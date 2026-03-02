@@ -1,0 +1,219 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ayase"
+version = "0.1.0"
+description = "Modular media quality metrics toolkit"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    { name = "Ayase Contributors" },
+]
+keywords = ["video", "image", "dataset", "metrics", "ml", "ai", "computer-vision", "quality-assessment", "vqa"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Video",
+]
+
+dependencies = [
+    "typer[all]>=0.12.0,<1.0",
+    "rich>=13.7.0,<15.0",
+    "pydantic>=2.5.0,<3.0",
+    "pydantic-settings>=2.1.0,<3.0",
+    "opencv-python>=4.9.0,<5.0",
+    "pillow>=10.2.0,<13.0",
+    "numpy>=1.24.0,<3.0",
+    "tqdm>=4.66.0,<5.0",
+    "pyarrow>=15.0.0,<23.0",
+    "pandas>=2.1.0,<3.0",
+    "imageio>=2.33.0,<3.0",
+    "imageio-ffmpeg>=0.4.9,<1.0",
+    "tomli>=2.0.1,<3.0;python_version<'3.11'",
+    "tomli-w>=1.0.0,<2.0",
+    "typing_extensions>=4.0.0;python_version<'3.11'",
+]
+
+[project.optional-dependencies]
+i-core = []
+v-perceptual = [
+    "torch>=2.1.0,<3.0",
+    "torchvision>=0.16.0,<1.0",
+    "timm>=0.9.12",
+    "einops>=0.7.0",
+    "lpips>=0.1.4",
+    "open-clip-torch>=2.24.0",
+]
+v-iqa = [
+    "torch>=2.1.0,<3.0",
+    "torchvision>=0.16.0,<1.0",
+    "pyiqa>=0.1.7,<1.0",
+    "scipy>=1.11.0",
+    "scikit-video>=1.1.11",
+]
+v-motion = [
+    "torch>=2.1.0,<3.0",
+    "torchvision>=0.16.0,<1.0",
+    "decord>=0.6.0",
+]
+v-ocr = [
+    "paddlepaddle>=2.5.0,<3.0",
+    "paddleocr>=2.7.0,<3.0",
+    "python-Levenshtein>=0.21.0",
+]
+v-face = [
+    "mediapipe>=0.10.0,<1.0",
+]
+v-object = [
+    "ultralytics>=8.0.0,<9.0",
+]
+v-watermark = [
+    "invisible-watermark>=0.2.0",
+]
+v-audio = [
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+]
+v-text = [
+    "torch>=2.1.0,<3.0",
+    "transformers>=4.36.0,<5.0",
+    "requests>=2.31.0",
+    "PyYAML>=6.0",
+]
+v-align = [
+    "t2v-metrics>=1.0.0",
+]
+v-scene = [
+    "transnetv2-pytorch>=1.0.0",
+]
+v-ml = [
+    "ayase[ml]",
+]
+ml = [
+    # NOTE: For CUDA support, install torch/torchvision from PyTorch index:
+    #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+    "torch>=2.1.0,<3.0",
+    "torchvision>=0.16.0,<1.0",
+    "transformers>=4.36.0,<5.0",
+    "timm>=0.9.12",
+    "decord>=0.6.0",
+    "PyYAML>=6.0",
+    "requests>=2.31.0",
+    "scikit-learn>=1.3.0",
+    "safetensors>=0.4.0",
+    "huggingface-hub>=0.20.0",
+
+    # Distribution / numerical
+    "scipy>=1.11.0",
+    "scikit-video>=1.1.11",
+
+    # No-reference metrics
+    "pyiqa>=0.1.7,<1.0",
+
+    # Advanced models
+    "lpips>=0.1.4",
+    "einops>=0.7.0",
+
+    # Captioning / BLEU scoring
+    "nltk>=3.8.0",
+
+    # Large model support
+    "accelerate>=0.25.0",
+
+    # Diffusion models (SD reference scoring)
+    "diffusers>=0.25.0",
+
+    # I2V similarity (CLIP sliding-window)
+    "open-clip-torch>=2.24.0",
+
+    # OCR fidelity
+    "paddlepaddle>=2.5.0,<3.0",
+    "paddleocr>=2.7.0,<3.0",
+    "python-Levenshtein>=0.21.0",
+
+    # Object detection
+    "ultralytics>=8.0.0,<9.0",
+]
+tui = [
+    "textual>=0.52.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=24.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
+all = [
+    "ayase[ml,dev,tui,v-perceptual,v-iqa,v-motion,v-ocr,v-face,v-object,v-watermark,v-audio,v-text,v-align,v-scene,v-ml]",
+]
+
+[project.urls]
+Homepage = "https://github.com/seruva19/ayase"
+Repository = "https://github.com/seruva19/ayase"
+Issues = "https://github.com/seruva19/ayase/issues"
+Changelog = "https://github.com/seruva19/ayase/blob/main/CHANGELOG.md"
+
+[project.scripts]
+ayase = "ayase.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ayase"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312"]
+extend-exclude = '''
+/src/ayase/modules/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+exclude = []
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501", "F401", "F403", "F541", "F841"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/modules/*.py" = ["I001"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+mypy_path = ["src"]
+ignore_missing_imports = true
+follow_imports = "skip"
+exclude = []
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
