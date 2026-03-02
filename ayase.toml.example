@@ -1,0 +1,41 @@
+[general]
+default_model = "auto"
+parallel_jobs = 8
+cache_enabled = true
+log_level = "INFO"
+
+[quality]
+enable_blur_detection = true
+blur_threshold = 100.0
+enable_compression_check = true
+enable_caption_analysis = true
+min_caption_length = 10
+max_caption_length = 1000
+enable_ml_quality = false
+
+[scoring]
+weight_technical = 0.4
+weight_visual = 0.3
+weight_caption = 0.2
+weight_metadata = 0.1
+
+[pipeline]
+# Dataset path used when no path is given on the CLI
+dataset_path = "./my_dataset"
+# Which modules to run (use `ayase modules list` to see all available)
+modules = ["metadata", "basic_quality", "motion"]
+# Folders scanned for .py plugin files at startup
+plugin_folders = ["plugins"]
+
+[output]
+default_format = "markdown"
+show_progress = true
+color_output = true
+# Directory where JSON/CSV artifact reports are written after every run
+artifacts_dir = "reports"
+# Format for artifact reports: json, csv, or html
+artifacts_format = "json"
+
+[filter]
+default_mode = "list"
+min_score_threshold = 60
