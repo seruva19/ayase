@@ -4,16 +4,16 @@
 FROM python:3.12-slim AS base
 
 LABEL org.opencontainers.image.title="ayase" \
-      org.opencontainers.image.description="Video dataset validator for ML training" \
-      org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.source="https://github.com/YOUR_ORG/ayase"
+    org.opencontainers.image.description="Video dataset validator for ML training" \
+    org.opencontainers.image.licenses="MIT" \
+    org.opencontainers.image.source="https://github.com/seruva19/ayase"
 
 # System libraries required by opencv-python, imageio-ffmpeg, and pillow
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libgl1 \
-        libglib2.0-0 \
-        ffmpeg && \
+    libgl1 \
+    libglib2.0-0 \
+    ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
 # Non-root user

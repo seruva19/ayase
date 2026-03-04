@@ -178,7 +178,7 @@ class I2VSimilarityModule(PipelineModule):
             logger.info(f"Loading DINOv2 ({self.dino_model_name}) for I2V on {self._device}...")
             if local_weights.exists():
                 logger.info(f"Using local DINOv2 weights: {local_weights}")
-                model = torch.hub.load("facebookresearch/dinov2", self.dino_model_name)
+                model = torch.hub.load("facebookresearch/dinov2", self.dino_model_name, pretrained=False)
                 state_dict = torch.load(str(local_weights), map_location=self._device, weights_only=True)
                 model.load_state_dict(state_dict)
             else:
