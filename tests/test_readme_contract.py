@@ -105,12 +105,12 @@ class _StubModule(PipelineModule):
 class TestMetricCount:
     """Verify the metric count claimed in the overview."""
 
-    def test_quality_metrics_has_225_fields(self):
-        """README: '225 quality metrics across visual, temporal, audio, …'"""
+    def test_quality_metrics_has_231_fields(self):
+        """README: '231 quality metrics across visual, temporal, audio, …'"""
         qm = QualityMetrics()
         # Pydantic model_fields gives declared fields (excludes _FIELD_GROUPS etc.)
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 225, f"Expected 225, got {field_count}"
+        assert field_count == 231, f"Expected 231, got {field_count}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -123,7 +123,7 @@ class TestMetricCount:
 # =====================================================================
 
 
-# The 225 metric names from the README table, in order.
+# The 231 metric names from the README table, in order.
 README_METRICS = [
     "blur_score", "compression_score", "aesthetic_score", "clip_score",
     "brightness", "contrast", "saturation", "fast_vqa_score",
@@ -133,7 +133,8 @@ README_METRICS = [
     "audio_quality_score", "perceptual_hash", "depth_score", "auto_caption",
     "vqa_a_score", "vqa_t_score", "is_score", "sd_score",
     "gradient_detail", "blip_bleu", "detection_score", "count_score",
-    "color_score", "celebrity_id_score", "ocr_score", "ocr_fidelity",
+    "color_score", "celebrity_id_score", "identity_loss",
+    "face_recognition_score", "ocr_score", "ocr_fidelity",
     "i2v_clip", "i2v_dino", "i2v_lpips", "i2v_quality",
     "action_score", "action_confidence", "flow_score", "motion_ac_score",
     "warping_error", "clip_temp", "face_consistency", "psnr", "ssim",
@@ -170,12 +171,12 @@ README_METRICS = [
     "depth_anything_score", "depth_anything_consistency", "video_type",
     "video_type_confidence", "jedi", "trajan_score", "promptiqa_score",
     "aigv_static", "aigv_temporal", "aigv_dynamic", "aigv_alignment",
-    "video_reward_score", "text_overlay_score", "ptlflow_motion_score",
+    "video_reward_score", "tifa_score", "text_overlay_score", "ptlflow_motion_score",
     "qcn_score", "finevq_score", "kvq_score", "rqvqa_score",
     "videval_score", "tlvqm_score", "funque_score", "movie_score",
     "st_greed_score", "c3dvqa_score", "flolpips", "hdr_vqm", "st_lpips",
     "camera_jitter_score", "jump_cut_score", "playback_speed_score",
-    "flow_coherence", "letterbox_ratio", "vtss", "cnniqa_score",
+    "flow_coherence", "letterbox_ratio", "tonal_dynamic_range", "vtss", "cnniqa_score",
     "hyperiqa_score", "paq2piq_score", "tres_score", "unique_score",
     "laion_aesthetic", "compare2score", "afine_score", "ckdn_score",
     "deepwsd_score", "ssimulacra2", "butteraugli", "flip_score",
@@ -184,13 +185,13 @@ README_METRICS = [
     "vmaf_4k", "visqol", "dnsmos_overall", "dnsmos_sig", "dnsmos_bak",
     "pu_psnr", "pu_ssim", "max_fall", "max_cll", "hdr_vdp",
     "delta_ictcp", "ciede2000", "psnr_hvs", "psnr_hvs_m", "cgvqm",
-    "strred", "p1203_mos",
+    "strred", "p1203_mos", "nemo_quality_score", "nemo_quality_label",
 ]
 
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 225
+        assert len(README_METRICS) == 231
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
