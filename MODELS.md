@@ -14,7 +14,7 @@ All support `cache_dir=models_dir` for local storage.
 
 | Model ID | Used By | License | Size |
 |----------|---------|---------|------|
-| `openai/clip-vit-base-patch32` | semantic_alignment, clip_temporal, sd_reference, action_recognition, background_consistency, deepfake_detection, generative_distribution_metrics, harmful_content, scene_tagging, t2v_score, video_memorability, video_text_matching, video_type_classifier, aigv_assessor, dataset_analytics | MIT | ~600 MB |
+| `openai/clip-vit-base-patch32` | semantic_alignment, clip_temporal, sd_reference, action_recognition, background_consistency, deepfake_detection, generative_distribution_metrics, harmful_content, scene_tagging, t2v_score, video_memorability, video_text_matching, video_type_classifier, aigv_assessor, dataset_analytics, tifa, umap_projection | MIT | ~600 MB |
 | `openai/clip-vit-large-patch14` | aesthetic_scoring | MIT | ~1.7 GB |
 
 ### Vision-Language
@@ -23,7 +23,7 @@ All support `cache_dir=models_dir` for local storage.
 |----------|---------|---------|------|
 | `Salesforce/blip-image-captioning-base` | captioning (default) | BSD-3-Clause | ~1 GB |
 | `Salesforce/blip2-opt-2.7b` | captioning (configurable BLIP-2 mode) | MIT | ~15 GB |
-| `dandelin/vilt-b32-finetuned-vqa` | commonsense | Apache 2.0 | ~500 MB |
+| `dandelin/vilt-b32-finetuned-vqa` | commonsense, tifa | Apache 2.0 | ~500 MB |
 | `llava-hf/llava-v1.6-mistral-7b-hf` | llm_descriptive_qa | Apache 2.0 | ~15 GB |
 | `llava-hf/llava-1.5-7b-hf` | vlm_judge | LLaMA 2 license | ~14 GB |
 
@@ -66,6 +66,12 @@ All support `cache_dir=models_dir` for local storage.
 | Model ID | Used By | License | Size |
 |----------|---------|---------|------|
 | `laion/clap-htsat-fused` | audio_text_alignment | Apache 2.0 | ~600 MB |
+
+### Text Quality
+
+| Model ID | Used By | License | Size |
+|----------|---------|---------|------|
+| `nvidia/quality-classifier-deberta` | nemo_curator | Apache 2.0 | ~1.5 GB |
 
 ---
 
@@ -239,6 +245,30 @@ Downloaded automatically by `pyiqa.create_metric()`. Weights managed by PyIQA in
 |---------|---------|---------|
 | `alex` (AlexNet) | i2v_similarity | BSD-2-Clause |
 
+### InsightFace
+
+| Model | Used By | License |
+|-------|---------|---------|
+| `buffalo_l` (ArcFace) | identity_loss | MIT |
+
+**Note:** Auto-downloaded by InsightFace on first use to `~/.insightface/models/buffalo_l/`. Requires `insightface>=0.7.0` and `onnxruntime>=1.14.0` (optional dependency group `v-identity`).
+
+### DeepFace
+
+| Model | Used By | License |
+|-------|---------|---------|
+| `ArcFace` | identity_loss (fallback) | MIT |
+
+**Note:** Auto-downloaded by DeepFace on first use to `~/.deepface/weights/`. Already available if `deepface` is installed (used by `celebrity_id` module).
+
+### MediaPipe
+
+| Model | Used By | License |
+|-------|---------|---------|
+| FaceMesh (468 landmarks) | identity_loss (geometric fallback), face_landmark_quality | Apache 2.0 |
+
+**Note:** Bundled with `mediapipe` package, no separate download needed.
+
 ### Ultralytics YOLO
 
 | Model | Used By | License |
@@ -279,6 +309,10 @@ These modules try multiple models in order, falling back to lighter alternatives
 | depth_consistency | MiDaS (various sizes) | OpenCV disparity | - |
 | motion_amplitude | RAFT Small | OpenCV Farneback | - |
 | temporal_flickering | RAFT Small | OpenCV Farneback | - |
+| identity_loss | InsightFace ArcFace | DeepFace ArcFace | MediaPipe FaceMesh |
+| tifa | ViLT VQA + rule-based QG | CLIP similarity proxy | Heuristic |
+| nemo_curator | nvidia/quality-classifier-deberta | FastText | Heuristic |
+| umap_projection | UMAP | t-SNE | sklearn PCA / numpy PCA |
 
 ---
 
@@ -286,8 +320,8 @@ These modules try multiple models in order, falling back to lighter alternatives
 
 | License | Models |
 |---------|--------|
-| **MIT** | CLIP (OpenAI), DOVER, FAST-VQA, open_clip, aesthetic scoring, BLIP-2, X-CLIP, Q-Align |
-| **Apache 2.0** | DINOv2, PaddleOCR, NSFW, CLAP (LAION), rembg, FineVQ, VideoScore, ViLT |
+| **MIT** | CLIP (OpenAI), DOVER, FAST-VQA, open_clip, aesthetic scoring, BLIP-2, X-CLIP, Q-Align, InsightFace, DeepFace |
+| **Apache 2.0** | DINOv2, PaddleOCR, NSFW, CLAP (LAION), rembg, FineVQ, VideoScore, ViLT, nvidia/quality-classifier-deberta, MediaPipe |
 | **BSD-3-Clause** | RAFT, R3D-18, BLIP base |
 | **BSD-2-Clause** | LPIPS |
 | **CC-BY-NC 4.0** | VideoMAE, Co-Tracker |
@@ -313,6 +347,8 @@ These modules try multiple models in order, falling back to lighter alternatives
 | MiDaS (depth) | ~0.5 GB |
 | PyIQA metrics (all) | ~2-5 GB |
 | LLaVA 7B (llm_descriptive_qa) | ~15 GB |
+| InsightFace buffalo_l (identity_loss) | ~0.3 GB |
+| nvidia/quality-classifier-deberta (nemo_curator) | ~1.5 GB |
 | Everything else | ~5-10 GB |
-| **Total (all modules)** | **~50-60 GB** |
+| **Total (all modules)** | **~52-62 GB** |
 | **Typical usage (10-15 modules)** | **~5-15 GB** |

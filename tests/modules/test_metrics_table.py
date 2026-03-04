@@ -31,11 +31,10 @@ def test_metrics_table_matches_quality_metrics():
     rows = _load_metrics_rows()
     fields = list(QualityMetrics.model_fields.keys())
     assert len(rows) == len(fields), f"Table has {len(rows)} rows but model has {len(fields)} fields"
-    # Strip backticks from metric names (table uses `field_name` formatting)
-    metrics = [row[1].strip("`") for row in rows]
+    metrics = [row[1] for row in rows]
     assert metrics == fields
     for index, row in enumerate(rows, 1):
         number, metric, module, inp, desc = row
         assert number == str(index)
-        assert metric.strip("`") == fields[index - 1]
+        assert metric == fields[index - 1]
         assert module  # Module column must not be empty
