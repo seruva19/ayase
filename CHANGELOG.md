@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Identity Loss** module (`identity_loss`) — reference-based face identity preservation metric with 4-tier backend: InsightFace ArcFace → DeepFace ArcFace → MediaPipe FaceMesh → skip. Outputs `identity_loss` (cosine distance, lower=better) and `face_recognition_score` (cosine similarity, higher=better). Used by IP-Adapter, DreamBooth, InstantID evaluation pipelines
+- **TIFA** module (`tifa`) — Text-to-Image Faithfulness Assessment (ICCV 2023) with 3-tier backend: rule-based question generation + ViLT VQA → CLIP similarity proxy → heuristic. Outputs `tifa_score` (0–1, higher=better)
+- **Tonal Dynamic Range** module (`tonal_dynamic_range`) — luminance histogram percentile range (0–100), with video frame subsampling
+- **NeMo Curator Quality** module (`nemo_curator`) — caption text quality scoring with 3-tier backend: nvidia/quality-classifier-deberta → FastText → heuristic
+- **UMAP Projection** module (`umap_projection`) — dataset-level embedding spread and coverage via CLIP features + 4-tier dimensionality reduction (UMAP → t-SNE → sklearn PCA → numpy PCA)
+- **VLM Classification Presets** — new `"presets"` mode for `vlm_judge` module with 5 predefined label sets (shot_scale, time_of_day, clothing_style, mood, expression), VLM inference + heuristic fallback
+- `QualityMetrics` fields: `identity_loss`, `face_recognition_score`, `tifa_score`, `tonal_dynamic_range`, `nemo_quality_score`, `nemo_quality_label`
+- `DatasetStats` fields: `umap_spread`, `umap_coverage`
+- `v-identity` optional dependency group: `insightface>=0.7.0`, `onnxruntime>=1.14.0`
 - `resolve_model_path(model_name, models_dir)` in `config.py` — resolves HuggingFace model names to local paths with `--`-delimited fallback, or falls back to Hub download
 - `download_model_file(relative_path, url, models_dir)` in `config.py` — downloads model weights to local cache with atomic `.part` temp file
 - Explicit config params for downstream integration in evaluation modules:
@@ -18,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- README metrics table redesigned as API reference: 5-column format (`#`, `Metric`, `Module`, `Input`, `Description`) replacing the old 4-column format — maps every QualityMetrics field to its producing module, required input type, and output range
 - Removed `enable_ml` flag from all 235 modules — ML is now always enabled when dependencies are available
 - TUI: `FolderSelectionScreen` starts at `Path.home()` instead of `"/"` (fixes Windows drive switching)
 - TUI: added Windows drive letter selector, path input, and visual polish across all screens
