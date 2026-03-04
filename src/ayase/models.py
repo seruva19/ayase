@@ -93,6 +93,7 @@ class QualityMetrics(BaseModel):
         "temporal_information": "basic",
         "spatial_information": "basic",
         "letterbox_ratio": "basic",
+        "tonal_dynamic_range": "basic",
         # Aesthetics
         "aesthetic_score": "aesthetic",
         "laion_aesthetic": "aesthetic",
@@ -114,6 +115,7 @@ class QualityMetrics(BaseModel):
         "vqa_a_score": "alignment",
         "vqa_t_score": "alignment",
         "video_reward_score": "alignment",
+        "tifa_score": "alignment",
         # Motion & dynamics
         "motion_score": "motion",
         "camera_motion_score": "motion",
@@ -242,6 +244,8 @@ class QualityMetrics(BaseModel):
         "face_landmark_jitter": "face",
         "face_iqa_score": "face",
         "celebrity_id_score": "face",
+        "identity_loss": "face",
+        "face_recognition_score": "face",
         # OCR & text
         "ocr_area_ratio": "text",
         "ocr_score": "text",
@@ -324,6 +328,8 @@ class QualityMetrics(BaseModel):
         "usability_score": "meta",
         "vtss": "meta",
         "perceptual_hash": "meta",
+        "nemo_quality_score": "meta",
+        "nemo_quality_label": "meta",
     }
 
     def non_null_metrics(self) -> dict[str, object]:
@@ -458,6 +464,8 @@ class QualityMetrics(BaseModel):
     count_score: Optional[float] = None
     color_score: Optional[float] = None
     celebrity_id_score: Optional[float] = None
+    identity_loss: Optional[float] = None  # Face identity cosine distance (0-1, lower=better)
+    face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
     ocr_score: Optional[float] = None
     ocr_fidelity: Optional[float] = None  # OCR text accuracy vs caption (0-100, higher=better)
 
@@ -678,6 +686,9 @@ class QualityMetrics(BaseModel):
     # VideoAlign reward (NeurIPS 2025)
     video_reward_score: Optional[float] = None  # Human preference reward
 
+    # TIFA (ICCV 2023) — Text-to-Image Faithfulness Assessment
+    tifa_score: Optional[float] = None  # VQA faithfulness (0-1, higher=better)
+
     # Text overlay (NVIDIA Curator)
     text_overlay_score: Optional[float] = None  # Text overlay severity (0-1)
 
@@ -707,6 +718,7 @@ class QualityMetrics(BaseModel):
     playback_speed_score: Optional[float] = None  # Normal speed (1.0=normal)
     flow_coherence: Optional[float] = None  # Bidirectional optical flow consistency (0-1)
     letterbox_ratio: Optional[float] = None  # Border/letterbox fraction (0-1, 0=no borders)
+    tonal_dynamic_range: Optional[float] = None  # Luminance histogram span (0-100)
     vtss: Optional[float] = None  # Video Training Suitability Score (0-1)
 
     # Image IQA (keyframe-level)
@@ -766,6 +778,10 @@ class QualityMetrics(BaseModel):
     cgvqm: Optional[float] = None  # CGVQM gaming quality (higher=better)
     strred: Optional[float] = None  # STRRED reduced-reference temporal (lower=better)
     p1203_mos: Optional[float] = None  # ITU-T P.1203 streaming QoE MOS (1-5)
+
+    # NeMo Curator text quality
+    nemo_quality_score: Optional[float] = None  # Caption text quality (0-1)
+    nemo_quality_label: Optional[str] = None  # Quality label (Low/Medium/High)
 
 
 class Sample(BaseModel):
@@ -879,6 +895,10 @@ class DatasetStats(BaseModel):
     outlier_count: Optional[int] = None  # Number of statistical outliers
     class_balance_score: Optional[float] = None  # Category balance 0-1 (higher=balanced)
     duplicate_pairs: Optional[int] = None  # Count of near-duplicate pairs
+
+    # UMAP projection (dataset-level)
+    umap_spread: Optional[float] = None  # UMAP projection spread
+    umap_coverage: Optional[float] = None  # UMAP projection coverage (0-1)
 
     # Codec comparison (dataset-level)
     bd_rate: Optional[float] = None  # BD-Rate compression efficiency (%, negative=better)
