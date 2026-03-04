@@ -166,6 +166,7 @@ tui = [
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-sugar>=1.0.0",
     "black>=24.0.0",
     "ruff>=0.1.0",
     "mypy>=1.8.0",

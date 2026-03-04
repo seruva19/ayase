@@ -154,12 +154,68 @@ class MyMetricModule(PipelineModule):
 - [ ] Set `description`
 - [ ] `default_config` for all tunable parameters
 - [ ] Heavy imports inside `setup()` or `on_mount()`, not at top level
-- [ ] `self._ml_available` flag pattern
+- [ ] Tiered backend pattern: real model → proxy → heuristic (see below)
 - [ ] `process()` always returns sample
-- [ ] Add `Optional[float]` field to `QualityMetrics` in `models.py`
+- [ ] Add `Optional[float] = None` field to `QualityMetrics` in `models.py`
 - [ ] Add field to `_FIELD_GROUPS` in `models.py`
 - [ ] Write tests in `tests/modules/` — use `_test_module_basics()` from conftest
-- [ ] Add to `modules/__init__.py` if it's a key module
+- [ ] Add to `modules/__init__.py` if it's a key module (grouped by category, not alphabetical)
+- [ ] Update hardcoded `README_METRICS` list and field count in `tests/test_readme_contract.py`
+
+### Tiered Backend Pattern
+
+All modules use automatic backend detection instead of an `enable_ml` flag. The pattern:
+
+```python
+def __init__(self, config=None):
+    super().__init__(config)
+    self._backend = None  # "insightface" | "clip" | "heuristic" | None
+
+def setup(self):
+    # Tier 1: Best quality
+    try:
+        from heavy_lib import Model
+        self._model = Model(...)
+        self._backend = "tier1"
+        return
+    except Exception:
+        pass
+    # Tier 2: Lighter fallback
+    try:
+        ...
+        self._backend = "tier2"
+        return
+    except Exception:
+        pass
+    # Tier 3: Always-available heuristic
+    self._backend = "heuristic"
+
+def process(self, sample):
+    if self._backend is None:
+        return sample  # graceful skip
+    ...
+```
+
+### Video Frame Subsampling
+
+Standard pattern for video processing — extract uniformly spaced frames:
+
+```python
+self.subsample = self.config.get("subsample", 8)  # default: 8 frames
+n = min(self.subsample, total_frames)
+indices = np.linspace(0, total_frames - 1, n, dtype=int)
+# Read frames via cv2.VideoCapture, convert BGR→RGB
+```
+
+### Caption and Reference Access
+
+- **Caption:** `sample.caption.text` (primary), sidecar `.txt` file next to sample (fallback)
+- **Reference image:** `getattr(sample, "reference_path", None)` — `reference_path` is NOT a Pydantic field on Sample, use `getattr` with default
+
+### Module Ordering in `__init__.py`
+
+Modules in `modules/__init__.py` are grouped by **functional category**, not alphabetically:
+Core → Aesthetics → Text/OCR → Motion → Temporal → Alignment → NR-Quality → FR-Quality → SOTA Video → Generation → Face → Scene → Safety → Audio → HDR/Codec → Dataset → Utility
 
 ### Module Lifecycle
 
@@ -376,6 +432,68 @@ These have known issues:
 - 6 bare `except:` clauses (swallow KeyboardInterrupt)
 - Do NOT run Black/Ruff on these — they are external code
 
+## Release Checklist
+
+After implementing any change (new modules, new metrics, bug fixes), complete ALL applicable steps before considering done:
+
+### 1. Code
+
+- [ ] Implement modules in `src/ayase/modules/`
+- [ ] Add `Optional[float] = None` fields to `QualityMetrics` in `models.py`
+- [ ] Add fields to `_FIELD_GROUPS` in `models.py`
+- [ ] Register in `modules/__init__.py` if it's a key module
+- [ ] Add optional deps to `pyproject.toml` if needed (and update `all` extras)
+
+### 2. Tests
+
+- [ ] Write tests in `tests/modules/test_*.py`
+- [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count (currently 231)
+- [ ] Run `pytest tests/ -x -q` — full regression must pass
+
+### 3. README.md
+
+- [ ] Update metrics table — 5-column format: `#`, `Metric`, `Module`, `Input`, `Description`
+- [ ] Metric names must exactly match `QualityMetrics` field names (no backticks)
+- [ ] Input shorthand: `img/vid` = image or video, `+ref` = needs `reference_path`, `+cap` = needs caption, `batch` = dataset-level
+- [ ] Renumber rows after insertions
+- [ ] Update overview module/metric counts
+- [ ] Validated by `tests/modules/test_metrics_table.py` — one row per `QualityMetrics` field, in order
+
+### 4. MODELS.md
+
+- [ ] Add new model weights with Used By, License, Size
+- [ ] Update "Used By" column for existing models reused by new modules
+- [ ] Add to tiered fallback table (Section 7) if module has multi-backend
+- [ ] Update license summary and storage estimates
+
+### 5. CHANGELOG.md
+
+- [ ] Add entries under `[Unreleased]` — follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
+- [ ] Sections: Added, Changed, Removed
+
+### 6. Lint & Commit
+
+- [ ] `ruff check` on new/changed files
+- [ ] Commit with a concise message describing what was added/changed
+
+### 7. PyPI Publish
+
+- [ ] Bump version in both `pyproject.toml` and `src/ayase/__init__.py` (keep in sync)
+- [ ] `python -m build && twine upload dist/*`
+
+## Contract Tests
+
+`tests/test_readme_contract.py` enforces structural invariants. When adding metrics, you MUST update:
+
+1. **Field count** — `test_quality_metrics_has_231_fields()` asserts exact count
+2. **`README_METRICS` list** — hardcoded list of all field names in order; used by:
+   - `test_readme_table_count()` — list length matches field count
+   - `test_readme_metric_exists_in_model()` — every listed name is a QualityMetrics field
+   - `test_no_unlisted_fields()` — every QualityMetrics field appears in the list
+3. **`tests/modules/test_metrics_table.py`** — parses README `## Metrics` table and verifies 1:1 match with QualityMetrics fields in order
+
+Other contract tests: golden values (`test_golden_values.py`, ±2% tolerance), public API surface (`TestPipelineAPI`, `TestProfileAPI`, `TestSampleModel`), CLI commands, TUI widget IDs.
+
 ## Common Pitfalls
 
 1. **Don't import torch at module top level** — it slows down `import ayase` for users who don't need ML
@@ -385,3 +503,7 @@ These have known issues:
 5. **Don't add fields to QualityMetrics without adding to `_FIELD_GROUPS`** — `to_grouped_dict()` will put them in "other"
 6. **Don't modify `third_party/`** unless absolutely necessary — it's vendored external code
 7. **Version is in two places** — `__init__.py` and `pyproject.toml` — update both
+8. **Don't forget `tests/test_readme_contract.py`** — has a hardcoded `README_METRICS` list and field count that must be updated when adding new QualityMetrics fields
+9. **Don't use `sample.reference_path` directly** — it's not a Pydantic field; use `getattr(sample, "reference_path", None)`
+10. **Don't use `enable_ml` flag** — removed; use tiered backend auto-detection pattern instead
+11. **Don't add modules alphabetically to `__init__.py`** — they're grouped by functional category
