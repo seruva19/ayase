@@ -21,6 +21,7 @@ _IMPORTS = [
     ("StructuralModule", ".structural"),
     ("ExposureModule", ".exposure"),
     ("CompressionArtifactsModule", ".compression_artifacts"),
+    ("TonalDynamicRangeModule", ".tonal_dynamic_range"),
     # --- Aesthetics ---
     ("AestheticModule", ".aesthetic"),
     ("AestheticScoringModule", ".aesthetic_scoring"),
@@ -51,6 +52,7 @@ _IMPORTS = [
     ("VideoTextMatchingModule", ".video_text_matching"),
     ("T2VScoreModule", ".t2v_score"),
     ("VQAScoreModule", ".vqa_score"),
+    ("TIFAModule", ".tifa"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("FastVQAModule", ".fast_vqa"),
@@ -87,6 +89,7 @@ _IMPORTS = [
     ("FaceFidelityModule", ".face_fidelity"),
     ("FaceLandmarkQualityModule", ".face_landmark_quality"),
     ("FaceIQAModule", ".face_iqa"),
+    ("IdentityLossModule", ".identity_loss"),
     # --- Scene & content ---
     ("SceneModule", ".scene"),
     ("SceneDetectionModule", ".scene_detection"),
@@ -115,6 +118,7 @@ _IMPORTS = [
     ("EmbeddingModule", ".embedding"),
     ("DiversitySelectionModule", ".diversity_selection"),
     ("DatasetAnalyticsModule", ".dataset_analytics"),
+    ("UMAPProjectionModule", ".umap_projection"),
     ("ResolutionBucketingModule", ".resolution_bucketing"),
     ("LLMAdvisorModule", ".llm_advisor"),
     # --- Utility ---
@@ -122,6 +126,7 @@ _IMPORTS = [
     ("SpectralComplexityModule", ".spectral"),
     ("BackgroundDiversityModule", ".background_diversity"),
     ("VideoMemorabilityModule", ".video_memorability"),
+    ("NemoCuratorModule", ".nemo_curator"),
 ]
 
 # Perform imports, silently skipping modules with missing optional deps.

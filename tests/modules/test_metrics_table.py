@@ -19,20 +19,23 @@ def _load_metrics_rows():
                 continue
             if cols[0] == "#" or cols[0].startswith("---"):
                 continue
-            if len(cols) >= 4:
-                rows.append(cols[:4])
+            if len(cols) >= 5:
+                rows.append(cols[:5])
     return rows
 
 
 def test_metrics_table_matches_quality_metrics():
+    """Verify the README metrics table has one row per QualityMetrics field,
+    in the correct order, with the 5-column API-reference format:
+    #, Metric, Module, Input, Description."""
     rows = _load_metrics_rows()
     fields = list(QualityMetrics.model_fields.keys())
-    assert len(rows) == len(fields)
-    metrics = [row[1] for row in rows]
+    assert len(rows) == len(fields), f"Table has {len(rows)} rows but model has {len(fields)} fields"
+    # Strip backticks from metric names (table uses `field_name` formatting)
+    metrics = [row[1].strip("`") for row in rows]
     assert metrics == fields
     for index, row in enumerate(rows, 1):
-        number, metric, title, tested = row
+        number, metric, module, inp, desc = row
         assert number == str(index)
-        assert metric == fields[index - 1]
-        assert title
-        assert tested == "Yes"
+        assert metric.strip("`") == fields[index - 1]
+        assert module  # Module column must not be empty

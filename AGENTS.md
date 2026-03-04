@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Ayase is a modular media quality metrics toolkit. It provides 235 pipeline modules across 195 files for analyzing video/image quality, text-video alignment, motion, temporal consistency, safety, audio, and more.
+Ayase is a modular media quality metrics toolkit. It provides 238 pipeline modules across 198 files for analyzing video/image quality, text-video alignment, motion, temporal consistency, safety, audio, and more.
 
 - **Language:** Python 3.9+
 - **Build:** Hatchling (`pyproject.toml`)
@@ -27,7 +27,7 @@ src/ayase/
 ├── tui.py               # Textual TUI (6 screens)
 ├── video.py             # Video utilities
 ├── audio.py             # Audio utilities
-├── modules/             # 195 module files, 235 PipelineModule subclasses
+├── modules/             # 198 module files, 238 PipelineModule subclasses
 │   ├── __init__.py      # Explicit imports of ~90 key modules + __all__
 │   └── *.py             # All auto-discovered at runtime via ModuleRegistry
 ├── third_party/         # Vendored code (DOVER, FastVQA, Kandinsky)

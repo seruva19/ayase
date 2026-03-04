@@ -4,7 +4,7 @@ Modular media quality metrics toolkit.
 
 ## Overview
 
-- 225 quality metrics across visual, temporal, audio, perceptual, and safety categories.
+- 231 quality metrics across visual, temporal, audio, perceptual, and safety categories.
 - Modular pipeline - modules compute raw values, downstream apps decide what to do with them.
 - CLI and Python API.
 - Profile-based pipeline configuration.
@@ -40,233 +40,241 @@ See [MODELS.md](MODELS.md) for the complete inventory of all pretrained weights 
 
 ## Metrics
 
-| # | Metric | Title | Tested |
-|---:|---|---|---|
-| 1 | blur_score | Blur Score | Yes |
-| 2 | compression_score | Compression Score | Yes |
-| 3 | aesthetic_score | Aesthetic Score | Yes |
-| 4 | clip_score | CLIP Score | Yes |
-| 5 | brightness | Brightness | Yes |
-| 6 | contrast | Contrast | Yes |
-| 7 | saturation | Saturation | Yes |
-| 8 | fast_vqa_score | Fast VQA Score | Yes |
-| 9 | motion_score | Motion Score | Yes |
-| 10 | camera_motion_score | Camera Motion Score | Yes |
-| 11 | temporal_consistency | Temporal Consistency | Yes |
-| 12 | technical_score | Technical Score | Yes |
-| 13 | noise_score | Noise Score | Yes |
-| 14 | artifacts_score | Artifacts Score | Yes |
-| 15 | watermark_probability | Watermark Probability | Yes |
-| 16 | ocr_area_ratio | OCR Area Ratio | Yes |
-| 17 | face_count | Face Count | Yes |
-| 18 | nsfw_score | NSFW Score | Yes |
-| 19 | audio_quality_score | Audio Quality Score | Yes |
-| 20 | perceptual_hash | Perceptual Hash | Yes |
-| 21 | depth_score | Depth Score | Yes |
-| 22 | auto_caption | Auto Caption | Yes |
-| 23 | vqa_a_score | VQA A Score | Yes |
-| 24 | vqa_t_score | VQA T Score | Yes |
-| 25 | is_score | IS Score | Yes |
-| 26 | sd_score | SD Score | Yes |
-| 27 | gradient_detail | Gradient Detail | Yes |
-| 28 | blip_bleu | BLIP BLEU | Yes |
-| 29 | detection_score | Detection Score | Yes |
-| 30 | count_score | Count Score | Yes |
-| 31 | color_score | Color Score | Yes |
-| 32 | celebrity_id_score | Celebrity ID Score | Yes |
-| 33 | ocr_score | OCR Score | Yes |
-| 34 | ocr_fidelity | OCR Fidelity | Yes |
-| 35 | i2v_clip | I2V CLIP | Yes |
-| 36 | i2v_dino | I2V DINO | Yes |
-| 37 | i2v_lpips | I2V LPIPS | Yes |
-| 38 | i2v_quality | I2V Quality | Yes |
-| 39 | action_score | Action Score | Yes |
-| 40 | action_confidence | Action Confidence | Yes |
-| 41 | flow_score | Flow Score | Yes |
-| 42 | motion_ac_score | Motion AC Score | Yes |
-| 43 | warping_error | Warping Error | Yes |
-| 44 | clip_temp | CLIP Temporal | Yes |
-| 45 | face_consistency | Face Consistency | Yes |
-| 46 | psnr | PSNR | Yes |
-| 47 | ssim | SSIM | Yes |
-| 48 | lpips | LPIPS | Yes |
-| 49 | spectral_entropy | Spectral Entropy | Yes |
-| 50 | spectral_rank | Spectral Rank | Yes |
-| 51 | fvd | FVD | Yes |
-| 52 | kvd | KVD | Yes |
-| 53 | fvmd | FVMD | Yes |
-| 54 | vmaf | VMAF | Yes |
-| 55 | ms_ssim | MS-SSIM | Yes |
-| 56 | vif | VIF | Yes |
-| 57 | niqe | NIQE | Yes |
-| 58 | t2v_score | T2V Score | Yes |
-| 59 | t2v_alignment | T2V Alignment | Yes |
-| 60 | t2v_quality | T2V Quality | Yes |
-| 61 | dynamics_range | Dynamics Range | Yes |
-| 62 | dynamics_controllability | Dynamics Controllability | Yes |
-| 63 | scene_complexity | Scene Complexity | Yes |
-| 64 | compression_artifacts | Compression Artifacts | Yes |
-| 65 | naturalness_score | Naturalness Score | Yes |
-| 66 | video_memorability | Video Memorability | Yes |
-| 67 | usability_rate | Usability Rate | Yes |
-| 68 | confidence_score | Confidence Score | Yes |
-| 69 | human_preference_score | Human Preference Score | Yes |
-| 70 | engagement_score | Engagement Score | Yes |
-| 71 | usability_score | Usability Score | Yes |
-| 72 | hdr_quality | HDR Quality | Yes |
-| 73 | sdr_quality | SDR Quality | Yes |
-| 74 | temporal_information | Temporal Information | Yes |
-| 75 | spatial_information | Spatial Information | Yes |
-| 76 | flicker_score | Flicker Score | Yes |
-| 77 | judder_score | Judder Score | Yes |
-| 78 | stutter_score | Stutter Score | Yes |
-| 79 | dists | DISTS | Yes |
-| 80 | fsim | FSIM | Yes |
-| 81 | gmsd | GMSD | Yes |
-| 82 | vsi_score | VSI Score | Yes |
-| 83 | brisque | BRISQUE | Yes |
-| 84 | pesq_score | PESQ Score | Yes |
-| 85 | av_sync_offset | A/V Sync Offset | Yes |
-| 86 | dover_score | DOVER Score | Yes |
-| 87 | dover_technical | DOVER Technical | Yes |
-| 88 | dover_aesthetic | DOVER Aesthetic | Yes |
-| 89 | topiq_score | TOPIQ Score | Yes |
-| 90 | liqe_score | LIQE Score | Yes |
-| 91 | clip_iqa_score | CLIP-IQA Score | Yes |
-| 92 | color_grading_score | Color Grading Score | Yes |
-| 93 | white_balance_score | White Balance Score | Yes |
-| 94 | exposure_consistency | Exposure Consistency | Yes |
-| 95 | focus_quality | Focus Quality | Yes |
-| 96 | banding_severity | Banding Severity | Yes |
-| 97 | qalign_quality | Q-Align Quality | Yes |
-| 98 | qalign_aesthetic | Q-Align Aesthetic | Yes |
-| 99 | face_quality_score | Face Quality Score | Yes |
-| 100 | face_identity_consistency | Face Identity Consistency | Yes |
-| 101 | face_expression_smoothness | Face Expression Smoothness | Yes |
-| 102 | face_landmark_jitter | Face Landmark Jitter | Yes |
-| 103 | object_permanence_score | Object Permanence Score | Yes |
-| 104 | semantic_consistency | Semantic Consistency | Yes |
-| 105 | depth_temporal_consistency | Depth Temporal Consistency | Yes |
-| 106 | subject_consistency | Subject Consistency | Yes |
-| 107 | background_consistency | Background Consistency | Yes |
-| 108 | motion_smoothness | Motion Smoothness | Yes |
-| 109 | codec_efficiency | Codec Efficiency | Yes |
-| 110 | gop_quality | GOP Quality | Yes |
-| 111 | codec_artifacts | Codec Artifacts | Yes |
-| 112 | deepfake_probability | Deepfake Probability | Yes |
-| 113 | ai_generated_probability | AI-Generated Probability | Yes |
-| 114 | harmful_content_score | Harmful Content Score | Yes |
-| 115 | watermark_strength | Watermark Strength | Yes |
-| 116 | bias_score | Bias Score | Yes |
-| 117 | depth_quality | Depth Quality | Yes |
-| 118 | multiview_consistency | Multiview Consistency | Yes |
-| 119 | stereo_comfort_score | Stereo Comfort Score | Yes |
-| 120 | musiq_score | MUSIQ Score | Yes |
-| 121 | contrique_score | CONTRIQUE Score | Yes |
-| 122 | mdtvsfa_score | MDTVSFA Score | Yes |
-| 123 | nima_score | NIMA Score | Yes |
-| 124 | dbcnn_score | DBCNN Score | Yes |
-| 125 | wadiqam_score | WaDIQaM Score | Yes |
-| 126 | maniqa_score | MANIQA Score | Yes |
-| 127 | arniqa_score | ARNIQA Score | Yes |
-| 128 | qualiclip_score | QualiCLIP Score | Yes |
-| 129 | pieapp | PieAPP | Yes |
-| 130 | cw_ssim | CW-SSIM | Yes |
-| 131 | nlpd | NLPD | Yes |
-| 132 | mad | MAD | Yes |
-| 133 | ahiq | AHIQ | Yes |
-| 134 | topiq_fr | TOPIQ-FR | Yes |
-| 135 | dreamsim | DreamSim | Yes |
-| 136 | cover_score | Cover Score | Yes |
-| 137 | cover_technical | Cover Technical | Yes |
-| 138 | cover_aesthetic | Cover Aesthetic | Yes |
-| 139 | cover_semantic | Cover Semantic | Yes |
-| 140 | vqa_score_alignment | VQAScore Alignment | Yes |
-| 141 | videoscore_visual | VideoScore Visual | Yes |
-| 142 | videoscore_temporal | VideoScore Temporal | Yes |
-| 143 | videoscore_dynamic | VideoScore Dynamic | Yes |
-| 144 | videoscore_alignment | VideoScore Alignment | Yes |
-| 145 | videoscore_factual | VideoScore Factual | Yes |
-| 146 | face_iqa_score | Face IQA Score | Yes |
-| 147 | scene_stability | Scene Stability | Yes |
-| 148 | avg_scene_duration | Average Scene Duration | Yes |
-| 149 | raft_motion_score | RAFT Motion Score | Yes |
-| 150 | ram_tags | RAM Tags | Yes |
-| 151 | depth_anything_score | Depth Anything Score | Yes |
-| 152 | depth_anything_consistency | Depth Anything Consistency | Yes |
-| 153 | video_type | Video Type | Yes |
-| 154 | video_type_confidence | Video Type Confidence | Yes |
-| 155 | jedi | JEDi | Yes |
-| 156 | trajan_score | TRAJAN Score | Yes |
-| 157 | promptiqa_score | PromptIQA Score | Yes |
-| 158 | aigv_static | AIGV Static | Yes |
-| 159 | aigv_temporal | AIGV Temporal | Yes |
-| 160 | aigv_dynamic | AIGV Dynamic | Yes |
-| 161 | aigv_alignment | AIGV Alignment | Yes |
-| 162 | video_reward_score | Video Reward Score | Yes |
-| 163 | text_overlay_score | Text Overlay Score | Yes |
-| 164 | ptlflow_motion_score | PTLFlow Motion Score | Yes |
-| 165 | qcn_score | QCN Score | Yes |
-| 166 | finevq_score | FineVQ Score | Yes |
-| 167 | kvq_score | KVQ Score | Yes |
-| 168 | rqvqa_score | RQ-VQA Score | Yes |
-| 169 | videval_score | VIDEVAL Score | Yes |
-| 170 | tlvqm_score | TLVQM Score | Yes |
-| 171 | funque_score | FUNQUE Score | Yes |
-| 172 | movie_score | MOVIE Score | Yes |
-| 173 | st_greed_score | ST-GREED Score | Yes |
-| 174 | c3dvqa_score | C3DVQA Score | Yes |
-| 175 | flolpips | FloLPIPS | Yes |
-| 176 | hdr_vqm | HDR-VQM | Yes |
-| 177 | st_lpips | ST-LPIPS | Yes |
-| 178 | camera_jitter_score | Camera Jitter Score | Yes |
-| 179 | jump_cut_score | Jump Cut Score | Yes |
-| 180 | playback_speed_score | Playback Speed Score | Yes |
-| 181 | flow_coherence | Flow Coherence | Yes |
-| 182 | letterbox_ratio | Letterbox Ratio | Yes |
-| 183 | vtss | VTSS | Yes |
-| 184 | cnniqa_score | CNNIQA Score | Yes |
-| 185 | hyperiqa_score | HyperIQA Score | Yes |
-| 186 | paq2piq_score | PaQ2PiQ Score | Yes |
-| 187 | tres_score | TReS Score | Yes |
-| 188 | unique_score | Unique Score | Yes |
-| 189 | laion_aesthetic | LAION Aesthetic | Yes |
-| 190 | compare2score | Compare2Score | Yes |
-| 191 | afine_score | A-FINE Score | Yes |
-| 192 | ckdn_score | CKDN Score | Yes |
-| 193 | deepwsd_score | DeepWSD Score | Yes |
-| 194 | ssimulacra2 | SSIMULACRA2 | Yes |
-| 195 | butteraugli | Butteraugli | Yes |
-| 196 | flip_score | Flip Score | Yes |
-| 197 | vmaf_neg | VMAF-NEG | Yes |
-| 198 | ilniqe | ILNIQE | Yes |
-| 199 | nrqm | NRQM | Yes |
-| 200 | pi_score | PI Score | Yes |
-| 201 | piqe | PIQE | Yes |
-| 202 | maclip_score | MACLIP Score | Yes |
-| 203 | dmm | DMM | Yes |
-| 204 | wadiqam_fr | WaDIQaM-FR | Yes |
-| 205 | ssimc | SSIM-C | Yes |
-| 206 | cambi | CAMBI | Yes |
-| 207 | xpsnr | XPSNR | Yes |
-| 208 | vmaf_phone | VMAF-Phone | Yes |
-| 209 | vmaf_4k | VMAF-4K | Yes |
-| 210 | visqol | ViSQOL | Yes |
-| 211 | dnsmos_overall | DNSMOS Overall | Yes |
-| 212 | dnsmos_sig | DNSMOS Signal | Yes |
-| 213 | dnsmos_bak | DNSMOS Background | Yes |
-| 214 | pu_psnr | PU-PSNR | Yes |
-| 215 | pu_ssim | PU-SSIM | Yes |
-| 216 | max_fall | Max FALL | Yes |
-| 217 | max_cll | Max CLL | Yes |
-| 218 | hdr_vdp | HDR-VDP | Yes |
-| 219 | delta_ictcp | Delta ICtCp | Yes |
-| 220 | ciede2000 | CIEDE2000 | Yes |
-| 221 | psnr_hvs | PSNR-HVS | Yes |
-| 222 | psnr_hvs_m | PSNR-HVS-M | Yes |
-| 223 | cgvqm | CGVQM | Yes |
-| 224 | strred | STRRED | Yes |
-| 225 | p1203_mos | P.1203 MOS | Yes |
+**Input key:** `image/video` = either, `+ref` = needs `reference_path`, `+caption` = needs caption text, `audio` = audio stream, `batch` = dataset-level.
+
+| # | Metric | Module | Input | Description |
+|---:|--------|--------|-------|-------------|
+| 1 | `blur_score` | `basic_quality` | image/video | Laplacian variance |
+| 2 | `compression_score` | `basic_quality` | image/video | Compression quality (0-100) |
+| 3 | `aesthetic_score` | `aesthetic` | image/video | 0-10, from aesthetic predictor |
+| 4 | `clip_score` | `semantic_alignment` | image/video +caption | Caption-image alignment |
+| 5 | `brightness` | `basic_quality` | image/video | Mean brightness (0-255) |
+| 6 | `contrast` | `basic_quality` | image/video | Contrast level (0-100) |
+| 7 | `saturation` | `basic_quality` | image/video | Color saturation (0-100) |
+| 8 | `fast_vqa_score` | `fast_vqa` | image/video | 0-100 |
+| 9 | `motion_score` | `motion` | image/video | Scene motion intensity |
+| 10 | `camera_motion_score` | `stabilized_motion` | image/video | Camera motion intensity |
+| 11 | `temporal_consistency` | `clip_temporal` | image/video | Frame consistency |
+| 12 | `technical_score` | `basic_quality` | image/video | Composite technical score |
+| 13 | `noise_score` | `basic_quality` | image/video | Noise level (0-100, lower=cleaner) |
+| 14 | `artifacts_score` | `basic_quality` | image/video | Artifact severity (0-100, lower=better) |
+| 15 | `watermark_probability` | `watermark_classifier` | image/video | 0-1 |
+| 16 | `ocr_area_ratio` | `text_detection` | image | 0-1 |
+| 17 | `face_count` | `face_fidelity` | image/video | Integer face count |
+| 18 | `nsfw_score` | `nsfw` | image | 0-1, likelihood of being NSFW |
+| 19 | `audio_quality_score` | `audio` | audio | 0-100 |
+| 20 | `perceptual_hash` | `dedup` | image/video | dHash or similar |
+| 21 | `depth_score` | `depth_map_quality` | image/video | Scene depth complexity |
+| 22 | `auto_caption` | `captioning` | image/video +caption | Generated caption |
+| 23 | `vqa_a_score` | `aesthetic` | image/video | VQA aesthetic sub-score |
+| 24 | `vqa_t_score` | `basic_quality` | image/video | VQA technical sub-score |
+| 25 | `is_score` | `inception_score` | image/video | Inception Score |
+| 26 | `sd_score` | `sd_reference` | image/video +caption | SD-reference similarity (0-1) |
+| 27 | `gradient_detail` | `basic_quality` | image/video | Sobel gradient detail (0-100) |
+| 28 | `blip_bleu` | `captioning` | image/video +caption | BLIP caption BLEU score |
+| 29 | `detection_score` | `object_detection` | image +caption | Object detection confidence |
+| 30 | `count_score` | `object_detection` | image +caption | Object count accuracy |
+| 31 | `color_score` | `color_consistency` | image/video +caption | Color consistency |
+| 32 | `celebrity_id_score` | `celebrity_id` | image/video | Celebrity identity distance |
+| 33 | `identity_loss` | `identity_loss` | image/video +ref | Face identity cosine distance (0-1, lower=better) |
+| 34 | `face_recognition_score` | `identity_loss` | image/video +ref | Face identity cosine similarity (0-1, higher=better) |
+| 35 | `ocr_score` | `ocr_fidelity` | image/video +caption | OCR confidence |
+| 36 | `ocr_fidelity` | `ocr_fidelity` | image/video +caption | OCR text accuracy vs caption (0-100, higher=better) |
+| 37 | `i2v_clip` | `i2v_similarity` | image/video +ref | CLIP image-video similarity (0-1) |
+| 38 | `i2v_dino` | `i2v_similarity` | image/video +ref | DINOv2 image-video similarity (0-1) |
+| 39 | `i2v_lpips` | `i2v_similarity` | image/video +ref | LPIPS image-video distance (0-1, lower=better) |
+| 40 | `i2v_quality` | `i2v_similarity` | image/video +ref | Aggregated I2V quality (0-100) |
+| 41 | `action_score` | `action_recognition` | image/video +caption | Caption-action fidelity (0-100) |
+| 42 | `action_confidence` | `action_recognition` | image/video +caption | Top-1 action confidence (0-100) |
+| 43 | `flow_score` | `advanced_flow` | image/video | Optical flow magnitude |
+| 44 | `motion_ac_score` | `motion_amplitude` | image/video +caption | Motion amplitude |
+| 45 | `warping_error` | `temporal_flickering` | image/video | Warping error |
+| 46 | `clip_temp` | `clip_temporal` | image/video | CLIP temporal consistency |
+| 47 | `face_consistency` | `clip_temporal` | image/video | Face identity temporal consistency |
+| 48 | `psnr` | `structural` | image/video +ref | Peak Signal-to-Noise Ratio (dB, higher=better) |
+| 49 | `ssim` | `structural` | image/video +ref | Structural Similarity (0-1, higher=better) |
+| 50 | `lpips` | `perceptual_fr` | image/video +ref | Learned Perceptual distance (0-1, lower=better) |
+| 51 | `spectral_entropy` | `spectral_complexity` | image/video | DINOv2 spectral entropy |
+| 52 | `spectral_rank` | `spectral_complexity` | image/video | DINOv2 effective rank ratio |
+| 53 | `fvd` | `fvd` | batch | Frechet Video Distance |
+| 54 | `kvd` | `fvd` | batch | Kernel Video Distance |
+| 55 | `fvmd` | `fvmd` | batch | Frechet Video Motion Distance |
+| 56 | `vmaf` | `vmaf` | image/video +ref | VMAF (0-100, higher=better) |
+| 57 | `ms_ssim` | `ms_ssim` | image/video +ref | Multi-Scale SSIM (0-1) |
+| 58 | `vif` | `vif` | image +ref | Visual Information Fidelity |
+| 59 | `niqe` | `niqe` | image | Natural Image Quality Evaluator (lower=better) |
+| 60 | `t2v_score` | `t2v_score` | image/video +caption | T2VScore alignment + quality |
+| 61 | `t2v_alignment` | `t2v_score` | image/video +caption | Text-video semantic alignment |
+| 62 | `t2v_quality` | `t2v_score` | image/video +caption | Video production quality |
+| 63 | `dynamics_range` | `dynamics_range` | image/video | Extent of content variation |
+| 64 | `dynamics_controllability` | `dynamics_controllability` | image/video +caption | Motion control fidelity |
+| 65 | `scene_complexity` | `scene_complexity` | image/video | Visual complexity score |
+| 66 | `compression_artifacts` | `compression_artifacts` | image/video | Artifact severity (0-100) |
+| 67 | `naturalness_score` | `naturalness` | image | Natural scene statistics |
+| 68 | `video_memorability` | `video_memorability` | image/video | Memorability prediction |
+| 69 | `usability_rate` | `usability_rate` | image | Percentage of usable frames |
+| 70 | `confidence_score` | `llm_descriptive_qa` | image/video | Prediction confidence |
+| 71 | `human_preference_score` | `llm_advisor` | image/video | Human preference (0-1, higher=better) |
+| 72 | `engagement_score` | `llm_advisor` | image/video | Engagement prediction (0-1, higher=better) |
+| 73 | `usability_score` | `usability_rate` | image/video | Usability estimate (0-100, higher=better) |
+| 74 | `hdr_quality` | `hdr_sdr_vqa` | image/video | HDR-specific quality |
+| 75 | `sdr_quality` | `hdr_sdr_vqa` | image/video | SDR-specific quality |
+| 76 | `temporal_information` | `ti_si` | image/video | ITU-T P.910 TI (higher=more motion) |
+| 77 | `spatial_information` | `ti_si` | image/video | ITU-T P.910 SI (higher=more detail) |
+| 78 | `flicker_score` | `flicker_detection` | image/video | Flicker severity 0-100 (lower=better) |
+| 79 | `judder_score` | `judder_stutter` | image/video | Judder severity 0-100 (lower=better) |
+| 80 | `stutter_score` | `judder_stutter` | image/video | Duplicate/dropped frames 0-100 (lower=better) |
+| 81 | `dists` | `dists` | image/video +ref | DISTS (0-1, lower=more similar) |
+| 82 | `fsim` | `perceptual_fr` | image/video +ref | Feature Similarity Index (0-1, higher=better) |
+| 83 | `gmsd` | `perceptual_fr` | image/video +ref | Gradient Magnitude Similarity Deviation (lower=better) |
+| 84 | `vsi_score` | `perceptual_fr` | image/video +ref | Visual Saliency Index (0-1, higher=better) |
+| 85 | `brisque` | `brisque` | image/video | BRISQUE (0-100, lower=better) |
+| 86 | `pesq_score` | `audio_pesq` | audio +ref | PESQ (-0.5 to 4.5, higher=better) |
+| 87 | `av_sync_offset` | `av_sync` | audio | Audio-video sync offset in ms |
+| 88 | `dover_score` | `dover` | image/video | DOVER overall (higher=better) |
+| 89 | `dover_technical` | `dover` | image/video | DOVER technical quality |
+| 90 | `dover_aesthetic` | `dover` | image/video | DOVER aesthetic quality |
+| 91 | `topiq_score` | `topiq` | image/video | TOPIQ transformer-based IQA (higher=better) |
+| 92 | `liqe_score` | `liqe` | image/video | LIQE lightweight IQA (higher=better) |
+| 93 | `clip_iqa_score` | `clip_iqa` | image/video | CLIP-IQA semantic quality (0-1, higher=better) |
+| 94 | `color_grading_score` | `production_quality` | image/video | Colour consistency 0-100 |
+| 95 | `white_balance_score` | `production_quality` | image/video | White balance accuracy 0-100 |
+| 96 | `exposure_consistency` | `production_quality` | image/video | Exposure stability 0-100 |
+| 97 | `focus_quality` | `production_quality` | image/video | Sharpness/focus quality 0-100 |
+| 98 | `banding_severity` | `production_quality` | image/video | Colour banding 0-100 (lower=better) |
+| 99 | `qalign_quality` | `q_align` | image/video | Q-Align technical quality (1-5, higher=better) |
+| 100 | `qalign_aesthetic` | `q_align` | image/video | Q-Align aesthetic quality (1-5, higher=better) |
+| 101 | `face_quality_score` | `face_fidelity` | image/video | Composite face quality 0-100 (higher=better) |
+| 102 | `face_identity_consistency` | `face_landmark_quality` | image/video | Temporal face identity stability (0-1) |
+| 103 | `face_expression_smoothness` | `face_landmark_quality` | image/video | Expression smoothness 0-100 (higher=better) |
+| 104 | `face_landmark_jitter` | `face_landmark_quality` | image/video | Landmark jitter 0-100 (lower=better) |
+| 105 | `object_permanence_score` | `object_permanence` | image/video | Object tracking consistency 0-100 (higher=better) |
+| 106 | `semantic_consistency` | `semantic_segmentation_consistency` | image/video | Segmentation temporal IoU 0-1 (higher=better) |
+| 107 | `depth_temporal_consistency` | `depth_consistency` | image/video | Depth map correlation 0-1 (higher=better) |
+| 108 | `subject_consistency` | `subject_consistency` | image/video | Subject identity consistency (0-1, higher=better) |
+| 109 | `background_consistency` | `background_consistency` | image/video | Background stability (0-1, higher=better) |
+| 110 | `motion_smoothness` | `motion_smoothness` | image/video | Motion smoothness (0-1, higher=better) |
+| 111 | `codec_efficiency` | `codec_specific_quality` | image/video | Quality-per-bit efficiency 0-100 (higher=better) |
+| 112 | `gop_quality` | `codec_specific_quality` | image/video | GOP structure appropriateness 0-100 (higher=better) |
+| 113 | `codec_artifacts` | `codec_specific_quality` | image/video | Block artifact severity 0-100 (lower=better) |
+| 114 | `deepfake_probability` | `deepfake_detection` | image/video | Synthetic/deepfake likelihood 0-1 |
+| 115 | `ai_generated_probability` | `watermark_classifier` | image/video | AI-generated content likelihood 0-1 |
+| 116 | `harmful_content_score` | `harmful_content` | image/video | Violence/gore severity 0-1 |
+| 117 | `watermark_strength` | `watermark_robustness` | image/video | Invisible watermark strength 0-1 |
+| 118 | `bias_score` | `bias_detection` | image/video | Representation imbalance indicator 0-1 |
+| 119 | `depth_quality` | `depth_map_quality` | image/video | Depth map quality 0-100 (higher=better) |
+| 120 | `multiview_consistency` | `multi_view_consistency` | image/video | Geometric consistency 0-1 (higher=better) |
+| 121 | `stereo_comfort_score` | `stereoscopic_quality` | image/video | Stereo viewing comfort 0-100 (higher=better) |
+| 122 | `musiq_score` | `musiq` | image/video | MUSIQ multi-scale IQA (higher=better) |
+| 123 | `contrique_score` | `contrique` | image/video | CONTRIQUE contrastive IQA (higher=better) |
+| 124 | `mdtvsfa_score` | `mdtvsfa` | image/video | MDTVSFA fragment-based VQA (higher=better) |
+| 125 | `nima_score` | `nima` | image/video | NIMA aesthetic+technical (1-10, higher=better) |
+| 126 | `dbcnn_score` | `dbcnn` | image/video | DBCNN bilinear CNN (higher=better) |
+| 127 | `wadiqam_score` | `wadiqam` | image/video | WaDIQaM-NR (higher=better) |
+| 128 | `maniqa_score` | `maniqa` | image/video | MANIQA multi-attention (higher=better) |
+| 129 | `arniqa_score` | `arniqa` | image/video | ARNIQA (higher=better) |
+| 130 | `qualiclip_score` | `qualiclip` | image/video | QualiCLIP opinion-unaware (higher=better) |
+| 131 | `pieapp` | `pieapp` | image/video +ref | PieAPP pairwise preference (lower=better) |
+| 132 | `cw_ssim` | `cw_ssim` | image/video +ref | Complex Wavelet SSIM (0-1, higher=better) |
+| 133 | `nlpd` | `nlpd` | image/video +ref | Normalized Laplacian Pyramid Distance (lower=better) |
+| 134 | `mad` | `mad` | image/video +ref | Most Apparent Distortion (lower=better) |
+| 135 | `ahiq` | `ahiq` | image/video +ref | Attention Hybrid IQA (higher=better) |
+| 136 | `topiq_fr` | `topiq_fr` | image/video +ref | TOPIQ full-reference (higher=better) |
+| 137 | `dreamsim` | `dreamsim` | image/video +ref | DreamSim CLIP+DINO similarity (lower=more similar) |
+| 138 | `cover_score` | `cover` | image/video | COVER overall (higher=better) |
+| 139 | `cover_technical` | `cover` | image/video | COVER technical branch |
+| 140 | `cover_aesthetic` | `cover` | image/video | COVER aesthetic branch |
+| 141 | `cover_semantic` | `cover` | image/video | COVER semantic branch |
+| 142 | `vqa_score_alignment` | `vqa_score` | image/video +caption | VQAScore text-visual alignment (0-1, higher=better) |
+| 143 | `videoscore_visual` | `videoscore` | image/video +caption | VideoScore visual quality |
+| 144 | `videoscore_temporal` | `videoscore` | image/video +caption | VideoScore temporal consistency |
+| 145 | `videoscore_dynamic` | `videoscore` | image/video +caption | VideoScore dynamic degree |
+| 146 | `videoscore_alignment` | `videoscore` | image/video +caption | VideoScore text-video alignment |
+| 147 | `videoscore_factual` | `videoscore` | image/video +caption | VideoScore factual consistency |
+| 148 | `face_iqa_score` | `face_iqa` | image/video | TOPIQ-face face quality (higher=better) |
+| 149 | `scene_stability` | `scene_detection` | image/video | Scene stability (0-1, 1=single continuous scene) |
+| 150 | `avg_scene_duration` | `scene_detection` | image/video | Average scene duration in seconds |
+| 151 | `raft_motion_score` | `raft_motion` | image/video | RAFT optical flow magnitude |
+| 152 | `ram_tags` | `ram_tagging` | image/video | Comma-separated RAM auto-tags |
+| 153 | `depth_anything_score` | `depth_anything` | image/video | Monocular depth quality |
+| 154 | `depth_anything_consistency` | `depth_anything` | image/video | Temporal depth consistency |
+| 155 | `video_type` | `video_type_classifier` | image/video | Content type (real, animated, game, etc.) |
+| 156 | `video_type_confidence` | `video_type_classifier` | image/video | Classification confidence |
+| 157 | `jedi` | `jedi_metric` | batch | Per-sample V-JEPA feature (batch-computed) |
+| 158 | `trajan_score` | `trajan` | image/video | Point track motion consistency |
+| 159 | `promptiqa_score` | `promptiqa` | image/video | Few-shot NR-IQA score |
+| 160 | `aigv_static` | `aigv_assessor` | image/video +caption | AI video static quality |
+| 161 | `aigv_temporal` | `aigv_assessor` | image/video +caption | AI video temporal smoothness |
+| 162 | `aigv_dynamic` | `aigv_assessor` | image/video +caption | AI video dynamic degree |
+| 163 | `aigv_alignment` | `aigv_assessor` | image/video +caption | AI video text-video alignment |
+| 164 | `video_reward_score` | `video_reward` | image/video +caption | Human preference reward |
+| 165 | `tifa_score` | `tifa` | image/video +caption | VQA faithfulness (0-1, higher=better) |
+| 166 | `text_overlay_score` | `text_detection` | image | Text overlay severity (0-1) |
+| 167 | `ptlflow_motion_score` | `ptlflow_motion` | image/video | ptlflow optical flow magnitude |
+| 168 | `qcn_score` | `qcn` | image/video | Geometric order blind IQA |
+| 169 | `finevq_score` | `finevq` | image/video | FineVQ fine-grained UGC VQA (CVPR 2025) |
+| 170 | `kvq_score` | `kvq` | image/video | KVQ saliency-guided VQA (CVPR 2025) |
+| 171 | `rqvqa_score` | `rqvqa` | image/video | RQ-VQA rich quality-aware (CVPR 2024 winner) |
+| 172 | `videval_score` | `videval` | image/video | VIDEVAL 60-feature fusion NR-VQA |
+| 173 | `tlvqm_score` | `tlvqm` | image/video | TLVQM two-level video quality |
+| 174 | `funque_score` | `funque` | image/video +ref | FUNQUE unified quality (beats VMAF) |
+| 175 | `movie_score` | `movie` | image/video +ref | MOVIE motion trajectory FR |
+| 176 | `st_greed_score` | `st_greed` | image/video +ref | ST-GREED variable frame rate FR |
+| 177 | `c3dvqa_score` | `c3dvqa` | image/video | C3DVQA 3D CNN spatiotemporal FR |
+| 178 | `flolpips` | `flolpips` | image/video | FloLPIPS flow-based perceptual FR |
+| 179 | `hdr_vqm` | `hdr_vqm` | image/video +ref | HDR-VQM HDR video quality FR |
+| 180 | `st_lpips` | `st_lpips` | image/video | ST-LPIPS spatiotemporal perceptual FR |
+| 181 | `camera_jitter_score` | `camera_jitter` | image/video | Camera stability (0-1, 1=stable) |
+| 182 | `jump_cut_score` | `jump_cut` | image/video | Jump cut absence (0-1, 1=no cuts) |
+| 183 | `playback_speed_score` | `playback_speed` | image/video | Normal speed (1.0=normal) |
+| 184 | `flow_coherence` | `flow_coherence` | image/video | Bidirectional optical flow consistency (0-1) |
+| 185 | `letterbox_ratio` | `letterbox` | image/video | Border/letterbox fraction (0-1, 0=no borders) |
+| 186 | `tonal_dynamic_range` | `tonal_dynamic_range` | image/video | Luminance histogram span (0-100) |
+| 187 | `vtss` | `vtss` | image | Video Training Suitability Score (0-1) |
+| 188 | `cnniqa_score` | `cnniqa` | image/video | CNNIQA blind CNN IQA |
+| 189 | `hyperiqa_score` | `hyperiqa` | image/video | HyperIQA adaptive NR-IQA |
+| 190 | `paq2piq_score` | `paq2piq` | image/video | PaQ-2-PiQ patch-to-picture (CVPR 2020) |
+| 191 | `tres_score` | `tres` | image/video | TReS transformer IQA (WACV 2022) |
+| 192 | `unique_score` | `unique` | image/video | UNIQUE unified NR-IQA (TIP 2021) |
+| 193 | `laion_aesthetic` | `laion_aesthetic` | image/video | LAION Aesthetics V2 (0-10) |
+| 194 | `compare2score` | `compare2score` | image/video | Compare2Score comparison-based |
+| 195 | `afine_score` | `afine` | image/video | A-FINE fidelity-naturalness (CVPR 2025) |
+| 196 | `ckdn_score` | `ckdn` | image +ref | CKDN knowledge distillation FR |
+| 197 | `deepwsd_score` | `deepwsd` | image +ref | DeepWSD Wasserstein distance FR |
+| 198 | `ssimulacra2` | `ssimulacra2` | image/video +ref | SSIMULACRA 2 (0-100, lower=better, JPEG XL standard) |
+| 199 | `butteraugli` | `butteraugli` | image/video +ref | Butteraugli perceptual distance (lower=better) |
+| 200 | `flip_score` | `flip` | image/video +ref | NVIDIA FLIP perceptual metric (0-1, lower=better) |
+| 201 | `vmaf_neg` | `vmaf_neg` | image/video +ref | VMAF NEG (no enhancement gain, 0-100, higher=better) |
+| 202 | `ilniqe` | `ilniqe` | image/video | IL-NIQE Integrated Local NIQE (lower=better) |
+| 203 | `nrqm` | `nrqm` | image/video | NRQM No-Reference Quality Metric (higher=better) |
+| 204 | `pi_score` | `pi` | image/video | Perceptual Index (PIRM challenge, lower=better) |
+| 205 | `piqe` | `piqe` | image/video | PIQE perception-based NR-IQA (lower=better) |
+| 206 | `maclip_score` | `maclip` | image/video | MACLIP multi-attribute CLIP NR-IQA (higher=better) |
+| 207 | `dmm` | `dmm` | image/video +ref | DMM Detail Model Metric FR (higher=better) |
+| 208 | `wadiqam_fr` | `wadiqam_fr` | image/video +ref | WaDIQaM full-reference (higher=better) |
+| 209 | `ssimc` | `ssimc` | image/video +ref | Complex Wavelet SSIM-C FR (higher=better) |
+| 210 | `cambi` | `cambi` | image/video | CAMBI banding index (0-24, lower=better) |
+| 211 | `xpsnr` | `xpsnr` | image +ref | XPSNR perceptual PSNR (dB, higher=better) |
+| 212 | `vmaf_phone` | `vmaf_phone` | image/video +ref | VMAF phone model (0-100, higher=better) |
+| 213 | `vmaf_4k` | `vmaf_4k` | image/video +ref | VMAF 4K model (0-100, higher=better) |
+| 214 | `visqol` | `visqol` | audio +ref | ViSQOL audio quality MOS (1-5, higher=better) |
+| 215 | `dnsmos_overall` | `dnsmos` | audio | DNSMOS overall MOS (1-5, higher=better) |
+| 216 | `dnsmos_sig` | `dnsmos` | audio | DNSMOS signal quality (1-5, higher=better) |
+| 217 | `dnsmos_bak` | `dnsmos` | audio | DNSMOS background quality (1-5, higher=better) |
+| 218 | `pu_psnr` | `pu_metrics` | image/video +ref | PU-PSNR perceptually uniform HDR (dB, higher=better) |
+| 219 | `pu_ssim` | `pu_metrics` | image/video +ref | PU-SSIM perceptually uniform HDR (0-1, higher=better) |
+| 220 | `max_fall` | `hdr_metadata` | image/video | MaxFALL frame average light level (nits) |
+| 221 | `max_cll` | `hdr_metadata` | image/video | MaxCLL content light level (nits) |
+| 222 | `hdr_vdp` | `hdr_vdp` | image/video +ref | HDR-VDP visual difference predictor (higher=better) |
+| 223 | `delta_ictcp` | `delta_ictcp` | image/video +ref | Delta ICtCp HDR color difference (lower=better) |
+| 224 | `ciede2000` | `ciede2000` | image/video +ref | CIEDE2000 perceptual color difference (lower=better) |
+| 225 | `psnr_hvs` | `psnr_hvs` | image/video +ref | PSNR-HVS perceptually weighted (dB, higher=better) |
+| 226 | `psnr_hvs_m` | `psnr_hvs` | image +ref | PSNR-HVS-M with masking (dB, higher=better) |
+| 227 | `cgvqm` | `cgvqm` | image/video +ref | CGVQM gaming quality (higher=better) |
+| 228 | `strred` | `strred` | image +ref | STRRED reduced-reference temporal (lower=better) |
+| 229 | `p1203_mos` | `p1203` | audio | ITU-T P.1203 streaming QoE MOS (1-5) |
+| 230 | `nemo_quality_score` | `nemo_curator` | image +caption | Caption text quality (0-1) |
+| 231 | `nemo_quality_label` | `nemo_curator` | image +caption | Quality label (Low/Medium/High) |
 
 ## Quick Start
 
