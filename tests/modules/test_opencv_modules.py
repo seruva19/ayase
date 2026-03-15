@@ -206,3 +206,22 @@ def test_dynamics_controllability_image(image_sample):
     m = DynamicsControllabilityModule()
     result = m.process(image_sample)
     assert result.quality_metrics is None or result.quality_metrics.dynamics_controllability is None
+
+
+def test_dynamics_controllability_skips_on_failure():
+    """dynamics_controllability skips storing score when motion can't be computed."""
+    from pathlib import Path
+
+    from ayase.models import CaptionMetadata, Sample
+    from ayase.modules.dynamics_controllability import DynamicsControllabilityModule
+
+    module = DynamicsControllabilityModule()
+
+    sample = Sample(
+        path=Path("nonexistent_video.mp4"),
+        is_video=True,
+        caption=CaptionMetadata(text="a fast running dog", length=18),
+    )
+    result = module.process(sample)
+    # Should not crash, and should not store a score
+    assert result.quality_metrics is None or result.quality_metrics.dynamics_controllability is None

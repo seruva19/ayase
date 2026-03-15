@@ -184,7 +184,9 @@ class TLVQMModule(PipelineModule):
             prediction = self._svr_model.predict(combined.reshape(1, -1))[0]
             return float((prediction - 1.0) / 4.0)
 
-        # Heuristic mapping from CNN features
+        # Heuristic proxy: without the trained SVR regressor, we map the
+        # L2 norm of CNN features to [0,1].  This is *not* calibrated to
+        # subjective MOS — install the SVR model for accurate predictions.
         feat_norm = np.linalg.norm(avg_features)
         spatial_quality = min(1.0, feat_norm / 50.0)
 

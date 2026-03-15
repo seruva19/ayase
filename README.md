@@ -1,6 +1,8 @@
 # Ayase
 
-Modular media quality metrics toolkit.
+Modular media quality metrics toolkit.  
+
+⚠️ Work in progress. Some features may not work as expected.
 
 ## Overview
 

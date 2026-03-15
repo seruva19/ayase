@@ -643,7 +643,7 @@ class ExecutionScreen(Screen):
                 log.write(f"  Init [bold]{name}[/bold]")
                 module = cls(config)
                 module.on_mount()
-                module._mounted = True
+                # on_mount() sets _mounted = True internally when setup succeeds.
                 modules.append(module)
             except Exception as e:
                 log.write(f"[bold red]FAILED[/bold red] {name}: {e}")

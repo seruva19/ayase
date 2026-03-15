@@ -95,6 +95,13 @@ class RQVQAModule(PipelineModule):
             if not frames:
                 return sample
 
+            # Dispatch to real RQ-VQA model when available
+            if self._backend == "rqvqa" and self._model is not None:
+                score = self._process_rqvqa_model(sample, frames)
+                if score is not None:
+                    sample.quality_metrics.rqvqa_score = float(np.clip(score, 0.0, 1.0))
+                return sample
+
             dims = self.config.get("dimensions", self.default_config["dimensions"])
 
             # Clarity: Laplacian sharpness + contrast
@@ -182,6 +189,34 @@ class RQVQAModule(PipelineModule):
         except Exception as e:
             logger.warning("RQ-VQA failed: %s", e)
         return sample
+
+    def _process_rqvqa_model(self, sample: Sample, frames: list) -> Optional[float]:
+        """Process using the real RQ-VQA model."""
+        import torch
+        import cv2
+
+        try:
+            tensors = []
+            for f in frames:
+                rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
+                rgb = cv2.resize(rgb, (224, 224))
+                t = torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
+                tensors.append(t)
+            clip = torch.stack(tensors).unsqueeze(0).to(self._device)
+            with torch.no_grad():
+                output = self._model(clip)
+                if isinstance(output, dict):
+                    score = output.get("score", output.get("quality"))
+                elif isinstance(output, (tuple, list)):
+                    score = output[0]
+                else:
+                    score = output
+                if hasattr(score, "item"):
+                    score = score.item()
+            return float(score)
+        except Exception as e:
+            logger.warning("RQ-VQA real model inference failed, falling back: %s", e)
+            return None
 
     def _load_frames(self, sample: Sample) -> list:
         import cv2

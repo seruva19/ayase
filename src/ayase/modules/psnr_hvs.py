@@ -36,21 +36,11 @@ class PSNRHVSModule(ReferenceBasedModule):
         self._backend = None
 
     def setup(self) -> None:
-        # Try piq package
-        try:
-            import piq
-            if hasattr(piq, 'psnr') or hasattr(piq, 'PieAPP'):
-                self._backend = "piq"
-                self._ml_available = True
-                logger.info("PSNR-HVS module initialised (piq)")
-                return
-        except ImportError:
-            pass
-
-        # Fallback: DCT-based approximation
-        self._backend = "approx"
+        # DCT-based CSF-weighted implementation is the correct PSNR-HVS algorithm.
+        # piq.psnr() computes plain PSNR (not HVS-weighted) — do not use it here.
+        self._backend = "dct"
         self._ml_available = True
-        logger.info("PSNR-HVS module initialised (DCT approximation)")
+        logger.info("PSNR-HVS module initialised (CSF-weighted DCT)")
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
@@ -68,30 +58,8 @@ class PSNRHVSModule(ReferenceBasedModule):
         return self._compute_psnr_hvs(ref, dist)
 
     def _compute_psnr_hvs(self, ref_bgr, dist_bgr) -> Optional[float]:
-        """Compute PSNR-HVS using piq (if available) or CSF-weighted DCT blocks."""
-        if self._backend == "piq":
-            return self._compute_psnr_hvs_piq(ref_bgr, dist_bgr)
+        """Compute PSNR-HVS using CSF-weighted DCT blocks."""
         return self._compute_psnr_hvs_dct(ref_bgr, dist_bgr)
-
-    def _compute_psnr_hvs_piq(self, ref_bgr, dist_bgr) -> Optional[float]:
-        """Compute PSNR-HVS using the piq library."""
-        try:
-            import torch
-            import piq
-
-            # Convert BGR→RGB, HWC→CHW, normalize to [0,1]
-            ref_t = torch.from_numpy(
-                cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-            ).permute(2, 0, 1).unsqueeze(0)
-            dist_t = torch.from_numpy(
-                cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-            ).permute(2, 0, 1).unsqueeze(0)
-
-            score = piq.psnr(ref_t, dist_t, data_range=1.0)
-            return float(score.item())
-        except Exception as e:
-            logger.debug(f"piq PSNR-HVS failed, falling back to DCT: {e}")
-            return self._compute_psnr_hvs_dct(ref_bgr, dist_bgr)
 
     def _compute_psnr_hvs_dct(self, ref_bgr, dist_bgr) -> Optional[float]:
         """Compute PSNR-HVS using CSF-weighted DCT blocks."""

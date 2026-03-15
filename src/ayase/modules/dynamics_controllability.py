@@ -129,7 +129,7 @@ class DynamicsControllabilityModule(PipelineModule):
             cap.release()
 
             if not motion_magnitudes:
-                return 0.5
+                return None
 
             # Normalize motion magnitude to [0, 1]
             # Empirical max motion magnitude is ~10-15
@@ -140,7 +140,7 @@ class DynamicsControllabilityModule(PipelineModule):
 
         except Exception as e:
             logger.debug(f"Actual motion computation failed: {e}")
-            return 0.5
+            return None
 
     def process(self, sample: Sample) -> Sample:
         """Process sample to compute dynamics controllability."""
@@ -159,6 +159,10 @@ class DynamicsControllabilityModule(PipelineModule):
 
             # Compute actual motion in video
             actual_motion = self._compute_actual_motion(sample.path)
+
+            if actual_motion is None:
+                # Cannot compute motion — skip rather than storing a meaningless score
+                return sample
 
             # Compute controllability as inverse of error
             # If expected ≈ actual, controllability is high

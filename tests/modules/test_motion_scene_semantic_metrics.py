@@ -1,4 +1,7 @@
-from ayase.models import QualityMetrics
+import cv2
+import numpy as np
+
+from ayase.models import QualityMetrics, Sample
 
 
 def test_scene_detection_basics():
@@ -288,3 +291,22 @@ def test_jedi_dataset_stats_field():
         total_size=1000)
     assert hasattr(stats, "jedi")
     assert stats.jedi is None
+
+
+def test_temporal_flickering_load_all_frames_respects_max(tmp_path):
+    """_load_all_frames subsamples when frame count exceeds max_frames."""
+    from ayase.modules.temporal_flickering import TemporalFlickeringModule
+
+    # Create a video with 30 frames
+    vid = tmp_path / "long.mp4"
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    writer = cv2.VideoWriter(str(vid), fourcc, 30.0, (32, 32))
+    for _ in range(30):
+        writer.write(np.full((32, 32, 3), 100, dtype=np.uint8))
+    writer.release()
+
+    module = TemporalFlickeringModule(config={"max_frames": 10})
+    sample = Sample(path=vid, is_video=True)
+    frames = module._load_all_frames(sample)
+
+    assert len(frames) <= 10
