@@ -114,7 +114,44 @@ class STLPIPSModule(PipelineModule):
         return sample
 
     def _spatial_quality(self, frames) -> list:
-        """Compute per-frame spatial perceptual quality."""
+        """Compute per-frame spatial perceptual quality using the best backend."""
+        if self._backend == "stlpips":
+            return self._spatial_quality_stlpips(frames)
+        elif self._backend == "lpips":
+            return self._spatial_quality_lpips(frames)
+        return self._spatial_quality_heuristic(frames)
+
+    def _spatial_quality_lpips_impl(self, frames, model) -> list:
+        """LPIPS-based spatial quality: distance between frame and its blurred version."""
+        import cv2
+        import torch
+
+        target_size = (256, 256)
+        scores = []
+        for frame in frames:
+            rgb = cv2.resize(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), target_size)
+            blurred = cv2.GaussianBlur(rgb, (7, 7), 2.0)
+
+            t_orig = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 127.5 - 1.0
+            t_blur = torch.from_numpy(blurred).permute(2, 0, 1).unsqueeze(0).float() / 127.5 - 1.0
+            t_orig, t_blur = t_orig.to(self._device), t_blur.to(self._device)
+
+            with torch.no_grad():
+                dist = model(t_orig, t_blur).item()
+            # Higher dist = more detail lost by blurring = sharper original
+            scores.append(float(min(1.0, dist * 5.0)))
+        return scores
+
+    def _spatial_quality_stlpips(self, frames) -> list:
+        """Spatial quality using real ST-LPIPS model."""
+        return self._spatial_quality_lpips_impl(frames, self._stlpips_model)
+
+    def _spatial_quality_lpips(self, frames) -> list:
+        """Spatial quality using standard LPIPS model."""
+        return self._spatial_quality_lpips_impl(frames, self._lpips_model)
+
+    def _spatial_quality_heuristic(self, frames) -> list:
+        """Heuristic spatial quality from multi-scale structural features."""
         import cv2
 
         scores = []

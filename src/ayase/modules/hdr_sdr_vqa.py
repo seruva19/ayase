@@ -30,13 +30,36 @@ class HDRSDRVQAModule(PipelineModule):
     def setup(self) -> None:
         pass
 
-    def _detect_hdr(self, frame: np.ndarray) -> bool:
-        """Detect if frame is HDR based on luminance range."""
-        # Conservative heuristic: avoid false positives on bright SDR 8-bit content.
+    def _detect_hdr(self, frame: np.ndarray, video_path=None) -> bool:
+        """Detect if content is HDR based on pixel dtype and (for video) ffprobe metadata."""
+        # Fast path: dtype-based detection
         if frame.dtype == np.uint16:
             return True
         if np.issubdtype(frame.dtype, np.floating):
             return bool(frame.max() > 1.0)
+
+        # For video files, probe color space metadata via ffprobe
+        if video_path is not None:
+            try:
+                import subprocess
+                result = subprocess.run(
+                    [
+                        "ffprobe", "-v", "quiet",
+                        "-select_streams", "v:0",
+                        "-show_entries", "stream=color_space,color_transfer,color_primaries",
+                        "-of", "csv=p=0",
+                        str(video_path),
+                    ],
+                    capture_output=True, text=True, timeout=10,
+                )
+                probe_out = result.stdout.lower()
+                hdr_indicators = ("bt2020", "smpte2084", "arib-std-b67", "bt2020nc")
+                if any(ind in probe_out for ind in hdr_indicators):
+                    return True
+            except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+                # ffprobe not available — rely on dtype check only
+                pass
+
         return False
 
     def _compute_hdr_quality(self, frames: list) -> float:
@@ -137,7 +160,7 @@ class HDRSDRVQAModule(PipelineModule):
                     break
 
                 if frame_idx == 0:
-                    is_hdr = self._detect_hdr(frame)
+                    is_hdr = self._detect_hdr(frame, video_path=sample.path)
 
                 if frame_idx % self.subsample == 0:
                     frames.append(frame)

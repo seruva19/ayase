@@ -37,6 +37,7 @@ class P1203Module(PipelineModule):
         # Try official P.1203 implementation
         try:
             from itu_p1203 import P1203Standalone
+            self._p1203_cls = P1203Standalone
             self._backend = "official"
             self._ml_available = True
             logger.info("P.1203 module initialised (official implementation)")
@@ -45,6 +46,7 @@ class P1203Module(PipelineModule):
             pass
 
         # Fallback: simplified parametric model
+        self._p1203_cls = None
         self._backend = "parametric"
         self._ml_available = True
         logger.info("P.1203 module initialised (parametric estimation)")
@@ -57,7 +59,10 @@ class P1203Module(PipelineModule):
             return sample
 
         try:
-            mos = self._estimate_mos(sample)
+            if self._backend == "official":
+                mos = self._compute_official(sample)
+            else:
+                mos = self._estimate_mos(sample)
             if mos is None:
                 return sample
 
@@ -68,6 +73,51 @@ class P1203Module(PipelineModule):
         except Exception as e:
             logger.error(f"P.1203 failed: {e}")
         return sample
+
+    def _compute_official(self, sample: Sample) -> Optional[float]:
+        """Compute MOS using the official ITU-T P.1203 implementation."""
+        meta = sample.video_metadata
+        if meta is None:
+            return None
+
+        try:
+            bitrate = meta.bitrate
+            if bitrate is None or bitrate <= 0:
+                if meta.duration > 0 and meta.file_size > 0:
+                    bitrate = int(meta.file_size * 8 / meta.duration)
+                else:
+                    return None
+
+            codec = (meta.codec or "h264").lower()
+            # Map to P.1203 codec IDs
+            if "h265" in codec or "hevc" in codec:
+                codec_id = 2
+            elif "vp9" in codec:
+                codec_id = 3
+            else:
+                codec_id = 1  # H.264/AVC
+
+            # Build per-second segment list expected by P1203Standalone
+            duration = max(1.0, meta.duration)
+            n_segments = max(1, int(duration))
+            segments = []
+            for _ in range(n_segments):
+                segments.append({
+                    "codec": codec_id,
+                    "bitrate": bitrate / 1000.0,  # kbps
+                    "resolution": f"{meta.width}x{meta.height}",
+                    "fps": meta.fps,
+                    "duration": 1.0,
+                })
+
+            result = self._p1203_cls(segments).calculate()
+            mos = result.get("O46", result.get("mos"))
+            if mos is not None:
+                return float(max(1.0, min(5.0, mos)))
+            return None
+        except Exception as e:
+            logger.warning(f"Official P.1203 failed, falling back to parametric: {e}")
+            return self._estimate_mos(sample)
 
     def _estimate_mos(self, sample: Sample) -> Optional[float]:
         """Estimate MOS using P.1203-like parametric model.

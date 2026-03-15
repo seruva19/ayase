@@ -134,14 +134,15 @@ class C3DVQAModule(PipelineModule):
             features = self._feature_extractor(clip)
             features = features.squeeze()
 
-        # Feature statistics as quality indicator
+        # Heuristic proxy: no trained regression head is available, so we
+        # map raw feature statistics to [0,1].  This is an *experimental*
+        # approximation — values are not calibrated to subjective MOS.
         feat_mean = features.mean().item()
         feat_std = features.std().item()
-        # Higher activation magnitude and diversity suggest richer content
-        activation_score = min(1.0, abs(feat_mean) / 2.0)
-        diversity_score = min(1.0, feat_std / 1.0)
+        activation_proxy = min(1.0, abs(feat_mean) / 2.0)
+        diversity_proxy = min(1.0, feat_std / 1.0)
 
-        return 0.5 * activation_score + 0.5 * diversity_score
+        return 0.5 * activation_proxy + 0.5 * diversity_proxy
 
     def _score_clip_handcrafted(self, frames) -> float:
         """Score using handcrafted 3D spatiotemporal features."""

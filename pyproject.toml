@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.3"
+version = "0.1.4"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -58,7 +58,7 @@ v-perceptual = [
 v-iqa = [
     "torch>=2.1.0,<3.0",
     "torchvision>=0.16.0,<1.0",
-    "pyiqa>=0.1.7,<1.0",
+    "pyiqa>=0.1.13,<1.0",
     "scipy>=1.11.0",
     "scikit-video>=1.1.11",
 ]
@@ -134,7 +134,7 @@ ml = [
     "scikit-video>=1.1.11",
 
     # No-reference metrics
-    "pyiqa>=0.1.7,<1.0",
+    "pyiqa>=0.1.13,<1.0",
 
     # Advanced models
     "lpips>=0.1.4",
