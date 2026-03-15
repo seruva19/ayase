@@ -5,6 +5,30 @@ All notable changes to Ayase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4]
+
+### Fixed
+
+- Pipeline `_mounted` guard: modules with missing dependencies now stay unmounted and are skipped during processing instead of silently running with broken state
+- TUI had the same `_mounted` force-set bug — fixed
+- **psnr_hvs**: was computing plain PSNR via `piq.psnr()` instead of CSF-weighted PSNR-HVS — now uses the correct DCT-based algorithm
+- **kvq**: real KVQ model was loaded in `setup()` but never invoked in `process()` — added dispatch
+- **rqvqa**: same issue — real RQ-VQA model loaded but never called — added dispatch
+- **p1203**: official ITU-T P.1203 backend loaded but never called — added `_compute_official()` dispatch
+- **t2v_score**: never attempted to load the real T2VScore model — added Tier 1 `AutoModel.from_pretrained` before CLIP fallback
+- **st_lpips**: spatial quality component always used heuristic even when LPIPS/ST-LPIPS models were loaded — added model-based spatial dispatch
+- **temporal_flickering**: loaded all video frames into memory with no limit (OOM risk on long videos) — added `max_frames` config (default 300) with uniform subsampling
+- **hdr_sdr_vqa**: HDR detection relied solely on pixel dtype, missing actual HDR video content — now probes ffprobe color space metadata (bt2020, smpte2084)
+- **dynamics_controllability**: returned 0.5 on failure, indistinguishable from a real score — now returns `None` and skips storing the metric
+- **fvd**: docstring claimed I3D but code uses R3D-18 — fixed docstring and renamed `_i3d_model` → `_r3d_model`
+
+### Changed
+
+- `QualityMetrics` now uses `extra="forbid"` — typo'd field names raise `ValidationError` instead of being silently ignored
+- `pyiqa` minimum version bumped from `0.1.7` to `0.1.13` in both `v-iqa` and `ml` dependency groups
+- **c3dvqa**: documented ML feature-mapping as experimental heuristic proxy (renamed `activation_score` → `activation_proxy`)
+- **tlvqm**: documented CNN pretrained feature-mapping as uncalibrated heuristic proxy
+
 ## [Unreleased]
 
 ### Added

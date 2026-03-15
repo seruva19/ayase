@@ -1,6 +1,10 @@
+from pathlib import Path
+from unittest.mock import MagicMock
+
+import cv2
 import numpy as np
 
-from ayase.models import QualityMetrics, Sample
+from ayase.models import QualityMetrics, Sample, VideoMetadata
 
 
 def test_cambi_basics():
@@ -644,3 +648,60 @@ def test_industry_dataset_stats_fields():
     ds = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
     for field in ["bd_rate", "bd_psnr"]:
         assert hasattr(ds, field)
+
+
+def test_psnr_hvs_differs_from_plain_psnr(tmp_dir):
+    """PSNR-HVS (CSF-weighted DCT) should produce different values than plain PSNR."""
+    from ayase.modules.psnr_hvs import PSNRHVSModule
+
+    # Create two similar images with known difference
+    ref = np.full((64, 64, 3), 128, dtype=np.uint8)
+    dist = ref.copy()
+    dist[16:48, 16:48, :] = 100  # add a visible difference
+
+    ref_path = tmp_dir / "ref.png"
+    dist_path = tmp_dir / "dist.png"
+    cv2.imwrite(str(ref_path), ref)
+    cv2.imwrite(str(dist_path), dist)
+
+    module = PSNRHVSModule()
+    module.setup()
+    hvs_score = module.compute_reference_score(dist_path, ref_path)
+
+    # Compute plain PSNR for comparison
+    mse = np.mean((ref.astype(float) - dist.astype(float)) ** 2)
+    plain_psnr = 10.0 * np.log10(255.0 ** 2 / mse)
+
+    assert hvs_score is not None
+    # They should differ because HVS applies CSF weighting
+    assert abs(hvs_score - plain_psnr) > 0.5, (
+        f"PSNR-HVS ({hvs_score:.2f}) should differ from plain PSNR ({plain_psnr:.2f})"
+    )
+
+
+def test_p1203_dispatches_to_official_when_loaded():
+    """P.1203 dispatches to official backend when backend=='official'."""
+    from ayase.modules.p1203 import P1203Module
+
+    module = P1203Module()
+    module._backend = "official"
+    module._ml_available = True
+
+    mock_cls = MagicMock()
+    mock_instance = MagicMock()
+    mock_instance.calculate.return_value = {"O46": 3.5}
+    mock_cls.return_value = mock_instance
+    module._p1203_cls = mock_cls
+
+    sample = Sample(
+        path=Path("test.mp4"),
+        is_video=True,
+        video_metadata=VideoMetadata(
+            width=1920, height=1080, frame_count=240,
+            fps=24.0, duration=10.0, bitrate=5000000, file_size=6250000,
+        ),
+    )
+    result = module.process(sample)
+    assert result.quality_metrics is not None
+    assert result.quality_metrics.p1203_mos == 3.5
+    mock_cls.assert_called_once()

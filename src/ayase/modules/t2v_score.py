@@ -61,7 +61,20 @@ class T2VScoreModule(PipelineModule):
             else:
                 self.device = torch.device(self.device_config)
 
-            # Use CLIP-based text-video alignment (reliable, well-tested)
+            # Tier 1: Try real T2VScore model
+            try:
+                from transformers import AutoModel
+                self._t2v_model = AutoModel.from_pretrained(
+                    self.model_name, trust_remote_code=True
+                ).to(self.device).eval()
+                self._use_fallback = False
+                self._ml_available = True
+                logger.info("T2VScore loaded real model from %s", self.model_name)
+                return
+            except Exception as e:
+                logger.info("T2VScore real model unavailable: %s", e)
+
+            # Tier 2: CLIP-based text-video alignment fallback
             self._setup_clip_fallback()
 
         except ImportError as e:
@@ -221,10 +234,63 @@ class T2VScoreModule(PipelineModule):
             logger.warning(f"Quality computation failed: {e}")
             return 0.5
 
+    def _compute_t2v_score_real(
+        self, video_path: Path, caption: str
+    ) -> Tuple[float, float, float]:
+        """Compute T2VScore using the real model."""
+        import torch
+
+        try:
+            frames = self._load_video_frames(video_path, self.num_frames)
+            if frames is None:
+                return 0.5, 0.5, 0.5
+
+            tensors = []
+            for f in frames:
+                t = torch.from_numpy(f).permute(2, 0, 1).float() / 255.0
+                tensors.append(t)
+            clip = torch.stack(tensors).unsqueeze(0).to(self.device)
+
+            with torch.no_grad():
+                output = self._t2v_model(clip, text=[caption])
+                if isinstance(output, dict):
+                    alignment = float(output.get("alignment", 0.5))
+                    quality = float(output.get("quality", 0.5))
+                    overall = float(output.get("score", alignment * self.alignment_weight + quality * self.quality_weight))
+                elif isinstance(output, (tuple, list)) and len(output) >= 2:
+                    overall, alignment = float(output[0]), float(output[1])
+                    quality = float(output[2]) if len(output) > 2 else overall
+                else:
+                    score = float(output.item()) if hasattr(output, "item") else float(output)
+                    overall = alignment = quality = score
+
+            return overall, alignment, quality
+        except Exception as e:
+            logger.warning(f"T2VScore real model failed, falling back to CLIP: {e}")
+            return self._compute_t2v_score_clip(video_path, caption)
+
+    def _compute_t2v_score_clip(
+        self, video_path: Path, caption: str
+    ) -> Tuple[float, float, float]:
+        """Compute T2VScore using CLIP fallback."""
+        try:
+            frames = self._load_video_frames(video_path, self.num_frames)
+            if frames is None:
+                return 0.5, 0.5, 0.5
+
+            alignment = self._compute_t2v_alignment_clip(frames, caption)
+            quality = self._compute_video_quality_simple(frames)
+            overall = alignment * self.alignment_weight + quality * self.quality_weight
+
+            return float(overall), float(alignment), float(quality)
+        except Exception as e:
+            logger.warning(f"T2VScore CLIP computation failed: {e}")
+            return 0.5, 0.5, 0.5
+
     def _compute_t2v_score(
         self, video_path: Path, caption: str
     ) -> Tuple[float, float, float]:
-        """Compute T2VScore using CLIP fallback.
+        """Compute T2VScore using the best available backend.
 
         Args:
             video_path: Path to video
@@ -233,26 +299,9 @@ class T2VScoreModule(PipelineModule):
         Returns:
             Tuple of (t2v_score, alignment, quality)
         """
-        try:
-            # Load frames
-            frames = self._load_video_frames(video_path, self.num_frames)
-            if frames is None:
-                return 0.5, 0.5, 0.5
-
-            # Compute alignment with CLIP
-            alignment = self._compute_t2v_alignment_clip(frames, caption)
-
-            # Compute quality with simple metrics
-            quality = self._compute_video_quality_simple(frames)
-
-            # Combined score
-            overall = alignment * self.alignment_weight + quality * self.quality_weight
-
-            return float(overall), float(alignment), float(quality)
-
-        except Exception as e:
-            logger.warning(f"T2VScore fallback computation failed: {e}")
-            return 0.5, 0.5, 0.5
+        if not self._use_fallback and self._t2v_model is not None:
+            return self._compute_t2v_score_real(video_path, caption)
+        return self._compute_t2v_score_clip(video_path, caption)
 
     def process(self, sample: Sample) -> Sample:
         """Process sample with T2VScore metric."""

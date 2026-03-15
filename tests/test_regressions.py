@@ -21,6 +21,7 @@ class _LifecycleModule(PipelineModule):
 
     def on_mount(self) -> None:
         self.mount_calls += 1
+        self._mounted = True
 
     def on_execute(self) -> None:
         self.execute_calls += 1
@@ -38,6 +39,36 @@ def test_pipeline_start_mounts_modules_once():
 
     assert module.mount_calls == 1
     assert module.execute_calls == 2
+
+
+class _MissingPkgModule(PipelineModule):
+    """Module whose on_mount() reports missing packages and stays unmounted."""
+    name = "missing_pkg_test"
+    description = "Simulates missing dependency"
+    required_packages = ["nonexistent_pkg_xyz_42"]
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.process_calls = 0
+
+    def process(self, sample: Sample) -> Sample:
+        self.process_calls += 1
+        return sample
+
+
+def test_unmounted_module_skipped_during_processing():
+    """Modules with missing packages stay unmounted and are skipped in process_sample."""
+    module = _MissingPkgModule()
+    pipeline = Pipeline([module])
+    pipeline.start()
+
+    # Module should NOT be mounted (missing package)
+    assert not module._mounted
+
+    # Processing should skip the unmounted module
+    sample = Sample(path=Path("test.mp4"), is_video=True)
+    asyncio.run(pipeline.process_sample(sample))
+    assert module.process_calls == 0
 
 
 def test_scanner_attaches_exact_caption(tmp_path: Path):
@@ -84,6 +115,7 @@ class _SparseMetricModule(PipelineModule):
 
 def test_pipeline_average_ignores_missing_metric_values():
     pipeline = Pipeline([_SparseMetricModule()])
+    pipeline.start()
     asyncio.run(pipeline.process_sample(Sample(path=Path("first.mp4"), is_video=True)))
     asyncio.run(pipeline.process_sample(Sample(path=Path("second.mp4"), is_video=True)))
     assert pipeline.stats.avg_technical_score == 100.0

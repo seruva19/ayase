@@ -1,7 +1,7 @@
 """FVD (Fréchet Video Distance) module.
 
 FVD measures the distance between distributions of real and generated videos.
-It uses I3D (Inflated 3D ConvNet) features and computes the Fréchet distance.
+It uses R3D-18 (3D ResNet-18) features and computes the Fréchet distance.
 Lower FVD = better video generation quality. Typical ranges: 50-500 (lower is better).
 
 This is a dataset-level metric that compares two distributions of videos.
@@ -40,7 +40,7 @@ class FVDModule(BatchMetricModule):
         self.subsample_videos = self.config.get("subsample_videos", None)
         self.device = None
         self._ml_available = False
-        self._i3d_model = None
+        self._r3d_model = None
         self._processed_count = 0
 
     def setup(self) -> None:
@@ -57,10 +57,10 @@ class FVDModule(BatchMetricModule):
 
             # Load R3D-18 pretrained on Kinetics-400 (3D CNN for video features)
             weights = R3D_18_Weights.KINETICS400_V1
-            self._i3d_model = r3d_18(weights=weights)
-            self._i3d_model.fc = nn.Identity()
-            self._i3d_model = self._i3d_model.to(self.device)
-            self._i3d_model.eval()
+            self._r3d_model = r3d_18(weights=weights)
+            self._r3d_model.fc = nn.Identity()
+            self._r3d_model = self._r3d_model.to(self.device)
+            self._r3d_model.eval()
 
             self._ml_available = True
             logger.info(f"FVD module initialized with R3D-18 on {self.device}")
@@ -106,7 +106,7 @@ class FVDModule(BatchMetricModule):
 
             # Extract features
             with torch.no_grad():
-                features = self._i3d_model(frames_tensor)
+                features = self._r3d_model(frames_tensor)
                 features = features.cpu().numpy().flatten()
 
             self._processed_count += 1

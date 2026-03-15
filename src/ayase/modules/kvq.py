@@ -82,6 +82,13 @@ class KVQModule(PipelineModule):
             if not frames:
                 return sample
 
+            # Dispatch to real KVQ model when available
+            if self._backend == "kvq" and self._model is not None:
+                score = self._process_kvq_model(sample, frames)
+                if score is not None:
+                    sample.quality_metrics.kvq_score = float(np.clip(score, 0.0, 1.0))
+                return sample
+
             frame_scores = []
             for frame in frames:
                 h, w = frame.shape[:2]
@@ -133,6 +140,35 @@ class KVQModule(PipelineModule):
         except Exception as e:
             logger.warning("KVQ failed: %s", e)
         return sample
+
+    def _process_kvq_model(self, sample: Sample, frames: list) -> Optional[float]:
+        """Process using the real KVQ model."""
+        import torch
+        import cv2
+
+        try:
+            tensors = []
+            for f in frames:
+                rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
+                rgb = cv2.resize(rgb, (224, 224))
+                t = torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
+                tensors.append(t)
+            # Stack as (T, C, H, W) and add batch dim
+            clip = torch.stack(tensors).unsqueeze(0).to(self._device)
+            with torch.no_grad():
+                output = self._model(clip)
+                if isinstance(output, dict):
+                    score = output.get("score", output.get("quality"))
+                elif isinstance(output, (tuple, list)):
+                    score = output[0]
+                else:
+                    score = output
+                if hasattr(score, "item"):
+                    score = score.item()
+            return float(score)
+        except Exception as e:
+            logger.warning("KVQ real model inference failed, falling back: %s", e)
+            return None
 
     def _compute_saliency(self, frame, h: int, w: int) -> np.ndarray:
         """Compute saliency map using spectral residual method."""

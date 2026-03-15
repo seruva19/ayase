@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ValidationSeverity(str, Enum):
@@ -77,6 +77,8 @@ class QualityMetrics(BaseModel):
     Use ``to_grouped_dict()`` for a structured view, or ``non_null_metrics()``
     to get only the metrics that were actually computed.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # -- Field grouping registry (field name → category) ------------------
     _FIELD_GROUPS: dict = {

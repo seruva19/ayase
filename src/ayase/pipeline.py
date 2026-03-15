@@ -181,10 +181,9 @@ class Pipeline:
             try:
                 if not getattr(module, "_mounted", False):
                     module.on_mount()
-                    # Only mark as mounted if on_mount did not fail internally
-                    # (on_mount returns early without setting _mounted if packages are missing)
-                    if not getattr(module, "_mounted", False):
-                        module._mounted = True
+                    # on_mount() sets _mounted = True only when setup() succeeds.
+                    # Do NOT force-set it here — modules with missing packages
+                    # must remain unmounted so process_sample() skips them.
             except Exception as e:
                 logger.error(f"Error in on_mount for module {module.name}: {e}")
         for module in self.modules:
@@ -227,6 +226,8 @@ class Pipeline:
             return self.results[str_path]
 
         for module in self.modules:
+            if not getattr(module, "_mounted", False):
+                continue
             try:
                 sample = module.process(sample)
             except Exception as e:

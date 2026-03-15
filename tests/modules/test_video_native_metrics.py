@@ -1,4 +1,9 @@
-from ayase.models import QualityMetrics
+from pathlib import Path
+from unittest.mock import MagicMock
+
+import numpy as np
+
+from ayase.models import QualityMetrics, Sample
 
 
 def test_finevq_basics():
@@ -266,3 +271,49 @@ def test_st_lpips_image(image_sample):
     m = STLPIPSModule()
     result = m.process(image_sample)
     assert result.quality_metrics.st_lpips is None
+
+
+def test_kvq_dispatches_to_real_model_when_loaded():
+    """KVQ module dispatches to real model when backend=='kvq'."""
+    from ayase.modules.kvq import KVQModule
+
+    module = KVQModule()
+    module._backend = "kvq"
+    module._ml_available = True
+    module._device = "cpu"
+
+    # Mock the model to return a known score
+    mock_model = MagicMock()
+    mock_model.return_value = MagicMock(item=MagicMock(return_value=0.75))
+    module._model = mock_model
+
+    # Create a small test image
+    frame = np.full((64, 64, 3), 128, dtype=np.uint8)
+
+    score = module._process_kvq_model(
+        Sample(path=Path("test.png"), is_video=False), [frame]
+    )
+    assert score is not None
+    mock_model.assert_called_once()
+
+
+def test_rqvqa_dispatches_to_real_model_when_loaded():
+    """RQ-VQA module dispatches to real model when backend=='rqvqa'."""
+    from ayase.modules.rqvqa import RQVQAModule
+
+    module = RQVQAModule()
+    module._backend = "rqvqa"
+    module._ml_available = True
+    module._device = "cpu"
+
+    mock_model = MagicMock()
+    mock_model.return_value = MagicMock(item=MagicMock(return_value=0.8))
+    module._model = mock_model
+
+    frame = np.full((64, 64, 3), 128, dtype=np.uint8)
+
+    score = module._process_rqvqa_model(
+        Sample(path=Path("test.png"), is_video=False), [frame]
+    )
+    assert score is not None
+    mock_model.assert_called_once()

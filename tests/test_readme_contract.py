@@ -13,6 +13,7 @@ from typing import List
 import cv2
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from ayase.config import (
     AyaseConfig,
@@ -116,6 +117,21 @@ class TestMetricCount:
         qm = QualityMetrics()
         for name in QualityMetrics.model_fields:
             assert getattr(qm, name) is None, f"{name} should default to None"
+
+
+class TestQualityMetricsValidation:
+    """Verify extra='forbid' catches typos and declared fields are accepted."""
+
+    def test_quality_metrics_forbids_extra_fields(self):
+        """QualityMetrics rejects undeclared field names (catches typos)."""
+        with pytest.raises(ValidationError):
+            QualityMetrics(blur_scroe=0.5)  # typo
+
+    def test_quality_metrics_allows_declared_fields(self):
+        """QualityMetrics accepts any known field."""
+        qm = QualityMetrics(blur_score=0.5, psnr=42.0, aesthetic_score=7.5)
+        assert qm.blur_score == 0.5
+        assert qm.psnr == 42.0
 
 
 # =====================================================================
@@ -823,6 +839,32 @@ class TestCLICommands:
 # =====================================================================
 
 
+def _make_dataset(tmp_path: Path) -> Path:
+    """Create a minimal dataset with one image."""
+    dataset = tmp_path / "dataset"
+    dataset.mkdir()
+    img = np.full((64, 64, 3), 128, dtype=np.uint8)
+    cv2.imwrite(str(dataset / "photo.png"), img)
+    return dataset
+
+
+class _AlwaysFailsMount(PipelineModule):
+    """Module whose setup() always raises, simulating missing ML dep."""
+    name = "always_fails_mount_test"
+    description = "Always fails to mount"
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.process_calls = 0
+
+    def setup(self) -> None:
+        raise ImportError("Simulated missing package")
+
+    def process(self, sample: Sample) -> Sample:
+        self.process_calls += 1
+        return sample
+
+
 class TestAyasePipeline:
     """Tests for the AyasePipeline entry point."""
 
@@ -909,3 +951,69 @@ class TestAyasePipeline:
         ayase = AyasePipeline(modules=["basic"])
         results = ayase.run(dataset_dir, samples=samples)
         assert len(results) == len(samples)
+
+    def test_ayase_pipeline_inline_models_dir(self, tmp_dir):
+        """AyasePipeline accepts inline config with custom models_dir."""
+        models_dir = tmp_dir / "my_models"
+        models_dir.mkdir()
+
+        cfg = AyaseConfig(general=GeneralConfig(models_dir=models_dir))
+        ayase = AyasePipeline(config=cfg, modules=["basic"])
+
+        assert ayase.config.general.models_dir == models_dir
+        assert len(ayase._modules) == 1
+        assert ayase._modules[0].config["models_dir"] == str(models_dir)
+
+    def test_ayase_pipeline_e2e_with_tiered_module(self, tmp_dir):
+        """End-to-end: AyasePipeline with a module that has fallback tiers."""
+        dataset = _make_dataset(tmp_dir)
+
+        # hdr_sdr_vqa is a good test — no ML deps, always mounts, produces a metric
+        ayase = AyasePipeline(modules=["hdr_sdr_vqa"])
+        results = ayase.run(dataset)
+
+        assert len(results) == 1
+        sample = list(results.values())[0]
+        assert sample.quality_metrics is not None
+        # Should produce sdr_quality for a uint8 image
+        assert sample.quality_metrics.sdr_quality is not None
+
+    def test_ayase_pipeline_e2e_multiple_modules(self, tmp_dir):
+        """End-to-end with multiple modules on an image dataset."""
+        dataset = _make_dataset(tmp_dir)
+
+        ayase = AyasePipeline(modules=["basic", "hdr_sdr_vqa"])
+        results = ayase.run(dataset)
+
+        assert len(results) == 1
+        sample = list(results.values())[0]
+        qm = sample.quality_metrics
+        assert qm is not None
+        # basic module produces blur_score, hdr_sdr_vqa produces sdr_quality
+        assert qm.blur_score is not None
+        assert qm.sdr_quality is not None
+
+    def test_ayase_pipeline_skips_failed_mount_module(self, tmp_dir):
+        """Modules that fail on_mount are skipped during processing (no crash)."""
+        dataset = _make_dataset(tmp_dir)
+
+        # Build pipeline with one good module and one that always fails
+        ModuleRegistry.discover_modules()
+        good_cls = ModuleRegistry.get_module("basic")
+        fail_module = _AlwaysFailsMount()
+        good_module = good_cls()
+
+        pipeline = Pipeline([fail_module, good_module])
+        pipeline.start()
+
+        # fail_module should NOT be mounted
+        assert not fail_module._mounted
+        # good_module should be mounted
+        assert good_module._mounted
+
+        sample = Sample(path=list(Path(dataset).glob("*"))[0], is_video=False)
+        asyncio.run(pipeline.process_sample(sample))
+
+        # fail_module was skipped, good_module ran
+        assert fail_module.process_calls == 0
+        assert sample.quality_metrics is not None
