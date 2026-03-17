@@ -11,10 +11,14 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+# Original URLs:
+#   https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_3D_1_1.pth
+#   https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_B_1_4.pth
+#   https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_M_1_4.pth
 FASTVQA_MODEL_URLS = {
-    "FAST_VQA_3D_1_1.pth": "https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_3D_1_1.pth",
-    "FAST_VQA_B_1_4.pth": "https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_B_1_4.pth",
-    "FAST_VQA_M_1_4.pth": "https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_M_1_4.pth",
+    "FAST_VQA_3D_1_1.pth": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth",
+    "FAST_VQA_B_1_4.pth": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth",
+    "FAST_VQA_M_1_4.pth": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth",
 }
 
 
