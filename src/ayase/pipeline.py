@@ -121,7 +121,10 @@ class PipelineModule(ABC):
             if target_path.exists():
                 continue
             try:
-                urllib.request.urlretrieve(url, target_path)
+                with urllib.request.urlopen(url, timeout=300) as resp:
+                    with open(target_path, "wb") as f:
+                        import shutil
+                        shutil.copyfileobj(resp, f)
             except Exception as e:
                 logger.warning(f"Failed to download {url}: {e}")
 
