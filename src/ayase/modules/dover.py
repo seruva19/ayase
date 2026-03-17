@@ -137,7 +137,8 @@ class DOVERModule(PipelineModule):
             logger.debug(f"Native DOVER setup failed: {e}")
             return False
 
-    _DOVER_WEIGHTS_URL = "https://github.com/VQAssessment/DOVER/releases/download/v0.1.0/DOVER.pth"
+    # Original: https://github.com/VQAssessment/DOVER/releases/download/v0.1.0/DOVER.pth
+    _DOVER_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth"
 
     def _resolve_weights(self) -> Optional[str]:
         """Find DOVER.pth weights file, auto-downloading if needed."""

@@ -468,8 +468,14 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 
 ### 5. CHANGELOG.md
 
-- [ ] Add entries under `[Unreleased]` — follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
-- [ ] Sections: Added, Changed, Removed
+- [ ] Add entries under the new version header (e.g. `## [0.1.9]`)
+- [ ] Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
+- [ ] Sections: **Added**, **Changed**, **Fixed**, **Removed** (only include sections that apply)
+- [ ] Each entry: one line, starts with `- `, prefix with **bold module name** if module-specific (e.g. `- **dover**: fixed weight resolution`)
+- [ ] Focus on *what changed for the user*, not implementation details
+- [ ] Don't duplicate git commit messages — CHANGELOG is a curated summary, not a log dump
+- [ ] Group related changes into a single entry when possible
+- [ ] `[Unreleased]` section is for work-in-progress; move entries to a versioned section on release
 
 ### 6. Lint & Commit
 
