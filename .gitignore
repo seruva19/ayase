@@ -46,6 +46,6 @@ ayase.toml
 test_datasets/
 reports/
 *.log
-models/
+/models/
 .claude/
 .ayase_sd_cache/
