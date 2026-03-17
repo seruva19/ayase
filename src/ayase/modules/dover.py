@@ -44,6 +44,7 @@ class DOVERModule(PipelineModule):
     default_config = {
         "warning_threshold": 0.4,
         "weights_path": None,  # Explicit path to DOVER.pth (optional)
+        "preferred_backend": None,  # "native", "onnx", or "pyiqa" — None = auto (native first)
     }
 
     def __init__(self, config=None):
@@ -61,12 +62,25 @@ class DOVERModule(PipelineModule):
         self._std = None
 
     def setup(self) -> None:
-        # Try native DOVER first, then ONNX, then pyiqa fallback
-        if self._try_native_setup():
+        preferred = self.config.get("preferred_backend")
+
+        # If explicit backend requested, try it first
+        if preferred == "onnx":
+            if self._try_onnx_setup():
+                return
+        elif preferred == "pyiqa":
+            if self._try_pyiqa_setup():
+                return
+        elif preferred == "native":
+            if self._try_native_setup():
+                return
+
+        # Auto fallback: native → ONNX → pyiqa
+        if not self._ml_available and self._try_native_setup():
             return
-        if self._try_onnx_setup():
+        if not self._ml_available and self._try_onnx_setup():
             return
-        if self._try_pyiqa_setup():
+        if not self._ml_available and self._try_pyiqa_setup():
             return
 
         logger.warning(
