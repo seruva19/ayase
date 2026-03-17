@@ -99,8 +99,9 @@ class I2VSimilarityModule(PipelineModule):
         if not (self._clip_available or self._dino_available or self._lpips_available):
             logger.warning("No I2V sub-metrics available. Module effectively disabled.")
 
+    # Original: https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt
     _CLIP_URLS = {
-        "ViT-B-32": "https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt",
+        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/ViT-B-32.pt",
     }
 
     def _init_clip(self) -> None:
@@ -148,16 +149,15 @@ class I2VSimilarityModule(PipelineModule):
         except Exception as e:
             logger.error(f"Failed to load CLIP for I2V: {e}")
 
+    # Original: https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth
     _DINO_URLS = {
-        "dinov2_vitb14": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth",
+        "dinov2_vitb14": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth",
     }
 
     def _init_dino(self) -> None:
         try:
-            import io
-            import os
-            import contextlib
             import torch
+            import timm
             from ayase.config import download_model_file
 
             models_dir = self.config.get("models_dir", "models")
@@ -171,25 +171,18 @@ class I2VSimilarityModule(PipelineModule):
                     models_dir,
                 )
 
-            # Redirect torch hub cache to models_dir
-            if models_dir:
-                os.environ["TORCH_HOME"] = str(models_dir)
-
             logger.info(f"Loading DINOv2 ({self.dino_model_name}) for I2V on {self._device}...")
 
-            # Use local torch hub cache if available to avoid network requests
-            hub_cache = Path(os.environ.get("TORCH_HOME", "")) / "hub" / "facebookresearch_dinov2_main"
-            hub_source = "local" if hub_cache.is_dir() else "github"
+            if not local_weights.exists():
+                logger.warning(f"DINOv2 weights not found at {local_weights}. I2V DINO disabled.")
+                return
 
-            if local_weights.exists():
-                logger.info(f"Using local DINOv2 weights: {local_weights}")
-                model = torch.hub.load("facebookresearch/dinov2", self.dino_model_name,
-                                       source=hub_source, pretrained=False)
-                state_dict = torch.load(str(local_weights), map_location=self._device, weights_only=True)
-                model.load_state_dict(state_dict)
-            else:
-                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                    model = torch.hub.load("facebookresearch/dinov2", self.dino_model_name)
+            # Build model architecture via timm (no network access needed)
+            logger.info(f"Using local DINOv2 weights: {local_weights}")
+            model = timm.create_model("vit_base_patch14_dinov2", pretrained=False)
+            state_dict = torch.load(str(local_weights), map_location=self._device, weights_only=True)
+            model.load_state_dict(state_dict, strict=False)
+
             model.eval().to(self._device)
             self._dino_model = model
 
@@ -203,11 +196,12 @@ class I2VSimilarityModule(PipelineModule):
             ])
             self._dino_available = True
         except ImportError:
-            logger.warning("torch/torchvision not installed properly. I2V DINO disabled.")
+            logger.warning("torch/timm not installed properly. I2V DINO disabled.")
         except Exception as e:
             logger.error(f"Failed to load DINOv2 for I2V: {e}")
 
-    _LPIPS_URL = "https://github.com/richzhang/PerceptualSimilarity/raw/master/lpips/weights/v0.1/alex.pth"
+    # Original: https://github.com/richzhang/PerceptualSimilarity/raw/master/lpips/weights/v0.1/alex.pth
+    _LPIPS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/alex.pth"
 
     def _init_lpips(self) -> None:
         try:

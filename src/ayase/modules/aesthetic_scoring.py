@@ -13,9 +13,10 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+# Original: https://github.com/christophschuhmann/improved-aesthetic-predictor/raw/main/sac+logos+ava1-l14-linearMSE.pth
 AESTHETIC_MLP_URL = (
-    "https://github.com/christophschuhmann/improved-aesthetic-predictor/raw/main/"
-    "sac+logos+ava1-l14-linearMSE.pth"
+    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+    "aesthetic_scoring/sac+logos+ava1-l14-linearMSE.pth"
 )
 AESTHETIC_MLP_FILENAME = "sac+logos+ava1-l14-linearMSE.pth"
 
