@@ -61,8 +61,10 @@ class DOVERModule(PipelineModule):
         self._std = None
 
     def setup(self) -> None:
-        # Try native DOVER first, then pyiqa fallback
+        # Try native DOVER first, then ONNX, then pyiqa fallback
         if self._try_native_setup():
+            return
+        if self._try_onnx_setup():
             return
         if self._try_pyiqa_setup():
             return
@@ -200,7 +202,66 @@ class DOVERModule(PipelineModule):
         )
 
     # ------------------------------------------------------------------ #
-    #  Backend 2: pyiqa                                                   #
+    #  Backend 2: ONNX                                                    #
+    # ------------------------------------------------------------------ #
+
+    # Original: https://github.com/VQAssessment/DOVER (convert_to_onnx.py)
+    _ONNX_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/onnx_dover.onnx"
+
+    def _try_onnx_setup(self) -> bool:
+        try:
+            import onnxruntime as ort
+
+            models_dir = self.config.get("models_dir", "models")
+            onnx_path = os.path.join(models_dir, "dover", "onnx_dover.onnx")
+
+            if not os.path.exists(onnx_path):
+                from ayase.config import download_model_file
+                try:
+                    download_model_file("dover/onnx_dover.onnx", self._ONNX_WEIGHTS_URL, models_dir)
+                except Exception:
+                    return False
+
+            if not os.path.exists(onnx_path):
+                return False
+
+            import torch
+            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if torch.cuda.is_available() else ["CPUExecutionProvider"]
+            self._onnx_session = ort.InferenceSession(onnx_path, providers=providers)
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            self._sample_types = {
+                "technical": {
+                    "fragments_h": 7, "fragments_w": 7,
+                    "fsize_h": 32, "fsize_w": 32,
+                    "aligned": 32,
+                    "clip_len": 32, "frame_interval": 2, "num_clips": 3,
+                },
+                "aesthetic": {
+                    "size_h": 224, "size_w": 224,
+                    "clip_len": 32, "frame_interval": 2,
+                    "t_frag": 32, "num_clips": 1,
+                },
+            }
+
+            import torch
+            self._mean = torch.FloatTensor([123.675, 116.28, 103.53])
+            self._std = torch.FloatTensor([58.395, 57.12, 57.375])
+
+            self._ml_available = True
+            self._backend = "onnx"
+            logger.info("DOVER (ONNX) initialised")
+            return True
+
+        except ImportError:
+            logger.debug("onnxruntime not installed, skipping ONNX backend.")
+            return False
+        except Exception as e:
+            logger.debug(f"ONNX DOVER setup failed: {e}")
+            return False
+
+    # ------------------------------------------------------------------ #
+    #  Backend 3: pyiqa                                                   #
     # ------------------------------------------------------------------ #
 
     def _try_pyiqa_setup(self) -> bool:
@@ -237,6 +298,8 @@ class DOVERModule(PipelineModule):
         try:
             if self._backend == "native":
                 aesthetic, technical, overall = self._process_native(sample)
+            elif self._backend == "onnx":
+                aesthetic, technical, overall = self._process_onnx(sample)
             else:
                 aesthetic, technical, overall = self._process_pyiqa(sample)
 
@@ -319,6 +382,50 @@ class DOVERModule(PipelineModule):
         with torch.no_grad():
             outputs = self._model(ordered, reduce_scores=False)
             results = [float(np.mean(out.detach().cpu().numpy())) for out in outputs]
+
+        rescaled = _fuse_results(results)
+        return rescaled["aesthetic"], rescaled["technical"], rescaled["overall"]
+
+    def _process_onnx(self, sample: Sample):
+        """Run inference using ONNX Runtime."""
+        from ayase.third_party.dover.datasets import UnifiedFrameSampler, spatial_temporal_view_decomposition
+
+        temporal_samplers = {}
+        for stype, sopt in self._sample_types.items():
+            if "t_frag" not in sopt:
+                temporal_samplers[stype] = UnifiedFrameSampler(
+                    sopt["clip_len"], sopt["num_clips"], sopt["frame_interval"]
+                )
+            else:
+                temporal_samplers[stype] = UnifiedFrameSampler(
+                    sopt["clip_len"] // sopt["t_frag"],
+                    sopt["t_frag"],
+                    sopt["frame_interval"],
+                    sopt["num_clips"],
+                )
+
+        views, _ = spatial_temporal_view_decomposition(
+            str(sample.path), self._sample_types, temporal_samplers
+        )
+
+        processed = {}
+        for k, v in views.items():
+            num_clips = self._sample_types[k].get("num_clips", 1)
+            processed[k] = (
+                ((v.permute(1, 2, 3, 0) - self._mean) / self._std)
+                .permute(3, 0, 1, 2)
+                .reshape(v.shape[0], num_clips, -1, *v.shape[2:])
+                .transpose(0, 1)
+            )
+
+        preds = self._onnx_session.run(
+            None,
+            {
+                "aes_view": processed["aesthetic"].numpy(),
+                "tech_view": processed["technical"].numpy(),
+            },
+        )
+        results = [float(np.mean(pred)) for pred in preds]
 
         rescaled = _fuse_results(results)
         return rescaled["aesthetic"], rescaled["technical"], rescaled["overall"]
