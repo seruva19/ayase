@@ -15,6 +15,7 @@ class ActionRecognitionModule(PipelineModule):
     default_config = {
         "model_name": "MCG-NJU/videomae-large-finetuned-kinetics",
         "caption_matching": False,
+        "matching_mode": "weighted",  # "weighted" (top-K weighted sum) or "top1" (direct top-1 similarity)
         "clip_model": "openai/clip-vit-base-patch32",
         "top_k": 5,
     }
@@ -63,9 +64,30 @@ class ActionRecognitionModule(PipelineModule):
             self._init_clip()
 
     def _init_clip(self) -> None:
+        self._clip_backend = None  # "open_clip" or "transformers"
+
+        # Tier 1: open_clip (preferred — wider model support)
+        try:
+            import open_clip
+
+            clip_name = self.config.get("open_clip_model", "ViT-B-32")
+            clip_pretrained = self.config.get("open_clip_pretrained", "openai")
+            logger.info(f"Loading open_clip ({clip_name}/{clip_pretrained}) for action matching...")
+            model, _, _ = open_clip.create_model_and_transforms(clip_name, pretrained=clip_pretrained, device=self._device)
+            model.eval()
+            self._clip_model = model
+            self._clip_tokenizer = open_clip.get_tokenizer(clip_name)
+            self._clip_available = True
+            self._clip_backend = "open_clip"
+            return
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.debug(f"open_clip failed: {e}")
+
+        # Tier 2: transformers CLIPModel
         try:
             from transformers import CLIPModel, AutoTokenizer
-
             from ayase.config import resolve_model_path
 
             models_dir = self.config.get("models_dir", "models")
@@ -74,10 +96,29 @@ class ActionRecognitionModule(PipelineModule):
             self._clip_model = CLIPModel.from_pretrained(resolved_clip).to(self._device)
             self._clip_tokenizer = AutoTokenizer.from_pretrained(resolved_clip)
             self._clip_available = True
+            self._clip_backend = "transformers"
         except ImportError:
-            logger.warning("Transformers CLIPModel not available. Caption matching disabled.")
+            logger.warning("No CLIP backend available. Caption matching disabled.")
         except Exception as e:
             logger.warning(f"Failed to load CLIP for action matching: {e}")
+
+    def _encode_text(self, text):
+        """Encode text(s) via CLIP, returns L2-normalized features. Supports both backends."""
+        import torch
+
+        if self._clip_backend == "open_clip":
+            tokens = self._clip_tokenizer(text if isinstance(text, list) else [text]).to(self._device)
+            with torch.no_grad():
+                features = self._clip_model.encode_text(tokens)
+        else:
+            tokens = self._clip_tokenizer(
+                text if isinstance(text, list) else [text],
+                return_tensors="pt", padding=True, truncation=True,
+            )
+            with torch.no_grad():
+                features = self._clip_model.get_text_features(tokens["input_ids"].to(self._device))
+
+        return features / features.norm(p=2, dim=-1, keepdim=True)
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available or not sample.is_video:
@@ -108,44 +149,30 @@ class ActionRecognitionModule(PipelineModule):
             sample.quality_metrics.action_confidence = round(top1_confidence * 100.0, 2)
 
             # Caption-matching mode: compute action_score via CLIP text similarity
-            # Prefer explicit expected_action from config (set by downstream caller)
             expected_action = self.config.get("expected_action")
             match_text = expected_action or (sample.caption.text if sample.caption else None)
 
+            matching_mode = self.config.get("matching_mode", "weighted")
+
             if self._clip_available and match_text:
-                top_k_probs, top_k_indices = probs.topk(min(self.top_k, probs.shape[1]))
-                action_labels = [
-                    self._model.config.id2label[idx.item()]
-                    for idx in top_k_indices.squeeze(0)
-                ]
-                confidences = top_k_probs.squeeze(0)
+                caption_features = self._encode_text(match_text)
 
-                caption_text = match_text
+                if matching_mode == "top1":
+                    # Direct top-1 similarity: CLIP(top1_label, prompt)
+                    action_features = self._encode_text(top1_label)
+                    action_score = float((action_features @ caption_features.T).squeeze().cpu()) * 100.0
+                else:
+                    # Weighted top-K: sum(confidence_i * similarity_i)
+                    top_k_probs, top_k_indices = probs.topk(min(self.top_k, probs.shape[1]))
+                    action_labels = [
+                        self._model.config.id2label[idx.item()]
+                        for idx in top_k_indices.squeeze(0)
+                    ]
+                    confidences = top_k_probs.squeeze(0)
+                    action_features = self._encode_text(action_labels)
+                    similarities = (action_features @ caption_features.T).squeeze(-1)
+                    action_score = (confidences @ similarities).item() * 100.0
 
-                # Encode action labels and caption with CLIP text encoder
-                action_tokens = self._clip_tokenizer(
-                    action_labels, return_tensors="pt", padding=True, truncation=True
-                )
-                caption_tokens = self._clip_tokenizer(
-                    caption_text, return_tensors="pt", padding=True, truncation=True
-                )
-
-                action_input_ids = action_tokens["input_ids"].to(self._device)
-                caption_input_ids = caption_tokens["input_ids"].to(self._device)
-
-                with torch.no_grad():
-                    action_features = self._clip_model.get_text_features(action_input_ids)
-                    caption_features = self._clip_model.get_text_features(caption_input_ids)
-
-                # Normalize
-                action_features = action_features / action_features.norm(p=2, dim=-1, keepdim=True)
-                caption_features = caption_features / caption_features.norm(p=2, dim=-1, keepdim=True)
-
-                # Cosine similarity: (top_k,) vector
-                similarities = (action_features @ caption_features.T).squeeze(-1)
-
-                # Weighted score: confidence_vector @ similarity_vector * 100
-                action_score = (confidences @ similarities).item() * 100.0
                 sample.quality_metrics.action_score = round(action_score, 2)
             else:
                 # Fallback: use top-1 confidence as action_score (original behavior)
