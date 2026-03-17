@@ -78,9 +78,9 @@ class DOVER(nn.Module):
             elif t_backbone_size == "swin_small":
                 b = swin_3d_small(**backbone[key])
             elif t_backbone_size == "conv_tiny":
-                b = convnext_3d_tiny(pretrained=True)
+                b = convnext_3d_tiny(pretrained=False)
             elif t_backbone_size == "conv_small":
-                b = convnext_3d_small(pretrained=True)
+                b = convnext_3d_small(pretrained=False)
             elif t_backbone_size == "conv_femto":
                 b = convnextv2_3d_femto(pretrained=True)
             elif t_backbone_size == "conv_pico":
@@ -234,7 +234,7 @@ class MinimumDOVER(nn.Module):
     def __init__(self):
         super().__init__()
         self.technical_backbone = VideoBackbone()
-        self.aesthetic_backbone = convnext_3d_tiny(pretrained=True)
+        self.aesthetic_backbone = convnext_3d_tiny(pretrained=False)
         self.technical_head = VQAHead(pre_pool=False, in_channels=768)
         self.aesthetic_head = VQAHead(pre_pool=False, in_channels=768)
 

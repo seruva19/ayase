@@ -312,8 +312,12 @@ class DOVERModule(PipelineModule):
                 .to(self._device)
             )
 
+        # Ensure aesthetic-first order for _fuse_results:
+        # DOVERModel iterates dict keys, so order depends on self._sample_types.
+        # _fuse_results expects [aesthetic, technical].
+        ordered = {"aesthetic": processed["aesthetic"], "technical": processed["technical"]}
         with torch.no_grad():
-            outputs = self._model(processed, reduce_scores=False)
+            outputs = self._model(ordered, reduce_scores=False)
             results = [float(np.mean(out.detach().cpu().numpy())) for out in outputs]
 
         rescaled = _fuse_results(results)
