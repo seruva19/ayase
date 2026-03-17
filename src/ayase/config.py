@@ -31,7 +31,7 @@ def download_model_file(relative_path: str, url: str, models_dir: str = "models"
 
     tmp = dest.with_suffix(dest.suffix + ".part")
     try:
-        with urllib.request.urlopen(url) as resp, open(tmp, "wb") as f:
+        with urllib.request.urlopen(url, timeout=300) as resp, open(tmp, "wb") as f:
             shutil.copyfileobj(resp, f)
         tmp.rename(dest)
     except Exception:
