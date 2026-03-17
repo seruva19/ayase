@@ -116,6 +116,9 @@ class DOVERModule(PipelineModule):
                 "vqa_head": {"in_channels": 768, "hidden_channels": 64},
             }
 
+            # Pre-cache ConvNeXt backbone weights to avoid torch.hub download from fbaipublicfiles
+            self._ensure_convnext_cached()
+
             self._model = DOVERModel(**model_args).to(self._device)
             self._model.load_state_dict(
                 torch.load(weights, map_location=self._device, weights_only=True)
@@ -136,6 +139,31 @@ class DOVERModule(PipelineModule):
         except Exception as e:
             logger.debug(f"Native DOVER setup failed: {e}")
             return False
+
+    # Original: https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
+    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
+    _CONVNEXT_FILENAME = "convnext_tiny_1k_224_ema.pth"
+
+    def _ensure_convnext_cached(self) -> None:
+        """Download ConvNeXt weights to torch hub cache if not present."""
+        import torch
+        hub_dir = torch.hub.get_dir()
+        cache_dir = os.path.join(hub_dir, "checkpoints")
+        cached = os.path.join(cache_dir, self._CONVNEXT_FILENAME)
+        if os.path.exists(cached):
+            return
+        os.makedirs(cache_dir, exist_ok=True)
+        logger.info("Downloading ConvNeXt backbone for DOVER...")
+        from ayase.config import download_model_file
+        tmp = download_model_file(
+            os.path.join("hub", "checkpoints", self._CONVNEXT_FILENAME),
+            self._CONVNEXT_URL,
+            os.path.dirname(hub_dir),  # parent of hub dir
+        )
+        # Move to torch cache if downloaded elsewhere
+        if str(tmp) != cached and os.path.exists(str(tmp)):
+            import shutil
+            shutil.copy2(str(tmp), cached)
 
     # Original: https://github.com/VQAssessment/DOVER/releases/download/v0.1.0/DOVER.pth
     _DOVER_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth"
