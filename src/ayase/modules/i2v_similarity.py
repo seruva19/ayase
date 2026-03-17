@@ -176,9 +176,15 @@ class I2VSimilarityModule(PipelineModule):
                 os.environ["TORCH_HOME"] = str(models_dir)
 
             logger.info(f"Loading DINOv2 ({self.dino_model_name}) for I2V on {self._device}...")
+
+            # Use local torch hub cache if available to avoid network requests
+            hub_cache = Path(os.environ.get("TORCH_HOME", "")) / "hub" / "facebookresearch_dinov2_main"
+            hub_source = "local" if hub_cache.is_dir() else "github"
+
             if local_weights.exists():
                 logger.info(f"Using local DINOv2 weights: {local_weights}")
-                model = torch.hub.load("facebookresearch/dinov2", self.dino_model_name, pretrained=False)
+                model = torch.hub.load("facebookresearch/dinov2", self.dino_model_name,
+                                       source=hub_source, pretrained=False)
                 state_dict = torch.load(str(local_weights), map_location=self._device, weights_only=True)
                 model.load_state_dict(state_dict)
             else:
