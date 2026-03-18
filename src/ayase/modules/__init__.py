@@ -127,6 +127,10 @@ _IMPORTS = [
     ("BackgroundDiversityModule", ".background_diversity"),
     ("VideoMemorabilityModule", ".video_memorability"),
     ("NemoCuratorModule", ".nemo_curator"),
+    # --- VBench-2.0 / Benchmarks ---
+    ("CreativityModule", ".creativity"),
+    ("ChronoMagicModule", ".chronomagic"),
+    ("T2VCompBenchModule", ".t2v_compbench"),
 ]
 
 # Perform imports, silently skipping modules with missing optional deps.

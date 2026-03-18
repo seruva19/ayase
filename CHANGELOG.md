@@ -51,6 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- 3 new modules: **creativity** (VBench-2.0 artistic novelty), **chronomagic** (ChronoMagic-Bench MTScore + CHScore), **t2v_compbench** (T2V-CompBench 7 compositional sub-metrics)
+- 13 new QualityMetrics fields for VBench-2.0 faithfulness, ChronoMagic-Bench, and T2V-CompBench coverage
+- 4 upgraded modules with tiered backends and QM scoring: **physics** (`physics_score`), **human_fidelity** (`human_fidelity_score`), **commonsense** (`commonsense_score`), **dynamics_controllability** (CoTracker + camera motion classification)
 - 6 new modules: **identity_loss**, **tifa**, **tonal_dynamic_range**, **nemo_curator**, **umap_projection**, **vlm_judge presets**
 - `resolve_model_path()` and `download_model_file()` utilities in `config.py`
 - Explicit config params for evaluation: `ocr_fidelity.expected_text`, `motion_amplitude.expected_motion`, `action_recognition.expected_action`

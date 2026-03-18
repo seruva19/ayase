@@ -252,6 +252,8 @@ class QualityMetrics(BaseModel):
         "ocr_area_ratio": "text",
         "ocr_score": "text",
         "ocr_fidelity": "text",
+        "ocr_cer": "text",
+        "ocr_wer": "text",
         "text_overlay_score": "text",
         "auto_caption": "text",
         # I2V reference
@@ -332,6 +334,22 @@ class QualityMetrics(BaseModel):
         "perceptual_hash": "meta",
         "nemo_quality_score": "meta",
         "nemo_quality_label": "meta",
+        # VBench-2.0 faithfulness
+        "human_fidelity_score": "scene",
+        "physics_score": "motion",
+        "commonsense_score": "scene",
+        "creativity_score": "aesthetic",
+        # ChronoMagic-Bench
+        "chronomagic_mt_score": "temporal",
+        "chronomagic_ch_score": "temporal",
+        # T2V-CompBench
+        "compbench_attribute": "alignment",
+        "compbench_object_rel": "alignment",
+        "compbench_action": "alignment",
+        "compbench_spatial": "alignment",
+        "compbench_numeracy": "alignment",
+        "compbench_scene": "alignment",
+        "compbench_overall": "alignment",
     }
 
     def non_null_metrics(self) -> dict[str, object]:
@@ -470,6 +488,8 @@ class QualityMetrics(BaseModel):
     face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
     ocr_score: Optional[float] = None
     ocr_fidelity: Optional[float] = None  # OCR text accuracy vs caption (0-100, higher=better)
+    ocr_cer: Optional[float] = None  # Character Error Rate (0-1, lower=better)
+    ocr_wer: Optional[float] = None  # Word Error Rate (0-1, lower=better)
 
     # Image-to-Video reference similarity (sliding-window)
     i2v_clip: Optional[float] = None  # CLIP image-video similarity (0-1)
@@ -784,6 +804,25 @@ class QualityMetrics(BaseModel):
     # NeMo Curator text quality
     nemo_quality_score: Optional[float] = None  # Caption text quality (0-1)
     nemo_quality_label: Optional[str] = None  # Quality label (Low/Medium/High)
+
+    # VBench-2.0 faithfulness (arXiv:2503.21755)
+    human_fidelity_score: Optional[float] = None  # Body/hand/face quality (0-1, higher=better)
+    physics_score: Optional[float] = None  # Physics plausibility (0-1, higher=better)
+    commonsense_score: Optional[float] = None  # Common sense adherence (0-1, higher=better)
+    creativity_score: Optional[float] = None  # Artistic novelty (0-1, higher=better)
+
+    # ChronoMagic-Bench (NeurIPS 2024, arXiv:2406.18522)
+    chronomagic_mt_score: Optional[float] = None  # Metamorphic temporal (0-1, higher=better)
+    chronomagic_ch_score: Optional[float] = None  # Chrono-hallucination (0-1, lower=fewer)
+
+    # T2V-CompBench (CVPR 2025)
+    compbench_attribute: Optional[float] = None  # Attribute binding (0-1)
+    compbench_object_rel: Optional[float] = None  # Object relationship (0-1)
+    compbench_action: Optional[float] = None  # Action binding (0-1)
+    compbench_spatial: Optional[float] = None  # Spatial relationship (0-1)
+    compbench_numeracy: Optional[float] = None  # Generative numeracy (0-1)
+    compbench_scene: Optional[float] = None  # Scene composition (0-1)
+    compbench_overall: Optional[float] = None  # Overall composition (0-1)
 
 
 class Sample(BaseModel):
