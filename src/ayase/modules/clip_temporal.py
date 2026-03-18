@@ -97,11 +97,12 @@ class CLIPTemporalModule(PipelineModule):
                     )
                 )
 
-            # --- face_consistency_score: all frames vs first frame ---
-            first = embeddings[0].unsqueeze(0)  # [1, D]
-            rest = embeddings[1:]  # [T-1, D]
-            face_sims = (rest @ first.T).squeeze(-1)  # [T-1]
-            face_consistency = float(face_sims.mean().item())
+            # --- face_consistency_score: rolling window (consecutive pairs) ---
+            face_sims = []
+            for i in range(embeddings.size(0) - 1):
+                sim = (embeddings[i] @ embeddings[i + 1]).item()
+                face_sims.append(sim)
+            face_consistency = float(np.mean(face_sims))
             sample.quality_metrics.face_consistency = face_consistency
 
             if face_consistency < self.face_threshold:
