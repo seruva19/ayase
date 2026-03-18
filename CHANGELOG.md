@@ -5,6 +5,21 @@ All notable changes to Ayase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10]
+
+### Added
+
+- **dover**: ONNX backend (tier 2) with configurable `preferred_backend` ("native" / "onnx" / "pyiqa")
+- **action_recognition**: `matching_mode` config ("weighted" top-K or "top1" direct similarity); open_clip as preferred CLIP backend
+- **motion_smoothness**: bundled RIFE HD v3 (vendored in `third_party/rife/`) with auto-download from HuggingFace and padding fix for non-32-aligned resolutions
+
+### Fixed
+
+- **clip_temporal**: `face_consistency` changed from first-frame comparison to rolling window (consecutive pairs), matching VBench methodology
+- **motion_amplitude**: added `scoring_mode` config ("binary" / "continuous") for smooth 0-100 scoring
+- **dover**: fixed aesthetic/technical output order in `DOVERModel.forward()` (dict key iteration)
+- **dover**: ConvNeXt backbone `pretrained=False` to match original DOVER training procedure
+
 ## [0.1.8]
 
 ### Fixed
