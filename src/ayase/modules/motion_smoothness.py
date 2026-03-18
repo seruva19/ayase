@@ -1,4 +1,5 @@
 import logging
+import os
 import cv2
 import numpy as np
 from typing import Optional, List
@@ -32,7 +33,34 @@ class MotionSmoothnessModule(PipelineModule):
             import torch
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            # Try to load RIFE model (primary import path)
+            # Try bundled RIFE HD v3 (ayase.third_party.rife)
+            try:
+                from ayase.third_party.rife.RIFE_HDv3 import Model as RIFEModel
+                from ayase.config import download_model_file
+
+                models_dir = self.config.get("models_dir", "models")
+                rife_dir = os.path.join(models_dir, "rife")
+                weights_path = os.path.join(rife_dir, "flownet.pkl")
+
+                if not os.path.exists(weights_path):
+                    download_model_file(
+                        "rife/flownet.pkl",
+                        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/motion_smoothness/flownet.pkl",
+                        models_dir,
+                    )
+
+                self._rife_model = RIFEModel()
+                self._rife_model.load_model(rife_dir, rank=-1)
+                self._rife_model.eval()
+                self._rife_available = True
+                logger.info("RIFE HD v3 loaded on %s", self._device)
+                return
+            except ImportError:
+                pass
+            except Exception as exc:
+                logger.debug("Bundled RIFE load failed: %s", exc)
+
+            # Fallback: external rife_model package
             try:
                 from rife_model import load_rife_model
                 self._rife_model = load_rife_model(device=self._device)
@@ -42,23 +70,7 @@ class MotionSmoothnessModule(PipelineModule):
             except ImportError:
                 pass
             except Exception as exc:
-                logger.debug("rife_model import succeeded but load failed: %s", exc)
-
-            # Alternative import path (model.RIFE package)
-            try:
-                from model.RIFE import Model as RIFEModel
-                self._rife_model = RIFEModel()
-                self._rife_model.load_model(
-                    self.config.get("rife_model_dir", "models/rife")
-                )
-                self._rife_model.eval()
-                self._rife_available = True
-                logger.info("RIFE model loaded on %s (model.RIFE path)", self._device)
-                return
-            except ImportError:
-                pass
-            except Exception as exc:
-                logger.debug("model.RIFE import succeeded but load failed: %s", exc)
+                logger.debug("rife_model import failed: %s", exc)
 
             # Neither import path worked -- fall back gracefully
             logger.warning(
@@ -104,17 +116,28 @@ class MotionSmoothnessModule(PipelineModule):
 
         errors = []
 
+        h, w = frames[0].shape[:2]
+        # Pad to multiple of 32 (RIFE requirement)
+        ph = ((h - 1) // 32 + 1) * 32
+        pw = ((w - 1) // 32 + 1) * 32
+        need_pad = (ph != h or pw != w)
+
         with torch.no_grad():
             for i in range(1, len(frames) - 1):
                 I0 = torch.from_numpy(frames[i - 1]).permute(2, 0, 1).float().unsqueeze(0).to(self._device) / 255.0
                 I1_gt = torch.from_numpy(frames[i]).permute(2, 0, 1).float().unsqueeze(0).to(self._device) / 255.0
                 I2 = torch.from_numpy(frames[i + 1]).permute(2, 0, 1).float().unsqueeze(0).to(self._device) / 255.0
 
+                if need_pad:
+                    I0 = torch.nn.functional.pad(I0, (0, pw - w, 0, ph - h))
+                    I1_gt = torch.nn.functional.pad(I1_gt, (0, pw - w, 0, ph - h))
+                    I2 = torch.nn.functional.pad(I2, (0, pw - w, 0, ph - h))
+
                 # RIFE interpolation at t=0.5
                 I1_pred = self._rife_model.inference(I0, I2)
 
-                # L1 error
-                diff = torch.mean(torch.abs(I1_pred - I1_gt)).item()
+                # Crop back to original size and compute L1 error
+                diff = torch.mean(torch.abs(I1_pred[:, :, :h, :w] - I1_gt[:, :, :h, :w])).item()
                 errors.append(diff)
 
         avg_error = float(np.mean(errors))
