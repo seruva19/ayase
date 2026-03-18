@@ -41,6 +41,7 @@ class MotionAmplitudeModule(PipelineModule):
     default_config = {
         "amplitude_threshold": 5.0,
         "max_frames": 150,
+        "scoring_mode": "binary",  # "binary" (0/100 match) or "continuous" (smooth 0-100)
     }
 
     def __init__(self, config=None):
@@ -111,7 +112,18 @@ class MotionAmplitudeModule(PipelineModule):
                 return sample
 
             predicted = "large" if abs(mean_flow) > self.amplitude_threshold else "slow"
-            score = 100.0 if predicted == expected else 0.0
+
+            scoring_mode = self.config.get("scoring_mode", "binary")
+            if scoring_mode == "continuous":
+                # Continuous score: how well flow matches expected amplitude
+                if expected in ("large", "fast"):
+                    # Higher flow = better match; sigmoid-like scaling
+                    score = min(100.0, abs(mean_flow) / self.amplitude_threshold * 50.0)
+                else:
+                    # Lower flow = better match
+                    score = max(0.0, 100.0 - abs(mean_flow) / self.amplitude_threshold * 50.0)
+            else:
+                score = 100.0 if predicted == expected else 0.0
 
             from ayase.models import QualityMetrics
             if sample.quality_metrics is None:
