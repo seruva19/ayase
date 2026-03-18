@@ -106,12 +106,12 @@ class _StubModule(PipelineModule):
 class TestMetricCount:
     """Verify the metric count claimed in the overview."""
 
-    def test_quality_metrics_has_231_fields(self):
-        """README: '231 quality metrics across visual, temporal, audio, …'"""
+    def test_quality_metrics_has_246_fields(self):
+        """README: '246 quality metrics across visual, temporal, audio, …'"""
         qm = QualityMetrics()
         # Pydantic model_fields gives declared fields (excludes _FIELD_GROUPS etc.)
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 231, f"Expected 231, got {field_count}"
+        assert field_count == 246, f"Expected 246, got {field_count}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -150,7 +150,7 @@ README_METRICS = [
     "vqa_a_score", "vqa_t_score", "is_score", "sd_score",
     "gradient_detail", "blip_bleu", "detection_score", "count_score",
     "color_score", "celebrity_id_score", "identity_loss",
-    "face_recognition_score", "ocr_score", "ocr_fidelity",
+    "face_recognition_score", "ocr_score", "ocr_fidelity", "ocr_cer", "ocr_wer",
     "i2v_clip", "i2v_dino", "i2v_lpips", "i2v_quality",
     "action_score", "action_confidence", "flow_score", "motion_ac_score",
     "warping_error", "clip_temp", "face_consistency", "psnr", "ssim",
@@ -202,12 +202,17 @@ README_METRICS = [
     "pu_psnr", "pu_ssim", "max_fall", "max_cll", "hdr_vdp",
     "delta_ictcp", "ciede2000", "psnr_hvs", "psnr_hvs_m", "cgvqm",
     "strred", "p1203_mos", "nemo_quality_score", "nemo_quality_label",
+    "human_fidelity_score", "physics_score", "commonsense_score",
+    "creativity_score", "chronomagic_mt_score", "chronomagic_ch_score",
+    "compbench_attribute", "compbench_object_rel", "compbench_action",
+    "compbench_spatial", "compbench_numeracy", "compbench_scene",
+    "compbench_overall",
 ]
 
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 231
+        assert len(README_METRICS) == 246
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):

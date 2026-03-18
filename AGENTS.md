@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Ayase is a modular media quality metrics toolkit. It provides 238 pipeline modules across 198 files for analyzing video/image quality, text-video alignment, motion, temporal consistency, safety, audio, and more.
+Ayase is a modular media quality metrics toolkit. It provides 218 pipeline modules across 201 files for analyzing video/image quality, text-video alignment, motion, temporal consistency, safety, audio, and more.
 
 - **Language:** Python 3.9+
 - **Build:** Hatchling (`pyproject.toml`)
@@ -19,7 +19,7 @@ src/ayase/
 ├── __main__.py          # python -m ayase
 ├── cli.py               # Typer CLI (scan, run, filter, stats, tui, modules, config)
 ├── config.py            # AyaseConfig (pydantic-settings), resolve_model_path, download_model_file
-├── models.py            # Sample, QualityMetrics (~175 fields), ValidationIssue, DatasetStats
+├── models.py            # Sample, QualityMetrics (244 fields), ValidationIssue, DatasetStats
 ├── pipeline.py          # Pipeline, PipelineModule (ABC), ModuleRegistry, AyasePipeline
 ├── profile.py           # PipelineProfile, load_profile, instantiate_profile_modules
 ├── scanner.py           # DatasetScanner, scan_dataset
@@ -27,7 +27,7 @@ src/ayase/
 ├── tui.py               # Textual TUI (6 screens)
 ├── video.py             # Video utilities
 ├── audio.py             # Audio utilities
-├── modules/             # 198 module files, 238 PipelineModule subclasses
+├── modules/             # 201 module files, 218 PipelineModule subclasses
 │   ├── __init__.py      # Explicit imports of ~90 key modules + __all__
 │   └── *.py             # All auto-discovered at runtime via ModuleRegistry
 ├── third_party/         # Vendored code (DOVER, FastVQA, Kandinsky)
@@ -46,7 +46,7 @@ tests/
 ├── test_tui.py
 └── modules/
     ├── conftest.py      # Shared fixtures: synthetic_image, synthetic_video, image_sample, video_sample
-    └── test_*.py        # Per-category module tests (18 files)
+    └── test_*.py        # Per-category module tests (19 files)
 ```
 
 ## Critical Rules
@@ -68,7 +68,7 @@ Before setting `sample.quality_metrics.my_field = value`, the field must exist i
 
 ### 4. Never Break Existing Tests
 
-768 tests must pass. Run `pytest tests/ -x -q` before considering any change complete. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
+~450 tests must pass. Run `pytest tests/ -x -q` before considering any change complete. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
 
 ### 5. Module `__init__.py` vs Auto-Discovery
 
@@ -447,7 +447,7 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 ### 2. Tests
 
 - [ ] Write tests in `tests/modules/test_*.py`
-- [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count (currently 231)
+- [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count (currently 246)
 - [ ] Run `pytest tests/ -x -q` — full regression must pass
 
 ### 3. README.md
@@ -491,7 +491,7 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 
 `tests/test_readme_contract.py` enforces structural invariants. When adding metrics, you MUST update:
 
-1. **Field count** — `test_quality_metrics_has_231_fields()` asserts exact count
+1. **Field count** — `test_quality_metrics_has_246_fields()` asserts exact count
 2. **`README_METRICS` list** — hardcoded list of all field names in order; used by:
    - `test_readme_table_count()` — list length matches field count
    - `test_readme_metric_exists_in_model()` — every listed name is a QualityMetrics field

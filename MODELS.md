@@ -14,7 +14,7 @@ All support `cache_dir=models_dir` for local storage.
 
 | Model ID | Used By | License | Size |
 |----------|---------|---------|------|
-| `openai/clip-vit-base-patch32` | semantic_alignment, clip_temporal, sd_reference, action_recognition, background_consistency, deepfake_detection, generative_distribution_metrics, harmful_content, scene_tagging, t2v_score, video_memorability, video_text_matching, video_type_classifier, aigv_assessor, dataset_analytics, tifa, umap_projection | MIT | ~600 MB |
+| `openai/clip-vit-base-patch32` | semantic_alignment, clip_temporal, sd_reference, action_recognition, background_consistency, deepfake_detection, generative_distribution_metrics, harmful_content, scene_tagging, t2v_score, video_memorability, video_text_matching, video_type_classifier, aigv_assessor, dataset_analytics, tifa, umap_projection, creativity, chronomagic, t2v_compbench | MIT | ~600 MB |
 | `openai/clip-vit-large-patch14` | aesthetic_scoring | MIT | ~1.7 GB |
 
 ### Vision-Language
@@ -23,9 +23,9 @@ All support `cache_dir=models_dir` for local storage.
 |----------|---------|---------|------|
 | `Salesforce/blip-image-captioning-base` | captioning (default) | BSD-3-Clause | ~1 GB |
 | `Salesforce/blip2-opt-2.7b` | captioning (configurable BLIP-2 mode) | MIT | ~15 GB |
-| `dandelin/vilt-b32-finetuned-vqa` | commonsense, tifa | Apache 2.0 | ~500 MB |
+| `dandelin/vilt-b32-finetuned-vqa` | commonsense (tier 2), tifa | Apache 2.0 | ~500 MB |
 | `llava-hf/llava-v1.6-mistral-7b-hf` | llm_descriptive_qa | Apache 2.0 | ~15 GB |
-| `llava-hf/llava-1.5-7b-hf` | vlm_judge | LLaMA 2 license | ~14 GB |
+| `llava-hf/llava-1.5-7b-hf` | vlm_judge, creativity, commonsense | LLaMA 2 license | ~14 GB |
 
 ### Video Understanding
 
@@ -60,6 +60,7 @@ All support `cache_dir=models_dir` for local storage.
 | `nvidia/segformer-b0-finetuned-ade-512-512` | semantic_segmentation_consistency | Other (Nvidia) | ~15 MB |
 | `Falconsai/nsfw_image_detection` | nsfw | Apache 2.0 | ~350 MB |
 | `facebook/dinov2-base` | subject_consistency | Apache 2.0 | ~350 MB |
+| `depth-anything/Depth-Anything-V2-Small-hf` | t2v_compbench (spatial verification) | Apache 2.0 | ~100 MB |
 
 ### Audio
 
@@ -149,7 +150,7 @@ Downloaded via `torch.hub.load()`. Cached in `$TORCH_HOME/hub/`.
 | `intel-isl/MiDaS` | `MiDaS_small` | depth_consistency, depth_map_quality | MIT | ~25 MB |
 | `intel-isl/MiDaS` | `DPT_Hybrid` | depth_consistency (large mode) | MIT | ~470 MB |
 | `intel-isl/MiDaS` | `DPT_Large` | depth_consistency (large mode) | MIT | ~1.3 GB |
-| `facebookresearch/co-tracker` | `cotracker2` | trajan | CC-BY-NC 4.0 | ~40 MB |
+| `facebookresearch/co-tracker` | `cotracker2` | trajan, physics, dynamics_controllability | CC-BY-NC 4.0 | ~40 MB |
 
 ---
 
@@ -266,6 +267,7 @@ Downloaded automatically by `pyiqa.create_metric()`. Weights managed by PyIQA in
 | Model | Used By | License |
 |-------|---------|---------|
 | FaceMesh (468 landmarks) | identity_loss (geometric fallback), face_landmark_quality | Apache 2.0 |
+| Pose (33 landmarks) | human_fidelity (tier 2) | Apache 2.0 |
 
 **Note:** Bundled with `mediapipe` package, no separate download needed.
 
@@ -274,7 +276,7 @@ Downloaded automatically by `pyiqa.create_metric()`. Weights managed by PyIQA in
 | Model | Used By | License |
 |-------|---------|---------|
 | `yolov8n.pt` | object_detection, object_permanence | AGPL-3.0 |
-| `yolov8s-world.pt` | object_detection (open vocabulary) | AGPL-3.0 |
+| `yolov8s-world.pt` | object_detection (open vocabulary), t2v_compbench | AGPL-3.0 |
 
 **Note:** Auto-downloaded by ultralytics on first use.
 
@@ -313,6 +315,13 @@ These modules try multiple models in order, falling back to lighter alternatives
 | tifa | ViLT VQA + rule-based QG | CLIP similarity proxy | Heuristic |
 | nemo_curator | nvidia/quality-classifier-deberta | FastText | Heuristic |
 | umap_projection | UMAP | t-SNE | sklearn PCA / numpy PCA |
+| physics | CoTracker2 | Lucas-Kanade (OpenCV) | Frame differencing |
+| human_fidelity | DWPose | MediaPipe Pose | Haar cascades + skin |
+| commonsense | LLaVA-1.5-7b | ViLT VQA | Color/frequency analysis |
+| dynamics_controllability | CoTracker2 | Farneback (OpenCV) | Keyword matching |
+| creativity | LLaVA-1.5-7b | CLIP novelty + LAION aesthetic | Color entropy + asymmetry |
+| chronomagic | CLIP ViT-B/32 | - | Pixel temporal gradient |
+| t2v_compbench | YOLO-World + Depth Anything + CLIP | CLIP-only | Text parsing + spatial |
 
 ---
 
