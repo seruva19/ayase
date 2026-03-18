@@ -65,6 +65,44 @@ def _normalized_edit_distance(reference: str, hypothesis: str) -> float:
     return d / max(len(reference), len(hypothesis))
 
 
+def _character_error_rate(reference: str, hypothesis: str) -> float:
+    """Compute Character Error Rate (CER) between two strings.
+
+    CER = Levenshtein(ref, hyp) / len(ref).
+    Returns a value in [0, ∞) where 0 means identical strings.
+    Clamped to [0, 1] for scoring purposes.
+    """
+    if not reference:
+        return 0.0 if not hypothesis else 1.0
+    try:
+        from Levenshtein import distance as lev_distance
+
+        d = lev_distance(reference, hypothesis)
+    except ImportError:
+        d = _levenshtein_dp(reference, hypothesis)
+    return min(1.0, d / len(reference))
+
+
+def _word_error_rate(reference: str, hypothesis: str) -> float:
+    """Compute Word Error Rate (WER) between two strings.
+
+    WER = Levenshtein(ref_words, hyp_words) / len(ref_words).
+    Returns a value in [0, ∞) where 0 means identical word sequences.
+    Clamped to [0, 1] for scoring purposes.
+    """
+    ref_words = reference.split()
+    hyp_words = hypothesis.split()
+    if not ref_words:
+        return 0.0 if not hyp_words else 1.0
+    try:
+        from Levenshtein import distance as lev_distance
+
+        d = lev_distance(" ".join(ref_words), " ".join(hyp_words))
+    except ImportError:
+        d = _levenshtein_dp(" ".join(ref_words), " ".join(hyp_words))
+    return min(1.0, d / len(ref_words))
+
+
 def _levenshtein_dp(s: str, t: str) -> int:
     """Minimal Levenshtein distance implementation (no external deps)."""
     m, n = len(s), len(t)
@@ -162,12 +200,16 @@ class OCRFidelityModule(PipelineModule):
             recognized = " ".join(all_recognized).lower()
 
             ned = _normalized_edit_distance(expected, recognized)
+            cer = _character_error_rate(expected, recognized)
+            wer = _word_error_rate(expected, recognized)
             score = max(0.0, (1.0 - ned)) * 100.0
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.ocr_fidelity = round(score, 2)
             sample.quality_metrics.ocr_score = round(score, 2)
+            sample.quality_metrics.ocr_cer = round(cer, 4)
+            sample.quality_metrics.ocr_wer = round(wer, 4)
 
             if score < 30.0:
                 sample.validation_issues.append(
@@ -178,6 +220,8 @@ class OCRFidelityModule(PipelineModule):
                             "expected_text": expected,
                             "recognized_text": recognized[:200],
                             "ocr_fidelity": score,
+                            "cer": round(cer, 4),
+                            "wer": round(wer, 4),
                         },
                         recommendation="Video may not be rendering the requested text correctly.",
                     )
