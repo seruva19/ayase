@@ -188,7 +188,7 @@ class CommonsenseModule(PipelineModule):
 
             # Score: "correct" answers contribute positively
             if flag_answer is not None:
-                if answer.lower() != flag_answer:
+                if answer.lower() == flag_answer:
                     correct_count += 1
                 else:
                     issues.append(

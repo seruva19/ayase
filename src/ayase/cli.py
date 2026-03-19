@@ -635,6 +635,58 @@ def modules_docs(
         print(content)
 
 
+@modules_app.command("models")
+def modules_models(
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: stdout)")] = None,
+) -> None:
+    """Generate MODELS.md catalog of all ML models and weights."""
+    config = AyaseConfig.load()
+    _discover_all_modules(config)
+
+    from .models_doc import generate_models_doc
+
+    content = generate_models_doc()
+
+    if output:
+        output.write_text(content, encoding="utf-8")
+        console.print(f"[green]Written to {output}[/green]")
+    else:
+        print(content)
+
+
+@modules_app.command("sync-readme")
+def modules_sync_readme(
+    readme: Annotated[Path, typer.Option("--readme", "-r", help="README.md path")] = Path("README.md"),
+) -> None:
+    """Update module/field counts in README.md to match reality."""
+    import re as _re
+
+    config = AyaseConfig.load()
+    _discover_all_modules(config)
+
+    all_modules = ModuleRegistry.list_modules()
+    total = len([n for n in all_modules if ModuleRegistry.get_module(n) is not None])
+
+    from .models import QualityMetrics
+    n_fields = len(QualityMetrics.model_fields)
+
+    if not readme.exists():
+        console.print(f"[red]{readme} not found[/red]")
+        raise typer.Exit(code=1)
+
+    text = readme.read_text(encoding="utf-8")
+    new_text = _re.sub(
+        r"\*\*\d+ modules\*\*,\s*\*\*\d+ quality metrics\*\*",
+        f"**{total} modules**, **{n_fields} quality metrics**",
+        text,
+    )
+    if new_text != text:
+        readme.write_text(new_text, encoding="utf-8")
+        console.print(f"[green]Updated README.md: {total} modules, {n_fields} fields[/green]")
+    else:
+        console.print(f"[green]README.md already up to date ({total} modules, {n_fields} fields)[/green]")
+
+
 # Config subcommand
 config_app = typer.Typer(help="Manage configuration")
 app.add_typer(config_app, name="config")

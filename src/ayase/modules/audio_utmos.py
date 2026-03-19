@@ -68,14 +68,14 @@ class AudioUTMOSModule(PipelineModule):
         if not self._ml_available:
             return sample
 
-        # UTMOS works on audio — skip pure video without audio
-        if sample.is_video:
-            return sample
-
         try:
             audio = self._load_audio(sample.path)
             if audio is None:
-                return sample
+                # For video files, try extracting audio via ffmpeg
+                if sample.is_video:
+                    audio = self._extract_audio_from_video(sample.path)
+                if audio is None:
+                    return sample
 
             import torch
 
@@ -101,6 +101,33 @@ class AudioUTMOSModule(PipelineModule):
             logger.warning(f"UTMOS failed for {sample.path}: {e}")
 
         return sample
+
+    def _extract_audio_from_video(self, path: Path) -> Optional[np.ndarray]:
+        """Extract audio from a video file via ffmpeg, return as float32 array."""
+        import subprocess
+        import tempfile
+
+        try:
+            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            tmp.close()
+            cmd = [
+                "ffmpeg", "-y", "-i", str(path),
+                "-vn", "-ac", "1", "-ar", str(self.target_sr),
+                "-sample_fmt", "s16", tmp.name,
+            ]
+            result = subprocess.run(cmd, capture_output=True, timeout=30)
+            if result.returncode != 0:
+                Path(tmp.name).unlink(missing_ok=True)
+                return None
+            audio = self._load_audio(Path(tmp.name))
+            Path(tmp.name).unlink(missing_ok=True)
+            return audio
+        except FileNotFoundError:
+            logger.debug("ffmpeg not found — cannot extract audio from video")
+            return None
+        except Exception as e:
+            logger.debug(f"Video audio extraction failed: {e}")
+            return None
 
     def _load_audio(self, path: Path) -> Optional[np.ndarray]:
         try:

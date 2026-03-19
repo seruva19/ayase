@@ -143,7 +143,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
             # dHash for duplicate detection
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             h = self._dhash(gray)
-            self._hashes.append((sample.path.name, h))
+            self._hashes.append((str(sample.path), h))
 
             # Colour histogram fallback
             self._histograms.append(self._colour_histogram(frame))

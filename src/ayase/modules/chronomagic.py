@@ -162,7 +162,7 @@ class ChronoMagicModule(PipelineModule):
         std_norm = gradient_norms.std() + 1e-8
         hallucination_mask = gradient_norms > (mean_norm + threshold * std_norm)
         hallucination_frac = float(np.mean(hallucination_mask))
-        ch_score = hallucination_frac  # Lower = fewer hallucinations
+        ch_score = 1.0 - hallucination_frac  # Higher = fewer hallucinations
 
         return (
             float(np.clip(mt_score, 0.0, 1.0)),

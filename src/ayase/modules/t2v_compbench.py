@@ -97,7 +97,7 @@ class T2VCompBenchModule(PipelineModule):
         depth_ok = self._try_load_depth()
 
         if yolo_ok and clip_ok:
-            self._backend = "yolo_depth" if depth_ok else "yolo_depth"
+            self._backend = "yolo_depth" if depth_ok else "yolo_clip"
             logger.info("T2VCompBench using YOLO+CLIP%s backend", "+Depth" if depth_ok else "")
         elif clip_ok:
             self._backend = "clip"

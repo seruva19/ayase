@@ -53,7 +53,7 @@ class ImagingQualityModule(PipelineModule):
             # Fast noise estimate (H/W derivatives)
             h, w = gray.shape
             M = [[1, -2, 1], [-2, 4, -2], [1, -2, 1]]
-            sigma = np.sum(np.sum(np.absolute(cv2.filter2D(gray, -1, np.array(M)))))
+            sigma = np.sum(np.sum(np.absolute(cv2.filter2D(gray, cv2.CV_64F, np.array(M, dtype=np.float64)))))
             sigma = sigma * np.sqrt(0.5 * np.pi) / (6 * (w - 2) * (h - 2))
 
             # Calculate difference across 8x8 block boundaries

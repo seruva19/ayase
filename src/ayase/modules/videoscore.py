@@ -146,6 +146,6 @@ class VideoScoreModule(PipelineModule):
         numbers = re.findall(r"(\d+\.?\d*)", response.split(":")[-1] if ":" in response else response)
         for num_str in numbers:
             val = float(num_str)
-            if 0.5 <= val <= 5.0:
+            if 0.0 <= val <= 5.0:
                 return val
         return None

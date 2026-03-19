@@ -11,7 +11,8 @@ Score range: 0.0+ (lower = better, 0 = identical spectra).
   >4     poor
 
 References:
-    - Gray & Markel (1976), "Distance Measures for Speech Processing"
+    - Inspired by log-spectral distance measures (Gray & Markel, 1976),
+      adapted to mel-spectrogram domain for modern audio quality assessment
 """
 
 import logging
