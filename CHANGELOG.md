@@ -5,6 +5,23 @@ All notable changes to Ayase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14]
+
+### Added
+
+- **audio_estoi**: ESTOI speech intelligibility (full-reference, pystoi)
+- **audio_mcd**: Mel Cepstral Distortion for TTS/voice conversion (librosa)
+- **audio_si_sdr**: Scale-Invariant Signal-to-Distortion Ratio (numpy, no ML deps)
+- **audio_lpdist**: Log-Power Spectral Distance (librosa)
+- **audio_utmos**: UTMOS no-reference MOS prediction (SpeechMOS)
+
+## [0.1.13]
+
+### Fixed
+
+- **temporal_flickering**: RAFT padding fix — pad frames to multiple of 8 before inference, crop results back. Fixes crash on 1080p video (540px height not divisible by 8)
+- **ocr_fidelity**: added CER (Character Error Rate) and WER (Word Error Rate) alongside NED
+
 ## [0.1.10]
 
 ### Added
