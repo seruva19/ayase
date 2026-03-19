@@ -87,22 +87,32 @@ class PipelineModule(ABC):
         import re as _re
         from .models import QualityMetrics
 
-        # Field descriptions from QualityMetrics
+        # Field descriptions from QualityMetrics (source comments + pydantic fields)
         field_descs: Dict[str, str] = {}
         try:
+            # Use pydantic model_fields for reliable field enumeration
+            for fname in QualityMetrics.model_fields:
+                field_descs[fname] = ""
+            # Enrich with inline comments from source
             src_models = inspect.getsource(QualityMetrics)
             for m in _re.finditer(
-                r"(\w+):\s*Optional\[.*?\]\s*=\s*None\s*(?:#\s*(.*))?", src_models
+                r"(\w+):\s*Optional\[.*?#\s*(.*)", src_models
             ):
-                field_descs[m.group(1)] = (m.group(2) or "").strip()
+                if m.group(1) in field_descs:
+                    field_descs[m.group(1)] = m.group(2).strip()
         except (TypeError, OSError):
             pass
 
-        # Source of this module's process() method
+        # Source of the entire module file (not just the class)
         try:
-            src = inspect.getsource(cls)
+            module_file = inspect.getfile(cls)
+            with open(module_file, "r", encoding="utf-8", errors="replace") as _f:
+                src = _f.read()
         except (TypeError, OSError):
-            src = ""
+            try:
+                src = inspect.getsource(cls)
+            except (TypeError, OSError):
+                src = ""
 
         # Input type: infer from process() checks
         needs_ref = "reference_path" in src

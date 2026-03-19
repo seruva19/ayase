@@ -90,17 +90,17 @@ def main() -> None:
         except Exception:
             continue
 
-        for attr in dir(mod):
+        for attr in sorted(dir(mod)):
             obj = getattr(mod, attr)
             if (
                 isinstance(obj, type)
                 and issubclass(obj, PipelineModule)
                 and obj is not PipelineModule
+                and obj.name != "unnamed_module"
             ):
                 meta = obj.get_metadata()
                 meta["group"] = get_group(meta["name"], meta["input_type"])
                 results.append(meta)
-                break
 
     results.sort(key=lambda x: (x["group"], x["name"]))
 
