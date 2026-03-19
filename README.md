@@ -42,7 +42,7 @@ See [MODELS.md](MODELS.md) for the complete inventory of all pretrained weights 
 
 ## Metrics
 
-208 modules across image, video, and audio quality assessment. See **[METRICS.md](METRICS.md)** for the full reference with config parameters.
+208 modules across image, video, and audio quality assessment. See [METRICS.md](METRICS.md) for the full reference with config parameters.
 
 Categories: visual quality (NR/FR), perceptual similarity, motion, temporal consistency, audio, text alignment, HDR, safety, face, depth, codec.
 
@@ -221,4 +221,4 @@ mypy src/ayase
 
 ## License
 
-MIT -- see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

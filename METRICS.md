@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-223 modules, 261 output fields.
+224 modules, 261 output fields.
 
 ## Audio Quality
 
@@ -162,6 +162,7 @@
 | `dynamics_controllability` | vid | `dynamics_controllability` - Motion control fidelity | Assesses motion controllability based on text-motion alignment | `subsample=16` |
 | `dynamics_range` | vid | `dynamics_range` - Extent of content variation | Measures extent of motion and content variation (DEVIL protocol) | `scene_change_threshold=30.0` |
 | `embedding` | img/vid | - | Calculates X-CLIP embeddings for similarity search | `model_name=microsoft/xclip-base-patch32`, `num_frames=8` |
+| `example` | img/vid | - | Example plugin that logs sample paths (template for custom plugins) | `log_valid=True` |
 | `exposure` | img/vid | - | Checks for overexposure, underexposure, and low contrast using histograms | `overexposure_threshold=0.3`, `underexposure_threshold=0.3`, +1 |
 | `generative_distribution` | img/vid | - | Precision / Recall / Coverage / Density (batch metric) | `k=5`, `device=auto` |
 | `generative_distribution_metrics` | img/vid | - | Precision / Recall / Coverage / Density (batch metric) | `k=5`, `device=auto` |

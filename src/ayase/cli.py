@@ -616,6 +616,25 @@ def modules_check() -> None:
     console.print(f"\n[green]All {len(all_modules)} module(s) loaded successfully.[/green]")
 
 
+@modules_app.command("docs")
+def modules_docs(
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: stdout)")] = None,
+) -> None:
+    """Generate METRICS.md reference from module metadata."""
+    config = AyaseConfig.load()
+    _discover_all_modules(config)
+
+    from .metrics_doc import generate_metrics_doc
+
+    content = generate_metrics_doc()
+
+    if output:
+        output.write_text(content, encoding="utf-8")
+        console.print(f"[green]Written to {output}[/green]")
+    else:
+        print(content)
+
+
 # Config subcommand
 config_app = typer.Typer(help="Manage configuration")
 app.add_typer(config_app, name="config")
