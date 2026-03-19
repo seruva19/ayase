@@ -272,6 +272,11 @@ class QualityMetrics(BaseModel):
         # Audio
         "audio_quality_score": "audio",
         "pesq_score": "audio",
+        "estoi_score": "audio",
+        "mcd_score": "audio",
+        "si_sdr_score": "audio",
+        "lpdist_score": "audio",
+        "utmos_score": "audio",
         "av_sync_offset": "audio",
         "visqol": "audio",
         "dnsmos_overall": "audio",
@@ -567,6 +572,11 @@ class QualityMetrics(BaseModel):
 
     # Audio quality metrics
     pesq_score: Optional[float] = None  # PESQ (-0.5 to 4.5, higher=better)
+    estoi_score: Optional[float] = None  # ESTOI intelligibility (0-1, higher=better)
+    mcd_score: Optional[float] = None  # Mel Cepstral Distortion (dB, lower=better)
+    si_sdr_score: Optional[float] = None  # Scale-Invariant SDR (dB, higher=better)
+    lpdist_score: Optional[float] = None  # Log-Power Spectral Distance (lower=better)
+    utmos_score: Optional[float] = None  # UTMOS predicted MOS (1-5, higher=better)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
 
     # SOTA no-reference VQA
