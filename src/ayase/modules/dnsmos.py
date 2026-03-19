@@ -35,6 +35,7 @@ class DNSMOSModule(PipelineModule):
         # Try torchmetrics DNSMOS
         try:
             from torchmetrics.audio import DeepNoiseSuppression
+            self._metric_cls = DeepNoiseSuppression
             self._backend = "torchmetrics"
             self._ml_available = True
             logger.info("DNSMOS module initialised (torchmetrics)")
@@ -65,9 +66,8 @@ class DNSMOSModule(PipelineModule):
     def _compute_torchmetrics(self, audio, sr: int) -> Optional[dict]:
         try:
             import torch
-            from torchmetrics.audio import DeepNoiseSuppression
 
-            metric = DeepNoiseSuppression(fs=sr, personalized=False)
+            metric = self._metric_cls(fs=sr, personalized=False)
             if not isinstance(audio, torch.Tensor):
                 import numpy as np
                 if isinstance(audio, np.ndarray):

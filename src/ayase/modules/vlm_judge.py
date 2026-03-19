@@ -52,7 +52,10 @@ class VLMJudgeModule(PipelineModule):
         super().__init__(config)
         self.model_name = self.config.get("model_name", "llava-hf/llava-1.5-7b-hf")
         self.max_new_tokens = self.config.get("max_new_tokens", 128)
-        self.verification_prompt = self.config.get("verification_prompt")
+        self.verification_prompt = self.config.get(
+            "verification_prompt",
+            "Does the following text accurately describe the image? Answer only with 'Yes' or 'No' and explain why briefly. Text: '{caption}'"
+        )
 
         self._model = None
         self._processor = None

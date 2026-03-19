@@ -109,7 +109,9 @@ class VQAScoreModule(PipelineModule):
         text = sample.caption.text
         subsample = self.config.get("subsample", 4)
 
-        text_tok = clip_tokenize = __import__("clip").tokenize([text]).to(self._device)
+        import clip
+
+        text_tok = clip.tokenize([text]).to(self._device)
 
         frames = []
         if sample.is_video:

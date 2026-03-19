@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from typing import Optional
 
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
+from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,18 @@ class CameraMotionModule(PipelineModule):
             frame_idx += 1
             
         cap.release()
-        
+
+        # Store camera motion score as a stability metric (0-1, higher = more stable)
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        if motion_errors:
+            avg_shake = float(np.mean(motion_errors))
+            # Map shake magnitude to 0-1 stability score
+            stability = 1.0 / (1.0 + avg_shake / 20.0)
+            sample.quality_metrics.camera_motion_score = round(stability, 4)
+        else:
+            sample.quality_metrics.camera_motion_score = 1.0  # No shake detected
+
         if len(motion_errors) > 3:
             avg_shake = np.mean(motion_errors)
             sample.validation_issues.append(

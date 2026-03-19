@@ -1,6 +1,461 @@
 # Ayase Metrics Reference
 
-224 modules, 261 output fields.
+Auto-generated reference for all pipeline modules. Run `ayase modules docs` to regenerate.
+
+## Summary
+
+| Stat | Value |
+|------|-------|
+| Total modules | **224** |
+| Unique output fields | **229** |
+| QualityMetrics fields | 251 |
+| Total output mappings | 263 |
+| Tiered-backend modules | 35 |
+| GPU-accelerated modules | 100 |
+| Categories | 13 |
+
+### Modules by Category
+
+```
+  No-Reference Quality           ██████████████████████████████ 95
+  Full-Reference & Distribution  ███████████ 36
+  Motion & Temporal              ███████ 23
+  Text & Semantic                █████ 16
+  Video Quality Assessment       ████ 15
+  Audio Quality                  ███ 10
+  Video Generation               ██ 8
+  Safety & Content               █ 6
+  Face & Identity                █ 4
+  HDR & Color                    █ 4
+  Codec & Technical               3
+  Depth                           3
+  Image-to-Video Reference        1
+```
+
+### By Input Type
+
+```
+  image+video       ██████████████████████████████ 100
+  video-only        ██████████████████ 63
+  full-reference    ██████████████ 48
+  caption-required  ██ 9
+  audio             █ 4
+```
+
+### Backend Usage
+
+```
+  torch         ██████████████████████████████ 105
+  opencv        ██████████████████ 63
+  pyiqa         █████████████ 48
+  transformers  ███████████ 41
+  torchvision   ███ 11
+  ffmpeg        ███ 11
+  piq            3
+  torchmetrics   1
+```
+
+### Speed Tiers
+
+```
+  medium (GPU, ~1s)    ██████████████████████████████ 112
+  fast (CPU, <0.1s)    ████████████████████████████ 105
+  slow (LLM/VLM, >5s)  █ 7
+```
+
+### Top Required Packages
+
+```
+  torch          ██████████████████████████████ 105
+  opencv-python  ██████████████████ 63
+  pyiqa          █████████████ 48
+  transformers   ███████████ 41
+  Pillow         ██████████ 36
+  torchvision    ███ 13
+  librosa        ██ 8
+  scipy          █ 6
+  soundfile      █ 6
+  mediapipe      █ 4
+  scikit-learn   █ 4
+  ultralytics     3
+  piq             3
+  lpips           3
+  scenedetect     2
+```
+
+### Recommended Module Presets
+
+**Quick Scan** — Fast quality triage (~1s/sample, CPU-only)
+```toml
+modules = ['basic', 'metadata', 'exposure', 'letterbox']
+```
+
+**Dataset Curation** — Clean & deduplicate datasets for training
+```toml
+modules = ['basic', 'aesthetic', 'dedup', 'nsfw', 'watermark_classifier', 'brisque', 'metadata', 'embedding', 'diversity_selection']
+```
+
+**Video Generation Eval** — Evaluate text-to-video model outputs (VBench-style)
+```toml
+modules = ['aesthetic', 'subject_consistency', 'background_consistency', 'temporal_flickering', 'motion_smoothness', 'clip_iqa', 'video_text_matching', 'dover', 'ti_si']
+```
+
+**Codec Comparison** — Compare video codec quality (needs reference)
+```toml
+modules = ['vmaf', 'ssimulacra2', 'psnr_hvs', 'ms_ssim', 'butteraugli', 'cambi', 'codec_specific_quality']
+```
+
+**Audio Quality** — Speech/audio quality assessment
+```toml
+modules = ['audio_pesq', 'audio_utmos', 'dnsmos', 'audio_si_sdr', 'audio_estoi', 'visqol']
+```
+
+### Benchmark Coverage
+
+| Benchmark | Status |
+|-----------|--------|
+| VBench (16/16) | Covered |
+| VBench-2.0 (5/5) | Covered |
+| EvalCrafter (17/17) | Covered |
+| ChronoMagic-Bench (2/2) | Covered |
+| T2V-CompBench (7/7) | Covered |
+| DEVIL (4/4) | Covered |
+
+### Field Collisions
+
+Multiple modules write to the same QualityMetrics field:
+
+| Field | Writers |
+|-------|---------|
+| `aesthetic_score` | `aesthetic`, `aesthetic_scoring` |
+| `artifacts_score` | `basic_quality`, `imaging_quality` |
+| `blur_score` | `basic_quality`, `cpbd` |
+| `camera_motion_score` | `camera_motion`, `stabilized_motion` |
+| `clip_score` | `semantic_alignment`, `video_text_matching` |
+| `clip_temp` | `clip_temporal`, `video_text_matching` |
+| `is_score` | `inception_score`, `object_detection` |
+| `motion_score` | `motion`, `stabilized_motion` |
+| `noise_score` | `basic_quality`, `imaging_quality` |
+| `technical_score` | `basic_quality`, `4k_vqa` |
+| `text_overlay_score` | `text_detection`, `text_overlay` |
+
+### Orphaned QualityMetrics Fields
+
+19 fields in `QualityMetrics` model that no module populates:
+
+- `audio_quality_score` (audio)
+- `compbench_action` (alignment)
+- `compbench_attribute` (alignment)
+- `compbench_numeracy` (alignment)
+- `compbench_object_rel` (alignment)
+- `compbench_overall` (alignment)
+- `compbench_scene` (alignment)
+- `compbench_spatial` (alignment)
+- `compression_score` (basic)
+- `depth_score` (spatial)
+- `fvd` (distribution)
+- `fvmd` (distribution)
+- `jedi` (distribution)
+- `kvd` (distribution)
+- `lpips` (fr_quality)
+- `psnr` (fr_quality)
+- `ssim` (fr_quality)
+- `temporal_consistency` (temporal)
+- `usability_score` (meta)
+
+### Module Dependency Graph
+
+Modules that read QualityMetrics fields written by other modules:
+
+```mermaid
+graph LR
+    4k_vqa --> usability_rate
+    aesthetic --> knowledge_graph
+    aesthetic --> usability_rate
+    aesthetic_scoring --> knowledge_graph
+    aesthetic_scoring --> usability_rate
+    basic_quality --> usability_rate
+    semantic_alignment --> aigv_assessor
+    video_text_matching --> aigv_assessor
+```
+
+### Score Direction Reference
+
+| Field | Direction | Range | Category |
+|-------|-----------|-------|----------|
+| `action_confidence` | — | 0-100 | scene |
+| `action_score` | ↑ higher=better | 0-100 | scene |
+| `aesthetic_score` | ↑ higher=better | — | aesthetic |
+| `afine_score` | ↑ higher=better | — | nr_quality |
+| `ahiq` | ↑ higher=better | higher=better | fr_quality |
+| `ai_generated_probability` | — | — | safety |
+| `aigv_alignment` | — | — | alignment |
+| `aigv_dynamic` | — | — | motion |
+| `aigv_static` | — | — | nr_quality |
+| `aigv_temporal` | — | — | temporal |
+| `arniqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `artifacts_score` | ↑ higher=better | — | basic |
+| `auto_caption` | — | — | text |
+| `av_sync_offset` | — | — | audio |
+| `avg_scene_duration` | — | — | scene |
+| `background_consistency` | ↑ higher=better | — | temporal |
+| `banding_severity` | ↓ lower=better | lower=better | production |
+| `bias_score` | ↑ higher=better | — | safety |
+| `blip_bleu` | — | — | alignment |
+| `blur_score` | ↑ higher=better | — | basic |
+| `brightness` | — | — | basic |
+| `brisque` | ↓ lower=better | 0-100, lower=better | nr_quality |
+| `butteraugli` | ↓ lower=better | lower=better | fr_quality |
+| `c3dvqa_score` | ↑ higher=better | — | fr_quality |
+| `cambi` | ↓ lower=better | 0-24, lower=better | codec |
+| `camera_jitter_score` | ↓ lower=better | 0-1, 1=stable | motion |
+| `camera_motion_score` | ↑ higher=better | — | motion |
+| `celebrity_id_score` | ↑ higher=better | — | face |
+| `cgvqm` | ↑ higher=better | higher=better | nr_quality |
+| `chronomagic_ch_score` | ↓ lower=better | 0-1, lower=fewer | temporal |
+| `chronomagic_mt_score` | ↑ higher=better | 0-1, higher=better | temporal |
+| `ciede2000` | ↓ lower=better | lower=better | fr_quality |
+| `ckdn_score` | ↑ higher=better | — | fr_quality |
+| `clip_iqa_score` | ↑ higher=better | 0-1, higher=better | nr_quality |
+| `clip_score` | ↑ higher=better | — | alignment |
+| `clip_temp` | — | — | temporal |
+| `cnniqa_score` | ↑ higher=better | — | nr_quality |
+| `codec_artifacts` | ↓ lower=better | lower=better | codec |
+| `codec_efficiency` | ↑ higher=better | higher=better | codec |
+| `color_grading_score` | ↑ higher=better | — | production |
+| `color_score` | ↑ higher=better | — | scene |
+| `commonsense_score` | ↑ higher=better | 0-1, higher=better | scene |
+| `compare2score` | ↑ higher=better | — | nr_quality |
+| `compression_artifacts` | — | 0-100 | basic |
+| `confidence_score` | ↑ higher=better | — | meta |
+| `contrast` | — | — | basic |
+| `contrique_score` | ↑ higher=better | higher=better | nr_quality |
+| `count_score` | ↑ higher=better | — | scene |
+| `cover_aesthetic` | — | — | aesthetic |
+| `cover_score` | ↑ higher=better | higher=better | nr_quality |
+| `cover_semantic` | — | — | aesthetic |
+| `cover_technical` | — | — | nr_quality |
+| `creativity_score` | ↑ higher=better | 0-1, higher=better | aesthetic |
+| `cw_ssim` | ↑ higher=better | 0-1, higher=better | fr_quality |
+| `dbcnn_score` | ↑ higher=better | higher=better | nr_quality |
+| `deepfake_probability` | — | — | safety |
+| `deepwsd_score` | ↓ lower=better | — | fr_quality |
+| `delta_ictcp` | ↓ lower=better | lower=better | hdr |
+| `depth_anything_consistency` | ↑ higher=better | — | spatial |
+| `depth_anything_score` | ↑ higher=better | — | spatial |
+| `depth_quality` | ↑ higher=better | higher=better | spatial |
+| `depth_temporal_consistency` | ↑ higher=better | higher=better | temporal |
+| `detection_score` | ↑ higher=better | — | scene |
+| `dists` | ↓ lower=better | 0-1, lower=more similar | fr_quality |
+| `dmm` | ↑ higher=better | higher=better | fr_quality |
+| `dnsmos_bak` | ↑ higher=better | 1-5, higher=better | audio |
+| `dnsmos_overall` | ↑ higher=better | 1-5, higher=better | audio |
+| `dnsmos_sig` | ↑ higher=better | 1-5, higher=better | audio |
+| `dover_aesthetic` | — | — | aesthetic |
+| `dover_score` | ↑ higher=better | higher=better | nr_quality |
+| `dover_technical` | — | — | nr_quality |
+| `dreamsim` | ↓ lower=better | lower=more similar | fr_quality |
+| `dynamics_controllability` | — | — | motion |
+| `dynamics_range` | — | — | motion |
+| `estoi_score` | ↑ higher=better | 0-1, higher=better | audio |
+| `exposure_consistency` | ↑ higher=better | — | production |
+| `face_consistency` | ↑ higher=better | — | face |
+| `face_count` | — | — | face |
+| `face_expression_smoothness` | — | — | face |
+| `face_identity_consistency` | ↑ higher=better | 0-1 | face |
+| `face_iqa_score` | ↑ higher=better | higher=better | face |
+| `face_landmark_jitter` | ↓ lower=better | lower=better | face |
+| `face_quality_score` | ↑ higher=better | higher=better | face |
+| `face_recognition_score` | ↑ higher=better | 0-1, higher=better | face |
+| `fast_vqa_score` | ↑ higher=better | — | nr_quality |
+| `finevq_score` | ↑ higher=better | — | nr_quality |
+| `flicker_score` | ↓ lower=better | lower=better | temporal |
+| `flip_score` | ↓ lower=better | 0-1, lower=better | fr_quality |
+| `flolpips` | — | — | fr_quality |
+| `flow_coherence` | — | 0-1 | temporal |
+| `flow_score` | ↑ higher=better | — | motion |
+| `focus_quality` | ↑ higher=better | — | production |
+| `fsim` | ↑ higher=better | 0-1, higher=better | fr_quality |
+| `funque_score` | ↑ higher=better | — | fr_quality |
+| `gmsd` | ↓ lower=better | lower=better | fr_quality |
+| `gop_quality` | ↑ higher=better | higher=better | codec |
+| `gradient_detail` | — | 0-100 | scene |
+| `harmful_content_score` | ↑ higher=better | — | safety |
+| `hdr_quality` | ↑ higher=better | — | hdr |
+| `hdr_vdp` | ↑ higher=better | higher=better | hdr |
+| `hdr_vqm` | — | — | hdr |
+| `human_fidelity_score` | ↑ higher=better | 0-1, higher=better | scene |
+| `hyperiqa_score` | ↑ higher=better | — | nr_quality |
+| `i2v_clip` | — | 0-1 | i2v |
+| `i2v_dino` | — | 0-1 | i2v |
+| `i2v_lpips` | ↓ lower=better | 0-1, lower=better | i2v |
+| `i2v_quality` | ↑ higher=better | 0-100 | i2v |
+| `identity_loss` | ↓ lower=better | 0-1, lower=better | face |
+| `ilniqe` | ↓ lower=better | lower=better | nr_quality |
+| `is_score` | ↑ higher=better | — | distribution |
+| `judder_score` | ↓ lower=better | lower=better | temporal |
+| `jump_cut_score` | ↑ higher=better | 0-1, 1=no cuts | temporal |
+| `kvq_score` | ↑ higher=better | — | nr_quality |
+| `laion_aesthetic` | — | 0-10 | aesthetic |
+| `letterbox_ratio` | — | 0-1, 0=no borders | basic |
+| `liqe_score` | ↑ higher=better | higher=better | nr_quality |
+| `lpdist_score` | ↓ lower=better | lower=better | audio |
+| `maclip_score` | ↑ higher=better | higher=better | nr_quality |
+| `mad` | ↓ lower=better | lower=better | fr_quality |
+| `maniqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `max_cll` | — | — | hdr |
+| `max_fall` | — | — | hdr |
+| `mcd_score` | ↓ lower=better | dB, lower=better | audio |
+| `mdtvsfa_score` | ↑ higher=better | higher=better | nr_quality |
+| `motion_ac_score` | ↑ higher=better | — | motion |
+| `motion_score` | ↑ higher=better | — | motion |
+| `motion_smoothness` | ↑ higher=better | 0-1, higher=better | motion |
+| `movie_score` | ↑ higher=better | — | fr_quality |
+| `ms_ssim` | — | 0-1 | fr_quality |
+| `multiview_consistency` | ↑ higher=better | higher=better | spatial |
+| `musiq_score` | ↑ higher=better | higher=better | nr_quality |
+| `naturalness_score` | ↑ higher=better | — | nr_quality |
+| `nemo_quality_label` | ↑ higher=better | — | meta |
+| `nemo_quality_score` | ↑ higher=better | 0-1 | meta |
+| `nima_score` | ↑ higher=better | 1-10, higher=better | aesthetic |
+| `niqe` | ↓ lower=better | lower=better | nr_quality |
+| `nlpd` | ↓ lower=better | lower=better | fr_quality |
+| `noise_score` | ↑ higher=better | — | basic |
+| `nrqm` | ↑ higher=better | higher=better | nr_quality |
+| `nsfw_score` | ↑ higher=better | — | safety |
+| `object_permanence_score` | ↑ higher=better | — | temporal |
+| `ocr_area_ratio` | — | — | text |
+| `ocr_cer` | ↓ lower=better | 0-1, lower=better | text |
+| `ocr_fidelity` | ↑ higher=better | 0-100, higher=better | text |
+| `ocr_score` | ↑ higher=better | — | text |
+| `ocr_wer` | ↓ lower=better | 0-1, lower=better | text |
+| `p1203_mos` | — | 1-5 | audio |
+| `paq2piq_score` | ↑ higher=better | — | nr_quality |
+| `pesq_score` | ↑ higher=better | -0.5 to 4.5, higher=better | audio |
+| `physics_score` | ↑ higher=better | 0-1, higher=better | motion |
+| `pi_score` | ↓ lower=better | PIRM challenge, lower=better | nr_quality |
+| `pieapp` | ↓ lower=better | lower=better | fr_quality |
+| `piqe` | ↓ lower=better | lower=better | nr_quality |
+| `playback_speed_score` | ↑ higher=better | — | motion |
+| `promptiqa_score` | ↑ higher=better | — | nr_quality |
+| `psnr_hvs` | ↑ higher=better | dB, higher=better | fr_quality |
+| `psnr_hvs_m` | ↑ higher=better | dB, higher=better | fr_quality |
+| `ptlflow_motion_score` | ↑ higher=better | — | motion |
+| `pu_psnr` | ↑ higher=better | dB, higher=better | hdr |
+| `pu_ssim` | ↑ higher=better | 0-1, higher=better | hdr |
+| `qalign_aesthetic` | ↑ higher=better | 1-5, higher=better | aesthetic |
+| `qalign_quality` | ↑ higher=better | 1-5, higher=better | nr_quality |
+| `qcn_score` | ↑ higher=better | — | nr_quality |
+| `qualiclip_score` | ↑ higher=better | higher=better | nr_quality |
+| `raft_motion_score` | ↑ higher=better | — | motion |
+| `ram_tags` | — | — | scene |
+| `rqvqa_score` | ↑ higher=better | — | nr_quality |
+| `saturation` | — | — | basic |
+| `scene_complexity` | — | — | scene |
+| `scene_stability` | — | — | temporal |
+| `sd_score` | ↑ higher=better | 0-1 | alignment |
+| `sdr_quality` | ↑ higher=better | — | hdr |
+| `semantic_consistency` | ↑ higher=better | higher=better | temporal |
+| `si_sdr_score` | ↑ higher=better | dB, higher=better | audio |
+| `spatial_information` | — | higher=more detail | basic |
+| `spectral_entropy` | — | — | nr_quality |
+| `spectral_rank` | — | — | nr_quality |
+| `ssimc` | ↑ higher=better | higher=better | fr_quality |
+| `ssimulacra2` | ↓ lower=better | 0-100, lower=better, JPEG XL standard | fr_quality |
+| `st_greed_score` | ↑ higher=better | — | fr_quality |
+| `st_lpips` | — | — | fr_quality |
+| `stereo_comfort_score` | ↑ higher=better | higher=better | spatial |
+| `strred` | ↓ lower=better | lower=better | fr_quality |
+| `stutter_score` | ↓ lower=better | lower=better | temporal |
+| `subject_consistency` | ↑ higher=better | 0-1, higher=better | temporal |
+| `t2v_alignment` | — | — | alignment |
+| `t2v_quality` | ↑ higher=better | — | nr_quality |
+| `t2v_score` | ↑ higher=better | — | alignment |
+| `technical_score` | ↑ higher=better | — | basic |
+| `temporal_information` | — | higher=more motion | basic |
+| `text_overlay_score` | ↑ higher=better | 0-1 | text |
+| `tifa_score` | ↑ higher=better | 0-1, higher=better | alignment |
+| `tlvqm_score` | ↑ higher=better | — | nr_quality |
+| `tonal_dynamic_range` | — | 0-100 | basic |
+| `topiq_fr` | ↑ higher=better | higher=better | fr_quality |
+| `topiq_score` | ↑ higher=better | higher=better | nr_quality |
+| `trajan_score` | ↑ higher=better | — | motion |
+| `tres_score` | ↑ higher=better | — | nr_quality |
+| `unique_score` | ↑ higher=better | — | nr_quality |
+| `usability_rate` | — | — | meta |
+| `utmos_score` | ↑ higher=better | 1-5, higher=better | audio |
+| `video_memorability` | — | — | nr_quality |
+| `video_reward_score` | ↑ higher=better | — | alignment |
+| `video_type` | — | — | scene |
+| `video_type_confidence` | — | — | scene |
+| `videoscore_alignment` | ↑ higher=better | — | alignment |
+| `videoscore_dynamic` | ↑ higher=better | — | motion |
+| `videoscore_factual` | ↑ higher=better | — | alignment |
+| `videoscore_temporal` | ↑ higher=better | — | temporal |
+| `videoscore_visual` | ↑ higher=better | — | nr_quality |
+| `videval_score` | ↑ higher=better | — | nr_quality |
+| `vif` | — | — | fr_quality |
+| `visqol` | ↑ higher=better | 1-5, higher=better | audio |
+| `vmaf` | ↑ higher=better | 0-100, higher=better | fr_quality |
+| `vmaf_4k` | ↑ higher=better | 0-100, higher=better | fr_quality |
+| `vmaf_neg` | ↑ higher=better | no enhancement gain, 0-100, higher=better | fr_quality |
+| `vmaf_phone` | ↑ higher=better | 0-100, higher=better | fr_quality |
+| `vqa_a_score` | ↑ higher=better | — | alignment |
+| `vqa_score_alignment` | ↑ higher=better | — | alignment |
+| `vqa_t_score` | ↑ higher=better | — | alignment |
+| `vsi_score` | ↑ higher=better | 0-1, higher=better | fr_quality |
+| `vtss` | — | 0-1 | meta |
+| `wadiqam_fr` | ↑ higher=better | higher=better | fr_quality |
+| `wadiqam_score` | ↑ higher=better | higher=better | nr_quality |
+| `warping_error` | ↓ lower=better | — | temporal |
+| `watermark_probability` | — | — | safety |
+| `watermark_strength` | — | — | safety |
+| `white_balance_score` | ↑ higher=better | — | production |
+| `xpsnr` | ↑ higher=better | dB, higher=better | fr_quality |
+
+### Deprecated Field Aliases
+
+| Old Name | Maps To | Status |
+|----------|---------|--------|
+| `fid_score` | `—` | deprecated, writes discarded |
+| `kid_score` | `—` | deprecated, writes discarded |
+| `inception_score` | `is_score` | alias |
+| `ssim_score` | `ssim` | alias |
+| `psnr_score` | `psnr` | alias |
+| `lpips_score` | `lpips` | alias |
+| `alignment_score` | `clip_score` | alias |
+
+### Static Health Checks
+
+25 module(s) with warnings:
+
+- `audio_visual_sync`: declares output fields but never assigns quality_metrics
+- `basic`: declares output fields but never assigns quality_metrics
+- `bd_rate`: no output fields and no validation issues
+- `dataset_analytics`: no output fields and no validation issues
+- `dedup`: no output fields and no validation issues
+- `diversity_selection`: no output fields and no validation issues
+- `dreamsim_metric`: declares output fields but never assigns quality_metrics
+- `embedding`: no output fields and no validation issues
+- `flip_metric`: declares output fields but never assigns quality_metrics
+- `fvd`: no output fields and no validation issues
+- `fvmd`: no output fields and no validation issues
+- `generative_distribution`: no output fields and no validation issues
+- `generative_distribution_metrics`: no output fields and no validation issues
+- `jedi`: no output fields and no validation issues
+- `jedi_metric`: no output fields and no validation issues
+- `knowledge_graph`: no output fields and no validation issues
+- `kvd`: no output fields and no validation issues
+- `mad_metric`: declares output fields but never assigns quality_metrics
+- `nlpd_metric`: declares output fields but never assigns quality_metrics
+- `pi_metric`: declares output fields but never assigns quality_metrics
+- `spectral`: declares output fields but never assigns quality_metrics
+- `t2v_compbench`: no output fields and no validation issues
+- `text`: declares output fields but never assigns quality_metrics
+- `umap_projection`: no output fields and no validation issues
+- `unique_iqa`: declares output fields but never assigns quality_metrics
+
+---
 
 ## Audio Quality
 
@@ -69,7 +524,7 @@
 | `nlpd` | img/vid +ref | `nlpd` - Normalized Laplacian Pyramid Distance (lower=better) | Normalized Laplacian Pyramid Distance full-reference (lower=better) | `subsample=8` |
 | `nlpd_metric` | img/vid +ref | `nlpd` - Normalized Laplacian Pyramid Distance (lower=better) | Normalized Laplacian Pyramid Distance full-reference (lower=better) | `subsample=8` |
 | `pieapp` | img/vid +ref | `pieapp` - PieAPP pairwise preference (lower=better) | PieAPP full-reference perceptual error via pairwise preference (lower=better) | `subsample=8` |
-| `psnr_hvs` | img/vid +ref | `psnr_hvs` - PSNR-HVS perceptually weighted (dB, higher=better) | PSNR-HVS + PSNR-HVS-M perceptually weighted PSNR (dB, higher=better) | `subsample=5` |
+| `psnr_hvs` | img/vid +ref | `psnr_hvs` - PSNR-HVS perceptually weighted (dB, higher=better); `psnr_hvs_m` - PSNR-HVS-M with masking (dB, higher=better) | PSNR-HVS + PSNR-HVS-M perceptually weighted PSNR (dB, higher=better) | `subsample=5` |
 | `ssimc` | img/vid +ref | `ssimc` - Complex Wavelet SSIM-C FR (higher=better) | SSIM-C complex wavelet structural similarity FR (higher=better) | `subsample=8` |
 | `ssimulacra2` | img/vid +ref | `ssimulacra2` - SSIMULACRA 2 (0-100, lower=better, JPEG XL standard) | SSIMULACRA 2 perceptual distance (JPEG XL standard, lower=better) | `subsample=5`, `warning_threshold=50.0` |
 | `st_lpips` | vid | `st_lpips` - ST-LPIPS spatiotemporal perceptual FR | Spatiotemporal perceptual video quality (ST-LPIPS model, LPIPS, or heuristic fallback) | `subsample=8` |
@@ -105,7 +560,7 @@
 | `advanced_flow` | vid | `flow_score` | RAFT optical flow: flow_score (all consecutive pairs) | `use_large_model=True`, `max_frames=150` |
 | `background_consistency` | vid | `background_consistency` | Background consistency using CLIP (all pairwise frame similarity) | `model_name=openai/clip-vit-base-patch32`, `max_frames=16`, +1 |
 | `camera_jitter` | vid | `camera_jitter_score` - Camera stability (0-1, 1=stable) | Camera jitter/shake detection (0-1, 1=stable) | `subsample=16` |
-| `camera_motion` | vid | - | Analyzes camera motion stability (VMBench) using Homography | - |
+| `camera_motion` | vid | `camera_motion_score` - Camera motion intensity | Analyzes camera motion stability (VMBench) using Homography | - |
 | `clip_temporal` | vid | `clip_temp`; `face_consistency` | CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency) | `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, +2 |
 | `flicker_detection` | vid | `flicker_score` - Flicker severity 0-100 (lower=better) | Detects temporal luminance flicker | `max_frames=600`, `warning_threshold=30.0` |
 | `flow_coherence` | vid | `flow_coherence` - Bidirectional optical flow consistency (0-1) | Bidirectional optical flow consistency (0-1, higher=coherent) | `subsample=8` |
@@ -290,3 +745,1479 @@
 | `st_greed` | vid +ref | `st_greed_score` - ST-GREED variable frame rate FR | Spatial-temporal entropic quality (FR entropic difference or NR heuristic fallback) | `subsample=16` |
 | `tlvqm` | img/vid | `tlvqm_score` - TLVQM two-level video quality | Two-level video quality model (CNN-TLVQM or handcrafted fallback) | `subsample=8` |
 | `videval` | img/vid | `videval_score` - VIDEVAL 60-feature fusion NR-VQA | Feature-fusion NR-VQA (VIDEVAL-style SVR or heuristic linear mapping) | `subsample=8` |
+
+---
+
+## Module Details
+
+Per-module requirements, speed tier, GPU usage, and fallback chains.
+
+<details><summary><code>audio_estoi</code> [fast]</summary>
+
+- **Packages**: librosa, pystoi, soundfile
+
+</details>
+
+<details><summary><code>audio_lpdist</code> [fast]</summary>
+
+- **Packages**: librosa
+
+</details>
+
+<details><summary><code>audio_mcd</code> [fast]</summary>
+
+- **Packages**: librosa
+
+</details>
+
+<details><summary><code>audio_pesq</code> [fast]</summary>
+
+- **Packages**: librosa, pesq, soundfile
+
+</details>
+
+<details><summary><code>audio_si_sdr</code> [fast]</summary>
+
+- **Packages**: librosa, soundfile
+
+</details>
+
+<details><summary><code>audio_text_alignment</code> [GPU · medium]</summary>
+
+- **Packages**: librosa, torch, transformers
+- **Models**: `laion/clap-htsat-fused`
+
+</details>
+
+<details><summary><code>audio_utmos</code> [GPU · medium]</summary>
+
+- **Packages**: librosa, soundfile, torch
+
+</details>
+
+<details><summary><code>audio_visual_sync</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>av_sync</code> [fast]</summary>
+
+- **Packages**: soundfile
+
+</details>
+
+<details><summary><code>dnsmos</code> [medium · tiered]</summary>
+
+- **Packages**: librosa, soundfile, torch, torchmetrics
+- **Fallback**: torchmetrics
+
+</details>
+
+<details><summary><code>codec_compatibility</code> [fast]</summary>
+
+- **Packages**: —
+- **Models**: `0/1`
+
+</details>
+
+<details><summary><code>codec_specific_quality</code> [fast]</summary>
+
+- **Packages**: —
+- **Models**: `30/1`
+
+</details>
+
+<details><summary><code>letterbox</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>depth_anything</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `depth-anything/Depth-Anything-V2-Small-hf`
+
+</details>
+
+<details><summary><code>depth_consistency</code> [GPU · medium]</summary>
+
+- **Packages**: torch
+- **Models**: `intel-isl/MiDaS`
+
+</details>
+
+<details><summary><code>depth_map_quality</code> [GPU · medium]</summary>
+
+- **Packages**: torch
+- **Models**: `intel-isl/MiDaS`
+
+</details>
+
+<details><summary><code>face_fidelity</code> [fast]</summary>
+
+- **Packages**: mediapipe
+
+</details>
+
+<details><summary><code>face_iqa</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>face_landmark_quality</code> [fast]</summary>
+
+- **Packages**: mediapipe
+
+</details>
+
+<details><summary><code>identity_loss</code> [fast · tiered]</summary>
+
+- **Packages**: Pillow, deepface, insightface, mediapipe
+- **Fallback**: insightface → deepface → mediapipe
+
+</details>
+
+<details><summary><code>ahiq</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>butteraugli</code> [fast · tiered]</summary>
+
+- **Packages**: butteraugli, jxlpy
+- **Fallback**: jxlpy → butteraugli → approx
+
+</details>
+
+<details><summary><code>ciede2000</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>ckdn</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>cw_ssim</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>deepwsd</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>delta_ictcp</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>dmm</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>dreamsim</code> [medium]</summary>
+
+- **Packages**: Pillow, dreamsim, opencv-python, torch
+
+</details>
+
+<details><summary><code>dreamsim_metric</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>flip</code> [medium · tiered]</summary>
+
+- **Packages**: flip-evaluator, flip_torch, torch
+- **Fallback**: flip_evaluator → flip_torch → approx
+
+</details>
+
+<details><summary><code>flip_metric</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>flolpips</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: lpips, opencv-python, torch, torchvision
+- **Fallback**: farneback_mse → raft_lpips → farneback_lpips
+
+</details>
+
+<details><summary><code>fvd</code> [GPU · medium]</summary>
+
+- **Packages**: scipy, torch, torchvision
+- **Est. VRAM**: ~200 MB
+
+</details>
+
+<details><summary><code>fvmd</code> [fast]</summary>
+
+- **Packages**: scipy
+
+</details>
+
+<details><summary><code>hdr_vdp</code> [fast · tiered]</summary>
+
+- **Packages**: hdrvdp
+- **Fallback**: python → approx
+
+</details>
+
+<details><summary><code>kvd</code> [GPU · medium]</summary>
+
+- **Packages**: torch
+
+</details>
+
+<details><summary><code>mad</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>mad_metric</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>ms_ssim</code> [GPU · medium]</summary>
+
+- **Packages**: pytorch_msssim, torch
+
+</details>
+
+<details><summary><code>nlpd</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>nlpd_metric</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>pieapp</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>psnr_hvs</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: dct
+
+</details>
+
+<details><summary><code>ssimc</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>ssimulacra2</code> [fast]</summary>
+
+- **Packages**: ssimulacra2
+
+</details>
+
+<details><summary><code>st_lpips</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: lpips, opencv-python, stlpips-pytorch, torch
+- **Fallback**: heuristic → stlpips → lpips
+
+</details>
+
+<details><summary><code>strred</code> [fast · tiered]</summary>
+
+- **Packages**: scikit-video
+- **Fallback**: skvideo → approx
+
+</details>
+
+<details><summary><code>topiq_fr</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>vif</code> [GPU · medium]</summary>
+
+- **Packages**: piq, torch
+
+</details>
+
+<details><summary><code>vmaf</code> [fast]</summary>
+
+- **Packages**: vmaf
+
+</details>
+
+<details><summary><code>vmaf_4k</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>vmaf_neg</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>vmaf_phone</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>wadiqam_fr</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>xpsnr</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>hdr_metadata</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>hdr_sdr_vqa</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>pu_metrics</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>tonal_dynamic_range</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>i2v_similarity</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, lpips, open-clip-torch, timm, torch, torchvision
+- **Models**: `lpips/alex.pth`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>advanced_flow</code> [GPU · medium]</summary>
+
+- **Packages**: torch, torchvision
+
+</details>
+
+<details><summary><code>background_consistency</code> [GPU · medium]</summary>
+
+- **Packages**: torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>camera_jitter</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>camera_motion</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>clip_temporal</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>flicker_detection</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>flow_coherence</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>judder_stutter</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>jump_cut</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>kandinsky_motion</code> [GPU · medium]</summary>
+
+- **Packages**: torch
+- **Models**: `ai-forever/kandinsky-video-tools`, `models/video_motion_predictor`
+
+</details>
+
+<details><summary><code>motion</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>motion_amplitude</code> [GPU · medium]</summary>
+
+- **Packages**: torch, torchvision
+
+</details>
+
+<details><summary><code>motion_smoothness</code> [GPU · medium]</summary>
+
+- **Packages**: rife_model, torch
+- **Models**: `rife/flownet.pkl`
+
+</details>
+
+<details><summary><code>object_permanence</code> [fast]</summary>
+
+- **Packages**: ultralytics
+
+</details>
+
+<details><summary><code>playback_speed</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>ptlflow_motion</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, ptlflow, torch
+
+</details>
+
+<details><summary><code>raft_motion</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, torch, torchvision
+
+</details>
+
+<details><summary><code>scene_detection</code> [fast]</summary>
+
+- **Packages**: opencv-python, transnetv2
+
+</details>
+
+<details><summary><code>stabilized_motion</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>subject_consistency</code> [GPU · medium]</summary>
+
+- **Packages**: torch, transformers
+- **Models**: `facebook/dinov2-base`
+- **Est. VRAM**: ~400 MB
+
+</details>
+
+<details><summary><code>temporal_flickering</code> [GPU · medium]</summary>
+
+- **Packages**: torch, torchvision
+
+</details>
+
+<details><summary><code>temporal_style</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>vfr_detection</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>4k_vqa</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>action_recognition</code> [GPU · medium]</summary>
+
+- **Packages**: open-clip-torch, torch, transformers
+- **Models**: `MCG-NJU/videomae-large-finetuned-kinetics`, `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>aesthetic</code> [GPU · medium]</summary>
+
+- **Packages**: aesthetic_predictor_v2_5, torch
+
+</details>
+
+<details><summary><code>aesthetic_scoring</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `openai/clip-vit-large-patch14`
+- **Est. VRAM**: ~1.5 GB
+
+</details>
+
+<details><summary><code>afine</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>arniqa</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>audio</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>background_diversity</code> [fast]</summary>
+
+- **Packages**: rembg
+
+</details>
+
+<details><summary><code>basic</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>basic_quality</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>bd_rate</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>brisque</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>cambi</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>celebrity_id</code> [fast]</summary>
+
+- **Packages**: Pillow, deepface, glob
+
+</details>
+
+<details><summary><code>cnniqa</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>color_consistency</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>commonsense</code> [GPU · slow · tiered]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `dandelin/vilt-b32-finetuned-vqa`, `llava-hf/llava-1.5-7b-hf`
+- **Est. VRAM**: ~14 GB
+- **Fallback**: heuristic → vlm → vilt
+
+</details>
+
+<details><summary><code>compare2score</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>contrique</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>cpbd</code> [fast]</summary>
+
+- **Packages**: cpbd
+
+</details>
+
+<details><summary><code>creativity</code> [GPU · slow · tiered]</summary>
+
+- **Packages**: Pillow, pyiqa, torch, torchvision, transformers
+- **Models**: `llava-hf/llava-1.5-7b-hf`, `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~14 GB
+- **Fallback**: heuristic → vlm → clip
+
+</details>
+
+<details><summary><code>dataset_analytics</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, scikit-learn, scipy, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>dbcnn</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>decoder_stress</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>dedup</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>deduplication</code> [fast]</summary>
+
+- **Packages**: imagehash
+
+</details>
+
+<details><summary><code>dists</code> [GPU · medium]</summary>
+
+- **Packages**: piq, torch
+
+</details>
+
+<details><summary><code>diversity</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>diversity_selection</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>dynamics_controllability</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: torch
+- **Models**: `facebookresearch/co-tracker`
+- **Fallback**: farneback → cotracker
+
+</details>
+
+<details><summary><code>dynamics_range</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>embedding</code> [GPU · medium]</summary>
+
+- **Packages**: torch, transformers
+- **Models**: `microsoft/xclip-base-patch32`
+
+</details>
+
+<details><summary><code>example</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>exposure</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>generative_distribution</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, scikit-learn, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>generative_distribution_metrics</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>human_fidelity</code> [fast · tiered]</summary>
+
+- **Packages**: dwpose, mediapipe
+- **Fallback**: heuristic → dwpose → mediapipe
+
+</details>
+
+<details><summary><code>hyperiqa</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>ilniqe</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>imaging_quality</code> [fast]</summary>
+
+- **Packages**: Pillow, brisque, imquality
+- **Est. VRAM**: ~800 MB
+
+</details>
+
+<details><summary><code>inception_score</code> [GPU · medium]</summary>
+
+- **Packages**: torch, torchvision
+- **Est. VRAM**: ~200 MB
+
+</details>
+
+<details><summary><code>jedi</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, scipy, torch, transformers
+- **Models**: `facebook/vjepa-giant`
+
+</details>
+
+<details><summary><code>jedi_metric</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>knowledge_graph</code> [fast]</summary>
+
+- **Packages**: scikit-learn
+
+</details>
+
+<details><summary><code>laion_aesthetic</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>liqe</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>llm_advisor</code> [slow]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>llm_descriptive_qa</code> [GPU · slow]</summary>
+
+- **Packages**: Pillow, openai, torch, transformers
+- **Models**: `llava-hf/llava-v1.6-mistral-7b-hf`
+- **Est. VRAM**: ~14 GB
+
+</details>
+
+<details><summary><code>maclip</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>maniqa</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>metadata</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>multi_view_consistency</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>multiple_objects</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>musiq</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>naturalness</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>nima</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>niqe</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>nrqm</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>object_detection</code> [GPU · medium]</summary>
+
+- **Packages**: grit, torch, ultralytics
+
+</details>
+
+<details><summary><code>p1203</code> [fast · tiered]</summary>
+
+- **Packages**: itu_p1203
+- **Fallback**: official → parametric
+
+</details>
+
+<details><summary><code>paq2piq</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>paranoid_decoder</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>perceptual_fr</code> [GPU · medium]</summary>
+
+- **Packages**: piq, torch
+
+</details>
+
+<details><summary><code>physics</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: torch
+- **Models**: `facebookresearch/co-tracker`
+- **Fallback**: heuristic → cotracker → lk
+
+</details>
+
+<details><summary><code>pi</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>pi_metric</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>piqe</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>production_quality</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>q_align</code> [GPU · slow]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `q-future/one-align`
+- **Est. VRAM**: ~14 GB
+
+</details>
+
+<details><summary><code>qcn</code> [medium · tiered]</summary>
+
+- **Packages**: Pillow, opencv-python, pyiqa, torch
+- **Fallback**: none → qcn → hyperiqa
+
+</details>
+
+<details><summary><code>qualiclip</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>resolution_bucketing</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>scene</code> [fast]</summary>
+
+- **Packages**: scenedetect
+
+</details>
+
+<details><summary><code>scene_complexity</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>scene_tagging</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>spatial_relationship</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>spectral</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>spectral_complexity</code> [GPU · medium]</summary>
+
+- **Packages**: torch, torchvision
+- **Models**: `facebookresearch/dinov2`
+- **Est. VRAM**: ~400 MB
+
+</details>
+
+<details><summary><code>spectral_upscaling</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>stereoscopic_quality</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>structural</code> [fast]</summary>
+
+- **Packages**: scenedetect
+
+</details>
+
+<details><summary><code>style_consistency</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>text</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>ti_si</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>topiq</code> [GPU · medium]</summary>
+
+- **Packages**: pyiqa, torch
+
+</details>
+
+<details><summary><code>trajan</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: cotracker, opencv-python, torch
+- **Models**: `facebookresearch/co-tracker`
+- **Fallback**: lk → cotracker
+
+</details>
+
+<details><summary><code>tres</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>umap_projection</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, scikit-learn, scipy, torch, transformers, umap
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>unique</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>unique_iqa</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>usability_rate</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>visqol</code> [fast · tiered]</summary>
+
+- **Packages**: visqol
+- **Fallback**: python → cli
+
+</details>
+
+<details><summary><code>vlm_judge</code> [GPU · slow]</summary>
+
+- **Packages**: torch, transformers
+- **Models**: `llava-hf/llava-1.5-7b-hf`
+- **Est. VRAM**: ~14 GB
+
+</details>
+
+<details><summary><code>vtss</code> [fast]</summary>
+
+- **Packages**: —
+- **Est. VRAM**: ~800 MB
+
+</details>
+
+<details><summary><code>wadiqam</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>bias_detection</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>deepfake_detection</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, scipy, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>harmful_content</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>nsfw</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, torch, transformers
+- **Models**: `Falconsai/nsfw_image_detection`
+
+</details>
+
+<details><summary><code>watermark_classifier</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, torchvision, transformers
+- **Models**: `umm-maybe/AI-image-detector`, `Watermark/Artifact`
+- **Est. VRAM**: ~200 MB
+
+</details>
+
+<details><summary><code>watermark_robustness</code> [fast]</summary>
+
+- **Packages**: imwatermark
+
+</details>
+
+<details><summary><code>captioning</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `Salesforce/blip-image-captioning-base`
+
+</details>
+
+<details><summary><code>clip_iqa</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>compression_artifacts</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>nemo_curator</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: fasttext, torch, transformers
+- **Fallback**: deberta → fasttext → heuristic
+
+</details>
+
+<details><summary><code>ocr_fidelity</code> [fast]</summary>
+
+- **Packages**: paddleocr
+
+</details>
+
+<details><summary><code>promptiqa</code> [medium · tiered]</summary>
+
+- **Packages**: Pillow, opencv-python, pyiqa, torch
+- **Fallback**: none → promptiqa → topiq_nr
+
+</details>
+
+<details><summary><code>ram_tagging</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `xinyu1205/recognize-anything-plus-model`
+
+</details>
+
+<details><summary><code>sd_reference</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, diffusers, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`, `stabilityai/stable-diffusion-xl-base-1.0`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>semantic_alignment</code> [GPU · medium]</summary>
+
+- **Packages**: torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>semantic_segmentation_consistency</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `nvidia/segformer-b0-finetuned-ade-512-512`
+
+</details>
+
+<details><summary><code>semantic_selection</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>text_detection</code> [fast]</summary>
+
+- **Packages**: paddleocr, pytesseract
+
+</details>
+
+<details><summary><code>text_overlay</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>tifa</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `dandelin/vilt-b32-finetuned-vqa`, `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: vilt → clip → heuristic
+
+</details>
+
+<details><summary><code>video_text_matching</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`, `microsoft/xclip-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>vqa_score</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, clip (openai), opencv-python, t2v_metrics, torch
+- **Models**: `ViT-B/32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>aigv_assessor</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `wangjiarui153/AIGV-Assessor`, `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → aigv_assessor → clip_heuristic
+
+</details>
+
+<details><summary><code>chronomagic</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → clip
+
+</details>
+
+<details><summary><code>t2v_compbench</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, torch, transformers, ultralytics
+- **Models**: `openai/clip-vit-base-patch32`, `depth-anything/Depth-Anything-V2-Small-hf`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → yolo_depth → clip
+
+</details>
+
+<details><summary><code>t2v_score</code> [GPU · medium]</summary>
+
+- **Packages**: torch, transformers
+- **Models**: `TIGER-Lab/T2VScore`, `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>video_memorability</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`, `facebookresearch/dinov2`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → clip → dinov2
+
+</details>
+
+<details><summary><code>video_reward</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `KlingTeam/VideoAlign-Reward`
+
+</details>
+
+<details><summary><code>video_type_classifier</code> [GPU · medium]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>videoscore</code> [GPU · slow]</summary>
+
+- **Packages**: Pillow, opencv-python, torch, transformers
+- **Models**: `TIGER-Lab/VideoScore`
+
+</details>
+
+<details><summary><code>c3dvqa</code> [GPU · medium]</summary>
+
+- **Packages**: opencv-python, torch, torchvision
+- **Est. VRAM**: ~200 MB
+
+</details>
+
+<details><summary><code>cgvqm</code> [fast · tiered]</summary>
+
+- **Packages**: cgvqm
+- **Fallback**: cgvqm → approx
+
+</details>
+
+<details><summary><code>cover</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: cover, opencv-python, pyiqa, torch
+- **Est. VRAM**: ~800 MB
+- **Fallback**: cover → dover
+
+</details>
+
+<details><summary><code>dover</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: onnxruntime, pyiqa, torch
+- **Models**: `dover/DOVER.pth`, `dover/onnx_dover.onnx`
+- **Est. VRAM**: ~800 MB
+- **Fallback**: native → onnx → pyiqa
+
+</details>
+
+<details><summary><code>fast_vqa</code> [GPU · medium]</summary>
+
+- **Packages**: decord, torch, traceback
+
+</details>
+
+<details><summary><code>finevq</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, opencv-python, pyiqa, torch, transformers
+- **Models**: `IntMeGroup/FineVQ_score`
+- **Fallback**: heuristic → finevq → topiq_handcrafted
+
+</details>
+
+<details><summary><code>funque</code> [fast · tiered]</summary>
+
+- **Packages**: funque, opencv-python
+- **Fallback**: heuristic_nr → funque → heuristic_fr
+
+</details>
+
+<details><summary><code>hdr_vqm</code> [fast · tiered]</summary>
+
+- **Packages**: PyWavelets, opencv-python
+- **Fallback**: gamma_heuristic → pu21_wavelet
+
+</details>
+
+<details><summary><code>kvq</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch, transformers
+- **Models**: `qyp2000/KVQ`
+- **Fallback**: heuristic → kvq → topiq_saliency
+
+</details>
+
+<details><summary><code>mdtvsfa</code> [medium]</summary>
+
+- **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>movie</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>rqvqa</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: opencv-python, pyiqa, torch, transformers
+- **Models**: `sunwei925/RQ-VQA`
+- **Fallback**: heuristic → rqvqa → clipiqa
+
+</details>
+
+<details><summary><code>st_greed</code> [fast]</summary>
+
+- **Packages**: opencv-python
+
+</details>
+
+<details><summary><code>tlvqm</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: joblib, opencv-python, torch, torchvision
+- **Est. VRAM**: ~200 MB
+- **Fallback**: handcrafted → cnn → cnn_svr → cnn_pretrained
+
+</details>
+
+<details><summary><code>videval</code> [fast · tiered]</summary>
+
+- **Packages**: joblib, opencv-python
+- **Fallback**: heuristic → svr
+
+</details>

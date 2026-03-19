@@ -213,10 +213,10 @@ class ProductionQualityModule(PipelineModule):
 
         logger.debug(
             f"Production for {sample.path.name}: "
-            f"cg={sample.quality_metrics.color_grading_score:.0f} "
-            f"wb={sample.quality_metrics.white_balance_score:.0f} "
-            f"exp={sample.quality_metrics.exposure_consistency:.0f} "
-            f"foc={sample.quality_metrics.focus_quality:.0f} "
+            f"cg={sample.quality_metrics.color_grading_score} "
+            f"wb={sample.quality_metrics.white_balance_score} "
+            f"exp={sample.quality_metrics.exposure_consistency} "
+            f"foc={sample.quality_metrics.focus_quality} "
             f"band={sample.quality_metrics.banding_severity:.0f}"
         )
 
