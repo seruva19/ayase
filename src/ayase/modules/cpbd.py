@@ -51,7 +51,7 @@ class CPBDModule(PipelineModule):
                     logger.warning(f"CPBD check failed: {e}")
                     continue
             else:
-                # Fallback implementation
+                # Fallback implementation — output 0-1 range to match cpbd library
                 gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                 edges = cv2.Canny(gray, 50, 150)
                 edge_count = np.count_nonzero(edges)
@@ -59,8 +59,8 @@ class CPBDModule(PipelineModule):
                 if edge_count > 0:
                     laplacian = cv2.Laplacian(gray, cv2.CV_64F)
                     variance = laplacian.var()
-                    # Normalized metric (heuristic)
-                    score = min(variance / 1000.0, 1.0) * 100.0
+                    # Normalized to 0-1 range (higher = sharper)
+                    score = min(variance / 1000.0, 1.0)
                 else:
                     score = 0.0
             

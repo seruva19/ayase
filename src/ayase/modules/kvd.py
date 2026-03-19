@@ -53,7 +53,7 @@ class KVDModule(BatchMetricModule):
 
             fvd_module = FVDModule(self.config)
             fvd_module.setup()
-            self._feature_model = fvd_module._i3d_model
+            self._feature_model = fvd_module._r3d_model
             self._ml_available = fvd_module._ml_available
 
             if self._ml_available:
@@ -71,7 +71,7 @@ class KVDModule(BatchMetricModule):
         from ayase.modules.fvd import FVDModule
 
         fvd_temp = FVDModule(self.config)
-        fvd_temp._i3d_model = self._feature_model
+        fvd_temp._r3d_model = self._feature_model
         fvd_temp._ml_available = True
         return fvd_temp.extract_features(sample)
 

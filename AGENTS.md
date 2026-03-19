@@ -454,20 +454,22 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 - [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count
 - [ ] Run `pytest tests/ -x -q` — full regression must pass
 
-### 3. METRICS.md
+### 3. METRICS.md & MODELS.md (auto-generated)
 
-- [ ] Run `ayase modules docs -o METRICS.md` to regenerate from module metadata
-- [ ] This uses `PipelineModule.get_metadata()` which introspects input type, output fields, and config from source
-- [ ] No manual editing of METRICS.md — always regenerate
+Both files are auto-generated from module source code. **Never edit manually — always regenerate before each deploy:**
 
-### 4. MODELS.md
+```bash
+ayase modules docs -o METRICS.md        # Metrics reference + stats + charts
+ayase modules models -o MODELS.md       # Model catalog + licenses (queries HF API)
+ayase modules sync-readme               # Update module/field counts in README.md
+```
 
-- [ ] Add new model weights with Used By, License, Size
-- [ ] Update "Used By" column for existing models reused by new modules
-- [ ] Add to tiered fallback table (Section 7) if module has multi-backend
-- [ ] Update license summary and storage estimates
+- `METRICS.md` uses `PipelineModule.get_metadata()` to introspect input type, output fields, config, backends, speed tiers, dependencies, and field collisions from source
+- `MODELS.md` extracts HuggingFace IDs, pyiqa metrics, torchvision/CLIP/torch.hub models, and direct download URLs from source code; fetches licenses from HuggingFace API
+- `sync-readme` updates the module/field counts in README.md to match current code
+- All three must be run after any module change (new module, renamed field, changed model, etc.)
 
-### 5. CHANGELOG.md
+### 4. CHANGELOG.md
 
 - [ ] Add entries under the new version header (e.g. `## [0.1.9]`)
 - [ ] Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
@@ -478,12 +480,12 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 - [ ] Group related changes into a single entry when possible
 - [ ] `[Unreleased]` section is for work-in-progress; move entries to a versioned section on release
 
-### 6. Lint & Commit
+### 5. Lint & Commit
 
 - [ ] `ruff check` on new/changed files
 - [ ] Commit with a concise message describing what was added/changed
 
-### 7. PyPI Publish
+### 6. PyPI Publish
 
 - [ ] Bump version in both `pyproject.toml` and `src/ayase/__init__.py` (keep in sync)
 - [ ] `python -m build && twine upload dist/*`

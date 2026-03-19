@@ -194,7 +194,7 @@ class DeepfakeDetectionModule(PipelineModule):
                 probs = torch.softmax(logits, dim=0).cpu().numpy()
 
             # probs[0] = real photo, probs[1] = CG, probs[2] = deepfake, probs[3] = natural
-            fake_prob = float(probs[1] + probs[2]) / 2
+            fake_prob = float(probs[1] + probs[2])
             return fake_prob
 
         except Exception as e:

@@ -48,7 +48,7 @@ class DeduplicationModule(PipelineModule):
                     )
                 )
             else:
-                self.seen_hashes[phash] = sample.path.name
+                self.seen_hashes[phash] = str(sample.path)
                 
         except Exception as e:
             logger.warning(f"Dedup failed: {e}")

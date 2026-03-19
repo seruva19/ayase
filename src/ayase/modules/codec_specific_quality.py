@@ -330,7 +330,7 @@ class CodecSpecificQualityModule(PipelineModule):
 
             logger.debug(
                 f"Codec quality for {sample.path.name}: "
-                f"eff={eff} gop={sample.quality_metrics.gop_quality} "
+                f"eff={sample.quality_metrics.codec_efficiency} gop={sample.quality_metrics.gop_quality} "
                 f"artifacts={artifacts:.1f}"
             )
 

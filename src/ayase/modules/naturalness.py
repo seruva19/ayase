@@ -80,8 +80,8 @@ class NaturalnessModule(NoReferenceModule):
         sigma = cv2.filter2D((gray.astype(np.float64) ** 2), -1, kernel)
         sigma = np.sqrt(np.abs(sigma - mu ** 2))
 
-        # MSCN coefficients
-        mscn = (gray - mu) / (sigma + 1)
+        # MSCN coefficients (ensure float64 for numeric stability)
+        mscn = (gray.astype(np.float64) - mu) / (sigma + 1)
 
         return mscn
 

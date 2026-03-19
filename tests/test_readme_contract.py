@@ -106,12 +106,12 @@ class _StubModule(PipelineModule):
 class TestMetricCount:
     """Verify the metric count claimed in the overview."""
 
-    def test_quality_metrics_has_246_fields(self):
-        """README: '246 quality metrics across visual, temporal, audio, …'"""
+    def test_quality_metrics_has_251_fields(self):
+        """README: '251 quality metrics across visual, temporal, audio, …'"""
         qm = QualityMetrics()
         # Pydantic model_fields gives declared fields (excludes _FIELD_GROUPS etc.)
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 246, f"Expected 246, got {field_count}"
+        assert field_count == 251, f"Expected 251, got {field_count}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -163,7 +163,9 @@ README_METRICS = [
     "hdr_quality", "sdr_quality", "temporal_information",
     "spatial_information", "flicker_score", "judder_score",
     "stutter_score", "dists", "fsim", "gmsd", "vsi_score", "brisque",
-    "pesq_score", "av_sync_offset", "dover_score", "dover_technical",
+    "pesq_score", "estoi_score", "mcd_score", "si_sdr_score",
+    "lpdist_score", "utmos_score",
+    "av_sync_offset", "dover_score", "dover_technical",
     "dover_aesthetic", "topiq_score", "liqe_score", "clip_iqa_score",
     "color_grading_score", "white_balance_score", "exposure_consistency",
     "focus_quality", "banding_severity", "qalign_quality",
@@ -212,7 +214,7 @@ README_METRICS = [
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 246
+        assert len(README_METRICS) == 251
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):

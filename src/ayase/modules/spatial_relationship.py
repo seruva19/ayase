@@ -46,7 +46,7 @@ class SpatialRelationshipModule(PipelineModule):
             },
             "center": {
                 "keywords": ["center", "middle", "centered"],
-                "check": lambda box: (width * 0.25) < (box[0] + box[2] / 2) < (width * 0.75),
+                "check": lambda box: (width * 0.25) < ((box[0] + box[2]) / 2) < (width * 0.75),
             },
             "foreground": {
                 "keywords": ["foreground", "in front"],

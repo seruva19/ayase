@@ -97,12 +97,13 @@ class CLIPTemporalModule(PipelineModule):
                     )
                 )
 
-            # --- face_consistency_score: rolling window (consecutive pairs) ---
+            # --- face_consistency_score: similarity to first frame (identity drift) ---
             face_sims = []
-            for i in range(embeddings.size(0) - 1):
-                sim = (embeddings[i] @ embeddings[i + 1]).item()
+            first_emb = embeddings[0]
+            for i in range(1, embeddings.size(0)):
+                sim = (first_emb @ embeddings[i]).item()
                 face_sims.append(sim)
-            face_consistency = float(np.mean(face_sims))
+            face_consistency = float(np.mean(face_sims)) if face_sims else clip_temp
             sample.quality_metrics.face_consistency = face_consistency
 
             if face_consistency < self.face_threshold:

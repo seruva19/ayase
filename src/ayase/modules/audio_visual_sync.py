@@ -212,7 +212,8 @@ class AudioVisualSyncModule(PipelineModule):
 
         except Exception as e:
             logger.error(f"A/V sync detection failed for {sample.path}: {e}")
-            cap.release()
+            if cap.isOpened():
+                cap.release()
 
         return sample
 
