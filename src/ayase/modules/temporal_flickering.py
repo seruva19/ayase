@@ -91,6 +91,14 @@ class TemporalFlickeringModule(PipelineModule):
                     img1 = F.interpolate(img1, scale_factor=0.5, mode="bilinear", align_corners=False)
                     img2 = F.interpolate(img2, scale_factor=0.5, mode="bilinear", align_corners=False)
 
+                    # Pad to multiple of 8 (RAFT requirement)
+                    _, _, h, w = img1.shape
+                    pad_h = (8 - h % 8) % 8
+                    pad_w = (8 - w % 8) % 8
+                    if pad_h > 0 or pad_w > 0:
+                        img1 = F.pad(img1, (0, pad_w, 0, pad_h), mode="reflect")
+                        img2 = F.pad(img2, (0, pad_w, 0, pad_h), mode="reflect")
+
                     # Prepare for RAFT (needs [0, 255] range after transforms)
                     img1_raft = img1 * 255.0
                     img2_raft = img2 * 255.0
@@ -104,6 +112,15 @@ class TemporalFlickeringModule(PipelineModule):
                     fw_flow = self._model(img1_t, img2_t)[-1]
                     # Backward flow (frame2 → frame1)
                     bw_flow = self._model(img2_t, img1_t)[-1]
+
+                    # Crop back to original size (remove padding)
+                    if pad_h > 0 or pad_w > 0:
+                        crop_h = fw_flow.shape[2] - pad_h if pad_h > 0 else fw_flow.shape[2]
+                        crop_w = fw_flow.shape[3] - pad_w if pad_w > 0 else fw_flow.shape[3]
+                        fw_flow = fw_flow[:, :, :crop_h, :crop_w]
+                        bw_flow = bw_flow[:, :, :crop_h, :crop_w]
+                        img1 = img1[:, :, :crop_h, :crop_w]
+                        img2 = img2[:, :, :crop_h, :crop_w]
 
                     # Warp img2 to img1 using forward flow
                     warped_img2 = self._warp(img2, fw_flow)
