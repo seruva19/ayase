@@ -44,22 +44,7 @@ See [MODELS.md](MODELS.md) for the complete inventory of all pretrained weights 
 
 208 modules across image, video, and audio quality assessment. See **[METRICS.md](METRICS.md)** for the full reference with config parameters.
 
-Categories: visual quality (NR/FR), perceptual similarity, motion analysis, temporal consistency, audio quality, text alignment, HDR, safety, face quality, depth, codec analysis.
-
-Selected highlights:
-
-| Module | Description |
-|--------|-------------|
-| `dover` | DOVER disentangled aesthetic + technical VQA (ICCV 2023) |
-| `vmaf` | VMAF video quality (Netflix, 0-100) |
-| `semantic_alignment` | CLIP text-image/video alignment |
-| `motion_smoothness` | RIFE-based motion smoothness (VBench) |
-| `audio_pesq` | PESQ speech quality (ITU-T P.862) |
-| `audio_utmos` | UTMOS no-reference MOS prediction |
-| `videoscore` | VideoScore human preference (EMNLP 2024) |
-| `niqe` | NIQE natural image quality (no-reference) |
-| `brisque` | BRISQUE blind image quality |
-| `i2v_similarity` | CLIP + DINO + LPIPS reference similarity |
+Categories: visual quality (NR/FR), perceptual similarity, motion, temporal consistency, audio, text alignment, HDR, safety, face, depth, codec.
 
 
 ## Quick Start
