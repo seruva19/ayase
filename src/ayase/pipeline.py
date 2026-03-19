@@ -77,6 +77,76 @@ class PipelineModule(ABC):
         """Called after all samples are processed. Use for cross-sample analysis."""
         return None
 
+    @classmethod
+    def get_metadata(cls) -> Dict[str, Any]:
+        """Introspect module source to extract metadata without instantiation.
+
+        Returns dict with: name, description, input_type, output_fields,
+        default_config.  All inferred from existing code — no duplication.
+        """
+        import re as _re
+        from .models import QualityMetrics
+
+        # Field descriptions from QualityMetrics
+        field_descs: Dict[str, str] = {}
+        try:
+            src_models = inspect.getsource(QualityMetrics)
+            for m in _re.finditer(
+                r"(\w+):\s*Optional\[.*?\]\s*=\s*None\s*(?:#\s*(.*))?", src_models
+            ):
+                field_descs[m.group(1)] = (m.group(2) or "").strip()
+        except (TypeError, OSError):
+            pass
+
+        # Source of this module's process() method
+        try:
+            src = inspect.getsource(cls)
+        except (TypeError, OSError):
+            src = ""
+
+        # Input type: infer from process() checks
+        needs_ref = "reference_path" in src
+        needs_cap = bool(
+            _re.search(r"caption.*\.text|\.caption", src[:3000])
+        )
+        video_only = bool(_re.search(r"not\s+sample\.is_video", src))
+        audio_module = bool(
+            _re.search(r"soundfile|librosa\.load|pesq|pystoi", src)
+        ) or cls.name.startswith("audio_")
+        batch_module = bool(
+            _re.search(r"post_process.*all_samples|batch", src[:500])
+            and "def post_process" in src
+        )
+
+        if batch_module:
+            input_type = "batch"
+        elif audio_module:
+            input_type = "audio"
+        elif video_only:
+            input_type = "vid"
+        else:
+            input_type = "img/vid"
+
+        if needs_ref:
+            input_type += " +ref"
+        if needs_cap:
+            input_type += " +cap"
+
+        # Output fields: find quality_metrics.FIELD = ... assignments
+        outputs: Dict[str, str] = {}
+        for m in _re.finditer(r"quality_metrics\.(\w+)\s*=", src):
+            field = m.group(1)
+            if field not in outputs and field in field_descs:
+                outputs[field] = field_descs[field]
+
+        return {
+            "name": cls.name,
+            "description": cls.description,
+            "input_type": input_type,
+            "output_fields": outputs,
+            "default_config": dict(cls.default_config) if cls.default_config else {},
+        }
+
     def _check_required_packages(self) -> List[str]:
         required = []
         if isinstance(self.required_packages, list):
