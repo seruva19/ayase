@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Ayase is a modular media quality metrics toolkit. It provides 218 pipeline modules across 201 files for analyzing video/image quality, text-video alignment, motion, temporal consistency, safety, audio, and more.
+Ayase is a modular media quality metrics toolkit for analyzing video/image quality, text-video alignment, motion, temporal consistency, safety, audio, and more.
 
 - **Language:** Python 3.9+
 - **Build:** Hatchling (`pyproject.toml`)
@@ -19,7 +19,7 @@ src/ayase/
 ├── __main__.py          # python -m ayase
 ├── cli.py               # Typer CLI (scan, run, filter, stats, tui, modules, config)
 ├── config.py            # AyaseConfig (pydantic-settings), resolve_model_path, download_model_file
-├── models.py            # Sample, QualityMetrics (244 fields), ValidationIssue, DatasetStats
+├── models.py            # Sample, QualityMetrics, ValidationIssue, DatasetStats
 ├── pipeline.py          # Pipeline, PipelineModule (ABC), ModuleRegistry, AyasePipeline
 ├── profile.py           # PipelineProfile, load_profile, instantiate_profile_modules
 ├── scanner.py           # DatasetScanner, scan_dataset
@@ -27,8 +27,8 @@ src/ayase/
 ├── tui.py               # Textual TUI (6 screens)
 ├── video.py             # Video utilities
 ├── audio.py             # Audio utilities
-├── modules/             # 201 module files, 218 PipelineModule subclasses
-│   ├── __init__.py      # Explicit imports of ~90 key modules + __all__
+├── modules/             # All pipeline modules (auto-discovered at runtime)
+│   ├── __init__.py      # Explicit imports of key modules + __all__
 │   └── *.py             # All auto-discovered at runtime via ModuleRegistry
 ├── third_party/         # Vendored code (DOVER, FastVQA, Kandinsky)
 │   ├── dover/
@@ -68,11 +68,15 @@ Before setting `sample.quality_metrics.my_field = value`, the field must exist i
 
 ### 4. Never Break Existing Tests
 
-~450 tests must pass. Run `pytest tests/ -x -q` before considering any change complete. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
+All tests must pass. Run `pytest tests/ -x -q` before considering any change complete. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
 
 ### 5. Module `__init__.py` vs Auto-Discovery
 
-`modules/__init__.py` explicitly imports ~90 key modules for convenience. The remaining ~105 are auto-discovered at runtime by `ModuleRegistry.discover_modules()`. If you create a new module, it works without touching `__init__.py`, but add it there if it's a commonly-used module.
+`modules/__init__.py` explicitly imports key modules for convenience. The rest are auto-discovered at runtime by `ModuleRegistry.discover_modules()`. If you create a new module, it works without touching `__init__.py`, but add it there if it's a commonly-used module.
+
+### 6. Module Metadata Introspection
+
+`PipelineModule.get_metadata()` returns `{name, description, input_type, output_fields, default_config}` by introspecting the module's own source. Used by `ayase modules docs` CLI command to generate METRICS.md. No manual metadata needed — everything is inferred from existing code.
 
 ## Code Style
 
@@ -210,7 +214,7 @@ indices = np.linspace(0, total_frames - 1, n, dtype=int)
 ### Caption and Reference Access
 
 - **Caption:** `sample.caption.text` (primary), sidecar `.txt` file next to sample (fallback)
-- **Reference image:** `getattr(sample, "reference_path", None)` — `reference_path` is NOT a Pydantic field on Sample, use `getattr` with default
+- **Reference image:** `sample.reference_path` — `Optional[Path]` field on Sample, defaults to None
 
 ### Module Ordering in `__init__.py`
 
@@ -447,17 +451,14 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 ### 2. Tests
 
 - [ ] Write tests in `tests/modules/test_*.py`
-- [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count (currently 246)
+- [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count
 - [ ] Run `pytest tests/ -x -q` — full regression must pass
 
-### 3. README.md
+### 3. METRICS.md
 
-- [ ] Update metrics table — 5-column format: `#`, `Metric`, `Module`, `Input`, `Description`
-- [ ] Metric names must exactly match `QualityMetrics` field names (no backticks)
-- [ ] Input shorthand: `img/vid` = image or video, `+ref` = needs `reference_path`, `+cap` = needs caption, `batch` = dataset-level
-- [ ] Renumber rows after insertions
-- [ ] Update overview module/metric counts
-- [ ] Validated by `tests/modules/test_metrics_table.py` — one row per `QualityMetrics` field, in order
+- [ ] Run `ayase modules docs -o METRICS.md` to regenerate from module metadata
+- [ ] This uses `PipelineModule.get_metadata()` which introspects input type, output fields, and config from source
+- [ ] No manual editing of METRICS.md — always regenerate
 
 ### 4. MODELS.md
 
@@ -491,7 +492,7 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 
 `tests/test_readme_contract.py` enforces structural invariants. When adding metrics, you MUST update:
 
-1. **Field count** — `test_quality_metrics_has_246_fields()` asserts exact count
+1. **Field count** — `test_quality_metrics_has_N_fields()` asserts exact count (update when adding fields)
 2. **`README_METRICS` list** — hardcoded list of all field names in order; used by:
    - `test_readme_table_count()` — list length matches field count
    - `test_readme_metric_exists_in_model()` — every listed name is a QualityMetrics field
@@ -510,6 +511,5 @@ Other contract tests: golden values (`test_golden_values.py`, ±2% tolerance), p
 6. **Don't modify `third_party/`** unless absolutely necessary — it's vendored external code
 7. **Version is in two places** — `__init__.py` and `pyproject.toml` — update both
 8. **Don't forget `tests/test_readme_contract.py`** — has a hardcoded `README_METRICS` list and field count that must be updated when adding new QualityMetrics fields
-9. **Don't use `sample.reference_path` directly** — it's not a Pydantic field; use `getattr(sample, "reference_path", None)`
-10. **Don't use `enable_ml` flag** — removed; use tiered backend auto-detection pattern instead
-11. **Don't add modules alphabetically to `__init__.py`** — they're grouped by functional category
+9. **Don't use `enable_ml` flag** — removed; use tiered backend auto-detection pattern instead
+10. **Don't add modules alphabetically to `modules/__init__.py`** — they're grouped by functional category
