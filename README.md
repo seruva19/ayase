@@ -134,7 +134,12 @@ See [MODELS.md](MODELS.md) for the complete inventory of all pretrained weights 
 | 86 | vsi_score | perceptual_fr | img/vid +ref | Visual Saliency Index (0-1, higher=better) |
 | 87 | brisque | brisque | img/vid | BRISQUE (0-100, lower=better) |
 | 88 | pesq_score | audio_pesq | audio +ref | PESQ (-0.5 to 4.5, higher=better) |
-| 89 | av_sync_offset | av_sync | audio | Audio-video sync offset in ms |
+| 89 | estoi_score | audio_estoi | audio +ref | ESTOI speech intelligibility (0-1, higher=better) |
+| 90 | mcd_score | audio_mcd | audio +ref | Mel Cepstral Distortion (dB, lower=better) |
+| 91 | si_sdr_score | audio_si_sdr | audio +ref | Scale-Invariant SDR (dB, higher=better) |
+| 92 | lpdist_score | audio_lpdist | audio +ref | Log-Power Spectral Distance (lower=better) |
+| 93 | utmos_score | audio_utmos | audio | UTMOS predicted MOS (1-5, higher=better) |
+| 94 | av_sync_offset | av_sync | audio | Audio-video sync offset in ms |
 | 90 | dover_score | dover | img/vid | DOVER overall (higher=better) |
 | 91 | dover_technical | dover | img/vid | DOVER technical quality |
 | 92 | dover_aesthetic | dover | img/vid | DOVER aesthetic quality |
