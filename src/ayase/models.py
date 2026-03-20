@@ -84,7 +84,6 @@ class QualityMetrics(BaseModel):
     _FIELD_GROUPS: dict = {
         # Basic visual quality
         "blur_score": "basic",
-        "compression_score": "basic",
         "brightness": "basic",
         "contrast": "basic",
         "saturation": "basic",
@@ -96,9 +95,13 @@ class QualityMetrics(BaseModel):
         "spatial_information": "basic",
         "letterbox_ratio": "basic",
         "tonal_dynamic_range": "basic",
+        "cpbd_score": "basic",
+        "imaging_noise_score": "basic",
+        "imaging_artifacts_score": "basic",
         # Aesthetics
         "aesthetic_score": "aesthetic",
         "laion_aesthetic": "aesthetic",
+        "aesthetic_mlp_score": "aesthetic",
         "nima_score": "aesthetic",
         "qalign_aesthetic": "aesthetic",
         "dover_aesthetic": "aesthetic",
@@ -116,6 +119,7 @@ class QualityMetrics(BaseModel):
         "videoscore_factual": "alignment",
         "vqa_a_score": "alignment",
         "vqa_t_score": "alignment",
+        "video_text_score": "alignment",
         "video_reward_score": "alignment",
         "tifa_score": "alignment",
         # Motion & dynamics
@@ -132,9 +136,10 @@ class QualityMetrics(BaseModel):
         "camera_jitter_score": "motion",
         "videoscore_dynamic": "motion",
         "aigv_dynamic": "motion",
+        "stabilized_motion_score": "motion",
+        "stabilized_camera_score": "motion",
         "playback_speed_score": "motion",
         # Temporal consistency
-        "temporal_consistency": "temporal",
         "warping_error": "temporal",
         "clip_temp": "temporal",
         "flicker_score": "temporal",
@@ -149,6 +154,7 @@ class QualityMetrics(BaseModel):
         "depth_temporal_consistency": "temporal",
         "videoscore_temporal": "temporal",
         "aigv_temporal": "temporal",
+        "video_text_temporal": "temporal",
         "jump_cut_score": "temporal",
         # Perceptual quality (no-reference)
         "fast_vqa_score": "nr_quality",
@@ -192,6 +198,8 @@ class QualityMetrics(BaseModel):
         "nrqm": "nr_quality",
         "pi_score": "nr_quality",
         "piqe": "nr_quality",
+        "internvqa_score": "nr_quality",
+        "nr_gvqm_score": "nr_quality",
         "maclip_score": "nr_quality",
         "cgvqm": "fr_quality",
         "spectral_entropy": "nr_quality",
@@ -199,10 +207,7 @@ class QualityMetrics(BaseModel):
         "videoscore_visual": "nr_quality",
         # Perceptual similarity (full-reference)
         "vmaf": "fr_quality",
-        "psnr": "fr_quality",
-        "ssim": "fr_quality",
         "ms_ssim": "fr_quality",
-        "lpips": "fr_quality",
         "vif": "fr_quality",
         "dists": "fr_quality",
         "fsim": "fr_quality",
@@ -270,7 +275,6 @@ class QualityMetrics(BaseModel):
         "watermark_strength": "safety",
         "bias_score": "safety",
         # Audio
-        "audio_quality_score": "audio",
         "pesq_score": "audio",
         "estoi_score": "audio",
         "mcd_score": "audio",
@@ -287,6 +291,7 @@ class QualityMetrics(BaseModel):
         "action_score": "scene",
         "action_confidence": "scene",
         "detection_score": "scene",
+        "detection_diversity": "scene",
         "count_score": "scene",
         "color_score": "scene",
         "scene_complexity": "scene",
@@ -296,10 +301,6 @@ class QualityMetrics(BaseModel):
         "video_type": "scene",
         "video_type_confidence": "scene",
         # Distribution (dataset-level, per-sample placeholder)
-        "fvd": "distribution",
-        "kvd": "distribution",
-        "fvmd": "distribution",
-        "jedi": "distribution",
         "is_score": "distribution",
         # HDR
         "hdr_quality": "hdr",
@@ -310,6 +311,7 @@ class QualityMetrics(BaseModel):
         "max_cll": "hdr",
         "hdr_vdp": "hdr",
         "delta_ictcp": "hdr",
+        "hdr_technical_score": "hdr",
         "hdr_vqm": "hdr",
         # Codec
         "codec_efficiency": "codec",
@@ -322,7 +324,6 @@ class QualityMetrics(BaseModel):
         "stereo_comfort_score": "spatial",
         "depth_anything_score": "spatial",
         "depth_anything_consistency": "spatial",
-        "depth_score": "spatial",
         # Production quality
         "color_grading_score": "production",
         "white_balance_score": "production",
@@ -334,10 +335,10 @@ class QualityMetrics(BaseModel):
         "confidence_score": "meta",
         "human_preference_score": "meta",
         "engagement_score": "meta",
-        "usability_score": "meta",
         "vtss": "meta",
         "perceptual_hash": "meta",
         "nemo_quality_score": "meta",
+        "llm_qa_score": "meta",
         "nemo_quality_label": "meta",
         # VBench-2.0 faithfulness
         "human_fidelity_score": "scene",
@@ -401,9 +402,6 @@ class QualityMetrics(BaseModel):
         "qclip_score": "nr_quality",
         "presresq_score": "nr_quality",
         # Distribution-level
-        "stream_spatial": "distribution",
-        "stream_temporal": "distribution",
-        "worldscore": "distribution",
         "umtscore": "alignment",
         # Video reward
         "videoreward_vq": "nr_quality",
@@ -451,13 +449,7 @@ class QualityMetrics(BaseModel):
         "psnr99": "fr_quality",
         # pyiqa built-ins
         "deepdc_score": "nr_quality",
-        "msswd_score": "distribution",
-        "sfid_score": "distribution",
         # Distribution/generation
-        "vendi_score": "distribution",
-        "fgd_score": "distribution",
-        "fmd_score": "distribution",
-        "fad_score": "distribution",
         # Audio aesthetics
         "audiobox_production": "audio",
         "audiobox_enjoyment": "audio",
@@ -513,69 +505,9 @@ class QualityMetrics(BaseModel):
         total = self.non_null_count()
         return f"{total} metrics ({', '.join(parts)})" if parts else "0 metrics"
 
-    # Backward-compatible aliases for older field names used in tests/profiles.
-    @property
-    def fid_score(self) -> Optional[float]:
-        return None
-
-    @fid_score.setter
-    def fid_score(self, value: Optional[float]) -> None:
-        import warnings
-        warnings.warn("fid_score is deprecated and writes are discarded", DeprecationWarning, stacklevel=2)
-
-    @property
-    def kid_score(self) -> Optional[float]:
-        return None
-
-    @kid_score.setter
-    def kid_score(self, value: Optional[float]) -> None:
-        import warnings
-        warnings.warn("kid_score is deprecated and writes are discarded", DeprecationWarning, stacklevel=2)
-
-    @property
-    def inception_score(self) -> Optional[float]:
-        return self.is_score
-
-    @inception_score.setter
-    def inception_score(self, value: Optional[float]) -> None:
-        self.is_score = value
-
-    @property
-    def ssim_score(self) -> Optional[float]:
-        return self.ssim
-
-    @ssim_score.setter
-    def ssim_score(self, value: Optional[float]) -> None:
-        self.ssim = value
-
-    @property
-    def psnr_score(self) -> Optional[float]:
-        return self.psnr
-
-    @psnr_score.setter
-    def psnr_score(self, value: Optional[float]) -> None:
-        self.psnr = value
-
-    @property
-    def lpips_score(self) -> Optional[float]:
-        return self.lpips
-
-    @lpips_score.setter
-    def lpips_score(self, value: Optional[float]) -> None:
-        self.lpips = value
-
-    @property
-    def alignment_score(self) -> Optional[float]:
-        return self.clip_score
-
-    @alignment_score.setter
-    def alignment_score(self, value: Optional[float]) -> None:
-        self.clip_score = value
-
     # -- Fields -----------------------------------------------------------
 
     blur_score: Optional[float] = None  # Laplacian variance
-    compression_score: Optional[float] = None
     aesthetic_score: Optional[float] = None  # 0-10, from aesthetic predictor
     clip_score: Optional[float] = None  # Caption-image alignment
     brightness: Optional[float] = None
@@ -586,21 +518,24 @@ class QualityMetrics(BaseModel):
     fast_vqa_score: Optional[float] = None  # 0-100
     motion_score: Optional[float] = None  # Scene motion intensity
     camera_motion_score: Optional[float] = None  # Camera motion intensity
-    temporal_consistency: Optional[float] = None  # Frame consistency
+    stabilized_motion_score: Optional[float] = None  # Stabilized scene motion (camera-invariant)
+    stabilized_camera_score: Optional[float] = None  # Stabilized camera motion estimate
     technical_score: Optional[float] = None  # Composite technical score
     noise_score: Optional[float] = None
     artifacts_score: Optional[float] = None
+    cpbd_score: Optional[float] = None  # CPBD perceptual blur detection (0-1, higher=sharper)
+    imaging_noise_score: Optional[float] = None  # Imaging noise level (0-1, higher=cleaner)
+    imaging_artifacts_score: Optional[float] = None  # Imaging edge-density artifacts (0-1, higher=cleaner)
     watermark_probability: Optional[float] = None  # 0-1
     ocr_area_ratio: Optional[float] = None  # 0-1
     face_count: Optional[int] = None
     nsfw_score: Optional[float] = None  # 0-1, likelihood of being NSFW
-    audio_quality_score: Optional[float] = None  # 0-100
     perceptual_hash: Optional[str] = None  # dHash or similar
-    depth_score: Optional[float] = None  # Scene depth complexity
     auto_caption: Optional[str] = None  # Generated caption
     vqa_a_score: Optional[float] = None
     vqa_t_score: Optional[float] = None
     is_score: Optional[float] = None
+    detection_diversity: Optional[float] = None  # Object detection category entropy
     sd_score: Optional[float] = None  # SD-reference similarity (0-1)
     gradient_detail: Optional[float] = None  # Sobel gradient detail (0-100)
     blip_bleu: Optional[float] = None
@@ -627,17 +562,11 @@ class QualityMetrics(BaseModel):
     motion_ac_score: Optional[float] = None
     warping_error: Optional[float] = None
     clip_temp: Optional[float] = None
+    video_text_score: Optional[float] = None  # Video-text alignment via X-CLIP/CLIP (0-1)
+    video_text_temporal: Optional[float] = None  # Video-text temporal consistency (0-1)
     face_consistency: Optional[float] = None
-    psnr: Optional[float] = None
-    ssim: Optional[float] = None
-    lpips: Optional[float] = None
     spectral_entropy: Optional[float] = None  # DINOv2 spectral entropy
     spectral_rank: Optional[float] = None  # DINOv2 effective rank ratio
-
-    # Video generation distribution metrics
-    fvd: Optional[float] = None  # Fréchet Video Distance
-    kvd: Optional[float] = None  # Kernel Video Distance
-    fvmd: Optional[float] = None  # Fréchet Video Motion Distance
 
     # Enhanced perceptual metrics
     vmaf: Optional[float] = None  # VMAF (0-100, higher=better)
@@ -663,9 +592,9 @@ class QualityMetrics(BaseModel):
     # Meta quality
     usability_rate: Optional[float] = None  # Percentage of usable frames
     confidence_score: Optional[float] = None  # Prediction confidence
+    llm_qa_score: Optional[float] = None  # LMM descriptive quality rating (0-1)
     human_preference_score: Optional[float] = None
     engagement_score: Optional[float] = None
-    usability_score: Optional[float] = None
 
     # Format-specific
     hdr_quality: Optional[float] = None  # HDR-specific quality
@@ -702,6 +631,7 @@ class QualityMetrics(BaseModel):
     dover_score: Optional[float] = None  # DOVER overall (higher=better)
     dover_technical: Optional[float] = None  # DOVER technical quality
     dover_aesthetic: Optional[float] = None  # DOVER aesthetic quality
+    internvqa_score: Optional[float] = None  # InternVQA video quality (higher=better)
     topiq_score: Optional[float] = None  # TOPIQ transformer-based IQA (higher=better)
     liqe_score: Optional[float] = None  # LIQE lightweight IQA (higher=better)
     clip_iqa_score: Optional[float] = None  # CLIP-IQA semantic quality (0-1, higher=better)
@@ -819,9 +749,6 @@ class QualityMetrics(BaseModel):
     video_type: Optional[str] = None  # Content type (real, animated, game, etc.)
     video_type_confidence: Optional[float] = None  # Classification confidence
 
-    # JEDi (ICLR 2025, batch metric)
-    jedi: Optional[float] = None  # Per-sample V-JEPA feature (batch-computed)
-
     # TRAJAN (ICLR 2025)
     trajan_score: Optional[float] = None  # Point track motion consistency
 
@@ -879,6 +806,7 @@ class QualityMetrics(BaseModel):
     tres_score: Optional[float] = None  # TReS transformer IQA (WACV 2022)
     unique_score: Optional[float] = None  # UNIQUE unified NR-IQA (TIP 2021)
     laion_aesthetic: Optional[float] = None  # LAION Aesthetics V2 (0-10)
+    aesthetic_mlp_score: Optional[float] = None  # LAION Aesthetics MLP (1-10)
     compare2score: Optional[float] = None  # Compare2Score comparison-based
     afine_score: Optional[float] = None  # A-FINE fidelity-naturalness (CVPR 2025)
     ckdn_score: Optional[float] = None  # CKDN knowledge distillation FR
@@ -921,6 +849,7 @@ class QualityMetrics(BaseModel):
     max_cll: Optional[float] = None  # MaxCLL content light level (nits)
     hdr_vdp: Optional[float] = None  # HDR-VDP visual difference predictor (higher=better)
     delta_ictcp: Optional[float] = None  # Delta ICtCp HDR color difference (lower=better)
+    hdr_technical_score: Optional[float] = None  # HDR/SDR-aware technical quality (0-1)
 
     # Color, codec, gaming, streaming
     ciede2000: Optional[float] = None  # CIEDE2000 perceptual color difference (lower=better)
@@ -1002,10 +931,6 @@ class QualityMetrics(BaseModel):
     qclip_score: Optional[float] = None  # Q-CLIP VLM-based (higher=better)
     presresq_score: Optional[float] = None  # PreResQ-R1 rank+score (higher=better)
 
-    # Distribution-level (batch metrics)
-    stream_spatial: Optional[float] = None  # STREAM spatial fidelity+diversity
-    stream_temporal: Optional[float] = None  # STREAM temporal naturalness
-    worldscore: Optional[float] = None  # WorldScore generation quality
     umtscore: Optional[float] = None  # UMTScore video-text alignment
 
     # Video reward models
@@ -1052,6 +977,7 @@ class QualityMetrics(BaseModel):
     vsfa_score: Optional[float] = None  # VSFA quality-aware feature aggregation (higher=better)
     speedqa_score: Optional[float] = None  # SpEED-QA entropic differencing (higher=better)
     gamival_score: Optional[float] = None  # GAMIVAL cloud gaming NR-VQA (higher=better)
+    nr_gvqm_score: Optional[float] = None  # NR-GVQM cloud gaming VQA (higher=better)
 
     # Task-specific FR metrics
     erqa_score: Optional[float] = None  # ERQA edge restoration quality (0-1, higher=better)
@@ -1062,14 +988,6 @@ class QualityMetrics(BaseModel):
 
     # pyiqa built-ins
     deepdc_score: Optional[float] = None  # DeepDC distribution conformance (lower=better)
-    msswd_score: Optional[float] = None  # MSSWD multi-scale sliced Wasserstein (lower=better)
-    sfid_score: Optional[float] = None  # SFID spatial FID (lower=better)
-
-    # Distribution/generation metrics
-    vendi_score: Optional[float] = None  # Vendi Score diversity (higher=better)
-    fgd_score: Optional[float] = None  # FGD Frechet Gesture Distance (lower=better)
-    fmd_score: Optional[float] = None  # FMD Frechet Motion Distance (lower=better)
-    fad_score: Optional[float] = None  # FAD Frechet Audio Distance (lower=better)
 
     # Audio aesthetics
     audiobox_production: Optional[float] = None  # Audiobox production quality
@@ -1209,6 +1127,17 @@ class DatasetStats(BaseModel):
     # UMAP projection (dataset-level)
     umap_spread: Optional[float] = None  # UMAP projection spread
     umap_coverage: Optional[float] = None  # UMAP projection coverage (0-1)
+
+    # Batch distribution metrics (dataset-level)
+    fad: Optional[float] = None  # Frechet Audio Distance (lower=better)
+    fgd: Optional[float] = None  # Frechet Gesture Distance (lower=better)
+    fmd: Optional[float] = None  # Frechet Motion Distance (lower=better)
+    msswd: Optional[float] = None  # Multi-Scale Sliced Wasserstein (lower=better)
+    sfid: Optional[float] = None  # Spatial FID (lower=better)
+    vendi: Optional[float] = None  # Vendi Score diversity (higher=better)
+    stream_spatial: Optional[float] = None  # STREAM spatial fidelity+diversity
+    stream_temporal: Optional[float] = None  # STREAM temporal naturalness
+    worldscore: Optional[float] = None  # WorldScore generation quality
 
     # Codec comparison (dataset-level)
     bd_rate: Optional[float] = None  # BD-Rate compression efficiency (%, negative=better)

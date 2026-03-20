@@ -269,7 +269,7 @@ class LLMDescriptiveQAModule(PipelineModule):
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
 
-            sample.quality_metrics.confidence_score = result["quality_score"] / 100.0
+            sample.quality_metrics.llm_qa_score = result["quality_score"] / 100.0
 
             # Add explanation as validation issue
             sample.validation_issues.append(

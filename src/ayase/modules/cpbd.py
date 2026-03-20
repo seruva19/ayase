@@ -77,7 +77,7 @@ class CPBDModule(PipelineModule):
         # Store the CPBD score in quality_metrics
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.blur_score = float(avg_score)
+        sample.quality_metrics.cpbd_score = float(avg_score)
 
         if self._cpbd_available:
             if min_score < self.threshold_cpbd:

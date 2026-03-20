@@ -128,7 +128,7 @@ class AestheticScoringModule(PipelineModule):
 
                 sample.quality_metrics = QualityMetrics()
 
-            sample.quality_metrics.aesthetic_score = float(avg_score)
+            sample.quality_metrics.aesthetic_mlp_score = float(avg_score)
 
             if avg_score < 4.5:
                 sample.validation_issues.append(

@@ -1,16 +1,11 @@
 """Generate METRICS.md from module metadata via PipelineModule.get_metadata().
 
-Enhanced with:
-- Summary dashboard with Unicode bar charts
-- Per-module: required packages, GPU flag, speed tier, fallback chain
-- Score direction & range for every output field
-- Field collision map (multiple modules → same field)
-- Orphaned QualityMetrics fields (no module writes to them)
-- Module dependency graph (Mermaid)
-- Recommended module presets
-- Benchmark coverage matrix
-- Deprecated field aliases
-- Static health checks
+Produces metric-centric tables grouped by QualityMetrics category, where each
+row is a (metric, module) pair with direction, range, speed, GPU, backend,
+source links, and description — all in one place.
+
+Integrity issues (field collisions, orphans, static checks) are reported as
+stderr warnings during generation, not included in the output.
 """
 
 import inspect
@@ -85,57 +80,6 @@ _VRAM_PATTERNS = {
     r"q-align|q_align": "~14 GB",
 }
 
-# ── Benchmark → modules mapping ────────────────────────────────────────────
-_BENCHMARK_MODULES = {
-    "VBench (16/16)": [
-        "subject_consistency", "background_consistency", "temporal_flickering",
-        "motion_smoothness", "dynamic_degree", "aesthetic", "imaging_quality",
-        "object_class", "multiple_objects", "human_action", "color", "spatial_relationship",
-        "scene", "appearance_style", "temporal_style", "overall_consistency",
-    ],
-    "VBench-2.0 (5/5)": [
-        "human_fidelity", "physics", "commonsense", "creativity",
-    ],
-    "EvalCrafter (17/17)": [
-        "inception_score", "action_recognition", "flow_score", "warping_error",
-        "motion_ac_score", "clip_score", "clip_temp", "face_consistency",
-        "blip_bleu", "sd_score", "celebrity_id", "dover_score", "aesthetic_score",
-        "subject_consistency", "background_consistency", "temporal_flickering",
-        "motion_smoothness",
-    ],
-    "ChronoMagic-Bench (2/2)": ["chronomagic"],
-    "T2V-CompBench (7/7)": ["t2v_compbench"],
-    "DEVIL (4/4)": ["dynamics_range", "ti_si", "flicker_detection", "motion"],
-}
-
-# ── Recommended presets ─────────────────────────────────────────────────────
-_PRESETS = {
-    "Quick Scan": {
-        "desc": "Fast quality triage (~1s/sample, CPU-only)",
-        "modules": ["basic", "metadata", "exposure", "letterbox"],
-    },
-    "Dataset Curation": {
-        "desc": "Clean & deduplicate datasets for training",
-        "modules": ["basic", "aesthetic", "dedup", "nsfw", "watermark_classifier",
-                     "brisque", "metadata", "embedding", "diversity_selection"],
-    },
-    "Video Generation Eval": {
-        "desc": "Evaluate text-to-video model outputs (VBench-style)",
-        "modules": ["aesthetic", "subject_consistency", "background_consistency",
-                     "temporal_flickering", "motion_smoothness", "clip_iqa",
-                     "video_text_matching", "dover", "ti_si"],
-    },
-    "Codec Comparison": {
-        "desc": "Compare video codec quality (needs reference)",
-        "modules": ["vmaf", "ssimulacra2", "psnr_hvs", "ms_ssim", "butteraugli",
-                     "cambi", "codec_specific_quality"],
-    },
-    "Audio Quality": {
-        "desc": "Speech/audio quality assessment",
-        "modules": ["audio_pesq", "audio_utmos", "dnsmos", "audio_si_sdr",
-                     "audio_estoi", "visqol"],
-    },
-}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -307,19 +251,111 @@ def _detect_fields_read(source: str) -> Set[str]:
 def _detect_fields_written(source: str) -> Set[str]:
     """Find QualityMetrics fields that a module writes."""
     writes: Set[str] = set()
+    # Pattern 1: sample.quality_metrics.FIELD =
     for m in re.finditer(r"quality_metrics\.(\w+)\s*=", source):
         writes.add(m.group(1))
+    # Pattern 2: metric_field = "FIELD" (ReferenceBasedModule/NoReferenceModule auto-assignment)
+    for m in re.finditer(r'metric_field\s*=\s*["\'](\w+)["\']', source):
+        writes.add(m.group(1))
+    # Pattern 3: qm.FIELD = (variable alias for quality_metrics)
+    if re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", source):
+        for m in re.finditer(r"\bqm\.(\w+)\s*=", source):
+            writes.add(m.group(1))
     return writes
 
 
-def _static_checks(source: str, meta: Dict) -> List[str]:
+_UTILITY_MODULES = {"embedding", "dedup", "diversity_selection", "knowledge_graph"}
+
+# ── Metric category display names and ordering ────────────────────────────
+_CATEGORY_DISPLAY = {
+    "nr_quality": "No-Reference Quality",
+    "fr_quality": "Full-Reference Quality",
+    "alignment": "Text-Video Alignment",
+    "temporal": "Temporal Consistency",
+    "motion": "Motion & Dynamics",
+    "basic": "Basic Visual Quality",
+    "aesthetic": "Aesthetics",
+    "audio": "Audio Quality",
+    "face": "Face & Identity",
+    "scene": "Scene & Content",
+    "hdr": "HDR & Color",
+    "codec": "Codec & Technical",
+    "spatial": "Depth & Spatial",
+    "production": "Production Quality",
+    "text": "OCR & Text",
+    "safety": "Safety & Ethics",
+    "i2v": "Image-to-Video Reference",
+    "meta": "Meta & Curation",
+}
+_CATEGORY_ORDER = list(_CATEGORY_DISPLAY.keys())
+
+
+def _detect_source_links(source: str, cls: type) -> str:
+    """Extract source links (paper, GitHub, HF) as compact markdown."""
+    links = []
+    # arXiv
+    for m in re.finditer(r"(https?://arxiv\.org/abs/[\w.]+)", source):
+        links.append(f"[arXiv]({m.group(1)})")
+        break
+    # GitHub
+    for m in re.finditer(r"(https?://github\.com/[\w-]+/[\w.-]+)", source):
+        links.append(f"[GitHub]({m.group(1)})")
+        break
+    # HuggingFace
+    for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
+        candidate = m.group(1)
+        if not any(x in candidate for x in ("http", "path", "file", "dir", "main/")):
+            links.append(f"[HF](https://huggingface.co/{candidate})")
+            break
+    # Paper citation from docstring
+    if not links:
+        doc = cls.__doc__ or ""
+        for m_p in re.finditer(
+            r"((?:CVPR|ICCV|ECCV|NeurIPS|ICML|ICLR|AAAI|WACV|TIP|TPAMI)\s*\d{4})", doc
+        ):
+            links.append(m_p.group(1))
+            break
+    return " · ".join(links) if links else "—"
+
+
+def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
     warnings = []
-    if "def on_mount(" in source and "def setup(" not in source:
-        if "super().on_mount()" not in source:
+    # For compat alias subclasses, include parent source in checks
+    full_source = source
+    if cls is not None and len(source) < 300:
+        for base in cls.__mro__[1:]:
+            if base.__module__.startswith("ayase."):
+                try:
+                    full_source = source + "\n" + inspect.getsource(base)
+                    break
+                except (TypeError, OSError):
+                    pass
+
+    # Skip checks for known utility modules (no quality_metrics by design)
+    if meta.get("name") in _UTILITY_MODULES:
+        return warnings
+
+    if "def on_mount(" in full_source and "def setup(" not in full_source:
+        if "super().on_mount()" not in full_source:
             warnings.append("uses `on_mount()` instead of `setup()`")
-    if not meta["output_fields"] and "validation_issues" not in source:
+    # A module "produces output" if it has output_fields, validation_issues,
+    # metric_field, add_dataset_metric, or is a batch/dataset-level module.
+    has_output = (
+        meta["output_fields"]
+        or "validation_issues" in full_source
+        or re.search(r'metric_field\s*=\s*["\']', full_source)
+        or "add_dataset_metric" in full_source
+        or "BatchMetricModule" in full_source
+    )
+    if not has_output:
         warnings.append("no output fields and no validation issues")
-    if "quality_metrics" not in source and meta["output_fields"]:
+    # Check that modules declaring output_fields actually write them
+    writes_metrics = (
+        "quality_metrics" in full_source
+        or re.search(r'metric_field\s*=\s*["\']', full_source)
+        or re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", full_source)
+    )
+    if meta["output_fields"] and not writes_metrics:
         warnings.append("declares output fields but never assigns quality_metrics")
     return warnings
 
@@ -665,18 +701,6 @@ def _get_score_direction(field_name: str, desc: str) -> str:
     return "—"
 
 
-def _get_deprecated_aliases() -> List[Tuple[str, str, str]]:
-    """Return list of (alias, maps_to, note) for deprecated fields."""
-    return [
-        ("fid_score", "—", "deprecated, writes discarded"),
-        ("kid_score", "—", "deprecated, writes discarded"),
-        ("inception_score", "is_score", "alias"),
-        ("ssim_score", "ssim", "alias"),
-        ("psnr_score", "psnr", "alias"),
-        ("lpips_score", "lpips", "alias"),
-        ("alignment_score", "clip_score", "alias"),
-    ]
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Main generator
@@ -689,6 +713,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         run_tests: If True, run pytest to collect test pass/fail status
                    for each module. Adds checkmark emojis to module tables.
     """
+    ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules()
 
     # ── Collect module data ──────────────────────────────────────────────
@@ -735,7 +760,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         for f in read:
             field_readers[f].append(name)
 
-        warnings = _static_checks(source, meta)
+        warnings = _static_checks(source, meta, cls)
         if warnings:
             all_warnings.append((name, warnings))
 
@@ -904,184 +929,138 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
             a(line)
         a("```")
 
-    # ── 7. Recommended Presets ───────────────────────────────────────────
-    a("")
-    a("### Recommended Module Presets")
-    a("")
-    for preset_name, info in _PRESETS.items():
-        a(f"**{preset_name}** — {info['desc']}")
-        a(f"```toml")
-        a(f"modules = {info['modules']}")
-        a(f"```")
-        a("")
 
-    # ── 8. Benchmark Coverage ────────────────────────────────────────────
-    a("### Benchmark Coverage")
-    a("")
-    a("| Benchmark | Status |")
-    a("|-----------|--------|")
-    for bench, _mods in _BENCHMARK_MODULES.items():
-        a(f"| {bench} | Covered |")
-    a("")
+    # ── Integrity warnings (stderr only, not in output) ────────────────
+    import sys
 
-    # ── 9. Field Collisions ──────────────────────────────────────────────
-    if collisions:
-        a("### Field Collisions")
-        a("")
-        a("Multiple modules write to the same QualityMetrics field:")
-        a("")
-        a("| Field | Writers |")
-        a("|-------|---------|")
-        for field, writers in sorted(collisions.items()):
-            a(f"| `{field}` | {', '.join(f'`{w}`' for w in writers)} |")
-        a("")
-
-    # ── 10. Orphaned Fields ──────────────────────────────────────────────
-    # Filter out string/special fields and known aliases
+    # Filter out guarded collisions (writer checks `if field is None` before writing)
+    real_collisions = {}
+    for field, writers in collisions.items():
+        unguarded = []
+        for w in writers:
+            w_cls = ModuleRegistry.get_module(w)
+            if w_cls is None:
+                unguarded.append(w)
+                continue
+            w_src = _get_source(w_cls)
+            if f"{field} is None" not in w_src:
+                unguarded.append(w)
+        if len(unguarded) > 1:
+            real_collisions[field] = unguarded
+    if real_collisions:
+        print(f"WARNING: {len(real_collisions)} field collision(s):", file=sys.stderr)
+        for field, writers in sorted(real_collisions.items()):
+            print(f"  {field}: {', '.join(writers)}", file=sys.stderr)
     real_orphans = {f for f in orphaned
                     if qm_fields.get(f, {}).get("type") == "float"
                     and f not in ("engagement_score", "human_preference_score")}
     if real_orphans:
-        a("### Orphaned QualityMetrics Fields")
-        a("")
-        a(f"{len(real_orphans)} fields in `QualityMetrics` model that no module populates:")
-        a("")
+        print(f"WARNING: {len(real_orphans)} orphaned QualityMetrics field(s):", file=sys.stderr)
         for f in sorted(real_orphans):
-            group = qm_fields[f]["group"]
-            a(f"- `{f}` ({group})")
-        a("")
+            print(f"  {f}", file=sys.stderr)
 
-    # ── 11. Module Dependencies (Mermaid) ────────────────────────────────
-    # Build unique dependency edges
-    dep_edges: Set[Tuple[str, str]] = set()
-    for consumer, field, producer in deps:
-        dep_edges.add((producer, consumer))
+    if all_warnings:
+        print(f"WARNING: {len(all_warnings)} module(s) with static health issues:", file=sys.stderr)
+        for mod_name, warns in sorted(all_warnings):
+            for w in warns:
+                print(f"  {mod_name}: {w}", file=sys.stderr)
 
-    if dep_edges:
-        a("### Module Dependency Graph")
-        a("")
-        a("Modules that read QualityMetrics fields written by other modules:")
-        a("")
-        a("```mermaid")
-        a("graph LR")
-        for producer, consumer in sorted(dep_edges):
-            a(f"    {producer} --> {consumer}")
-        a("```")
-        a("")
+    # ══════════════════════════════════════════════════════════════════════
+    # METRIC-CENTRIC TABLES (grouped by _FIELD_GROUPS category)
+    # ══════════════════════════════════════════════════════════════════════
 
-    # ── 12. Score Direction Reference ────────────────────────────────────
-    a("### Score Direction Reference")
-    a("")
-    a("| Field | Direction | Range | Category |")
-    a("|-------|-----------|-------|----------|")
-    for field_name in sorted(unique_outputs):
-        qm = qm_fields.get(field_name, {})
-        # Find description from module output_fields
+    # Build module lookup: name → enriched result dict
+    mod_lookup: Dict[str, Dict] = {r["name"]: r for r in results}
+
+    # Build source links cache (per module, computed once)
+    source_links_cache: Dict[str, str] = {}
+    for name in all_modules:
+        cls = ModuleRegistry.get_module(name)
+        if cls is None:
+            continue
+        source_links_cache[name] = _detect_source_links(_get_source(cls), cls)
+
+    # Build metric rows: one per (field, writer_module) pair
+    speed_badges = {"fast": "\u26a1", "medium": "\u23f1\ufe0f", "slow": "\U0001f40c"}
+    metric_rows: Dict[str, list] = defaultdict(list)  # category → rows
+
+    for field_name in sorted(qm_fields.keys()):
+        qm = qm_fields[field_name]
+        group = qm["group"]
+        writers = field_writers.get(field_name, [])
+        if not writers:
+            continue
+
+        # Get description and direction from QualityMetrics field comment
         desc = ""
         for r in results:
             if field_name in r["output_fields"]:
                 desc = r["output_fields"][field_name]
                 break
         direction = _get_score_direction(field_name, desc)
-        # Extract range from desc
-        range_match = re.search(r"\(([^)]*(?:higher|lower|dB|MOS|0-\d+|\d+-\d+)[^)]*)\)", desc or "")
+        range_match = re.search(
+            r"\(([^)]*(?:higher|lower|dB|MOS|0-\d+|\d+-\d+)[^)]*)\)", desc or ""
+        )
         range_str = range_match.group(1) if range_match else "—"
-        group = qm.get("group", "—")
-        a(f"| `{field_name}` | {direction} | {range_str} | {group} |")
-    a("")
 
-    # ── 13. Deprecated Aliases ───────────────────────────────────────────
-    aliases = _get_deprecated_aliases()
-    a("### Deprecated Field Aliases")
-    a("")
-    a("| Old Name | Maps To | Status |")
-    a("|----------|---------|--------|")
-    for old, new, note in aliases:
-        a(f"| `{old}` | `{new}` | {note} |")
-    a("")
+        for mod_name in sorted(writers):
+            mod = mod_lookup.get(mod_name)
+            if mod is None:
+                continue
+            badge = speed_badges.get(mod["speed"], "")
+            chain = " → ".join(mod["fallback_chain"]) if mod["fallback_chain"] else "—"
+            gpu = "✓" if mod["gpu"] else ""
+            source = source_links_cache.get(mod_name, "—")
+            test_status = _format_test_status(mod_name, test_results)
 
-    # ── 14. Static Health Checks ─────────────────────────────────────────
-    if all_warnings:
-        a("### Static Health Checks")
-        a("")
-        a(f"{len(all_warnings)} module(s) with warnings:")
-        a("")
-        for mod_name, warns in sorted(all_warnings):
-            for w in warns:
-                a(f"- `{mod_name}`: {w}")
-        a("")
+            metric_rows[group].append(
+                f"| `{field_name}` | {direction} | {range_str} "
+                f"| `{mod_name}` | {mod['input_type']} "
+                f"| {badge} {mod['speed']} | {gpu} | {chain} "
+                f"| {source} | {test_status} | {mod['description']} |"
+            )
 
-    # ══════════════════════════════════════════════════════════════════════
-    # PER-MODULE TABLES (with enriched columns)
-    # ══════════════════════════════════════════════════════════════════════
     a("---")
     a("")
 
-    current_group = None
-    for r in results:
-        if r["group"] != current_group:
-            if current_group is not None:
-                a("")
-            grp = r["group"]
-            grp_count = group_stats[grp]["modules"]
-            a(f"## {grp} ({grp_count} modules)")
-            a("")
-            a("| Module | Type | Outputs | Speed | Test | Description |")
-            a("|--------|------|---------|-------|------|-------------|")
-            current_group = grp
-
-        out_parts = []
-        for field, desc in r["output_fields"].items():
-            out_parts.append(f"`{field}`")
-        out_str = ", ".join(out_parts) if out_parts else "—"
-
-        # Speed badge
-        speed_badge = {"fast": "\u26a1", "medium": "\u23f1\ufe0f", "slow": "\U0001f40c"}.get(r["speed"], "")
-
-        # Test status
-        test_status = _format_test_status(r["name"], test_results)
-
-        a(f"| `{r['name']}` | {r['input_type']} | {out_str} "
-          f"| {speed_badge} {r['speed']} | {test_status} | {r['description']} |")
-
-    a("")
-
-    # ── Per-module detail cards (packages, GPU, speed, fallback) ─────────
-    a("---")
-    a("")
-    a("## Module Details")
-    a("")
-    a("Per-module requirements, speed tier, GPU usage, and fallback chains.")
-    a("")
-
-    for r in results:
-        badges = []
-        if r["gpu"]:
-            badges.append("GPU")
-        badges.append(r["speed"])
-        if r["tiered"]:
-            badges.append("tiered")
-        badge_str = " · ".join(badges)
-
-        pkg_str = ", ".join(r["packages"]) if r["packages"] else "—"
-        chain_str = " → ".join(r["fallback_chain"]) if r["fallback_chain"] else "—"
-        hf_str = ", ".join(f"`{m}`" for m in r["hf_models"]) if r["hf_models"] else "—"
-        vram_str = r["vram"] or "—"
-        paper_str = r["paper"] or "—"
-
-        a(f"<details><summary><code>{r['name']}</code> [{badge_str}]</summary>")
+    for cat_key in _CATEGORY_ORDER:
+        rows = metric_rows.get(cat_key)
+        if not rows:
+            continue
+        display = _CATEGORY_DISPLAY.get(cat_key, cat_key)
+        a(f"## {display} ({len(rows)} metrics)")
         a("")
-        a(f"- **Packages**: {pkg_str}")
-        if hf_str != "—":
-            a(f"- **Models**: {hf_str}")
-        if vram_str != "—":
-            a(f"- **Est. VRAM**: {vram_str}")
-        if chain_str != "—":
-            a(f"- **Fallback**: {chain_str}")
-        if paper_str != "—":
-            a(f"- **Paper**: {paper_str}")
+        a("| Metric | Dir | Range | Module | Input | Speed | GPU | Backend | Source | Test | Description |")
+        a("|--------|-----|-------|--------|-------|-------|-----|---------|--------|------|-------------|")
+        for row in rows:
+            a(row)
         a("")
-        a("</details>")
+
+    # Handle "other" category (fields not in _CATEGORY_ORDER)
+    other_rows = metric_rows.get("other")
+    if other_rows:
+        a(f"## Other ({len(other_rows)} metrics)")
+        a("")
+        a("| Metric | Dir | Range | Module | Input | Speed | GPU | Backend | Source | Test | Description |")
+        a("|--------|-----|-------|--------|-------|-------|-----|---------|--------|------|-------------|")
+        for row in other_rows:
+            a(row)
+        a("")
+
+    # ── Utility & Validation Modules (no metric output) ───────────────
+    no_output = [r for r in results if not r["output_fields"]]
+    if no_output:
+        a(f"## Utility & Validation ({len(no_output)} modules)")
+        a("")
+        a("Modules that perform validation, embedding, deduplication, or dataset-level "
+          "analysis without writing individual QualityMetrics fields.")
+        a("")
+        a("| Module | Input | Speed | GPU | Description |")
+        a("|--------|-------|-------|-----|-------------|")
+        for r in sorted(no_output, key=lambda x: x["name"]):
+            badge = speed_badges.get(r["speed"], "")
+            gpu = "✓" if r["gpu"] else ""
+            a(f"| `{r['name']}` | {r['input_type']} | {badge} {r['speed']} | {gpu} | {r['description']} |")
         a("")
 
     return "\n".join(L)

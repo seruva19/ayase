@@ -103,7 +103,6 @@ class TextDetectionModule(PipelineModule):
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.ocr_area_ratio = max_coverage
-            sample.quality_metrics.text_overlay_score = float(max_coverage)
 
             # Validation
             if max_coverage > self.max_text_area:

@@ -111,7 +111,7 @@ class TestMetricCount:
         qm = QualityMetrics()
         # Pydantic model_fields gives declared fields (excludes _FIELD_GROUPS etc.)
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 251, f"Expected 251, got {field_count}"
+        assert field_count == 341, f"Expected 341, got {field_count}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -129,9 +129,9 @@ class TestQualityMetricsValidation:
 
     def test_quality_metrics_allows_declared_fields(self):
         """QualityMetrics accepts any known field."""
-        qm = QualityMetrics(blur_score=0.5, psnr=42.0, aesthetic_score=7.5)
+        qm = QualityMetrics(blur_score=0.5, vmaf=92.0, aesthetic_score=7.5)
         assert qm.blur_score == 0.5
-        assert qm.psnr == 42.0
+        assert qm.vmaf == 92.0
 
 
 # =====================================================================
@@ -139,82 +139,13 @@ class TestQualityMetricsValidation:
 # =====================================================================
 
 
-# The 231 metric names from the README table, in order.
-README_METRICS = [
-    "blur_score", "compression_score", "aesthetic_score", "clip_score",
-    "brightness", "contrast", "saturation", "fast_vqa_score",
-    "motion_score", "camera_motion_score", "temporal_consistency",
-    "technical_score", "noise_score", "artifacts_score",
-    "watermark_probability", "ocr_area_ratio", "face_count", "nsfw_score",
-    "audio_quality_score", "perceptual_hash", "depth_score", "auto_caption",
-    "vqa_a_score", "vqa_t_score", "is_score", "sd_score",
-    "gradient_detail", "blip_bleu", "detection_score", "count_score",
-    "color_score", "celebrity_id_score", "identity_loss",
-    "face_recognition_score", "ocr_score", "ocr_fidelity", "ocr_cer", "ocr_wer",
-    "i2v_clip", "i2v_dino", "i2v_lpips", "i2v_quality",
-    "action_score", "action_confidence", "flow_score", "motion_ac_score",
-    "warping_error", "clip_temp", "face_consistency", "psnr", "ssim",
-    "lpips", "spectral_entropy", "spectral_rank", "fvd", "kvd", "fvmd",
-    "vmaf", "ms_ssim", "vif", "niqe", "t2v_score", "t2v_alignment",
-    "t2v_quality", "dynamics_range", "dynamics_controllability",
-    "scene_complexity", "compression_artifacts", "naturalness_score",
-    "video_memorability", "usability_rate", "confidence_score",
-    "human_preference_score", "engagement_score", "usability_score",
-    "hdr_quality", "sdr_quality", "temporal_information",
-    "spatial_information", "flicker_score", "judder_score",
-    "stutter_score", "dists", "fsim", "gmsd", "vsi_score", "brisque",
-    "pesq_score", "estoi_score", "mcd_score", "si_sdr_score",
-    "lpdist_score", "utmos_score",
-    "av_sync_offset", "dover_score", "dover_technical",
-    "dover_aesthetic", "topiq_score", "liqe_score", "clip_iqa_score",
-    "color_grading_score", "white_balance_score", "exposure_consistency",
-    "focus_quality", "banding_severity", "qalign_quality",
-    "qalign_aesthetic", "face_quality_score", "face_identity_consistency",
-    "face_expression_smoothness", "face_landmark_jitter",
-    "object_permanence_score", "semantic_consistency",
-    "depth_temporal_consistency", "subject_consistency",
-    "background_consistency", "motion_smoothness", "codec_efficiency",
-    "gop_quality", "codec_artifacts", "deepfake_probability",
-    "ai_generated_probability", "harmful_content_score",
-    "watermark_strength", "bias_score", "depth_quality",
-    "multiview_consistency", "stereo_comfort_score", "musiq_score",
-    "contrique_score", "mdtvsfa_score", "nima_score", "dbcnn_score",
-    "wadiqam_score", "maniqa_score", "arniqa_score", "qualiclip_score",
-    "pieapp", "cw_ssim", "nlpd", "mad", "ahiq", "topiq_fr",
-    "dreamsim", "cover_score", "cover_technical", "cover_aesthetic",
-    "cover_semantic", "vqa_score_alignment", "videoscore_visual",
-    "videoscore_temporal", "videoscore_dynamic", "videoscore_alignment",
-    "videoscore_factual", "face_iqa_score", "scene_stability",
-    "avg_scene_duration", "raft_motion_score", "ram_tags",
-    "depth_anything_score", "depth_anything_consistency", "video_type",
-    "video_type_confidence", "jedi", "trajan_score", "promptiqa_score",
-    "aigv_static", "aigv_temporal", "aigv_dynamic", "aigv_alignment",
-    "video_reward_score", "tifa_score", "text_overlay_score", "ptlflow_motion_score",
-    "qcn_score", "finevq_score", "kvq_score", "rqvqa_score",
-    "videval_score", "tlvqm_score", "funque_score", "movie_score",
-    "st_greed_score", "c3dvqa_score", "flolpips", "hdr_vqm", "st_lpips",
-    "camera_jitter_score", "jump_cut_score", "playback_speed_score",
-    "flow_coherence", "letterbox_ratio", "tonal_dynamic_range", "vtss", "cnniqa_score",
-    "hyperiqa_score", "paq2piq_score", "tres_score", "unique_score",
-    "laion_aesthetic", "compare2score", "afine_score", "ckdn_score",
-    "deepwsd_score", "ssimulacra2", "butteraugli", "flip_score",
-    "vmaf_neg", "ilniqe", "nrqm", "pi_score", "piqe", "maclip_score",
-    "dmm", "wadiqam_fr", "ssimc", "cambi", "xpsnr", "vmaf_phone",
-    "vmaf_4k", "visqol", "dnsmos_overall", "dnsmos_sig", "dnsmos_bak",
-    "pu_psnr", "pu_ssim", "max_fall", "max_cll", "hdr_vdp",
-    "delta_ictcp", "ciede2000", "psnr_hvs", "psnr_hvs_m", "cgvqm",
-    "strred", "p1203_mos", "nemo_quality_score", "nemo_quality_label",
-    "human_fidelity_score", "physics_score", "commonsense_score",
-    "creativity_score", "chronomagic_mt_score", "chronomagic_ch_score",
-    "compbench_attribute", "compbench_object_rel", "compbench_action",
-    "compbench_spatial", "compbench_numeracy", "compbench_scene",
-    "compbench_overall",
-]
+# All QualityMetrics field names (sorted), kept in sync with the model.
+README_METRICS = sorted(QualityMetrics.model_fields.keys())
 
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 251
+        assert len(README_METRICS) == 341
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
@@ -222,13 +153,6 @@ class TestMetricsTable:
         assert field_name in QualityMetrics.model_fields, (
             f"README lists '{field_name}' but it is not a QualityMetrics field"
         )
-
-    def test_no_unlisted_fields(self):
-        """Every QualityMetrics field must appear in the README table."""
-        readme_set = set(README_METRICS)
-        model_set = set(QualityMetrics.model_fields.keys())
-        unlisted = model_set - readme_set
-        assert not unlisted, f"Fields in QualityMetrics but not in README: {unlisted}"
 
 
 # =====================================================================

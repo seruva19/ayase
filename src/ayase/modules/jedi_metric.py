@@ -130,6 +130,9 @@ class JEDiModule(PipelineModule):
             set2 = features[mid:]
             mmd = self._compute_mmd(set1, set2)
             logger.info("JEDi MMD score: %.4f (computed from %d samples)", mmd, n)
+            if hasattr(self, "pipeline") and self.pipeline:
+                if hasattr(self.pipeline, "add_dataset_metric"):
+                    self.pipeline.add_dataset_metric("jedi", mmd)
         except Exception as e:
             logger.warning("JEDi computation failed: %s", e)
         finally:
