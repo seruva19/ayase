@@ -16,7 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 class PipelineModule(ABC):
-    """Base class for all quality assessment modules."""
+    """Base class for all quality assessment modules.
+
+    Supports a ``test_mode`` flag that forces heuristic-only backends,
+    skipping heavy ML model downloads. Activate via:
+
+    - ``Module({"test_mode": True})`` — per-instance
+    - ``AYASE_TEST_MODE=1`` environment variable — global
+    - ``PipelineModule.set_test_mode(True)`` — class-level toggle
+
+    In test mode, ``setup()`` is still called but modules should skip
+    ML model loading when ``self.test_mode`` is True and fall through
+    to their heuristic backend instead.
+    """
 
     name: str = "unnamed_module"
     description: str = "No description provided"
@@ -24,10 +36,31 @@ class PipelineModule(ABC):
     required_packages: List[str] = []
     required_files: Dict[str, str] = {}
 
+    _global_test_mode: bool = False
+
     def __init__(self, config: Dict[str, Any] = None):
         self.config = {**self.default_config, **(config or {})}
         self.pipeline = None  # Will be set by Pipeline during initialization
         self._mounted = False
+
+    @property
+    def test_mode(self) -> bool:
+        """Whether this module should skip ML model loading.
+
+        True if any of: config ``test_mode``, env ``AYASE_TEST_MODE=1``,
+        or class-level ``set_test_mode(True)`` is active.
+        """
+        import os
+        return (
+            self.config.get("test_mode", False)
+            or self._global_test_mode
+            or os.environ.get("AYASE_TEST_MODE", "") == "1"
+        )
+
+    @classmethod
+    def set_test_mode(cls, enabled: bool = True) -> None:
+        """Enable/disable test mode globally for all modules."""
+        cls._global_test_mode = enabled
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -47,7 +80,16 @@ class PipelineModule(ABC):
         raise NotImplementedError("PipelineModule subclasses must implement process().")
 
     def on_mount(self) -> None:
-        """Called when the module is loaded/initialized. Use for loading models/weights."""
+        """Called when the module is loaded/initialized. Use for loading models/weights.
+
+        In test mode, ``setup()`` is skipped entirely — modules stay in
+        their default state with ``_ml_available = False``, which makes
+        ``process()`` use the heuristic fallback (or return the sample
+        unchanged). This avoids all heavy model downloads and GPU usage.
+        """
+        if self.test_mode:
+            self._mounted = True
+            return
         missing = self._check_required_packages()
         if missing:
             logger.warning(f"Missing packages for {self.name}: {', '.join(missing)}")
@@ -66,7 +108,12 @@ class PipelineModule(ABC):
         self.teardown()
 
     def setup(self) -> None:
-        """Deprecated: Use on_mount instead."""
+        """Load ML models and weights. Override in subclasses.
+
+        In test mode, this is automatically skipped by ``on_mount()``.
+        If called directly (e.g. from tests), subclasses should handle
+        gracefully when ML packages are unavailable.
+        """
         return None
 
     def teardown(self) -> None:
