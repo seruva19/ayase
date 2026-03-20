@@ -1,87 +1,34 @@
 # Ayase Metrics Reference
 
-Auto-generated reference for all pipeline modules. Run `ayase modules docs` to regenerate.
+> **Version 0.1.17** · Generated 2026-03-20 17:01 · **312 modules** · **349 metrics**
+>
+> `ayase modules docs -o METRICS.md` to regenerate
+>
+> Tests: `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 ## Summary
 
-| Stat | Value |
-|------|-------|
-| Total modules | **224** |
-| Unique output fields | **229** |
-| QualityMetrics fields | 251 |
-| Total output mappings | 263 |
-| Tiered-backend modules | 35 |
-| GPU-accelerated modules | 100 |
-| Categories | 13 |
+![Summary Dashboard](docs/chart_summary.png)
 
 ### Modules by Category
 
-```
-  No-Reference Quality           ██████████████████████████████ 95
-  Full-Reference & Distribution  ███████████ 36
-  Motion & Temporal              ███████ 23
-  Text & Semantic                █████ 16
-  Video Quality Assessment       ████ 15
-  Audio Quality                  ███ 10
-  Video Generation               ██ 8
-  Safety & Content               █ 6
-  Face & Identity                █ 4
-  HDR & Color                    █ 4
-  Codec & Technical               3
-  Depth                           3
-  Image-to-Video Reference        1
-```
+![Module Distribution by Category](docs/chart_categories.png)
 
 ### By Input Type
 
-```
-  image+video       ██████████████████████████████ 100
-  video-only        ██████████████████ 63
-  full-reference    ██████████████ 48
-  caption-required  ██ 9
-  audio             █ 4
-```
-
-### Backend Usage
-
-```
-  torch         ██████████████████████████████ 105
-  opencv        ██████████████████ 63
-  pyiqa         █████████████ 48
-  transformers  ███████████ 41
-  torchvision   ███ 11
-  ffmpeg        ███ 11
-  piq            3
-  torchmetrics   1
-```
+![Input Type Distribution](docs/chart_input_types.png)
 
 ### Speed Tiers
 
-```
-  medium (GPU, ~1s)    ██████████████████████████████ 112
-  fast (CPU, <0.1s)    ████████████████████████████ 105
-  slow (LLM/VLM, >5s)  █ 7
-```
+![Speed Tiers](docs/chart_speed.png)
+
+### Backend Usage
+
+![Backend Usage](docs/chart_backends.png)
 
 ### Top Required Packages
 
-```
-  torch          ██████████████████████████████ 105
-  opencv-python  ██████████████████ 63
-  pyiqa          █████████████ 48
-  transformers   ███████████ 41
-  Pillow         ██████████ 36
-  torchvision    ███ 13
-  librosa        ██ 8
-  scipy          █ 6
-  soundfile      █ 6
-  mediapipe      █ 4
-  scikit-learn   █ 4
-  ultralytics     3
-  piq             3
-  lpips           3
-  scenedetect     2
-```
+![Top Required Packages](docs/chart_packages.png)
 
 ### Recommended Module Presets
 
@@ -133,6 +80,9 @@ Multiple modules write to the same QualityMetrics field:
 | `camera_motion_score` | `camera_motion`, `stabilized_motion` |
 | `clip_score` | `semantic_alignment`, `video_text_matching` |
 | `clip_temp` | `clip_temporal`, `video_text_matching` |
+| `confidence_score` | `unqa`, `llm_descriptive_qa` |
+| `dover_score` | `dover`, `internvqa`, `unified_vqa` |
+| `gamival_score` | `nr_gvqm`, `gamival` |
 | `is_score` | `inception_score`, `object_detection` |
 | `motion_score` | `motion`, `stabilized_motion` |
 | `noise_score` | `basic_quality`, `imaging_quality` |
@@ -141,9 +91,11 @@ Multiple modules write to the same QualityMetrics field:
 
 ### Orphaned QualityMetrics Fields
 
-19 fields in `QualityMetrics` model that no module populates:
+43 fields in `QualityMetrics` model that no module populates:
 
+- `artfid_score` (fr_quality)
 - `audio_quality_score` (audio)
+- `avqt_score` (fr_quality)
 - `compbench_action` (alignment)
 - `compbench_attribute` (alignment)
 - `compbench_numeracy` (alignment)
@@ -151,17 +103,39 @@ Multiple modules write to the same QualityMetrics field:
 - `compbench_overall` (alignment)
 - `compbench_scene` (alignment)
 - `compbench_spatial` (alignment)
+- `compressed_vqa_hdr` (fr_quality)
 - `compression_score` (basic)
+- `deepvqa_score` (fr_quality)
 - `depth_score` (spatial)
+- `erqa_score` (fr_quality)
+- `fad_score` (distribution)
+- `fgd_score` (distribution)
+- `fmd_score` (distribution)
 - `fvd` (distribution)
 - `fvmd` (distribution)
+- `graphsim_score` (fr_quality)
 - `jedi` (distribution)
 - `kvd` (distribution)
 - `lpips` (fr_quality)
+- `msswd_score` (distribution)
+- `pcqm_score` (fr_quality)
+- `pointssim_score` (fr_quality)
 - `psnr` (fr_quality)
+- `psnr99` (fr_quality)
+- `psnr_div` (fr_quality)
+- `pvmaf_score` (fr_quality)
+- `rankdvqa_score` (fr_quality)
+- `sfid_score` (distribution)
 - `ssim` (fr_quality)
+- `st_mad` (fr_quality)
+- `stream_spatial` (distribution)
+- `stream_temporal` (distribution)
 - `temporal_consistency` (temporal)
 - `usability_score` (meta)
+- `vendi_score` (distribution)
+- `vfips_score` (fr_quality)
+- `worldscore` (distribution)
+- `ws_ssim` (fr_quality)
 
 ### Module Dependency Graph
 
@@ -185,40 +159,52 @@ graph LR
 |-------|-----------|-------|----------|
 | `action_confidence` | — | 0-100 | scene |
 | `action_score` | ↑ higher=better | 0-100 | scene |
+| `adadqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `aesthetic_score` | ↑ higher=better | — | aesthetic |
 | `afine_score` | ↑ higher=better | — | nr_quality |
 | `ahiq` | ↑ higher=better | higher=better | fr_quality |
 | `ai_generated_probability` | — | — | safety |
+| `aigcvqa_aesthetic` | — | — | nr_quality |
+| `aigcvqa_alignment` | — | — | alignment |
+| `aigcvqa_technical` | — | — | nr_quality |
 | `aigv_alignment` | — | — | alignment |
 | `aigv_dynamic` | — | — | motion |
 | `aigv_static` | — | — | nr_quality |
 | `aigv_temporal` | — | — | temporal |
+| `aigvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `arniqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `artifacts_score` | ↑ higher=better | — | basic |
+| `audiobox_enjoyment` | — | — | audio |
+| `audiobox_production` | — | — | audio |
 | `auto_caption` | — | — | text |
 | `av_sync_offset` | — | — | audio |
 | `avg_scene_duration` | — | — | scene |
 | `background_consistency` | ↑ higher=better | — | temporal |
 | `banding_severity` | ↓ lower=better | lower=better | production |
+| `bas_score` | ↑ higher=better | higher=better | motion |
 | `bias_score` | ↑ higher=better | — | safety |
 | `blip_bleu` | — | — | alignment |
 | `blur_score` | ↑ higher=better | — | basic |
 | `brightness` | — | — | basic |
 | `brisque` | ↓ lower=better | 0-100, lower=better | nr_quality |
 | `butteraugli` | ↓ lower=better | lower=better | fr_quality |
+| `bvqi_score` | ↑ higher=better | higher=better | nr_quality |
 | `c3dvqa_score` | ↑ higher=better | — | fr_quality |
 | `cambi` | ↓ lower=better | 0-24, lower=better | codec |
 | `camera_jitter_score` | ↓ lower=better | 0-1, 1=stable | motion |
 | `camera_motion_score` | ↑ higher=better | — | motion |
+| `cdc_score` | ↓ lower=better | lower=better | temporal |
 | `celebrity_id_score` | ↑ higher=better | — | face |
-| `cgvqm` | ↑ higher=better | higher=better | nr_quality |
+| `cgvqm` | ↑ higher=better | higher=better | fr_quality |
 | `chronomagic_ch_score` | ↓ lower=better | 0-1, lower=fewer | temporal |
 | `chronomagic_mt_score` | ↑ higher=better | 0-1, higher=better | temporal |
 | `ciede2000` | ↓ lower=better | lower=better | fr_quality |
 | `ckdn_score` | ↑ higher=better | — | fr_quality |
+| `clifvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `clip_iqa_score` | ↑ higher=better | 0-1, higher=better | nr_quality |
 | `clip_score` | ↑ higher=better | — | alignment |
 | `clip_temp` | — | — | temporal |
+| `clipvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `cnniqa_score` | ↑ higher=better | — | nr_quality |
 | `codec_artifacts` | ↓ lower=better | lower=better | codec |
 | `codec_efficiency` | ↑ higher=better | higher=better | codec |
@@ -230,14 +216,21 @@ graph LR
 | `confidence_score` | ↑ higher=better | — | meta |
 | `contrast` | — | — | basic |
 | `contrique_score` | ↑ higher=better | higher=better | nr_quality |
+| `conviqt_score` | ↑ higher=better | higher=better | nr_quality |
 | `count_score` | ↑ higher=better | — | scene |
 | `cover_aesthetic` | — | — | aesthetic |
 | `cover_score` | ↑ higher=better | higher=better | nr_quality |
 | `cover_semantic` | — | — | aesthetic |
 | `cover_technical` | — | — | nr_quality |
+| `cpp_psnr` | ↑ higher=better | dB, higher=better | fr_quality |
+| `crave_score` | ↑ higher=better | higher=better | nr_quality |
 | `creativity_score` | ↑ higher=better | 0-1, higher=better | aesthetic |
+| `crfiqa_score` | ↑ higher=better | higher=better | face |
 | `cw_ssim` | ↑ higher=better | 0-1, higher=better | fr_quality |
+| `davis_f` | ↑ higher=better | higher=better | temporal |
+| `davis_j` | ↑ higher=better | higher=better | temporal |
 | `dbcnn_score` | ↑ higher=better | higher=better | nr_quality |
+| `deepdc_score` | ↓ lower=better | lower=better | nr_quality |
 | `deepfake_probability` | — | — | safety |
 | `deepwsd_score` | ↓ lower=better | — | fr_quality |
 | `delta_ictcp` | ↓ lower=better | lower=better | hdr |
@@ -246,6 +239,7 @@ graph LR
 | `depth_quality` | ↑ higher=better | higher=better | spatial |
 | `depth_temporal_consistency` | ↑ higher=better | higher=better | temporal |
 | `detection_score` | ↑ higher=better | — | scene |
+| `discovqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `dists` | ↓ lower=better | 0-1, lower=more similar | fr_quality |
 | `dmm` | ↑ higher=better | higher=better | fr_quality |
 | `dnsmos_bak` | ↑ higher=better | 1-5, higher=better | audio |
@@ -255,6 +249,7 @@ graph LR
 | `dover_score` | ↑ higher=better | higher=better | nr_quality |
 | `dover_technical` | — | — | nr_quality |
 | `dreamsim` | ↓ lower=better | lower=more similar | fr_quality |
+| `dsg_score` | ↑ higher=better | higher=better | alignment |
 | `dynamics_controllability` | — | — | motion |
 | `dynamics_range` | — | — | motion |
 | `estoi_score` | ↑ higher=better | 0-1, higher=better | audio |
@@ -268,6 +263,7 @@ graph LR
 | `face_quality_score` | ↑ higher=better | higher=better | face |
 | `face_recognition_score` | ↑ higher=better | 0-1, higher=better | face |
 | `fast_vqa_score` | ↑ higher=better | — | nr_quality |
+| `faver_score` | ↑ higher=better | higher=better | nr_quality |
 | `finevq_score` | ↑ higher=better | — | nr_quality |
 | `flicker_score` | ↓ lower=better | lower=better | temporal |
 | `flip_score` | ↓ lower=better | 0-1, lower=better | fr_quality |
@@ -277,9 +273,11 @@ graph LR
 | `focus_quality` | ↑ higher=better | — | production |
 | `fsim` | ↑ higher=better | 0-1, higher=better | fr_quality |
 | `funque_score` | ↑ higher=better | — | fr_quality |
+| `gamival_score` | ↑ higher=better | higher=better | nr_quality |
 | `gmsd` | ↓ lower=better | lower=better | fr_quality |
 | `gop_quality` | ↑ higher=better | higher=better | codec |
 | `gradient_detail` | — | 0-100 | scene |
+| `grafiqs_score` | ↑ higher=better | higher=better | face |
 | `harmful_content_score` | ↑ higher=better | — | safety |
 | `hdr_quality` | ↑ higher=better | — | hdr |
 | `hdr_vdp` | ↑ higher=better | higher=better | hdr |
@@ -299,14 +297,26 @@ graph LR
 | `laion_aesthetic` | — | 0-10 | aesthetic |
 | `letterbox_ratio` | — | 0-1, 0=no borders | basic |
 | `liqe_score` | ↑ higher=better | higher=better | nr_quality |
+| `lmmvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `lpdist_score` | ↓ lower=better | lower=better | audio |
+| `lse_c` | ↑ higher=better | higher=better | temporal |
+| `lse_d` | ↓ lower=better | lower=better | temporal |
 | `maclip_score` | ↑ higher=better | higher=better | nr_quality |
 | `mad` | ↓ lower=better | lower=better | fr_quality |
+| `magface_score` | ↑ higher=better | higher=better | face |
 | `maniqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `max_cll` | — | — | hdr |
 | `max_fall` | — | — | hdr |
+| `maxvqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `mc360iqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `mcd_score` | ↓ lower=better | dB, lower=better | audio |
 | `mdtvsfa_score` | ↑ higher=better | higher=better | nr_quality |
+| `mdvqa_distortion` | ↑ higher=better | higher=better | nr_quality |
+| `mdvqa_motion` | ↑ higher=better | higher=better | nr_quality |
+| `mdvqa_semantic` | ↑ higher=better | higher=better | nr_quality |
+| `memoryvqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `mm_pcqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `modularbvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `motion_ac_score` | ↑ higher=better | — | motion |
 | `motion_score` | ↑ higher=better | — | motion |
 | `motion_smoothness` | ↑ higher=better | 0-1, higher=better | motion |
@@ -323,6 +333,7 @@ graph LR
 | `noise_score` | ↑ higher=better | — | basic |
 | `nrqm` | ↑ higher=better | higher=better | nr_quality |
 | `nsfw_score` | ↑ higher=better | — | safety |
+| `oavqa_score` | ↑ higher=better | higher=better | audio |
 | `object_permanence_score` | ↑ higher=better | — | temporal |
 | `ocr_area_ratio` | — | — | text |
 | `ocr_cer` | ↓ lower=better | 0-1, lower=better | text |
@@ -330,40 +341,57 @@ graph LR
 | `ocr_score` | ↑ higher=better | — | text |
 | `ocr_wer` | ↓ lower=better | 0-1, lower=better | text |
 | `p1203_mos` | — | 1-5 | audio |
+| `p1204_mos` | — | 1-5 | codec |
 | `paq2piq_score` | ↑ higher=better | — | nr_quality |
+| `pc_d1_psnr` | — | dB | fr_quality |
+| `pc_d2_psnr` | — | dB | fr_quality |
 | `pesq_score` | ↑ higher=better | -0.5 to 4.5, higher=better | audio |
 | `physics_score` | ↑ higher=better | 0-1, higher=better | motion |
 | `pi_score` | ↓ lower=better | PIRM challenge, lower=better | nr_quality |
 | `pieapp` | ↓ lower=better | lower=better | fr_quality |
 | `piqe` | ↓ lower=better | lower=better | nr_quality |
 | `playback_speed_score` | ↑ higher=better | — | motion |
+| `presresq_score` | ↑ higher=better | higher=better | nr_quality |
 | `promptiqa_score` | ↑ higher=better | — | nr_quality |
+| `provqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `psnr_hvs` | ↑ higher=better | dB, higher=better | fr_quality |
 | `psnr_hvs_m` | ↑ higher=better | dB, higher=better | fr_quality |
 | `ptlflow_motion_score` | ↑ higher=better | — | motion |
+| `ptmvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `pu_psnr` | ↑ higher=better | dB, higher=better | hdr |
 | `pu_ssim` | ↑ higher=better | 0-1, higher=better | hdr |
 | `qalign_aesthetic` | ↑ higher=better | 1-5, higher=better | aesthetic |
 | `qalign_quality` | ↑ higher=better | 1-5, higher=better | nr_quality |
+| `qclip_score` | ↑ higher=better | higher=better | nr_quality |
 | `qcn_score` | ↑ higher=better | — | nr_quality |
 | `qualiclip_score` | ↑ higher=better | higher=better | nr_quality |
 | `raft_motion_score` | ↑ higher=better | — | motion |
 | `ram_tags` | — | — | scene |
+| `rapique_score` | ↑ higher=better | higher=better | nr_quality |
 | `rqvqa_score` | ↑ higher=better | — | nr_quality |
+| `s_psnr` | ↑ higher=better | dB, higher=better | fr_quality |
+| `sama_score` | ↑ higher=better | higher=better | nr_quality |
 | `saturation` | — | — | basic |
 | `scene_complexity` | — | — | scene |
 | `scene_stability` | — | — | temporal |
 | `sd_score` | ↑ higher=better | 0-1 | alignment |
 | `sdr_quality` | ↑ higher=better | — | hdr |
 | `semantic_consistency` | ↑ higher=better | higher=better | temporal |
+| `serfiq_score` | ↑ higher=better | higher=better | face |
 | `si_sdr_score` | ↑ higher=better | dB, higher=better | audio |
+| `siamvqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `simplevqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `spatial_information` | — | higher=more detail | basic |
 | `spectral_entropy` | — | — | nr_quality |
 | `spectral_rank` | — | — | nr_quality |
+| `speedqa_score` | ↑ higher=better | higher=better | nr_quality |
+| `sqi_score` | ↑ higher=better | — | nr_quality |
+| `sr4kvqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `ssimc` | ↑ higher=better | higher=better | fr_quality |
 | `ssimulacra2` | ↓ lower=better | 0-100, lower=better, JPEG XL standard | fr_quality |
 | `st_greed_score` | ↑ higher=better | — | fr_quality |
 | `st_lpips` | — | — | fr_quality |
+| `stablevqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `stereo_comfort_score` | ↑ higher=better | higher=better | spatial |
 | `strred` | ↓ lower=better | lower=better | fr_quality |
 | `stutter_score` | ↓ lower=better | lower=better | temporal |
@@ -371,9 +399,11 @@ graph LR
 | `t2v_alignment` | — | — | alignment |
 | `t2v_quality` | ↑ higher=better | — | nr_quality |
 | `t2v_score` | ↑ higher=better | — | alignment |
+| `t2veval_score` | ↑ higher=better | higher=better | alignment |
 | `technical_score` | ↑ higher=better | — | basic |
 | `temporal_information` | — | higher=more motion | basic |
 | `text_overlay_score` | ↑ higher=better | 0-1 | text |
+| `thqa_score` | ↑ higher=better | higher=better | nr_quality |
 | `tifa_score` | ↑ higher=better | 0-1, higher=better | alignment |
 | `tlvqm_score` | ↑ higher=better | — | nr_quality |
 | `tonal_dynamic_range` | — | 0-100 | basic |
@@ -381,13 +411,23 @@ graph LR
 | `topiq_score` | ↑ higher=better | higher=better | nr_quality |
 | `trajan_score` | ↑ higher=better | — | motion |
 | `tres_score` | ↑ higher=better | — | nr_quality |
+| `uciqe_score` | ↑ higher=better | higher=better | nr_quality |
+| `ugvq_score` | ↑ higher=better | higher=better | nr_quality |
+| `uiqm_score` | ↑ higher=better | higher=better | nr_quality |
+| `umtscore` | ↑ higher=better | — | alignment |
 | `unique_score` | ↑ higher=better | — | nr_quality |
 | `usability_rate` | — | — | meta |
 | `utmos_score` | ↑ higher=better | 1-5, higher=better | audio |
+| `vader_score` | ↑ higher=better | — | nr_quality |
+| `vbliinds_score` | ↑ higher=better | higher=better | nr_quality |
+| `video_atlas_score` | ↑ higher=better | — | nr_quality |
 | `video_memorability` | — | — | nr_quality |
 | `video_reward_score` | ↑ higher=better | — | alignment |
 | `video_type` | — | — | scene |
 | `video_type_confidence` | — | — | scene |
+| `videoreward_mq` | — | — | motion |
+| `videoreward_ta` | — | — | alignment |
+| `videoreward_vq` | — | — | nr_quality |
 | `videoscore_alignment` | ↑ higher=better | — | alignment |
 | `videoscore_dynamic` | ↑ higher=better | — | motion |
 | `videoscore_factual` | ↑ higher=better | — | alignment |
@@ -395,14 +435,19 @@ graph LR
 | `videoscore_visual` | ↑ higher=better | — | nr_quality |
 | `videval_score` | ↑ higher=better | — | nr_quality |
 | `vif` | — | — | fr_quality |
+| `viideo_score` | ↓ lower=better | lower=better | nr_quality |
 | `visqol` | ↑ higher=better | 1-5, higher=better | audio |
 | `vmaf` | ↑ higher=better | 0-100, higher=better | fr_quality |
 | `vmaf_4k` | ↑ higher=better | 0-100, higher=better | fr_quality |
 | `vmaf_neg` | ↑ higher=better | no enhancement gain, 0-100, higher=better | fr_quality |
 | `vmaf_phone` | ↑ higher=better | 0-100, higher=better | fr_quality |
+| `vqa2_score` | ↑ higher=better | higher=better | nr_quality |
 | `vqa_a_score` | ↑ higher=better | — | alignment |
 | `vqa_score_alignment` | ↑ higher=better | — | alignment |
 | `vqa_t_score` | ↑ higher=better | — | alignment |
+| `vqathinker_score` | ↑ higher=better | higher=better | nr_quality |
+| `vqinsight_score` | ↑ higher=better | higher=better | nr_quality |
+| `vsfa_score` | ↑ higher=better | higher=better | nr_quality |
 | `vsi_score` | ↑ higher=better | 0-1, higher=better | fr_quality |
 | `vtss` | — | 0-1 | meta |
 | `wadiqam_fr` | ↑ higher=better | higher=better | fr_quality |
@@ -411,7 +456,10 @@ graph LR
 | `watermark_probability` | — | — | safety |
 | `watermark_strength` | — | — | safety |
 | `white_balance_score` | ↑ higher=better | — | production |
+| `world_consistency_score` | ↑ higher=better | higher=better | temporal |
+| `ws_psnr` | ↑ higher=better | dB, higher=better | fr_quality |
 | `xpsnr` | ↑ higher=better | dB, higher=better | fr_quality |
+| `zoomvqa_score` | ↑ higher=better | higher=better | nr_quality |
 
 ### Deprecated Field Aliases
 
@@ -427,324 +475,435 @@ graph LR
 
 ### Static Health Checks
 
-25 module(s) with warnings:
+48 module(s) with warnings:
 
+- `artfid`: no output fields and no validation issues
 - `audio_visual_sync`: declares output fields but never assigns quality_metrics
+- `avqt`: no output fields and no validation issues
 - `basic`: declares output fields but never assigns quality_metrics
 - `bd_rate`: no output fields and no validation issues
+- `compressed_vqa_hdr`: no output fields and no validation issues
 - `dataset_analytics`: no output fields and no validation issues
 - `dedup`: no output fields and no validation issues
+- `deepvqa`: no output fields and no validation issues
 - `diversity_selection`: no output fields and no validation issues
 - `dreamsim_metric`: declares output fields but never assigns quality_metrics
 - `embedding`: no output fields and no validation issues
+- `erqa`: no output fields and no validation issues
+- `fad`: no output fields and no validation issues
+- `fgd`: no output fields and no validation issues
 - `flip_metric`: declares output fields but never assigns quality_metrics
+- `fmd`: no output fields and no validation issues
 - `fvd`: no output fields and no validation issues
 - `fvmd`: no output fields and no validation issues
 - `generative_distribution`: no output fields and no validation issues
 - `generative_distribution_metrics`: no output fields and no validation issues
+- `graphsim`: no output fields and no validation issues
 - `jedi`: no output fields and no validation issues
 - `jedi_metric`: no output fields and no validation issues
 - `knowledge_graph`: no output fields and no validation issues
 - `kvd`: no output fields and no validation issues
 - `mad_metric`: declares output fields but never assigns quality_metrics
+- `msswd`: no output fields and no validation issues
 - `nlpd_metric`: declares output fields but never assigns quality_metrics
+- `pcqm`: no output fields and no validation issues
 - `pi_metric`: declares output fields but never assigns quality_metrics
+- `pointssim`: no output fields and no validation issues
+- `psnr99`: no output fields and no validation issues
+- `psnr_div`: no output fields and no validation issues
+- `pvmaf`: no output fields and no validation issues
+- `rankdvqa`: no output fields and no validation issues
+- `sfid`: no output fields and no validation issues
 - `spectral`: declares output fields but never assigns quality_metrics
+- `st_mad`: no output fields and no validation issues
+- `stream_metric`: no output fields and no validation issues
 - `t2v_compbench`: no output fields and no validation issues
 - `text`: declares output fields but never assigns quality_metrics
 - `umap_projection`: no output fields and no validation issues
 - `unique_iqa`: declares output fields but never assigns quality_metrics
+- `vendi`: no output fields and no validation issues
+- `vfips`: no output fields and no validation issues
+- `worldscore`: no output fields and no validation issues
+- `ws_ssim`: no output fields and no validation issues
 
 ---
 
-## Audio Quality
+## Audio Quality (14 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `audio_estoi` | audio +ref | `estoi_score` - ESTOI intelligibility (0-1, higher=better) | ESTOI speech intelligibility (full-reference) | `target_sr=10000`, `warning_threshold=0.5` |
-| `audio_lpdist` | audio +ref | `lpdist_score` - Log-Power Spectral Distance (lower=better) | Log-Power Spectral Distance (full-reference audio) | `target_sr=16000`, `n_mels=80`, +1 |
-| `audio_mcd` | audio +ref | `mcd_score` - Mel Cepstral Distortion (dB, lower=better) | Mel Cepstral Distortion for TTS/VC quality (full-reference) | `target_sr=16000`, `n_mfcc=13`, +1 |
-| `audio_pesq` | audio +ref | `pesq_score` - PESQ (-0.5 to 4.5, higher=better) | PESQ speech quality (full-reference, ITU-T P.862) | `target_sr=16000`, `warning_threshold=3.0` |
-| `audio_si_sdr` | audio +ref | `si_sdr_score` - Scale-Invariant SDR (dB, higher=better) | Scale-Invariant SDR for audio quality (full-reference) | `target_sr=16000`, `warning_threshold=0.0` |
-| `audio_text_alignment` | audio +cap | - | Multimodal alignment check (Audio-Text) using CLAP | `alignment_threshold=0.2`, `model_name=laion/clap-htsat-fused` |
-| `audio_utmos` | audio | `utmos_score` - UTMOS predicted MOS (1-5, higher=better) | UTMOS no-reference MOS prediction for speech quality | `target_sr=16000`, `warning_threshold=3.0` |
-| `audio_visual_sync` | audio | `av_sync_offset` - Audio-video sync offset in ms | Audio-video synchronisation offset detection | `max_frames=600`, `warning_threshold_ms=80.0` |
-| `av_sync` | audio | `av_sync_offset` - Audio-video sync offset in ms | Audio-video synchronisation offset detection | `max_frames=600`, `warning_threshold_ms=80.0` |
-| `dnsmos` | audio | `dnsmos_overall` - DNSMOS overall MOS (1-5, higher=better); `dnsmos_sig` - DNSMOS signal quality (1-5, higher=better); `dnsmos_bak` - DNSMOS background quality (1-5, higher=better) | DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS) | - |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `audio_estoi` | audio +ref | `estoi_score` | ⚡ fast | ✅⏳ | ESTOI speech intelligibility (full-reference) |
+| `audio_lpdist` | audio +ref | `lpdist_score` | ⚡ fast | ✅⏳ | Log-Power Spectral Distance (full-reference audio) |
+| `audio_mcd` | audio +ref | `mcd_score` | ⚡ fast | ✅⏳ | Mel Cepstral Distortion for TTS/VC quality (full-reference) |
+| `audio_pesq` | audio +ref | `pesq_score` | ⚡ fast | ✅⏳ | PESQ speech quality (full-reference, ITU-T P.862) |
+| `audio_si_sdr` | audio +ref | `si_sdr_score` | ⚡ fast | ✅⏳ | Scale-Invariant SDR for audio quality (full-reference) |
+| `audio_text_alignment` | audio +cap | — | ⏱️ medium | ✅⏳ | Multimodal alignment check (Audio-Text) using CLAP |
+| `audio_utmos` | audio | `utmos_score` | ⏱️ medium | ✅⏳ | UTMOS no-reference MOS prediction for speech quality |
+| `audio_visual_sync` | audio | `av_sync_offset` | ⚡ fast | ✅⏳ | Audio-video synchronisation offset detection |
+| `audiobox_aesthetics` | audio | `audiobox_production`, `audiobox_enjoyment` | ⚡ fast | ✅⏳ | Meta Audiobox Aesthetics audio quality (2025) |
+| `av_sync` | audio | `av_sync_offset` | ⚡ fast | ✅⏳ | Audio-video synchronisation offset detection |
+| `beat_alignment` | audio | `bas_score` | ⚡ fast | ✅⏳ | BAS beat alignment score — audio-motion sync (EDGE/CVPR 2023) |
+| `dnsmos` | audio | `dnsmos_overall`, `dnsmos_sig`, `dnsmos_bak` | ⏱️ medium | ✅⏳ | DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS) |
+| `fad` | audio | — | ⚡ fast | ✅⏳ | Frechet Audio Distance for audio generation (batch metric, 2019) |
+| `lip_sync` | audio | `lse_d`, `lse_c` | ⚡ fast | ✅⏳ | LSE-D/LSE-C lip sync error (SyncNet/Wav2Lip, 2020) |
 
-## Codec & Technical
+## Codec & Technical (3 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `codec_compatibility` | vid | - | Validates codec, pixel format, and container for ML dataloader compatibility | `min_bitrate_kbps=500`, `min_bpp=0.02` |
-| `codec_specific_quality` | vid | `codec_efficiency` - Quality-per-bit efficiency 0-100 (higher=better); `gop_quality` - GOP structure appropriateness 0-100 (higher=better); `codec_artifacts` - Block artifact severity 0-100 (lower=better) | Codec-level efficiency, GOP quality, and artifact detection | `max_frames=100`, `subsample=10`, +2 |
-| `letterbox` | img/vid | `letterbox_ratio` - Border/letterbox fraction (0-1, 0=no borders) | Border/letterbox detection (0-1, 0=no borders) | `threshold=16`, `subsample=4` |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `codec_compatibility` | vid | — | ⚡ fast | ✅⏳ | Validates codec, pixel format, and container for ML dataloader compatibility |
+| `codec_specific_quality` | vid | `codec_efficiency`, `gop_quality`, `codec_artifacts` | ⚡ fast | ✅⏳ | Codec-level efficiency, GOP quality, and artifact detection |
+| `letterbox` | img/vid | `letterbox_ratio` | ⚡ fast | ✅⏳ | Border/letterbox detection (0-1, 0=no borders) |
 
-## Depth
+## Depth (3 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `depth_anything` | img/vid | `depth_anything_score` - Monocular depth quality; `depth_anything_consistency` - Temporal depth consistency | Depth Anything V2 monocular depth estimation and consistency | `model_name=depth-anything/Depth-Anything-V2-Small-hf`, `subsample=8` |
-| `depth_consistency` | vid | `depth_temporal_consistency` - Depth map correlation 0-1 (higher=better) | Monocular depth temporal consistency | `model_type=MiDaS_small`, `device=auto`, +3 |
-| `depth_map_quality` | img/vid | `depth_quality` - Depth map quality 0-100 (higher=better) | Monocular depth map quality (sharpness, completeness, edge alignment) | `model_type=MiDaS_small`, `device=auto`, +2 |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `depth_anything` | img/vid | `depth_anything_score`, `depth_anything_consistency` | ⏱️ medium | ✅⏳ | Depth Anything V2 monocular depth estimation and consistency |
+| `depth_consistency` | vid | `depth_temporal_consistency` | ⏱️ medium | ✅⏳ | Monocular depth temporal consistency |
+| `depth_map_quality` | img/vid | `depth_quality` | ⏱️ medium | ✅⏳ | Monocular depth map quality (sharpness, completeness, edge alignment) |
 
-## Face & Identity
+## Face & Identity (5 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `face_fidelity` | img/vid | `face_count`; `face_quality_score` - Composite face quality 0-100 (higher=better) | Face detection and per-face quality assessment | `backend=haar`, `subsample=5`, +4 |
-| `face_iqa` | img/vid | `face_iqa_score` - TOPIQ-face face quality (higher=better) | Face-specific IQA via TOPIQ-face (GFIQA-trained, higher=better) | `subsample=8` |
-| `face_landmark_quality` | vid | `face_landmark_jitter` - Landmark jitter 0-100 (lower=better); `face_expression_smoothness`; `face_identity_consistency` - Temporal face identity stability (0-1) | Facial landmark jitter, expression smoothness, identity consistency | `subsample=2`, `max_frames=300`, +1 |
-| `identity_loss` | img/vid +ref | `identity_loss` - Face identity cosine distance (0-1, lower=better); `face_recognition_score` - Face identity cosine similarity (0-1, higher=better) | Face identity preservation metric (cosine distance/similarity vs reference) | `model_name=buffalo_l`, `subsample=8`, +1 |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `face_fidelity` | img/vid | `face_count`, `face_quality_score` | ⚡ fast | ✅⏳ | Face detection and per-face quality assessment |
+| `face_iqa` | img/vid | `face_iqa_score` | ⏱️ medium | ✅⏳ | Face-specific IQA via TOPIQ-face (GFIQA-trained, higher=better) |
+| `face_landmark_quality` | vid | `face_landmark_jitter`, `face_expression_smoothness`, `face_identity_consistency` | ⚡ fast | ✅⏳ | Facial landmark jitter, expression smoothness, identity consistency |
+| `identity_loss` | img/vid +ref | `identity_loss`, `face_recognition_score` | ⚡ fast | ✅⏳ | Face identity preservation metric (cosine distance/similarity vs reference) |
+| `magface` | img/vid | `magface_score` | ⚡ fast | ✅⏳ | MagFace face magnitude quality (CVPR 2021) |
 
-## Full-Reference & Distribution
+## Full-Reference & Distribution (44 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `ahiq` | img/vid +ref | `ahiq` - Attention Hybrid IQA (higher=better) | Attention-based Hybrid IQA full-reference (higher=better) | `subsample=8` |
-| `butteraugli` | img/vid +ref | `butteraugli` - Butteraugli perceptual distance (lower=better) | Butteraugli perceptual distance (Google/JPEG XL, lower=better) | `subsample=5`, `warning_threshold=2.0` |
-| `ciede2000` | img/vid +ref | `ciede2000` - CIEDE2000 perceptual color difference (lower=better) | CIEDE2000 perceptual color difference (lower=better) | `subsample=5` |
-| `ckdn` | img/vid +ref | `ckdn_score` - CKDN knowledge distillation FR | CKDN knowledge distillation FR image quality | `subsample=4` |
-| `cw_ssim` | img/vid +ref | `cw_ssim` - Complex Wavelet SSIM (0-1, higher=better) | Complex Wavelet SSIM full-reference metric (0-1, higher=better) | `subsample=8` |
-| `deepwsd` | img/vid +ref | `deepwsd_score` - DeepWSD Wasserstein distance FR | DeepWSD Wasserstein distance FR image quality | `subsample=4` |
-| `delta_ictcp` | img/vid +ref | `delta_ictcp` - Delta ICtCp HDR color difference (lower=better) | Delta ICtCp HDR perceptual color difference (lower=better) | `subsample=5` |
-| `dmm` | img/vid +ref | `dmm` - DMM Detail Model Metric FR (higher=better) | DMM detail model metric full-reference (higher=better) | `subsample=8` |
-| `dreamsim` | img/vid +ref | `dreamsim` - DreamSim CLIP+DINO similarity (lower=more similar) | DreamSim foundation model perceptual similarity (CLIP+DINO ensemble) | `subsample=8`, `model_type=ensemble` |
-| `dreamsim_metric` | img/vid +ref | `dreamsim` - DreamSim CLIP+DINO similarity (lower=more similar) | DreamSim foundation model perceptual similarity (CLIP+DINO ensemble) | `subsample=8`, `model_type=ensemble` |
-| `flip` | img/vid +ref | `flip_score` - NVIDIA FLIP perceptual metric (0-1, lower=better) | NVIDIA FLIP perceptual difference (0-1, lower=better) | `subsample=5`, `warning_threshold=0.3` |
-| `flip_metric` | img/vid +ref | `flip_score` - NVIDIA FLIP perceptual metric (0-1, lower=better) | NVIDIA FLIP perceptual difference (0-1, lower=better) | `subsample=5`, `warning_threshold=0.3` |
-| `flolpips` | vid | `flolpips` - FloLPIPS flow-based perceptual FR | Flow-compensated perceptual distance (RAFT+LPIPS, Farneback+LPIPS, or MSE fallback) | `subsample=8` |
-| `fvd` | vid +ref | - | Fréchet Video Distance for video generation evaluation (batch metric) | `i3d_weights=kinetics400`, `num_frames=16`, +3 |
-| `fvmd` | vid | - | Fréchet Video Motion Distance for motion quality evaluation (batch metric) | `num_frames=16`, `flow_method=farneback`, +1 |
-| `hdr_vdp` | img/vid +ref | `hdr_vdp` - HDR-VDP visual difference predictor (higher=better) | HDR-VDP visual difference predictor (higher=better) | `subsample=5` |
-| `kvd` | vid | - | Kernel Video Distance using Maximum Mean Discrepancy (batch metric) | `feature_extractor=i3d`, `kernel=rbf`, +2 |
-| `mad` | img/vid +ref | `mad` - Most Apparent Distortion (lower=better) | Most Apparent Distortion full-reference metric (lower=better) | `subsample=8` |
-| `mad_metric` | img/vid +ref | `mad` - Most Apparent Distortion (lower=better) | Most Apparent Distortion full-reference metric (lower=better) | `subsample=8` |
-| `ms_ssim` | vid +ref | `ms_ssim` - Multi-Scale SSIM (0-1) | Multi-Scale SSIM perceptual similarity metric (full-reference) | `scales=5`, `weights=[0.0448, 0.2856, 0.3001, 0.2363, 0.1333]`, +3 |
-| `nlpd` | img/vid +ref | `nlpd` - Normalized Laplacian Pyramid Distance (lower=better) | Normalized Laplacian Pyramid Distance full-reference (lower=better) | `subsample=8` |
-| `nlpd_metric` | img/vid +ref | `nlpd` - Normalized Laplacian Pyramid Distance (lower=better) | Normalized Laplacian Pyramid Distance full-reference (lower=better) | `subsample=8` |
-| `pieapp` | img/vid +ref | `pieapp` - PieAPP pairwise preference (lower=better) | PieAPP full-reference perceptual error via pairwise preference (lower=better) | `subsample=8` |
-| `psnr_hvs` | img/vid +ref | `psnr_hvs` - PSNR-HVS perceptually weighted (dB, higher=better); `psnr_hvs_m` - PSNR-HVS-M with masking (dB, higher=better) | PSNR-HVS + PSNR-HVS-M perceptually weighted PSNR (dB, higher=better) | `subsample=5` |
-| `ssimc` | img/vid +ref | `ssimc` - Complex Wavelet SSIM-C FR (higher=better) | SSIM-C complex wavelet structural similarity FR (higher=better) | `subsample=8` |
-| `ssimulacra2` | img/vid +ref | `ssimulacra2` - SSIMULACRA 2 (0-100, lower=better, JPEG XL standard) | SSIMULACRA 2 perceptual distance (JPEG XL standard, lower=better) | `subsample=5`, `warning_threshold=50.0` |
-| `st_lpips` | vid | `st_lpips` - ST-LPIPS spatiotemporal perceptual FR | Spatiotemporal perceptual video quality (ST-LPIPS model, LPIPS, or heuristic fallback) | `subsample=8` |
-| `strred` | img/vid +ref | `strred` - STRRED reduced-reference temporal (lower=better) | STRRED reduced-reference temporal quality (ITU, lower=better) | `subsample=3` |
-| `topiq_fr` | img/vid +ref | `topiq_fr` - TOPIQ full-reference (higher=better) | TOPIQ full-reference top-down semantics-to-distortion IQA (higher=better) | `subsample=8` |
-| `vif` | img/vid +ref | `vif` - Visual Information Fidelity | Visual Information Fidelity metric (full-reference) | `subsample=1`, `warning_threshold=0.3`, +1 |
-| `vmaf` | vid +ref | `vmaf` - VMAF (0-100, higher=better) | VMAF perceptual video quality metric (full-reference) | `vmaf_model=vmaf_v0.6.1`, `subsample=1`, +2 |
-| `vmaf_4k` | vid +ref | `vmaf_4k` - VMAF 4K model (0-100, higher=better) | VMAF 4K model for UHD content (0-100, higher=better) | - |
-| `vmaf_neg` | vid +ref | `vmaf_neg` - VMAF NEG (no enhancement gain, 0-100, higher=better) | VMAF NEG no-enhancement-gain variant (0-100, higher=better) | `subsample=1`, `warning_threshold=70.0` |
-| `vmaf_phone` | vid +ref | `vmaf_phone` - VMAF phone model (0-100, higher=better) | VMAF phone model for mobile viewing (0-100, higher=better) | - |
-| `wadiqam_fr` | img/vid +ref | `wadiqam_fr` - WaDIQaM full-reference (higher=better) | WaDIQaM full-reference deep quality metric (higher=better) | `subsample=8` |
-| `xpsnr` | img/vid +ref | `xpsnr` - XPSNR perceptual PSNR (dB, higher=better) | XPSNR perceptually weighted PSNR (Fraunhofer, dB, higher=better) | - |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `ahiq` | img/vid +ref | `ahiq` | ⏱️ medium | ✅⏳ | Attention-based Hybrid IQA full-reference (higher=better) |
+| `butteraugli` | img/vid +ref | `butteraugli` | ⚡ fast | ✅⏳ | Butteraugli perceptual distance (Google/JPEG XL, lower=better) |
+| `ciede2000` | img/vid +ref | `ciede2000` | ⚡ fast | ✅⏳ | CIEDE2000 perceptual color difference (lower=better) |
+| `ckdn` | img/vid +ref | `ckdn_score` | ⏱️ medium | ✅⏳ | CKDN knowledge distillation FR image quality |
+| `cw_ssim` | img/vid +ref | `cw_ssim` | ⏱️ medium | ✅⏳ | Complex Wavelet SSIM full-reference metric (0-1, higher=better) |
+| `deepwsd` | img/vid +ref | `deepwsd_score` | ⏱️ medium | ✅⏳ | DeepWSD Wasserstein distance FR image quality |
+| `delta_ictcp` | img/vid +ref | `delta_ictcp` | ⚡ fast | ✅⏳ | Delta ICtCp HDR perceptual color difference (lower=better) |
+| `dmm` | img/vid +ref | `dmm` | ⏱️ medium | ✅⏳ | DMM detail model metric full-reference (higher=better) |
+| `dreamsim` | img/vid +ref | `dreamsim` | ⏱️ medium | ✅⏳ | DreamSim foundation model perceptual similarity (CLIP+DINO ensemble) |
+| `dreamsim_metric` | img/vid +ref | `dreamsim` | ⚡ fast | ✅⏳ | DreamSim foundation model perceptual similarity (CLIP+DINO ensemble) |
+| `flip` | img/vid +ref | `flip_score` | ⏱️ medium | ✅⏳ | NVIDIA FLIP perceptual difference (0-1, lower=better) |
+| `flip_metric` | img/vid +ref | `flip_score` | ⚡ fast | ✅⏳ | NVIDIA FLIP perceptual difference (0-1, lower=better) |
+| `flolpips` | vid | `flolpips` | ⏱️ medium | ✅⏳ | Flow-compensated perceptual distance (RAFT+LPIPS, Farneback+LPIPS, or MSE fallback) |
+| `fvd` | vid +ref | — | ⏱️ medium | ✅⏳ | Fréchet Video Distance for video generation evaluation (batch metric) |
+| `fvmd` | vid | — | ⚡ fast | ✅⏳ | Fréchet Video Motion Distance for motion quality evaluation (batch metric) |
+| `hdr_vdp` | img/vid +ref | `hdr_vdp` | ⚡ fast | ✅⏳ | HDR-VDP visual difference predictor (higher=better) |
+| `kvd` | vid | — | ⏱️ medium | ✅⏳ | Kernel Video Distance using Maximum Mean Discrepancy (batch metric) |
+| `mad` | img/vid +ref | `mad` | ⏱️ medium | ✅⏳ | Most Apparent Distortion full-reference metric (lower=better) |
+| `mad_metric` | img/vid +ref | `mad` | ⚡ fast | ✅⏳ | Most Apparent Distortion full-reference metric (lower=better) |
+| `ms_ssim` | vid +ref | `ms_ssim` | ⏱️ medium | ✅⏳ | Multi-Scale SSIM perceptual similarity metric (full-reference) |
+| `nlpd` | img/vid +ref | `nlpd` | ⏱️ medium | ✅⏳ | Normalized Laplacian Pyramid Distance full-reference (lower=better) |
+| `nlpd_metric` | img/vid +ref | `nlpd` | ⚡ fast | ✅⏳ | Normalized Laplacian Pyramid Distance full-reference (lower=better) |
+| `pc_psnr` | img/vid +ref | `pc_d1_psnr`, `pc_d2_psnr` | ⚡ fast | ✅⏳ | D1/D2 MPEG point cloud PSNR |
+| `pieapp` | img/vid +ref | `pieapp` | ⏱️ medium | ✅⏳ | PieAPP full-reference perceptual error via pairwise preference (lower=better) |
+| `pointssim` | img/vid +ref | — | ⚡ fast | ✅⏳ | PointSSIM structural similarity for point clouds (2020) |
+| `psnr99` | img/vid +ref | — | ⚡ fast | ✅⏳ | PSNR99 worst-case region quality for super-resolution (FR, 2025) |
+| `psnr_div` | img/vid +ref | — | ⚡ fast | ✅⏳ | PSNR_DIV motion-weighted PSNR for frame interpolation (ICIP 2025, FR) |
+| `psnr_hvs` | img/vid +ref | `psnr_hvs`, `psnr_hvs_m` | ⚡ fast | ✅⏳ | PSNR-HVS + PSNR-HVS-M perceptually weighted PSNR (dB, higher=better) |
+| `pvmaf` | img/vid +ref | — | ⚡ fast | ✅⏳ | Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100) |
+| `spherical_psnr` | img/vid +ref | `s_psnr`, `ws_psnr`, `cpp_psnr` | ⚡ fast | ✅⏳ | S-PSNR/WS-PSNR/CPP-PSNR spherical PSNR (MPEG/JVET) |
+| `ssimc` | img/vid +ref | `ssimc` | ⏱️ medium | ✅⏳ | SSIM-C complex wavelet structural similarity FR (higher=better) |
+| `ssimulacra2` | img/vid +ref | `ssimulacra2` | ⚡ fast | ✅⏳ | SSIMULACRA 2 perceptual distance (JPEG XL standard, lower=better) |
+| `st_lpips` | vid | `st_lpips` | ⏱️ medium | ✅⏳ | Spatiotemporal perceptual video quality (ST-LPIPS model, LPIPS, or heuristic fallback) |
+| `st_mad` | img/vid +ref | — | ⚡ fast | ✅⏳ | ST-MAD spatiotemporal MAD (TIP 2012) |
+| `strred` | img/vid +ref | `strred` | ⚡ fast | ✅⏳ | STRRED reduced-reference temporal quality (ITU, lower=better) |
+| `topiq_fr` | img/vid +ref | `topiq_fr` | ⏱️ medium | ✅⏳ | TOPIQ full-reference top-down semantics-to-distortion IQA (higher=better) |
+| `vif` | img/vid +ref | `vif` | ⏱️ medium | ✅⏳ | Visual Information Fidelity metric (full-reference) |
+| `vmaf` | vid +ref | `vmaf` | ⚡ fast | ✅⏳ | VMAF perceptual video quality metric (full-reference) |
+| `vmaf_4k` | vid +ref | `vmaf_4k` | ⚡ fast | ✅⏳ | VMAF 4K model for UHD content (0-100, higher=better) |
+| `vmaf_neg` | vid +ref | `vmaf_neg` | ⚡ fast | ✅⏳ | VMAF NEG no-enhancement-gain variant (0-100, higher=better) |
+| `vmaf_phone` | vid +ref | `vmaf_phone` | ⚡ fast | ✅⏳ | VMAF phone model for mobile viewing (0-100, higher=better) |
+| `wadiqam_fr` | img/vid +ref | `wadiqam_fr` | ⏱️ medium | ✅⏳ | WaDIQaM full-reference deep quality metric (higher=better) |
+| `ws_ssim` | img/vid +ref | — | ⚡ fast | ✅⏳ | WS-SSIM weighted spherical SSIM |
+| `xpsnr` | img/vid +ref | `xpsnr` | ⚡ fast | ✅⏳ | XPSNR perceptually weighted PSNR (Fraunhofer, dB, higher=better) |
 
-## HDR & Color
+## HDR & Color (4 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `hdr_metadata` | vid | `max_fall` - MaxFALL frame average light level (nits); `max_cll` - MaxCLL content light level (nits) | MaxFALL + MaxCLL HDR static metadata analysis | `subsample=3`, `peak_nits=10000.0` |
-| `hdr_sdr_vqa` | vid | `hdr_quality` - HDR-specific quality; `sdr_quality` - SDR-specific quality; `technical_score` - Composite technical score | HDR/SDR-aware video quality assessment | `subsample=5` |
-| `pu_metrics` | img/vid +ref | `pu_psnr` - PU-PSNR perceptually uniform HDR (dB, higher=better); `pu_ssim` - PU-SSIM perceptually uniform HDR (0-1, higher=better) | PU-PSNR + PU-SSIM for HDR content (perceptually uniform) | `subsample=5`, `assume_nits_range=10000.0` |
-| `tonal_dynamic_range` | img/vid | `tonal_dynamic_range` - Luminance histogram span (0-100) | Luminance histogram tonal range (0-100) | `low_percentile=1`, `high_percentile=99`, +1 |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `hdr_metadata` | vid | `max_fall`, `max_cll` | ⚡ fast | ✅⏳ | MaxFALL + MaxCLL HDR static metadata analysis |
+| `hdr_sdr_vqa` | vid | `hdr_quality`, `sdr_quality`, `technical_score` | ⚡ fast | ✅⏳ | HDR/SDR-aware video quality assessment |
+| `pu_metrics` | img/vid +ref | `pu_psnr`, `pu_ssim` | ⚡ fast | ✅⏳ | PU-PSNR + PU-SSIM for HDR content (perceptually uniform) |
+| `tonal_dynamic_range` | img/vid | `tonal_dynamic_range` | ⚡ fast | ✅⏳ | Luminance histogram tonal range (0-100) |
 
-## Image-to-Video Reference
+## Image-to-Video Reference (1 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `i2v_similarity` | vid +ref | `i2v_clip` - CLIP image-video similarity (0-1); `i2v_dino` - DINOv2 image-video similarity (0-1); `i2v_lpips` - LPIPS image-video distance (0-1, lower=better); `i2v_quality` - Aggregated I2V quality (0-100) | Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window) | `window_size=16`, `stride=8`, +7 |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `i2v_similarity` | vid +ref | `i2v_clip`, `i2v_dino`, `i2v_lpips`, `i2v_quality` | ⏱️ medium | ✅⏳ | Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window) |
 
-## Motion & Temporal
+## Motion & Temporal (23 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `advanced_flow` | vid | `flow_score` | RAFT optical flow: flow_score (all consecutive pairs) | `use_large_model=True`, `max_frames=150` |
-| `background_consistency` | vid | `background_consistency` | Background consistency using CLIP (all pairwise frame similarity) | `model_name=openai/clip-vit-base-patch32`, `max_frames=16`, +1 |
-| `camera_jitter` | vid | `camera_jitter_score` - Camera stability (0-1, 1=stable) | Camera jitter/shake detection (0-1, 1=stable) | `subsample=16` |
-| `camera_motion` | vid | `camera_motion_score` - Camera motion intensity | Analyzes camera motion stability (VMBench) using Homography | - |
-| `clip_temporal` | vid | `clip_temp`; `face_consistency` | CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency) | `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, +2 |
-| `flicker_detection` | vid | `flicker_score` - Flicker severity 0-100 (lower=better) | Detects temporal luminance flicker | `max_frames=600`, `warning_threshold=30.0` |
-| `flow_coherence` | vid | `flow_coherence` - Bidirectional optical flow consistency (0-1) | Bidirectional optical flow consistency (0-1, higher=coherent) | `subsample=8` |
-| `judder_stutter` | vid | `judder_score` - Judder severity 0-100 (lower=better); `stutter_score` - Duplicate/dropped frames 0-100 (lower=better) | Detects judder (uneven cadence) and stutter (duplicate frames) | `max_frames=600`, `duplicate_threshold=1.0`, +1 |
-| `jump_cut` | vid | `jump_cut_score` - Jump cut absence (0-1, 1=no cuts) | Jump cut / abrupt transition detection (0-1, 1=no cuts) | `threshold=40.0` |
-| `kandinsky_motion` | vid | - | Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2) | `models_dir=models` |
-| `motion` | vid | `motion_score` - Scene motion intensity | Analyzes motion dynamics (optical flow, flickering) | `sample_rate=5`, `low_motion_threshold=0.5`, +1 |
-| `motion_amplitude` | vid | `motion_ac_score` | Motion amplitude classification vs caption (motion_ac_score via RAFT) | `amplitude_threshold=5.0`, `max_frames=150`, +1 |
-| `motion_smoothness` | vid | `motion_smoothness` - Motion smoothness (0-1, higher=better) | Motion smoothness via RIFE VFI reconstruction error (VBench) | `vfi_error_threshold=0.08`, `max_frames=64` |
-| `object_permanence` | vid | `object_permanence_score` | Object tracking consistency (ID switches, disappearances) | `backend=auto`, `subsample=2`, +3 |
-| `playback_speed` | vid | `playback_speed_score` - Normal speed (1.0=normal) | Playback speed normality detection (1.0=normal) | `subsample=16` |
-| `ptlflow_motion` | vid | `ptlflow_motion_score` - ptlflow optical flow magnitude | ptlflow optical flow motion scoring (dpflow model) | `model_name=dpflow`, `ckpt_path=things`, +1 |
-| `raft_motion` | vid | `raft_motion_score` - RAFT optical flow magnitude | RAFT optical flow motion scoring (torchvision) | `subsample=8` |
-| `scene_detection` | vid | `scene_stability`; `avg_scene_duration` - Average scene duration in seconds | Scene stability metric — penalises rapid cuts (0-1, higher=more stable) | `threshold=0.5` |
-| `stabilized_motion` | vid | `motion_score` - Scene motion intensity; `camera_motion_score` - Camera motion intensity | Calculates motion scores with camera stabilization (ORB+Homography) | `step=2`, `threshold_px=0.5`, +3 |
-| `subject_consistency` | vid | `subject_consistency` - Subject identity consistency (0-1, higher=better) | Subject consistency using DINOv2-base (all pairwise frame similarity) | `model_name=facebook/dinov2-base`, `max_frames=16`, +1 |
-| `temporal_flickering` | vid | `warping_error` | Warping Error using RAFT optical flow with occlusion masking | `warning_threshold=0.02`, `max_frames=300` |
-| `temporal_style` | vid | - | Analyzes temporal style (Slow Motion, Timelapse, Speed) | - |
-| `vfr_detection` | vid | - | Variable Frame Rate (VFR) and jitter detection | `jitter_threshold_ms=2.0` |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `advanced_flow` | vid | `flow_score` | ⏱️ medium | ✅⏳ | RAFT optical flow: flow_score (all consecutive pairs) |
+| `background_consistency` | vid | `background_consistency` | ⏱️ medium | ✅⏳ | Background consistency using CLIP (all pairwise frame similarity) |
+| `camera_jitter` | vid | `camera_jitter_score` | ⚡ fast | ✅⏳ | Camera jitter/shake detection (0-1, 1=stable) |
+| `camera_motion` | vid | `camera_motion_score` | ⚡ fast | ✅⏳ | Analyzes camera motion stability (VMBench) using Homography |
+| `clip_temporal` | vid | `clip_temp`, `face_consistency` | ⏱️ medium | ✅⏳ | CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency) |
+| `flicker_detection` | vid | `flicker_score` | ⚡ fast | ✅⏳ | Detects temporal luminance flicker |
+| `flow_coherence` | vid | `flow_coherence` | ⚡ fast | ✅⏳ | Bidirectional optical flow consistency (0-1, higher=coherent) |
+| `judder_stutter` | vid | `judder_score`, `stutter_score` | ⚡ fast | ✅⏳ | Detects judder (uneven cadence) and stutter (duplicate frames) |
+| `jump_cut` | vid | `jump_cut_score` | ⚡ fast | ✅⏳ | Jump cut / abrupt transition detection (0-1, 1=no cuts) |
+| `kandinsky_motion` | vid | — | ⏱️ medium | ✅⏳ | Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2) |
+| `motion` | vid | `motion_score` | ⚡ fast | ✅⏳ | Analyzes motion dynamics (optical flow, flickering) |
+| `motion_amplitude` | vid | `motion_ac_score` | ⏱️ medium | ✅⏳ | Motion amplitude classification vs caption (motion_ac_score via RAFT) |
+| `motion_smoothness` | vid | `motion_smoothness` | ⏱️ medium | ✅⏳ | Motion smoothness via RIFE VFI reconstruction error (VBench) |
+| `object_permanence` | vid | `object_permanence_score` | ⚡ fast | ✅⏳ | Object tracking consistency (ID switches, disappearances) |
+| `playback_speed` | vid | `playback_speed_score` | ⚡ fast | ✅⏳ | Playback speed normality detection (1.0=normal) |
+| `ptlflow_motion` | vid | `ptlflow_motion_score` | ⏱️ medium | ✅⏳ | ptlflow optical flow motion scoring (dpflow model) |
+| `raft_motion` | vid | `raft_motion_score` | ⏱️ medium | ✅⏳ | RAFT optical flow motion scoring (torchvision) |
+| `scene_detection` | vid | `scene_stability`, `avg_scene_duration` | ⚡ fast | ✅⏳ | Scene stability metric — penalises rapid cuts (0-1, higher=more stable) |
+| `stabilized_motion` | vid | `motion_score`, `camera_motion_score` | ⚡ fast | ✅⏳ | Calculates motion scores with camera stabilization (ORB+Homography) |
+| `subject_consistency` | vid | `subject_consistency` | ⏱️ medium | ✅⏳ | Subject consistency using DINOv2-base (all pairwise frame similarity) |
+| `temporal_flickering` | vid | `warping_error` | ⏱️ medium | ✅⏳ | Warping Error using RAFT optical flow with occlusion masking |
+| `temporal_style` | vid | — | ⚡ fast | ✅⏳ | Analyzes temporal style (Slow Motion, Timelapse, Speed) |
+| `vfr_detection` | vid | — | ⚡ fast | ✅⏳ | Variable Frame Rate (VFR) and jitter detection |
 
-## No-Reference Quality
+## No-Reference Quality (168 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `4k_vqa` | vid | `hdr_quality` - HDR-specific quality; `sdr_quality` - SDR-specific quality; `technical_score` - Composite technical score | Memory-efficient quality assessment for 4K+ videos | `tile_size=512`, `subsample=10` |
-| `action_recognition` | vid +cap | `action_confidence` - Top-1 action confidence (0-100); `action_score` - Caption-action fidelity (0-100) | Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models | `model_name=MCG-NJU/videomae-large-finetuned-kinetics`, `caption_matching=False`, +3 |
-| `aesthetic` | img/vid | `aesthetic_score` - 0-10, from aesthetic predictor; `vqa_a_score` | Estimates aesthetic quality using Aesthetic Predictor V2.5 | `num_frames=5`, `trust_remote_code=True`, +1 |
-| `aesthetic_scoring` | img/vid | `aesthetic_score` - 0-10, from aesthetic predictor | Calculates aesthetic score (1-10) using LAION-Aesthetics MLP | `models_dir=models` |
-| `afine` | img/vid | `afine_score` - A-FINE fidelity-naturalness (CVPR 2025) | A-FINE adaptive fidelity-naturalness IQA (CVPR 2025) | `subsample=4` |
-| `arniqa` | img/vid | `arniqa_score` - ARNIQA (higher=better) | ARNIQA no-reference image quality assessment | `subsample=8` |
-| `audio` | vid | - | Validates audio stream quality and presence | `require_audio=False`, `min_sample_rate=44100`, +4 |
-| `background_diversity` | img/vid | - | Checks background complexity (entropy) to detect concept bleeding | `min_entropy_threshold=3.0`, `use_rembg=True` |
-| `basic` | img/vid | `blur_score` - Laplacian variance; `brightness`; `contrast`; `saturation`; `noise_score`; `artifacts_score`; `technical_score` - Composite technical score; `vqa_t_score`; `gradient_detail` - Sobel gradient detail (0-100) | Comprehensive technical quality assessment (blur, noise, artifacts, contrast) | `threshold=40.0`, `blur_threshold=100.0`, +1 |
-| `basic_quality` | img/vid | `blur_score` - Laplacian variance; `brightness`; `contrast`; `saturation`; `noise_score`; `artifacts_score`; `technical_score` - Composite technical score; `vqa_t_score`; `gradient_detail` - Sobel gradient detail (0-100) | Comprehensive technical quality assessment (blur, noise, artifacts, contrast) | `threshold=40.0`, `blur_threshold=100.0`, +1 |
-| `bd_rate` | img/vid | - | BD-Rate codec comparison (dataset-level, negative%=better) | `quality_metric=psnr` |
-| `brisque` | img/vid | `brisque` - BRISQUE (0-100, lower=better) | BRISQUE no-reference image quality (lower=better) | `subsample=3`, `warning_threshold=50.0` |
-| `cambi` | vid | `cambi` - CAMBI banding index (0-24, lower=better) | CAMBI banding/contouring detector (Netflix, 0-24, lower=better) | `warning_threshold=5.0` |
-| `celebrity_id` | img/vid | `celebrity_id_score` | Face identity verification using DeepFace (EvalCrafter celebrity_id_score) | `reference_dir=`, `num_frames=8`, +2 |
-| `cnniqa` | img/vid | `cnniqa_score` - CNNIQA blind CNN IQA | CNNIQA blind CNN-based image quality assessment | `subsample=4` |
-| `color_consistency` | img/vid +cap | `color_score` | Verifies color attributes in prompt vs video content | - |
-| `commonsense` | img/vid | `commonsense_score` - Common sense adherence (0-1, higher=better) | Common sense adherence (VLM / ViLT VQA / heuristic) | `model_name=dandelin/vilt-b32-finetuned-vqa`, `vlm_model=llava-hf/llava-1.5-7b-hf` |
-| `compare2score` | img/vid | `compare2score` - Compare2Score comparison-based | Compare2Score comparison-based NR image quality | `subsample=4` |
-| `contrique` | img/vid | `contrique_score` - CONTRIQUE contrastive IQA (higher=better) | Contrastive no-reference IQA | `subsample=5` |
-| `cpbd` | img/vid | `blur_score` - Laplacian variance | Cumulative Probability of Blur Detection (Perceptual Blur) | `threshold_cpbd=0.65`, `threshold_heuristic=10.0` |
-| `creativity` | img/vid | `creativity_score` - Artistic novelty (0-1, higher=better) | Artistic novelty assessment (VLM / CLIP / heuristic) | `vlm_model=llava-hf/llava-1.5-7b-hf` |
-| `dataset_analytics` | img/vid | - | Dataset-level diversity, coverage, outliers, duplicates | `duplicate_threshold=5`, `outlier_iqr_factor=1.5`, +1 |
-| `dbcnn` | img/vid | `dbcnn_score` - DBCNN bilinear CNN (higher=better) | DBCNN deep bilinear CNN for no-reference IQA | `subsample=8` |
-| `decoder_stress` | vid | - | Random access decoder stress test | `num_probes=5`, `check_integrity=True` |
-| `dedup` | img/vid | - | Detects duplicates using Perceptual Hashing (pHash) | - |
-| `deduplication` | img/vid | - | Detects duplicates using Perceptual Hashing (pHash) | - |
-| `dists` | img/vid +ref | `dists` - DISTS (0-1, lower=more similar) | Deep Image Structure and Texture Similarity (full-reference) | `subsample=5`, `warning_threshold=0.3`, +1 |
-| `diversity` | img/vid | - | Flags redundant samples using embedding similarity (Deduplication) | `similarity_threshold=0.95`, `priority_metric=aesthetic_score` |
-| `diversity_selection` | img/vid | - | Flags redundant samples using embedding similarity (Deduplication) | `similarity_threshold=0.95`, `priority_metric=aesthetic_score` |
-| `dynamics_controllability` | vid | `dynamics_controllability` - Motion control fidelity | Assesses motion controllability based on text-motion alignment | `subsample=16` |
-| `dynamics_range` | vid | `dynamics_range` - Extent of content variation | Measures extent of motion and content variation (DEVIL protocol) | `scene_change_threshold=30.0` |
-| `embedding` | img/vid | - | Calculates X-CLIP embeddings for similarity search | `model_name=microsoft/xclip-base-patch32`, `num_frames=8` |
-| `example` | img/vid | - | Example plugin that logs sample paths (template for custom plugins) | `log_valid=True` |
-| `exposure` | img/vid | - | Checks for overexposure, underexposure, and low contrast using histograms | `overexposure_threshold=0.3`, `underexposure_threshold=0.3`, +1 |
-| `generative_distribution` | img/vid | - | Precision / Recall / Coverage / Density (batch metric) | `k=5`, `device=auto` |
-| `generative_distribution_metrics` | img/vid | - | Precision / Recall / Coverage / Density (batch metric) | `k=5`, `device=auto` |
-| `human_fidelity` | img/vid | `human_fidelity_score` - Body/hand/face quality (0-1, higher=better) | Human body/hand/face fidelity (DWPose / MediaPipe / heuristic) | - |
-| `hyperiqa` | img/vid | `hyperiqa_score` - HyperIQA adaptive NR-IQA | HyperIQA adaptive hypernetwork NR image quality | `subsample=4` |
-| `ilniqe` | img/vid | `ilniqe` - IL-NIQE Integrated Local NIQE (lower=better) | IL-NIQE integrated local no-reference quality (lower=better) | `subsample=3`, `warning_threshold=50.0` |
-| `imaging_quality` | img/vid | `noise_score`; `artifacts_score` | Assesses technical quality (Noise, Blockiness) - Proxy for MUSIQ/DOVER | `noise_threshold=20.0` |
-| `inception_score` | img/vid | `is_score` | Inception Score (IS) using InceptionV3 — EvalCrafter quality metric | `num_frames=16`, `splits=1` |
-| `jedi` | vid | - | JEDi distribution metric (V-JEPA + MMD, ICLR 2025) | `num_frames=16`, `batch_size=8`, +2 |
-| `jedi_metric` | vid | - | JEDi distribution metric (V-JEPA + MMD, ICLR 2025) | `num_frames=16`, `batch_size=8`, +2 |
-| `knowledge_graph` | img/vid | - | Generates a conceptual knowledge graph of the video dataset | `output_file=knowledge_graph.json`, `min_confidence=0.5`, +4 |
-| `laion_aesthetic` | img/vid | `laion_aesthetic` - LAION Aesthetics V2 (0-10) | LAION Aesthetics V2 predictor (0-10, industry standard) | `subsample=4` |
-| `liqe` | img/vid | `liqe_score` - LIQE lightweight IQA (higher=better) | LIQE lightweight no-reference IQA | `subsample=5`, `warning_threshold=2.5` |
-| `llm_advisor` | img/vid | - | Rule-based improvement recommendations derived from quality metrics (no LLM used) | `severity_level=INFO` |
-| `llm_descriptive_qa` | img/vid | `confidence_score` - Prediction confidence | LMM-based interpretable quality assessment with explanations | `model_name=llava-hf/llava-v1.6-mistral-7b-hf`, `use_openai=False`, +3 |
-| `maclip` | img/vid | `maclip_score` - MACLIP multi-attribute CLIP NR-IQA (higher=better) | MACLIP multi-attribute CLIP no-reference quality (higher=better) | `subsample=3` |
-| `maniqa` | img/vid | `maniqa_score` - MANIQA multi-attention (higher=better) | MANIQA multi-dimension attention no-reference IQA | `subsample=8` |
-| `metadata` | img/vid | - | Checks video/image metadata (resolution, FPS, duration, integrity) | `min_resolution=720`, `min_fps=15`, +4 |
-| `multi_view_consistency` | vid | `multiview_consistency` - Geometric consistency 0-1 (higher=better) | Geometric multi-view consistency via epipolar analysis | `subsample=5`, `max_pairs=30`, +1 |
-| `multiple_objects` | img/vid +cap | - | Verifies object count matches caption (VBench multiple_objects dimension) | `tolerance=1` |
-| `musiq` | img/vid | `musiq_score` - MUSIQ multi-scale IQA (higher=better) | Multi-Scale Image Quality Transformer (no-reference) | `variant=musiq`, `subsample=5`, +1 |
-| `naturalness` | img/vid | `naturalness_score` - Natural scene statistics | Measures naturalness of content (natural vs synthetic) | `use_pyiqa=True`, `subsample=2`, +1 |
-| `nima` | img/vid | `nima_score` - NIMA aesthetic+technical (1-10, higher=better) | NIMA aesthetic and technical image quality (1-10 scale) | `subsample=8` |
-| `niqe` | img/vid | `niqe` - Natural Image Quality Evaluator (lower=better) | Natural Image Quality Evaluator (no-reference) | `subsample=2`, `warning_threshold=7.0` |
-| `nrqm` | img/vid | `nrqm` - NRQM No-Reference Quality Metric (higher=better) | NRQM no-reference quality metric for super-resolution (higher=better) | `subsample=3` |
-| `object_detection` | img/vid | `detection_score`; `count_score`; `is_score` | Detects objects (GRiT / YOLOv8) - Supports Heavy Models | `model_name=yolov8n.pt`, `use_yolo_world=False`, +1 |
-| `p1203` | vid | `p1203_mos` - ITU-T P.1203 streaming QoE MOS (1-5) | ITU-T P.1203 streaming QoE estimation (1-5 MOS) | `display_size=phone` |
-| `paq2piq` | img/vid | `paq2piq_score` - PaQ-2-PiQ patch-to-picture (CVPR 2020) | PaQ-2-PiQ patch-to-picture NR quality (CVPR 2020) | `subsample=4` |
-| `paranoid_decoder` | vid | - | Deep bitstream validation using FFmpeg (Paranoid Mode) | `timeout=60`, `strict_mode=True` |
-| `perceptual_fr` | img/vid +ref | `fsim` - Feature Similarity Index (0-1, higher=better); `gmsd` - Gradient Magnitude Similarity Deviation (lower=better); `vsi_score` - Visual Saliency Index (0-1, higher=better) | FSIM + GMSD + VSI full-reference perceptual metrics | `subsample=5`, `device=auto` |
-| `physics` | vid | `physics_score` - Physics plausibility (0-1, higher=better) | Physics plausibility via trajectory analysis (CoTracker / LK / heuristic) | `subsample=16`, `accel_threshold=50.0` |
-| `pi` | img/vid | `pi_score` - Perceptual Index (PIRM challenge, lower=better) | Perceptual Index (PIRM challenge metric, lower=better) | `subsample=3` |
-| `pi_metric` | img/vid | `pi_score` - Perceptual Index (PIRM challenge, lower=better) | Perceptual Index (PIRM challenge metric, lower=better) | `subsample=3` |
-| `piqe` | img/vid | `piqe` - PIQE perception-based NR-IQA (lower=better) | PIQE perception-based no-reference quality (lower=better) | `subsample=3`, `warning_threshold=50.0` |
-| `production_quality` | img/vid | `white_balance_score` - White balance accuracy 0-100; `focus_quality` - Sharpness/focus quality 0-100; `banding_severity` - Colour banding 0-100 (lower=better); `color_grading_score` - Colour consistency 0-100; `exposure_consistency` - Exposure stability 0-100 | Professional production quality (colour, exposure, focus, banding) | `max_frames=150` |
-| `q_align` | img/vid | `qalign_quality` - Q-Align technical quality (1-5, higher=better); `qalign_aesthetic` - Q-Align aesthetic quality (1-5, higher=better) | Q-Align unified quality + aesthetic assessment (ICML 2024) | `model_name=q-future/one-align`, `dtype=float16`, +6 |
-| `qcn` | img/vid | `qcn_score` - Geometric order blind IQA | Blind IQA (QCN via pyiqa, or HyperIQA fallback) | `subsample=4` |
-| `qualiclip` | img/vid | `qualiclip_score` - QualiCLIP opinion-unaware (higher=better) | QualiCLIP opinion-unaware CLIP-based no-reference IQA | `subsample=8` |
-| `resolution_bucketing` | img/vid | - | Validates resolution/aspect-ratio fit for training buckets | `max_crop_ratio=0.15`, `max_scale_factor=2.0`, +3 |
-| `scene` | vid | - | Detects scene cuts and shots using PySceneDetect | `threshold=27.0`, `min_scene_len=15`, +2 |
-| `scene_complexity` | vid | `scene_complexity` - Visual complexity score | Spatial and temporal scene complexity analysis | `subsample=2`, `spatial_weight=0.5`, +1 |
-| `scene_tagging` | img/vid | - | Tags scene context (Proxy for Tag2Text/RAM using CLIP) | `models_dir=models` |
-| `spatial_relationship` | img/vid +cap | - | Verifies spatial relations (left/right/top/bottom) in prompt vs detections | - |
-| `spectral` | vid | `spectral_entropy` - DINOv2 spectral entropy; `spectral_rank` - DINOv2 effective rank ratio | Analyzes spectral complexity (Effective Rank) of video features (DINOv2) | `model_type=dinov2_vits14`, `sample_rate=8`, +2 |
-| `spectral_complexity` | vid | `spectral_entropy` - DINOv2 spectral entropy; `spectral_rank` - DINOv2 effective rank ratio | Analyzes spectral complexity (Effective Rank) of video features (DINOv2) | `model_type=dinov2_vits14`, `sample_rate=8`, +2 |
-| `spectral_upscaling` | img/vid | - | Detection of upscaled/fake high-resolution content | `energy_threshold=0.05`, `sample_rate=20` |
-| `stereoscopic_quality` | vid | `stereo_comfort_score` - Stereo viewing comfort 0-100 (higher=better) | Stereo 3D comfort and quality assessment | `stereo_format=auto`, `subsample=10`, +3 |
-| `structural` | vid | - | Checks structural integrity (scene cuts, black bars) | `detect_cuts=True`, `detect_black_bars=True` |
-| `style_consistency` | vid | - | Appearance Style verification (Gram Matrix Consistency) | - |
-| `text` | img/vid | `ocr_area_ratio` - 0-1; `text_overlay_score` - Text overlay severity (0-1) | Detects text/watermarks using OCR (PaddleOCR / Tesseract) | `use_paddle=True`, `max_text_area=0.05` |
-| `ti_si` | vid | `spatial_information` - ITU-T P.910 SI (higher=more detail); `temporal_information` - ITU-T P.910 TI (higher=more motion) | ITU-T P.910 Temporal & Spatial Information | `max_frames=300` |
-| `topiq` | img/vid | `topiq_score` - TOPIQ transformer-based IQA (higher=better) | TOPIQ transformer-based no-reference IQA | `variant=topiq_nr`, `subsample=5`, +1 |
-| `trajan` | vid | `trajan_score` - Point track motion consistency | Motion consistency via point tracking (CoTracker or Lucas-Kanade fallback) | `num_frames=16`, `num_points=256` |
-| `tres` | img/vid | `tres_score` - TReS transformer IQA (WACV 2022) | TReS transformer-based NR image quality (WACV 2022) | `subsample=4` |
-| `umap_projection` | img/vid | - | UMAP/t-SNE/PCA 2-D projection with spread & coverage | `device=auto`, `min_samples=3` |
-| `unique` | img/vid | `unique_score` - UNIQUE unified NR-IQA (TIP 2021) | UNIQUE unified NR image quality (TIP 2021) | `subsample=4` |
-| `unique_iqa` | img/vid | `unique_score` - UNIQUE unified NR-IQA (TIP 2021) | UNIQUE unified NR image quality (TIP 2021) | `subsample=4` |
-| `usability_rate` | img/vid | `usability_rate` - Percentage of usable frames | Computes percentage of usable frames based on quality thresholds | `quality_threshold=50.0` |
-| `visqol` | img/vid +ref | `visqol` - ViSQOL audio quality MOS (1-5, higher=better) | ViSQOL audio quality MOS (Google, 1-5, higher=better) | `mode=audio` |
-| `vlm_judge` | img/vid | - | Advanced semantic verification using VLM (e.g. LLaVA) | `model_name=llava-hf/llava-1.5-7b-hf`, `max_new_tokens=256`, +4 |
-| `vtss` | img/vid | `vtss` - Video Training Suitability Score (0-1) | Video Training Suitability Score (0-1, meta-metric) | `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'temporal_consistency': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}` |
-| `wadiqam` | img/vid | `wadiqam_score` - WaDIQaM-NR (higher=better) | WaDIQaM-NR weighted averaging deep image quality mapper | `subsample=8` |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `4k_vqa` | vid | `hdr_quality`, `sdr_quality`, `technical_score` | ⚡ fast | ✅⏳ | Memory-efficient quality assessment for 4K+ videos |
+| `action_recognition` | vid +cap | `action_confidence`, `action_score` | ⏱️ medium | ✅⏳ | Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models |
+| `adadqa` | img/vid | `adadqa_score` | ⚡ fast | ✅⏳ | Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023) |
+| `aesthetic` | img/vid | `aesthetic_score`, `vqa_a_score` | ⏱️ medium | ✅⏳ | Estimates aesthetic quality using Aesthetic Predictor V2.5 |
+| `aesthetic_scoring` | img/vid | `aesthetic_score` | ⏱️ medium | ✅⏳ | Calculates aesthetic score (1-10) using LAION-Aesthetics MLP |
+| `afine` | img/vid | `afine_score` | ⏱️ medium | ✅⏳ | A-FINE adaptive fidelity-naturalness IQA (CVPR 2025) |
+| `aigcvqa` | img/vid +cap | `aigcvqa_technical`, `aigcvqa_aesthetic`, `aigcvqa_alignment` | ⚡ fast | ✅⏳ | AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024) |
+| `arniqa` | img/vid | `arniqa_score` | ⏱️ medium | ✅⏳ | ARNIQA no-reference image quality assessment |
+| `artfid` | img/vid +ref | — | ⚡ fast | ✅⏳ | ArtFID style transfer quality (FR, 2022, lower=better) |
+| `audio` | vid | — | ⚡ fast | ✅⏳ | Validates audio stream quality and presence |
+| `avqt` | img/vid +ref | — | ⚡ fast | ✅⏳ | Apple AVQT perceptual video quality (full-reference) |
+| `background_diversity` | img/vid | — | ⚡ fast | ✅⏳ | Checks background complexity (entropy) to detect concept bleeding |
+| `basic` | img/vid | `blur_score`, `brightness`, `contrast`, `saturation`, `noise_score`, `artifacts_score`, `technical_score`, `vqa_t_score`, `gradient_detail` | ⚡ fast | ✅⏳ | Comprehensive technical quality assessment (blur, noise, artifacts, contrast) |
+| `basic_quality` | img/vid | `blur_score`, `brightness`, `contrast`, `saturation`, `noise_score`, `artifacts_score`, `technical_score`, `vqa_t_score`, `gradient_detail` | ⚡ fast | ✅⏳ | Comprehensive technical quality assessment (blur, noise, artifacts, contrast) |
+| `bd_rate` | img/vid | — | ⚡ fast | ✅⏳ | BD-Rate codec comparison (dataset-level, negative%=better) |
+| `brisque` | img/vid | `brisque` | ⏱️ medium | ✅⏳ | BRISQUE no-reference image quality (lower=better) |
+| `bvqi` | img/vid | `bvqi_score` | ⏱️ medium | ✅⏳ | BVQI zero-shot blind video quality index (ICME 2023) |
+| `cambi` | vid | `cambi` | ⚡ fast | ✅⏳ | CAMBI banding/contouring detector (Netflix, 0-24, lower=better) |
+| `cdc` | vid | `cdc_score` | ⚡ fast | ✅⏳ | CDC color distribution consistency for video colorization (2024) |
+| `celebrity_id` | img/vid | `celebrity_id_score` | ⚡ fast | ✅⏳ | Face identity verification using DeepFace (EvalCrafter celebrity_id_score) |
+| `clifvqa` | img/vid | `clifvqa_score` | ⚡ fast | ✅⏳ | CLiF-VQA human feelings VQA via CLIP (2024) |
+| `clipvqa` | img/vid | `clipvqa_score` | ⏱️ medium | ✅⏳ | CLIPVQA CLIP-based spatiotemporal VQA (TIP 2024) |
+| `cnniqa` | img/vid | `cnniqa_score` | ⏱️ medium | ✅⏳ | CNNIQA blind CNN-based image quality assessment |
+| `color_consistency` | img/vid +cap | `color_score` | ⚡ fast | ✅⏳ | Verifies color attributes in prompt vs video content |
+| `commonsense` | img/vid | `commonsense_score` | 🐌 slow | ✅⏳ | Common sense adherence (VLM / ViLT VQA / heuristic) |
+| `compare2score` | img/vid | `compare2score` | ⏱️ medium | ✅⏳ | Compare2Score comparison-based NR image quality |
+| `compressed_vqa_hdr` | img/vid +ref | — | ⚡ fast | ✅⏳ | CompressedVQA-HDR FR quality (ICME 2025) |
+| `contrique` | img/vid | `contrique_score` | ⏱️ medium | ✅⏳ | Contrastive no-reference IQA |
+| `conviqt` | img/vid | `conviqt_score` | ⏱️ medium | ✅⏳ | CONVIQT contrastive self-supervised NR-VQA (TIP 2023) |
+| `cpbd` | img/vid | `blur_score` | ⚡ fast | ✅⏳ | Cumulative Probability of Blur Detection (Perceptual Blur) |
+| `crave` | vid | `crave_score` | ⚡ fast | ✅⏳ | CRAVE content-rich AIGC video evaluator (2025) |
+| `creativity` | img/vid | `creativity_score` | 🐌 slow | ✅⏳ | Artistic novelty assessment (VLM / CLIP / heuristic) |
+| `crfiqa` | img/vid | `crfiqa_score` | ⚡ fast | ✅⏳ | CR-FIQA face quality via classifiability (CVPR 2023) |
+| `dataset_analytics` | img/vid | — | ⏱️ medium | ✅⏳ | Dataset-level diversity, coverage, outliers, duplicates |
+| `davis_jf` | img/vid +ref | `davis_j`, `davis_f` | ⚡ fast | ✅⏳ | DAVIS J&F video segmentation quality (FR, 2016) |
+| `dbcnn` | img/vid | `dbcnn_score` | ⏱️ medium | ✅⏳ | DBCNN deep bilinear CNN for no-reference IQA |
+| `decoder_stress` | vid | — | ⚡ fast | ✅⏳ | Random access decoder stress test |
+| `dedup` | img/vid | — | ⚡ fast | ✅⏳ | Detects duplicates using Perceptual Hashing (pHash) |
+| `deduplication` | img/vid | — | ⚡ fast | ✅⏳ | Detects duplicates using Perceptual Hashing (pHash) |
+| `deepdc` | img/vid | `deepdc_score` | ⏱️ medium | ✅⏳ | DeepDC distribution conformance NR-IQA via pyiqa (2024, lower=better) |
+| `deepvqa` | img/vid +ref | — | ⚡ fast | ✅⏳ | DeepVQA spatiotemporal masking FR-VQA (ECCV 2018) |
+| `discovqa` | img/vid | `discovqa_score` | ⚡ fast | ✅⏳ | DisCoVQA temporal distortion-content VQA (2023) |
+| `dists` | img/vid +ref | `dists` | ⏱️ medium | ✅⏳ | Deep Image Structure and Texture Similarity (full-reference) |
+| `diversity` | img/vid | — | ⚡ fast | ✅⏳ | Flags redundant samples using embedding similarity (Deduplication) |
+| `diversity_selection` | img/vid | — | ⚡ fast | ✅⏳ | Flags redundant samples using embedding similarity (Deduplication) |
+| `dsg` | img/vid +cap | `dsg_score` | ⚡ fast | ✅⏳ | DSG Davidsonian Scene Graph faithfulness (ICLR 2024, Google) |
+| `dynamics_controllability` | vid | `dynamics_controllability` | ⏱️ medium | ✅⏳ | Assesses motion controllability based on text-motion alignment |
+| `dynamics_range` | vid | `dynamics_range` | ⚡ fast | ✅⏳ | Measures extent of motion and content variation (DEVIL protocol) |
+| `embedding` | img/vid | — | ⏱️ medium | ✅⏳ | Calculates X-CLIP embeddings for similarity search |
+| `erqa` | img/vid +ref | — | ⚡ fast | ✅⏳ | ERQA edge restoration quality assessment (FR, 2022) |
+| `exposure` | img/vid | — | ⚡ fast | ✅⏳ | Checks for overexposure, underexposure, and low contrast using histograms |
+| `faver` | vid | `faver_score` | ⚡ fast | ✅⏳ | FAVER blind VQA for variable frame rate videos (2024) |
+| `fgd` | vid | — | ⚡ fast | ✅⏳ | Frechet Gesture Distance for motion generation (batch metric, 2020) |
+| `fmd` | vid | — | ⚡ fast | ✅⏳ | Frechet Motion Distance for motion generation (batch metric, 2022) |
+| `gamival` | img/vid | `gamival_score` | ⚡ fast | ✅⏳ | GAMIVAL cloud gaming NR-VQA with NSS + CNN features (2023) |
+| `generative_distribution` | img/vid | — | ⏱️ medium | ✅⏳ | Precision / Recall / Coverage / Density (batch metric) |
+| `generative_distribution_metrics` | img/vid | — | ⚡ fast | ✅⏳ | Precision / Recall / Coverage / Density (batch metric) |
+| `grafiqs` | img/vid | `grafiqs_score` | ⚡ fast | ✅⏳ | GraFIQs gradient face quality (CVPRW 2024) |
+| `graphsim` | img/vid +ref | — | ⚡ fast | ✅⏳ | GraphSIM graph gradient point cloud quality (2020) |
+| `human_fidelity` | img/vid | `human_fidelity_score` | ⚡ fast | ✅⏳ | Human body/hand/face fidelity (DWPose / MediaPipe / heuristic) |
+| `hyperiqa` | img/vid | `hyperiqa_score` | ⏱️ medium | ✅⏳ | HyperIQA adaptive hypernetwork NR image quality |
+| `ilniqe` | img/vid | `ilniqe` | ⏱️ medium | ✅⏳ | IL-NIQE integrated local no-reference quality (lower=better) |
+| `imaging_quality` | img/vid | `noise_score`, `artifacts_score` | ⚡ fast | ✅⏳ | Assesses technical quality (Noise, Blockiness) - Proxy for MUSIQ/DOVER |
+| `inception_score` | img/vid | `is_score` | ⏱️ medium | ✅⏳ | Inception Score (IS) using InceptionV3 — EvalCrafter quality metric |
+| `internvqa` | vid | `dover_score` | ⚡ fast | ✅⏳ | InternVQA lightweight compressed video quality (2025) |
+| `jedi` | vid | — | ⏱️ medium | ✅⏳ | JEDi distribution metric (V-JEPA + MMD, ICLR 2025) |
+| `jedi_metric` | vid | — | ⚡ fast | ✅⏳ | JEDi distribution metric (V-JEPA + MMD, ICLR 2025) |
+| `knowledge_graph` | img/vid | — | ⚡ fast | ✅⏳ | Generates a conceptual knowledge graph of the video dataset |
+| `laion_aesthetic` | img/vid | `laion_aesthetic` | ⏱️ medium | ✅⏳ | LAION Aesthetics V2 predictor (0-10, industry standard) |
+| `liqe` | img/vid | `liqe_score` | ⏱️ medium | ✅⏳ | LIQE lightweight no-reference IQA |
+| `llm_advisor` | img/vid | — | 🐌 slow | ✅⏳ | Rule-based improvement recommendations derived from quality metrics (no LLM used) |
+| `llm_descriptive_qa` | img/vid | `confidence_score` | 🐌 slow | ✅⏳ | LMM-based interpretable quality assessment with explanations |
+| `lmmvqa` | img/vid | `lmmvqa_score` | ⚡ fast | ✅⏳ | LMM-VQA spatiotemporal LMM VQA (IEEE 2024) |
+| `maclip` | img/vid | `maclip_score` | ⏱️ medium | ✅⏳ | MACLIP multi-attribute CLIP no-reference quality (higher=better) |
+| `maniqa` | img/vid | `maniqa_score` | ⏱️ medium | ✅⏳ | MANIQA multi-dimension attention no-reference IQA |
+| `maxvqa` | img/vid | `maxvqa_score` | ⏱️ medium | ✅⏳ | MaxVQA explainable language-prompted VQA (ACM MM 2023) |
+| `mc360iqa` | img/vid | `mc360iqa_score` | ⚡ fast | ✅⏳ | MC360IQA blind 360 IQA (2019) |
+| `mdvqa` | img/vid | `mdvqa_semantic`, `mdvqa_distortion`, `mdvqa_motion` | ⚡ fast | ✅⏳ | MD-VQA multi-dimensional UGC live VQA (CVPR 2023) |
+| `memoryvqa` | img/vid | `memoryvqa_score` | ⚡ fast | ✅⏳ | Memory-VQA human memory system VQA (Neurocomputing 2025) |
+| `metadata` | img/vid | — | ⚡ fast | ✅⏳ | Checks video/image metadata (resolution, FPS, duration, integrity) |
+| `mm_pcqa` | img/vid | `mm_pcqa_score` | ⚡ fast | ✅⏳ | MM-PCQA multi-modal point cloud QA (IJCAI 2023) |
+| `modularbvqa` | img/vid | `modularbvqa_score` | ⚡ fast | ✅⏳ | ModularBVQA resolution/framerate-aware blind VQA (CVPR 2024) |
+| `msswd` | img/vid | — | ⏱️ medium | ✅⏳ | MSSWD multi-scale sliced Wasserstein distance via pyiqa (batch, lower=better) |
+| `multi_view_consistency` | vid | `multiview_consistency` | ⚡ fast | ✅⏳ | Geometric multi-view consistency via epipolar analysis |
+| `multiple_objects` | img/vid +cap | — | ⚡ fast | ✅⏳ | Verifies object count matches caption (VBench multiple_objects dimension) |
+| `musiq` | img/vid | `musiq_score` | ⏱️ medium | ✅⏳ | Multi-Scale Image Quality Transformer (no-reference) |
+| `naturalness` | img/vid | `naturalness_score` | ⏱️ medium | ✅⏳ | Measures naturalness of content (natural vs synthetic) |
+| `nima` | img/vid | `nima_score` | ⏱️ medium | ✅⏳ | NIMA aesthetic and technical image quality (1-10 scale) |
+| `niqe` | img/vid | `niqe` | ⏱️ medium | ✅⏳ | Natural Image Quality Evaluator (no-reference) |
+| `nr_gvqm` | img/vid | `gamival_score` | ⚡ fast | ✅⏳ | NR-GVQM no-reference gaming video quality (ISM 2018, 9 features) |
+| `nrqm` | img/vid | `nrqm` | ⏱️ medium | ✅⏳ | NRQM no-reference quality metric for super-resolution (higher=better) |
+| `oavqa` | img/vid | `oavqa_score` | ⚡ fast | ✅⏳ | OAVQA omnidirectional audio-visual QA (2024) |
+| `object_detection` | img/vid | `detection_score`, `count_score`, `is_score` | ⏱️ medium | ✅⏳ | Detects objects (GRiT / YOLOv8) - Supports Heavy Models |
+| `p1203` | vid | `p1203_mos` | ⚡ fast | ✅⏳ | ITU-T P.1203 streaming QoE estimation (1-5 MOS) |
+| `p1204` | vid | `p1204_mos` | ⚡ fast | ✅⏳ | ITU-T P.1204.3 bitstream NR quality (2020) |
+| `paq2piq` | img/vid | `paq2piq_score` | ⏱️ medium | ✅⏳ | PaQ-2-PiQ patch-to-picture NR quality (CVPR 2020) |
+| `paranoid_decoder` | vid | — | ⚡ fast | ✅⏳ | Deep bitstream validation using FFmpeg (Paranoid Mode) |
+| `pcqm` | img/vid +ref | — | ⚡ fast | ✅⏳ | PCQM geometry+color point cloud quality (2020) |
+| `perceptual_fr` | img/vid +ref | `fsim`, `gmsd`, `vsi_score` | ⏱️ medium | ✅⏳ | FSIM + GMSD + VSI full-reference perceptual metrics |
+| `physics` | vid | `physics_score` | ⏱️ medium | ✅⏳ | Physics plausibility via trajectory analysis (CoTracker / LK / heuristic) |
+| `pi` | img/vid | `pi_score` | ⏱️ medium | ✅⏳ | Perceptual Index (PIRM challenge metric, lower=better) |
+| `pi_metric` | img/vid | `pi_score` | ⚡ fast | ✅⏳ | Perceptual Index (PIRM challenge metric, lower=better) |
+| `piqe` | img/vid | `piqe` | ⏱️ medium | ✅⏳ | PIQE perception-based no-reference quality (lower=better) |
+| `presresq` | img/vid | `presresq_score` | ⚡ fast | ✅⏳ | PreResQ-R1 rank+score VQA (2025) |
+| `production_quality` | img/vid | `white_balance_score`, `focus_quality`, `banding_severity`, `color_grading_score`, `exposure_consistency` | ⚡ fast | ✅⏳ | Professional production quality (colour, exposure, focus, banding) |
+| `provqa` | img/vid | `provqa_score` | ⚡ fast | ✅⏳ | ProVQA progressive blind 360 VQA (2022) |
+| `ptmvqa` | img/vid | `ptmvqa_score` | ⚡ fast | ✅⏳ | PTM-VQA multi-PTM fusion VQA (CVPR 2024) |
+| `q_align` | img/vid | `qalign_quality`, `qalign_aesthetic` | 🐌 slow | ✅⏳ | Q-Align unified quality + aesthetic assessment (ICML 2024) |
+| `qclip` | img/vid | `qclip_score` | ⚡ fast | ✅⏳ | Q-CLIP VLM-based VQA (2025) |
+| `qcn` | img/vid | `qcn_score` | ⏱️ medium | ✅⏳ | Blind IQA (QCN via pyiqa, or HyperIQA fallback) |
+| `qualiclip` | img/vid | `qualiclip_score` | ⏱️ medium | ✅⏳ | QualiCLIP opinion-unaware CLIP-based no-reference IQA |
+| `rankdvqa` | img/vid +ref | — | ⚡ fast | ✅⏳ | RankDVQA ranking-based FR VQA (WACV 2024) |
+| `rapique` | img/vid | `rapique_score` | ⚡ fast | ✅⏳ | RAPIQUE rapid NR-VQA via bandpass NSS + CNN features (IEEE OJSP 2021) |
+| `resolution_bucketing` | img/vid | — | ⚡ fast | ✅⏳ | Validates resolution/aspect-ratio fit for training buckets |
+| `sama` | img/vid | `sama_score` | ⚡ fast | ✅⏳ | SAMA scaling+masking VQA (2024) |
+| `scene` | vid | — | ⚡ fast | ✅⏳ | Detects scene cuts and shots using PySceneDetect |
+| `scene_complexity` | vid | `scene_complexity` | ⚡ fast | ✅⏳ | Spatial and temporal scene complexity analysis |
+| `scene_tagging` | img/vid | — | ⏱️ medium | ✅⏳ | Tags scene context (Proxy for Tag2Text/RAM using CLIP) |
+| `serfiq` | img/vid | `serfiq_score` | ⚡ fast | ✅⏳ | SER-FIQ face quality via embedding robustness (2020) |
+| `sfid` | img/vid | — | ⏱️ medium | ✅⏳ | SFID spatial Fréchet Inception Distance via pyiqa (batch, lower=better) |
+| `siamvqa` | img/vid | `siamvqa_score` | ⚡ fast | ✅⏳ | SiamVQA Siamese high-resolution VQA (2025) |
+| `simplevqa` | img/vid | `simplevqa_score` | ⚡ fast | ✅⏳ | SimpleVQA Swin+SlowFast blind VQA (2022) |
+| `spatial_relationship` | img/vid +cap | — | ⚡ fast | ✅⏳ | Verifies spatial relations (left/right/top/bottom) in prompt vs detections |
+| `spectral` | vid | `spectral_entropy`, `spectral_rank` | ⚡ fast | ✅⏳ | Analyzes spectral complexity (Effective Rank) of video features (DINOv2) |
+| `spectral_complexity` | vid | `spectral_entropy`, `spectral_rank` | ⏱️ medium | ✅⏳ | Analyzes spectral complexity (Effective Rank) of video features (DINOv2) |
+| `spectral_upscaling` | img/vid | — | ⚡ fast | ✅⏳ | Detection of upscaled/fake high-resolution content |
+| `speedqa` | vid | `speedqa_score` | ⚡ fast | ✅⏳ | SpEED-QA spatial efficient entropic differencing NR-VQA (Bampis 2017) |
+| `sqi` | vid | `sqi_score` | ⚡ fast | ✅⏳ | SQI streaming quality index (2016) |
+| `stablevqa` | vid | `stablevqa_score` | ⚡ fast | ✅⏳ | StableVQA video stability quality assessment (ACM MM 2023) |
+| `stereoscopic_quality` | vid | `stereo_comfort_score` | ⚡ fast | ✅⏳ | Stereo 3D comfort and quality assessment |
+| `stream_metric` | img/vid | — | ⚡ fast | ✅⏳ | STREAM spatial/temporal generation eval (ICLR 2024) |
+| `structural` | vid | — | ⚡ fast | ✅⏳ | Checks structural integrity (scene cuts, black bars) |
+| `style_consistency` | vid | — | ⚡ fast | ✅⏳ | Appearance Style verification (Gram Matrix Consistency) |
+| `t2veval` | img/vid | `t2veval_score` | ⚡ fast | ✅⏳ | T2VEval text-video consistency+realness (2025) |
+| `text` | img/vid | `ocr_area_ratio`, `text_overlay_score` | ⚡ fast | ✅⏳ | Detects text/watermarks using OCR (PaddleOCR / Tesseract) |
+| `thqa` | vid | `thqa_score` | ⚡ fast | ✅⏳ | THQA talking head quality assessment (ICIP 2024) |
+| `ti_si` | vid | `spatial_information`, `temporal_information` | ⚡ fast | ✅⏳ | ITU-T P.910 Temporal & Spatial Information |
+| `topiq` | img/vid | `topiq_score` | ⏱️ medium | ✅⏳ | TOPIQ transformer-based no-reference IQA |
+| `trajan` | vid | `trajan_score` | ⏱️ medium | ✅⏳ | Motion consistency via point tracking (CoTracker or Lucas-Kanade fallback) |
+| `tres` | img/vid | `tres_score` | ⏱️ medium | ✅⏳ | TReS transformer-based NR image quality (WACV 2022) |
+| `uciqe` | img/vid | `uciqe_score` | ⚡ fast | ✅⏳ | UCIQE underwater color image quality evaluation (2015) |
+| `ugvq` | img/vid | `ugvq_score` | ⚡ fast | ✅⏳ | UGVQ unified generated video quality (TOMM 2024) |
+| `uiqm` | img/vid | `uiqm_score` | ⚡ fast | ✅⏳ | UIQM underwater image quality measure (Panetta et al. 2016) |
+| `umap_projection` | img/vid | — | ⏱️ medium | ✅⏳ | UMAP/t-SNE/PCA 2-D projection with spread & coverage |
+| `umtscore` | img/vid | `umtscore` | ⏱️ medium | ✅⏳ | UMTScore video-text alignment via UMT features |
+| `unified_vqa` | img/vid +ref | `dover_score` | ⚡ fast | ✅⏳ | Unified-VQA FR+NR multi-task quality assessment (2025) |
+| `unique` | img/vid | `unique_score` | ⏱️ medium | ✅⏳ | UNIQUE unified NR image quality (TIP 2021) |
+| `unique_iqa` | img/vid | `unique_score` | ⚡ fast | ✅⏳ | UNIQUE unified NR image quality (TIP 2021) |
+| `unqa` | img/vid | `confidence_score` | ⚡ fast | ✅⏳ | UNQA unified no-reference quality for audio/image/video (2024) |
+| `usability_rate` | img/vid | `usability_rate` | ⚡ fast | ✅⏳ | Computes percentage of usable frames based on quality thresholds |
+| `vader` | img/vid | `vader_score` | ⚡ fast | ✅⏳ | VADER reward gradient alignment (ICLR 2025) |
+| `vbliinds` | img/vid | `vbliinds_score` | ⚡ fast | ✅⏳ | V-BLIINDS blind NR-VQA via DCT-domain NSS (Saad 2013) |
+| `vendi` | img/vid | — | ⚡ fast | ✅⏳ | Vendi Score dataset diversity (NeurIPS 2022, batch metric) |
+| `vfips` | img/vid +ref | — | ⚡ fast | ✅⏳ | VFIPS frame interpolation perceptual similarity (ECCV 2022, FR) |
+| `video_atlas` | vid | `video_atlas_score` | ⚡ fast | ✅⏳ | Video ATLAS temporal artifacts+stalls assessment (2018) |
+| `videoreward` | vid +cap | `videoreward_vq`, `videoreward_mq`, `videoreward_ta` | ⚡ fast | ✅⏳ | VideoReward Kling multi-dim reward model (NeurIPS 2025) |
+| `viideo` | vid | `viideo_score` | ⚡ fast | ✅⏳ | VIIDEO blind NR-VQA via natural video statistics (Mittal 2016, lower=better) |
+| `visqol` | img/vid +ref | `visqol` | ⚡ fast | ✅⏳ | ViSQOL audio quality MOS (Google, 1-5, higher=better) |
+| `vlm_judge` | img/vid | — | 🐌 slow | ✅⏳ | Advanced semantic verification using VLM (e.g. LLaVA) |
+| `vqa2` | img/vid | `vqa2_score` | ⚡ fast | ✅⏳ | VQA² LMM video quality assessment (MM 2025) |
+| `vqathinker` | img/vid | `vqathinker_score` | ⚡ fast | ✅⏳ | VQAThinker RL-based explainable VQA (2025) |
+| `vqinsight` | img/vid | `vqinsight_score` | ⚡ fast | ✅⏳ | VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026) |
+| `vsfa` | img/vid | `vsfa_score` | ⚡ fast | ✅⏳ | VSFA quality-aware feature aggregation with GRU (ACMMM 2019) |
+| `vtss` | img/vid | `vtss` | ⚡ fast | ✅⏳ | Video Training Suitability Score (0-1, meta-metric) |
+| `wadiqam` | img/vid | `wadiqam_score` | ⏱️ medium | ✅⏳ | WaDIQaM-NR weighted averaging deep image quality mapper |
+| `world_consistency` | vid | `world_consistency_score` | ⚡ fast | ✅⏳ | World Consistency Score: object permanence + causal compliance (2025) |
+| `worldscore` | vid | — | ⚡ fast | ✅⏳ | WorldScore world generation evaluation (ICCV 2025) |
+| `zoomvqa` | img/vid | `zoomvqa_score` | ⚡ fast | ✅⏳ | Zoom-VQA multi-level patch/frame/clip VQA (CVPRW 2023) |
 
-## Safety & Content
+## Safety & Content (6 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `bias_detection` | img/vid | `bias_score` - Representation imbalance indicator 0-1 | Demographic representation analysis (face count, age distribution) | `subsample=10`, `max_frames=30`, +1 |
-| `deepfake_detection` | img/vid | `deepfake_probability` - Synthetic/deepfake likelihood 0-1 | Synthetic media / deepfake likelihood estimation | `subsample=10`, `max_frames=60`, +1 |
-| `harmful_content` | img/vid | `harmful_content_score` - Violence/gore severity 0-1 | Violence, gore, and disturbing content detection | `subsample=10`, `max_frames=60`, +1 |
-| `nsfw` | img/vid | `nsfw_score` - 0-1, likelihood of being NSFW | Detects NSFW (adult/violent) content using ViT | `model_name=Falconsai/nsfw_image_detection`, `threshold=0.5`, +1 |
-| `watermark_classifier` | img/vid | `ai_generated_probability` - AI-generated content likelihood 0-1; `watermark_probability` - 0-1 | Classifies video for watermarks using a pretrained model or custom ResNet-50 weights | `model_weights_path=`, `hf_model=umm-maybe/AI-image-detector`, +1 |
-| `watermark_robustness` | img/vid | `watermark_strength` - Invisible watermark strength 0-1 | Invisible watermark detection and strength estimation | `subsample=15`, `max_frames=30` |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `bias_detection` | img/vid | `bias_score` | ⚡ fast | ✅⏳ | Demographic representation analysis (face count, age distribution) |
+| `deepfake_detection` | img/vid | `deepfake_probability` | ⏱️ medium | ✅⏳ | Synthetic media / deepfake likelihood estimation |
+| `harmful_content` | img/vid | `harmful_content_score` | ⏱️ medium | ✅⏳ | Violence, gore, and disturbing content detection |
+| `nsfw` | img/vid | `nsfw_score` | ⏱️ medium | ✅⏳ | Detects NSFW (adult/violent) content using ViT |
+| `watermark_classifier` | img/vid | `ai_generated_probability`, `watermark_probability` | ⏱️ medium | ✅⏳ | Classifies video for watermarks using a pretrained model or custom ResNet-50 weights |
+| `watermark_robustness` | img/vid | `watermark_strength` | ⚡ fast | ✅⏳ | Invisible watermark detection and strength estimation |
 
-## Text & Semantic
+## Text & Semantic (16 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `captioning` | img/vid | `blip_bleu`; `auto_caption` - Generated caption | Generates captions using BLIP + computes BLEU score (EvalCrafter blip_bleu) | `model_name=Salesforce/blip-image-captioning-base`, `num_frames=5` |
-| `clip_iqa` | img/vid | `clip_iqa_score` - CLIP-IQA semantic quality (0-1, higher=better) | CLIP-based no-reference image quality assessment | `subsample=5`, `warning_threshold=0.4` |
-| `compression_artifacts` | vid | `compression_artifacts` - Artifact severity (0-100) | Detects compression artifacts (blocking, ringing, mosquito noise) | `subsample=3`, `warning_threshold=40.0` |
-| `nemo_curator` | img/vid +cap | `nemo_quality_score` - Caption text quality (0-1); `nemo_quality_label` - Quality label (Low/Medium/High) | Caption text quality scoring (DeBERTa/FastText/heuristic) | `backend=auto`, `model_name=nvidia/quality-classifier-deberta`, +2 |
-| `ocr_fidelity` | img/vid | `ocr_fidelity` - OCR text accuracy vs caption (0-100, higher=better); `ocr_score`; `ocr_cer` - Character Error Rate (0-1, lower=better); `ocr_wer` - Word Error Rate (0-1, lower=better) | Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR) | `num_frames=8`, `lang=en` |
-| `promptiqa` | img/vid | `promptiqa_score` - Few-shot NR-IQA score | Prompt-guided NR-IQA (PromptIQA via pyiqa, TOPIQ-NR, or CLIP-IQA+ fallback) | `subsample=4` |
-| `ram_tagging` | img/vid | `ram_tags` - Comma-separated RAM auto-tags | RAM (Recognize Anything Model) auto-tagging for video frames | `model_name=xinyu1205/recognize-anything-plus-model`, `subsample=4`, +2 |
-| `sd_reference` | img/vid | `sd_score` - SD-reference similarity (0-1) | SD Score — CLIP similarity between video frames and SDXL-generated reference images | `clip_model=openai/clip-vit-base-patch32`, `sdxl_model=stabilityai/stable-diffusion-xl-base-1.0`, +4 |
-| `semantic_alignment` | vid +cap | `clip_score` - Caption-image alignment | Checks alignment between video and caption (CLIP Score) | `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, +1 |
-| `semantic_segmentation_consistency` | vid | `semantic_consistency` - Segmentation temporal IoU 0-1 (higher=better) | Temporal stability of semantic segmentation | `backend=auto`, `device=auto`, +4 |
-| `semantic_selection` | img/vid | - | Selects diverse samples based on VLM-extracted semantic traits | `num_to_select=10`, `uniqueness_weight=0.7`, +1 |
-| `text_detection` | img/vid | `ocr_area_ratio` - 0-1; `text_overlay_score` - Text overlay severity (0-1) | Detects text/watermarks using OCR (PaddleOCR / Tesseract) | `use_paddle=True`, `max_text_area=0.05` |
-| `text_overlay` | img/vid | `text_overlay_score` - Text overlay severity (0-1) | Text overlay / subtitle detection in video frames | `subsample=4`, `edge_threshold=0.15` |
-| `tifa` | img/vid +cap | `tifa_score` - VQA faithfulness (0-1, higher=better) | TIFA text-to-image faithfulness via VQA question answering (ICCV 2023) | `vqa_model=dandelin/vilt-b32-finetuned-vqa`, `num_questions=8`, +1 |
-| `video_text_matching` | img/vid | `clip_score` - Caption-image alignment; `clip_temp` | ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP | `use_xclip=False`, `model_name=openai/clip-vit-base-patch32`, +3 |
-| `vqa_score` | img/vid +cap | `vqa_score_alignment` | VQAScore text-visual alignment via VQA probability (0-1, higher=better) | `model=clip-flant5-xxl`, `subsample=4` |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `captioning` | img/vid | `blip_bleu`, `auto_caption` | ⏱️ medium | ✅⏳ | Generates captions using BLIP + computes BLEU score (EvalCrafter blip_bleu) |
+| `clip_iqa` | img/vid | `clip_iqa_score` | ⏱️ medium | ✅⏳ | CLIP-based no-reference image quality assessment |
+| `compression_artifacts` | vid | `compression_artifacts` | ⚡ fast | ✅⏳ | Detects compression artifacts (blocking, ringing, mosquito noise) |
+| `nemo_curator` | img/vid +cap | `nemo_quality_score`, `nemo_quality_label` | ⏱️ medium | ✅⏳ | Caption text quality scoring (DeBERTa/FastText/heuristic) |
+| `ocr_fidelity` | img/vid | `ocr_fidelity`, `ocr_score`, `ocr_cer`, `ocr_wer` | ⚡ fast | ✅⏳ | Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR) |
+| `promptiqa` | img/vid | `promptiqa_score` | ⏱️ medium | ✅⏳ | Prompt-guided NR-IQA (PromptIQA via pyiqa, TOPIQ-NR, or CLIP-IQA+ fallback) |
+| `ram_tagging` | img/vid | `ram_tags` | ⏱️ medium | ✅⏳ | RAM (Recognize Anything Model) auto-tagging for video frames |
+| `sd_reference` | img/vid | `sd_score` | ⏱️ medium | ✅⏳ | SD Score — CLIP similarity between video frames and SDXL-generated reference images |
+| `semantic_alignment` | vid +cap | `clip_score` | ⏱️ medium | ✅⏳ | Checks alignment between video and caption (CLIP Score) |
+| `semantic_segmentation_consistency` | vid | `semantic_consistency` | ⏱️ medium | ✅⏳ | Temporal stability of semantic segmentation |
+| `semantic_selection` | img/vid | — | ⚡ fast | ✅⏳ | Selects diverse samples based on VLM-extracted semantic traits |
+| `text_detection` | img/vid | `ocr_area_ratio`, `text_overlay_score` | ⚡ fast | ✅⏳ | Detects text/watermarks using OCR (PaddleOCR / Tesseract) |
+| `text_overlay` | img/vid | `text_overlay_score` | ⚡ fast | ✅⏳ | Text overlay / subtitle detection in video frames |
+| `tifa` | img/vid +cap | `tifa_score` | ⏱️ medium | ✅⏳ | TIFA text-to-image faithfulness via VQA question answering (ICCV 2023) |
+| `video_text_matching` | img/vid | `clip_score`, `clip_temp` | ⏱️ medium | ✅⏳ | ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP |
+| `vqa_score` | img/vid +cap | `vqa_score_alignment` | ⏱️ medium | ✅⏳ | VQAScore text-visual alignment via VQA probability (0-1, higher=better) |
 
-## Video Generation
+## Video Generation (9 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `aigv_assessor` | vid | `aigv_static` - AI video static quality; `aigv_temporal` - AI video temporal smoothness; `aigv_dynamic` - AI video dynamic degree; `aigv_alignment` - AI video text-video alignment | AI-generated video quality (AIGV-Assessor model, CLIP+heuristic, or OpenCV fallback) | `subsample=8`, `trust_remote_code=True`, +1 |
-| `chronomagic` | vid | `chronomagic_mt_score` - Metamorphic temporal (0-1, higher=better); `chronomagic_ch_score` - Chrono-hallucination (0-1, lower=fewer) | ChronoMagic-Bench MTScore + CHScore (CLIP / heuristic) | `subsample=16`, `hallucination_threshold=2.0` |
-| `t2v_compbench` | vid | - | T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic) | `subsample=8`, `enable_attribute=True`, +6 |
-| `t2v_score` | vid | `t2v_score` - T2VScore alignment + quality; `t2v_alignment` - Text-video semantic alignment; `t2v_quality` - Video production quality | Text-to-Video alignment and quality scoring | `model_name=TIGER-Lab/T2VScore`, `use_clip_fallback=True`, +5 |
-| `video_memorability` | img/vid | `video_memorability` - Memorability prediction | Content memorability approximation (CLIP/DINOv2 feature statistics, not a trained predictor) | `subsample=5` |
-| `video_reward` | img/vid | `video_reward_score` - Human preference reward | VideoAlign human preference reward model (NeurIPS 2025) | `model_name=KlingTeam/VideoAlign-Reward`, `subsample=8`, +2 |
-| `video_type_classifier` | img/vid | `video_type` - Content type (real, animated, game, etc.); `video_type_confidence` - Classification confidence | CLIP zero-shot video content type classification | `subsample=4` |
-| `videoscore` | img/vid | `videoscore_visual` - VideoScore visual quality; `videoscore_temporal` - VideoScore temporal consistency; `videoscore_dynamic` - VideoScore dynamic degree; `videoscore_alignment` - VideoScore text-video alignment; `videoscore_factual` - VideoScore factual consistency | VideoScore 5-dimensional video quality assessment (1-4 scale) | `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, +2 |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `aigv_assessor` | vid | `aigv_static`, `aigv_temporal`, `aigv_dynamic`, `aigv_alignment` | ⏱️ medium | ✅⏳ | AI-generated video quality (AIGV-Assessor model, CLIP+heuristic, or OpenCV fallback) |
+| `aigvqa` | img/vid | `aigvqa_score` | ⚡ fast | ✅⏳ | AIGVQA multi-dimensional AIGC VQA (ICCVW 2025) |
+| `chronomagic` | vid | `chronomagic_mt_score`, `chronomagic_ch_score` | ⏱️ medium | ✅⏳ | ChronoMagic-Bench MTScore + CHScore (CLIP / heuristic) |
+| `t2v_compbench` | vid | — | ⏱️ medium | ✅⏳ | T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic) |
+| `t2v_score` | vid | `t2v_score`, `t2v_alignment`, `t2v_quality` | ⏱️ medium | ✅⏳ | Text-to-Video alignment and quality scoring |
+| `video_memorability` | img/vid | `video_memorability` | ⏱️ medium | ✅⏳ | Content memorability approximation (CLIP/DINOv2 feature statistics, not a trained predictor) |
+| `video_reward` | img/vid | `video_reward_score` | ⏱️ medium | ✅⏳ | VideoAlign human preference reward model (NeurIPS 2025) |
+| `video_type_classifier` | img/vid | `video_type`, `video_type_confidence` | ⏱️ medium | ✅⏳ | CLIP zero-shot video content type classification |
+| `videoscore` | img/vid | `videoscore_visual`, `videoscore_temporal`, `videoscore_dynamic`, `videoscore_alignment`, `videoscore_factual` | 🐌 slow | ✅⏳ | VideoScore 5-dimensional video quality assessment (1-4 scale) |
 
-## Video Quality Assessment
+## Video Quality Assessment (16 modules)
 
-| Module | Input | Outputs | Description | Config |
-|--------|-------|---------|-------------|--------|
-| `c3dvqa` | vid | `c3dvqa_score` - C3DVQA 3D CNN spatiotemporal FR | 3D CNN spatiotemporal video quality assessment | `clip_length=16`, `subsample=4` |
-| `cgvqm` | img/vid +ref | `cgvqm` - CGVQM gaming quality (higher=better) | CGVQM gaming/rendering quality metric (Intel, higher=better) | `subsample=5` |
-| `cover` | img/vid | `cover_technical` - COVER technical branch; `cover_aesthetic` - COVER aesthetic branch; `cover_semantic` - COVER semantic branch; `cover_score` - COVER overall (higher=better) | COVER 3-branch comprehensive video quality (semantic + aesthetic + technical) | `subsample=8`, `quality_threshold=30.0` |
-| `dover` | vid | `dover_score` - DOVER overall (higher=better); `dover_aesthetic` - DOVER aesthetic quality; `dover_technical` - DOVER technical quality | DOVER disentangled technical + aesthetic VQA (ICCV 2023) | `warning_threshold=0.4`, `weights_path=None`, +1 |
-| `fast_vqa` | vid | `fast_vqa_score` - 0-100 | Deep Learning Video Quality Assessment (FAST-VQA) | `model_type=FasterVQA` |
-| `finevq` | img/vid | `finevq_score` - FineVQ fine-grained UGC VQA (CVPR 2025) | Fine-grained video quality (FineVQ model, TOPIQ+handcrafted, or heuristic fallback) | `subsample=8`, `trust_remote_code=True`, +2 |
-| `funque` | img/vid +ref | `funque_score` - FUNQUE unified quality (beats VMAF) | Fused quality evaluator (FUNQUE package, handcrafted FR, or NR fallback) | `subsample=8` |
-| `hdr_vqm` | img/vid +ref | `hdr_vqm` - HDR-VQM HDR video quality FR | HDR-aware video quality (PU21+wavelet FR or gamma heuristic fallback) | `subsample=8` |
-| `kvq` | img/vid | `kvq_score` - KVQ saliency-guided VQA (CVPR 2025) | Saliency-guided video quality (KVQ model, TOPIQ+saliency, or heuristic fallback) | `subsample=8`, `trust_remote_code=True`, +1 |
-| `mdtvsfa` | img/vid | `mdtvsfa_score` - MDTVSFA fragment-based VQA (higher=better) | Multi-Dimensional fragment-based VQA | `subsample=5` |
-| `movie` | img/vid +ref | `movie_score` - MOVIE motion trajectory FR | Video quality via spatiotemporal Gabor decomposition (FR or NR fallback) | `subsample=8` |
-| `rqvqa` | img/vid | `rqvqa_score` - RQ-VQA rich quality-aware (CVPR 2024 winner) | Multi-attribute video quality (RQ-VQA model, CLIP-IQA+, or heuristic fallback) | `subsample=8`, `trust_remote_code=True`, +2 |
-| `st_greed` | vid +ref | `st_greed_score` - ST-GREED variable frame rate FR | Spatial-temporal entropic quality (FR entropic difference or NR heuristic fallback) | `subsample=16` |
-| `tlvqm` | img/vid | `tlvqm_score` - TLVQM two-level video quality | Two-level video quality model (CNN-TLVQM or handcrafted fallback) | `subsample=8` |
-| `videval` | img/vid | `videval_score` - VIDEVAL 60-feature fusion NR-VQA | Feature-fusion NR-VQA (VIDEVAL-style SVR or heuristic linear mapping) | `subsample=8` |
+| Module | Type | Outputs | Speed | Test | Description |
+|--------|------|---------|-------|------|-------------|
+| `c3dvqa` | vid | `c3dvqa_score` | ⏱️ medium | ✅⏳ | 3D CNN spatiotemporal video quality assessment |
+| `cgvqm` | img/vid +ref | `cgvqm` | ⚡ fast | ✅⏳ | CGVQM gaming/rendering quality metric (Intel, higher=better) |
+| `cover` | img/vid | `cover_technical`, `cover_aesthetic`, `cover_semantic`, `cover_score` | ⏱️ medium | ✅⏳ | COVER 3-branch comprehensive video quality (semantic + aesthetic + technical) |
+| `dover` | vid | `dover_score`, `dover_aesthetic`, `dover_technical` | ⏱️ medium | ✅⏳ | DOVER disentangled technical + aesthetic VQA (ICCV 2023) |
+| `fast_vqa` | vid | `fast_vqa_score` | ⏱️ medium | ✅⏳ | Deep Learning Video Quality Assessment (FAST-VQA) |
+| `finevq` | img/vid | `finevq_score` | ⏱️ medium | ✅⏳ | Fine-grained video quality (FineVQ model, TOPIQ+handcrafted, or heuristic fallback) |
+| `funque` | img/vid +ref | `funque_score` | ⚡ fast | ✅⏳ | Fused quality evaluator (FUNQUE package, handcrafted FR, or NR fallback) |
+| `hdr_vqm` | img/vid +ref | `hdr_vqm` | ⚡ fast | ✅⏳ | HDR-aware video quality (PU21+wavelet FR or gamma heuristic fallback) |
+| `kvq` | img/vid | `kvq_score` | ⏱️ medium | ✅⏳ | Saliency-guided video quality (KVQ model, TOPIQ+saliency, or heuristic fallback) |
+| `mdtvsfa` | img/vid | `mdtvsfa_score` | ⏱️ medium | ✅⏳ | Multi-Dimensional fragment-based VQA |
+| `movie` | img/vid +ref | `movie_score` | ⚡ fast | ✅⏳ | Video quality via spatiotemporal Gabor decomposition (FR or NR fallback) |
+| `rqvqa` | img/vid | `rqvqa_score` | ⏱️ medium | ✅⏳ | Multi-attribute video quality (RQ-VQA model, CLIP-IQA+, or heuristic fallback) |
+| `sr4kvqa` | img/vid | `sr4kvqa_score` | ⚡ fast | ✅⏳ | SR4KVQA super-resolution 4K quality (2024) |
+| `st_greed` | vid +ref | `st_greed_score` | ⚡ fast | ✅⏳ | Spatial-temporal entropic quality (FR entropic difference or NR heuristic fallback) |
+| `tlvqm` | img/vid | `tlvqm_score` | ⏱️ medium | ✅⏳ | Two-level video quality model (CNN-TLVQM or handcrafted fallback) |
+| `videval` | img/vid | `videval_score` | ⚡ fast | ✅⏳ | Feature-fusion NR-VQA (VIDEVAL-style SVR or heuristic linear mapping) |
 
 ---
 
@@ -801,9 +960,23 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>audiobox_aesthetics</code> [fast · tiered]</summary>
+
+- **Packages**: audiobox_aesthetics, soundfile
+- **Fallback**: audiobox
+
+</details>
+
 <details><summary><code>av_sync</code> [fast]</summary>
 
 - **Packages**: soundfile
+
+</details>
+
+<details><summary><code>beat_alignment</code> [fast · tiered]</summary>
+
+- **Packages**: librosa
+- **Fallback**: heuristic → librosa
 
 </details>
 
@@ -811,6 +984,20 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 - **Packages**: librosa, soundfile, torch, torchmetrics
 - **Fallback**: torchmetrics
+
+</details>
+
+<details><summary><code>fad</code> [fast · tiered]</summary>
+
+- **Packages**: frechet_audio_distance, scipy, soundfile
+- **Fallback**: fad_package
+
+</details>
+
+<details><summary><code>lip_sync</code> [fast · tiered]</summary>
+
+- **Packages**: soundfile, syncnet
+- **Fallback**: syncnet
 
 </details>
 
@@ -877,6 +1064,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 - **Packages**: Pillow, deepface, insightface, mediapipe
 - **Fallback**: insightface → deepface → mediapipe
+
+</details>
+
+<details><summary><code>magface</code> [fast · tiered]</summary>
+
+- **Packages**: magface
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1017,9 +1211,33 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>pc_psnr</code> [fast]</summary>
+
+- **Packages**: open3d, scipy
+
+</details>
+
 <details><summary><code>pieapp</code> [GPU · medium]</summary>
 
 - **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>pointssim</code> [fast]</summary>
+
+- **Packages**: open3d, scipy
+
+</details>
+
+<details><summary><code>psnr99</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>psnr_div</code> [fast]</summary>
+
+- **Packages**: —
 
 </details>
 
@@ -1027,6 +1245,19 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 - **Packages**: —
 - **Fallback**: dct
+
+</details>
+
+<details><summary><code>pvmaf</code> [fast · tiered]</summary>
+
+- **Packages**: pvmaf
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>spherical_psnr</code> [fast]</summary>
+
+- **Packages**: —
 
 </details>
 
@@ -1046,6 +1277,12 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 - **Packages**: lpips, opencv-python, stlpips-pytorch, torch
 - **Fallback**: heuristic → stlpips → lpips
+
+</details>
+
+<details><summary><code>st_mad</code> [fast]</summary>
+
+- **Packages**: —
 
 </details>
 
@@ -1095,6 +1332,12 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 <details><summary><code>wadiqam_fr</code> [GPU · medium]</summary>
 
 - **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>ws_ssim</code> [fast]</summary>
+
+- **Packages**: —
 
 </details>
 
@@ -1296,6 +1539,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>adadqa</code> [fast · tiered]</summary>
+
+- **Packages**: adadqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>aesthetic</code> [GPU · medium]</summary>
 
 - **Packages**: aesthetic_predictor_v2_5, torch
@@ -1316,15 +1566,35 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>aigcvqa</code> [fast · tiered]</summary>
+
+- **Packages**: aigcvqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>arniqa</code> [GPU · medium]</summary>
 
 - **Packages**: opencv-python, pyiqa, torch
 
 </details>
 
+<details><summary><code>artfid</code> [fast]</summary>
+
+- **Packages**: art_fid
+
+</details>
+
 <details><summary><code>audio</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>avqt</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → cli
 
 </details>
 
@@ -1358,7 +1628,20 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>bvqi</code> [medium · tiered]</summary>
+
+- **Packages**: bvqi, pyiqa, torch
+- **Fallback**: heuristic → native → pyiqa
+
+</details>
+
 <details><summary><code>cambi</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>cdc</code> [fast]</summary>
 
 - **Packages**: —
 
@@ -1367,6 +1650,22 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 <details><summary><code>celebrity_id</code> [fast]</summary>
 
 - **Packages**: Pillow, deepface, glob
+
+</details>
+
+<details><summary><code>clifvqa</code> [fast · tiered]</summary>
+
+- **Packages**: clifvqa
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>clipvqa</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, clipvqa, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → native → clip
 
 </details>
 
@@ -1397,15 +1696,35 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>compressed_vqa_hdr</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
 <details><summary><code>contrique</code> [medium]</summary>
 
 - **Packages**: pyiqa
 
 </details>
 
+<details><summary><code>conviqt</code> [medium · tiered]</summary>
+
+- **Packages**: conviqt, pyiqa, torch
+- **Fallback**: heuristic → native → pyiqa
+
+</details>
+
 <details><summary><code>cpbd</code> [fast]</summary>
 
 - **Packages**: cpbd
+
+</details>
+
+<details><summary><code>crave</code> [fast · tiered]</summary>
+
+- **Packages**: crave
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1418,11 +1737,24 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>crfiqa</code> [fast · tiered]</summary>
+
+- **Packages**: crfiqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>dataset_analytics</code> [GPU · medium]</summary>
 
 - **Packages**: Pillow, scikit-learn, scipy, torch, transformers
 - **Models**: `openai/clip-vit-base-patch32`
 - **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>davis_jf</code> [fast]</summary>
+
+- **Packages**: opencv-python
 
 </details>
 
@@ -1450,6 +1782,27 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>deepdc</code> [medium · tiered]</summary>
+
+- **Packages**: pyiqa, torch
+- **Fallback**: heuristic → pyiqa
+
+</details>
+
+<details><summary><code>deepvqa</code> [fast · tiered]</summary>
+
+- **Packages**: deepvqa
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>discovqa</code> [fast · tiered]</summary>
+
+- **Packages**: discovqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>dists</code> [GPU · medium]</summary>
 
 - **Packages**: piq, torch
@@ -1465,6 +1818,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 <details><summary><code>diversity_selection</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>dsg</code> [fast · tiered]</summary>
+
+- **Packages**: dsg
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1489,15 +1849,41 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
-<details><summary><code>example</code> [fast]</summary>
+<details><summary><code>erqa</code> [fast]</summary>
 
-- **Packages**: —
+- **Packages**: erqa
 
 </details>
 
 <details><summary><code>exposure</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>faver</code> [fast · tiered]</summary>
+
+- **Packages**: faver
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>fgd</code> [fast]</summary>
+
+- **Packages**: scipy
+
+</details>
+
+<details><summary><code>fmd</code> [fast]</summary>
+
+- **Packages**: scipy
+
+</details>
+
+<details><summary><code>gamival</code> [fast · tiered]</summary>
+
+- **Packages**: gamival
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1512,6 +1898,19 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 <details><summary><code>generative_distribution_metrics</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>grafiqs</code> [fast · tiered]</summary>
+
+- **Packages**: grafiqs
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>graphsim</code> [fast]</summary>
+
+- **Packages**: open3d, scipy
 
 </details>
 
@@ -1545,6 +1944,14 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 - **Packages**: torch, torchvision
 - **Est. VRAM**: ~200 MB
+
+</details>
+
+<details><summary><code>internvqa</code> [fast · tiered]</summary>
+
+- **Packages**: internvqa
+- **Est. VRAM**: ~800 MB
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1593,6 +2000,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>lmmvqa</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>maclip</code> [medium]</summary>
 
 - **Packages**: pyiqa
@@ -1605,9 +2019,60 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>maxvqa</code> [GPU · medium · tiered]</summary>
+
+- **Packages**: Pillow, maxvqa, torch, transformers
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → native → clip
+
+</details>
+
+<details><summary><code>mc360iqa</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>mdvqa</code> [fast · tiered]</summary>
+
+- **Packages**: mdvqa
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>memoryvqa</code> [fast · tiered]</summary>
+
+- **Packages**: memoryvqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>metadata</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>mm_pcqa</code> [fast · tiered]</summary>
+
+- **Packages**: open3d, scipy
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>modularbvqa</code> [fast · tiered]</summary>
+
+- **Packages**: modularbvqa
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>msswd</code> [medium · tiered]</summary>
+
+- **Packages**: pyiqa
+- **Fallback**: heuristic → pyiqa
 
 </details>
 
@@ -1647,9 +2112,23 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>nr_gvqm</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic
+
+</details>
+
 <details><summary><code>nrqm</code> [medium]</summary>
 
 - **Packages**: pyiqa
+
+</details>
+
+<details><summary><code>oavqa</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1666,6 +2145,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>p1204</code> [fast · tiered]</summary>
+
+- **Packages**: itu_p1204_3
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>paq2piq</code> [GPU · medium]</summary>
 
 - **Packages**: opencv-python, pyiqa, torch
@@ -1675,6 +2161,12 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 <details><summary><code>paranoid_decoder</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>pcqm</code> [fast]</summary>
+
+- **Packages**: open3d, scipy
 
 </details>
 
@@ -1710,9 +2202,31 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>presresq</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>production_quality</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>provqa</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>ptmvqa</code> [fast · tiered]</summary>
+
+- **Packages**: ptmvqa
+- **Est. VRAM**: ~400 MB
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1721,6 +2235,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 - **Packages**: Pillow, torch, transformers
 - **Models**: `q-future/one-align`
 - **Est. VRAM**: ~14 GB
+
+</details>
+
+<details><summary><code>qclip</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1737,9 +2258,29 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>rankdvqa</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>rapique</code> [fast · tiered]</summary>
+
+- **Packages**: rapique
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>resolution_bucketing</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>sama</code> [fast · tiered]</summary>
+
+- **Packages**: sama
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1760,6 +2301,35 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 - **Packages**: Pillow, torch, transformers
 - **Models**: `openai/clip-vit-base-patch32`
 - **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>serfiq</code> [fast · tiered]</summary>
+
+- **Packages**: serfiq
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>sfid</code> [medium · tiered]</summary>
+
+- **Packages**: pyiqa
+- **Est. VRAM**: ~200 MB
+- **Fallback**: heuristic → pyiqa
+
+</details>
+
+<details><summary><code>siamvqa</code> [fast · tiered]</summary>
+
+- **Packages**: siamvqa
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>simplevqa</code> [fast · tiered]</summary>
+
+- **Packages**: simplevqa
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1789,7 +2359,33 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>speedqa</code> [fast · tiered]</summary>
+
+- **Packages**: speedqa
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>sqi</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>stablevqa</code> [fast · tiered]</summary>
+
+- **Packages**: stablevqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>stereoscopic_quality</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>stream_metric</code> [fast]</summary>
 
 - **Packages**: —
 
@@ -1807,9 +2403,23 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>t2veval</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>text</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>thqa</code> [fast · tiered]</summary>
+
+- **Packages**: thqa
+- **Fallback**: thqa
 
 </details>
 
@@ -1839,11 +2449,47 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>uciqe</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>ugvq</code> [fast · tiered]</summary>
+
+- **Packages**: ugvq
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>uiqm</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
 <details><summary><code>umap_projection</code> [GPU · medium]</summary>
 
 - **Packages**: Pillow, scikit-learn, scipy, torch, transformers, umap
 - **Models**: `openai/clip-vit-base-patch32`
 - **Est. VRAM**: ~600 MB
+
+</details>
+
+<details><summary><code>umtscore</code> [medium · tiered]</summary>
+
+- **Packages**: Pillow, torch, transformers, umt
+- **Models**: `openai/clip-vit-base-patch32`
+- **Est. VRAM**: ~600 MB
+- **Fallback**: heuristic → native → clip
+
+</details>
+
+<details><summary><code>unified_vqa</code> [fast · tiered]</summary>
+
+- **Packages**: unified_vqa
+- **Est. VRAM**: ~800 MB
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1859,9 +2505,63 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>unqa</code> [fast · tiered]</summary>
+
+- **Packages**: unqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>usability_rate</code> [fast]</summary>
 
 - **Packages**: —
+
+</details>
+
+<details><summary><code>vader</code> [fast · tiered]</summary>
+
+- **Packages**: vader
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>vbliinds</code> [fast · tiered]</summary>
+
+- **Packages**: vbliinds
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>vendi</code> [fast]</summary>
+
+- **Packages**: vendi_score
+
+</details>
+
+<details><summary><code>vfips</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>video_atlas</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>videoreward</code> [fast · tiered]</summary>
+
+- **Packages**: videoreward
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>viideo</code> [fast · tiered]</summary>
+
+- **Packages**: viideo
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -1880,6 +2580,34 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>vqa2</code> [fast · tiered]</summary>
+
+- **Packages**: vqa2_assistant
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>vqathinker</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>vqinsight</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>vsfa</code> [fast · tiered]</summary>
+
+- **Packages**: vsfa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>vtss</code> [fast]</summary>
 
 - **Packages**: —
@@ -1890,6 +2618,26 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 <details><summary><code>wadiqam</code> [GPU · medium]</summary>
 
 - **Packages**: opencv-python, pyiqa, torch
+
+</details>
+
+<details><summary><code>world_consistency</code> [fast · tiered]</summary>
+
+- **Packages**: wcs
+- **Fallback**: heuristic → native
+
+</details>
+
+<details><summary><code>worldscore</code> [fast]</summary>
+
+- **Packages**: —
+
+</details>
+
+<details><summary><code>zoomvqa</code> [fast · tiered]</summary>
+
+- **Packages**: zoomvqa
+- **Fallback**: heuristic → native
 
 </details>
 
@@ -2057,6 +2805,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 
 </details>
 
+<details><summary><code>aigvqa</code> [fast · tiered]</summary>
+
+- **Packages**: aigvqa
+- **Fallback**: heuristic → native
+
+</details>
+
 <details><summary><code>chronomagic</code> [GPU · medium · tiered]</summary>
 
 - **Packages**: Pillow, torch, transformers
@@ -2141,7 +2896,7 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 - **Packages**: onnxruntime, pyiqa, torch
 - **Models**: `dover/DOVER.pth`, `dover/onnx_dover.onnx`
 - **Est. VRAM**: ~800 MB
-- **Fallback**: native → onnx → pyiqa
+- **Fallback**: heuristic → native → onnx → pyiqa
 
 </details>
 
@@ -2198,6 +2953,13 @@ Per-module requirements, speed tier, GPU usage, and fallback chains.
 - **Packages**: opencv-python, pyiqa, torch, transformers
 - **Models**: `sunwei925/RQ-VQA`
 - **Fallback**: heuristic → rqvqa → clipiqa
+
+</details>
+
+<details><summary><code>sr4kvqa</code> [fast · tiered]</summary>
+
+- **Packages**: —
+- **Fallback**: heuristic → native
 
 </details>
 

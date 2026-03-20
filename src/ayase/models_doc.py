@@ -18,6 +18,7 @@ import urllib.request
 import urllib.error
 from collections import defaultdict
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from .pipeline import ModuleRegistry
@@ -40,6 +41,13 @@ class ModelEntry:
     notes: Optional[str] = None
     license: Optional[str] = None
     commercial_ok: Optional[bool] = None  # True=OK, False=restricted, None=unknown
+    # HF-fetched metadata
+    downloads: Optional[int] = None
+    likes: Optional[int] = None
+    parameters: Optional[int] = None  # from safetensors
+    pipeline_tag: Optional[str] = None
+    library: Optional[str] = None
+    arxiv: Optional[str] = None
 
 
 # ── Size estimates for known models ──────────────────────────────────────────
@@ -229,14 +237,71 @@ def _fetch_hf_licenses_batch(model_ids: List[str]) -> Dict[str, str]:
     """Fetch licenses for multiple HF models. Returns {model_id: license}."""
     result = {}
     for model_id in model_ids:
-        # Skip direct file URLs (not model repos)
         if "/" in model_id and model_id.count("/") == 1:
             lic = _fetch_hf_license(model_id)
             if lic:
                 result[model_id] = lic
-                logger.info("  %s → %s", model_id, lic)
-            else:
-                logger.info("  %s → (no license found)", model_id)
+    return result
+
+
+def _fetch_hf_info_batch(model_ids: List[str]) -> Dict[str, dict]:
+    """Fetch rich metadata for HF models via huggingface_hub API.
+
+    Returns {model_id: {license, downloads, likes, parameters, pipeline_tag, library, arxiv}}.
+    """
+    result: Dict[str, dict] = {}
+    try:
+        from huggingface_hub import model_info as _model_info
+    except ImportError:
+        logger.debug("huggingface_hub not installed, skipping HF metadata fetch")
+        return result
+
+    for model_id in model_ids:
+        if "/" not in model_id or model_id.count("/") != 1:
+            continue
+        try:
+            info = _model_info(model_id)
+            data: dict = {}
+            # License
+            lic = None
+            if info.card_data and info.card_data.license:
+                lic = info.card_data.license
+            elif info.tags:
+                for tag in info.tags:
+                    if tag.startswith("license:"):
+                        lic = tag.split(":", 1)[1]
+                        break
+            data["license"] = lic
+            # Downloads & likes
+            data["downloads"] = info.downloads
+            data["likes"] = info.likes
+            # Parameters from safetensors
+            params = None
+            if info.safetensors and hasattr(info.safetensors, "total"):
+                params = info.safetensors.total
+            elif info.safetensors and hasattr(info.safetensors, "parameters"):
+                p = info.safetensors.parameters
+                if isinstance(p, dict):
+                    params = sum(p.values())
+                elif isinstance(p, int):
+                    params = p
+            data["parameters"] = params
+            # Pipeline tag and library
+            data["pipeline_tag"] = info.pipeline_tag
+            data["library"] = info.library_name
+            # ArXiv from tags
+            arxiv = None
+            if info.tags:
+                for tag in info.tags:
+                    if tag.startswith("arxiv:"):
+                        arxiv = tag.split(":", 1)[1]
+                        break
+            data["arxiv"] = arxiv
+            result[model_id] = data
+            logger.info("  %s → %s, %s downloads, %s params",
+                        model_id, lic, data["downloads"], data["parameters"])
+        except Exception as exc:
+            logger.debug("Failed to fetch HF info for %s: %s", model_id, exc)
     return result
 
 
@@ -261,14 +326,27 @@ def _get_module_source(cls) -> str:
 def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
     """Extract HuggingFace model IDs from from_pretrained() calls and config defaults."""
     models = set()
-    # Direct from_pretrained calls
+    # Direct from_pretrained calls with string literals
     for m in re.finditer(r'from_pretrained\s*\(\s*["\']([a-zA-Z0-9_/-]+)["\']', source):
         candidate = m.group(1)
         if "/" in candidate and not any(x in candidate for x in ("http", "path", ".py")):
             models.add(candidate)
-    # Model names from default_config (model_name, vlm_model, etc.)
+    # Variable-based: model_name = "org/model" followed by from_pretrained(model_name)
+    for m in re.finditer(r'model_name\s*=\s*["\']([a-zA-Z0-9_/-]+)["\']', source):
+        candidate = m.group(1)
+        if "/" in candidate and "from_pretrained" in source:
+            models.add(candidate)
+    # Quoted org/model strings near from_pretrained (catches indirect references)
+    for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
+        candidate = m.group(1)
+        if ("from_pretrained" in source or "AutoModel" in source) and \
+           not any(x in candidate for x in ("http", "path", ".py", ".pth", ".onnx",
+                                            "ayase-models", "resolve/main")):
+            models.add(candidate)
+    # Model names from default_config
     if default_config:
-        for key in ("model_name", "vlm_model", "vlm_model_name"):
+        for key in ("model_name", "vlm_model", "vlm_model_name", "clip_model",
+                     "sdxl_model", "vqa_model", "xclip_model_name"):
             val = default_config.get(key, "")
             if isinstance(val, str) and "/" in val and not val.startswith(("http", "/")):
                 models.add(val)
@@ -278,8 +356,17 @@ def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
 def _extract_pyiqa_metrics(source: str) -> List[str]:
     """Extract pyiqa.create_metric() metric names."""
     metrics = set()
+    # Direct string: create_metric("name")
     for m in re.finditer(r'create_metric\s*\(\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
         metrics.add(m.group(1))
+    # Variable-based: self.variant or name passed to create_metric
+    # Look for variant/name = "metric" patterns when create_metric is present
+    if "create_metric" in source and "import pyiqa" in source:
+        for m in re.finditer(r'(?:variant|name|metric_name)\s*=\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
+            metrics.add(m.group(1))
+        # Also check default_config for variant
+        for m in re.finditer(r'"variant"\s*:\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
+            metrics.add(m.group(1))
     return sorted(metrics)
 
 
@@ -294,7 +381,8 @@ def _extract_torch_hub(source: str) -> List[str]:
 def _extract_torchvision_models(source: str) -> List[str]:
     """Extract torchvision pretrained model usage."""
     models = set()
-    for m in re.finditer(r'(?:from torchvision\.models\S*\s+import\s+|torchvision\.models\.)(\w+)', source):
+    # Also catch `models.inception_v3(...)` when `from torchvision import models`
+    for m in re.finditer(r'(?:from torchvision\.models\S*\s+import\s+|torchvision\.models\.|models\.)(\w+)', source):
         name = m.group(1)
         if name[0].islower():  # function names like raft_small, resnet18
             models.add(name)
@@ -361,6 +449,105 @@ def _bar_chart(items, max_width=30):
         bar = "█" * bar_len
         lines.append(f"  {str(label):<{max_label}}  {bar} {val}")
     return lines
+
+
+_CHART_WIDTH = 900
+_CHART_SCALE = 2
+
+
+def _generate_model_charts(
+    source_counts, comm_yes, comm_no, comm_unknown,
+    total_models, total_hf, total_pyiqa, output_dir: Path,
+) -> Dict[str, str]:
+    """Generate Plotly charts for MODELS.md."""
+    paths: Dict[str, str] = {}
+    try:
+        import plotly.graph_objects as go
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        _layout = dict(
+            font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=13),
+            margin=dict(l=20, r=20, t=50, b=20),
+            paper_bgcolor="white", plot_bgcolor="white",
+        )
+
+        # ── 1. Summary indicators ─────────────────────────────────────
+        fig = go.Figure()
+        stats = {"Models": total_models, "HuggingFace": total_hf,
+                 "pyiqa": total_pyiqa, "Sources": len(source_counts)}
+        n = len(stats)
+        for i, (label, value) in enumerate(stats.items()):
+            fig.add_trace(go.Indicator(
+                mode="number", value=value,
+                title={"text": label, "font": {"size": 14}},
+                number={"font": {"size": 36, "color": "#2C3E50"}},
+                domain={"x": [i / n + 0.01, (i + 1) / n - 0.01], "y": [0.1, 0.9]},
+            ))
+        fig.update_layout(width=_CHART_WIDTH, height=140,
+                          paper_bgcolor="white", margin=dict(l=10, r=10, t=10, b=10))
+        p = output_dir / "models_summary.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["summary"] = f"docs/{p.name}"
+
+        # ── 2. Sources — sunburst chart ────────────────────────────────
+        src_items = sorted(source_counts.items(), key=lambda x: -x[1])
+        labels = [s for s, _ in src_items]
+        values = [c for _, c in src_items]
+        colors = ["#3498DB", "#E74C3C", "#2ECC71", "#F39C12", "#9B59B6", "#1ABC9C", "#E67E22"]
+        fig = go.Figure(go.Pie(
+            labels=labels, values=values,
+            hole=0.4, textinfo="label+value",
+            textposition="outside", textfont_size=12,
+            marker=dict(colors=colors[:len(labels)],
+                        line=dict(color="white", width=2)),
+            sort=False,
+        ))
+        fig.update_layout(
+            **_layout, width=_CHART_WIDTH, height=450,
+            title=dict(text="Models by Source", font_size=16, x=0.5),
+            legend=dict(font_size=11),
+        )
+        p = output_dir / "models_sources.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["sources"] = f"docs/{p.name}"
+
+        # ── 3. License — pie chart ─────────────────────────────────────
+        lic_labels = []
+        lic_values = []
+        lic_colors = []
+        if comm_yes:
+            lic_labels.append(f"Commercial OK ({comm_yes})")
+            lic_values.append(comm_yes)
+            lic_colors.append("#2ECC71")
+        if comm_no:
+            lic_labels.append(f"Non-commercial ({comm_no})")
+            lic_values.append(comm_no)
+            lic_colors.append("#E74C3C")
+        if comm_unknown:
+            lic_labels.append(f"Research / Unspecified ({comm_unknown})")
+            lic_values.append(comm_unknown)
+            lic_colors.append("#95A5A6")
+        fig = go.Figure(go.Pie(
+            labels=lic_labels, values=lic_values,
+            hole=0.45, textinfo="label+percent",
+            textposition="outside", textfont_size=13,
+            marker=dict(colors=lic_colors, line=dict(color="white", width=2)),
+            sort=False,
+        ))
+        fig.update_layout(
+            **_layout, width=_CHART_WIDTH, height=380,
+            title=dict(text="License Distribution", font_size=16, x=0.5),
+            showlegend=False,
+        )
+        p = output_dir / "models_licenses.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["licenses"] = f"docs/{p.name}"
+
+    except ImportError:
+        pass
+    except Exception as exc:
+        logger.warning(f"Model chart generation failed: {exc}")
+    return paths
 
 
 def generate_models_doc(fetch_licenses: bool = True) -> str:
@@ -503,6 +690,40 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
                 )
             entries[key].modules.append(mod_name)
 
+        # pip packages with bundled models (piq, stlpips, dreamsim, ptlflow, etc.)
+        _PIP_MODEL_PACKAGES = {
+            "piq": ("piq", "piq (PyTorch Image Quality)"),
+            "stlpips_pytorch": ("stlpips-pytorch", "ST-LPIPS spatiotemporal perceptual"),
+            "dreamsim": ("dreamsim", "DreamSim CLIP+DINO similarity"),
+            "ptlflow": ("ptlflow", "ptlflow optical flow models"),
+            "aesthetic_predictor_v2_5": ("aesthetic-predictor-v2-5", "Aesthetic Predictor V2.5 (SigLIP)"),
+            "erqa": ("erqa", "ERQA edge restoration quality"),
+            "torchmetrics": ("torchmetrics[audio]", "TorchMetrics (DNSMOS, etc.)"),
+            "ultralytics": ("ultralytics", "YOLOv8 object detection"),
+        }
+        # Also check for ultralytics/YOLO in source
+        if "yolo" in source.lower() or "ultralytics" in source.lower():
+            key = "pip:ultralytics"
+            if key not in entries:
+                entries[key] = ModelEntry(
+                    name="ultralytics", source="pip",
+                    install="pip install ultralytics",
+                    notes="YOLOv8 object detection",
+                )
+            if mod_name not in entries[key].modules:
+                entries[key].modules.append(mod_name)
+        for pkg_import, (pip_name, desc) in _PIP_MODEL_PACKAGES.items():
+            if f"import {pkg_import}" in source or f"from {pkg_import}" in source:
+                key = f"pip:{pip_name}"
+                if key not in entries:
+                    entries[key] = ModelEntry(
+                        name=pip_name, source="pip",
+                        install=f"pip install {pip_name}",
+                        notes=desc,
+                    )
+                if mod_name not in entries[key].modules:
+                    entries[key].modules.append(mod_name)
+
     # Count by source
     for e in entries.values():
         source_counts[e.source] += 1
@@ -519,24 +740,36 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
             entry.license = lic
             entry.commercial_ok = comm
 
-    # 2. Fetch HF licenses via API
+    # 2. Fetch rich HF metadata via API (license, downloads, params, etc.)
     if fetch_licenses:
         hf_repos_to_query = []
         for key, entry in entries.items():
-            if entry.source == "huggingface" and entry.license is None:
-                # Only query actual repos (org/model), not file entries
+            if entry.source == "huggingface":
                 if "/" in entry.name and entry.name.count("/") == 1:
                     hf_repos_to_query.append(entry.name)
 
         if hf_repos_to_query:
-            logger.info("Fetching licenses for %d HuggingFace models...", len(hf_repos_to_query))
-            hf_licenses = _fetch_hf_licenses_batch(hf_repos_to_query)
+            logger.info("Fetching metadata for %d HuggingFace models...", len(hf_repos_to_query))
+            hf_info = _fetch_hf_info_batch(hf_repos_to_query)
             for key, entry in entries.items():
-                if entry.source == "huggingface" and entry.license is None:
-                    lic = hf_licenses.get(entry.name)
-                    if lic:
-                        entry.license = lic
-                        entry.commercial_ok = _classify_license(lic)
+                if entry.source == "huggingface" and entry.name in hf_info:
+                    data = hf_info[entry.name]
+                    if entry.license is None and data.get("license"):
+                        entry.license = data["license"]
+                        entry.commercial_ok = _classify_license(data["license"])
+                    entry.downloads = data.get("downloads")
+                    entry.likes = data.get("likes")
+                    entry.parameters = data.get("parameters")
+                    entry.pipeline_tag = data.get("pipeline_tag")
+                    entry.library = data.get("library")
+                    entry.arxiv = data.get("arxiv")
+                    # Auto-fill size estimate from parameters if not known
+                    if entry.size_estimate is None and entry.parameters:
+                        size_mb = entry.parameters * 4 / 1024 / 1024  # FP32
+                        if size_mb > 1024:
+                            entry.size_estimate = f"~{size_mb/1024:.1f} GB"
+                        else:
+                            entry.size_estimate = f"~{size_mb:.0f} MB"
 
     # 3. Inherit license from parent repo for file entries
     # e.g., AkaneTendo25/ayase-models files inherit from the repo
@@ -552,41 +785,56 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
                     entry.commercial_ok = comm
                     break
 
+    # ── Generate charts ────────────────────────────────────────────────
+    total_models = len(entries)
+    total_hf = source_counts.get("huggingface", 0)
+    total_pyiqa = source_counts.get("pyiqa", 0)
+
+    comm_yes = sum(1 for e in entries.values() if e.commercial_ok is True)
+    comm_no = sum(1 for e in entries.values() if e.commercial_ok is False)
+    comm_unknown = sum(1 for e in entries.values() if e.commercial_ok is None)
+
+    docs_dir = Path(__file__).parent.parent.parent / "docs"
+    chart_paths = _generate_model_charts(
+        source_counts, comm_yes, comm_no, comm_unknown,
+        total_models, total_hf, total_pyiqa, docs_dir,
+    )
+
     # ── Build document ───────────────────────────────────────────────────
     L = []
     a = L.append
 
+    from datetime import datetime
+    try:
+        from ayase import __version__
+    except ImportError:
+        __version__ = "dev"
+
     a("# Ayase Models Reference")
     a("")
-    a("Auto-generated catalog of all ML models, weights, and external assets "
-      "used by Ayase pipeline modules. Run `ayase modules models` to regenerate.")
+    a(f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
+      f"· **{total_models} models** across **{len(source_counts)} sources**")
+    a(">")
+    a("> `ayase modules models -o MODELS.md` to regenerate")
 
-    # Summary
+    # Summary with chart
     a("")
     a("## Summary")
     a("")
-    total_models = len(entries)
-    total_hf = source_counts.get("huggingface", 0)
-    total_pyiqa = source_counts.get("pyiqa", 0)
-    a("| Stat | Value |")
-    a("|------|-------|")
-    a(f"| Total model references | **{total_models}** |")
-    a(f"| HuggingFace models | {total_hf} |")
-    a(f"| pyiqa metrics | {total_pyiqa} |")
-    a(f"| torchvision models | {source_counts.get('torchvision', 0)} |")
-    a(f"| CLIP variants | {source_counts.get('clip', 0)} |")
-    a(f"| torch.hub repos | {source_counts.get('torch_hub', 0)} |")
-    a(f"| FFmpeg models | {source_counts.get('ffmpeg', 0)} |")
-    a(f"| Local weight files | {source_counts.get('local', 0)} |")
+    if "summary" in chart_paths:
+        a(f"![Summary]({chart_paths['summary']})")
+        a("")
 
-    # Chart
+    # By Source chart
+    a("### Models by Source")
     a("")
-    a("### By Source")
-    a("")
-    a("```")
-    for line in _bar_chart(sorted(source_counts.items(), key=lambda x: -x[1])):
-        a(line)
-    a("```")
+    if "sources" in chart_paths:
+        a(f"![Models by Source]({chart_paths['sources']})")
+    else:
+        a("```")
+        for line in _bar_chart(sorted(source_counts.items(), key=lambda x: -x[1])):
+            a(line)
+        a("```")
 
     # Estimated total download size
     known_sizes = []
@@ -612,9 +860,6 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
           "You rarely need all models at once.*")
 
     # ── License Summary ────────────────────────────────────────────────
-    comm_yes = sum(1 for e in entries.values() if e.commercial_ok is True)
-    comm_no = sum(1 for e in entries.values() if e.commercial_ok is False)
-    comm_unknown = sum(1 for e in entries.values() if e.commercial_ok is None)
     comm_research = sum(1 for e in entries.values()
                         if e.license and "research" in (e.license or "").lower()
                         and e.commercial_ok is None)
@@ -622,19 +867,23 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     a("")
     a("### License Overview")
     a("")
-    a("```")
-    lic_items = [
-        ("Commercial OK", comm_yes),
-        ("Non-commercial", comm_no),
-        ("Research / unspecified", comm_unknown),
-    ]
-    for line in _bar_chart(lic_items):
-        a(line)
-    a("```")
+    if "licenses" in chart_paths:
+        a(f"![License Distribution]({chart_paths['licenses']})")
+    else:
+        lic_items = [
+            ("Commercial OK", comm_yes),
+            ("Non-commercial", comm_no),
+            ("Research / unspecified", comm_unknown),
+        ]
+        a("```")
+        for line in _bar_chart(lic_items):
+            a(line)
+        a("```")
     a("")
     if comm_no > 0 or comm_research > 0:
-        a("> **For commercial use:** Stick to modules whose models are marked "
-          "\"Commercial: Yes\" below. Most pyiqa metrics marked \"research\" "
+        a("> [!WARNING]")
+        a("> **Commercial use:** Stick to modules whose models are marked "
+          "\"Commercial OK\" above. Most pyiqa metrics marked \"research\" "
           "are re-implementations under pyiqa's MIT license, but the original "
           "training data or architecture may carry restrictions — verify before "
           "commercial deployment.")
@@ -646,18 +895,37 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         a("")
         a("## HuggingFace Models")
         a("")
-        a("| Model | License | Commercial | Disk | VRAM | Used By |")
-        a("|-------|---------|------------|------|------|---------|")
+        a("| Model | License | Params | Downloads | Task | Used By |")
+        a("|-------|---------|--------|-----------|------|---------|")
         for _key, e in hf_entries:
             mods = ", ".join(f"`{m}`" for m in e.modules[:5])
             if len(e.modules) > 5:
                 mods += f" +{len(e.modules)-5}"
-            disk = e.size_estimate or "?"
-            vram = e.vram_estimate or "?"
             lic = e.license or "?"
-            comm = {True: "Yes", False: "No", None: "?"}[e.commercial_ok]
+            # Format parameters
+            if e.parameters:
+                if e.parameters >= 1_000_000_000:
+                    params = f"{e.parameters/1e9:.1f}B"
+                elif e.parameters >= 1_000_000:
+                    params = f"{e.parameters/1e6:.0f}M"
+                else:
+                    params = f"{e.parameters/1e3:.0f}K"
+            else:
+                params = "?"
+            # Format downloads
+            if e.downloads:
+                if e.downloads >= 1_000_000:
+                    dl = f"{e.downloads/1e6:.1f}M"
+                elif e.downloads >= 1_000:
+                    dl = f"{e.downloads/1e3:.0f}K"
+                else:
+                    dl = str(e.downloads)
+            else:
+                dl = "?"
+            task = e.pipeline_tag or "?"
             link = f"[{e.name}]({e.url})" if e.url else e.name
-            a(f"| {link} | {lic} | {comm} | {disk} | {vram} | {mods} |")
+            arxiv_link = f" [[paper]](https://arxiv.org/abs/{e.arxiv})" if e.arxiv else ""
+            a(f"| {link}{arxiv_link} | {lic} | {params} | {dl} | {task} | {mods} |")
 
     # ── pyiqa Models ─────────────────────────────────────────────────────
     pyiqa_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pyiqa"]
