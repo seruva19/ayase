@@ -1,71 +1,61 @@
 # Ayase Models Reference
 
-Auto-generated catalog of all ML models, weights, and external assets used by Ayase pipeline modules. Run `ayase modules models` to regenerate.
+> **Version 0.1.17** · Generated 2026-03-20 17:04 · **124 models** across **7 sources**
+>
+> `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-| Stat | Value |
-|------|-------|
-| Total model references | **88** |
-| HuggingFace models | 31 |
-| pyiqa metrics | 40 |
-| torchvision models | 5 |
-| CLIP variants | 1 |
-| torch.hub repos | 4 |
-| FFmpeg models | 7 |
-| Local weight files | 0 |
+![Summary](docs/models_summary.png)
 
-### By Source
+### Models by Source
 
-```
-  pyiqa        ██████████████████████████████ 40
-  huggingface  ███████████████████████ 31
-  ffmpeg       █████ 7
-  torchvision  ███ 5
-  torch_hub    ███ 4
-  clip          1
-```
+![Models by Source](docs/models_sources.png)
 
-**Estimated total download size (all models):** ~49 GB
+**Estimated total download size (all models):** ~51 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
 ### License Overview
 
-```
-  Commercial OK           █████████████████████████████ 43
-  Non-commercial           1
-  Research / unspecified  ██████████████████████████████ 44
-```
+![License Distribution](docs/models_licenses.png)
 
-> **For commercial use:** Stick to modules whose models are marked "Commercial: Yes" below. Most pyiqa metrics marked "research" are re-implementations under pyiqa's MIT license, but the original training data or architecture may carry restrictions — verify before commercial deployment.
+> [!WARNING]
+> **Commercial use:** Stick to modules whose models are marked "Commercial OK" above. Most pyiqa metrics marked "research" are re-implementations under pyiqa's MIT license, but the original training data or architecture may carry restrictions — verify before commercial deployment.
 
 
 ## HuggingFace Models
 
-| Model | License | Commercial | Disk | VRAM | Used By |
-|-------|---------|------------|------|------|---------|
-| [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection) | apache-2.0 | Yes | ? | ? | `nsfw` |
+| Model | License | Params | Downloads | Task | Used By |
+|-------|---------|--------|-----------|------|---------|
+| [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection) | ? | ? | ? | ? | `nsfw` |
+| [IntMeGroup/FineVQ_score](https://huggingface.co/IntMeGroup/FineVQ_score) | ? | ? | ? | ? | `finevq` |
 | [KlingTeam/VideoAlign-Reward](https://huggingface.co/KlingTeam/VideoAlign-Reward) | ? | ? | ? | ? | `video_reward` |
-| [MCG-NJU/videomae-large-finetuned-kinetics](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics) | cc-by-nc-4.0 | No | ~1.3 GB | ~1.5 GB | `action_recognition` |
-| [Salesforce/blip-image-captioning-base](https://huggingface.co/Salesforce/blip-image-captioning-base) | bsd-3-clause | Yes | ~990 MB | ~1 GB | `captioning` |
+| [MCG-NJU/videomae-large-finetuned-kinetics](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics) | ? | ? | ? | ? | `action_recognition` |
+| [Salesforce/blip-image-captioning-base](https://huggingface.co/Salesforce/blip-image-captioning-base) | ? | ? | ? | ? | `captioning` |
 | [TIGER-Lab/T2VScore](https://huggingface.co/TIGER-Lab/T2VScore) | ? | ? | ? | ? | `t2v_score` |
-| [TIGER-Lab/VideoScore](https://huggingface.co/TIGER-Lab/VideoScore) | apache-2.0 | Yes | ~14 GB | ~14 GB | `videoscore` |
+| [TIGER-Lab/VideoScore](https://huggingface.co/TIGER-Lab/VideoScore) | ? | ? | ? | ? | `videoscore` |
 | [ai-forever/kandinsky-video-tools](https://huggingface.co/ai-forever/kandinsky-video-tools) | ? | ? | ? | ? | `kandinsky_motion` |
-| [dandelin/vilt-b32-finetuned-vqa](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa) | apache-2.0 | Yes | ~450 MB | ~500 MB | `commonsense` |
-| [depth-anything/Depth-Anything-V2-Small-hf](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf) | apache-2.0 | Yes | ~100 MB | ~200 MB | `depth_anything` |
-| [facebook/dinov2-base](https://huggingface.co/facebook/dinov2-base) | apache-2.0 | Yes | ? | ? | `subject_consistency` |
-| [laion/clap-htsat-fused](https://huggingface.co/laion/clap-htsat-fused) | apache-2.0 | Yes | ~600 MB | ~600 MB | `audio_text_alignment` |
-| [llava-hf/llava-1.5-7b-hf](https://huggingface.co/llava-hf/llava-1.5-7b-hf) | llama2 | ? | ~14 GB | ~14 GB | `commonsense`, `creativity`, `vlm_judge` |
-| [llava-hf/llava-v1.6-mistral-7b-hf](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf) | apache-2.0 | Yes | ~14 GB | ~14 GB | `llm_descriptive_qa` |
-| [microsoft/xclip-base-patch32](https://huggingface.co/microsoft/xclip-base-patch32) | mit | Yes | ~600 MB | ~600 MB | `embedding` |
-| [nvidia/quality-classifier-deberta](https://huggingface.co/nvidia/quality-classifier-deberta) | apache-2.0 | Yes | ? | ? | `nemo_curator` |
-| [nvidia/segformer-b0-finetuned-ade-512-512](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512) | other | ? | ? | ? | `semantic_segmentation_consistency` |
-| [openai/clip-vit-base-patch32](https://huggingface.co/openai/clip-vit-base-patch32) | ? | ? | ~600 MB | ~600 MB | `aigv_assessor`, `background_consistency`, `chronomagic`, `clip_temporal`, `creativity` +9 |
-| [q-future/one-align](https://huggingface.co/q-future/one-align) | mit | Yes | ? | ? | `q_align` |
+| [dandelin/vilt-b32-finetuned-vqa](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa) | ? | ? | ? | ? | `commonsense`, `tifa` |
+| [depth-anything/Depth-Anything-V2-Small-hf](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf) | ? | ? | ? | ? | `depth_anything`, `t2v_compbench` |
+| [facebook/dinov2-base](https://huggingface.co/facebook/dinov2-base) | ? | ? | ? | ? | `subject_consistency` |
+| [facebook/vjepa-giant](https://huggingface.co/facebook/vjepa-giant) | ? | ? | ? | ? | `jedi` |
+| [facebookresearch/dinov2](https://huggingface.co/facebookresearch/dinov2) | ? | ? | ? | ? | `video_memorability` |
+| [laion/clap-htsat-fused](https://huggingface.co/laion/clap-htsat-fused) | ? | ? | ? | ? | `audio_text_alignment` |
+| [llava-hf/llava-1.5-7b-hf](https://huggingface.co/llava-hf/llava-1.5-7b-hf) | ? | ? | ? | ? | `commonsense`, `creativity`, `vlm_judge` |
+| [llava-hf/llava-v1.6-mistral-7b-hf](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf) | ? | ? | ? | ? | `llm_descriptive_qa` |
+| [microsoft/xclip-base-patch32](https://huggingface.co/microsoft/xclip-base-patch32) | ? | ? | ? | ? | `embedding`, `video_text_matching` |
+| [models/video_motion_predictor](https://huggingface.co/models/video_motion_predictor) | ? | ? | ? | ? | `kandinsky_motion` |
+| [nvidia/quality-classifier-deberta](https://huggingface.co/nvidia/quality-classifier-deberta) | ? | ? | ? | ? | `nemo_curator` |
+| [nvidia/segformer-b0-finetuned-ade-512-512](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512) | ? | ? | ? | ? | `semantic_segmentation_consistency` |
+| [openai/clip-vit-base-patch32](https://huggingface.co/openai/clip-vit-base-patch32) | ? | ? | ? | ? | `action_recognition`, `aigv_assessor`, `background_consistency`, `chronomagic`, `clip_temporal` +18 |
+| [openai/clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) | ? | ? | ? | ? | `aesthetic_scoring` |
+| [q-future/one-align](https://huggingface.co/q-future/one-align) | ? | ? | ? | ? | `q_align` |
 | [qyp2000/KVQ](https://huggingface.co/qyp2000/KVQ) | ? | ? | ? | ? | `kvq` |
+| [stabilityai/stable-diffusion-xl-base-1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) | ? | ? | ? | ? | `sd_reference` |
 | [sunwei925/RQ-VQA](https://huggingface.co/sunwei925/RQ-VQA) | ? | ? | ? | ? | `rqvqa` |
-| [xinyu1205/recognize-anything-plus-model](https://huggingface.co/xinyu1205/recognize-anything-plus-model) | apache-2.0 | Yes | ? | ? | `ram_tagging` |
+| [wangjiarui153/AIGV-Assessor](https://huggingface.co/wangjiarui153/AIGV-Assessor) | ? | ? | ? | ? | `aigv_assessor` |
+| [xinyu1205/recognize-anything-plus-model](https://huggingface.co/xinyu1205/recognize-anything-plus-model) | ? | ? | ? | ? | `ram_tagging` |
 | [DOVER.pth](https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth) | ? | ? | ? | ? | `dover` |
 | [convnext_tiny_1k_224_ema.pth](https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/convnext_tiny_1k_224_ema.pth) | ? | ? | ? | ? | `dover` |
 | [onnx_dover.onnx](https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/onnx_dover.onnx) | ? | ? | ? | ? | `dover` |
@@ -83,27 +73,42 @@ All auto-download weights on first `pyiqa.create_metric()` call. pyiqa itself is
 
 | Metric | License | Commercial | Task | VRAM | Used By |
 |--------|---------|------------|------|------|---------|
+| `pyiqa/afine` | research | ? | IQA | ~200 MB | `afine` |
 | `pyiqa/afine_nr` | research | ? | IQA | ~200 MB | `afine` |
 | `pyiqa/ahiq` | research | ? | Attention-based hybrid FR-IQA | ~300 MB | `ahiq` |
 | `pyiqa/arniqa` | research | ? | IQA | ~200 MB | `arniqa` |
 | `pyiqa/brisque` | BSD-2-Clause (OpenCV) | Yes | No-reference image quality (naturalness) | ~50 MB | `brisque`, `naturalness` |
+| `pyiqa/bvqi` | research | ? | IQA | ~200 MB | `bvqi` |
 | `pyiqa/ckdn` | research | ? | IQA | ~200 MB | `ckdn` |
+| `pyiqa/clip_iqa` | research | ? | IQA | ~200 MB | `clip_iqa` |
 | `pyiqa/clipiqa+` | MIT (pyiqa) | Yes | CLIP-based image quality assessment | ~600 MB | `clip_iqa`, `promptiqa`, `rqvqa` |
 | `pyiqa/cnniqa` | research | ? | IQA | ~200 MB | `cnniqa` |
 | `pyiqa/compare2score` | research | ? | IQA | ~200 MB | `compare2score` |
 | `pyiqa/contrique` | research | ? | IQA | ~200 MB | `contrique` |
+| `pyiqa/conviqt` | research | ? | IQA | ~200 MB | `conviqt` |
+| `pyiqa/cover` | research | ? | IQA | ~200 MB | `cover` |
+| `pyiqa/creativity` | research | ? | IQA | ~200 MB | `creativity` |
 | `pyiqa/cw_ssim` | MIT (pyiqa) | Yes | IQA | ~200 MB | `cw_ssim` |
 | `pyiqa/dbcnn` | research | ? | Deep bilinear CNN for blind IQA | ~200 MB | `dbcnn` |
+| `pyiqa/deepdc` | research | ? | IQA | ~200 MB | `deepdc` |
 | `pyiqa/deepwsd` | research | ? | IQA | ~200 MB | `deepwsd` |
 | `pyiqa/dmm` | research | ? | IQA | ~200 MB | `dmm` |
 | `pyiqa/dover` | MIT (pyiqa) | Yes | IQA | ~200 MB | `cover`, `dover` |
+| `pyiqa/face_iqa` | research | ? | IQA | ~200 MB | `face_iqa` |
+| `pyiqa/finevq` | research | ? | IQA | ~200 MB | `finevq` |
 | `pyiqa/hyperiqa` | research | ? | Adaptive hypernetwork NR image quality | ~200 MB | `hyperiqa`, `qcn` |
 | `pyiqa/ilniqe` | BSD-2-Clause | Yes | IQA | ~200 MB | `ilniqe` |
+| `pyiqa/kvq` | research | ? | IQA | ~200 MB | `kvq` |
 | `pyiqa/laion_aes` | MIT | Yes | IQA | ~200 MB | `creativity`, `laion_aesthetic` |
+| `pyiqa/laion_aesthetic` | research | ? | IQA | ~200 MB | `laion_aesthetic` |
 | `pyiqa/liqe` | research | ? | IQA | ~200 MB | `liqe` |
 | `pyiqa/maclip` | research | ? | IQA | ~200 MB | `maclip` |
 | `pyiqa/mad` | research | ? | IQA | ~200 MB | `mad` |
 | `pyiqa/maniqa` | Apache-2.0 | Yes | Multi-dimension attention NR-IQA | ~300 MB | `maniqa` |
+| `pyiqa/mdtvsfa` | research | ? | IQA | ~200 MB | `mdtvsfa` |
+| `pyiqa/msswd` | research | ? | IQA | ~200 MB | `msswd` |
+| `pyiqa/musiq` | Apache-2.0 (Google) | Yes | Multi-scale image quality transformer | ~300 MB | `musiq` |
+| `pyiqa/naturalness` | research | ? | IQA | ~200 MB | `naturalness` |
 | `pyiqa/nima` | Apache-2.0 (Google) | Yes | Neural image assessment (aesthetic + technical) | ~200 MB | `nima` |
 | `pyiqa/niqe` | BSD-2-Clause (OpenCV) | Yes | No-reference image quality (naturalness statistics) | ~50 MB | `niqe` |
 | `pyiqa/nlpd` | research | ? | IQA | ~200 MB | `nlpd` |
@@ -115,12 +120,16 @@ All auto-download weights on first `pyiqa.create_metric()` call. pyiqa itself is
 | `pyiqa/promptiqa` | research | ? | IQA | ~200 MB | `promptiqa` |
 | `pyiqa/qcn` | research | ? | IQA | ~200 MB | `qcn` |
 | `pyiqa/qualiclip` | research | ? | IQA | ~200 MB | `qualiclip` |
+| `pyiqa/rqvqa` | research | ? | IQA | ~200 MB | `rqvqa` |
+| `pyiqa/sfid` | research | ? | IQA | ~200 MB | `sfid` |
 | `pyiqa/ssimc` | MIT (pyiqa) | Yes | IQA | ~200 MB | `ssimc` |
+| `pyiqa/topiq` | research | ? | IQA | ~200 MB | `topiq` |
 | `pyiqa/topiq_fr` | MIT (pyiqa) | Yes | Transformer-based FR image quality | ~300 MB | `topiq_fr` |
-| `pyiqa/topiq_nr` | MIT (pyiqa) | Yes | Transformer-based NR image quality | ~300 MB | `finevq`, `kvq`, `promptiqa` |
+| `pyiqa/topiq_nr` | MIT (pyiqa) | Yes | Transformer-based NR image quality | ~300 MB | `finevq`, `kvq`, `promptiqa`, `topiq` |
 | `pyiqa/topiq_nr-face` | MIT (pyiqa) | Yes | IQA | ~200 MB | `face_iqa` |
 | `pyiqa/tres` | research | ? | IQA | ~200 MB | `tres` |
 | `pyiqa/unique` | research | ? | IQA | ~200 MB | `unique` |
+| `pyiqa/wadiqam` | research | ? | IQA | ~200 MB | `wadiqam` |
 | `pyiqa/wadiqam_fr` | research | ? | IQA | ~200 MB | `wadiqam_fr` |
 | `pyiqa/wadiqam_nr` | research | ? | IQA | ~200 MB | `wadiqam` |
 
@@ -130,10 +139,12 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 | Model | Disk | VRAM | Used By |
 |-------|------|------|---------|
+| `torchvision/inception_v3` | ~100 MB | ~200 MB | `inception_score` |
 | `torchvision/r3d_18` | ~130 MB | ~200 MB | `c3dvqa`, `fvd` |
 | `torchvision/raft_large` | ~20 MB | ~200 MB | `advanced_flow`, `raft_motion` |
 | `torchvision/raft_small` | ~20 MB | ~100 MB | `advanced_flow`, `flolpips`, `motion_amplitude`, `temporal_flickering` |
 | `torchvision/resnet18` | ~45 MB | ~100 MB | `tlvqm` |
+| `torchvision/resnet50` | ? | ? | `watermark_classifier` |
 | `torchvision/video` | ? | ? | `c3dvqa` |
 
 ## CLIP Models

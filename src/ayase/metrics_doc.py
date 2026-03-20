@@ -16,6 +16,7 @@ Enhanced with:
 import inspect
 import re
 from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from .pipeline import ModuleRegistry, PipelineModule
@@ -325,6 +326,266 @@ def _static_checks(source: str, meta: Dict) -> List[str]:
 
 # ── Chart helpers ───────────────────────────────────────────────────────────
 
+_CHART_WIDTH = 900
+_CHART_HEIGHT_BAR = 400
+_CHART_SCALE = 2  # retina-quality PNG export
+
+
+def _generate_charts(
+    cat_items: List[Tuple[str, Dict]],
+    input_counts: "Counter",
+    speed_counts: "Counter",
+    all_backends: "Counter",
+    output_dir: Path,
+    all_packages: Optional["Counter"] = None,
+    summary_stats: Optional[Dict[str, int]] = None,
+) -> Dict[str, str]:
+    """Generate PNG chart images using Plotly.
+
+    All charts are rendered at uniform width (_CHART_WIDTH px).
+    Returns dict of chart_name -> relative path to PNG file.
+    """
+    paths: Dict[str, str] = {}
+    try:
+        import plotly.graph_objects as go
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # ── Shared layout defaults ─────────────────────────────────────
+        _layout = dict(
+            font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=13),
+            margin=dict(l=20, r=20, t=50, b=20),
+            paper_bgcolor="white",
+            plot_bgcolor="white",
+        )
+
+        # ── 1. Category horizontal bar (cleaner than pie for 13+ categories)
+        labels = [g for g, _ in cat_items]
+        values = [s["modules"] for _, s in cat_items]
+        colors = [
+            "#4DC9F6", "#F67019", "#F53794", "#537BC4", "#ACC236",
+            "#166A8F", "#00A950", "#58595B", "#8549BA", "#FFC300",
+            "#C70039", "#DAF7A6", "#FF5733",
+        ][:len(labels)]
+        fig = go.Figure(go.Bar(
+            x=values[::-1], y=labels[::-1], orientation="h",
+            marker_color=colors[::-1],
+            text=values[::-1], textposition="outside", textfont_size=13,
+        ))
+        fig.update_layout(
+            **_layout, width=_CHART_WIDTH,
+            height=max(400, len(labels) * 38 + 80),
+            title=dict(text="Module Distribution by Category", font_size=16, x=0.5),
+            xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
+            yaxis=dict(autorange="reversed"),
+            bargap=0.25,
+            showlegend=False,
+        )
+        p = output_dir / "chart_categories.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["categories"] = f"docs/{p.name}"
+
+        # ── 2. Input type donut ────────────────────────────────────────
+        i_labels = [l for l, _ in input_counts.most_common()]
+        i_values = [c for _, c in input_counts.most_common()]
+        fig = go.Figure(go.Pie(
+            labels=i_labels, values=i_values,
+            hole=0.5, textinfo="label+percent",
+            textposition="outside", textfont_size=11,
+            marker=dict(
+                colors=["#36A2EB", "#FF6384", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"],
+                line=dict(color="white", width=2),
+            ),
+        ))
+        fig.update_layout(
+            **_layout, width=_CHART_WIDTH, height=450,
+            title=dict(text="Input Type Distribution", font_size=16, x=0.5),
+            legend=dict(font_size=11),
+        )
+        p = output_dir / "chart_input_types.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["input_types"] = f"docs/{p.name}"
+
+        # ── 3. Speed tiers bar ─────────────────────────────────────────
+        tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
+        tier_colors = {"fast": "#2ECC71", "medium": "#F39C12", "slow": "#E74C3C"}
+        s_items = speed_counts.most_common()
+        s_labels = [tier_map.get(t, t) for t, _ in s_items]
+        s_values = [c for _, c in s_items]
+        s_cols = [tier_colors.get(t, "#3498DB") for t, _ in s_items]
+        fig = go.Figure(go.Bar(
+            x=s_values, y=s_labels, orientation="h",
+            marker_color=s_cols,
+            text=s_values, textposition="outside", textfont_size=14,
+        ))
+        fig.update_layout(
+            **_layout, width=_CHART_WIDTH, height=_CHART_HEIGHT_BAR,
+            title=dict(text="Speed Tiers", font_size=16, x=0.5),
+            xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
+            yaxis=dict(autorange="reversed"),
+            bargap=0.35,
+        )
+        p = output_dir / "chart_speed.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["speed"] = f"docs/{p.name}"
+
+        # ── 4. Backend usage bar ───────────────────────────────────────
+        b_items = all_backends.most_common(10)
+        b_labels = [l for l, _ in b_items]
+        b_values = [c for _, c in b_items]
+        fig = go.Figure(go.Bar(
+            x=b_values, y=b_labels, orientation="h",
+            marker_color="#5DADE2",
+            text=b_values, textposition="outside", textfont_size=13,
+        ))
+        fig.update_layout(
+            **_layout, width=_CHART_WIDTH, height=max(_CHART_HEIGHT_BAR, len(b_labels) * 42 + 80),
+            title=dict(text="Backend Usage (Top 10)", font_size=16, x=0.5),
+            xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
+            yaxis=dict(autorange="reversed"),
+            bargap=0.3,
+        )
+        p = output_dir / "chart_backends.png"
+        fig.write_image(str(p), scale=_CHART_SCALE)
+        paths["backends"] = f"docs/{p.name}"
+
+        # ── 5. Top packages bar ────────────────────────────────────────
+        if all_packages:
+            pk_items = all_packages.most_common(12)
+            pk_labels = [l for l, _ in pk_items]
+            pk_values = [c for _, c in pk_items]
+            fig = go.Figure(go.Bar(
+                x=pk_values, y=pk_labels, orientation="h",
+                marker_color="#8E44AD",
+                text=pk_values, textposition="outside", textfont_size=13,
+            ))
+            fig.update_layout(
+                **_layout, width=_CHART_WIDTH,
+                height=max(_CHART_HEIGHT_BAR, len(pk_labels) * 38 + 80),
+                title=dict(text="Top Required Packages", font_size=16, x=0.5),
+                xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
+                yaxis=dict(autorange="reversed"),
+                bargap=0.3,
+            )
+            p = output_dir / "chart_packages.png"
+            fig.write_image(str(p), scale=_CHART_SCALE)
+            paths["packages"] = f"docs/{p.name}"
+
+        # ── 6. Summary dashboard (number indicators) ───────────────────
+        if summary_stats:
+            fig = go.Figure()
+            keys = list(summary_stats.keys())
+            n = len(keys)
+            for i, (label, value) in enumerate(summary_stats.items()):
+                fig.add_trace(go.Indicator(
+                    mode="number",
+                    value=value,
+                    title={"text": label, "font": {"size": 14}},
+                    number={"font": {"size": 36, "color": "#2C3E50"}},
+                    domain={"x": [i / n + 0.01, (i + 1) / n - 0.01], "y": [0.1, 0.9]},
+                ))
+            fig.update_layout(
+                width=_CHART_WIDTH, height=160,
+                paper_bgcolor="white",
+                margin=dict(l=10, r=10, t=10, b=10),
+            )
+            p = output_dir / "chart_summary.png"
+            fig.write_image(str(p), scale=_CHART_SCALE)
+            paths["summary"] = f"docs/{p.name}"
+
+    except ImportError:
+        pass  # plotly/kaleido not available, skip chart generation
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f"Chart generation failed: {exc}")
+
+    return paths
+
+
+def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
+    """Collect test pass/fail status for modules by running pytest in light mode.
+
+    Args:
+        run_tests: If True, actually run pytest. If False, return empty dict.
+
+    Returns dict: module_name -> {"light": True/False}
+    """
+    if not run_tests:
+        return {}
+
+    import subprocess
+    result: Dict[str, Dict[str, bool]] = {}
+    project_root = str(Path(__file__).parent.parent.parent)
+
+    try:
+        # Run per-module basics tests (ultra-fast, ~1s for all 312)
+        import os as _os
+        env = {**_os.environ, "AYASE_TEST_MODE": "1"}
+        proc = subprocess.run(
+            ["python", "-m", "pytest", "tests/modules/per_module/",
+             "-k", "basics", "--tb=no", "--no-header", "-v"],
+            capture_output=True, text=True, timeout=30,
+            cwd=project_root, encoding="utf-8", errors="replace",
+            env=env,
+        )
+        for line in proc.stdout.splitlines():
+            if "PASSED" not in line and "FAILED" not in line:
+                continue
+            # Format: tests/modules/test_x.py::test_name PASSED  [ 10%]
+            passed = " PASSED" in line
+
+            # Extract test function name from path::test_name
+            if "::" not in line:
+                continue
+            test_func = line.split("::")[1].split()[0]  # get "test_name" before PASSED/FAILED
+
+            # Strip test_ prefix
+            if not test_func.startswith("test_"):
+                continue
+            name = test_func[5:]  # remove "test_"
+
+            # Strip known suffixes to get module name
+            suffixes = [
+                "_basics", "_image", "_video", "_no_reference", "_with_reference",
+                "_no_metadata", "_with_metadata", "_image_skipped",
+                "_is_batch", "_extract", "_fields_exist", "_fields",
+                "_no_pointcloud", "_config",
+            ]
+            mod_name = name
+            for suffix in sorted(suffixes, key=len, reverse=True):
+                if name.endswith(suffix):
+                    mod_name = name[: -len(suffix)]
+                    break
+
+            if not mod_name:
+                continue
+
+            if mod_name not in result:
+                result[mod_name] = {"light": True}
+            if not passed:
+                result[mod_name]["light"] = False
+
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as exc:
+        import logging
+        logging.getLogger(__name__).debug(f"Test collection failed: {exc}")
+
+    return result
+
+
+def _format_test_status(module_name: str, test_results: Dict) -> str:
+    """Format test status as emoji checkmarks.
+
+    Icons: ✅ = pass, ❌ = fail, ⏳ = not run yet
+    Two columns: light (heuristic) | full (ML models)
+    """
+    if module_name not in test_results:
+        return "\u2014"
+    info = test_results[module_name]
+    light = "\u2705" if info.get("light") else "\u274c"
+    full = "\u2705" if info.get("full") else "\u23f3"  # hourglass = not run
+    return f"{light}{full}"
+
+
 def _bar_chart(items: List[Tuple[str, int]], max_width: int = 30) -> List[str]:
     """Generate a Unicode horizontal bar chart."""
     if not items:
@@ -421,7 +682,13 @@ def _get_deprecated_aliases() -> List[Tuple[str, str, str]]:
 # Main generator
 # ══════════════════════════════════════════════════════════════════════════════
 
-def generate_metrics_doc() -> str:
+def generate_metrics_doc(run_tests: bool = True) -> str:
+    """Generate METRICS.md content with charts, test status, and version header.
+
+    Args:
+        run_tests: If True, run pytest to collect test pass/fail status
+                   for each module. Adds checkmark emojis to module tables.
+    """
     all_modules = ModuleRegistry.list_modules()
 
     # ── Collect module data ──────────────────────────────────────────────
@@ -525,77 +792,117 @@ def generate_metrics_doc() -> str:
                     if producer != r["name"]:
                         deps.append((r["name"], field, producer))
 
+    # ── Run tests to get status (optional) ────────────────────────────────
+    test_results = _collect_test_status(run_tests=run_tests)
+
+    # ── Generate charts ──────────────────────────────────────────────────
+    cat_items = sorted(group_stats.items(), key=lambda x: -x[1]["modules"])
+    docs_dir = Path(__file__).parent.parent.parent / "docs"
+    summary_stats = {
+        "Modules": total_modules,
+        "Output Fields": len(unique_outputs),
+        "QM Fields": len(qm_fields),
+        "Tiered": tiered_count,
+        "GPU": gpu_count,
+        "Categories": len(group_stats),
+    }
+    chart_paths = _generate_charts(
+        cat_items, input_counts, speed_counts, all_backends, docs_dir,
+        all_packages=all_packages, summary_stats=summary_stats,
+    )
+
     # ══════════════════════════════════════════════════════════════════════
     # BUILD DOCUMENT
     # ══════════════════════════════════════════════════════════════════════
     L = []  # output lines
     a = L.append  # shorthand
 
+    # ── Header with version + date ────────────────────────────────────────
+    from datetime import datetime
+    try:
+        from ayase import __version__
+    except ImportError:
+        __version__ = "dev"
     a("# Ayase Metrics Reference")
     a("")
-    a("Auto-generated reference for all pipeline modules. "
-      "Run `ayase modules docs` to regenerate.")
+    a(f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
+      f"· **{total_modules} modules** · **{len(qm_fields)} metrics**")
+    a(">")
+    a("> `ayase modules docs -o METRICS.md` to regenerate")
+    a(">")
+    a(f"> Tests: `pytest tests/` (light) · `pytest tests/ --full` (with ML models)")
 
     # ── 1. Summary Dashboard ─────────────────────────────────────────────
     a("")
     a("## Summary")
     a("")
-    a("| Stat | Value |")
-    a("|------|-------|")
-    a(f"| Total modules | **{total_modules}** |")
-    a(f"| Unique output fields | **{len(unique_outputs)}** |")
-    a(f"| QualityMetrics fields | {len(qm_fields)} |")
-    a(f"| Total output mappings | {total_outputs} |")
-    a(f"| Tiered-backend modules | {tiered_count} |")
-    a(f"| GPU-accelerated modules | {gpu_count} |")
-    a(f"| Categories | {len(group_stats)} |")
+    if "summary" in chart_paths:
+        a(f"![Summary Dashboard]({chart_paths['summary']})")
+    else:
+        a(f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
+          f"· **{len(qm_fields)}** QualityMetrics fields · **{tiered_count}** tiered "
+          f"· **{gpu_count}** GPU · **{len(group_stats)}** categories")
 
-    # ── 2. Category Distribution (bar chart) ─────────────────────────────
+    # ── 2. Category Distribution ──────────────────────────────────────────
     a("")
     a("### Modules by Category")
     a("")
-    a("```")
-    cat_items = sorted(group_stats.items(), key=lambda x: -x[1]["modules"])
-    for line in _bar_chart([(g, s["modules"]) for g, s in cat_items]):
-        a(line)
-    a("```")
+    if "categories" in chart_paths:
+        a(f"![Module Distribution by Category]({chart_paths['categories']})")
+    else:
+        a("```")
+        for line in _bar_chart([(g, s["modules"]) for g, s in cat_items]):
+            a(line)
+        a("```")
 
     # ── 3. Input Type Breakdown ──────────────────────────────────────────
     a("")
     a("### By Input Type")
     a("")
-    a("```")
-    for line in _bar_chart(input_counts.most_common()):
-        a(line)
-    a("```")
+    if "input_types" in chart_paths:
+        a(f"![Input Type Distribution]({chart_paths['input_types']})")
+    else:
+        a("```")
+        for line in _bar_chart(input_counts.most_common()):
+            a(line)
+        a("```")
 
-    # ── 4. Backend Usage (bar chart) ─────────────────────────────────────
-    a("")
-    a("### Backend Usage")
-    a("")
-    a("```")
-    for line in _bar_chart(all_backends.most_common()):
-        a(line)
-    a("```")
-
-    # ── 5. Speed Tiers ───────────────────────────────────────────────────
+    # ── 4. Speed Tiers ───────────────────────────────────────────────────
     a("")
     a("### Speed Tiers")
     a("")
-    a("```")
-    tier_labels = {"fast": "fast (CPU, <0.1s)", "medium": "medium (GPU, ~1s)", "slow": "slow (LLM/VLM, >5s)"}
-    for line in _bar_chart([(tier_labels.get(t, t), c) for t, c in speed_counts.most_common()]):
-        a(line)
-    a("```")
+    if "speed" in chart_paths:
+        a(f"![Speed Tiers]({chart_paths['speed']})")
+    else:
+        a("```")
+        tier_labels = {"fast": "fast (CPU, <0.1s)", "medium": "medium (GPU, ~1s)", "slow": "slow (LLM/VLM, >5s)"}
+        for line in _bar_chart([(tier_labels.get(t, t), c) for t, c in speed_counts.most_common()]):
+            a(line)
+        a("```")
+
+    # ── 5. Backend Usage ──────────────────────────────────────────────────
+    a("")
+    a("### Backend Usage")
+    a("")
+    if "backends" in chart_paths:
+        a(f"![Backend Usage]({chart_paths['backends']})")
+    else:
+        a("```")
+        for line in _bar_chart(all_backends.most_common()):
+            a(line)
+        a("```")
 
     # ── 6. Top Required Packages ─────────────────────────────────────────
     a("")
     a("### Top Required Packages")
     a("")
-    a("```")
-    for line in _bar_chart(all_packages.most_common(15)):
-        a(line)
-    a("```")
+    if "packages" in chart_paths:
+        a(f"![Top Required Packages]({chart_paths['packages']})")
+    else:
+        a("```")
+        for line in _bar_chart(all_packages.most_common(15)):
+            a(line)
+        a("```")
 
     # ── 7. Recommended Presets ───────────────────────────────────────────
     a("")
@@ -715,25 +1022,27 @@ def generate_metrics_doc() -> str:
         if r["group"] != current_group:
             if current_group is not None:
                 a("")
-            a(f"## {r['group']}")
+            grp = r["group"]
+            grp_count = group_stats[grp]["modules"]
+            a(f"## {grp} ({grp_count} modules)")
             a("")
-            a("| Module | Input | Outputs | Description | Config |")
-            a("|--------|-------|---------|-------------|--------|")
-            current_group = r["group"]
+            a("| Module | Type | Outputs | Speed | Test | Description |")
+            a("|--------|------|---------|-------|------|-------------|")
+            current_group = grp
 
         out_parts = []
         for field, desc in r["output_fields"].items():
-            out_parts.append(f"`{field}` - {desc}" if desc else f"`{field}`")
-        out_str = "; ".join(out_parts) if out_parts else "-"
+            out_parts.append(f"`{field}`")
+        out_str = ", ".join(out_parts) if out_parts else "—"
 
-        cfg = r["default_config"]
-        cfg_items = [f"`{k}={v}`" for k, v in list(cfg.items())[:2]]
-        if len(cfg) > 2:
-            cfg_items.append(f"+{len(cfg) - 2}")
-        cfg_str = ", ".join(cfg_items) or "-"
+        # Speed badge
+        speed_badge = {"fast": "\u26a1", "medium": "\u23f1\ufe0f", "slow": "\U0001f40c"}.get(r["speed"], "")
+
+        # Test status
+        test_status = _format_test_status(r["name"], test_results)
 
         a(f"| `{r['name']}` | {r['input_type']} | {out_str} "
-          f"| {r['description']} | {cfg_str} |")
+          f"| {speed_badge} {r['speed']} | {test_status} | {r['description']} |")
 
     a("")
 
