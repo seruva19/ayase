@@ -618,19 +618,32 @@ def modules_check() -> None:
 
 @modules_app.command("docs")
 def modules_docs(
-    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: stdout)")] = None,
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: METRICS.md)")] = None,
+    run_tests: Annotated[bool, typer.Option("--run-tests/--no-tests", help="Run tests and show pass/fail status")] = True,
 ) -> None:
-    """Generate METRICS.md reference from module metadata."""
+    """Generate METRICS.md with charts, test status, and version info.
+
+    Single command to regenerate everything:
+        ayase modules docs -o METRICS.md --run-tests
+    """
     config = AyaseConfig.load()
     _discover_all_modules(config)
 
     from .metrics_doc import generate_metrics_doc
 
-    content = generate_metrics_doc()
+    if run_tests:
+        console.print("[cyan]Running tests to collect status...[/cyan]")
+    content = generate_metrics_doc(run_tests=run_tests)
 
     if output:
         output.write_text(content, encoding="utf-8")
         console.print(f"[green]Written to {output}[/green]")
+        # List generated charts
+        docs_dir = Path("docs")
+        if docs_dir.exists():
+            charts = [f for f in docs_dir.iterdir() if f.suffix == ".png"]
+            if charts:
+                console.print(f"[green]Generated {len(charts)} charts in docs/[/green]")
     else:
         print(content)
 
