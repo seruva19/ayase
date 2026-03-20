@@ -193,7 +193,7 @@ class QualityMetrics(BaseModel):
         "pi_score": "nr_quality",
         "piqe": "nr_quality",
         "maclip_score": "nr_quality",
-        "cgvqm": "nr_quality",
+        "cgvqm": "fr_quality",
         "spectral_entropy": "nr_quality",
         "spectral_rank": "nr_quality",
         "videoscore_visual": "nr_quality",
@@ -355,6 +355,125 @@ class QualityMetrics(BaseModel):
         "compbench_numeracy": "alignment",
         "compbench_scene": "alignment",
         "compbench_overall": "alignment",
+        # NR-VQA (new models)
+        "rapique_score": "nr_quality",
+        "conviqt_score": "nr_quality",
+        "stablevqa_score": "nr_quality",
+        "maxvqa_score": "nr_quality",
+        "bvqi_score": "nr_quality",
+        "modularbvqa_score": "nr_quality",
+        "ptmvqa_score": "nr_quality",
+        "clipvqa_score": "nr_quality",
+        "discovqa_score": "nr_quality",
+        "zoomvqa_score": "nr_quality",
+        "faver_score": "nr_quality",
+        "siamvqa_score": "nr_quality",
+        "memoryvqa_score": "nr_quality",
+        "sama_score": "nr_quality",
+        "clifvqa_score": "nr_quality",
+        "simplevqa_score": "nr_quality",
+        "adadqa_score": "nr_quality",
+        "mdvqa_semantic": "nr_quality",
+        "mdvqa_distortion": "nr_quality",
+        "mdvqa_motion": "nr_quality",
+        # FR-VQA (new models)
+        "rankdvqa_score": "fr_quality",
+        "compressed_vqa_hdr": "fr_quality",
+        "deepvqa_score": "fr_quality",
+        "st_mad": "fr_quality",
+        "avqt_score": "fr_quality",
+        "pvmaf_score": "fr_quality",
+        "sr4kvqa_score": "nr_quality",  # NR: evaluates SR artifacts without reference
+        # AIGC-specific VQA
+        "crave_score": "nr_quality",
+        "aigcvqa_technical": "nr_quality",
+        "aigcvqa_aesthetic": "nr_quality",
+        "aigcvqa_alignment": "alignment",
+        "ugvq_score": "nr_quality",
+        "aigvqa_score": "nr_quality",
+        "t2veval_score": "alignment",
+        "world_consistency_score": "temporal",
+        # LLM/VLM-based VQA
+        "vqa2_score": "nr_quality",
+        "lmmvqa_score": "nr_quality",
+        "vqinsight_score": "nr_quality",
+        "vqathinker_score": "nr_quality",
+        "qclip_score": "nr_quality",
+        "presresq_score": "nr_quality",
+        # Distribution-level
+        "stream_spatial": "distribution",
+        "stream_temporal": "distribution",
+        "worldscore": "distribution",
+        "umtscore": "alignment",
+        # Video reward
+        "videoreward_vq": "nr_quality",
+        "videoreward_mq": "motion",
+        "videoreward_ta": "alignment",
+        "vader_score": "nr_quality",
+        # 360/VR spherical
+        "s_psnr": "fr_quality",
+        "ws_psnr": "fr_quality",
+        "cpp_psnr": "fr_quality",
+        "ws_ssim": "fr_quality",
+        "mc360iqa_score": "nr_quality",
+        "provqa_score": "nr_quality",
+        # Point cloud
+        "pc_d1_psnr": "fr_quality",
+        "pc_d2_psnr": "fr_quality",
+        "pcqm_score": "fr_quality",
+        "graphsim_score": "fr_quality",
+        "pointssim_score": "fr_quality",
+        "mm_pcqa_score": "nr_quality",
+        # Streaming QoE
+        "p1204_mos": "codec",
+        "sqi_score": "nr_quality",
+        "video_atlas_score": "nr_quality",
+        # Face quality (recognition-aware)
+        "serfiq_score": "face",
+        "crfiqa_score": "face",
+        "magface_score": "face",
+        "grafiqs_score": "face",
+        # Niche domains
+        "uiqm_score": "nr_quality",
+        "uciqe_score": "nr_quality",
+        "oavqa_score": "audio",
+        # Classic NR-VQA
+        "viideo_score": "nr_quality",
+        "vbliinds_score": "nr_quality",
+        "vsfa_score": "nr_quality",
+        "speedqa_score": "nr_quality",
+        "gamival_score": "nr_quality",
+        # Task-specific FR
+        "erqa_score": "fr_quality",
+        "vfips_score": "fr_quality",
+        "artfid_score": "fr_quality",
+        "psnr_div": "fr_quality",
+        "psnr99": "fr_quality",
+        # pyiqa built-ins
+        "deepdc_score": "nr_quality",
+        "msswd_score": "distribution",
+        "sfid_score": "distribution",
+        # Distribution/generation
+        "vendi_score": "distribution",
+        "fgd_score": "distribution",
+        "fmd_score": "distribution",
+        "fad_score": "distribution",
+        # Audio aesthetics
+        "audiobox_production": "audio",
+        "audiobox_enjoyment": "audio",
+        # Talking head / lip sync
+        "thqa_score": "nr_quality",
+        "lse_d": "temporal",
+        "lse_c": "temporal",
+        # Video segmentation
+        "davis_j": "temporal",
+        "davis_f": "temporal",
+        # Video colorization
+        "cdc_score": "temporal",
+        # Dance/motion
+        "bas_score": "motion",
+        # Scene graph
+        "dsg_score": "alignment",
     }
 
     def non_null_metrics(self) -> dict[str, object]:
@@ -833,6 +952,146 @@ class QualityMetrics(BaseModel):
     compbench_numeracy: Optional[float] = None  # Generative numeracy (0-1)
     compbench_scene: Optional[float] = None  # Scene composition (0-1)
     compbench_overall: Optional[float] = None  # Overall composition (0-1)
+
+    # NR-VQA (new models, 2023-2025)
+    rapique_score: Optional[float] = None  # RAPIQUE bandpass+CNN NR-VQA (higher=better)
+    conviqt_score: Optional[float] = None  # CONVIQT contrastive NR-VQA (higher=better)
+    stablevqa_score: Optional[float] = None  # StableVQA video stability (higher=better)
+    maxvqa_score: Optional[float] = None  # MaxVQA explainable quality (higher=better)
+    bvqi_score: Optional[float] = None  # BVQI zero-shot blind VQA (higher=better)
+    modularbvqa_score: Optional[float] = None  # ModularBVQA resolution-aware (higher=better)
+    ptmvqa_score: Optional[float] = None  # PTM-VQA multi-PTM fusion (higher=better)
+    clipvqa_score: Optional[float] = None  # CLIPVQA CLIP-based VQA (higher=better)
+    discovqa_score: Optional[float] = None  # DisCoVQA distortion-content (higher=better)
+    zoomvqa_score: Optional[float] = None  # Zoom-VQA multi-level (higher=better)
+    faver_score: Optional[float] = None  # FAVER variable frame rate (higher=better)
+    siamvqa_score: Optional[float] = None  # SiamVQA Siamese high-res (higher=better)
+    memoryvqa_score: Optional[float] = None  # Memory-VQA human memory (higher=better)
+    sama_score: Optional[float] = None  # SAMA scaling+masking (higher=better)
+    clifvqa_score: Optional[float] = None  # CLiF-VQA human feelings (higher=better)
+    simplevqa_score: Optional[float] = None  # SimpleVQA Swin+SlowFast (higher=better)
+    adadqa_score: Optional[float] = None  # Ada-DQA adaptive diverse (higher=better)
+    mdvqa_semantic: Optional[float] = None  # MD-VQA semantic quality (higher=better)
+    mdvqa_distortion: Optional[float] = None  # MD-VQA distortion quality (higher=better)
+    mdvqa_motion: Optional[float] = None  # MD-VQA motion quality (higher=better)
+
+    # FR-VQA (new models)
+    rankdvqa_score: Optional[float] = None  # RankDVQA ranking-based FR (higher=better)
+    compressed_vqa_hdr: Optional[float] = None  # CompressedVQA-HDR (higher=better)
+    deepvqa_score: Optional[float] = None  # DeepVQA spatiotemporal FR (higher=better)
+    st_mad: Optional[float] = None  # ST-MAD spatiotemporal MAD (lower=better)
+    avqt_score: Optional[float] = None  # Apple AVQT perceptual (higher=better)
+    pvmaf_score: Optional[float] = None  # pVMAF predictive VMAF (0-100)
+    sr4kvqa_score: Optional[float] = None  # SR4KVQA super-resolution 4K (higher=better)
+
+    # AIGC-specific VQA
+    crave_score: Optional[float] = None  # CRAVE next-gen AIGC (higher=better)
+    aigcvqa_technical: Optional[float] = None  # AIGC-VQA technical branch
+    aigcvqa_aesthetic: Optional[float] = None  # AIGC-VQA aesthetic branch
+    aigcvqa_alignment: Optional[float] = None  # AIGC-VQA text-video alignment
+    ugvq_score: Optional[float] = None  # UGVQ unified generated VQ (higher=better)
+    aigvqa_score: Optional[float] = None  # AIGVQA multi-dimensional (higher=better)
+    t2veval_score: Optional[float] = None  # T2VEval consistency+realness (higher=better)
+    world_consistency_score: Optional[float] = None  # WCS object permanence (higher=better)
+
+    # LLM/VLM-based VQA
+    vqa2_score: Optional[float] = None  # VQA² LMM quality (higher=better)
+    lmmvqa_score: Optional[float] = None  # LMM-VQA spatiotemporal (higher=better)
+    vqinsight_score: Optional[float] = None  # VQ-Insight ByteDance (higher=better)
+    vqathinker_score: Optional[float] = None  # VQAThinker GRPO (higher=better)
+    qclip_score: Optional[float] = None  # Q-CLIP VLM-based (higher=better)
+    presresq_score: Optional[float] = None  # PreResQ-R1 rank+score (higher=better)
+
+    # Distribution-level (batch metrics)
+    stream_spatial: Optional[float] = None  # STREAM spatial fidelity+diversity
+    stream_temporal: Optional[float] = None  # STREAM temporal naturalness
+    worldscore: Optional[float] = None  # WorldScore generation quality
+    umtscore: Optional[float] = None  # UMTScore video-text alignment
+
+    # Video reward models
+    videoreward_vq: Optional[float] = None  # VideoReward visual quality
+    videoreward_mq: Optional[float] = None  # VideoReward motion quality
+    videoreward_ta: Optional[float] = None  # VideoReward text alignment
+    vader_score: Optional[float] = None  # VADER reward alignment
+
+    # 360/VR spherical metrics
+    s_psnr: Optional[float] = None  # Spherical PSNR (dB, higher=better)
+    ws_psnr: Optional[float] = None  # Weighted Spherical PSNR (dB, higher=better)
+    cpp_psnr: Optional[float] = None  # Craster Parabolic PSNR (dB, higher=better)
+    ws_ssim: Optional[float] = None  # Weighted Spherical SSIM (0-1, higher=better)
+    mc360iqa_score: Optional[float] = None  # MC360IQA blind 360 (higher=better)
+    provqa_score: Optional[float] = None  # ProVQA progressive 360 (higher=better)
+
+    # Point cloud quality
+    pc_d1_psnr: Optional[float] = None  # Point-to-point PSNR (dB)
+    pc_d2_psnr: Optional[float] = None  # Point-to-plane PSNR (dB)
+    pcqm_score: Optional[float] = None  # PCQM geometry+color (higher=better)
+    graphsim_score: Optional[float] = None  # GraphSIM gradient (higher=better)
+    pointssim_score: Optional[float] = None  # PointSSIM structural (higher=better)
+    mm_pcqa_score: Optional[float] = None  # MM-PCQA multi-modal (higher=better)
+
+    # Streaming QoE
+    p1204_mos: Optional[float] = None  # ITU-T P.1204.3 bitstream MOS (1-5)
+    sqi_score: Optional[float] = None  # SQI streaming quality index
+    video_atlas_score: Optional[float] = None  # Video ATLAS temporal artifacts
+
+    # Face quality (recognition-aware)
+    serfiq_score: Optional[float] = None  # SER-FIQ embedding robustness (higher=better)
+    crfiqa_score: Optional[float] = None  # CR-FIQA classifiability (higher=better)
+    magface_score: Optional[float] = None  # MagFace magnitude quality (higher=better)
+    grafiqs_score: Optional[float] = None  # GraFIQs gradient-based (higher=better)
+
+    # Niche domains
+    uiqm_score: Optional[float] = None  # UIQM underwater quality (higher=better)
+    uciqe_score: Optional[float] = None  # UCIQE underwater color (higher=better)
+    oavqa_score: Optional[float] = None  # OAVQA omnidirectional AV (higher=better)
+
+    # Classic NR-VQA (missed from first round)
+    viideo_score: Optional[float] = None  # VIIDEO blind natural video statistics (lower=better)
+    vbliinds_score: Optional[float] = None  # V-BLIINDS DCT-domain NSS (higher=better)
+    vsfa_score: Optional[float] = None  # VSFA quality-aware feature aggregation (higher=better)
+    speedqa_score: Optional[float] = None  # SpEED-QA entropic differencing (higher=better)
+    gamival_score: Optional[float] = None  # GAMIVAL cloud gaming NR-VQA (higher=better)
+
+    # Task-specific FR metrics
+    erqa_score: Optional[float] = None  # ERQA edge restoration quality (0-1, higher=better)
+    vfips_score: Optional[float] = None  # VFIPS frame interpolation perceptual (lower=better)
+    artfid_score: Optional[float] = None  # ArtFID style transfer quality (lower=better)
+    psnr_div: Optional[float] = None  # PSNR_DIV motion-weighted PSNR (dB, higher=better)
+    psnr99: Optional[float] = None  # PSNR99 worst-case region quality (dB, higher=better)
+
+    # pyiqa built-ins
+    deepdc_score: Optional[float] = None  # DeepDC distribution conformance (lower=better)
+    msswd_score: Optional[float] = None  # MSSWD multi-scale sliced Wasserstein (lower=better)
+    sfid_score: Optional[float] = None  # SFID spatial FID (lower=better)
+
+    # Distribution/generation metrics
+    vendi_score: Optional[float] = None  # Vendi Score diversity (higher=better)
+    fgd_score: Optional[float] = None  # FGD Frechet Gesture Distance (lower=better)
+    fmd_score: Optional[float] = None  # FMD Frechet Motion Distance (lower=better)
+    fad_score: Optional[float] = None  # FAD Frechet Audio Distance (lower=better)
+
+    # Audio aesthetics
+    audiobox_production: Optional[float] = None  # Audiobox production quality
+    audiobox_enjoyment: Optional[float] = None  # Audiobox content enjoyment
+
+    # Talking head / lip sync
+    thqa_score: Optional[float] = None  # THQA talking head quality (higher=better)
+    lse_d: Optional[float] = None  # LSE-D lip sync error distance (lower=better)
+    lse_c: Optional[float] = None  # LSE-C lip sync error confidence (higher=better)
+
+    # Video segmentation
+    davis_j: Optional[float] = None  # DAVIS J region similarity IoU (higher=better)
+    davis_f: Optional[float] = None  # DAVIS F boundary accuracy (higher=better)
+
+    # Video colorization
+    cdc_score: Optional[float] = None  # CDC color distribution consistency (lower=better)
+
+    # Dance/motion generation
+    bas_score: Optional[float] = None  # BAS beat alignment score (higher=better)
+
+    # Scene graph faithfulness
+    dsg_score: Optional[float] = None  # DSG Davidsonian Scene Graph (higher=better)
 
 
 class Sample(BaseModel):

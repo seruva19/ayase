@@ -53,6 +53,7 @@ _IMPORTS = [
     ("T2VScoreModule", ".t2v_score"),
     ("VQAScoreModule", ".vqa_score"),
     ("TIFAModule", ".tifa"),
+    ("DSGModule", ".dsg"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("FastVQAModule", ".fast_vqa"),
@@ -78,6 +79,9 @@ _IMPORTS = [
     ("JEDiModule", ".jedi_metric"),
     ("COVERModule", ".cover"),
     ("VIDEVALModule", ".videval"),
+    ("UNQAModule", ".unqa"),
+    ("InternVQAModule", ".internvqa"),
+    ("NRGVQMModule", ".nr_gvqm"),
     # --- Generation metrics ---
     ("FVDModule", ".fvd"),
     ("FVMDModule", ".fvmd"),
@@ -110,6 +114,7 @@ _IMPORTS = [
     ("AudioModule", ".audio"),
     ("AudioPESQModule", ".audio_pesq"),
     ("DNSMOSModule", ".dnsmos"),
+    ("BeatAlignmentModule", ".beat_alignment"),
     # --- HDR / codec ---
     ("HDRMetadataModule", ".hdr_metadata"),
     ("ProductionQualityModule", ".production_quality"),
