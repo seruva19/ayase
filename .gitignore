@@ -47,5 +47,6 @@ test_datasets/
 reports/
 *.log
 /models/
+!/models/README.md
 .claude/
 .ayase_sd_cache/
