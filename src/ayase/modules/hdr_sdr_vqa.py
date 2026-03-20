@@ -251,7 +251,7 @@ class FourKVQAModule(PipelineModule):
                     if sample.quality_metrics is None:
                         sample.quality_metrics = QualityMetrics()
                     # Use technical_score as proxy
-                    sample.quality_metrics.technical_score = quality
+                    sample.quality_metrics.hdr_technical_score = quality
 
                     logger.debug(f"4K quality for {sample.path.name}: {quality:.1f}")
 
@@ -282,7 +282,7 @@ class FourKVQAModule(PipelineModule):
 
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.technical_score = avg_quality
+                sample.quality_metrics.hdr_technical_score = avg_quality
 
                 logger.debug(f"4K quality for {sample.path.name}: {avg_quality:.1f}")
 

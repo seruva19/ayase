@@ -117,8 +117,8 @@ class VideoTextMatchingModule(PipelineModule):
                 from ayase.models import QualityMetrics
                 sample.quality_metrics = QualityMetrics()
 
-            sample.quality_metrics.clip_score = float(normalized)
-            sample.quality_metrics.clip_temp = 1.0
+            sample.quality_metrics.video_text_score = float(normalized)
+            sample.quality_metrics.video_text_temporal = 1.0
 
             if normalized < self.min_score_threshold:
                 sample.validation_issues.append(
@@ -158,8 +158,8 @@ class VideoTextMatchingModule(PipelineModule):
                     from ayase.models import QualityMetrics
                     sample.quality_metrics = QualityMetrics()
 
-                sample.quality_metrics.clip_score = avg_score
-                sample.quality_metrics.clip_temp = max(0.0, 1.0 - score_std)
+                sample.quality_metrics.video_text_score = avg_score
+                sample.quality_metrics.video_text_temporal = max(0.0, 1.0 - score_std)
 
                 if avg_score < self.min_score_threshold:
                      sample.validation_issues.append(

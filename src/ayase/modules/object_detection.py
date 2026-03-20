@@ -129,11 +129,11 @@ class ObjectDetectionModule(PipelineModule):
                 if total > 0:
                     probs = np.array([v / total for v in label_scores.values()], dtype=np.float64)
                     entropy = -np.sum(probs * np.log(probs + 1e-9))
-                    sample.quality_metrics.is_score = float(np.exp(entropy))
+                    sample.quality_metrics.detection_diversity = float(np.exp(entropy))
                 else:
-                    sample.quality_metrics.is_score = 0.0
+                    sample.quality_metrics.detection_diversity = 0.0
             else:
-                sample.quality_metrics.is_score = 0.0
+                sample.quality_metrics.detection_diversity = 0.0
 
         except Exception as e:
             logger.warning(f"Object detection failed: {e}")

@@ -191,10 +191,22 @@ class PipelineModule(ABC):
 
         # Output fields: find quality_metrics.FIELD = ... assignments
         outputs: Dict[str, str] = {}
+        # Pattern 1: quality_metrics.FIELD =
         for m in _re.finditer(r"quality_metrics\.(\w+)\s*=", src):
             field = m.group(1)
             if field not in outputs and field in field_descs:
                 outputs[field] = field_descs[field]
+        # Pattern 2: metric_field = "FIELD" (base class auto-assignment)
+        for m in _re.finditer(r'metric_field\s*=\s*["\'](\w+)["\']', src):
+            field = m.group(1)
+            if field not in outputs and field in field_descs:
+                outputs[field] = field_descs[field]
+        # Pattern 3: qm.FIELD = (variable alias for quality_metrics)
+        if _re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", src):
+            for m in _re.finditer(r"\bqm\.(\w+)\s*=", src):
+                field = m.group(1)
+                if field not in outputs and field in field_descs:
+                    outputs[field] = field_descs[field]
 
         return {
             "name": cls.name,

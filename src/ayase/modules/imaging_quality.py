@@ -63,7 +63,7 @@ class ImagingQualityModule(PipelineModule):
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             
-            sample.quality_metrics.noise_score = float(1.0 - min(sigma / 50.0, 1.0)) # Normalized 
+            sample.quality_metrics.imaging_noise_score = float(1.0 - min(sigma / 50.0, 1.0)) # Normalized
 
             # Report
             if sigma > self.noise_threshold:
@@ -147,7 +147,7 @@ class ImagingQualityModule(PipelineModule):
                     )
                 )
 
-            sample.quality_metrics.artifacts_score = float(1.0 - min(edge_density * 10.0, 1.0))
+            sample.quality_metrics.imaging_artifacts_score = float(1.0 - min(edge_density * 10.0, 1.0))
 
 
         except Exception as e:

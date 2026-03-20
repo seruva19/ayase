@@ -216,7 +216,7 @@ class NRGVQMModule(PipelineModule):
             if score is not None:
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.gamival_score = score
+                sample.quality_metrics.nr_gvqm_score = score
         except Exception as e:
             logger.warning("NR-GVQM failed for %s: %s", sample.path, e)
         return sample
