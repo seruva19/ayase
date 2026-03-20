@@ -38,8 +38,8 @@ class StabilizedMotionModule(PipelineModule):
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
 
-                sample.quality_metrics.motion_score = motion_stats["scene_motion_mean"]
-                sample.quality_metrics.camera_motion_score = motion_stats["camera_motion_mean"]
+                sample.quality_metrics.stabilized_motion_score = motion_stats["scene_motion_mean"]
+                sample.quality_metrics.stabilized_camera_score = motion_stats["camera_motion_mean"]
 
                 # You might want to flag static videos or excessively shaky ones
                 if (

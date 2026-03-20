@@ -188,7 +188,7 @@ class InternVQAModule(PipelineModule):
             if score is not None:
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.dover_score = score
+                sample.quality_metrics.internvqa_score = score
         except Exception as e:
             logger.warning("InternVQA failed for %s: %s", sample.path, e)
 
