@@ -62,6 +62,12 @@ class DOVERModule(PipelineModule):
         self._std = None
 
     def setup(self) -> None:
+        # In test mode, skip all heavy model loading
+        if self.test_mode:
+            self._backend = "heuristic"
+            logger.debug("DOVER: test mode, skipping ML backends")
+            return
+
         preferred = self.config.get("preferred_backend")
 
         # If explicit backend requested, try it first
