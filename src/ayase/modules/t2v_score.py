@@ -26,7 +26,7 @@ class T2VScoreModule(PipelineModule):
     name = "t2v_score"
     description = "Text-to-Video alignment and quality scoring"
     default_config = {
-        "model_name": "TIGER-Lab/T2VScore",  # HuggingFace model
+        "model_name": "openai/clip-vit-base-patch32",  # CLIP-based scoring
         "use_clip_fallback": True,  # Use CLIP if T2VScore unavailable
         "num_frames": 8,  # Number of frames to sample
         "alignment_weight": 0.5,  # Weight for alignment component
@@ -37,7 +37,7 @@ class T2VScoreModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.model_name = self.config.get("model_name", "TIGER-Lab/T2VScore")
+        self.model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
         self.use_clip_fallback = self.config.get("use_clip_fallback", True)
         self.num_frames = self.config.get("num_frames", 8)
         self.alignment_weight = self.config.get("alignment_weight", 0.5)

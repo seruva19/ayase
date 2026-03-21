@@ -1087,7 +1087,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         for _key, e in hf_entries:
             # Heading with link
             if e.url:
-                a(f"### [`{e.name}`]({e.url}) [↑](#categories)")
+                a(f'### <a href="{e.url}" target="_blank">`{e.name}`</a> [↑](#categories)')
             else:
                 a(f"### `{e.name}` [↑](#categories)")
 
@@ -1127,7 +1127,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
 
             # Source link (arXiv)
             if e.arxiv:
-                a(f"- **Source**: [arXiv](https://arxiv.org/abs/{e.arxiv})")
+                a(f'- **Source**: <a href="https://arxiv.org/abs/{e.arxiv}" target="_blank">arXiv</a>')
 
             a("")
 
@@ -1140,7 +1140,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
 
         for repo_name, files in sorted(weight_file_repos.items()):
             repo_url = f"https://huggingface.co/{repo_name}"
-            a(f"### [`{repo_name}`]({repo_url}) [↑](#categories)")
+            a(f'### <a href="{repo_url}" target="_blank">`{repo_name}`</a> [↑](#categories)')
             a("> Pre-trained weight files for ayase modules")
             a("")
             for fe in sorted(files, key=lambda x: x.name):
@@ -1154,7 +1154,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     if pyiqa_entries:
         a(f"## pyiqa Metrics ({len(pyiqa_entries)})")
         a("")
-        a("[pyiqa](https://github.com/chaofengc/IQA-PyTorch) is an MIT-licensed collection "
+        a('<a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection '
           "of image/video quality metrics. Weights auto-download on first "
           "`pyiqa.create_metric()` call. `pip install pyiqa`")
         a("")
