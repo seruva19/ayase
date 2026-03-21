@@ -928,6 +928,9 @@ class TestAyasePipeline:
         """Modules that fail on_mount are skipped during processing (no crash)."""
         dataset = _make_dataset(tmp_dir)
 
+        # Temporarily disable test_mode so setup() actually runs and can fail
+        PipelineModule.set_test_mode(False)
+
         # Build pipeline with one good module and one that always fails
         ModuleRegistry.discover_modules()
         good_cls = ModuleRegistry.get_module("basic")
@@ -936,6 +939,9 @@ class TestAyasePipeline:
 
         pipeline = Pipeline([fail_module, good_module])
         pipeline.start()
+
+        # Restore test_mode
+        PipelineModule.set_test_mode(True)
 
         # fail_module should NOT be mounted
         assert not fail_module._mounted
