@@ -122,7 +122,7 @@ class PVMAFModule(ReferenceBasedModule):
             noise_var = dist_var - g * cross_var
             noise_var = np.maximum(noise_var, eps)
 
-            sigma_n = 0.1
+            sigma_n = 2.0
             vif_num = np.sum(np.log2(1 + g ** 2 * ref_var / (noise_var + sigma_n ** 2) + eps))
             vif_den = np.sum(np.log2(1 + ref_var / (sigma_n ** 2) + eps))
             vif = float(vif_num / (vif_den + eps))

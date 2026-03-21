@@ -141,9 +141,10 @@ class DeepfakeDetectionModule(PipelineModule):
         q3 = q3[:min_s, :min_w]
         q4 = q4[:min_s, :min_w]
 
-        # High symmetry between diagonally opposite quadrants → suspicious
-        sym_12 = float(np.corrcoef(q1.flatten(), q4.flatten())[0, 1])
-        sym_34 = float(np.corrcoef(q2.flatten(), q3.flatten())[0, 1])
+        # High symmetry between adjacent quadrants → suspicious
+        # (Diagonal quadrants are always symmetric due to Hermitian property of real FFT)
+        sym_12 = float(np.corrcoef(q1.flatten(), q2.flatten())[0, 1])
+        sym_34 = float(np.corrcoef(q3.flatten(), q4.flatten())[0, 1])
 
         if np.isnan(sym_12) or np.isnan(sym_34):
             return 0.0

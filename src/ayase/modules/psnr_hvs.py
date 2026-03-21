@@ -102,6 +102,7 @@ class PSNRHVSModule(ReferenceBasedModule):
         if avg_wmse < 1e-10:
             return 100.0
 
+        # Note: dB values are relative to CSF-weighted domain, not directly comparable to standard PSNR implementations.
         return float(10.0 * np.log10(255.0 ** 2 / avg_wmse))
 
     def _compute_psnr_hvs_m(self, ref_bgr, dist_bgr) -> Optional[float]:

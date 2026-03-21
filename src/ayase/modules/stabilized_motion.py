@@ -149,7 +149,7 @@ class StabilizedMotionModule(PipelineModule):
             except Exception:
                 logger.debug("Failed to compute camera motion for stabilized motion.")
 
-            prev_gray = curr_gray
+            prev_gray = stabilized_curr
 
         cap.release()
 

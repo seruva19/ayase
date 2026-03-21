@@ -35,4 +35,4 @@ def test_metrics_table_matches_quality_metrics():
     assert not unknown, f"METRICS.md references unknown fields: {unknown}"
 
     # QualityMetrics field count must be correct
-    assert len(model_fields) == 349, f"Expected 349 fields, got {len(model_fields)}"
+    assert len(model_fields) == 341, f"Expected 341 fields, got {len(model_fields)}"

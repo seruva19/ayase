@@ -33,9 +33,9 @@ def _gaming_artifact_features(frame: np.ndarray) -> np.ndarray:
     blockiness = 0.0
     if h_blocks > 1 and w_blocks > 1:
         cropped = gray[: h_blocks * block_size, : w_blocks * block_size]
-        # Measure discontinuities at block boundaries
-        h_edges = np.abs(np.diff(cropped[::block_size, :], axis=0))
-        v_edges = np.abs(np.diff(cropped[:, ::block_size], axis=1))
+        # Measure discontinuities across block boundaries
+        h_edges = np.abs(cropped[block_size-1::block_size, :].astype(float) - cropped[block_size::block_size, :].astype(float))
+        v_edges = np.abs(cropped[:, block_size-1::block_size].astype(float) - cropped[:, block_size::block_size].astype(float))
         blockiness = float(np.mean(h_edges) + np.mean(v_edges))
 
     # Banding detection (gradient posterization common in gaming)

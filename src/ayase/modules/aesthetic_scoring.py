@@ -37,8 +37,7 @@ class AestheticScoringModule(PipelineModule):
         # URL for the weights (not downloading here, just reference)
         # https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/sac+logos+ava1-l14-linearMSE.pth
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             import torch
             import torch.nn as nn

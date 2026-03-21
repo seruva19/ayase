@@ -84,7 +84,7 @@ class BackgroundDiversityModule(PipelineModule):
             
             # Compute histogram of background pixels
             # Safety: if entire image is FG, bg_mask is all 0.
-            if np.sum(bg_mask) < 100:
+            if np.count_nonzero(bg_mask) < 100:
                 # No background?
                 return sample
                 

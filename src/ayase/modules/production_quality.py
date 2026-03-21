@@ -217,7 +217,7 @@ class ProductionQualityModule(PipelineModule):
             f"wb={sample.quality_metrics.white_balance_score} "
             f"exp={sample.quality_metrics.exposure_consistency} "
             f"foc={sample.quality_metrics.focus_quality} "
-            f"band={sample.quality_metrics.banding_severity:.0f}"
+            f"band={sample.quality_metrics.banding_severity or 0.0:.0f}"
         )
 
         return sample

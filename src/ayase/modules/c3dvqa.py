@@ -137,6 +137,7 @@ class C3DVQAModule(PipelineModule):
         # Heuristic proxy: no trained regression head is available, so we
         # map raw feature statistics to [0,1].  This is an *experimental*
         # approximation — values are not calibrated to subjective MOS.
+        # Note: heuristic proxy using raw feature statistics; not calibrated against subjective quality scores.
         feat_mean = features.mean().item()
         feat_std = features.std().item()
         activation_proxy = min(1.0, abs(feat_mean) / 2.0)

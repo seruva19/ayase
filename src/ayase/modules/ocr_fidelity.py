@@ -97,14 +97,14 @@ def _word_error_rate(reference: str, hypothesis: str) -> float:
     try:
         from Levenshtein import distance as lev_distance
 
-        d = lev_distance(" ".join(ref_words), " ".join(hyp_words))
-    except ImportError:
-        d = _levenshtein_dp(" ".join(ref_words), " ".join(hyp_words))
+        d = lev_distance(ref_words, hyp_words)
+    except (ImportError, TypeError):
+        d = _levenshtein_dp(ref_words, hyp_words)
     return min(1.0, d / len(ref_words))
 
 
-def _levenshtein_dp(s: str, t: str) -> int:
-    """Minimal Levenshtein distance implementation (no external deps)."""
+def _levenshtein_dp(s, t) -> int:
+    """Minimal Levenshtein distance implementation (no external deps). Works on strings or lists."""
     m, n = len(s), len(t)
     prev = list(range(n + 1))
     for i in range(1, m + 1):
@@ -131,8 +131,7 @@ class OCRFidelityModule(PipelineModule):
         self._ocr = None
         self._ocr_available = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             # PaddleOCR 2.x uses np.sctypes which was removed in NumPy 2.0
             import numpy as _np

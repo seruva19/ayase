@@ -377,26 +377,118 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
 
 # ── Chart helpers ───────────────────────────────────────────────────────────
 
-def _mermaid_bar(title: str, items: List[Tuple[str, int]]) -> List[str]:
-    """Generate a mermaid xychart-beta horizontal bar chart block."""
-    lines = [f"```mermaid", f"---", f"config:", f"  theme: neutral", f"---",
-             f"xychart-beta horizontal"]
-    labels = [f'"{label}"' for label, _ in items]
-    values = [v for _, v in items]
-    lines.append(f"    x-axis [{', '.join(labels)}]")
-    lines.append(f'    y-axis "{title}"')
-    lines.append(f"    bar [{', '.join(str(v) for v in values)}]")
-    lines.append("```")
-    return lines
+def _generate_charts(
+    cat_items: List[Tuple[str, Dict]],
+    input_counts: "Counter",
+    speed_counts: "Counter",
+    all_backends: "Counter",
+    output_dir: Path,
+    all_packages: Optional["Counter"] = None,
+    metrics_per_cat: Optional[Dict[str, int]] = None,
+) -> Dict[str, str]:
+    """Generate PNG charts using seaborn/matplotlib.
 
+    Returns dict of chart_name -> relative path to PNG file.
+    """
+    paths: Dict[str, str] = {}
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import seaborn as sns
 
-def _mermaid_pie(title: str, items: List[Tuple[str, int]]) -> List[str]:
-    """Generate a mermaid pie chart block."""
-    lines = ["```mermaid", f'pie title {title}']
-    for label, val in items:
-        lines.append(f'    "{label}" : {val}')
-    lines.append("```")
-    return lines
+        output_dir.mkdir(parents=True, exist_ok=True)
+        _colors = ['#6C5CE7', '#00B894', '#FD79A8', '#0984E3', '#FDCB6E',
+                    '#E17055', '#00CEC9', '#636E72', '#A29BFE', '#FAB1A0',
+                    '#55EFC4', '#DFE6E9', '#74B9FF']
+
+        _W = 5  # uniform width for all charts (paired 2-per-row)
+
+        def _save_bar(items, fname, palette=None):
+            sns.set_theme(style="whitegrid", font_scale=0.9)
+            labels = [l for l, _ in items]
+            values = [v for _, v in items]
+            cols = (palette or _colors)[:len(items)]
+            fig, ax = plt.subplots(figsize=(_W, max(2.5, len(items) * 0.32)))
+            bars = ax.barh(labels[::-1], values[::-1], color=cols[::-1],
+                           height=0.65, edgecolor="none")
+            ax.bar_label(bars, padding=4, fontsize=9, color="#333")
+            ax.set_xlim(0, max(values) * 1.12)
+            ax.xaxis.set_visible(False)
+            for spine in ("top", "right", "bottom"):
+                ax.spines[spine].set_visible(False)
+            ax.grid(axis="x", alpha=0.3)
+            ax.grid(axis="y", visible=False)
+            plt.tight_layout()
+            p = output_dir / fname
+            plt.savefig(str(p), dpi=150, bbox_inches="tight", facecolor="white")
+            plt.close()
+            return f"docs/{p.name}"
+
+        def _save_pie(items, fname, colors=None):
+            sns.set_theme(style="white", font_scale=0.85)
+            labels = [l for l, _ in items]
+            values = [v for _, v in items]
+            palette = colors or sns.color_palette("husl", len(items))
+            fig, ax = plt.subplots(figsize=(_W, _W * 0.6))
+            wedges, texts, autotexts = ax.pie(
+                values, labels=labels, autopct="%1.0f%%",
+                colors=palette,
+                wedgeprops=dict(width=0.45, edgecolor="white", linewidth=2),
+                textprops=dict(fontsize=10), pctdistance=0.75, startangle=90,
+            )
+            for t in autotexts:
+                t.set_fontsize(9)
+            plt.tight_layout()
+            p = output_dir / fname
+            plt.savefig(str(p), dpi=150, bbox_inches="tight", facecolor="white")
+            plt.close()
+            return f"docs/{p.name}"
+
+        # 1. Modules by category
+        paths["categories"] = _save_bar(
+            [(g, s["modules"]) for g, s in cat_items],
+            "chart_categories.png")
+
+        # 2. Input types
+        paths["input_types"] = _save_bar(
+            input_counts.most_common(), "chart_input_types.png")
+
+        # 3. Speed tiers
+        tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
+        tier_colors = {"fast": "#00B894", "medium": "#FDCB6E", "slow": "#E17055"}
+        s_items = speed_counts.most_common()
+        paths["speed"] = _save_bar(
+            [(tier_map.get(t, t), c) for t, c in s_items],
+            "chart_speed.png",
+            palette=[tier_colors.get(t, "#74B9FF") for t, _ in s_items])
+
+        # 4. Backend usage
+        paths["backends"] = _save_bar(
+            all_backends.most_common(10), "chart_backends.png",
+            palette=["#74B9FF"] * 10)
+
+        # 5. Top packages
+        if all_packages:
+            paths["packages"] = _save_bar(
+                all_packages.most_common(12), "chart_packages.png",
+                palette=["#A29BFE"] * 12)
+
+        # 6. Metrics per category
+        if metrics_per_cat:
+            mc_items = sorted(metrics_per_cat.items(), key=lambda x: -x[1])
+            mc_display = [(_CATEGORY_DISPLAY.get(k, k), v) for k, v in mc_items]
+            paths["metrics_per_cat"] = _save_bar(
+                mc_display, "chart_metrics_per_cat.png",
+                palette=["#00B894"] * len(mc_items))
+
+    except ImportError:
+        pass  # seaborn/matplotlib not available
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning(f"Chart generation failed: {exc}")
+
+    return paths
 
 
 def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
@@ -667,14 +759,20 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
     # ── Run tests to get status (optional) ────────────────────────────────
     test_results = _collect_test_status(run_tests=run_tests)
 
-    # ── Prepare chart data ──────────────────────────────────────────────
+    # ── Generate charts ──────────────────────────────────────────────────
     cat_items = sorted(group_stats.items(), key=lambda x: -x[1]["modules"])
+    docs_dir = Path(__file__).parent.parent.parent / "docs"
 
-    # Count metrics per _FIELD_GROUPS category
     metrics_per_cat_count: Dict[str, int] = defaultdict(int)
     for field_name, info in qm_fields.items():
         if field_writers.get(field_name):
             metrics_per_cat_count[info["group"]] += 1
+
+    chart_paths = _generate_charts(
+        cat_items, input_counts, speed_counts, all_backends, docs_dir,
+        all_packages=all_packages,
+        metrics_per_cat=dict(metrics_per_cat_count),
+    )
 
     # ══════════════════════════════════════════════════════════════════════
     # BUILD DOCUMENT
@@ -705,45 +803,31 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
       f"· **{len(qm_fields)}** metrics · **{tiered_count}** tiered "
       f"· **{gpu_count}** GPU · **{len(group_stats)}** categories")
 
-    # ── 2. Mermaid charts ─────────────────────────────────────────────
-    a("")
-    a("<h4>Modules by Category</h4>")
-    a("")
-    for line in _mermaid_bar("Modules", [(g, s["modules"]) for g, s in cat_items]):
-        a(line)
-
-    a("")
-    a("<h4>Input Types</h4>")
-    a("")
-    for line in _mermaid_pie("Input Types", input_counts.most_common()):
-        a(line)
-
-    a("")
-    a("<h4>Speed Tiers</h4>")
-    a("")
-    tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
-    for line in _mermaid_bar("Modules", [(tier_map.get(t, t), c) for t, c in speed_counts.most_common()]):
-        a(line)
-
-    a("")
-    a("<h4>Backend Usage</h4>")
-    a("")
-    for line in _mermaid_bar("Modules", all_backends.most_common(10)):
-        a(line)
-
-    a("")
-    a("<h4>Top Packages</h4>")
-    a("")
-    for line in _mermaid_bar("Modules", all_packages.most_common(12)):
-        a(line)
-
-    a("")
-    a("<h4>Metrics per Category</h4>")
-    a("")
-    mc_items = sorted(metrics_per_cat_count.items(), key=lambda x: -x[1])
-    mc_display = [(_CATEGORY_DISPLAY.get(k, k), v) for k, v in mc_items]
-    for line in _mermaid_bar("Metrics", mc_display):
-        a(line)
+    # ── 2. Charts ─────────────────────────────────────────────────────
+    chart_titles = {
+        "categories": "Modules by Category",
+        "input_types": "Input Types",
+        "speed": "Speed Tiers",
+        "backends": "Backend Usage",
+        "packages": "Top Packages",
+        "metrics_per_cat": "Metrics per Category",
+    }
+    chart_order = [k for k in ("categories", "input_types", "speed", "backends", "packages", "metrics_per_cat") if k in chart_paths]
+    for i in range(0, len(chart_order), 2):
+        pair = chart_order[i:i+2]
+        if len(pair) == 2:
+            t1, t2 = chart_titles[pair[0]], chart_titles[pair[1]]
+            p1, p2 = chart_paths[pair[0]], chart_paths[pair[1]]
+            a("")
+            a('<table width="100%"><tr>')
+            a(f'<td width="50%" valign="top"><h4>{t1}</h4><img src="{p1}" width="100%"/></td>')
+            a(f'<td width="50%" valign="top"><h4>{t2}</h4><img src="{p2}" width="100%"/></td>')
+            a("</tr></table>")
+        else:
+            a("")
+            a(f"<h4>{chart_titles[pair[0]]}</h4>")
+            a("")
+            a(f"![]({chart_paths[pair[0]]})")
 
 
     # ── Integrity warnings (stderr only, not in output) ────────────────

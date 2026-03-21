@@ -3,8 +3,10 @@ import importlib.util
 import inspect
 import json
 import logging
+import os
 import pkgutil
 import sys
+import tempfile
 import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -358,7 +360,7 @@ class Pipeline:
             for module in self._batch_modules:
                 logger.debug(f"  - {module.name}")
 
-    async def process_sample(self, sample: Sample) -> Sample:
+    def process_sample(self, sample: Sample) -> Sample:
         """Run all active modules on a sample."""
 
         # Check if we already have a result for this file in memory (from load_state)
@@ -452,7 +454,7 @@ class Pipeline:
                     recs_str = "; ".join(
                         [i.recommendation for i in s.validation_issues if i.recommendation]
                     )
-                    score = s.quality_metrics.technical_score if s.quality_metrics else 0
+                    score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
 
                     writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, f"{score:.2f}"])
 
@@ -504,8 +506,14 @@ class Pipeline:
                 "results": {k: v.model_dump(mode="json") for k, v in self.results.items()},
                 "stats": self.stats.model_dump(mode="json"),
             }
-            with open(path, "w") as f:
-                json.dump(data, f, indent=2)
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+            try:
+                with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2)
+                Path(tmp_path).replace(path)
+            except:
+                Path(tmp_path).unlink(missing_ok=True)
+                raise
             logger.info(f"State saved to {path}")
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
@@ -516,13 +524,28 @@ class Pipeline:
             return
 
         try:
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             if "results" in data:
                 for k, v in data["results"].items():
                     try:
-                        self.results[k] = Sample.model_validate(v)
+                        sample = Sample.model_validate(v)
+                        # Validate that cached file still exists and has same size
+                        try:
+                            st = sample.path.stat()
+                            cached_size = None
+                            if sample.video_metadata:
+                                cached_size = sample.video_metadata.file_size
+                            elif sample.image_metadata:
+                                cached_size = sample.image_metadata.file_size
+                            if cached_size is not None and st.st_size != cached_size:
+                                logger.info(f"Skipping stale cache for {k} (size changed)")
+                                continue
+                        except OSError:
+                            logger.info(f"Skipping stale cache for {k} (file missing)")
+                            continue
+                        self.results[k] = sample
                     except Exception as e:
                         logger.warning(f"Failed to load sample {k}: {e}")
 
@@ -712,8 +735,6 @@ class AyasePipeline:
         Returns:
             Dict mapping file paths to processed Sample objects.
         """
-        import asyncio
-
         from .scanner import scan_dataset
 
         if samples is None:
@@ -721,12 +742,8 @@ class AyasePipeline:
 
         self.pipeline.start()
         try:
-            loop = asyncio.new_event_loop()
-            try:
-                for sample in samples:
-                    loop.run_until_complete(self.pipeline.process_sample(sample))
-            finally:
-                loop.close()
+            for sample in samples:
+                self.pipeline.process_sample(sample)
         finally:
             self.pipeline.stop()
 

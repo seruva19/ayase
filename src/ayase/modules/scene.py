@@ -22,10 +22,9 @@ class SceneModule(PipelineModule):
         self.min_scene_len = self.config.get("min_scene_len", 15)
         self.warn_on_high_shot_count = self.config.get("warn_on_high_shot_count", True)
         self.shot_count_threshold = self.config.get("shot_count_threshold", 3)
-
-    def on_mount(self) -> None:
-        super().on_mount()
         self._available = False
+
+    def setup(self) -> None:
         try:
             import scenedetect  # noqa: F401
             self._available = True

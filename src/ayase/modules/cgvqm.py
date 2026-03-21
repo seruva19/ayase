@@ -115,8 +115,12 @@ class CGVQMModule(ReferenceBasedModule):
         # Edge preservation (Sobel)
         ref_edges = cv2.Sobel(ref_gray, cv2.CV_32F, 1, 1)
         dist_edges = cv2.Sobel(dist_gray, cv2.CV_32F, 1, 1)
-        edge_sim = float(np.corrcoef(ref_edges.flatten(), dist_edges.flatten())[0, 1])
-        edge_sim = max(0.0, edge_sim)
+        # Constant (flat) inputs produce NaN from corrcoef; treat identical as no distortion
+        if np.std(ref_edges) < 1e-6 or np.std(dist_edges) < 1e-6:
+            edge_sim = 1.0
+        else:
+            edge_sim = float(np.corrcoef(ref_edges.flatten(), dist_edges.flatten())[0, 1])
+            edge_sim = max(0.0, edge_sim)
 
         # Combine
         score = (0.6 * hf_ratio + 0.4 * edge_sim) * 100.0

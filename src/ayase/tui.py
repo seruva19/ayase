@@ -694,7 +694,7 @@ class ExecutionScreen(Screen):
             )
 
             try:
-                result = await pipeline.process_sample(sample)
+                result = pipeline.process_sample(sample)
                 processed += 1
                 issues = len(result.validation_issues)
                 if issues > 0:

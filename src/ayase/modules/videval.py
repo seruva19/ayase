@@ -31,6 +31,8 @@ class VIDEVALModule(PipelineModule):
         self._svr_model = None
         self._scaler = None
         self._backend = "heuristic"
+        self.mos_min = self.config.get("mos_min", 1.0)
+        self.mos_max = self.config.get("mos_max", 5.0)
 
     def setup(self) -> None:
         # Tier 1: Try loading pre-trained SVR model
@@ -112,8 +114,8 @@ class VIDEVALModule(PipelineModule):
         if self._scaler is not None:
             feat_2d = self._scaler.transform(feat_2d)
         prediction = self._svr_model.predict(feat_2d)[0]
-        # SVR output may be in MOS range (1-5), normalize to 0-1
-        return float((prediction - 1.0) / 4.0)
+        # SVR output may be in MOS range, normalize to 0-1
+        return float((prediction - self.mos_min) / (self.mos_max - self.mos_min))
 
     def _extract_features(self, frame) -> np.ndarray:
         """Extract spatial quality features from a single frame."""

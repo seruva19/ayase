@@ -17,20 +17,12 @@ class PointSSIMModule(ReferenceBasedModule):
             pc2 = o3d.io.read_point_cloud(str(reference_path))
             p1, p2 = np.asarray(pc1.points), np.asarray(pc2.points)
             if len(p1)==0 or len(p2)==0: return None
+            tree1 = cKDTree(p1)
             tree2 = cKDTree(p2)
-            k = min(12, len(p2))
-            n_samples = min(2000, len(p1))
-            sample_idx = np.random.choice(len(p1), n_samples, replace=False)
-            ssim_vals = []
-            for i in sample_idx:
-                _, nn = tree2.query(p1[i], k=k)
-                local_ref = p2[nn]
-                mu1, mu2 = p1[i].mean(), local_ref.mean(axis=0).mean()
-                s1, s2 = p1[i].var(), local_ref.var()
-                cov = np.cov(np.concatenate([p1[i:i+1], local_ref[:1]]).T)[0,1] if k > 1 else 0
-                C1, C2 = 0.01, 0.03
-                ssim = ((2*mu1*mu2+C1)*(2*cov+C2))/((mu1**2+mu2**2+C1)*(s1+s2+C2))
-                ssim_vals.append(max(min(ssim, 1), 0))
-            return float(np.mean(ssim_vals))
+            # Chamfer distance: mean of nearest-neighbor distances in both directions
+            d1, _ = tree2.query(p1)
+            d2, _ = tree1.query(p2)
+            chamfer_dist = float(np.mean(d1) + np.mean(d2)) / 2.0
+            return float(1.0 / (1.0 + chamfer_dist))
         except ImportError:
             logger.debug("open3d/scipy not installed"); return None

@@ -140,8 +140,7 @@ class BasicQualityModule(PipelineModule):
 
     def _calculate_noise(self, image: np.ndarray) -> float:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        noise_sobel = cv2.Sobel(gray, cv2.CV_64F, 1, 1, ksize=3)
-        noise_level = noise_sobel.var()
+        noise_level = np.std(cv2.Laplacian(gray, cv2.CV_64F))
         # Normalize: higher noise -> lower score
         return 1.0 - min(noise_level / 200.0, 1.0)
 

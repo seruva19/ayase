@@ -80,8 +80,10 @@ class PUMetricsModule(ReferenceBasedModule):
             dist_gray = dist_pu
 
         # Simplified SSIM on PU-encoded values
-        C1 = (0.01 * 1.0) ** 2
-        C2 = (0.03 * 1.0) ** 2
+        # L must reflect the actual PU-encoded data range, not a fixed 1.0
+        L = max(float(ref_gray.max()), float(dist_gray.max()), 0.001)
+        C1 = (0.01 * L) ** 2
+        C2 = (0.03 * L) ** 2
 
         mu_ref = cv2.GaussianBlur(ref_gray, (11, 11), 1.5)
         mu_dist = cv2.GaussianBlur(dist_gray, (11, 11), 1.5)

@@ -102,6 +102,7 @@ class WatermarkClassificationModule(PipelineModule):
                     if any(kw in label for kw in ("artificial", "ai", "watermark", "fake")):
                         score = max(score, r["score"])
             else:
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 input_tensor = self._transform(image).unsqueeze(0).to(self._device)
                 with torch.no_grad():
                     output = self._model(input_tensor)

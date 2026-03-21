@@ -169,7 +169,7 @@ class CommonsenseModule(PipelineModule):
         pil_image = Image.fromarray(image_rgb)
 
         questions = [
-            ("Is this a real photo?", "no", "Model thinks this is NOT a real photo"),
+            ("Is this a real photo?", "yes", "Model thinks this is NOT a real photo"),
             ("Is this a cartoon?", "yes", "Model classifies this as cartoon/animated content"),
             ("Is there a person in the image?", None, None),
             ("Is this image blurry?", "yes", "Model thinks this image is blurry"),
@@ -199,7 +199,8 @@ class CommonsenseModule(PipelineModule):
                         )
                     )
             else:
-                correct_count += 1  # Informational questions always count
+                if answer.lower() == "yes":
+                    correct_count += 1
 
         # Cross-question reasoning
         if (answers.get("Is this a real photo?", "").lower() == "yes" and

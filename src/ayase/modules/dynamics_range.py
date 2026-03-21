@@ -41,6 +41,7 @@ class DynamicsRangeModule(PipelineModule):
             if not cap.isOpened():
                 return sample
 
+            max_frames = self.config.get("max_frames", 300)
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
             # Single-pass: read all frames once, compute all three components
@@ -53,6 +54,9 @@ class DynamicsRangeModule(PipelineModule):
             while True:
                 ret, frame = cap.read()
                 if not ret:
+                    break
+
+                if frame_count >= max_frames:
                     break
 
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

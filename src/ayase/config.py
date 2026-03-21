@@ -19,7 +19,9 @@ def download_model_file(relative_path: str, url: str, models_dir: str = "models"
     """
     base = Path(models_dir).resolve()
     dest = (base / relative_path).resolve()
-    if not str(dest).startswith(str(base)):
+    try:
+        dest.resolve().relative_to(base.resolve())
+    except ValueError:
         raise ValueError(f"Path traversal detected: {relative_path!r} escapes {models_dir!r}")
     if dest.exists():
         return dest
@@ -102,7 +104,7 @@ class FilterConfig(BaseSettings):
     """Filter configuration."""
 
     default_mode: str = "list"
-    min_score_threshold: int = 60
+    min_score_threshold: float = 60.0
 
 
 class AyaseConfig(BaseSettings):

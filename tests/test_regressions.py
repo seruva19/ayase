@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 import cv2
@@ -67,7 +66,7 @@ def test_unmounted_module_skipped_during_processing():
 
     # Processing should skip the unmounted module
     sample = Sample(path=Path("test.mp4"), is_video=True)
-    asyncio.run(pipeline.process_sample(sample))
+    pipeline.process_sample(sample)
     assert module.process_calls == 0
 
 
@@ -116,8 +115,8 @@ class _SparseMetricModule(PipelineModule):
 def test_pipeline_average_ignores_missing_metric_values():
     pipeline = Pipeline([_SparseMetricModule()])
     pipeline.start()
-    asyncio.run(pipeline.process_sample(Sample(path=Path("first.mp4"), is_video=True)))
-    asyncio.run(pipeline.process_sample(Sample(path=Path("second.mp4"), is_video=True)))
+    pipeline.process_sample(Sample(path=Path("first.mp4"), is_video=True))
+    pipeline.process_sample(Sample(path=Path("second.mp4"), is_video=True))
     assert pipeline.stats.avg_technical_score == 100.0
 
 

@@ -41,18 +41,11 @@ class MDTVSFAModule(PipelineModule):
         try:
             import pyiqa
 
-            # Try MDTVSFA first, fall back to related metrics
-            for name in ("mdtvsfa", "fast-vqa", "fastvqa"):
-                try:
-                    self._metric = pyiqa.create_metric(name, device="cpu")
-                    self._metric_name = name
-                    self._ml_available = True
-                    logger.info(f"MDTVSFA: using {name} backend")
-                    return
-                except Exception:
-                    continue
-
-            logger.warning("No suitable VQA metric found in pyiqa")
+            # Only "mdtvsfa" is a valid pyiqa metric name
+            self._metric = pyiqa.create_metric("mdtvsfa", device="cpu")
+            self._metric_name = "mdtvsfa"
+            self._ml_available = True
+            logger.info("MDTVSFA: using mdtvsfa backend via pyiqa")
 
         except ImportError:
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")

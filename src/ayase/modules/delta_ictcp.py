@@ -57,11 +57,11 @@ def _rgb_to_ictcp(rgb_linear: np.ndarray) -> np.ndarray:
 
     Simplified pipeline: RGB -> LMS -> PQ -> ICtCp
     """
-    # BT.2020 RGB to LMS (approximate)
+    # BT.2020 RGB to LMS (exact BT.2100 coefficients)
     r, g, b = rgb_linear[:, :, 0], rgb_linear[:, :, 1], rgb_linear[:, :, 2]
-    L = 0.4122 * r + 0.5237 * g + 0.0641 * b
-    M = 0.1671 * r + 0.7204 * g + 0.1125 * b
-    S = 0.0241 * r + 0.0756 * g + 0.9003 * b
+    L = 0.412109375 * r + 0.523925781 * g + 0.063964844 * b
+    M = 0.166748047 * r + 0.720458984 * g + 0.112792969 * b
+    S = 0.024047852 * r + 0.075439453 * g + 0.900512695 * b
 
     # Apply PQ
     L_pq = _linear_to_pq(L)

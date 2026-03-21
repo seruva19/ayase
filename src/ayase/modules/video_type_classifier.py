@@ -88,7 +88,12 @@ class VideoTypeClassifierModule(PipelineModule):
                         frames.append(Image.fromarray(rgb))
                 cap.release()
             else:
-                frames.append(Image.open(str(sample.path)).convert("RGB"))
+                img = Image.open(str(sample.path))
+                try:
+                    frames.append(img.convert("RGB"))
+                except Exception:
+                    img.close()
+                    raise
 
             if not frames:
                 return sample

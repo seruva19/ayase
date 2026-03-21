@@ -181,10 +181,15 @@ class KnowledgeGraphModule(PipelineModule):
             }
         }
 
-        output_path = Path(self.config.get("output_file", "knowledge_graph.json"))
+        output_path = Path(self.config.get("output_file", "knowledge_graph.json")).resolve()
+        # Constrain output to current working directory to prevent path traversal
+        cwd = Path.cwd().resolve()
+        if not str(output_path).startswith(str(cwd)):
+            output_path = cwd / output_path.name
+            logger.warning(f"Output path constrained to working directory: {output_path}")
         try:
-            with open(output_path, "w") as f:
-                json.dump(graph_data, f, indent=2)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(graph_data, f, indent=2, ensure_ascii=False)
             logger.info(f"Knowledge Graph exported to {output_path}")
         except Exception as e:
             logger.error(f"Failed to export Knowledge Graph: {e}")

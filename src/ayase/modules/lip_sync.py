@@ -77,7 +77,7 @@ class LipSyncModule(PipelineModule):
             sample.quality_metrics.lse_c = scores.get("lse_c")
             logger.debug(
                 f"Lip Sync for {sample.path.name}: "
-                f"LSE-D={scores.get('lse_d'):.4f} LSE-C={scores.get('lse_c'):.4f}"
+                f"LSE-D={scores.get('lse_d', 0.0):.4f} LSE-C={scores.get('lse_c', 0.0):.4f}"
             )
         except Exception as e:
             logger.error(f"Lip Sync failed: {e}")

@@ -14,13 +14,13 @@ class CPBDModule(PipelineModule):
     description = "Cumulative Probability of Blur Detection (Perceptual Blur)"
     default_config = {
         "threshold_cpbd": 0.65,
-        "threshold_heuristic": 10.0,
+        "threshold_heuristic": 0.3,
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.threshold_cpbd = self.config.get("threshold_cpbd", 0.65)
-        self.threshold_heuristic = self.config.get("threshold_heuristic", 10.0)
+        self.threshold_heuristic = self.config.get("threshold_heuristic", 0.3)
         self._cpbd_available = False
         try:
             # Check for cpbd library or implementation

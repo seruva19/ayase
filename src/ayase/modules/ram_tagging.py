@@ -19,7 +19,7 @@ class RAMTaggingModule(PipelineModule):
     default_config = {
         "model_name": "xinyu1205/recognize-anything-plus-model",
         "subsample": 4,
-        "trust_remote_code": True,
+        "trust_remote_code": False,
         "model_revision": None,
     }
 
@@ -40,7 +40,7 @@ class RAMTaggingModule(PipelineModule):
             )
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-            trc = self.config.get("trust_remote_code", True)
+            trc = self.config.get("trust_remote_code", False)
             rev = self.config.get("model_revision", None)
             self._processor = AutoProcessor.from_pretrained(
                 model_name, trust_remote_code=trc, revision=rev

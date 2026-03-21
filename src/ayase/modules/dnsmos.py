@@ -118,7 +118,7 @@ class DNSMOSModule(PipelineModule):
             sample.quality_metrics.dnsmos_bak = scores.get("bak")
             logger.debug(
                 f"DNSMOS for {sample.path.name}: "
-                f"SIG={scores.get('sig'):.2f} BAK={scores.get('bak'):.2f} OVRL={scores.get('ovrl'):.2f}"
+                f"SIG={scores.get('sig', 0.0):.2f} BAK={scores.get('bak', 0.0):.2f} OVRL={scores.get('ovrl', 0.0):.2f}"
             )
         except Exception as e:
             logger.error(f"DNSMOS failed: {e}")

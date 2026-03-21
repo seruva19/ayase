@@ -69,12 +69,14 @@ class UMTScoreModule(PipelineModule):
             if not caption:
                 return sample
 
+            caption_text = caption.text if hasattr(caption, "text") else str(caption)
+
             if self._backend == "native":
-                score = float(self._model.score(str(sample.path), caption))
+                score = float(self._model.score(str(sample.path), caption_text))
             elif self._backend == "clip":
-                score = self._process_clip(sample, caption)
+                score = self._process_clip(sample, caption_text)
             else:
-                score = self._process_heuristic(sample, caption)
+                score = self._process_heuristic(sample, caption_text)
 
             if score is not None:
                 if sample.quality_metrics is None:

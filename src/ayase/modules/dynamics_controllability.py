@@ -207,6 +207,7 @@ class DynamicsControllabilityModule(PipelineModule):
     def _compute_farneback(self, video_path) -> float:
         try:
             cap = cv2.VideoCapture(str(video_path))
+            max_frames = self.config.get("max_frames", 300)
             motion_magnitudes = []
             prev_frame = None
             frame_count = 0
@@ -214,6 +215,9 @@ class DynamicsControllabilityModule(PipelineModule):
             while True:
                 ret, frame = cap.read()
                 if not ret:
+                    break
+
+                if frame_count >= max_frames:
                     break
 
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

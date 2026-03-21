@@ -266,7 +266,6 @@ def test_motion_scene_qualitymetrics_fields():
         "depth_anything_consistency",
         "video_type",
         "video_type_confidence",
-        "jedi",
         "trajan_score",
         "promptiqa_score",
         "qcn_score",

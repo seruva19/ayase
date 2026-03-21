@@ -39,6 +39,7 @@ class FVMDModule(BatchMetricModule):
         self._processed_count = 0
 
     def setup(self) -> None:
+        self._processed_count = 0
         logger.info("FVMD module initialized (OpenCV optical flow)")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
@@ -142,9 +143,16 @@ class FVMDModule(BatchMetricModule):
                 ref_array = features_array[:mid]
                 features_array = features_array[mid:]
 
+            # Guard: need at least 2 samples for covariance
+            if features_array.shape[0] < 2:
+                return 0.0
+
             # Compute statistics
             mu1 = np.mean(features_array, axis=0)
             sigma1 = np.cov(features_array, rowvar=False)
+
+            if ref_array.shape[0] < 2:
+                return 0.0
 
             mu2 = np.mean(ref_array, axis=0)
             sigma2 = np.cov(ref_array, rowvar=False)
