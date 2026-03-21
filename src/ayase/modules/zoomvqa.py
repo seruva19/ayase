@@ -81,10 +81,11 @@ class ZoomVQAModule(PipelineModule):
             h, w = gray.shape
 
             # Patch-level quality
+            rng = np.random.RandomState(42)
             p_scores = []
             for _ in range(self.n_patches):
-                y = np.random.randint(0, max(h - self.patch_size, 1))
-                x = np.random.randint(0, max(w - self.patch_size, 1))
+                y = rng.randint(0, max(h - self.patch_size, 1))
+                x = rng.randint(0, max(w - self.patch_size, 1))
                 patch = gray[y : y + self.patch_size, x : x + self.patch_size]
                 lap = cv2.Laplacian(patch, cv2.CV_64F).var()
                 p_scores.append(min(lap / 500.0, 1.0))

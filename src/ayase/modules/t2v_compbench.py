@@ -323,7 +323,7 @@ class T2VCompBenchModule(PipelineModule):
         with torch.no_grad():
             outputs = self._clip_model(**inputs)
             logits = outputs.logits_per_image
-            return float(logits.softmax(dim=-1)[0, 0])
+            return float(logits[0, 0].item() / 100.0)
 
     def _clip_sim_batch_text(self, image: np.ndarray, texts: List[str]) -> List[float]:
         """CLIP similarity of one image against multiple texts."""
@@ -569,11 +569,11 @@ class T2VCompBenchModule(PipelineModule):
 
         # Attribute: check if descriptive adjectives are present
         attrs = self._parse_attributes(caption)
-        scores["attribute"] = 0.5 if attrs else 0.5
+        scores["attribute"] = min(1.0, len(attrs) / 3.0) if attrs else 0.5
 
         # Relations: check if relation words are present
         rels = self._parse_relations(caption)
-        scores["object_rel"] = 0.5 if rels else 0.5
+        scores["object_rel"] = min(1.0, len(rels) / 2.0) if rels else 0.5
 
         # Action: estimate motion magnitude per frame
         actions = self._parse_actions(caption)

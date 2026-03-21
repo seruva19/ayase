@@ -49,6 +49,7 @@ class CreativityModule(PipelineModule):
         self._clip_model = None
         self._clip_processor = None
         self._common_embeddings = None
+        self._aes_model = None
         self._device = "cpu"
 
     def setup(self) -> None:
@@ -94,6 +95,13 @@ class CreativityModule(PipelineModule):
                 inputs = self._clip_processor(text=_COMMON_PROMPTS, return_tensors="pt", padding=True).to(self._device)
                 text_features = self._clip_model.get_text_features(**inputs)
                 self._common_embeddings = text_features / text_features.norm(dim=-1, keepdim=True)
+
+            # Pre-load LAION aesthetic model for reuse
+            try:
+                import pyiqa
+                self._aes_model = pyiqa.create_metric("laion_aes", device=self._device)
+            except Exception:
+                pass
 
             self._backend = "clip"
             logger.info("Creativity loaded CLIP on %s", self._device)
@@ -192,15 +200,14 @@ class CreativityModule(PipelineModule):
             # High distance from common = high novelty
             novelty = 1.0 - max_sim  # CLIP sim is typically 0.1-0.4
 
-        # Try LAION aesthetic via pyiqa
+        # Try LAION aesthetic via cached pyiqa model
         aesthetic_score = 0.5
         try:
-            import pyiqa
-            metric = pyiqa.create_metric("laion_aes", device=self._device)
-            import torchvision.transforms.functional as TF
-            img_tensor = TF.to_tensor(pil_image).unsqueeze(0).to(self._device)
-            raw = float(metric(img_tensor).item())
-            aesthetic_score = min(raw / 10.0, 1.0)  # LAION is 0-10
+            if self._aes_model is not None:
+                import torchvision.transforms.functional as TF
+                img_tensor = TF.to_tensor(pil_image).unsqueeze(0).to(self._device)
+                raw = float(self._aes_model(img_tensor).item())
+                aesthetic_score = min(raw / 10.0, 1.0)  # LAION is 0-10
         except Exception:
             pass
 

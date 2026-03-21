@@ -33,6 +33,10 @@ class LAIONAestheticModule(PipelineModule):
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self._model = pyiqa.create_metric("laion_aes", device=device)
+            try:
+                self._device = next(self._model.parameters()).device
+            except StopIteration:
+                self._device = torch.device("cpu")
             self._ml_available = True
             logger.info("LAION Aesthetics model loaded on %s", device)
         except (ImportError, Exception) as e:
@@ -57,7 +61,7 @@ class LAIONAestheticModule(PipelineModule):
                 tensor = (
                     torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
                 )
-                tensor = tensor.to(next(self._model.parameters()).device)
+                tensor = tensor.to(self._device)
                 with torch.no_grad():
                     score = self._model(tensor).item()
                 scores.append(score)
@@ -74,7 +78,7 @@ class LAIONAestheticModule(PipelineModule):
         frames = []
         if sample.is_video:
             cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
             indices = list(range(0, total, max(1, total // subsample)))[:subsample]
             for idx in indices:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, idx)

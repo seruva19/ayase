@@ -152,17 +152,20 @@ class SpectralComplexityModule(PipelineModule):
         return sample
 
     def _load_frames(self, sample: Sample, step: int = 8) -> list:
+        max_frames = self.config.get("max_frames", 300)
         frames = []
         try:
             cap = cv2.VideoCapture(str(sample.path))
             total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            
+
             # Simple uniform sampling
             for i in range(0, total, step):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, i)
                 ret, frame = cap.read()
                 if ret:
                     frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                if len(frames) >= max_frames:
+                    break
             cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames for spectral analysis: {e}")

@@ -29,7 +29,7 @@ class TOPIQModule(PipelineModule):
     name = "topiq"
     description = "TOPIQ transformer-based no-reference IQA"
     default_config = {
-        "variant": "topiq_nr",  # topiq_nr or topiq_fr
+        "variant": "topiq_nr",  # only topiq_nr supported (NR module)
         "subsample": 5,  # Every Nth video frame
         "warning_threshold": 0.4,
     }
@@ -43,6 +43,13 @@ class TOPIQModule(PipelineModule):
         self._metric = None
 
     def setup(self) -> None:
+        if self.variant not in ("topiq_nr",):
+            logger.warning(
+                f"TOPIQ variant '{self.variant}' is not supported by this NR-only module; "
+                f"falling back to 'topiq_nr'."
+            )
+            self.variant = "topiq_nr"
+
         try:
             import pyiqa
             import torch

@@ -117,7 +117,7 @@ def test_vtss_with_metrics(video_sample):
         aesthetic_score=7.0,
         technical_score=60.0,
         motion_score=8.0,
-        temporal_consistency=0.85,
+        clip_temp=0.85,
         blur_score=300.0,
         noise_score=10.0,
     )

@@ -116,11 +116,9 @@ class VIFModule(ReferenceBasedModule):
                 .to(self.device)
             )
 
-            # Normalize to [0, 1]
-            if ref_tensor.max() > 1.0:
-                ref_tensor = ref_tensor / 255.0
-            if dist_tensor.max() > 1.0:
-                dist_tensor = dist_tensor / 255.0
+            # Normalize uint8 [0, 255] → [0, 1] unconditionally
+            ref_tensor = ref_tensor / 255.0
+            dist_tensor = dist_tensor / 255.0
 
             # Compute VIF
             with torch.no_grad():

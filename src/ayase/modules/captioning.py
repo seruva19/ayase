@@ -33,8 +33,7 @@ class CaptioningModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             import torch
             from ayase.config import resolve_model_path

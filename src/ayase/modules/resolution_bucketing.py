@@ -149,7 +149,7 @@ class ResolutionBucketingModule(PipelineModule):
                 total_pixels = bw * bh
 
             crop_ratio = crop_pixels / total_pixels if total_pixels > 0 else 0
-            scale_factor = 1.0 / scale if scale > 0 else float("inf")  # >1 means upscale
+            scale_factor = scale  # <1 means downscale, >1 means upscale
 
             # Combined score: penalize both crop and extreme scaling
             ar_diff = abs(math.log(src_ar / bucket_ar)) if bucket_ar > 0 else 99

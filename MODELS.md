@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.17** · Generated 2026-03-20 17:04 · **124 models** across **7 sources**
+> **Version 0.1.17** · Generated 2026-03-21 16:52 · **124 models** across **7 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -12,7 +12,7 @@
 
 ![Models by Source](docs/models_sources.png)
 
-**Estimated total download size (all models):** ~51 GB
+**Estimated total download size (all models):** ~82 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -28,34 +28,34 @@
 
 | Model | License | Params | Downloads | Task | Used By |
 |-------|---------|--------|-----------|------|---------|
-| [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection) | ? | ? | ? | ? | `nsfw` |
-| [IntMeGroup/FineVQ_score](https://huggingface.co/IntMeGroup/FineVQ_score) | ? | ? | ? | ? | `finevq` |
+| [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection) [[paper]](https://arxiv.org/abs/2010.11929) | apache-2.0 | ? | 41.7M | image-classification | `nsfw` |
+| [IntMeGroup/FineVQ_score](https://huggingface.co/IntMeGroup/FineVQ_score) | apache-2.0 | 8.2B | 671 | ? | `finevq` |
 | [KlingTeam/VideoAlign-Reward](https://huggingface.co/KlingTeam/VideoAlign-Reward) | ? | ? | ? | ? | `video_reward` |
-| [MCG-NJU/videomae-large-finetuned-kinetics](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics) | ? | ? | ? | ? | `action_recognition` |
-| [Salesforce/blip-image-captioning-base](https://huggingface.co/Salesforce/blip-image-captioning-base) | ? | ? | ? | ? | `captioning` |
+| [MCG-NJU/videomae-large-finetuned-kinetics](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics) [[paper]](https://arxiv.org/abs/2203.12602) | cc-by-nc-4.0 | 304M | 2K | video-classification | `action_recognition` |
+| [Salesforce/blip-image-captioning-base](https://huggingface.co/Salesforce/blip-image-captioning-base) [[paper]](https://arxiv.org/abs/2201.12086) | bsd-3-clause | ? | 3.5M | image-to-text | `captioning` |
 | [TIGER-Lab/T2VScore](https://huggingface.co/TIGER-Lab/T2VScore) | ? | ? | ? | ? | `t2v_score` |
-| [TIGER-Lab/VideoScore](https://huggingface.co/TIGER-Lab/VideoScore) | ? | ? | ? | ? | `videoscore` |
+| [TIGER-Lab/VideoScore](https://huggingface.co/TIGER-Lab/VideoScore) [[paper]](https://arxiv.org/abs/2406.15252) | apache-2.0 | 8.3B | 2K | visual-question-answering | `videoscore` |
 | [ai-forever/kandinsky-video-tools](https://huggingface.co/ai-forever/kandinsky-video-tools) | ? | ? | ? | ? | `kandinsky_motion` |
-| [dandelin/vilt-b32-finetuned-vqa](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa) | ? | ? | ? | ? | `commonsense`, `tifa` |
-| [depth-anything/Depth-Anything-V2-Small-hf](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf) | ? | ? | ? | ? | `depth_anything`, `t2v_compbench` |
-| [facebook/dinov2-base](https://huggingface.co/facebook/dinov2-base) | ? | ? | ? | ? | `subject_consistency` |
+| [dandelin/vilt-b32-finetuned-vqa](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa) [[paper]](https://arxiv.org/abs/2102.03334) | apache-2.0 | ? | 73K | visual-question-answering | `commonsense`, `tifa` |
+| [depth-anything/Depth-Anything-V2-Small-hf](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf) [[paper]](https://arxiv.org/abs/2406.09414) | apache-2.0 | 25M | 1.4M | depth-estimation | `depth_anything`, `t2v_compbench` |
+| [facebook/dinov2-base](https://huggingface.co/facebook/dinov2-base) [[paper]](https://arxiv.org/abs/2304.07193) | apache-2.0 | 87M | 1.2M | image-feature-extraction | `subject_consistency` |
 | [facebook/vjepa-giant](https://huggingface.co/facebook/vjepa-giant) | ? | ? | ? | ? | `jedi` |
 | [facebookresearch/dinov2](https://huggingface.co/facebookresearch/dinov2) | ? | ? | ? | ? | `video_memorability` |
-| [laion/clap-htsat-fused](https://huggingface.co/laion/clap-htsat-fused) | ? | ? | ? | ? | `audio_text_alignment` |
-| [llava-hf/llava-1.5-7b-hf](https://huggingface.co/llava-hf/llava-1.5-7b-hf) | ? | ? | ? | ? | `commonsense`, `creativity`, `vlm_judge` |
-| [llava-hf/llava-v1.6-mistral-7b-hf](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf) | ? | ? | ? | ? | `llm_descriptive_qa` |
-| [microsoft/xclip-base-patch32](https://huggingface.co/microsoft/xclip-base-patch32) | ? | ? | ? | ? | `embedding`, `video_text_matching` |
+| [laion/clap-htsat-fused](https://huggingface.co/laion/clap-htsat-fused) [[paper]](https://arxiv.org/abs/2211.06687) | apache-2.0 | 154M | 25.8M | audio-classification | `audio_text_alignment` |
+| [llava-hf/llava-1.5-7b-hf](https://huggingface.co/llava-hf/llava-1.5-7b-hf) | llama2 | 7.1B | 4.7M | image-text-to-text | `commonsense`, `creativity`, `vlm_judge` |
+| [llava-hf/llava-v1.6-mistral-7b-hf](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf) [[paper]](https://arxiv.org/abs/2310.03744) | apache-2.0 | 7.6B | 683K | image-text-to-text | `llm_descriptive_qa` |
+| [microsoft/xclip-base-patch32](https://huggingface.co/microsoft/xclip-base-patch32) [[paper]](https://arxiv.org/abs/2208.02816) | mit | 197M | 140K | video-classification | `embedding`, `video_text_matching` |
 | [models/video_motion_predictor](https://huggingface.co/models/video_motion_predictor) | ? | ? | ? | ? | `kandinsky_motion` |
-| [nvidia/quality-classifier-deberta](https://huggingface.co/nvidia/quality-classifier-deberta) | ? | ? | ? | ? | `nemo_curator` |
-| [nvidia/segformer-b0-finetuned-ade-512-512](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512) | ? | ? | ? | ? | `semantic_segmentation_consistency` |
-| [openai/clip-vit-base-patch32](https://huggingface.co/openai/clip-vit-base-patch32) | ? | ? | ? | ? | `action_recognition`, `aigv_assessor`, `background_consistency`, `chronomagic`, `clip_temporal` +18 |
-| [openai/clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) | ? | ? | ? | ? | `aesthetic_scoring` |
-| [q-future/one-align](https://huggingface.co/q-future/one-align) | ? | ? | ? | ? | `q_align` |
+| [nvidia/quality-classifier-deberta](https://huggingface.co/nvidia/quality-classifier-deberta) [[paper]](https://arxiv.org/abs/2111.09543) | apache-2.0 | ? | 3K | ? | `nemo_curator` |
+| [nvidia/segformer-b0-finetuned-ade-512-512](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512) [[paper]](https://arxiv.org/abs/2105.15203) | other | 4M | 503K | image-segmentation | `semantic_segmentation_consistency` |
+| [openai/clip-vit-base-patch32](https://huggingface.co/openai/clip-vit-base-patch32) [[paper]](https://arxiv.org/abs/2103.00020) | ? | ? | 20.0M | zero-shot-image-classification | `action_recognition`, `aigv_assessor`, `background_consistency`, `chronomagic`, `clip_temporal` +18 |
+| [openai/clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) [[paper]](https://arxiv.org/abs/2103.00020) | ? | 428M | 20.2M | zero-shot-image-classification | `aesthetic_scoring` |
+| [q-future/one-align](https://huggingface.co/q-future/one-align) [[paper]](https://arxiv.org/abs/2312.17090) | mit | ? | 310K | zero-shot-image-classification | `q_align` |
 | [qyp2000/KVQ](https://huggingface.co/qyp2000/KVQ) | ? | ? | ? | ? | `kvq` |
-| [stabilityai/stable-diffusion-xl-base-1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) | ? | ? | ? | ? | `sd_reference` |
+| [stabilityai/stable-diffusion-xl-base-1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) [[paper]](https://arxiv.org/abs/2307.01952) | openrail++ | ? | 2.2M | text-to-image | `sd_reference` |
 | [sunwei925/RQ-VQA](https://huggingface.co/sunwei925/RQ-VQA) | ? | ? | ? | ? | `rqvqa` |
 | [wangjiarui153/AIGV-Assessor](https://huggingface.co/wangjiarui153/AIGV-Assessor) | ? | ? | ? | ? | `aigv_assessor` |
-| [xinyu1205/recognize-anything-plus-model](https://huggingface.co/xinyu1205/recognize-anything-plus-model) | ? | ? | ? | ? | `ram_tagging` |
+| [xinyu1205/recognize-anything-plus-model](https://huggingface.co/xinyu1205/recognize-anything-plus-model) [[paper]](https://arxiv.org/abs/2306.03514) | apache-2.0 | ? | ? | zero-shot-image-classification | `ram_tagging` |
 | [DOVER.pth](https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth) | ? | ? | ? | ? | `dover` |
 | [convnext_tiny_1k_224_ema.pth](https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/convnext_tiny_1k_224_ema.pth) | ? | ? | ? | ? | `dover` |
 | [onnx_dover.onnx](https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/onnx_dover.onnx) | ? | ? | ? | ? | `dover` |

@@ -138,6 +138,8 @@ class AdvancedFlowModule(PipelineModule):
                         break
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     frames.append(frame)
+                    if len(frames) >= self.max_frames:
+                        break
             cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames for advanced flow: {e}")

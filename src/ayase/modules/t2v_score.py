@@ -44,6 +44,7 @@ class T2VScoreModule(PipelineModule):
         self.quality_weight = self.config.get("quality_weight", 0.5)
         self.device_config = self.config.get("device", "auto")
         self.warning_threshold = self.config.get("warning_threshold", 0.6)
+        self.trust_remote_code = self.config.get("trust_remote_code", False)
         self.device = None
         self._ml_available = False
         self._t2v_model = None
@@ -65,7 +66,7 @@ class T2VScoreModule(PipelineModule):
             try:
                 from transformers import AutoModel
                 self._t2v_model = AutoModel.from_pretrained(
-                    self.model_name, trust_remote_code=True
+                    self.model_name, trust_remote_code=self.trust_remote_code
                 ).to(self.device).eval()
                 self._use_fallback = False
                 self._ml_available = True
@@ -187,8 +188,8 @@ class T2VScoreModule(PipelineModule):
                 # Average similarity across frames
                 alignment_score = similarities.mean().item()
 
-                # Convert from [-1, 1] to [0, 1]
-                alignment_score = (alignment_score + 1) / 2
+                # Clamp to [0, 1] (real CLIP cosine similarities are typically in [0.1, 0.4])
+                alignment_score = min(max(alignment_score, 0.0), 1.0)
 
             return float(alignment_score)
 

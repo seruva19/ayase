@@ -59,6 +59,28 @@ def _generate_questions(caption: str, max_questions: int = 8) -> List[Tuple[str,
     # --- Noun/object questions ---
     # Simple POS-free heuristic: take nouns as words after determiners/adjectives
     # or standalone content words that are likely nouns.
+    _NON_NOUNS = {
+        "is", "are", "was", "were", "has", "have", "had", "be",
+        "with", "from", "into", "onto", "upon", "over", "under",
+        "and", "but", "for", "nor", "yet", "not", "can", "will",
+        "very", "much", "more", "most", "also", "just", "only",
+    }
+    _ADJECTIVE_SUFFIXES = ("ing", "ly", "ed", "ful", "ous", "ive", "ish", "able", "ible", "less")
+    _COMMON_ADJECTIVES = {
+        "big", "small", "large", "tall", "short", "long", "new", "old",
+        "good", "bad", "high", "low", "dark", "bright", "beautiful",
+        "nice", "pretty", "ugly", "happy", "sad", "fast", "slow",
+        "soft", "hard", "warm", "cold", "hot", "cool", "young",
+    }
+
+    def _is_likely_noun(w: str) -> bool:
+        """Return True if the word is likely a noun (not a verb/adjective)."""
+        if w in _NON_NOUNS or w in _COMMON_ADJECTIVES:
+            return False
+        if w.endswith(_ADJECTIVE_SUFFIXES):
+            return False
+        return True
+
     candidate_nouns = []
     for i, w in enumerate(words):
         if w in _SKIP_NOUNS or len(w) < 3:
@@ -67,14 +89,10 @@ def _generate_questions(caption: str, max_questions: int = 8) -> List[Tuple[str,
             continue
         # Words following a/an/the are likely nouns
         if i > 0 and words[i - 1] in ("a", "an", "the"):
-            candidate_nouns.append(w)
-        # Words that are not common verbs/prepositions (rough heuristic)
-        elif w not in {
-            "is", "are", "was", "were", "has", "have", "had", "be",
-            "with", "from", "into", "onto", "upon", "over", "under",
-            "and", "but", "for", "nor", "yet", "not", "can", "will",
-            "very", "much", "more", "most", "also", "just", "only",
-        }:
+            if _is_likely_noun(w):
+                candidate_nouns.append(w)
+        # Standalone content words that pass the noun filter
+        elif _is_likely_noun(w):
             candidate_nouns.append(w)
 
     seen = set()

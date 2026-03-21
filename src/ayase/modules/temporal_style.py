@@ -36,34 +36,40 @@ class TemporalStyleModule(PipelineModule):
         return sample
 
     def _analyze_temporal_style(self, sample: Sample) -> str:
+        max_frames = self.config.get("max_frames", 300)
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
             return "unknown"
 
         prev_gray = None
         flow_mags = []
-        
+        sampled = 0
+
         frame_idx = 0
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-                
+
             # Sample every 5th frame to save time
             if frame_idx % 5 != 0:
                 frame_idx += 1
                 continue
 
+            sampled += 1
+            if sampled > max_frames:
+                break
+
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            
+
             if prev_gray is not None:
                 flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
                 mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
                 flow_mags.append(np.mean(mag))
-                
+
             prev_gray = gray
             frame_idx += 1
-            
+
         cap.release()
         
         if not flow_mags:

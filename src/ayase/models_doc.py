@@ -556,6 +556,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     Args:
         fetch_licenses: If True, query HuggingFace API for model licenses.
     """
+    ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules()
 
     # Collect all model references

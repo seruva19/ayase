@@ -5,10 +5,10 @@ the JPEG XL codec. It is based on a multi-scale structural similarity
 computation with psychovisual error modeling.
 
 Range: roughly -inf to 100 (lower = better perceptual quality).
-  Score < 0: distortions not likely visible
-  0-30: low quality
-  30-70: medium quality
-  70-100: high quality (significant distortion)
+  Score < 0: high quality (distortions not likely visible)
+  0-30: good quality (minor distortion)
+  30-70: medium quality (noticeable distortion)
+  70-100: low quality (significant distortion)
 
 This is a full-reference metric.
 

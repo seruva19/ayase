@@ -366,7 +366,7 @@ class VisionTransformer(nn.Module):
         num_patches = self.patch_embed.num_patches
         self.with_cp = with_cp
 
-        norm_layer = partial(eval(norm_layer), eps=layer_norm_eps)
+        norm_layer = partial(getattr(nn, norm_layer) if isinstance(norm_layer, str) else norm_layer, eps=layer_norm_eps)
 
         if use_learnable_pos_emb:
             self.pos_embed = nn.Parameter(

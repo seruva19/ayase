@@ -143,7 +143,7 @@ class STGREEDModule(PipelineModule):
             blurred = cv2.GaussianBlur(current, (0, 0), 2.0)
             bandpass = current - blurred
 
-            mu = cv2.GaussianBlur(np.abs(bandpass), (7, 7), 7 / 6)
+            mu = cv2.GaussianBlur(bandpass, (7, 7), 7 / 6)
             sigma = np.sqrt(cv2.GaussianBlur(bandpass ** 2, (7, 7), 7 / 6) - mu ** 2 + 1e-7)
             mscn = bandpass / (sigma + 1.0)
 

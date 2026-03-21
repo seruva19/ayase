@@ -94,10 +94,10 @@ def _ciede2000_pixel(lab1: np.ndarray, lab2: np.ndarray) -> np.ndarray:
         np.radians(60 * np.exp(-((hp_avg - 275) / 25.0) ** 2))
     )
 
-    dE = np.sqrt(
+    dE = np.sqrt(np.maximum(0,
         (dLp / SL) ** 2 + (dCp / SC) ** 2 + (dHp / SH) ** 2
         + RT * (dCp / SC) * (dHp / SH)
-    )
+    ))
     return dE
 
 

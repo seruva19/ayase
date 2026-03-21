@@ -35,8 +35,7 @@ class ActionRecognitionModule(PipelineModule):
         self._ml_available = False
         self._clip_available = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             import torch
             from transformers import VideoMAEImageProcessor, VideoMAEForVideoClassification

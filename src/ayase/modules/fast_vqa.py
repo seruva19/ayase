@@ -4,8 +4,6 @@ import urllib.request
 
 import cv2
 import numpy as np
-import yaml  # type: ignore[import-untyped]
-
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -96,6 +94,7 @@ class FastVQAModule(PipelineModule):
             if not opt_path.exists():
                 raise FileNotFoundError(f"Config file not found: {opt_path}")
 
+            import yaml  # type: ignore[import-untyped]
             with open(opt_path, "r") as f:
                 self._opt = yaml.safe_load(f)
 

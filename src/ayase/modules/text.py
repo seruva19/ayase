@@ -88,11 +88,11 @@ class TextDetectionModule(PipelineModule):
                     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                     data = self.pytesseract.image_to_data(gray, output_type=self.pytesseract.Output.DICT)
                     n_boxes = len(data['text'])
-                    for i in range(n_boxes):
-                        if int(data['conf'][i]) > 60:
-                            text = data['text'][i].strip()
+                    for box_idx in range(n_boxes):
+                        if int(data['conf'][box_idx]) > 60:
+                            text = data['text'][box_idx].strip()
                             if len(text) > 2:
-                                (x, y, w, h) = (data['left'][i], data['top'][i], data['width'][i], data['height'][i])
+                                (x, y, w, h) = (data['left'][box_idx], data['top'][box_idx], data['width'][box_idx], data['height'][box_idx])
                                 text_area += w * h
                                 found_text_frame.append(text)
 

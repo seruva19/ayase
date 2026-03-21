@@ -36,11 +36,12 @@ class DecoderStressModule(PipelineModule):
                 cap.release()
                 return sample
 
-            # Define probe points: Start, Middle, End, and some random ones
+            # Define probe points: Start, Middle, End, and some deterministic random ones
             probes = [0, total_frames // 2, total_frames - 1]
             if self.num_probes > 3:
+                rng = random.Random(hash(str(sample.path)))
                 for _ in range(self.num_probes - 3):
-                    probes.append(random.randint(0, total_frames - 1))
+                    probes.append(rng.randint(0, total_frames - 1))
             
             # Sort to minimize seeking (though not strictly necessary)
             probes = sorted(list(set(probes)))

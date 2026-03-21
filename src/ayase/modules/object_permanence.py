@@ -69,9 +69,13 @@ class ObjectPermanenceModule(PipelineModule):
                 if self.backend == "yolo":
                     return
 
-        # Fallback: background-subtraction-based contour detection
+        # Fallback: background-subtraction-based contour detection.
+        # NOTE: BGS on non-consecutive subsampled frames is less accurate because
+        # the background model sees discontinuous motion. A short history (20) and
+        # high learning rate help the model adapt faster to the jumps between
+        # subsampled frames.
         self._bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-            history=50, varThreshold=40, detectShadows=False
+            history=20, varThreshold=40, detectShadows=False
         )
         self._ml_available = True
         logger.info("Object permanence: contour (BGS) backend initialised")

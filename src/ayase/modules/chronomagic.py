@@ -211,7 +211,7 @@ class ChronoMagicModule(PipelineModule):
         mean_diff = diffs.mean()
         std_diff = diffs.std() + 1e-6
         hallucination_mask = diffs > (mean_diff + threshold * std_diff)
-        ch_score = float(np.mean(hallucination_mask))
+        ch_score = 1.0 - float(np.mean(hallucination_mask))
 
         return (
             float(np.clip(mt_score, 0.0, 1.0)),
