@@ -405,10 +405,10 @@ def _generate_charts(
 
         # ── Shared layout defaults ─────────────────────────────────────
         _layout = dict(
-            font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=13),
-            margin=dict(l=20, r=20, t=10, b=20),
-            paper_bgcolor="white",
-            plot_bgcolor="white",
+            font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=11),
+            margin=dict(l=10, r=30, t=8, b=10),
+            paper_bgcolor="#fafafa",
+            plot_bgcolor="#fafafa",
         )
 
         # All paired charts use the same height for alignment
@@ -418,21 +418,21 @@ def _generate_charts(
         labels = [g for g, _ in cat_items]
         values = [s["modules"] for _, s in cat_items]
         colors = [
-            "#4DC9F6", "#F67019", "#F53794", "#537BC4", "#ACC236",
-            "#166A8F", "#00A950", "#58595B", "#8549BA", "#FFC300",
-            "#C70039", "#DAF7A6", "#FF5733",
+            "#6C5CE7", "#00B894", "#FD79A8", "#0984E3", "#FDCB6E",
+            "#E17055", "#00CEC9", "#636E72", "#A29BFE", "#FAB1A0",
+            "#55EFC4", "#DFE6E9", "#74B9FF",
         ][:len(labels)]
         fig = go.Figure(go.Bar(
             x=values[::-1], y=labels[::-1], orientation="h",
-            marker_color=colors[::-1],
-            text=values[::-1], textposition="outside", textfont_size=10,
+            marker=dict(color=colors[::-1], line=dict(width=0)),
+            text=values[::-1], textposition="outside", textfont_size=9,
         ))
         fig.update_layout(
             **_layout, width=_CHART_WIDTH, height=_PAIR_H,
             title=None,
-            xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
-            yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
-            bargap=0.15,
+            xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
+            yaxis=dict(autorange="reversed", tickfont=dict(size=8)),
+            bargap=0.12,
             showlegend=False,
         )
         p = output_dir / "chart_categories.png"
@@ -444,18 +444,18 @@ def _generate_charts(
         i_values = [c for _, c in input_counts.most_common()]
         fig = go.Figure(go.Pie(
             labels=i_labels, values=i_values,
-            hole=0.5, textinfo="label+percent",
-            textposition="inside", textfont_size=10,
+            hole=0.45, textinfo="label+percent",
+            textposition="inside", textfont_size=9,
             insidetextorientation="horizontal",
             marker=dict(
-                colors=["#36A2EB", "#FF6384", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"],
-                line=dict(color="white", width=2),
+                colors=["#74B9FF", "#FD79A8", "#FFEAA7", "#55EFC4", "#A29BFE", "#FAB1A0"],
+                line=dict(color="#fafafa", width=2),
             ),
         ))
         fig.update_layout(
             **_layout, width=_CHART_WIDTH, height=_PAIR_H,
             title=None,
-            legend=dict(font_size=10),
+            legend=dict(font_size=9, bgcolor="rgba(0,0,0,0)"),
         )
         p = output_dir / "chart_input_types.png"
         fig.write_image(str(p), scale=_CHART_SCALE)
@@ -463,20 +463,20 @@ def _generate_charts(
 
         # ── 3. Speed tiers bar ─────────────────────────────────────────
         tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
-        tier_colors = {"fast": "#2ECC71", "medium": "#F39C12", "slow": "#E74C3C"}
+        tier_colors = {"fast": "#00B894", "medium": "#FDCB6E", "slow": "#E17055"}
         s_items = speed_counts.most_common()
         s_labels = [tier_map.get(t, t) for t, _ in s_items]
         s_values = [c for _, c in s_items]
-        s_cols = [tier_colors.get(t, "#3498DB") for t, _ in s_items]
+        s_cols = [tier_colors.get(t, "#74B9FF") for t, _ in s_items]
         fig = go.Figure(go.Bar(
             x=s_values, y=s_labels, orientation="h",
-            marker_color=s_cols,
-            text=s_values, textposition="outside", textfont_size=12,
+            marker=dict(color=s_cols, line=dict(width=0)),
+            text=s_values, textposition="outside", textfont_size=11,
         ))
         fig.update_layout(
             **_layout, width=_CHART_WIDTH, height=_PAIR_H,
             title=None,
-            xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
+            xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
             yaxis=dict(autorange="reversed"),
             bargap=0.35,
         )
@@ -490,15 +490,15 @@ def _generate_charts(
         b_values = [c for _, c in b_items]
         fig = go.Figure(go.Bar(
             x=b_values, y=b_labels, orientation="h",
-            marker_color="#5DADE2",
-            text=b_values, textposition="outside", textfont_size=11,
+            marker=dict(color="#74B9FF", line=dict(width=0)),
+            text=b_values, textposition="outside", textfont_size=10,
         ))
         fig.update_layout(
             **_layout, width=_CHART_WIDTH, height=_PAIR_H,
             title=None,
-            xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
-            yaxis=dict(autorange="reversed"),
-            bargap=0.25,
+            xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
+            yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
+            bargap=0.2,
         )
         p = output_dir / "chart_backends.png"
         fig.write_image(str(p), scale=_CHART_SCALE)
@@ -511,15 +511,15 @@ def _generate_charts(
             pk_values = [c for _, c in pk_items]
             fig = go.Figure(go.Bar(
                 x=pk_values, y=pk_labels, orientation="h",
-                marker_color="#8E44AD",
-                text=pk_values, textposition="outside", textfont_size=13,
+                marker=dict(color="#A29BFE", line=dict(width=0)),
+                text=pk_values, textposition="outside", textfont_size=9,
             ))
             fig.update_layout(
                 **_layout, width=_CHART_WIDTH, height=_PAIR_H,
                 title=None,
-                xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
-                yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
-                bargap=0.25,
+                xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
+                yaxis=dict(autorange="reversed", tickfont=dict(size=8)),
+                bargap=0.2,
             )
             p = output_dir / "chart_packages.png"
             fig.write_image(str(p), scale=_CHART_SCALE)
@@ -532,15 +532,15 @@ def _generate_charts(
             mc_values = [v for _, v in mc_items]
             fig = go.Figure(go.Bar(
                 x=mc_values, y=mc_labels, orientation="h",
-                marker_color="#27AE60",
-                text=mc_values, textposition="outside", textfont_size=10,
+                marker=dict(color="#00B894", line=dict(width=0)),
+                text=mc_values, textposition="outside", textfont_size=9,
             ))
             fig.update_layout(
                 **_layout, width=_CHART_WIDTH, height=_PAIR_H,
                 title=None,
-                xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
-                yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
-                bargap=0.15,
+                xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
+                yaxis=dict(autorange="reversed", tickfont=dict(size=8)),
+                bargap=0.12,
             )
             p = output_dir / "chart_metrics_per_cat.png"
             fig.write_image(str(p), scale=_CHART_SCALE)
@@ -1050,6 +1050,22 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         if writers:
             metrics_by_cat[group].append(field_name)
 
+    # ── Category navigation ─────────────────────────────────────────────
+    a("")
+    nav_parts = []
+    for cat_key in _CATEGORY_ORDER:
+        fields = metrics_by_cat.get(cat_key)
+        if not fields:
+            continue
+        display = _CATEGORY_DISPLAY.get(cat_key, cat_key)
+        # GitHub heading anchor: lowercase, spaces→hyphens, strip non-alnum except hyphens
+        anchor = re.sub(r"[^a-z0-9 -]", "", display.lower()).replace(" ", "-")
+        anchor = f"{anchor}-{len(fields)}-metrics"
+        nav_parts.append(f"[{display}](#{anchor}) ({len(fields)})")
+    no_out_count = len([r for r in results if not r["output_fields"]])
+    nav_parts.append(f"[Utility & Validation](#utility--validation-{no_out_count}-modules) ({no_out_count})")
+    a(" · ".join(nav_parts))
+    a("")
     a("---")
     a("")
 
@@ -1144,23 +1160,21 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                 a(f"**{mod_link}** — {mod['description']}")
                 a("")
 
-                # Info as key-value table
+                # Info as bullet list
                 speed_str = f"{badge} {mod['speed']}"
                 if mod["gpu"]:
                     speed_str += " · GPU"
-                rows = []
-                rows.append(f"| Input | {mod['input_type']} |")
-                rows.append(f"| Speed | {speed_str} |")
+                a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
                 if chain:
-                    rows.append(f"| Backend | {chain} |")
+                    a(f"- **Backend**: {chain}")
                 if pkgs:
-                    rows.append(f"| Packages | {pkgs} |")
+                    a(f"- **Packages**: {pkgs}")
                 if vram:
-                    rows.append(f"| VRAM | {vram} |")
+                    a(f"- **VRAM**: {vram}")
                 if source_links != "—":
-                    rows.append(f"| Source | {source_links} |")
+                    a(f"- **Source**: {source_links}")
                 if test_status != "\u2014":
-                    rows.append(f"| Test | {test_status} |")
+                    a(f"- **Test**: {test_status}")
 
                 cfg = mod.get("default_config", {})
                 cfg_items = {k: v for k, v in cfg.items()
@@ -1168,12 +1182,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                              and v is not None}
                 if cfg_items:
                     cfg_str = ", ".join(f"`{k}={v}`" for k, v in cfg_items.items())
-                    rows.append(f"| Config | {cfg_str} |")
-
-                a("| | |")
-                a("|---|---|")
-                for row in rows:
-                    a(row)
+                    a(f"- **Config**: {cfg_str}")
                 a("")
 
         a("")
