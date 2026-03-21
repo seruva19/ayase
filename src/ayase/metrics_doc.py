@@ -310,17 +310,17 @@ def _detect_source_links(source: str, cls: type) -> str:
     links = []
     # arXiv
     for m in re.finditer(r"(https?://arxiv\.org/abs/[\w.]+)", source):
-        links.append(f"[arXiv]({m.group(1)})")
+        links.append(f'<a href="{m.group(1)}" target="_blank">arXiv</a>')
         break
     # GitHub
     for m in re.finditer(r"(https?://github\.com/[\w-]+/[\w.-]+)", source):
-        links.append(f"[GitHub]({m.group(1)})")
+        links.append(f'<a href="{m.group(1)}" target="_blank">GitHub</a>')
         break
     # HuggingFace
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
         if not any(x in candidate for x in ("http", "path", "file", "dir", "main/")):
-            links.append(f"[HF](https://huggingface.co/{candidate})")
+            links.append(f'<a href="https://huggingface.co/{candidate}" target="_blank">HF</a>')
             break
     # Paper citation from docstring
     if not links:

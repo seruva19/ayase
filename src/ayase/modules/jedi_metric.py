@@ -40,7 +40,7 @@ class JEDiModule(PipelineModule):
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             # V-JEPA model for video feature extraction
-            model_name = "facebook/vjepa-giant"
+            model_name = "facebook/vjepa2-vitg-fpc64-256"
             trc = self.config.get("trust_remote_code", True)
             rev = self.config.get("model_revision", None)
             self._model = AutoModel.from_pretrained(

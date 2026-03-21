@@ -54,6 +54,7 @@ _IMPORTS = [
     ("VQAScoreModule", ".vqa_score"),
     ("TIFAModule", ".tifa"),
     ("DSGModule", ".dsg"),
+    ("ImageRewardModule", ".image_reward"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("FastVQAModule", ".fast_vqa"),
@@ -83,6 +84,7 @@ _IMPORTS = [
     ("InternVQAModule", ".internvqa"),
     ("NRGVQMModule", ".nr_gvqm"),
     # --- Generation metrics ---
+    ("KIDModule", ".kid"),
     ("FVDModule", ".fvd"),
     ("FVMDModule", ".fvmd"),
     ("InceptionScoreModule", ".inception_score"),
@@ -94,6 +96,7 @@ _IMPORTS = [
     ("FaceLandmarkQualityModule", ".face_landmark_quality"),
     ("FaceIQAModule", ".face_iqa"),
     ("IdentityLossModule", ".identity_loss"),
+    ("FaceCrossSimilarityModule", ".face_cross_similarity"),
     # --- Scene & content ---
     ("SceneModule", ".scene"),
     ("SceneDetectionModule", ".scene_detection"),
@@ -136,6 +139,9 @@ _IMPORTS = [
     ("CreativityModule", ".creativity"),
     ("ChronoMagicModule", ".chronomagic"),
     ("T2VCompBenchModule", ".t2v_compbench"),
+    # --- Image LPIPS & Concept Presence ---
+    ("ImageLPIPSModule", ".image_lpips"),
+    ("ConceptPresenceModule", ".concept_presence"),
 ]
 
 # Perform imports, silently skipping modules with missing optional deps.
