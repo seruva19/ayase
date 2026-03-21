@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.17** · Generated 2026-03-21 17:47 · **124 models** across **7 sources**
+> **Version 0.1.17** · Generated 2026-03-21 18:45 · **130 models** across **7 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**124** models · **38** HuggingFace · **59** pyiqa · **7** sources
+**130** models · **37** HuggingFace · **59** pyiqa · **7** sources
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Models by Source</h4><img src="docs/models_sources.png" width="100%"/></td>
@@ -25,31 +25,33 @@
 > [!WARNING]
 > **Commercial use:** Stick to modules whose models are marked "Commercial OK" above. Most pyiqa metrics marked "research" are re-implementations under pyiqa's MIT license, but the original training data or architecture may carry restrictions — verify before commercial deployment.
 
-[HuggingFace (28)](#huggingface-models) · [Weight Files (10)](#weight-file-repos) · [pyiqa (59)](#pyiqa-metrics) · [torchvision (7)](#torchvision-models) · [CLIP / OpenCLIP (1)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (8)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+<a id="categories"></a>
+
+[HuggingFace (26)](#huggingface-models) · [Weight Files (11)](#weight-file-repos) · [pyiqa (59)](#pyiqa-metrics) · [torchvision (7)](#torchvision-models) · [CLIP / OpenCLIP (1)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
 ## HuggingFace Models
 
-### [`Falconsai/nsfw_image_detection`](https://huggingface.co/Falconsai/nsfw_image_detection)
+### [`Falconsai/nsfw_image_detection`](https://huggingface.co/Falconsai/nsfw_image_detection) [↑](#categories)
 > image-classification · apache-2.0
 
 - **Used by**: `nsfw`
 - **Downloads**: 41.7M
 - **Source**: [arXiv](https://arxiv.org/abs/2010.11929)
 
-### [`IntMeGroup/FineVQ_score`](https://huggingface.co/IntMeGroup/FineVQ_score)
+### [`IntMeGroup/FineVQ_score`](https://huggingface.co/IntMeGroup/FineVQ_score) [↑](#categories)
 > apache-2.0
 
 - **Used by**: `finevq`
 - **Parameters**: 8.2B · **Downloads**: 671
 - **Disk**: ~30.5 GB
 
-### [`KlingTeam/VideoAlign-Reward`](https://huggingface.co/KlingTeam/VideoAlign-Reward)
+### [`KlingTeam/VideoAlign-Reward`](https://huggingface.co/KlingTeam/VideoAlign-Reward) [↑](#categories)
 
 - **Used by**: `video_reward`
 
-### [`MCG-NJU/videomae-large-finetuned-kinetics`](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics)
+### [`MCG-NJU/videomae-large-finetuned-kinetics`](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics) [↑](#categories)
 > video-classification · cc-by-nc-4.0
 
 - **Used by**: `action_recognition`
@@ -57,7 +59,7 @@
 - **VRAM**: ~1.5 GB · **Disk**: ~1.3 GB
 - **Source**: [arXiv](https://arxiv.org/abs/2203.12602)
 
-### [`Salesforce/blip-image-captioning-base`](https://huggingface.co/Salesforce/blip-image-captioning-base)
+### [`Salesforce/blip-image-captioning-base`](https://huggingface.co/Salesforce/blip-image-captioning-base) [↑](#categories)
 > image-to-text · bsd-3-clause
 
 - **Used by**: `captioning`
@@ -65,11 +67,11 @@
 - **VRAM**: ~1 GB · **Disk**: ~990 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2201.12086)
 
-### [`TIGER-Lab/T2VScore`](https://huggingface.co/TIGER-Lab/T2VScore)
+### [`TIGER-Lab/T2VScore`](https://huggingface.co/TIGER-Lab/T2VScore) [↑](#categories)
 
 - **Used by**: `t2v_score`
 
-### [`TIGER-Lab/VideoScore`](https://huggingface.co/TIGER-Lab/VideoScore)
+### [`TIGER-Lab/VideoScore`](https://huggingface.co/TIGER-Lab/VideoScore) [↑](#categories)
 > visual-question-answering · apache-2.0
 
 - **Used by**: `videoscore`
@@ -77,11 +79,12 @@
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: [arXiv](https://arxiv.org/abs/2406.15252)
 
-### [`ai-forever/kandinsky-video-tools`](https://huggingface.co/ai-forever/kandinsky-video-tools)
+### [`ai-forever/kandinsky-video-motion-predictor`](https://huggingface.co/ai-forever/kandinsky-video-motion-predictor) [↑](#categories)
 
 - **Used by**: `kandinsky_motion`
+- **Downloads**: 86K
 
-### [`dandelin/vilt-b32-finetuned-vqa`](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa)
+### [`dandelin/vilt-b32-finetuned-vqa`](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa) [↑](#categories)
 > visual-question-answering · apache-2.0
 
 - **Used by**: `commonsense`, `tifa`
@@ -89,7 +92,7 @@
 - **VRAM**: ~500 MB · **Disk**: ~450 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2102.03334)
 
-### [`depth-anything/Depth-Anything-V2-Small-hf`](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf)
+### [`depth-anything/Depth-Anything-V2-Small-hf`](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf) [↑](#categories)
 > depth-estimation · apache-2.0
 
 - **Used by**: `depth_anything`, `t2v_compbench`
@@ -97,7 +100,7 @@
 - **VRAM**: ~200 MB · **Disk**: ~100 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2406.09414)
 
-### [`facebook/dinov2-base`](https://huggingface.co/facebook/dinov2-base)
+### [`facebook/dinov2-base`](https://huggingface.co/facebook/dinov2-base) [↑](#categories)
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `subject_consistency`
@@ -105,15 +108,11 @@
 - **Disk**: ~330 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2304.07193)
 
-### [`facebook/vjepa-giant`](https://huggingface.co/facebook/vjepa-giant)
+### [`facebook/vjepa-giant`](https://huggingface.co/facebook/vjepa-giant) [↑](#categories)
 
 - **Used by**: `jedi`
 
-### [`facebookresearch/dinov2`](https://huggingface.co/facebookresearch/dinov2)
-
-- **Used by**: `video_memorability`
-
-### [`laion/clap-htsat-fused`](https://huggingface.co/laion/clap-htsat-fused)
+### [`laion/clap-htsat-fused`](https://huggingface.co/laion/clap-htsat-fused) [↑](#categories)
 > audio-classification · apache-2.0
 
 - **Used by**: `audio_text_alignment`
@@ -121,14 +120,14 @@
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2211.06687)
 
-### [`llava-hf/llava-1.5-7b-hf`](https://huggingface.co/llava-hf/llava-1.5-7b-hf)
+### [`llava-hf/llava-1.5-7b-hf`](https://huggingface.co/llava-hf/llava-1.5-7b-hf) [↑](#categories)
 > image-text-to-text · llama2
 
 - **Used by**: `commonsense`, `creativity`, `vlm_judge`
 - **Parameters**: 7.1B · **Downloads**: 4.7M
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 
-### [`llava-hf/llava-v1.6-mistral-7b-hf`](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf)
+### [`llava-hf/llava-v1.6-mistral-7b-hf`](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf) [↑](#categories)
 > image-text-to-text · apache-2.0
 
 - **Used by**: `llm_descriptive_qa`
@@ -136,7 +135,7 @@
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: [arXiv](https://arxiv.org/abs/2310.03744)
 
-### [`microsoft/xclip-base-patch32`](https://huggingface.co/microsoft/xclip-base-patch32)
+### [`microsoft/xclip-base-patch32`](https://huggingface.co/microsoft/xclip-base-patch32) [↑](#categories)
 > video-classification · mit
 
 - **Used by**: `embedding`, `video_text_matching`
@@ -144,18 +143,14 @@
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2208.02816)
 
-### [`models/video_motion_predictor`](https://huggingface.co/models/video_motion_predictor)
-
-- **Used by**: `kandinsky_motion`
-
-### [`nvidia/quality-classifier-deberta`](https://huggingface.co/nvidia/quality-classifier-deberta)
+### [`nvidia/quality-classifier-deberta`](https://huggingface.co/nvidia/quality-classifier-deberta) [↑](#categories)
 > apache-2.0
 
 - **Used by**: `nemo_curator`
 - **Downloads**: 3K
 - **Source**: [arXiv](https://arxiv.org/abs/2111.09543)
 
-### [`nvidia/segformer-b0-finetuned-ade-512-512`](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512)
+### [`nvidia/segformer-b0-finetuned-ade-512-512`](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512) [↑](#categories)
 > image-segmentation · other
 
 - **Used by**: `semantic_segmentation_consistency`
@@ -163,7 +158,7 @@
 - **Disk**: ~14 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2105.15203)
 
-### [`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32)
+### [`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32) [↑](#categories)
 > zero-shot-image-classification
 
 - **Used by**: `action_recognition`, `aigv_assessor`, `background_consistency`, `chronomagic`, `clip_temporal`, `clipvqa`, `creativity`, `dataset_analytics`, `deepfake_detection`, `generative_distribution`, `harmful_content`, `maxvqa`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `t2v_compbench`, `t2v_score`, `tifa`, `umap_projection`, `umtscore`, `video_memorability`, `video_text_matching`, `video_type_classifier`
@@ -171,7 +166,7 @@
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: [arXiv](https://arxiv.org/abs/2103.00020)
 
-### [`openai/clip-vit-large-patch14`](https://huggingface.co/openai/clip-vit-large-patch14)
+### [`openai/clip-vit-large-patch14`](https://huggingface.co/openai/clip-vit-large-patch14) [↑](#categories)
 > zero-shot-image-classification
 
 - **Used by**: `aesthetic_scoring`
@@ -179,33 +174,33 @@
 - **VRAM**: ~1.5 GB · **Disk**: ~1.7 GB
 - **Source**: [arXiv](https://arxiv.org/abs/2103.00020)
 
-### [`q-future/one-align`](https://huggingface.co/q-future/one-align)
+### [`q-future/one-align`](https://huggingface.co/q-future/one-align) [↑](#categories)
 > zero-shot-image-classification · mit
 
 - **Used by**: `q_align`
 - **Downloads**: 310K
 - **Source**: [arXiv](https://arxiv.org/abs/2312.17090)
 
-### [`qyp2000/KVQ`](https://huggingface.co/qyp2000/KVQ)
+### [`qyp2000/KVQ`](https://huggingface.co/qyp2000/KVQ) [↑](#categories)
 
 - **Used by**: `kvq`
 
-### [`stabilityai/stable-diffusion-xl-base-1.0`](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
+### [`stabilityai/stable-diffusion-xl-base-1.0`](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) [↑](#categories)
 > text-to-image · openrail++
 
 - **Used by**: `sd_reference`
 - **Downloads**: 2.2M
 - **Source**: [arXiv](https://arxiv.org/abs/2307.01952)
 
-### [`sunwei925/RQ-VQA`](https://huggingface.co/sunwei925/RQ-VQA)
+### [`sunwei925/RQ-VQA`](https://huggingface.co/sunwei925/RQ-VQA) [↑](#categories)
 
 - **Used by**: `rqvqa`
 
-### [`wangjiarui153/AIGV-Assessor`](https://huggingface.co/wangjiarui153/AIGV-Assessor)
+### [`wangjiarui153/AIGV-Assessor`](https://huggingface.co/wangjiarui153/AIGV-Assessor) [↑](#categories)
 
 - **Used by**: `aigv_assessor`
 
-### [`xinyu1205/recognize-anything-plus-model`](https://huggingface.co/xinyu1205/recognize-anything-plus-model)
+### [`xinyu1205/recognize-anything-plus-model`](https://huggingface.co/xinyu1205/recognize-anything-plus-model) [↑](#categories)
 > zero-shot-image-classification · apache-2.0
 
 - **Used by**: `ram_tagging`
@@ -213,7 +208,7 @@
 
 ## Weight File Repos
 
-### [`AkaneTendo25/ayase-models`](https://huggingface.co/AkaneTendo25/ayase-models)
+### [`AkaneTendo25/ayase-models`](https://huggingface.co/AkaneTendo25/ayase-models) [↑](#categories)
 > Pre-trained weight files for ayase modules
 
 - `DOVER.pth` — used by `dover`
@@ -226,360 +221,121 @@
 - `dinov2_vitb14_pretrain.pth` — used by `i2v_similarity`
 - `flownet.pkl` — used by `motion_smoothness`
 - `onnx_dover.onnx` — used by `dover`
-
-## pyiqa Metrics
-
-All auto-download weights on first `pyiqa.create_metric()` call. pyiqa itself is MIT-licensed; underlying model licenses vary.
-
-### `pyiqa/afine`
-
-- **Used by**: `afine`
-
-### `pyiqa/afine_nr`
-> research
-
-- **Used by**: `afine`
-
-### `pyiqa/ahiq`
-> Attention-based hybrid FR-IQA · research
-
-- **Used by**: `ahiq`
-- **VRAM**: ~300 MB · **Disk**: ~150 MB
-
-### `pyiqa/arniqa`
-> research
-
-- **Used by**: `arniqa`
-
-### `pyiqa/brisque`
-> No-reference image quality (naturalness) · BSD-2-Clause (OpenCV)
-
-- **Used by**: `brisque`, `naturalness`
-- **VRAM**: ~50 MB · **Disk**: ~1 MB
-- **Commercial**: Yes
-
-### `pyiqa/bvqi`
-
-- **Used by**: `bvqi`
-
-### `pyiqa/ckdn`
-> research
-
-- **Used by**: `ckdn`
-
-### `pyiqa/clip_iqa`
-
-- **Used by**: `clip_iqa`
-
-### `pyiqa/clipiqa+`
-> CLIP-based image quality assessment · MIT (pyiqa)
-
-- **Used by**: `clip_iqa`, `promptiqa`, `rqvqa`
-- **VRAM**: ~600 MB · **Disk**: ~600 MB
-- **Commercial**: Yes
-
-### `pyiqa/cnniqa`
-> research
-
-- **Used by**: `cnniqa`
-
-### `pyiqa/compare2score`
-> research
-
-- **Used by**: `compare2score`
-
-### `pyiqa/contrique`
-> research
-
-- **Used by**: `contrique`
-
-### `pyiqa/conviqt`
-
-- **Used by**: `conviqt`
-
-### `pyiqa/cover`
-
-- **Used by**: `cover`
-
-### `pyiqa/creativity`
-
-- **Used by**: `creativity`
-
-### `pyiqa/cw_ssim`
-> MIT (pyiqa)
-
-- **Used by**: `cw_ssim`
-- **Commercial**: Yes
-
-### `pyiqa/dbcnn`
-> Deep bilinear CNN for blind IQA · research
-
-- **Used by**: `dbcnn`
-- **VRAM**: ~200 MB · **Disk**: ~100 MB
-
-### `pyiqa/deepdc`
-
-- **Used by**: `deepdc`
-
-### `pyiqa/deepwsd`
-> research
-
-- **Used by**: `deepwsd`
-
-### `pyiqa/dmm`
-> research
-
-- **Used by**: `dmm`
-
-### `pyiqa/dover`
-> MIT (pyiqa)
-
-- **Used by**: `cover`, `dover`
-- **Commercial**: Yes
-
-### `pyiqa/face_iqa`
-
-- **Used by**: `face_iqa`
-
-### `pyiqa/finevq`
-
-- **Used by**: `finevq`
-
-### `pyiqa/hyperiqa`
-> Adaptive hypernetwork NR image quality · research
-
-- **Used by**: `hyperiqa`, `qcn`
-- **VRAM**: ~200 MB · **Disk**: ~100 MB
-
-### `pyiqa/ilniqe`
-> BSD-2-Clause
-
-- **Used by**: `ilniqe`
-- **Commercial**: Yes
-
-### `pyiqa/kvq`
-
-- **Used by**: `kvq`
-
-### `pyiqa/laion_aes`
-> MIT
-
-- **Used by**: `creativity`, `laion_aesthetic`
-- **Commercial**: Yes
-
-### `pyiqa/laion_aesthetic`
-
-- **Used by**: `laion_aesthetic`
-
-### `pyiqa/liqe`
-
-- **Used by**: `liqe`
-
-### `pyiqa/maclip`
-> research
-
-- **Used by**: `maclip`
-
-### `pyiqa/mad`
-> research
-
-- **Used by**: `mad`
-
-### `pyiqa/maniqa`
-> Multi-dimension attention NR-IQA · Apache-2.0
-
-- **Used by**: `maniqa`
-- **VRAM**: ~300 MB · **Disk**: ~150 MB
-- **Commercial**: Yes
-
-### `pyiqa/mdtvsfa`
-
-- **Used by**: `mdtvsfa`
-
-### `pyiqa/msswd`
-
-- **Used by**: `msswd`
-
-### `pyiqa/musiq`
-> Multi-scale image quality transformer · Apache-2.0 (Google)
-
-- **Used by**: `musiq`
-- **VRAM**: ~300 MB · **Disk**: ~150 MB
-- **Commercial**: Yes
-
-### `pyiqa/naturalness`
-
-- **Used by**: `naturalness`
-
-### `pyiqa/nima`
-> Neural image assessment (aesthetic + technical) · Apache-2.0 (Google)
-
-- **Used by**: `nima`
-- **VRAM**: ~200 MB · **Disk**: ~100 MB
-- **Commercial**: Yes
-
-### `pyiqa/niqe`
-> No-reference image quality (naturalness statistics) · BSD-2-Clause (OpenCV)
-
-- **Used by**: `niqe`
-- **VRAM**: ~50 MB · **Disk**: ~1 MB
-- **Commercial**: Yes
-
-### `pyiqa/nlpd`
-> research
-
-- **Used by**: `nlpd`
-
-### `pyiqa/nrqm`
-> research
-
-- **Used by**: `nrqm`
-
-### `pyiqa/paq2piq`
-> research
-
-- **Used by**: `paq2piq`
-
-### `pyiqa/pi`
-> research
-
-- **Used by**: `pi`
-
-### `pyiqa/pieapp`
-> research
-
-- **Used by**: `pieapp`
-
-### `pyiqa/piqe`
-> BSD-2-Clause
-
-- **Used by**: `piqe`
-- **Commercial**: Yes
-
-### `pyiqa/promptiqa`
-> research
-
-- **Used by**: `promptiqa`
-
-### `pyiqa/qcn`
-> research
-
-- **Used by**: `qcn`
-
-### `pyiqa/qualiclip`
-> research
-
-- **Used by**: `qualiclip`
-
-### `pyiqa/rqvqa`
-
-- **Used by**: `rqvqa`
-
-### `pyiqa/sfid`
-
-- **Used by**: `sfid`
-
-### `pyiqa/ssimc`
-> MIT (pyiqa)
-
-- **Used by**: `ssimc`
-- **Commercial**: Yes
-
-### `pyiqa/topiq`
-
-- **Used by**: `topiq`
-
-### `pyiqa/topiq_fr`
-> Transformer-based FR image quality · MIT (pyiqa)
-
-- **Used by**: `topiq_fr`
-- **VRAM**: ~300 MB · **Disk**: ~150 MB
-- **Commercial**: Yes
-
-### `pyiqa/topiq_nr`
-> Transformer-based NR image quality · MIT (pyiqa)
-
-- **Used by**: `finevq`, `kvq`, `promptiqa`, `topiq`
-- **VRAM**: ~300 MB · **Disk**: ~150 MB
-- **Commercial**: Yes
-
-### `pyiqa/topiq_nr-face`
-> MIT (pyiqa)
-
-- **Used by**: `face_iqa`
-- **Commercial**: Yes
-
-### `pyiqa/tres`
-> research
-
-- **Used by**: `tres`
-
-### `pyiqa/unique`
-> research
-
-- **Used by**: `unique`
-
-### `pyiqa/wadiqam`
-
-- **Used by**: `wadiqam`
-
-### `pyiqa/wadiqam_fr`
-> research
-
-- **Used by**: `wadiqam_fr`
-
-### `pyiqa/wadiqam_nr`
-> research
-
-- **Used by**: `wadiqam`
+- `sac+logos+ava1-l14-linearMSE.pth` — used by `aesthetic_scoring`
+
+## pyiqa Metrics (59)
+
+[pyiqa](https://github.com/chaofengc/IQA-PyTorch) is an MIT-licensed collection of image/video quality metrics. Weights auto-download on first `pyiqa.create_metric()` call. `pip install pyiqa`
+
+| Metric | Task | License | Commercial | Used By |
+|--------|------|---------|------------|---------|
+| `afine` | Adaptive fidelity-naturalness IQA | research | — | `afine` |
+| `afine_nr` | A-FINE NR fidelity-naturalness | research | — | `afine` |
+| `ahiq` | Attention-based hybrid FR-IQA | research | — | `ahiq` |
+| `arniqa` | Artifact-aware NR-IQA | research | — | `arniqa` |
+| `brisque` | Blind naturalness statistics NR-IQA | BSD-2-Clause (OpenCV) | Yes | `brisque`, `naturalness` |
+| `bvqi` | Zero-shot blind VQA | research | — | `bvqi` |
+| `ckdn` | Conditional knowledge distillation FR-IQA | research | — | `ckdn` |
+| `clip_iqa` | CLIP image quality assessment | research | — | `clip_iqa` |
+| `clipiqa+` | CLIP-based image quality assessment | MIT (pyiqa) | Yes | `clip_iqa`, `promptiqa`, `rqvqa` |
+| `cnniqa` | CNN-based blind image quality | research | — | `cnniqa` |
+| `compare2score` | Comparative-to-absolute quality scoring | research | — | `compare2score` |
+| `contrique` | Contrastive image quality representation | research | — | `contrique` |
+| `conviqt` | Contrastive NR-VQA | research | — | `conviqt` |
+| `cover` | Comprehensive video evaluation and rating | research | — | `cover` |
+| `creativity` | Creative quality assessment | research | — | `creativity` |
+| `cw_ssim` | Complex wavelet SSIM | MIT (pyiqa) | Yes | `cw_ssim` |
+| `dbcnn` | Deep bilinear CNN for blind IQA | research | — | `dbcnn` |
+| `deepdc` | Deep distribution conformance | research | — | `deepdc` |
+| `deepwsd` | Deep Wasserstein distance FR-IQA | research | — | `deepwsd` |
+| `dmm` | Detail model metric FR-IQA | research | — | `dmm` |
+| `dover` | Disentangled objective video evaluation | MIT (pyiqa) | Yes | `cover`, `dover` |
+| `face_iqa` | TOPIQ face-specific quality | research | — | `face_iqa` |
+| `finevq` | Fine-grained UGC video quality | research | — | `finevq` |
+| `hyperiqa` | Adaptive hypernetwork NR-IQA | research | — | `hyperiqa`, `qcn` |
+| `ilniqe` | Integrated local NIQE | BSD-2-Clause | Yes | `ilniqe` |
+| `kvq` | Key-frame saliency-guided VQA | research | — | `kvq` |
+| `laion_aes` | LAION aesthetic scoring (CLIP-based) | MIT | Yes | `creativity`, `laion_aesthetic` |
+| `laion_aesthetic` | LAION Aesthetics V2 predictor | research | — | `laion_aesthetic` |
+| `liqe` | Learned image quality evaluator (multi-task) | research | — | `liqe` |
+| `maclip` | Multi-attribute CLIP quality scoring | research | — | `maclip` |
+| `mad` | Most apparent distortion FR-IQA | research | — | `mad` |
+| `maniqa` | Multi-dimension attention NR-IQA | Apache-2.0 | Yes | `maniqa` |
+| `mdtvsfa` | Multi-dimensional temporal-spatial VQA | research | — | `mdtvsfa` |
+| `msswd` | Multi-scale sliced Wasserstein distance | research | — | `msswd` |
+| `musiq` | Multi-scale image quality transformer | Apache-2.0 (Google) | Yes | `musiq` |
+| `naturalness` | Natural scene statistics | research | — | `naturalness` |
+| `nima` | Neural image assessment (aesthetic + technical) | Apache-2.0 (Google) | Yes | `nima` |
+| `niqe` | Natural image quality evaluator (statistics-based) | BSD-2-Clause (OpenCV) | Yes | `niqe` |
+| `nlpd` | Normalized Laplacian pyramid distance | research | — | `nlpd` |
+| `nrqm` | No-reference quality metric | research | — | `nrqm` |
+| `paq2piq` | Patches-as-questions for image quality | research | — | `paq2piq` |
+| `pi` | Perceptual index (PIRM challenge) | research | — | `pi` |
+| `pieapp` | Pairwise learned perceptual distance | research | — | `pieapp` |
+| `piqe` | Perception-based blind NR-IQA | BSD-2-Clause | Yes | `piqe` |
+| `promptiqa` | Few-shot prompt-based NR-IQA | research | — | `promptiqa` |
+| `qcn` | Geometric order blind IQA | research | — | `qcn` |
+| `qualiclip` | Quality-aware CLIP embeddings | research | — | `qualiclip` |
+| `rqvqa` | Rich quality-aware VQA | research | — | `rqvqa` |
+| `sfid` | Spatial FID distribution metric | research | — | `sfid` |
+| `ssimc` | Complex wavelet SSIM-C FR | MIT (pyiqa) | Yes | `ssimc` |
+| `topiq` | TOPIQ transformer quality | research | — | `topiq` |
+| `topiq_fr` | Transformer-based FR image quality | MIT (pyiqa) | Yes | `topiq_fr` |
+| `topiq_nr` | Transformer-based NR image quality | MIT (pyiqa) | Yes | `finevq`, `kvq`, `promptiqa`, `topiq` |
+| `topiq_nr-face` | TOPIQ face-specific quality | MIT (pyiqa) | Yes | `face_iqa` |
+| `tres` | Transformer relative quality estimation | research | — | `tres` |
+| `unique` | Unified NR-IQA with contrastive learning | research | — | `unique` |
+| `wadiqam` | Weighted average deep IQA | research | — | `wadiqam` |
+| `wadiqam_fr` | Weighted average deep FR-IQA | research | — | `wadiqam_fr` |
+| `wadiqam_nr` | Weighted average deep NR-IQA | research | — | `wadiqam` |
 
 ## torchvision Models
 
 Bundled with `pip install torchvision`. Weights download on first use.
 
-### `torchvision/inception_v3`
+### `torchvision/inception_v3` [↑](#categories)
 > torchvision · BSD-3-Clause
 
 - **Used by**: `inception_score`
 - **VRAM**: ~200 MB · **Disk**: ~100 MB
 
-### `torchvision/r3d_18`
+### `torchvision/r3d_18` [↑](#categories)
 > torchvision · BSD-3-Clause
 
 - **Used by**: `c3dvqa`, `fvd`
 - **VRAM**: ~200 MB · **Disk**: ~130 MB
 
-### `torchvision/raft_large`
+### `torchvision/raft_large` [↑](#categories)
 > torchvision · BSD-3-Clause
 
 - **Used by**: `advanced_flow`, `raft_motion`
 - **VRAM**: ~200 MB · **Disk**: ~20 MB
 
-### `torchvision/raft_small`
+### `torchvision/raft_small` [↑](#categories)
 > torchvision · BSD-3-Clause
 
 - **Used by**: `advanced_flow`, `flolpips`, `motion_amplitude`, `temporal_flickering`
 - **VRAM**: ~100 MB · **Disk**: ~20 MB
 
-### `torchvision/resnet18`
+### `torchvision/resnet18` [↑](#categories)
 > torchvision · BSD-3-Clause
 
 - **Used by**: `tlvqm`
 - **VRAM**: ~100 MB · **Disk**: ~45 MB
 
-### `torchvision/resnet50`
+### `torchvision/resnet50` [↑](#categories)
 > torchvision
 
 - **Used by**: `watermark_classifier`
 
-### `torchvision/video`
+### `torchvision/video` [↑](#categories)
 > torchvision · BSD-3-Clause
 
 - **Used by**: `c3dvqa`
 
 ## CLIP / OpenCLIP
 
-### `CLIP ViT-B/32`
+### `CLIP ViT-B/32` [↑](#categories)
 > MIT (OpenAI)
 
 - **Used by**: `vqa_score`
@@ -587,23 +343,23 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 ## torch.hub
 
-### `facebookresearch/co-tracker`
+### `facebookresearch/co-tracker` [↑](#categories)
 > torch.hub · Apache-2.0
 
 - **Used by**: `dynamics_controllability`, `physics`, `trajan`
 
-### `facebookresearch/dinov2`
+### `facebookresearch/dinov2` [↑](#categories)
 > torch.hub · Apache-2.0
 
 - **Used by**: `spectral_complexity`, `video_memorability`
 
-### `intel-isl/MiDaS`
+### `intel-isl/MiDaS` [↑](#categories)
 > torch.hub · MIT
 
 - **Used by**: `depth_consistency`, `depth_map_quality`
 - **VRAM**: ~400 MB · **Disk**: ~400 MB
 
-### `tarepan/SpeechMOS:v1.2.0`
+### `tarepan/SpeechMOS:v1.2.0` [↑](#categories)
 > torch.hub · MIT
 
 - **Used by**: `audio_utmos`
@@ -613,86 +369,128 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 Require FFmpeg compiled with libvmaf. No separate download needed.
 
-### `ffmpeg/cambi`
+### `ffmpeg/cambi` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
 - **Used by**: `cambi`
 
-### `ffmpeg/libvmaf`
+### `ffmpeg/libvmaf` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
 - **Used by**: `cambi`, `vmaf`, `vmaf_4k`, `vmaf_neg`, `vmaf_phone`
 
-### `ffmpeg/vmaf_4k_v0.6.1`
+### `ffmpeg/vmaf_4k_v0.6.1` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
 - **Used by**: `vmaf_4k`
 
-### `ffmpeg/vmaf_phone_model`
+### `ffmpeg/vmaf_phone_model` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
 - **Used by**: `vmaf_phone`
 
-### `ffmpeg/vmaf_v0.6.1`
+### `ffmpeg/vmaf_v0.6.1` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
 - **Used by**: `vmaf_neg`, `vmaf_phone`
 
-### `ffmpeg/vmaf_v0.6.1neg`
+### `ffmpeg/vmaf_v0.6.1neg` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
 - **Used by**: `vmaf_neg`
 
-### `ffmpeg/xpsnr`
+### `ffmpeg/xpsnr` [↑](#categories)
 > built-in · BSD (FFmpeg)
 
 - **Used by**: `xpsnr`
 
 ## pip Packages
 
-### `aesthetic-predictor-v2-5`
+### `aesthetic-predictor-v2-5` [↑](#categories)
 > Aesthetic Predictor V2.5 (SigLIP)
 
 - **Used by**: `aesthetic`
 - **Install**: `pip install aesthetic-predictor-v2-5`
 
-### `dreamsim`
+### `deepface` [↑](#categories)
+> DeepFace (face recognition/verification)
+
+- **Used by**: `celebrity_id`, `identity_loss`
+- **Install**: `pip install deepface`
+
+### `dreamsim` [↑](#categories)
 > DreamSim CLIP+DINO similarity
 
 - **Used by**: `dreamsim`
 - **Install**: `pip install dreamsim`
 
-### `erqa`
+### `erqa` [↑](#categories)
 > ERQA edge restoration quality
 
 - **Used by**: `erqa`
 - **Install**: `pip install erqa`
 
-### `piq`
+### `fasttext` [↑](#categories)
+> FastText (text classification)
+
+- **Used by**: `nemo_curator`
+- **Install**: `pip install fasttext`
+
+### `insightface` [↑](#categories)
+> InsightFace (face recognition)
+
+- **Used by**: `identity_loss`
+- **Install**: `pip install insightface`
+
+### `joblib` [↑](#categories)
+> Joblib (serialized model storage)
+
+- **Used by**: `tlvqm`, `videval`
+- **Install**: `pip install joblib`
+
+### `jxlpy` [↑](#categories)
+> JPEG XL codec library
+
+- **Used by**: `butteraugli`
+- **Install**: `pip install jxlpy`
+
+### `mediapipe` [↑](#categories)
+> MediaPipe (face/pose/hand detection)
+
+- **Used by**: `face_fidelity`, `face_landmark_quality`, `human_fidelity`, `identity_loss`
+- **Install**: `pip install mediapipe`
+
+### `onnxruntime` [↑](#categories)
+> ONNX Runtime (model inference)
+
+- **Used by**: `dover`
+- **Install**: `pip install onnxruntime`
+
+### `piq` [↑](#categories)
 > piq (PyTorch Image Quality)
 
 - **Used by**: `dists`, `perceptual_fr`, `vif`
 - **Install**: `pip install piq`
 
-### `ptlflow`
+### `ptlflow` [↑](#categories)
 > ptlflow optical flow models
 
 - **Used by**: `ptlflow_motion`
 - **Install**: `pip install ptlflow`
 
-### `stlpips-pytorch`
+### `stlpips-pytorch` [↑](#categories)
 > ST-LPIPS spatiotemporal perceptual
 
 - **Used by**: `st_lpips`
 - **Install**: `pip install stlpips-pytorch`
 
-### `torchmetrics[audio]`
+### `torchmetrics[audio]` [↑](#categories)
 > TorchMetrics (DNSMOS, etc.)
 
 - **Used by**: `dnsmos`
 - **Install**: `pip install torchmetrics[audio]`
 
-### `ultralytics`
+### `ultralytics` [↑](#categories)
 > YOLOv8 object detection
 
 - **Used by**: `object_detection`, `object_permanence`, `t2v_compbench`

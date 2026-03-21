@@ -23,6 +23,33 @@ from typing import Dict, List, Optional, Set
 
 from .pipeline import ModuleRegistry
 
+
+def _validate_urls(entries: Dict[str, "ModelEntry"]) -> List[str]:
+    """Check that model URLs are reachable. Returns list of warnings."""
+    import sys
+    warnings = []
+    urls_to_check = []
+    for key, entry in entries.items():
+        if entry.url and entry.url.startswith("http"):
+            urls_to_check.append((key, entry.url))
+
+    if not urls_to_check:
+        return warnings
+
+    print(f"Validating {len(urls_to_check)} model URLs...", file=sys.stderr)
+    for key, url in urls_to_check:
+        try:
+            req = urllib.request.Request(url, method="HEAD")
+            req.add_header("User-Agent", "ayase-models-doc/1.0")
+            resp = urllib.request.urlopen(req, timeout=10)
+            if resp.status >= 400:
+                warnings.append(f"  {key}: HTTP {resp.status} — {url}")
+        except urllib.error.HTTPError as e:
+            warnings.append(f"  {key}: HTTP {e.code} — {url}")
+        except Exception as e:
+            warnings.append(f"  {key}: {type(e).__name__} — {url}")
+    return warnings
+
 logger = logging.getLogger(__name__)
 
 
@@ -100,17 +127,66 @@ _SIZE_DB = {
 }
 
 _TASK_DB = {
-    "brisque": "No-reference image quality (naturalness)",
-    "niqe": "No-reference image quality (naturalness statistics)",
+    "brisque": "Blind naturalness statistics NR-IQA",
+    "niqe": "Natural image quality evaluator (statistics-based)",
+    "ilniqe": "Integrated local NIQE",
+    "piqe": "Perception-based blind NR-IQA",
+    "nrqm": "No-reference quality metric",
+    "pi": "Perceptual index (PIRM challenge)",
     "clipiqa+": "CLIP-based image quality assessment",
+    "clip_iqa": "CLIP image quality assessment",
     "maniqa": "Multi-dimension attention NR-IQA",
     "topiq_nr": "Transformer-based NR image quality",
     "topiq_fr": "Transformer-based FR image quality",
+    "topiq": "TOPIQ transformer quality",
+    "topiq_nr-face": "TOPIQ face-specific quality",
     "dbcnn": "Deep bilinear CNN for blind IQA",
     "musiq": "Multi-scale image quality transformer",
     "nima": "Neural image assessment (aesthetic + technical)",
-    "hyperiqa": "Adaptive hypernetwork NR image quality",
+    "hyperiqa": "Adaptive hypernetwork NR-IQA",
     "ahiq": "Attention-based hybrid FR-IQA",
+    "contrique": "Contrastive image quality representation",
+    "cnniqa": "CNN-based blind image quality",
+    "arniqa": "Artifact-aware NR-IQA",
+    "qualiclip": "Quality-aware CLIP embeddings",
+    "liqe": "Learned image quality evaluator (multi-task)",
+    "dover": "Disentangled objective video evaluation",
+    "cover": "Comprehensive video evaluation and rating",
+    "finevq": "Fine-grained UGC video quality",
+    "kvq": "Key-frame saliency-guided VQA",
+    "rqvqa": "Rich quality-aware VQA",
+    "compare2score": "Comparative-to-absolute quality scoring",
+    "unique": "Unified NR-IQA with contrastive learning",
+    "tres": "Transformer relative quality estimation",
+    "laion_aes": "LAION aesthetic scoring (CLIP-based)",
+    "laion_aesthetic": "LAION Aesthetics V2 predictor",
+    "paq2piq": "Patches-as-questions for image quality",
+    "maclip": "Multi-attribute CLIP quality scoring",
+    "mdtvsfa": "Multi-dimensional temporal-spatial VQA",
+    "deepwsd": "Deep Wasserstein distance IQA",
+    "wadiqam_nr": "Weighted average deep NR-IQA",
+    "wadiqam_fr": "Weighted average deep FR-IQA",
+    "wadiqam": "Weighted average deep IQA",
+    "ckdn": "Conditional knowledge distillation FR-IQA",
+    "dmm": "Detail model metric FR-IQA",
+    "ssimc": "Complex wavelet SSIM-C FR",
+    "cw_ssim": "Complex wavelet SSIM",
+    "nlpd": "Normalized Laplacian pyramid distance",
+    "pieapp": "Pairwise learned perceptual distance",
+    "mad": "Most apparent distortion FR-IQA",
+    "deepwsd": "Deep Wasserstein distance FR-IQA",
+    "promptiqa": "Few-shot prompt-based NR-IQA",
+    "qcn": "Geometric order blind IQA",
+    "deepdc": "Deep distribution conformance",
+    "sfid": "Spatial FID distribution metric",
+    "msswd": "Multi-scale sliced Wasserstein distance",
+    "afine": "Adaptive fidelity-naturalness IQA",
+    "afine_nr": "A-FINE NR fidelity-naturalness",
+    "bvqi": "Zero-shot blind VQA",
+    "conviqt": "Contrastive NR-VQA",
+    "creativity": "Creative quality assessment",
+    "face_iqa": "TOPIQ face-specific quality",
+    "naturalness": "Natural scene statistics",
 }
 
 
@@ -341,7 +417,10 @@ def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
         candidate = m.group(1)
         if ("from_pretrained" in source or "AutoModel" in source) and \
            not any(x in candidate for x in ("http", "path", ".py", ".pth", ".onnx",
-                                            "ayase-models", "resolve/main")):
+                                            "ayase-models", "resolve/main",
+                                            "models/", "subfolder",
+                                            "facebookresearch/", "intel-isl/",
+                                            "tarepan/")):
             models.add(candidate)
     # Model names from default_config
     if default_config:
@@ -421,11 +500,16 @@ def _extract_ffmpeg_models(source: str) -> List[str]:
 
 
 def _extract_hf_direct_urls(source: str) -> List[tuple]:
-    """Extract direct HuggingFace download URLs (resolve/main pattern)."""
+    """Extract direct HuggingFace download URLs (resolve/main pattern).
+
+    Also handles Python implicit string concatenation across lines.
+    """
+    # Pre-process: join adjacent string literals ("a" "b" → "ab")
+    joined = re.sub(r'"\s*\n\s*"', '', source)
     results = []
     for m in re.finditer(
         r'https://huggingface\.co/([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)/resolve/main/([^\s"\']+)',
-        source,
+        joined,
     ):
         repo = m.group(1)
         path = m.group(2)
@@ -715,6 +799,13 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
             "erqa": ("erqa", "ERQA edge restoration quality"),
             "torchmetrics": ("torchmetrics[audio]", "TorchMetrics (DNSMOS, etc.)"),
             "ultralytics": ("ultralytics", "YOLOv8 object detection"),
+            "mediapipe": ("mediapipe", "MediaPipe (face/pose/hand detection)"),
+            "deepface": ("deepface", "DeepFace (face recognition/verification)"),
+            "insightface": ("insightface", "InsightFace (face recognition)"),
+            "onnxruntime": ("onnxruntime", "ONNX Runtime (model inference)"),
+            "jxlpy": ("jxlpy", "JPEG XL codec library"),
+            "fasttext": ("fasttext", "FastText (text classification)"),
+            "joblib": ("joblib", "Joblib (serialized model storage)"),
         }
         # Also check for ultralytics/YOLO in source
         if "yolo" in source.lower() or "ultralytics" in source.lower():
@@ -921,6 +1012,22 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
           "training data or architecture may carry restrictions — verify before "
           "commercial deployment.")
 
+    # ── Validate URLs (stderr warnings only) ────────────────────────────
+    if fetch_licenses:
+        url_warnings = _validate_urls(entries)
+        # Filter out 401 (gated/private repos — expected for some HF models)
+        real_broken = [w for w in url_warnings if "HTTP 401" not in w]
+        gated = [w for w in url_warnings if "HTTP 401" in w]
+        import sys
+        if real_broken:
+            print(f"WARNING: {len(real_broken)} broken model URL(s):", file=sys.stderr)
+            for w in real_broken:
+                print(w, file=sys.stderr)
+        if gated:
+            print(f"INFO: {len(gated)} gated/private model(s) (auth required):", file=sys.stderr)
+            for w in gated:
+                print(w, file=sys.stderr)
+
     # ── Category navigation ──────────────────────────────────────────────
     # Prepare section data for navigation and rendering
     hf_entries = [(k, e) for k, e in sorted(entries.items())
@@ -963,6 +1070,8 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     nav_sections.append(("Quick Install Guide", "quick-install-guide"))
 
     a("")
+    a('<a id="categories"></a>')
+    a("")
     a(" · ".join(f"[{label}](#{anchor})" for label, anchor in nav_sections))
     a("")
     a("---")
@@ -978,9 +1087,9 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         for _key, e in hf_entries:
             # Heading with link
             if e.url:
-                a(f"### [`{e.name}`]({e.url})")
+                a(f"### [`{e.name}`]({e.url}) [↑](#categories)")
             else:
-                a(f"### `{e.name}`")
+                a(f"### `{e.name}` [↑](#categories)")
 
             # Tagline: pipeline_tag + license
             tagline_parts = []
@@ -1031,7 +1140,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
 
         for repo_name, files in sorted(weight_file_repos.items()):
             repo_url = f"https://huggingface.co/{repo_name}"
-            a(f"### [`{repo_name}`]({repo_url})")
+            a(f"### [`{repo_name}`]({repo_url}) [↑](#categories)")
             a("> Pre-trained weight files for ayase modules")
             a("")
             for fe in sorted(files, key=lambda x: x.name):
@@ -1043,46 +1152,24 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     # SECTION: pyiqa Metrics
     # ══════════════════════════════════════════════════════════════════════
     if pyiqa_entries:
-        a(f"## pyiqa Metrics")
+        a(f"## pyiqa Metrics ({len(pyiqa_entries)})")
         a("")
-        a("All auto-download weights on first `pyiqa.create_metric()` call. "
-          "pyiqa itself is MIT-licensed; underlying model licenses vary.")
+        a("[pyiqa](https://github.com/chaofengc/IQA-PyTorch) is an MIT-licensed collection "
+          "of image/video quality metrics. Weights auto-download on first "
+          "`pyiqa.create_metric()` call. `pip install pyiqa`")
         a("")
-
+        a("| Metric | Task | License | Commercial | Used By |")
+        a("|--------|------|---------|------------|---------|")
         for _key, e in pyiqa_entries:
-            metric_name = e.name.split("/")[-1] if "/" in e.name else e.name
-            a(f"### `{e.name}`")
-
-            # Tagline: task + license
-            tagline_parts = []
-            if e.task:
-                tagline_parts.append(e.task)
-            if e.license:
-                tagline_parts.append(e.license)
-            if tagline_parts:
-                a(f"> {' · '.join(tagline_parts)}")
-            a("")
-
-            # Used by
-            mods = ", ".join(f"`{m}`" for m in e.modules)
-            a(f"- **Used by**: {mods}")
-
-            # VRAM + Disk
-            size_parts = []
-            if e.vram_estimate:
-                size_parts.append(f"**VRAM**: {e.vram_estimate}")
-            if e.size_estimate:
-                size_parts.append(f"**Disk**: {e.size_estimate}")
-            if size_parts:
-                a(f"- {' · '.join(size_parts)}")
-
-            # Commercial status
-            if e.commercial_ok is True:
-                a("- **Commercial**: Yes")
-            elif e.commercial_ok is False:
-                a("- **Commercial**: No")
-
-            a("")
+            metric_name = e.name.replace("pyiqa/", "")
+            task = e.task or "IQA"
+            lic = e.license or "research"
+            comm = {True: "Yes", False: "No"}.get(e.commercial_ok, "—")
+            mods = ", ".join(f"`{m}`" for m in e.modules[:4])
+            if len(e.modules) > 4:
+                mods += f" +{len(e.modules) - 4}"
+            a(f"| `{metric_name}` | {task} | {lic} | {comm} | {mods} |")
+        a("")
 
     # ══════════════════════════════════════════════════════════════════════
     # SECTION: torchvision Models
@@ -1094,7 +1181,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         a("")
 
         for _key, e in tv_entries:
-            a(f"### `{e.name}`")
+            a(f"### `{e.name}` [↑](#categories)")
 
             tagline_parts = ["torchvision"]
             lic_key = f"tv:{e.name.split('/')[-1]}"
@@ -1124,7 +1211,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         a("")
 
         for _key, e in clip_entries:
-            a(f"### `{e.name}`")
+            a(f"### `{e.name}` [↑](#categories)")
 
             tagline_parts = []
             lic_key = f"clip:{e.name.replace('CLIP ', '')}"
@@ -1155,7 +1242,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         a("")
 
         for _key, e in hub_entries:
-            a(f"### `{e.name}`")
+            a(f"### `{e.name}` [↑](#categories)")
 
             tagline_parts = ["torch.hub"]
             lic_key = f"hub:{e.name}"
@@ -1187,7 +1274,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         a("")
 
         for _key, e in ff_entries:
-            a(f"### `{e.name}`")
+            a(f"### `{e.name}` [↑](#categories)")
 
             tagline_parts = ["built-in"]
             lic_key = f"ff:{e.name.split('/')[-1]}"
@@ -1209,7 +1296,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         a("")
 
         for _key, e in pip_entries:
-            a(f"### `{e.name}`")
+            a(f"### `{e.name}` [↑](#categories)")
             if e.notes:
                 a(f"> {e.notes}")
             a("")
