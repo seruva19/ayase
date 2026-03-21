@@ -377,204 +377,26 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
 
 # ── Chart helpers ───────────────────────────────────────────────────────────
 
-_CHART_WIDTH = 480
-_CHART_HEIGHT_BAR = 280
-_CHART_SCALE = 2  # retina-quality PNG export
+def _mermaid_bar(title: str, items: List[Tuple[str, int]]) -> List[str]:
+    """Generate a mermaid xychart-beta horizontal bar chart block."""
+    lines = [f"```mermaid", f"---", f"config:", f"  theme: neutral", f"---",
+             f"xychart-beta horizontal"]
+    labels = [f'"{label}"' for label, _ in items]
+    values = [v for _, v in items]
+    lines.append(f"    x-axis [{', '.join(labels)}]")
+    lines.append(f'    y-axis "{title}"')
+    lines.append(f"    bar [{', '.join(str(v) for v in values)}]")
+    lines.append("```")
+    return lines
 
 
-def _generate_charts(
-    cat_items: List[Tuple[str, Dict]],
-    input_counts: "Counter",
-    speed_counts: "Counter",
-    all_backends: "Counter",
-    output_dir: Path,
-    all_packages: Optional["Counter"] = None,
-    summary_stats: Optional[Dict[str, int]] = None,
-    metrics_per_cat: Optional[Dict[str, int]] = None,
-) -> Dict[str, str]:
-    """Generate PNG chart images using Plotly.
-
-    All charts are rendered at uniform width (_CHART_WIDTH px).
-    Returns dict of chart_name -> relative path to PNG file.
-    """
-    paths: Dict[str, str] = {}
-    try:
-        import plotly.graph_objects as go
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        # ── Shared layout defaults ─────────────────────────────────────
-        _layout = dict(
-            font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=11),
-            margin=dict(l=10, r=30, t=8, b=10),
-            paper_bgcolor="#fafafa",
-            plot_bgcolor="#fafafa",
-        )
-
-        # All paired charts use the same height for alignment
-        _PAIR_H = _CHART_HEIGHT_BAR
-
-        # ── 1. Category horizontal bar ─────────────────────────────────
-        labels = [g for g, _ in cat_items]
-        values = [s["modules"] for _, s in cat_items]
-        colors = [
-            "#6C5CE7", "#00B894", "#FD79A8", "#0984E3", "#FDCB6E",
-            "#E17055", "#00CEC9", "#636E72", "#A29BFE", "#FAB1A0",
-            "#55EFC4", "#DFE6E9", "#74B9FF",
-        ][:len(labels)]
-        fig = go.Figure(go.Bar(
-            x=values[::-1], y=labels[::-1], orientation="h",
-            marker=dict(color=colors[::-1], line=dict(width=0)),
-            text=values[::-1], textposition="outside", textfont_size=9,
-        ))
-        fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
-            title=None,
-            xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
-            yaxis=dict(autorange="reversed", tickfont=dict(size=8)),
-            bargap=0.12,
-            showlegend=False,
-        )
-        p = output_dir / "chart_categories.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["categories"] = f"docs/{p.name}"
-
-        # ── 2. Input type donut ────────────────────────────────────────
-        i_labels = [l for l, _ in input_counts.most_common()]
-        i_values = [c for _, c in input_counts.most_common()]
-        fig = go.Figure(go.Pie(
-            labels=i_labels, values=i_values,
-            hole=0.45, textinfo="label+percent",
-            textposition="inside", textfont_size=9,
-            insidetextorientation="horizontal",
-            marker=dict(
-                colors=["#74B9FF", "#FD79A8", "#FFEAA7", "#55EFC4", "#A29BFE", "#FAB1A0"],
-                line=dict(color="#fafafa", width=2),
-            ),
-        ))
-        fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
-            title=None,
-            legend=dict(font_size=9, bgcolor="rgba(0,0,0,0)"),
-        )
-        p = output_dir / "chart_input_types.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["input_types"] = f"docs/{p.name}"
-
-        # ── 3. Speed tiers bar ─────────────────────────────────────────
-        tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
-        tier_colors = {"fast": "#00B894", "medium": "#FDCB6E", "slow": "#E17055"}
-        s_items = speed_counts.most_common()
-        s_labels = [tier_map.get(t, t) for t, _ in s_items]
-        s_values = [c for _, c in s_items]
-        s_cols = [tier_colors.get(t, "#74B9FF") for t, _ in s_items]
-        fig = go.Figure(go.Bar(
-            x=s_values, y=s_labels, orientation="h",
-            marker=dict(color=s_cols, line=dict(width=0)),
-            text=s_values, textposition="outside", textfont_size=11,
-        ))
-        fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
-            title=None,
-            xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
-            yaxis=dict(autorange="reversed"),
-            bargap=0.35,
-        )
-        p = output_dir / "chart_speed.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["speed"] = f"docs/{p.name}"
-
-        # ── 4. Backend usage bar ───────────────────────────────────────
-        b_items = all_backends.most_common(10)
-        b_labels = [l for l, _ in b_items]
-        b_values = [c for _, c in b_items]
-        fig = go.Figure(go.Bar(
-            x=b_values, y=b_labels, orientation="h",
-            marker=dict(color="#74B9FF", line=dict(width=0)),
-            text=b_values, textposition="outside", textfont_size=10,
-        ))
-        fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
-            title=None,
-            xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
-            yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
-            bargap=0.2,
-        )
-        p = output_dir / "chart_backends.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["backends"] = f"docs/{p.name}"
-
-        # ── 5. Top packages bar ────────────────────────────────────────
-        if all_packages:
-            pk_items = all_packages.most_common(12)
-            pk_labels = [l for l, _ in pk_items]
-            pk_values = [c for _, c in pk_items]
-            fig = go.Figure(go.Bar(
-                x=pk_values, y=pk_labels, orientation="h",
-                marker=dict(color="#A29BFE", line=dict(width=0)),
-                text=pk_values, textposition="outside", textfont_size=9,
-            ))
-            fig.update_layout(
-                **_layout, width=_CHART_WIDTH, height=_PAIR_H,
-                title=None,
-                xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
-                yaxis=dict(autorange="reversed", tickfont=dict(size=8)),
-                bargap=0.2,
-            )
-            p = output_dir / "chart_packages.png"
-            fig.write_image(str(p), scale=_CHART_SCALE)
-            paths["packages"] = f"docs/{p.name}"
-
-        # ── 6. Metrics per category bar ────────────────────────────────
-        if metrics_per_cat:
-            mc_items = sorted(metrics_per_cat.items(), key=lambda x: x[1])
-            mc_labels = [_CATEGORY_DISPLAY.get(k, k) for k, _ in mc_items]
-            mc_values = [v for _, v in mc_items]
-            fig = go.Figure(go.Bar(
-                x=mc_values, y=mc_labels, orientation="h",
-                marker=dict(color="#00B894", line=dict(width=0)),
-                text=mc_values, textposition="outside", textfont_size=9,
-            ))
-            fig.update_layout(
-                **_layout, width=_CHART_WIDTH, height=_PAIR_H,
-                title=None,
-                xaxis=dict(showgrid=True, gridcolor="#eee", zeroline=False, showticklabels=False),
-                yaxis=dict(autorange="reversed", tickfont=dict(size=8)),
-                bargap=0.12,
-            )
-            p = output_dir / "chart_metrics_per_cat.png"
-            fig.write_image(str(p), scale=_CHART_SCALE)
-            paths["metrics_per_cat"] = f"docs/{p.name}"
-
-        # ── 7. Summary dashboard (number indicators) ───────────────────
-        if summary_stats:
-            fig = go.Figure()
-            keys = list(summary_stats.keys())
-            n = len(keys)
-            for i, (label, value) in enumerate(summary_stats.items()):
-                fig.add_trace(go.Indicator(
-                    mode="number",
-                    value=value,
-                    title={"text": label, "font": {"size": 14}},
-                    number={"font": {"size": 36, "color": "#2C3E50"}},
-                    domain={"x": [i / n + 0.01, (i + 1) / n - 0.01], "y": [0.1, 0.9]},
-                ))
-            fig.update_layout(
-                width=_CHART_WIDTH * 2, height=120,
-                paper_bgcolor="white",
-                margin=dict(l=10, r=10, t=10, b=10),
-            )
-            p = output_dir / "chart_summary.png"
-            fig.write_image(str(p), scale=_CHART_SCALE)
-            paths["summary"] = f"docs/{p.name}"
-
-    except ImportError:
-        pass  # plotly/kaleido not available, skip chart generation
-    except Exception as exc:
-        import logging
-        logging.getLogger(__name__).warning(f"Chart generation failed: {exc}")
-
-    return paths
+def _mermaid_pie(title: str, items: List[Tuple[str, int]]) -> List[str]:
+    """Generate a mermaid pie chart block."""
+    lines = ["```mermaid", f'pie title {title}']
+    for label, val in items:
+        lines.append(f'    "{label}" : {val}')
+    lines.append("```")
+    return lines
 
 
 def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
@@ -660,28 +482,6 @@ def _format_test_status(module_name: str, test_results: Dict) -> str:
     full = "\u2705" if info.get("full") else "\u23f3"  # hourglass = not run
     return f"{light}{full}"
 
-
-def _bar_chart(items: List[Tuple[str, int]], max_width: int = 30) -> List[str]:
-    """Generate a Unicode horizontal bar chart."""
-    if not items:
-        return []
-    max_val = max(v for _, v in items)
-    max_label = max(len(label) for label, _ in items)
-    lines = []
-    for label, val in items:
-        bar_len = int(val / max(max_val, 1) * max_width)
-        bar = "█" * bar_len
-        lines.append(f"  {label:<{max_label}}  {bar} {val}")
-    return lines
-
-
-def _pie_ascii(items: List[Tuple[str, int]], total: int) -> List[str]:
-    """Generate a simple percentage breakdown."""
-    lines = []
-    for label, val in items:
-        pct = val / max(total, 1) * 100
-        lines.append(f"  {label}: {val} ({pct:.0f}%)")
-    return lines
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -867,28 +667,14 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
     # ── Run tests to get status (optional) ────────────────────────────────
     test_results = _collect_test_status(run_tests=run_tests)
 
-    # ── Generate charts ──────────────────────────────────────────────────
+    # ── Prepare chart data ──────────────────────────────────────────────
     cat_items = sorted(group_stats.items(), key=lambda x: -x[1]["modules"])
-    docs_dir = Path(__file__).parent.parent.parent / "docs"
-    summary_stats = {
-        "Modules": total_modules,
-        "Output Fields": len(unique_outputs),
-        "QM Fields": len(qm_fields),
-        "Tiered": tiered_count,
-        "GPU": gpu_count,
-        "Categories": len(group_stats),
-    }
+
     # Count metrics per _FIELD_GROUPS category
     metrics_per_cat_count: Dict[str, int] = defaultdict(int)
     for field_name, info in qm_fields.items():
-        if field_writers.get(field_name):  # only count fields with writers
+        if field_writers.get(field_name):
             metrics_per_cat_count[info["group"]] += 1
-
-    chart_paths = _generate_charts(
-        cat_items, input_counts, speed_counts, all_backends, docs_dir,
-        all_packages=all_packages, summary_stats=summary_stats,
-        metrics_per_cat=dict(metrics_per_cat_count),
-    )
 
     # ══════════════════════════════════════════════════════════════════════
     # BUILD DOCUMENT
@@ -911,75 +697,53 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
     a(">")
     a(f"> Tests: `pytest tests/` (light) · `pytest tests/ --full` (with ML models)")
 
-    # ── 1. Summary Dashboard ─────────────────────────────────────────────
+    # ── 1. Summary ─────────────────────────────────────────────────────
     a("")
     a("## Summary")
     a("")
-    if "summary" in chart_paths:
-        a(f"![Summary Dashboard]({chart_paths['summary']})")
-    else:
-        a(f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
-          f"· **{len(qm_fields)}** QualityMetrics fields · **{tiered_count}** tiered "
-          f"· **{gpu_count}** GPU · **{len(group_stats)}** categories")
+    a(f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
+      f"· **{len(qm_fields)}** metrics · **{tiered_count}** tiered "
+      f"· **{gpu_count}** GPU · **{len(group_stats)}** categories")
 
-    # ── Charts (two per row via HTML table) ─────────────────────────────
-    chart_titles = {
-        "categories": "Modules by Category",
-        "input_types": "Input Types",
-        "speed": "Speed Tiers",
-        "backends": "Backend Usage",
-        "packages": "Top Packages",
-        "metrics_per_cat": "Metrics per Category",
-    }
-    chart_keys = [k for k in ("categories", "input_types", "speed", "backends", "packages", "metrics_per_cat") if k in chart_paths]
-    if chart_keys:
-        a("")
-        for i in range(0, len(chart_keys), 2):
-            pair = chart_keys[i:i+2]
-            if len(pair) == 2:
-                t1 = chart_titles.get(pair[0], "")
-                t2 = chart_titles.get(pair[1], "")
-                a("<table><tr>")
-                p0 = chart_paths[pair[0]]
-                p1 = chart_paths[pair[1]]
-                a(f'<td valign="top"><h4>{t1}</h4><img src="{p0}"/></td>')
-                a(f'<td valign="top"><h4>{t2}</h4><img src="{p1}"/></td>')
-                a("</tr></table>")
-            else:
-                t = chart_titles.get(pair[0], "")
-                a(f"<h4>{t}</h4>")
-                a("")
-                a(f"![]({chart_paths[pair[0]]})")
-            a("")
+    # ── 2. Mermaid charts ─────────────────────────────────────────────
+    a("")
+    a("<h4>Modules by Category</h4>")
+    a("")
+    for line in _mermaid_bar("Modules", [(g, s["modules"]) for g, s in cat_items]):
+        a(line)
 
-    # ── Text fallbacks (when plotly is unavailable) ───────────────────
-    if not chart_paths:
-        a("")
-        a("```")
-        for line in _bar_chart([(g, s["modules"]) for g, s in cat_items]):
-            a(line)
-        a("```")
-        a("")
-        a("```")
-        for line in _bar_chart(input_counts.most_common()):
-            a(line)
-        a("```")
-        a("")
-        a("```")
-        tier_labels = {"fast": "fast (CPU, <0.1s)", "medium": "medium (GPU, ~1s)", "slow": "slow (LLM/VLM, >5s)"}
-        for line in _bar_chart([(tier_labels.get(t, t), c) for t, c in speed_counts.most_common()]):
-            a(line)
-        a("```")
-        a("")
-        a("```")
-        for line in _bar_chart(all_backends.most_common()):
-            a(line)
-        a("```")
-        a("")
-        a("```")
-        for line in _bar_chart(all_packages.most_common(15)):
-            a(line)
-        a("```")
+    a("")
+    a("<h4>Input Types</h4>")
+    a("")
+    for line in _mermaid_pie("Input Types", input_counts.most_common()):
+        a(line)
+
+    a("")
+    a("<h4>Speed Tiers</h4>")
+    a("")
+    tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
+    for line in _mermaid_bar("Modules", [(tier_map.get(t, t), c) for t, c in speed_counts.most_common()]):
+        a(line)
+
+    a("")
+    a("<h4>Backend Usage</h4>")
+    a("")
+    for line in _mermaid_bar("Modules", all_backends.most_common(10)):
+        a(line)
+
+    a("")
+    a("<h4>Top Packages</h4>")
+    a("")
+    for line in _mermaid_bar("Modules", all_packages.most_common(12)):
+        a(line)
+
+    a("")
+    a("<h4>Metrics per Category</h4>")
+    a("")
+    mc_items = sorted(metrics_per_cat_count.items(), key=lambda x: -x[1])
+    mc_display = [(_CATEGORY_DISPLAY.get(k, k), v) for k, v in mc_items]
+    for line in _mermaid_bar("Metrics", mc_display):
+        a(line)
 
 
     # ── Integrity warnings (stderr only, not in output) ────────────────
