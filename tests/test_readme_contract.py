@@ -110,7 +110,7 @@ class TestMetricCount:
         qm = QualityMetrics()
         # Pydantic model_fields gives declared fields (excludes _FIELD_GROUPS etc.)
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 341, f"Expected 341, got {field_count}"
+        assert field_count == 348, f"Expected 348, got {field_count}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -144,7 +144,7 @@ README_METRICS = sorted(QualityMetrics.model_fields.keys())
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 341
+        assert len(README_METRICS) == 348
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):

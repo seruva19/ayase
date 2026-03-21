@@ -19,7 +19,7 @@ class VideoRewardModule(PipelineModule):
     name = "video_reward"
     description = "VideoAlign human preference reward model (NeurIPS 2025)"
     default_config = {
-        "model_name": "KlingTeam/VideoAlign-Reward",
+        "model_name": "KlingTeam/VideoReward",
         "subsample": 8,
         "trust_remote_code": True,
         "model_revision": None,
@@ -37,7 +37,7 @@ class VideoRewardModule(PipelineModule):
             import torch
             from transformers import AutoModelForSequenceClassification, AutoProcessor
 
-            model_name = self.config.get("model_name", "KlingTeam/VideoAlign-Reward")
+            model_name = self.config.get("model_name", "KlingTeam/VideoReward")
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
             trc = self.config.get("trust_remote_code", True)

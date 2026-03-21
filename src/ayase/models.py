@@ -122,6 +122,7 @@ class QualityMetrics(BaseModel):
         "video_text_score": "alignment",
         "video_reward_score": "alignment",
         "tifa_score": "alignment",
+        "image_reward_score": "alignment",
         # Motion & dynamics
         "motion_score": "motion",
         "camera_motion_score": "motion",
@@ -253,6 +254,8 @@ class QualityMetrics(BaseModel):
         "celebrity_id_score": "face",
         "identity_loss": "face",
         "face_recognition_score": "face",
+        "face_cross_similarity": "face",
+        "face_identity_count": "face",
         # OCR & text
         "ocr_area_ratio": "text",
         "ocr_score": "text",
@@ -466,6 +469,12 @@ class QualityMetrics(BaseModel):
         "bas_score": "motion",
         # Scene graph
         "dsg_score": "alignment",
+        # Image LPIPS (FR perceptual distance)
+        "image_lpips": "fr_quality",
+        # Concept presence detection
+        "concept_presence": "scene",
+        "concept_count": "scene",
+        "concept_face_count": "face",
     }
 
     def non_null_metrics(self) -> dict[str, object]:
@@ -545,6 +554,8 @@ class QualityMetrics(BaseModel):
     celebrity_id_score: Optional[float] = None
     identity_loss: Optional[float] = None  # Face identity cosine distance (0-1, lower=better)
     face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
+    face_cross_similarity: Optional[float] = None  # Avg pairwise face similarity (0-1, higher=more consistent)
+    face_identity_count: Optional[int] = None  # Number of unique identities detected
     ocr_score: Optional[float] = None
     ocr_fidelity: Optional[float] = None  # OCR text accuracy vs caption (0-100, higher=better)
     ocr_cer: Optional[float] = None  # Character Error Rate (0-1, lower=better)
@@ -766,6 +777,9 @@ class QualityMetrics(BaseModel):
 
     # TIFA (ICCV 2023) — Text-to-Image Faithfulness Assessment
     tifa_score: Optional[float] = None  # VQA faithfulness (0-1, higher=better)
+
+    # ImageReward (human preference for text-to-image)
+    image_reward_score: Optional[float] = None  # Human preference reward (-2..+2, higher=better)
 
     # Text overlay (NVIDIA Curator)
     text_overlay_score: Optional[float] = None  # Text overlay severity (0-1)
@@ -1011,6 +1025,14 @@ class QualityMetrics(BaseModel):
     # Scene graph faithfulness
     dsg_score: Optional[float] = None  # DSG Davidsonian Scene Graph (higher=better)
 
+    # Image LPIPS (FR perceptual distance)
+    image_lpips: Optional[float] = None  # LPIPS perceptual distance vs reference (0-1, lower=more similar)
+
+    # Concept presence detection
+    concept_presence: Optional[float] = None  # Concept presence confidence (0-1, higher=more confident)
+    concept_count: Optional[int] = None  # Number of detected instances of target concept
+    concept_face_count: Optional[int] = None  # Number of faces detected
+
 
 class Sample(BaseModel):
     """A single sample (video/image) in the dataset."""
@@ -1110,6 +1132,8 @@ class DatasetStats(BaseModel):
     fvmd: Optional[float] = None  # Fréchet Video Motion Distance
     fid: Optional[float] = None  # Fréchet Inception Distance
     jedi: Optional[float] = None  # JEDi (V-JEPA + MMD, ICLR 2025)
+    kid: Optional[float] = None  # Kernel Inception Distance (lower=better)
+    kid_std: Optional[float] = None  # KID standard deviation
 
     # Generative distribution metrics (dataset-level)
     precision: Optional[float] = None  # Quality of generated samples (0-1)
@@ -1123,6 +1147,11 @@ class DatasetStats(BaseModel):
     outlier_count: Optional[int] = None  # Number of statistical outliers
     class_balance_score: Optional[float] = None  # Category balance 0-1 (higher=balanced)
     duplicate_pairs: Optional[int] = None  # Count of near-duplicate pairs
+
+    # Face cross-similarity (dataset-level)
+    face_similarity_matrix: Optional[List[List[float]]] = None  # NxN pairwise similarity
+    avg_face_cross_similarity: Optional[float] = None  # Dataset-level average
+    identity_cluster_count: Optional[int] = None  # Number of identity clusters
 
     # UMAP projection (dataset-level)
     umap_spread: Optional[float] = None  # UMAP projection spread
@@ -1142,5 +1171,8 @@ class DatasetStats(BaseModel):
     # Codec comparison (dataset-level)
     bd_rate: Optional[float] = None  # BD-Rate compression efficiency (%, negative=better)
     bd_psnr: Optional[float] = None  # BD-PSNR quality delta (dB, positive=better)
+
+    # Image LPIPS diversity (dataset-level)
+    lpips_diversity: Optional[float] = None  # Average pairwise LPIPS across dataset (higher=more diverse)
 
 
