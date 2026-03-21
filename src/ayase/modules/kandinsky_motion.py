@@ -32,17 +32,17 @@ class KandinskyMotionModule(PipelineModule):
             models_dir = self.config.get("models_dir", "models")
 
             # Load model from HuggingFace
-            # We assume the repo is 'ai-forever/kandinsky-video-tools' and weights are in 'models/video_motion_predictor'
+            # We assume the repo is 'ai-forever/kandinsky-video-motion-predictor' and weights are in 'models/video_motion_predictor'
             try:
                 self._model = VideoMotionPredictor.from_pretrained(
-                    "ai-forever/kandinsky-video-tools", 
+                    "ai-forever/kandinsky-video-motion-predictor", 
                     subfolder="models/video_motion_predictor",
                     cache_dir=models_dir
                 ).to(self._device).eval()
             except Exception as e_sub:
                 logger.info(f"Could not load with subfolder, trying root: {e_sub}")
                 self._model = VideoMotionPredictor.from_pretrained(
-                    "ai-forever/kandinsky-video-tools",
+                    "ai-forever/kandinsky-video-motion-predictor",
                     cache_dir=models_dir
                 ).to(self._device).eval()
 

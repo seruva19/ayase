@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.17** · Generated 2026-03-21 16:53 · **312 modules** · **341 metrics**
+> **Version 0.1.17** · Generated 2026-03-21 18:45 · **312 modules** · **341 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -25,13 +25,15 @@
 <td width="50%" valign="top"><h4>Metrics per Category</h4><img src="docs/chart_metrics_per_cat.png" width="100%"/></td>
 </tr></table>
 
+<a id="categories"></a>
+
 [No-Reference Quality](#no-reference-quality-95-metrics) (95) · [Full-Reference Quality](#full-reference-quality-57-metrics) (57) · [Text-Video Alignment](#text-video-alignment-26-metrics) (26) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-19-metrics) (19) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-15-metrics) (15) · [Face & Identity](#face--identity-14-metrics) (14) · [Scene & Content](#scene--content-14-metrics) (14) · [HDR & Color](#hdr--color-10-metrics) (10) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Utility & Validation](#utility--validation-46-modules) (46)
 
 ---
 
 ## No-Reference Quality (95 metrics)
 
-### `adadqa_score`
+### `adadqa_score` [↑](#categories)
 > Ada-DQA adaptive diverse (higher=better) · ↑ higher=better
 
 **[`adadqa`](src/ayase/modules/adadqa.py)** — Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023)
@@ -41,7 +43,7 @@
 - **Packages**: adadqa
 - **Config**: `subsample=8`
 
-### `afine_score`
+### `afine_score` [↑](#categories)
 > A-FINE fidelity-naturalness (CVPR 2025) · ↑ higher=better
 
 **[`afine`](src/ayase/modules/afine.py)** — A-FINE adaptive fidelity-naturalness IQA (CVPR 2025)
@@ -50,7 +52,7 @@
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `aigcvqa_aesthetic`
+### `aigcvqa_aesthetic` [↑](#categories)
 > AIGC-VQA aesthetic branch
 
 **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
@@ -60,7 +62,7 @@
 - **Packages**: aigcvqa
 - **Config**: `subsample=8`
 
-### `aigcvqa_technical`
+### `aigcvqa_technical` [↑](#categories)
 > AIGC-VQA technical branch
 
 **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
@@ -70,7 +72,7 @@
 - **Packages**: aigcvqa
 - **Config**: `subsample=8`
 
-### `aigv_static`
+### `aigv_static` [↑](#categories)
 > AI video static quality
 
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor model, CLIP+heuristic, or OpenCV fallback)
@@ -82,7 +84,7 @@
 - **Source**: [HF](https://huggingface.co/wangjiarui153/AIGV-Assessor)
 - **Config**: `subsample=8`, `trust_remote_code=True`
 
-### `aigvqa_score`
+### `aigvqa_score` [↑](#categories)
 > AIGVQA multi-dimensional (higher=better) · ↑ higher=better
 
 **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)
@@ -92,7 +94,7 @@
 - **Packages**: aigvqa
 - **Config**: `subsample=8`
 
-### `arniqa_score`
+### `arniqa_score` [↑](#categories)
 > ARNIQA (higher=better) · ↑ higher=better
 
 **[`arniqa`](src/ayase/modules/arniqa.py)** — ARNIQA no-reference image quality assessment
@@ -101,7 +103,7 @@
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `brisque`
+### `brisque` [↑](#categories)
 > BRISQUE (0-100, lower=better) · ↓ lower=better · 0-100
 
 **[`brisque`](src/ayase/modules/brisque.py)** — BRISQUE no-reference image quality (lower=better)
@@ -110,7 +112,7 @@
 - **Packages**: pyiqa
 - **Config**: `subsample=3`, `warning_threshold=50.0`
 
-### `bvqi_score`
+### `bvqi_score` [↑](#categories)
 > BVQI zero-shot blind VQA (higher=better) · ↑ higher=better
 
 **[`bvqi`](src/ayase/modules/bvqi.py)** — BVQI zero-shot blind video quality index (ICME 2023)
@@ -120,7 +122,7 @@
 - **Packages**: bvqi, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `clifvqa_score`
+### `clifvqa_score` [↑](#categories)
 > CLiF-VQA human feelings (higher=better) · ↑ higher=better
 
 **[`clifvqa`](src/ayase/modules/clifvqa.py)** — CLiF-VQA human feelings VQA via CLIP (2024)
@@ -130,7 +132,7 @@
 - **Packages**: clifvqa
 - **Config**: `subsample=8`
 
-### `clip_iqa_score`
+### `clip_iqa_score` [↑](#categories)
 > CLIP-IQA semantic quality (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`clip_iqa`](src/ayase/modules/clip_iqa.py)** — CLIP-based no-reference image quality assessment
@@ -139,7 +141,7 @@
 - **Packages**: pyiqa
 - **Config**: `subsample=5`, `warning_threshold=0.4`
 
-### `clipvqa_score`
+### `clipvqa_score` [↑](#categories)
 > CLIPVQA CLIP-based VQA (higher=better) · ↑ higher=better
 
 **[`clipvqa`](src/ayase/modules/clipvqa.py)** — CLIPVQA CLIP-based spatiotemporal VQA (TIP 2024)
@@ -151,7 +153,7 @@
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`
 
-### `cnniqa_score`
+### `cnniqa_score` [↑](#categories)
 > CNNIQA blind CNN IQA · ↑ higher=better
 
 **[`cnniqa`](src/ayase/modules/cnniqa.py)** — CNNIQA blind CNN-based image quality assessment
@@ -160,7 +162,7 @@
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `compare2score`
+### `compare2score` [↑](#categories)
 > Compare2Score comparison-based · ↑ higher=better
 
 **[`compare2score`](src/ayase/modules/compare2score.py)** — Compare2Score comparison-based NR image quality
@@ -169,7 +171,7 @@
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `contrique_score`
+### `contrique_score` [↑](#categories)
 > CONTRIQUE contrastive IQA (higher=better) · ↑ higher=better
 
 **[`contrique`](src/ayase/modules/contrique.py)** — Contrastive no-reference IQA
@@ -178,7 +180,7 @@
 - **Packages**: pyiqa
 - **Config**: `subsample=5`
 
-### `conviqt_score`
+### `conviqt_score` [↑](#categories)
 > CONVIQT contrastive NR-VQA (higher=better) · ↑ higher=better
 
 **[`conviqt`](src/ayase/modules/conviqt.py)** — CONVIQT contrastive self-supervised NR-VQA (TIP 2023)
@@ -188,7 +190,7 @@
 - **Packages**: conviqt, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `cover_score`
+### `cover_score` [↑](#categories)
 > COVER overall (higher=better) · ↑ higher=better
 
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
@@ -199,7 +201,7 @@
 - **VRAM**: ~800 MB
 - **Config**: `subsample=8`, `quality_threshold=30.0`
 
-### `cover_technical`
+### `cover_technical` [↑](#categories)
 > COVER technical branch
 
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
@@ -210,7 +212,7 @@
 - **VRAM**: ~800 MB
 - **Config**: `subsample=8`, `quality_threshold=30.0`
 
-### `crave_score`
+### `crave_score` [↑](#categories)
 > CRAVE next-gen AIGC (higher=better) · ↑ higher=better
 
 **[`crave`](src/ayase/modules/crave.py)** — CRAVE content-rich AIGC video evaluator (2025)
@@ -220,7 +222,7 @@
 - **Packages**: crave
 - **Config**: `subsample=12`
 
-### `dbcnn_score`
+### `dbcnn_score` [↑](#categories)
 > DBCNN bilinear CNN (higher=better) · ↑ higher=better
 
 **[`dbcnn`](src/ayase/modules/dbcnn.py)** — DBCNN deep bilinear CNN for no-reference IQA
@@ -229,7 +231,7 @@
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `deepdc_score`
+### `deepdc_score` [↑](#categories)
 > DeepDC distribution conformance (lower=better) · ↓ lower=better
 
 **[`deepdc`](src/ayase/modules/deepdc.py)** — DeepDC distribution conformance NR-IQA via pyiqa (2024, lower=better)
@@ -239,7 +241,7 @@
 - **Packages**: pyiqa, torch
 - **Config**: `subsample=8`
 
-### `discovqa_score`
+### `discovqa_score` [↑](#categories)
 > DisCoVQA distortion-content (higher=better) · ↑ higher=better
 
 **[`discovqa`](src/ayase/modules/discovqa.py)** — DisCoVQA temporal distortion-content VQA (2023)
@@ -249,7 +251,7 @@
 - **Packages**: discovqa
 - **Config**: `subsample=8`
 
-### `dover_score`
+### `dover_score` [↑](#categories)
 > DOVER overall (higher=better) · ↑ higher=better
 
 Used by: [`internvqa`](src/ayase/modules/internvqa.py)
@@ -271,7 +273,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **VRAM**: ~800 MB
 - **Config**: `subsample=8`
 
-### `dover_technical`
+### `dover_technical` [↑](#categories)
 > DOVER technical quality
 
 **[`dover`](src/ayase/modules/dover.py)** — DOVER disentangled technical + aesthetic VQA (ICCV 2023)
@@ -283,7 +285,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [GitHub](https://github.com/VQAssessment/DOVER.git) · [HF](https://huggingface.co/dover/DOVER.pth)
 - **Config**: `warning_threshold=0.4`
 
-### `fast_vqa_score`
+### `fast_vqa_score` [↑](#categories)
 > 0-100 · ↑ higher=better · 0-100
 
 **[`fast_vqa`](src/ayase/modules/fast_vqa.py)** — Deep Learning Video Quality Assessment (FAST-VQA)
@@ -292,7 +294,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: PyYAML, decord, torch, traceback
 - **Config**: `model_type=FasterVQA`
 
-### `faver_score`
+### `faver_score` [↑](#categories)
 > FAVER variable frame rate (higher=better) · ↑ higher=better
 
 **[`faver`](src/ayase/modules/faver.py)** — FAVER blind VQA for variable frame rate videos (2024)
@@ -302,7 +304,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: faver
 - **Config**: `subsample=16`
 
-### `finevq_score`
+### `finevq_score` [↑](#categories)
 > FineVQ fine-grained UGC VQA (CVPR 2025) · ↑ higher=better
 
 **[`finevq`](src/ayase/modules/finevq.py)** — Fine-grained video quality (FineVQ model, TOPIQ+handcrafted, or heuristic fallback)
@@ -313,7 +315,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/IntMeGroup/FineVQ_score)
 - **Config**: `subsample=8`, `trust_remote_code=True`, `weights={'sharpness': 0.2, 'colorfulness': 0.15, 'noise': 0.2, 'temporal_stability': 0.25, 'content_richness': 0.2}`
 
-### `gamival_score`
+### `gamival_score` [↑](#categories)
 > GAMIVAL cloud gaming NR-VQA (higher=better) · ↑ higher=better
 
 **[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA with NSS + CNN features (2023)
@@ -323,7 +325,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: gamival
 - **Config**: `subsample=8`
 
-### `hyperiqa_score`
+### `hyperiqa_score` [↑](#categories)
 > HyperIQA adaptive NR-IQA · ↑ higher=better
 
 **[`hyperiqa`](src/ayase/modules/hyperiqa.py)** — HyperIQA adaptive hypernetwork NR image quality
@@ -332,7 +334,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `ilniqe`
+### `ilniqe` [↑](#categories)
 > IL-NIQE Integrated Local NIQE (lower=better) · ↓ lower=better
 
 **[`ilniqe`](src/ayase/modules/ilniqe.py)** — IL-NIQE integrated local no-reference quality (lower=better)
@@ -341,7 +343,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=3`, `warning_threshold=50.0`
 
-### `internvqa_score`
+### `internvqa_score` [↑](#categories)
 > InternVQA video quality (higher=better) · ↑ higher=better
 
 **[`internvqa`](src/ayase/modules/internvqa.py)** — InternVQA lightweight compressed video quality (2025)
@@ -352,7 +354,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **VRAM**: ~800 MB
 - **Config**: `subsample=8`
 
-### `kvq_score`
+### `kvq_score` [↑](#categories)
 > KVQ saliency-guided VQA (CVPR 2025) · ↑ higher=better
 
 **[`kvq`](src/ayase/modules/kvq.py)** — Saliency-guided video quality (KVQ model, TOPIQ+saliency, or heuristic fallback)
@@ -363,7 +365,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/qyp2000/KVQ)
 - **Config**: `subsample=8`, `trust_remote_code=True`
 
-### `liqe_score`
+### `liqe_score` [↑](#categories)
 > LIQE lightweight IQA (higher=better) · ↑ higher=better
 
 **[`liqe`](src/ayase/modules/liqe.py)** — LIQE lightweight no-reference IQA
@@ -372,7 +374,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=5`, `warning_threshold=2.5`
 
-### `lmmvqa_score`
+### `lmmvqa_score` [↑](#categories)
 > LMM-VQA spatiotemporal (higher=better) · ↑ higher=better
 
 **[`lmmvqa`](src/ayase/modules/lmmvqa.py)** — LMM-VQA spatiotemporal LMM VQA (IEEE 2024)
@@ -381,7 +383,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `maclip_score`
+### `maclip_score` [↑](#categories)
 > MACLIP multi-attribute CLIP NR-IQA (higher=better) · ↑ higher=better
 
 **[`maclip`](src/ayase/modules/maclip.py)** — MACLIP multi-attribute CLIP no-reference quality (higher=better)
@@ -390,7 +392,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=3`
 
-### `maniqa_score`
+### `maniqa_score` [↑](#categories)
 > MANIQA multi-attention (higher=better) · ↑ higher=better
 
 **[`maniqa`](src/ayase/modules/maniqa.py)** — MANIQA multi-dimension attention no-reference IQA
@@ -399,7 +401,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `maxvqa_score`
+### `maxvqa_score` [↑](#categories)
 > MaxVQA explainable quality (higher=better) · ↑ higher=better
 
 **[`maxvqa`](src/ayase/modules/maxvqa.py)** — MaxVQA explainable language-prompted VQA (ACM MM 2023)
@@ -411,7 +413,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`
 
-### `mc360iqa_score`
+### `mc360iqa_score` [↑](#categories)
 > MC360IQA blind 360 (higher=better) · ↑ higher=better
 
 **[`mc360iqa`](src/ayase/modules/mc360iqa.py)** — MC360IQA blind 360 IQA (2019)
@@ -420,7 +422,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`, `n_viewports=6`
 
-### `mdtvsfa_score`
+### `mdtvsfa_score` [↑](#categories)
 > MDTVSFA fragment-based VQA (higher=better) · ↑ higher=better
 
 **[`mdtvsfa`](src/ayase/modules/mdtvsfa.py)** — Multi-Dimensional fragment-based VQA
@@ -429,7 +431,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=5`
 
-### `mdvqa_distortion`
+### `mdvqa_distortion` [↑](#categories)
 > MD-VQA distortion quality (higher=better) · ↑ higher=better
 
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023)
@@ -439,7 +441,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: mdvqa
 - **Config**: `subsample=8`
 
-### `mdvqa_motion`
+### `mdvqa_motion` [↑](#categories)
 > MD-VQA motion quality (higher=better) · ↑ higher=better
 
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023)
@@ -449,7 +451,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: mdvqa
 - **Config**: `subsample=8`
 
-### `mdvqa_semantic`
+### `mdvqa_semantic` [↑](#categories)
 > MD-VQA semantic quality (higher=better) · ↑ higher=better
 
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023)
@@ -459,7 +461,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: mdvqa
 - **Config**: `subsample=8`
 
-### `memoryvqa_score`
+### `memoryvqa_score` [↑](#categories)
 > Memory-VQA human memory (higher=better) · ↑ higher=better
 
 **[`memoryvqa`](src/ayase/modules/memoryvqa.py)** — Memory-VQA human memory system VQA (Neurocomputing 2025)
@@ -469,7 +471,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: memoryvqa
 - **Config**: `subsample=12`
 
-### `mm_pcqa_score`
+### `mm_pcqa_score` [↑](#categories)
 > MM-PCQA multi-modal (higher=better) · ↑ higher=better
 
 **[`mm_pcqa`](src/ayase/modules/mm_pcqa.py)** — MM-PCQA multi-modal point cloud QA (IJCAI 2023)
@@ -478,7 +480,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Packages**: open3d, scipy
 
-### `modularbvqa_score`
+### `modularbvqa_score` [↑](#categories)
 > ModularBVQA resolution-aware (higher=better) · ↑ higher=better
 
 **[`modularbvqa`](src/ayase/modules/modularbvqa.py)** — ModularBVQA resolution/framerate-aware blind VQA (CVPR 2024)
@@ -488,7 +490,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: modularbvqa
 - **Config**: `subsample=8`
 
-### `musiq_score`
+### `musiq_score` [↑](#categories)
 > MUSIQ multi-scale IQA (higher=better) · ↑ higher=better
 
 **[`musiq`](src/ayase/modules/musiq.py)** — Multi-Scale Image Quality Transformer (no-reference)
@@ -497,7 +499,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `variant=musiq`, `subsample=5`, `warning_threshold=40.0`
 
-### `naturalness_score`
+### `naturalness_score` [↑](#categories)
 > Natural scene statistics · ↑ higher=better
 
 **[`naturalness`](src/ayase/modules/naturalness.py)** — Measures naturalness of content (natural vs synthetic)
@@ -506,7 +508,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: Pillow, pyiqa
 - **Config**: `use_pyiqa=True`, `subsample=2`, `warning_threshold=0.4`
 
-### `niqe`
+### `niqe` [↑](#categories)
 > Natural Image Quality Evaluator (lower=better) · ↓ lower=better
 
 **[`niqe`](src/ayase/modules/niqe.py)** — Natural Image Quality Evaluator (no-reference)
@@ -515,7 +517,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=2`, `warning_threshold=7.0`
 
-### `nr_gvqm_score`
+### `nr_gvqm_score` [↑](#categories)
 > NR-GVQM cloud gaming VQA (higher=better) · ↑ higher=better
 
 **[`nr_gvqm`](src/ayase/modules/nr_gvqm.py)** — NR-GVQM no-reference gaming video quality (ISM 2018, 9 features)
@@ -524,7 +526,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic
 - **Config**: `subsample=8`
 
-### `nrqm`
+### `nrqm` [↑](#categories)
 > NRQM No-Reference Quality Metric (higher=better) · ↑ higher=better
 
 **[`nrqm`](src/ayase/modules/nrqm.py)** — NRQM no-reference quality metric for super-resolution (higher=better)
@@ -533,7 +535,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=3`
 
-### `paq2piq_score`
+### `paq2piq_score` [↑](#categories)
 > PaQ-2-PiQ patch-to-picture (CVPR 2020) · ↑ higher=better
 
 **[`paq2piq`](src/ayase/modules/paq2piq.py)** — PaQ-2-PiQ patch-to-picture NR quality (CVPR 2020)
@@ -542,7 +544,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `pi_score`
+### `pi_score` [↑](#categories)
 > Perceptual Index (PIRM challenge, lower=better) · ↓ lower=better · PIRM challenge
 
 **[`pi`](src/ayase/modules/pi_metric.py)** — Perceptual Index (PIRM challenge metric, lower=better)
@@ -551,7 +553,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=3`
 
-### `piqe`
+### `piqe` [↑](#categories)
 > PIQE perception-based NR-IQA (lower=better) · ↓ lower=better
 
 **[`piqe`](src/ayase/modules/piqe.py)** — PIQE perception-based no-reference quality (lower=better)
@@ -560,7 +562,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa
 - **Config**: `subsample=3`, `warning_threshold=50.0`
 
-### `presresq_score`
+### `presresq_score` [↑](#categories)
 > PreResQ-R1 rank+score (higher=better) · ↑ higher=better
 
 **[`presresq`](src/ayase/modules/presresq.py)** — PreResQ-R1 rank+score VQA (2025)
@@ -569,7 +571,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `promptiqa_score`
+### `promptiqa_score` [↑](#categories)
 > Few-shot NR-IQA score · ↑ higher=better
 
 **[`promptiqa`](src/ayase/modules/promptiqa.py)** — Prompt-guided NR-IQA (PromptIQA via pyiqa, TOPIQ-NR, or CLIP-IQA+ fallback)
@@ -579,7 +581,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: Pillow, opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `provqa_score`
+### `provqa_score` [↑](#categories)
 > ProVQA progressive 360 (higher=better) · ↑ higher=better
 
 **[`provqa`](src/ayase/modules/provqa.py)** — ProVQA progressive blind 360 VQA (2022)
@@ -588,7 +590,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `ptmvqa_score`
+### `ptmvqa_score` [↑](#categories)
 > PTM-VQA multi-PTM fusion (higher=better) · ↑ higher=better
 
 **[`ptmvqa`](src/ayase/modules/ptmvqa.py)** — PTM-VQA multi-PTM fusion VQA (CVPR 2024)
@@ -599,7 +601,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **VRAM**: ~400 MB
 - **Config**: `subsample=8`
 
-### `qalign_quality`
+### `qalign_quality` [↑](#categories)
 > Q-Align technical quality (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`q_align`](src/ayase/modules/q_align.py)** — Q-Align unified quality + aesthetic assessment (ICML 2024)
@@ -610,7 +612,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/q-future/one-align)
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
-### `qclip_score`
+### `qclip_score` [↑](#categories)
 > Q-CLIP VLM-based (higher=better) · ↑ higher=better
 
 **[`qclip`](src/ayase/modules/qclip.py)** — Q-CLIP VLM-based VQA (2025)
@@ -619,7 +621,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `qcn_score`
+### `qcn_score` [↑](#categories)
 > Geometric order blind IQA · ↑ higher=better
 
 **[`qcn`](src/ayase/modules/qcn.py)** — Blind IQA (QCN via pyiqa, or HyperIQA fallback)
@@ -629,7 +631,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: Pillow, opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `qualiclip_score`
+### `qualiclip_score` [↑](#categories)
 > QualiCLIP opinion-unaware (higher=better) · ↑ higher=better
 
 **[`qualiclip`](src/ayase/modules/qualiclip.py)** — QualiCLIP opinion-unaware CLIP-based no-reference IQA
@@ -638,7 +640,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `rapique_score`
+### `rapique_score` [↑](#categories)
 > RAPIQUE bandpass+CNN NR-VQA (higher=better) · ↑ higher=better
 
 **[`rapique`](src/ayase/modules/rapique.py)** — RAPIQUE rapid NR-VQA via bandpass NSS + CNN features (IEEE OJSP 2021)
@@ -648,7 +650,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: rapique
 - **Config**: `subsample=8`
 
-### `rqvqa_score`
+### `rqvqa_score` [↑](#categories)
 > RQ-VQA rich quality-aware (CVPR 2024 winner) · ↑ higher=better
 
 **[`rqvqa`](src/ayase/modules/rqvqa.py)** — Multi-attribute video quality (RQ-VQA model, CLIP-IQA+, or heuristic fallback)
@@ -659,7 +661,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/sunwei925/RQ-VQA)
 - **Config**: `subsample=8`, `trust_remote_code=True`, `dimensions={'clarity': 0.25, 'aesthetics': 0.2, 'motion_naturalness': 0.25, 'semantic_coherence': 0.15, 'overall_impression': 0.15}`
 
-### `sama_score`
+### `sama_score` [↑](#categories)
 > SAMA scaling+masking (higher=better) · ↑ higher=better
 
 **[`sama`](src/ayase/modules/sama.py)** — SAMA scaling+masking VQA (2024)
@@ -669,7 +671,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: sama
 - **Config**: `subsample=8`, `mask_ratio=0.5`
 
-### `siamvqa_score`
+### `siamvqa_score` [↑](#categories)
 > SiamVQA Siamese high-res (higher=better) · ↑ higher=better
 
 **[`siamvqa`](src/ayase/modules/siamvqa.py)** — SiamVQA Siamese high-resolution VQA (2025)
@@ -679,7 +681,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: siamvqa
 - **Config**: `subsample=8`
 
-### `simplevqa_score`
+### `simplevqa_score` [↑](#categories)
 > SimpleVQA Swin+SlowFast (higher=better) · ↑ higher=better
 
 **[`simplevqa`](src/ayase/modules/simplevqa.py)** — SimpleVQA Swin+SlowFast blind VQA (2022)
@@ -689,7 +691,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: simplevqa
 - **Config**: `subsample=8`
 
-### `spectral_entropy`
+### `spectral_entropy` [↑](#categories)
 > DINOv2 spectral entropy
 
 **[`spectral_complexity`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
@@ -700,7 +702,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/facebookresearch/dinov2)
 - **Config**: `model_type=dinov2_vits14`, `sample_rate=8`, `min_rank_ratio=0.05`, `max_entropy_threshold=6.0`
 
-### `spectral_rank`
+### `spectral_rank` [↑](#categories)
 > DINOv2 effective rank ratio
 
 **[`spectral_complexity`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
@@ -711,7 +713,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/facebookresearch/dinov2)
 - **Config**: `model_type=dinov2_vits14`, `sample_rate=8`, `min_rank_ratio=0.05`, `max_entropy_threshold=6.0`
 
-### `speedqa_score`
+### `speedqa_score` [↑](#categories)
 > SpEED-QA entropic differencing (higher=better) · ↑ higher=better
 
 **[`speedqa`](src/ayase/modules/speedqa.py)** — SpEED-QA spatial efficient entropic differencing NR-VQA (Bampis 2017)
@@ -721,14 +723,14 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: speedqa
 - **Config**: `subsample=8`
 
-### `sqi_score`
+### `sqi_score` [↑](#categories)
 > SQI streaming quality index · ↑ higher=better
 
 **[`sqi`](src/ayase/modules/sqi.py)** — SQI streaming quality index (2016)
 
 - **Input**: vid · **Speed**: ⚡ fast
 
-### `sr4kvqa_score`
+### `sr4kvqa_score` [↑](#categories)
 > SR4KVQA super-resolution 4K (higher=better) · ↑ higher=better
 
 **[`sr4kvqa`](src/ayase/modules/sr4kvqa.py)** — SR4KVQA super-resolution 4K quality (2024)
@@ -737,7 +739,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `stablevqa_score`
+### `stablevqa_score` [↑](#categories)
 > StableVQA video stability (higher=better) · ↑ higher=better
 
 **[`stablevqa`](src/ayase/modules/stablevqa.py)** — StableVQA video stability quality assessment (ACM MM 2023)
@@ -747,7 +749,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: stablevqa
 - **Config**: `step=2`, `max_frames=120`
 
-### `t2v_quality`
+### `t2v_quality` [↑](#categories)
 > Video production quality · ↑ higher=better
 
 **[`t2v_score`](src/ayase/modules/t2v_score.py)** — Text-to-Video alignment and quality scoring
@@ -758,7 +760,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/T2VScore)
 - **Config**: `model_name=TIGER-Lab/T2VScore`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
 
-### `thqa_score`
+### `thqa_score` [↑](#categories)
 > THQA talking head quality (higher=better) · ↑ higher=better
 
 **[`thqa`](src/ayase/modules/thqa.py)** — THQA talking head quality assessment (ICIP 2024)
@@ -768,7 +770,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: thqa
 - **Config**: `subsample=16`
 
-### `tlvqm_score`
+### `tlvqm_score` [↑](#categories)
 > TLVQM two-level video quality · ↑ higher=better
 
 **[`tlvqm`](src/ayase/modules/tlvqm.py)** — Two-level video quality model (CNN-TLVQM or handcrafted fallback)
@@ -780,7 +782,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [GitHub](https://github.com/jarikorhonen/cnn-tlvqm)
 - **Config**: `subsample=8`
 
-### `topiq_score`
+### `topiq_score` [↑](#categories)
 > TOPIQ transformer-based IQA (higher=better) · ↑ higher=better
 
 **[`topiq`](src/ayase/modules/topiq.py)** — TOPIQ transformer-based no-reference IQA
@@ -789,7 +791,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pyiqa, torch
 - **Config**: `variant=topiq_nr`, `subsample=5`, `warning_threshold=0.4`
 
-### `tres_score`
+### `tres_score` [↑](#categories)
 > TReS transformer IQA (WACV 2022) · ↑ higher=better
 
 **[`tres`](src/ayase/modules/tres.py)** — TReS transformer-based NR image quality (WACV 2022)
@@ -798,7 +800,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `uciqe_score`
+### `uciqe_score` [↑](#categories)
 > UCIQE underwater color (higher=better) · ↑ higher=better
 
 **[`uciqe`](src/ayase/modules/uciqe.py)** — UCIQE underwater color image quality evaluation (2015)
@@ -806,7 +808,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `c1=0.468`, `c2=0.2745`, `c3=0.2576`, `subsample=8`
 
-### `ugvq_score`
+### `ugvq_score` [↑](#categories)
 > UGVQ unified generated VQ (higher=better) · ↑ higher=better
 
 **[`ugvq`](src/ayase/modules/ugvq.py)** — UGVQ unified generated video quality (TOMM 2024)
@@ -816,7 +818,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: ugvq
 - **Config**: `subsample=8`
 
-### `uiqm_score`
+### `uiqm_score` [↑](#categories)
 > UIQM underwater quality (higher=better) · ↑ higher=better
 
 **[`uiqm`](src/ayase/modules/uiqm.py)** — UIQM underwater image quality measure (Panetta et al. 2016)
@@ -824,7 +826,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `c1=0.0282`, `c2=0.2953`, `c3=3.5753`, `subsample=8`
 
-### `unique_score`
+### `unique_score` [↑](#categories)
 > UNIQUE unified NR-IQA (TIP 2021) · ↑ higher=better
 
 **[`unique`](src/ayase/modules/unique_iqa.py)** — UNIQUE unified NR image quality (TIP 2021)
@@ -833,7 +835,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `vader_score`
+### `vader_score` [↑](#categories)
 > VADER reward alignment · ↑ higher=better
 
 **[`vader`](src/ayase/modules/vader.py)** — VADER reward gradient alignment (ICLR 2025)
@@ -843,7 +845,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: vader
 - **Config**: `subsample=8`
 
-### `vbliinds_score`
+### `vbliinds_score` [↑](#categories)
 > V-BLIINDS DCT-domain NSS (higher=better) · ↑ higher=better
 
 **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain NSS (Saad 2013)
@@ -853,7 +855,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: vbliinds
 - **Config**: `subsample=8`
 
-### `video_atlas_score`
+### `video_atlas_score` [↑](#categories)
 > Video ATLAS temporal artifacts · ↑ higher=better
 
 **[`video_atlas`](src/ayase/modules/video_atlas.py)** — Video ATLAS temporal artifacts+stalls assessment (2018)
@@ -862,7 +864,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=16`
 
-### `video_memorability`
+### `video_memorability` [↑](#categories)
 > Memorability prediction
 
 **[`video_memorability`](src/ayase/modules/video_memorability.py)** — Content memorability approximation (CLIP/DINOv2 feature statistics, not a trained predictor)
@@ -874,7 +876,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=5`
 
-### `videoreward_vq`
+### `videoreward_vq` [↑](#categories)
 > VideoReward visual quality
 
 **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
@@ -884,7 +886,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: videoreward
 - **Config**: `subsample=8`
 
-### `videoscore_visual`
+### `videoscore_visual` [↑](#categories)
 > VideoScore visual quality · ↑ higher=better
 
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
@@ -894,7 +896,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/VideoScore)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
 
-### `videval_score`
+### `videval_score` [↑](#categories)
 > VIDEVAL 60-feature fusion NR-VQA · ↑ higher=better
 
 **[`videval`](src/ayase/modules/videval.py)** — Feature-fusion NR-VQA (VIDEVAL-style SVR or heuristic linear mapping)
@@ -905,7 +907,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [GitHub](https://github.com/vztu/VIDEVAL)
 - **Config**: `subsample=8`
 
-### `viideo_score`
+### `viideo_score` [↑](#categories)
 > VIIDEO blind natural video statistics (lower=better) · ↓ lower=better
 
 **[`viideo`](src/ayase/modules/viideo.py)** — VIIDEO blind NR-VQA via natural video statistics (Mittal 2016, lower=better)
@@ -915,7 +917,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: viideo
 - **Config**: `subsample=8`
 
-### `vqa2_score`
+### `vqa2_score` [↑](#categories)
 > VQA² LMM quality (higher=better) · ↑ higher=better
 
 **[`vqa2`](src/ayase/modules/vqa2.py)** — VQA² LMM video quality assessment (MM 2025)
@@ -925,7 +927,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: vqa2_assistant
 - **Config**: `subsample=8`
 
-### `vqathinker_score`
+### `vqathinker_score` [↑](#categories)
 > VQAThinker GRPO (higher=better) · ↑ higher=better
 
 **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025)
@@ -934,7 +936,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `vqinsight_score`
+### `vqinsight_score` [↑](#categories)
 > VQ-Insight ByteDance (higher=better) · ↑ higher=better
 
 **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
@@ -943,7 +945,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `vsfa_score`
+### `vsfa_score` [↑](#categories)
 > VSFA quality-aware feature aggregation (higher=better) · ↑ higher=better
 
 **[`vsfa`](src/ayase/modules/vsfa.py)** — VSFA quality-aware feature aggregation with GRU (ACMMM 2019)
@@ -953,7 +955,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: vsfa
 - **Config**: `subsample=8`
 
-### `wadiqam_score`
+### `wadiqam_score` [↑](#categories)
 > WaDIQaM-NR (higher=better) · ↑ higher=better
 
 **[`wadiqam`](src/ayase/modules/wadiqam.py)** — WaDIQaM-NR weighted averaging deep image quality mapper
@@ -962,7 +964,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `zoomvqa_score`
+### `zoomvqa_score` [↑](#categories)
 > Zoom-VQA multi-level (higher=better) · ↑ higher=better
 
 **[`zoomvqa`](src/ayase/modules/zoomvqa.py)** — Zoom-VQA multi-level patch/frame/clip VQA (CVPRW 2023)
@@ -975,7 +977,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 
 ## Full-Reference Quality (57 metrics)
 
-### `ahiq`
+### `ahiq` [↑](#categories)
 > Attention Hybrid IQA (higher=better) · ↑ higher=better
 
 **[`ahiq`](src/ayase/modules/ahiq.py)** — Attention-based Hybrid IQA full-reference (higher=better)
@@ -984,7 +986,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `artfid_score`
+### `artfid_score` [↑](#categories)
 > ArtFID style transfer quality (lower=better) · ↓ lower=better
 
 **[`artfid`](src/ayase/modules/artfid.py)** — ArtFID style transfer quality (FR, 2022, lower=better)
@@ -993,7 +995,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: art_fid
 - **Config**: `subsample=8`
 
-### `avqt_score`
+### `avqt_score` [↑](#categories)
 > Apple AVQT perceptual (higher=better) · ↑ higher=better
 
 **[`avqt`](src/ayase/modules/avqt.py)** — Apple AVQT perceptual video quality (full-reference)
@@ -1002,7 +1004,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: heuristic → cli
 - **Config**: `subsample=8`
 
-### `butteraugli`
+### `butteraugli` [↑](#categories)
 > Butteraugli perceptual distance (lower=better) · ↓ lower=better
 
 **[`butteraugli`](src/ayase/modules/butteraugli.py)** — Butteraugli perceptual distance (Google/JPEG XL, lower=better)
@@ -1012,7 +1014,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: butteraugli, jxlpy
 - **Config**: `subsample=5`, `warning_threshold=2.0`
 
-### `c3dvqa_score`
+### `c3dvqa_score` [↑](#categories)
 > C3DVQA 3D CNN spatiotemporal FR · ↑ higher=better
 
 **[`c3dvqa`](src/ayase/modules/c3dvqa.py)** — 3D CNN spatiotemporal video quality assessment
@@ -1022,7 +1024,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **VRAM**: ~200 MB
 - **Config**: `clip_length=16`, `subsample=4`
 
-### `cgvqm`
+### `cgvqm` [↑](#categories)
 > CGVQM gaming quality (higher=better) · ↑ higher=better
 
 **[`cgvqm`](src/ayase/modules/cgvqm.py)** — CGVQM gaming/rendering quality metric (Intel, higher=better)
@@ -1032,7 +1034,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: cgvqm
 - **Config**: `subsample=5`
 
-### `ciede2000`
+### `ciede2000` [↑](#categories)
 > CIEDE2000 perceptual color difference (lower=better) · ↓ lower=better
 
 **[`ciede2000`](src/ayase/modules/ciede2000.py)** — CIEDE2000 perceptual color difference (lower=better)
@@ -1040,7 +1042,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=5`
 
-### `ckdn_score`
+### `ckdn_score` [↑](#categories)
 > CKDN knowledge distillation FR · ↑ higher=better
 
 **[`ckdn`](src/ayase/modules/ckdn.py)** — CKDN knowledge distillation FR image quality
@@ -1049,7 +1051,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `compressed_vqa_hdr`
+### `compressed_vqa_hdr` [↑](#categories)
 > CompressedVQA-HDR (higher=better) · ↑ higher=better
 
 **[`compressed_vqa_hdr`](src/ayase/modules/compressed_vqa_hdr.py)** — CompressedVQA-HDR FR quality (ICME 2025)
@@ -1057,7 +1059,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `cpp_psnr`
+### `cpp_psnr` [↑](#categories)
 > Craster Parabolic PSNR (dB, higher=better) · ↑ higher=better · dB
 
 **[`spherical_psnr`](src/ayase/modules/spherical_psnr.py)** — S-PSNR/WS-PSNR/CPP-PSNR spherical PSNR (MPEG/JVET)
@@ -1065,7 +1067,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `cw_ssim`
+### `cw_ssim` [↑](#categories)
 > Complex Wavelet SSIM (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`cw_ssim`](src/ayase/modules/cw_ssim.py)** — Complex Wavelet SSIM full-reference metric (0-1, higher=better)
@@ -1074,7 +1076,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `deepvqa_score`
+### `deepvqa_score` [↑](#categories)
 > DeepVQA spatiotemporal FR (higher=better) · ↑ higher=better
 
 **[`deepvqa`](src/ayase/modules/deepvqa.py)** — DeepVQA spatiotemporal masking FR-VQA (ECCV 2018)
@@ -1084,7 +1086,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: deepvqa
 - **Config**: `subsample=8`
 
-### `deepwsd_score`
+### `deepwsd_score` [↑](#categories)
 > DeepWSD Wasserstein distance FR · ↓ lower=better
 
 **[`deepwsd`](src/ayase/modules/deepwsd.py)** — DeepWSD Wasserstein distance FR image quality
@@ -1093,7 +1095,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `dists`
+### `dists` [↑](#categories)
 > DISTS (0-1, lower=more similar) · ↓ lower=better · 0-1, lower=more similar
 
 **[`dists`](src/ayase/modules/dists.py)** — Deep Image Structure and Texture Similarity (full-reference)
@@ -1102,7 +1104,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: piq, torch
 - **Config**: `subsample=5`, `warning_threshold=0.3`, `device=auto`
 
-### `dmm`
+### `dmm` [↑](#categories)
 > DMM Detail Model Metric FR (higher=better) · ↑ higher=better
 
 **[`dmm`](src/ayase/modules/dmm.py)** — DMM detail model metric full-reference (higher=better)
@@ -1111,7 +1113,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `dreamsim`
+### `dreamsim` [↑](#categories)
 > DreamSim CLIP+DINO similarity (lower=more similar) · ↓ lower=better · lower=more similar
 
 **[`dreamsim`](src/ayase/modules/dreamsim_metric.py)** — DreamSim foundation model perceptual similarity (CLIP+DINO ensemble)
@@ -1120,7 +1122,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: Pillow, dreamsim, opencv-python, torch
 - **Config**: `subsample=8`, `model_type=ensemble`
 
-### `erqa_score`
+### `erqa_score` [↑](#categories)
 > ERQA edge restoration quality (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`erqa`](src/ayase/modules/erqa.py)** — ERQA edge restoration quality assessment (FR, 2022)
@@ -1129,7 +1131,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: erqa
 - **Config**: `subsample=8`
 
-### `flip_score`
+### `flip_score` [↑](#categories)
 > NVIDIA FLIP perceptual metric (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`flip`](src/ayase/modules/flip_metric.py)** — NVIDIA FLIP perceptual difference (0-1, lower=better)
@@ -1139,7 +1141,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: flip-evaluator, flip_torch, torch
 - **Config**: `subsample=5`, `warning_threshold=0.3`
 
-### `flolpips`
+### `flolpips` [↑](#categories)
 > FloLPIPS flow-based perceptual FR
 
 **[`flolpips`](src/ayase/modules/flolpips.py)** — Flow-compensated perceptual distance (RAFT+LPIPS, Farneback+LPIPS, or MSE fallback)
@@ -1149,7 +1151,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: lpips, opencv-python, torch, torchvision
 - **Config**: `subsample=8`
 
-### `fsim`
+### `fsim` [↑](#categories)
 > Feature Similarity Index (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`perceptual_fr`](src/ayase/modules/perceptual_fr.py)** — FSIM + GMSD + VSI full-reference perceptual metrics
@@ -1158,7 +1160,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: piq, torch
 - **Config**: `subsample=5`, `device=auto`
 
-### `funque_score`
+### `funque_score` [↑](#categories)
 > FUNQUE unified quality (beats VMAF) · ↑ higher=better
 
 **[`funque`](src/ayase/modules/funque.py)** — Fused quality evaluator (FUNQUE package, handcrafted FR, or NR fallback)
@@ -1168,7 +1170,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: funque, opencv-python
 - **Config**: `subsample=8`
 
-### `gmsd`
+### `gmsd` [↑](#categories)
 > Gradient Magnitude Similarity Deviation (lower=better) · ↓ lower=better
 
 **[`perceptual_fr`](src/ayase/modules/perceptual_fr.py)** — FSIM + GMSD + VSI full-reference perceptual metrics
@@ -1177,7 +1179,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: piq, torch
 - **Config**: `subsample=5`, `device=auto`
 
-### `graphsim_score`
+### `graphsim_score` [↑](#categories)
 > GraphSIM gradient (higher=better) · ↑ higher=better
 
 **[`graphsim`](src/ayase/modules/graphsim.py)** — GraphSIM graph gradient point cloud quality (2020)
@@ -1185,7 +1187,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Packages**: open3d, scipy
 
-### `mad`
+### `mad` [↑](#categories)
 > Most Apparent Distortion (lower=better) · ↓ lower=better
 
 **[`mad`](src/ayase/modules/mad_metric.py)** — Most Apparent Distortion full-reference metric (lower=better)
@@ -1194,7 +1196,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `movie_score`
+### `movie_score` [↑](#categories)
 > MOVIE motion trajectory FR · ↑ higher=better
 
 **[`movie`](src/ayase/modules/movie.py)** — Video quality via spatiotemporal Gabor decomposition (FR or NR fallback)
@@ -1203,7 +1205,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=8`
 
-### `ms_ssim`
+### `ms_ssim` [↑](#categories)
 > Multi-Scale SSIM (0-1) · 0-1
 
 **[`ms_ssim`](src/ayase/modules/ms_ssim.py)** — Multi-Scale SSIM perceptual similarity metric (full-reference)
@@ -1212,7 +1214,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pytorch_msssim, torch
 - **Config**: `scales=5`, `weights=[0.0448, 0.2856, 0.3001, 0.2363, 0.1333]`, `subsample=1`, `warning_threshold=0.85`, `device=auto`
 
-### `nlpd`
+### `nlpd` [↑](#categories)
 > Normalized Laplacian Pyramid Distance (lower=better) · ↓ lower=better
 
 **[`nlpd`](src/ayase/modules/nlpd_metric.py)** — Normalized Laplacian Pyramid Distance full-reference (lower=better)
@@ -1221,7 +1223,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `pc_d1_psnr`
+### `pc_d1_psnr` [↑](#categories)
 > Point-to-point PSNR (dB) · dB
 
 **[`pc_psnr`](src/ayase/modules/pc_psnr.py)** — D1/D2 MPEG point cloud PSNR
@@ -1229,7 +1231,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Packages**: open3d, scipy
 
-### `pc_d2_psnr`
+### `pc_d2_psnr` [↑](#categories)
 > Point-to-plane PSNR (dB) · dB
 
 **[`pc_psnr`](src/ayase/modules/pc_psnr.py)** — D1/D2 MPEG point cloud PSNR
@@ -1237,7 +1239,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Packages**: open3d, scipy
 
-### `pcqm_score`
+### `pcqm_score` [↑](#categories)
 > PCQM geometry+color (higher=better) · ↑ higher=better
 
 **[`pcqm`](src/ayase/modules/pcqm.py)** — PCQM geometry+color point cloud quality (2020)
@@ -1245,7 +1247,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Packages**: open3d, scipy
 
-### `pieapp`
+### `pieapp` [↑](#categories)
 > PieAPP pairwise preference (lower=better) · ↓ lower=better
 
 **[`pieapp`](src/ayase/modules/pieapp.py)** — PieAPP full-reference perceptual error via pairwise preference (lower=better)
@@ -1254,7 +1256,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `pointssim_score`
+### `pointssim_score` [↑](#categories)
 > PointSSIM structural (higher=better) · ↑ higher=better
 
 **[`pointssim`](src/ayase/modules/pointssim.py)** — PointSSIM structural similarity for point clouds (2020)
@@ -1262,7 +1264,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Packages**: open3d, scipy
 
-### `psnr99`
+### `psnr99` [↑](#categories)
 > PSNR99 worst-case region quality (dB, higher=better) · ↑ higher=better · dB
 
 **[`psnr99`](src/ayase/modules/psnr99.py)** — PSNR99 worst-case region quality for super-resolution (FR, 2025)
@@ -1270,7 +1272,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`, `block_size=32`
 
-### `psnr_div`
+### `psnr_div` [↑](#categories)
 > PSNR_DIV motion-weighted PSNR (dB, higher=better) · ↑ higher=better · dB
 
 **[`psnr_div`](src/ayase/modules/psnr_div.py)** — PSNR_DIV motion-weighted PSNR for frame interpolation (ICIP 2025, FR)
@@ -1278,7 +1280,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`, `block_size=16`
 
-### `psnr_hvs`
+### `psnr_hvs` [↑](#categories)
 > PSNR-HVS perceptually weighted (dB, higher=better) · ↑ higher=better · dB
 
 **[`psnr_hvs`](src/ayase/modules/psnr_hvs.py)** — PSNR-HVS + PSNR-HVS-M perceptually weighted PSNR (dB, higher=better)
@@ -1287,7 +1289,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: dct
 - **Config**: `subsample=5`
 
-### `psnr_hvs_m`
+### `psnr_hvs_m` [↑](#categories)
 > PSNR-HVS-M with masking (dB, higher=better) · ↑ higher=better · dB
 
 **[`psnr_hvs`](src/ayase/modules/psnr_hvs.py)** — PSNR-HVS + PSNR-HVS-M perceptually weighted PSNR (dB, higher=better)
@@ -1296,7 +1298,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Backend**: dct
 - **Config**: `subsample=5`
 
-### `pvmaf_score`
+### `pvmaf_score` [↑](#categories)
 > pVMAF predictive VMAF (0-100) · ↑ higher=better · 0-100
 
 **[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100)
@@ -1306,7 +1308,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: pvmaf
 - **Config**: `subsample=8`
 
-### `rankdvqa_score`
+### `rankdvqa_score` [↑](#categories)
 > RankDVQA ranking-based FR (higher=better) · ↑ higher=better
 
 **[`rankdvqa`](src/ayase/modules/rankdvqa.py)** — RankDVQA ranking-based FR VQA (WACV 2024)
@@ -1314,7 +1316,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `s_psnr`
+### `s_psnr` [↑](#categories)
 > Spherical PSNR (dB, higher=better) · ↑ higher=better · dB
 
 **[`spherical_psnr`](src/ayase/modules/spherical_psnr.py)** — S-PSNR/WS-PSNR/CPP-PSNR spherical PSNR (MPEG/JVET)
@@ -1322,7 +1324,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `ssimc`
+### `ssimc` [↑](#categories)
 > Complex Wavelet SSIM-C FR (higher=better) · ↑ higher=better
 
 **[`ssimc`](src/ayase/modules/ssimc.py)** — SSIM-C complex wavelet structural similarity FR (higher=better)
@@ -1331,7 +1333,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `ssimulacra2`
+### `ssimulacra2` [↑](#categories)
 > SSIMULACRA 2 (0-100, lower=better, JPEG XL standard) · ↓ lower=better · 0-100, JPEG XL standard
 
 **[`ssimulacra2`](src/ayase/modules/ssimulacra2.py)** — SSIMULACRA 2 perceptual distance (JPEG XL standard, lower=better)
@@ -1340,7 +1342,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: ssimulacra2
 - **Config**: `subsample=5`, `warning_threshold=50.0`
 
-### `st_greed_score`
+### `st_greed_score` [↑](#categories)
 > ST-GREED variable frame rate FR · ↑ higher=better
 
 **[`st_greed`](src/ayase/modules/st_greed.py)** — Spatial-temporal entropic quality (FR entropic difference or NR heuristic fallback)
@@ -1349,7 +1351,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=16`
 
-### `st_lpips`
+### `st_lpips` [↑](#categories)
 > ST-LPIPS spatiotemporal perceptual FR
 
 **[`st_lpips`](src/ayase/modules/st_lpips.py)** — Spatiotemporal perceptual video quality (ST-LPIPS model, LPIPS, or heuristic fallback)
@@ -1359,7 +1361,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: lpips, opencv-python, stlpips-pytorch, torch
 - **Config**: `subsample=8`
 
-### `st_mad`
+### `st_mad` [↑](#categories)
 > ST-MAD spatiotemporal MAD (lower=better) · ↓ lower=better
 
 **[`st_mad`](src/ayase/modules/st_mad.py)** — ST-MAD spatiotemporal MAD (TIP 2012)
@@ -1367,7 +1369,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `strred`
+### `strred` [↑](#categories)
 > STRRED reduced-reference temporal (lower=better) · ↓ lower=better
 
 **[`strred`](src/ayase/modules/strred.py)** — STRRED reduced-reference temporal quality (ITU, lower=better)
@@ -1377,7 +1379,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: scikit-video
 - **Config**: `subsample=3`
 
-### `topiq_fr`
+### `topiq_fr` [↑](#categories)
 > TOPIQ full-reference (higher=better) · ↑ higher=better
 
 **[`topiq_fr`](src/ayase/modules/topiq_fr.py)** — TOPIQ full-reference top-down semantics-to-distortion IQA (higher=better)
@@ -1386,7 +1388,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `vfips_score`
+### `vfips_score` [↑](#categories)
 > VFIPS frame interpolation perceptual (lower=better) · ↓ lower=better
 
 **[`vfips`](src/ayase/modules/vfips.py)** — VFIPS frame interpolation perceptual similarity (ECCV 2022, FR)
@@ -1394,7 +1396,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `vif`
+### `vif` [↑](#categories)
 > Visual Information Fidelity
 
 **[`vif`](src/ayase/modules/vif.py)** — Visual Information Fidelity metric (full-reference)
@@ -1403,7 +1405,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: piq, torch
 - **Config**: `subsample=1`, `warning_threshold=0.3`, `device=auto`
 
-### `vmaf`
+### `vmaf` [↑](#categories)
 > VMAF (0-100, higher=better) · ↑ higher=better · 0-100
 
 **[`vmaf`](src/ayase/modules/vmaf.py)** — VMAF perceptual video quality metric (full-reference)
@@ -1412,14 +1414,14 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: vmaf
 - **Config**: `vmaf_model=vmaf_v0.6.1`, `subsample=1`, `use_ffmpeg=True`, `warning_threshold=70.0`
 
-### `vmaf_4k`
+### `vmaf_4k` [↑](#categories)
 > VMAF 4K model (0-100, higher=better) · ↑ higher=better · 0-100
 
 **[`vmaf_4k`](src/ayase/modules/vmaf_4k.py)** — VMAF 4K model for UHD content (0-100, higher=better)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
 
-### `vmaf_neg`
+### `vmaf_neg` [↑](#categories)
 > VMAF NEG (no enhancement gain, 0-100, higher=better) · ↑ higher=better · no enhancement gain, 0-100
 
 **[`vmaf_neg`](src/ayase/modules/vmaf_neg.py)** — VMAF NEG no-enhancement-gain variant (0-100, higher=better)
@@ -1427,14 +1429,14 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=1`, `warning_threshold=70.0`
 
-### `vmaf_phone`
+### `vmaf_phone` [↑](#categories)
 > VMAF phone model (0-100, higher=better) · ↑ higher=better · 0-100
 
 **[`vmaf_phone`](src/ayase/modules/vmaf_phone.py)** — VMAF phone model for mobile viewing (0-100, higher=better)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
 
-### `vsi_score`
+### `vsi_score` [↑](#categories)
 > Visual Saliency Index (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`perceptual_fr`](src/ayase/modules/perceptual_fr.py)** — FSIM + GMSD + VSI full-reference perceptual metrics
@@ -1443,7 +1445,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: piq, torch
 - **Config**: `subsample=5`, `device=auto`
 
-### `wadiqam_fr`
+### `wadiqam_fr` [↑](#categories)
 > WaDIQaM full-reference (higher=better) · ↑ higher=better
 
 **[`wadiqam_fr`](src/ayase/modules/wadiqam_fr.py)** — WaDIQaM full-reference deep quality metric (higher=better)
@@ -1452,7 +1454,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `ws_psnr`
+### `ws_psnr` [↑](#categories)
 > Weighted Spherical PSNR (dB, higher=better) · ↑ higher=better · dB
 
 **[`spherical_psnr`](src/ayase/modules/spherical_psnr.py)** — S-PSNR/WS-PSNR/CPP-PSNR spherical PSNR (MPEG/JVET)
@@ -1460,7 +1462,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `ws_ssim`
+### `ws_ssim` [↑](#categories)
 > Weighted Spherical SSIM (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`ws_ssim`](src/ayase/modules/ws_ssim.py)** — WS-SSIM weighted spherical SSIM
@@ -1468,7 +1470,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=8`
 
-### `xpsnr`
+### `xpsnr` [↑](#categories)
 > XPSNR perceptual PSNR (dB, higher=better) · ↑ higher=better · dB
 
 **[`xpsnr`](src/ayase/modules/xpsnr.py)** — XPSNR perceptually weighted PSNR (Fraunhofer, dB, higher=better)
@@ -1478,7 +1480,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 
 ## Text-Video Alignment (26 metrics)
 
-### `aigcvqa_alignment`
+### `aigcvqa_alignment` [↑](#categories)
 > AIGC-VQA text-video alignment
 
 **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
@@ -1488,7 +1490,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Packages**: aigcvqa
 - **Config**: `subsample=8`
 
-### `aigv_alignment`
+### `aigv_alignment` [↑](#categories)
 > AI video text-video alignment
 
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor model, CLIP+heuristic, or OpenCV fallback)
@@ -1500,7 +1502,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/wangjiarui153/AIGV-Assessor)
 - **Config**: `subsample=8`, `trust_remote_code=True`
 
-### `blip_bleu`
+### `blip_bleu` [↑](#categories)
 
 **[`captioning`](src/ayase/modules/captioning.py)** — Generates captions using BLIP + computes BLEU score (EvalCrafter blip_bleu)
 
@@ -1509,7 +1511,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Source**: [HF](https://huggingface.co/Salesforce/blip-image-captioning-base)
 - **Config**: `model_name=Salesforce/blip-image-captioning-base`, `num_frames=5`
 
-### `clip_score`
+### `clip_score` [↑](#categories)
 > Caption-image alignment · ↑ higher=better
 
 Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
@@ -1522,7 +1524,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, `warning_threshold=0.2`
 
-### `compbench_action`
+### `compbench_action` [↑](#categories)
 > Action binding (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1534,7 +1536,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `compbench_attribute`
+### `compbench_attribute` [↑](#categories)
 > Attribute binding (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1546,7 +1548,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `compbench_numeracy`
+### `compbench_numeracy` [↑](#categories)
 > Generative numeracy (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1558,7 +1560,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `compbench_object_rel`
+### `compbench_object_rel` [↑](#categories)
 > Object relationship (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1570,7 +1572,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `compbench_overall`
+### `compbench_overall` [↑](#categories)
 > Overall composition (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1582,7 +1584,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `compbench_scene`
+### `compbench_scene` [↑](#categories)
 > Scene composition (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1594,7 +1596,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `compbench_spatial`
+### `compbench_spatial` [↑](#categories)
 > Spatial relationship (0-1) · 0-1
 
 **[`t2v_compbench`](src/ayase/modules/t2v_compbench.py)** — T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)
@@ -1606,7 +1608,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
 
-### `dsg_score`
+### `dsg_score` [↑](#categories)
 > DSG Davidsonian Scene Graph (higher=better) · ↑ higher=better
 
 **[`dsg`](src/ayase/modules/dsg.py)** — DSG Davidsonian Scene Graph faithfulness (ICLR 2024, Google)
@@ -1616,7 +1618,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: dsg
 - **Config**: `threshold=0.25`, `subsample=4`
 
-### `sd_score`
+### `sd_score` [↑](#categories)
 > SD-reference similarity (0-1) · ↑ higher=better · 0-1
 
 **[`sd_reference`](src/ayase/modules/sd_reference.py)** — SD Score — CLIP similarity between video frames and SDXL-generated reference images
@@ -1627,7 +1629,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `clip_model=openai/clip-vit-base-patch32`, `sdxl_model=stabilityai/stable-diffusion-xl-base-1.0`, `num_sd_images=5`, `num_video_frames=8`, `sd_steps=20`, `cache_dir=.ayase_sd_cache`
 
-### `t2v_alignment`
+### `t2v_alignment` [↑](#categories)
 > Text-video semantic alignment
 
 **[`t2v_score`](src/ayase/modules/t2v_score.py)** — Text-to-Video alignment and quality scoring
@@ -1638,7 +1640,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/T2VScore)
 - **Config**: `model_name=TIGER-Lab/T2VScore`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
 
-### `t2v_score`
+### `t2v_score` [↑](#categories)
 > T2VScore alignment + quality · ↑ higher=better
 
 **[`t2v_score`](src/ayase/modules/t2v_score.py)** — Text-to-Video alignment and quality scoring
@@ -1649,7 +1651,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/T2VScore)
 - **Config**: `model_name=TIGER-Lab/T2VScore`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
 
-### `t2veval_score`
+### `t2veval_score` [↑](#categories)
 > T2VEval consistency+realness (higher=better) · ↑ higher=better
 
 **[`t2veval`](src/ayase/modules/t2veval.py)** — T2VEval text-video consistency+realness (2025)
@@ -1658,7 +1660,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `tifa_score`
+### `tifa_score` [↑](#categories)
 > VQA faithfulness (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`tifa`](src/ayase/modules/tifa.py)** — TIFA text-to-image faithfulness via VQA question answering (ICCV 2023)
@@ -1670,7 +1672,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa)
 - **Config**: `vqa_model=dandelin/vilt-b32-finetuned-vqa`, `num_questions=8`, `subsample=4`
 
-### `umtscore`
+### `umtscore` [↑](#categories)
 > UMTScore video-text alignment · ↑ higher=better
 
 **[`umtscore`](src/ayase/modules/umtscore.py)** — UMTScore video-text alignment via UMT features
@@ -1682,7 +1684,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=8`
 
-### `video_reward_score`
+### `video_reward_score` [↑](#categories)
 > Human preference reward · ↑ higher=better
 
 **[`video_reward`](src/ayase/modules/video_reward.py)** — VideoAlign human preference reward model (NeurIPS 2025)
@@ -1692,7 +1694,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/KlingTeam/VideoAlign-Reward)
 - **Config**: `model_name=KlingTeam/VideoAlign-Reward`, `subsample=8`, `trust_remote_code=True`
 
-### `video_text_score`
+### `video_text_score` [↑](#categories)
 > Video-text alignment via X-CLIP/CLIP (0-1) · ↑ higher=better · 0-1
 
 **[`video_text_matching`](src/ayase/modules/video_text_matching.py)** — ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP
@@ -1703,7 +1705,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `use_xclip=False`, `model_name=openai/clip-vit-base-patch32`, `xclip_model_name=microsoft/xclip-base-patch32`, `min_score_threshold=0.2`, `consistency_std_threshold=0.1`
 
-### `videoreward_ta`
+### `videoreward_ta` [↑](#categories)
 > VideoReward text alignment
 
 **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
@@ -1713,7 +1715,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: videoreward
 - **Config**: `subsample=8`
 
-### `videoscore_alignment`
+### `videoscore_alignment` [↑](#categories)
 > VideoScore text-video alignment · ↑ higher=better
 
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
@@ -1723,7 +1725,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/VideoScore)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
 
-### `videoscore_factual`
+### `videoscore_factual` [↑](#categories)
 > VideoScore factual consistency · ↑ higher=better
 
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
@@ -1733,7 +1735,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/VideoScore)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
 
-### `vqa_a_score`
+### `vqa_a_score` [↑](#categories)
 > ↑ higher=better
 
 **[`aesthetic`](src/ayase/modules/aesthetic.py)** — Estimates aesthetic quality using Aesthetic Predictor V2.5
@@ -1742,7 +1744,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
-### `vqa_score_alignment`
+### `vqa_score_alignment` [↑](#categories)
 > ↑ higher=better
 
 **[`vqa_score`](src/ayase/modules/vqa_score.py)** — VQAScore text-visual alignment via VQA probability (0-1, higher=better)
@@ -1753,7 +1755,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/ViT-B/32)
 - **Config**: `model=clip-flant5-xxl`, `subsample=4`
 
-### `vqa_t_score`
+### `vqa_t_score` [↑](#categories)
 > ↑ higher=better
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -1764,7 +1766,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 
 ## Temporal Consistency (24 metrics)
 
-### `aigv_temporal`
+### `aigv_temporal` [↑](#categories)
 > AI video temporal smoothness
 
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor model, CLIP+heuristic, or OpenCV fallback)
@@ -1776,7 +1778,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/wangjiarui153/AIGV-Assessor)
 - **Config**: `subsample=8`, `trust_remote_code=True`
 
-### `background_consistency`
+### `background_consistency` [↑](#categories)
 > ↑ higher=better
 
 **[`background_consistency`](src/ayase/modules/background_consistency.py)** — Background consistency using CLIP (all pairwise frame similarity)
@@ -1787,7 +1789,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=16`, `warning_threshold=0.5`
 
-### `cdc_score`
+### `cdc_score` [↑](#categories)
 > CDC color distribution consistency (lower=better) · ↓ lower=better
 
 **[`cdc`](src/ayase/modules/cdc.py)** — CDC color distribution consistency for video colorization (2024)
@@ -1795,7 +1797,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=16`, `hist_bins=32`
 
-### `chronomagic_ch_score`
+### `chronomagic_ch_score` [↑](#categories)
 > Chrono-hallucination (0-1, lower=fewer) · ↓ lower=better · 0-1, lower=fewer
 
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore + CHScore (CLIP / heuristic)
@@ -1807,7 +1809,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=16`, `hallucination_threshold=2.0`
 
-### `chronomagic_mt_score`
+### `chronomagic_mt_score` [↑](#categories)
 > Metamorphic temporal (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore + CHScore (CLIP / heuristic)
@@ -1819,7 +1821,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=16`, `hallucination_threshold=2.0`
 
-### `clip_temp`
+### `clip_temp` [↑](#categories)
 
 **[`clip_temporal`](src/ayase/modules/clip_temporal.py)** — CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)
 
@@ -1829,7 +1831,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, `temp_threshold=0.9`, `face_threshold=0.85`
 
-### `davis_f`
+### `davis_f` [↑](#categories)
 > DAVIS F boundary accuracy (higher=better) · ↑ higher=better
 
 **[`davis_jf`](src/ayase/modules/davis_jf.py)** — DAVIS J&F video segmentation quality (FR, 2016)
@@ -1838,7 +1840,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=8`, `boundary_threshold=2`
 
-### `davis_j`
+### `davis_j` [↑](#categories)
 > DAVIS J region similarity IoU (higher=better) · ↑ higher=better
 
 **[`davis_jf`](src/ayase/modules/davis_jf.py)** — DAVIS J&F video segmentation quality (FR, 2016)
@@ -1847,7 +1849,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=8`, `boundary_threshold=2`
 
-### `depth_temporal_consistency`
+### `depth_temporal_consistency` [↑](#categories)
 > Depth map correlation 0-1 (higher=better) · ↑ higher=better
 
 **[`depth_consistency`](src/ayase/modules/depth_consistency.py)** — Monocular depth temporal consistency
@@ -1857,7 +1859,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/intel-isl/MiDaS)
 - **Config**: `model_type=MiDaS_small`, `device=auto`, `subsample=3`, `max_frames=200`, `warning_threshold=0.7`
 
-### `flicker_score`
+### `flicker_score` [↑](#categories)
 > Flicker severity 0-100 (lower=better) · ↓ lower=better
 
 **[`flicker_detection`](src/ayase/modules/flicker_detection.py)** — Detects temporal luminance flicker
@@ -1865,7 +1867,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=600`, `warning_threshold=30.0`
 
-### `flow_coherence`
+### `flow_coherence` [↑](#categories)
 > Bidirectional optical flow consistency (0-1) · 0-1
 
 **[`flow_coherence`](src/ayase/modules/flow_coherence.py)** — Bidirectional optical flow consistency (0-1, higher=coherent)
@@ -1874,7 +1876,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=8`
 
-### `judder_score`
+### `judder_score` [↑](#categories)
 > Judder severity 0-100 (lower=better) · ↓ lower=better
 
 **[`judder_stutter`](src/ayase/modules/judder_stutter.py)** — Detects judder (uneven cadence) and stutter (duplicate frames)
@@ -1882,7 +1884,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=600`, `duplicate_threshold=1.0`, `warning_threshold=20.0`
 
-### `jump_cut_score`
+### `jump_cut_score` [↑](#categories)
 > Jump cut absence (0-1, 1=no cuts) · ↑ higher=better · 0-1, 1=no cuts
 
 **[`jump_cut`](src/ayase/modules/jump_cut.py)** — Jump cut / abrupt transition detection (0-1, 1=no cuts)
@@ -1891,7 +1893,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `threshold=40.0`
 
-### `lse_c`
+### `lse_c` [↑](#categories)
 > LSE-C lip sync error confidence (higher=better) · ↑ higher=better
 
 **[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet/Wav2Lip, 2020)
@@ -1901,7 +1903,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: soundfile, syncnet
 - **Config**: `subsample=16`, `sample_rate=16000`
 
-### `lse_d`
+### `lse_d` [↑](#categories)
 > LSE-D lip sync error distance (lower=better) · ↓ lower=better
 
 **[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet/Wav2Lip, 2020)
@@ -1911,7 +1913,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: soundfile, syncnet
 - **Config**: `subsample=16`, `sample_rate=16000`
 
-### `object_permanence_score`
+### `object_permanence_score` [↑](#categories)
 > ↑ higher=better
 
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
@@ -1920,7 +1922,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: ultralytics
 - **Config**: `backend=auto`, `subsample=2`, `max_frames=300`, `match_distance=80.0`, `warning_threshold=50.0`
 
-### `scene_stability`
+### `scene_stability` [↑](#categories)
 
 **[`scene_detection`](src/ayase/modules/scene_detection.py)** — Scene stability metric — penalises rapid cuts (0-1, higher=more stable)
 
@@ -1928,7 +1930,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python, transnetv2
 - **Config**: `threshold=0.5`
 
-### `semantic_consistency`
+### `semantic_consistency` [↑](#categories)
 > Segmentation temporal IoU 0-1 (higher=better) · ↑ higher=better
 
 **[`semantic_segmentation_consistency`](src/ayase/modules/semantic_segmentation_consistency.py)** — Temporal stability of semantic segmentation
@@ -1938,7 +1940,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/nvidia/segformer-b0-finetuned-ade-512-512)
 - **Config**: `backend=auto`, `device=auto`, `subsample=3`, `max_frames=150`, `num_clusters=8`, `warning_threshold=0.6`
 
-### `stutter_score`
+### `stutter_score` [↑](#categories)
 > Duplicate/dropped frames 0-100 (lower=better) · ↓ lower=better
 
 **[`judder_stutter`](src/ayase/modules/judder_stutter.py)** — Detects judder (uneven cadence) and stutter (duplicate frames)
@@ -1946,7 +1948,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=600`, `duplicate_threshold=1.0`, `warning_threshold=20.0`
 
-### `subject_consistency`
+### `subject_consistency` [↑](#categories)
 > Subject identity consistency (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`subject_consistency`](src/ayase/modules/subject_consistency.py)** — Subject consistency using DINOv2-base (all pairwise frame similarity)
@@ -1957,7 +1959,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/facebook/dinov2-base)
 - **Config**: `model_name=facebook/dinov2-base`, `max_frames=16`, `warning_threshold=0.6`
 
-### `video_text_temporal`
+### `video_text_temporal` [↑](#categories)
 > Video-text temporal consistency (0-1) · 0-1
 
 **[`video_text_matching`](src/ayase/modules/video_text_matching.py)** — ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP
@@ -1968,7 +1970,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `use_xclip=False`, `model_name=openai/clip-vit-base-patch32`, `xclip_model_name=microsoft/xclip-base-patch32`, `min_score_threshold=0.2`, `consistency_std_threshold=0.1`
 
-### `videoscore_temporal`
+### `videoscore_temporal` [↑](#categories)
 > VideoScore temporal consistency · ↑ higher=better
 
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
@@ -1978,7 +1980,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/TIGER-Lab/VideoScore)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
 
-### `warping_error`
+### `warping_error` [↑](#categories)
 > ↓ lower=better
 
 **[`temporal_flickering`](src/ayase/modules/temporal_flickering.py)** — Warping Error using RAFT optical flow with occlusion masking
@@ -1987,7 +1989,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: torch, torchvision
 - **Config**: `warning_threshold=0.02`, `max_frames=300`
 
-### `world_consistency_score`
+### `world_consistency_score` [↑](#categories)
 > WCS object permanence (higher=better) · ↑ higher=better
 
 **[`world_consistency`](src/ayase/modules/world_consistency.py)** — World Consistency Score: object permanence + causal compliance (2025)
@@ -2000,7 +2002,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 
 ## Motion & Dynamics (19 metrics)
 
-### `aigv_dynamic`
+### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
 
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor model, CLIP+heuristic, or OpenCV fallback)
@@ -2012,7 +2014,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/wangjiarui153/AIGV-Assessor)
 - **Config**: `subsample=8`, `trust_remote_code=True`
 
-### `bas_score`
+### `bas_score` [↑](#categories)
 > BAS beat alignment score (higher=better) · ↑ higher=better
 
 **[`beat_alignment`](src/ayase/modules/beat_alignment.py)** — BAS beat alignment score — audio-motion sync (EDGE/CVPR 2023)
@@ -2022,7 +2024,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: librosa
 - **Config**: `tolerance=0.1`, `subsample=2`
 
-### `camera_jitter_score`
+### `camera_jitter_score` [↑](#categories)
 > Camera stability (0-1, 1=stable) · ↓ lower=better · 0-1, 1=stable
 
 **[`camera_jitter`](src/ayase/modules/camera_jitter.py)** — Camera jitter/shake detection (0-1, 1=stable)
@@ -2031,14 +2033,14 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=16`
 
-### `camera_motion_score`
+### `camera_motion_score` [↑](#categories)
 > Camera motion intensity · ↑ higher=better
 
 **[`camera_motion`](src/ayase/modules/camera_motion.py)** — Analyzes camera motion stability (VMBench) using Homography
 
 - **Input**: vid · **Speed**: ⚡ fast
 
-### `dynamics_controllability`
+### `dynamics_controllability` [↑](#categories)
 > Motion control fidelity
 
 **[`dynamics_controllability`](src/ayase/modules/dynamics_controllability.py)** — Assesses motion controllability based on text-motion alignment
@@ -2049,7 +2051,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/facebookresearch/co-tracker)
 - **Config**: `subsample=16`
 
-### `dynamics_range`
+### `dynamics_range` [↑](#categories)
 > Extent of content variation
 
 **[`dynamics_range`](src/ayase/modules/dynamics_range.py)** — Measures extent of motion and content variation (DEVIL protocol)
@@ -2057,7 +2059,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `scene_change_threshold=30.0`
 
-### `flow_score`
+### `flow_score` [↑](#categories)
 > ↑ higher=better
 
 **[`advanced_flow`](src/ayase/modules/advanced_flow.py)** — RAFT optical flow: flow_score (all consecutive pairs)
@@ -2066,7 +2068,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: torch, torchvision
 - **Config**: `use_large_model=True`, `max_frames=150`
 
-### `motion_ac_score`
+### `motion_ac_score` [↑](#categories)
 > ↑ higher=better
 
 **[`motion_amplitude`](src/ayase/modules/motion_amplitude.py)** — Motion amplitude classification vs caption (motion_ac_score via RAFT)
@@ -2075,7 +2077,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: torch, torchvision
 - **Config**: `amplitude_threshold=5.0`, `max_frames=150`, `scoring_mode=binary`
 
-### `motion_score`
+### `motion_score` [↑](#categories)
 > Scene motion intensity · ↑ higher=better
 
 **[`motion`](src/ayase/modules/motion.py)** — Analyzes motion dynamics (optical flow, flickering)
@@ -2083,7 +2085,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `sample_rate=5`, `low_motion_threshold=0.5`, `high_motion_threshold=20.0`
 
-### `motion_smoothness`
+### `motion_smoothness` [↑](#categories)
 > Motion smoothness (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`motion_smoothness`](src/ayase/modules/motion_smoothness.py)** — Motion smoothness via RIFE VFI reconstruction error (VBench)
@@ -2093,7 +2095,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/rife/flownet.pkl)
 - **Config**: `vfi_error_threshold=0.08`, `max_frames=64`
 
-### `physics_score`
+### `physics_score` [↑](#categories)
 > Physics plausibility (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`physics`](src/ayase/modules/physics.py)** — Physics plausibility via trajectory analysis (CoTracker / LK / heuristic)
@@ -2104,7 +2106,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/facebookresearch/co-tracker)
 - **Config**: `subsample=16`, `accel_threshold=50.0`
 
-### `playback_speed_score`
+### `playback_speed_score` [↑](#categories)
 > Normal speed (1.0=normal) · ↑ higher=better
 
 **[`playback_speed`](src/ayase/modules/playback_speed.py)** — Playback speed normality detection (1.0=normal)
@@ -2113,7 +2115,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `subsample=16`
 
-### `ptlflow_motion_score`
+### `ptlflow_motion_score` [↑](#categories)
 > ptlflow optical flow magnitude · ↑ higher=better
 
 **[`ptlflow_motion`](src/ayase/modules/ptlflow_motion.py)** — ptlflow optical flow motion scoring (dpflow model)
@@ -2122,7 +2124,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python, ptlflow, torch
 - **Config**: `model_name=dpflow`, `ckpt_path=things`, `subsample=8`
 
-### `raft_motion_score`
+### `raft_motion_score` [↑](#categories)
 > RAFT optical flow magnitude · ↑ higher=better
 
 **[`raft_motion`](src/ayase/modules/raft_motion.py)** — RAFT optical flow motion scoring (torchvision)
@@ -2131,7 +2133,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python, torch, torchvision
 - **Config**: `subsample=8`
 
-### `stabilized_camera_score`
+### `stabilized_camera_score` [↑](#categories)
 > Stabilized camera motion estimate · ↑ higher=better
 
 **[`stabilized_motion`](src/ayase/modules/stabilized_motion.py)** — Calculates motion scores with camera stabilization (ORB+Homography)
@@ -2139,7 +2141,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `step=2`, `threshold_px=0.5`, `stabilize=True`, `high_camera_motion_threshold=5.0`, `static_threshold=0.1`
 
-### `stabilized_motion_score`
+### `stabilized_motion_score` [↑](#categories)
 > Stabilized scene motion (camera-invariant) · ↑ higher=better
 
 **[`stabilized_motion`](src/ayase/modules/stabilized_motion.py)** — Calculates motion scores with camera stabilization (ORB+Homography)
@@ -2147,7 +2149,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `step=2`, `threshold_px=0.5`, `stabilize=True`, `high_camera_motion_threshold=5.0`, `static_threshold=0.1`
 
-### `trajan_score`
+### `trajan_score` [↑](#categories)
 > Point track motion consistency · ↑ higher=better
 
 **[`trajan`](src/ayase/modules/trajan.py)** — Motion consistency via point tracking (CoTracker or Lucas-Kanade fallback)
@@ -2158,7 +2160,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Source**: [HF](https://huggingface.co/facebookresearch/co-tracker)
 - **Config**: `num_frames=16`, `num_points=256`
 
-### `videoreward_mq`
+### `videoreward_mq` [↑](#categories)
 > VideoReward motion quality
 
 **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
@@ -2168,7 +2170,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: videoreward
 - **Config**: `subsample=8`
 
-### `videoscore_dynamic`
+### `videoscore_dynamic` [↑](#categories)
 > VideoScore dynamic degree · ↑ higher=better
 
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
@@ -2181,7 +2183,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 
 ## Basic Visual Quality (15 metrics)
 
-### `artifacts_score`
+### `artifacts_score` [↑](#categories)
 > ↑ higher=better
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -2189,7 +2191,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `blur_score`
+### `blur_score` [↑](#categories)
 > Laplacian variance · ↑ higher=better
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -2197,14 +2199,14 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `brightness`
+### `brightness` [↑](#categories)
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `compression_artifacts`
+### `compression_artifacts` [↑](#categories)
 > Artifact severity (0-100) · 0-100
 
 **[`compression_artifacts`](src/ayase/modules/compression_artifacts.py)** — Detects compression artifacts (blocking, ringing, mosquito noise)
@@ -2212,14 +2214,14 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=3`, `warning_threshold=40.0`
 
-### `contrast`
+### `contrast` [↑](#categories)
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `cpbd_score`
+### `cpbd_score` [↑](#categories)
 > CPBD perceptual blur detection (0-1, higher=sharper) · ↑ higher=better · 0-1, higher=sharper
 
 **[`cpbd`](src/ayase/modules/cpbd.py)** — Cumulative Probability of Blur Detection (Perceptual Blur)
@@ -2228,7 +2230,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: cpbd
 - **Config**: `threshold_cpbd=0.65`, `threshold_heuristic=0.3`
 
-### `imaging_artifacts_score`
+### `imaging_artifacts_score` [↑](#categories)
 > Imaging edge-density artifacts (0-1, higher=cleaner) · ↑ higher=better · 0-1, higher=cleaner
 
 **[`imaging_quality`](src/ayase/modules/imaging_quality.py)** — Assesses technical quality (Noise, Blockiness) - Proxy for MUSIQ/DOVER
@@ -2238,7 +2240,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **VRAM**: ~800 MB
 - **Config**: `noise_threshold=20.0`
 
-### `imaging_noise_score`
+### `imaging_noise_score` [↑](#categories)
 > Imaging noise level (0-1, higher=cleaner) · ↑ higher=better · 0-1, higher=cleaner
 
 **[`imaging_quality`](src/ayase/modules/imaging_quality.py)** — Assesses technical quality (Noise, Blockiness) - Proxy for MUSIQ/DOVER
@@ -2248,7 +2250,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **VRAM**: ~800 MB
 - **Config**: `noise_threshold=20.0`
 
-### `letterbox_ratio`
+### `letterbox_ratio` [↑](#categories)
 > Border/letterbox fraction (0-1, 0=no borders) · 0-1, 0=no borders
 
 **[`letterbox`](src/ayase/modules/letterbox.py)** — Border/letterbox detection (0-1, 0=no borders)
@@ -2257,7 +2259,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: opencv-python
 - **Config**: `threshold=16`, `subsample=4`
 
-### `noise_score`
+### `noise_score` [↑](#categories)
 > ↑ higher=better
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -2265,7 +2267,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `saturation`
+### `saturation` [↑](#categories)
 > Advanced metrics
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -2273,7 +2275,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `spatial_information`
+### `spatial_information` [↑](#categories)
 > ITU-T P.910 SI (higher=more detail) · higher=more detail
 
 **[`ti_si`](src/ayase/modules/ti_si.py)** — ITU-T P.910 Temporal & Spatial Information
@@ -2281,7 +2283,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=300`
 
-### `technical_score`
+### `technical_score` [↑](#categories)
 > Composite technical score · ↑ higher=better
 
 Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
@@ -2291,7 +2293,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `temporal_information`
+### `temporal_information` [↑](#categories)
 > ITU-T P.910 TI (higher=more motion) · higher=more motion
 
 **[`ti_si`](src/ayase/modules/ti_si.py)** — ITU-T P.910 Temporal & Spatial Information
@@ -2299,7 +2301,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=300`
 
-### `tonal_dynamic_range`
+### `tonal_dynamic_range` [↑](#categories)
 > Luminance histogram span (0-100) · 0-100
 
 **[`tonal_dynamic_range`](src/ayase/modules/tonal_dynamic_range.py)** — Luminance histogram tonal range (0-100)
@@ -2310,7 +2312,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 
 ## Aesthetics (9 metrics)
 
-### `aesthetic_mlp_score`
+### `aesthetic_mlp_score` [↑](#categories)
 > LAION Aesthetics MLP (1-10) · ↑ higher=better · 1-10
 
 **[`aesthetic_scoring`](src/ayase/modules/aesthetic_scoring.py)** — Calculates aesthetic score (1-10) using LAION-Aesthetics MLP
@@ -2320,7 +2322,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 - **VRAM**: ~1.5 GB
 - **Source**: [GitHub](https://github.com/christophschuhmann/improved-aesthetic-predictor) · [HF](https://huggingface.co/openai/clip-vit-large-patch14)
 
-### `aesthetic_score`
+### `aesthetic_score` [↑](#categories)
 > 0-10, from aesthetic predictor · ↑ higher=better · 0-10
 
 Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_rate`](src/ayase/modules/usability_rate.py)
@@ -2331,7 +2333,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
-### `cover_aesthetic`
+### `cover_aesthetic` [↑](#categories)
 > COVER aesthetic branch
 
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
@@ -2342,7 +2344,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **VRAM**: ~800 MB
 - **Config**: `subsample=8`, `quality_threshold=30.0`
 
-### `cover_semantic`
+### `cover_semantic` [↑](#categories)
 > COVER semantic branch
 
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
@@ -2353,7 +2355,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **VRAM**: ~800 MB
 - **Config**: `subsample=8`, `quality_threshold=30.0`
 
-### `creativity_score`
+### `creativity_score` [↑](#categories)
 > Artistic novelty (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`creativity`](src/ayase/modules/creativity.py)** — Artistic novelty assessment (VLM / CLIP / heuristic)
@@ -2365,7 +2367,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/llava-hf/llava-1.5-7b-hf)
 - **Config**: `vlm_model=llava-hf/llava-1.5-7b-hf`
 
-### `dover_aesthetic`
+### `dover_aesthetic` [↑](#categories)
 > DOVER aesthetic quality
 
 **[`dover`](src/ayase/modules/dover.py)** — DOVER disentangled technical + aesthetic VQA (ICCV 2023)
@@ -2377,7 +2379,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [GitHub](https://github.com/VQAssessment/DOVER.git) · [HF](https://huggingface.co/dover/DOVER.pth)
 - **Config**: `warning_threshold=0.4`
 
-### `laion_aesthetic`
+### `laion_aesthetic` [↑](#categories)
 > LAION Aesthetics V2 (0-10) · 0-10
 
 **[`laion_aesthetic`](src/ayase/modules/laion_aesthetic.py)** — LAION Aesthetics V2 predictor (0-10, industry standard)
@@ -2386,7 +2388,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=4`
 
-### `nima_score`
+### `nima_score` [↑](#categories)
 > NIMA aesthetic+technical (1-10, higher=better) · ↑ higher=better · 1-10
 
 **[`nima`](src/ayase/modules/nima.py)** — NIMA aesthetic and technical image quality (1-10 scale)
@@ -2395,7 +2397,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `qalign_aesthetic`
+### `qalign_aesthetic` [↑](#categories)
 > Q-Align aesthetic quality (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`q_align`](src/ayase/modules/q_align.py)** — Q-Align unified quality + aesthetic assessment (ICML 2024)
@@ -2409,7 +2411,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Audio Quality (15 metrics)
 
-### `audiobox_enjoyment`
+### `audiobox_enjoyment` [↑](#categories)
 > Audiobox content enjoyment
 
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
@@ -2419,7 +2421,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: audiobox_aesthetics, soundfile
 - **Config**: `sample_rate=16000`
 
-### `audiobox_production`
+### `audiobox_production` [↑](#categories)
 > Audiobox production quality
 
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
@@ -2429,7 +2431,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: audiobox_aesthetics, soundfile
 - **Config**: `sample_rate=16000`
 
-### `av_sync_offset`
+### `av_sync_offset` [↑](#categories)
 > Audio-video sync offset in ms
 
 **[`av_sync`](src/ayase/modules/audio_visual_sync.py)** — Audio-video synchronisation offset detection
@@ -2438,7 +2440,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: soundfile
 - **Config**: `max_frames=600`, `warning_threshold_ms=80.0`
 
-### `dnsmos_bak`
+### `dnsmos_bak` [↑](#categories)
 > DNSMOS background quality (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
@@ -2447,7 +2449,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: torchmetrics
 - **Packages**: librosa, soundfile, torch, torchmetrics
 
-### `dnsmos_overall`
+### `dnsmos_overall` [↑](#categories)
 > DNSMOS overall MOS (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
@@ -2456,7 +2458,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: torchmetrics
 - **Packages**: librosa, soundfile, torch, torchmetrics
 
-### `dnsmos_sig`
+### `dnsmos_sig` [↑](#categories)
 > DNSMOS signal quality (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
@@ -2465,7 +2467,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: torchmetrics
 - **Packages**: librosa, soundfile, torch, torchmetrics
 
-### `estoi_score`
+### `estoi_score` [↑](#categories)
 > ESTOI intelligibility (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`audio_estoi`](src/ayase/modules/audio_estoi.py)** — ESTOI speech intelligibility (full-reference)
@@ -2474,7 +2476,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, pystoi, soundfile
 - **Config**: `target_sr=10000`, `warning_threshold=0.5`
 
-### `lpdist_score`
+### `lpdist_score` [↑](#categories)
 > Log-Power Spectral Distance (lower=better) · ↓ lower=better
 
 **[`audio_lpdist`](src/ayase/modules/audio_lpdist.py)** — Log-Power Spectral Distance (full-reference audio)
@@ -2483,7 +2485,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa
 - **Config**: `target_sr=16000`, `n_mels=80`, `warning_threshold=4.0`
 
-### `mcd_score`
+### `mcd_score` [↑](#categories)
 > Mel Cepstral Distortion (dB, lower=better) · ↓ lower=better · dB
 
 **[`audio_mcd`](src/ayase/modules/audio_mcd.py)** — Mel Cepstral Distortion for TTS/VC quality (full-reference)
@@ -2492,7 +2494,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa
 - **Config**: `target_sr=16000`, `n_mfcc=13`, `warning_threshold=8.0`
 
-### `oavqa_score`
+### `oavqa_score` [↑](#categories)
 > OAVQA omnidirectional AV (higher=better) · ↑ higher=better
 
 **[`oavqa`](src/ayase/modules/oavqa.py)** — OAVQA omnidirectional audio-visual QA (2024)
@@ -2501,7 +2503,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: heuristic → native
 - **Config**: `subsample=8`
 
-### `p1203_mos`
+### `p1203_mos` [↑](#categories)
 > ITU-T P.1203 streaming QoE MOS (1-5) · 1-5
 
 **[`p1203`](src/ayase/modules/p1203.py)** — ITU-T P.1203 streaming QoE estimation (1-5 MOS)
@@ -2511,7 +2513,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: itu_p1203
 - **Config**: `display_size=phone`
 
-### `pesq_score`
+### `pesq_score` [↑](#categories)
 > PESQ (-0.5 to 4.5, higher=better) · ↑ higher=better · -0.5 to 4.5
 
 **[`audio_pesq`](src/ayase/modules/audio_pesq.py)** — PESQ speech quality (full-reference, ITU-T P.862)
@@ -2520,7 +2522,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, pesq, soundfile
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
 
-### `si_sdr_score`
+### `si_sdr_score` [↑](#categories)
 > Scale-Invariant SDR (dB, higher=better) · ↑ higher=better · dB
 
 **[`audio_si_sdr`](src/ayase/modules/audio_si_sdr.py)** — Scale-Invariant SDR for audio quality (full-reference)
@@ -2529,7 +2531,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, soundfile
 - **Config**: `target_sr=16000`, `warning_threshold=0.0`
 
-### `utmos_score`
+### `utmos_score` [↑](#categories)
 > UTMOS predicted MOS (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`audio_utmos`](src/ayase/modules/audio_utmos.py)** — UTMOS no-reference MOS prediction for speech quality
@@ -2538,7 +2540,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, soundfile, torch
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
 
-### `visqol`
+### `visqol` [↑](#categories)
 > ViSQOL audio quality MOS (1-5, higher=better) · ↑ higher=better · 1-5
 
 **[`visqol`](src/ayase/modules/visqol.py)** — ViSQOL audio quality MOS (Google, 1-5, higher=better)
@@ -2552,7 +2554,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Face & Identity (14 metrics)
 
-### `celebrity_id_score`
+### `celebrity_id_score` [↑](#categories)
 > ↑ higher=better
 
 **[`celebrity_id`](src/ayase/modules/celebrity_id.py)** — Face identity verification using DeepFace (EvalCrafter celebrity_id_score)
@@ -2561,7 +2563,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: Pillow, deepface, glob
 - **Config**: `reference_dir=`, `num_frames=8`, `consistency_threshold=0.4`, `model_name=VGG-Face`
 
-### `crfiqa_score`
+### `crfiqa_score` [↑](#categories)
 > CR-FIQA classifiability (higher=better) · ↑ higher=better
 
 **[`crfiqa`](src/ayase/modules/crfiqa.py)** — CR-FIQA face quality via classifiability (CVPR 2023)
@@ -2571,7 +2573,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: crfiqa
 - **Config**: `subsample=4`
 
-### `face_consistency`
+### `face_consistency` [↑](#categories)
 > ↑ higher=better
 
 **[`clip_temporal`](src/ayase/modules/clip_temporal.py)** — CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)
@@ -2582,7 +2584,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, `temp_threshold=0.9`, `face_threshold=0.85`
 
-### `face_count`
+### `face_count` [↑](#categories)
 > type: int
 
 **[`face_fidelity`](src/ayase/modules/face_fidelity.py)** — Face detection and per-face quality assessment
@@ -2591,7 +2593,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: mediapipe
 - **Config**: `backend=haar`, `subsample=5`, `max_frames=60`, `min_face_size=64`, `blur_threshold=50.0`, `warning_threshold=40.0`
 
-### `face_expression_smoothness`
+### `face_expression_smoothness` [↑](#categories)
 
 **[`face_landmark_quality`](src/ayase/modules/face_landmark_quality.py)** — Facial landmark jitter, expression smoothness, identity consistency
 
@@ -2599,7 +2601,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: mediapipe
 - **Config**: `subsample=2`, `max_frames=300`, `jitter_warning=30.0`
 
-### `face_identity_consistency`
+### `face_identity_consistency` [↑](#categories)
 > Temporal face identity stability (0-1) · ↑ higher=better · 0-1
 
 **[`face_landmark_quality`](src/ayase/modules/face_landmark_quality.py)** — Facial landmark jitter, expression smoothness, identity consistency
@@ -2608,7 +2610,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: mediapipe
 - **Config**: `subsample=2`, `max_frames=300`, `jitter_warning=30.0`
 
-### `face_iqa_score`
+### `face_iqa_score` [↑](#categories)
 > TOPIQ-face face quality (higher=better) · ↑ higher=better
 
 **[`face_iqa`](src/ayase/modules/face_iqa.py)** — Face-specific IQA via TOPIQ-face (GFIQA-trained, higher=better)
@@ -2617,7 +2619,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: opencv-python, pyiqa, torch
 - **Config**: `subsample=8`
 
-### `face_landmark_jitter`
+### `face_landmark_jitter` [↑](#categories)
 > Landmark jitter 0-100 (lower=better) · ↓ lower=better
 
 **[`face_landmark_quality`](src/ayase/modules/face_landmark_quality.py)** — Facial landmark jitter, expression smoothness, identity consistency
@@ -2626,7 +2628,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: mediapipe
 - **Config**: `subsample=2`, `max_frames=300`, `jitter_warning=30.0`
 
-### `face_quality_score`
+### `face_quality_score` [↑](#categories)
 > Composite face quality 0-100 (higher=better) · ↑ higher=better
 
 **[`face_fidelity`](src/ayase/modules/face_fidelity.py)** — Face detection and per-face quality assessment
@@ -2635,7 +2637,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: mediapipe
 - **Config**: `backend=haar`, `subsample=5`, `max_frames=60`, `min_face_size=64`, `blur_threshold=50.0`, `warning_threshold=40.0`
 
-### `face_recognition_score`
+### `face_recognition_score` [↑](#categories)
 > Face identity cosine similarity (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`identity_loss`](src/ayase/modules/identity_loss.py)** — Face identity preservation metric (cosine distance/similarity vs reference)
@@ -2645,7 +2647,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: Pillow, deepface, insightface, mediapipe
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`
 
-### `grafiqs_score`
+### `grafiqs_score` [↑](#categories)
 > GraFIQs gradient-based (higher=better) · ↑ higher=better
 
 **[`grafiqs`](src/ayase/modules/grafiqs.py)** — GraFIQs gradient face quality (CVPRW 2024)
@@ -2655,7 +2657,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: grafiqs
 - **Config**: `subsample=4`
 
-### `identity_loss`
+### `identity_loss` [↑](#categories)
 > Face identity cosine distance (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`identity_loss`](src/ayase/modules/identity_loss.py)** — Face identity preservation metric (cosine distance/similarity vs reference)
@@ -2665,7 +2667,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: Pillow, deepface, insightface, mediapipe
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`
 
-### `magface_score`
+### `magface_score` [↑](#categories)
 > MagFace magnitude quality (higher=better) · ↑ higher=better
 
 **[`magface`](src/ayase/modules/magface.py)** — MagFace face magnitude quality (CVPR 2021)
@@ -2675,7 +2677,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: magface
 - **Config**: `subsample=4`
 
-### `serfiq_score`
+### `serfiq_score` [↑](#categories)
 > SER-FIQ embedding robustness (higher=better) · ↑ higher=better
 
 **[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via embedding robustness (2020)
@@ -2688,7 +2690,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Scene & Content (14 metrics)
 
-### `action_confidence`
+### `action_confidence` [↑](#categories)
 > Top-1 action confidence (0-100) · 0-100
 
 **[`action_recognition`](src/ayase/modules/action_recognition.py)** — Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models
@@ -2699,7 +2701,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics)
 - **Config**: `model_name=MCG-NJU/videomae-large-finetuned-kinetics`, `caption_matching=False`, `matching_mode=weighted`, `clip_model=openai/clip-vit-base-patch32`, `top_k=5`
 
-### `action_score`
+### `action_score` [↑](#categories)
 > Caption-action fidelity (0-100) · ↑ higher=better · 0-100
 
 **[`action_recognition`](src/ayase/modules/action_recognition.py)** — Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models
@@ -2710,7 +2712,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics)
 - **Config**: `model_name=MCG-NJU/videomae-large-finetuned-kinetics`, `caption_matching=False`, `matching_mode=weighted`, `clip_model=openai/clip-vit-base-patch32`, `top_k=5`
 
-### `avg_scene_duration`
+### `avg_scene_duration` [↑](#categories)
 > Average scene duration in seconds
 
 **[`scene_detection`](src/ayase/modules/scene_detection.py)** — Scene stability metric — penalises rapid cuts (0-1, higher=more stable)
@@ -2719,14 +2721,14 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: opencv-python, transnetv2
 - **Config**: `threshold=0.5`
 
-### `color_score`
+### `color_score` [↑](#categories)
 > ↑ higher=better
 
 **[`color_consistency`](src/ayase/modules/color_consistency.py)** — Verifies color attributes in prompt vs video content
 
 - **Input**: img/vid +cap · **Speed**: ⚡ fast
 
-### `commonsense_score`
+### `commonsense_score` [↑](#categories)
 > Common sense adherence (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`commonsense`](src/ayase/modules/commonsense.py)** — Common sense adherence (VLM / ViLT VQA / heuristic)
@@ -2738,7 +2740,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/dandelin/vilt-b32-finetuned-vqa)
 - **Config**: `model_name=dandelin/vilt-b32-finetuned-vqa`, `vlm_model=llava-hf/llava-1.5-7b-hf`
 
-### `count_score`
+### `count_score` [↑](#categories)
 > ↑ higher=better
 
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
@@ -2747,7 +2749,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: grit, torch, ultralytics
 - **Config**: `model_name=yolov8n.pt`, `use_yolo_world=False`, `use_grit=False`
 
-### `detection_diversity`
+### `detection_diversity` [↑](#categories)
 > Object detection category entropy
 
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
@@ -2756,7 +2758,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: grit, torch, ultralytics
 - **Config**: `model_name=yolov8n.pt`, `use_yolo_world=False`, `use_grit=False`
 
-### `detection_score`
+### `detection_score` [↑](#categories)
 > ↑ higher=better
 
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
@@ -2765,7 +2767,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: grit, torch, ultralytics
 - **Config**: `model_name=yolov8n.pt`, `use_yolo_world=False`, `use_grit=False`
 
-### `gradient_detail`
+### `gradient_detail` [↑](#categories)
 > Sobel gradient detail (0-100) · 0-100
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -2773,7 +2775,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
-### `human_fidelity_score`
+### `human_fidelity_score` [↑](#categories)
 > Body/hand/face quality (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`human_fidelity`](src/ayase/modules/human_fidelity.py)** — Human body/hand/face fidelity (DWPose / MediaPipe / heuristic)
@@ -2782,7 +2784,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: heuristic → dwpose → mediapipe
 - **Packages**: dwpose, mediapipe
 
-### `ram_tags`
+### `ram_tags` [↑](#categories)
 > Comma-separated RAM auto-tags · type: str
 
 **[`ram_tagging`](src/ayase/modules/ram_tagging.py)** — RAM (Recognize Anything Model) auto-tagging for video frames
@@ -2790,9 +2792,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: Pillow, opencv-python, torch, transformers
 - **Source**: [HF](https://huggingface.co/xinyu1205/recognize-anything-plus-model)
-- **Config**: `model_name=xinyu1205/recognize-anything-plus-model`, `subsample=4`, `trust_remote_code=True`
+- **Config**: `model_name=xinyu1205/recognize-anything-plus-model`, `subsample=4`, `trust_remote_code=False`
 
-### `scene_complexity`
+### `scene_complexity` [↑](#categories)
 > Visual complexity score
 
 **[`scene_complexity`](src/ayase/modules/scene_complexity.py)** — Spatial and temporal scene complexity analysis
@@ -2800,7 +2802,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=2`, `spatial_weight=0.5`, `temporal_weight=0.5`
 
-### `video_type`
+### `video_type` [↑](#categories)
 > Content type (real, animated, game, etc.) · type: str
 
 **[`video_type_classifier`](src/ayase/modules/video_type_classifier.py)** — CLIP zero-shot video content type classification
@@ -2811,7 +2813,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=4`
 
-### `video_type_confidence`
+### `video_type_confidence` [↑](#categories)
 > Classification confidence
 
 **[`video_type_classifier`](src/ayase/modules/video_type_classifier.py)** — CLIP zero-shot video content type classification
@@ -2825,7 +2827,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## HDR & Color (10 metrics)
 
-### `delta_ictcp`
+### `delta_ictcp` [↑](#categories)
 > Delta ICtCp HDR color difference (lower=better) · ↓ lower=better
 
 **[`delta_ictcp`](src/ayase/modules/delta_ictcp.py)** — Delta ICtCp HDR perceptual color difference (lower=better)
@@ -2833,7 +2835,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=5`
 
-### `hdr_quality`
+### `hdr_quality` [↑](#categories)
 > HDR-specific quality · ↑ higher=better
 
 **[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
@@ -2841,7 +2843,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=5`
 
-### `hdr_technical_score`
+### `hdr_technical_score` [↑](#categories)
 > HDR/SDR-aware technical quality (0-1) · ↑ higher=better · 0-1
 
 **[`4k_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — Memory-efficient quality assessment for 4K+ videos
@@ -2849,7 +2851,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `tile_size=512`, `subsample=10`
 
-### `hdr_vdp`
+### `hdr_vdp` [↑](#categories)
 > HDR-VDP visual difference predictor (higher=better) · ↑ higher=better
 
 **[`hdr_vdp`](src/ayase/modules/hdr_vdp.py)** — HDR-VDP visual difference predictor (higher=better)
@@ -2859,7 +2861,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: hdrvdp
 - **Config**: `subsample=5`
 
-### `hdr_vqm`
+### `hdr_vqm` [↑](#categories)
 > HDR-VQM HDR video quality FR
 
 **[`hdr_vqm`](src/ayase/modules/hdr_vqm.py)** — HDR-aware video quality (PU21+wavelet FR or gamma heuristic fallback)
@@ -2869,7 +2871,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: PyWavelets, opencv-python
 - **Config**: `subsample=8`
 
-### `max_cll`
+### `max_cll` [↑](#categories)
 > MaxCLL content light level (nits)
 
 **[`hdr_metadata`](src/ayase/modules/hdr_metadata.py)** — MaxFALL + MaxCLL HDR static metadata analysis
@@ -2877,7 +2879,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=3`, `peak_nits=10000.0`
 
-### `max_fall`
+### `max_fall` [↑](#categories)
 > MaxFALL frame average light level (nits)
 
 **[`hdr_metadata`](src/ayase/modules/hdr_metadata.py)** — MaxFALL + MaxCLL HDR static metadata analysis
@@ -2885,7 +2887,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=3`, `peak_nits=10000.0`
 
-### `pu_psnr`
+### `pu_psnr` [↑](#categories)
 > PU-PSNR perceptually uniform HDR (dB, higher=better) · ↑ higher=better · dB
 
 **[`pu_metrics`](src/ayase/modules/pu_metrics.py)** — PU-PSNR + PU-SSIM for HDR content (perceptually uniform)
@@ -2893,7 +2895,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=5`, `assume_nits_range=10000.0`
 
-### `pu_ssim`
+### `pu_ssim` [↑](#categories)
 > PU-SSIM perceptually uniform HDR (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`pu_metrics`](src/ayase/modules/pu_metrics.py)** — PU-PSNR + PU-SSIM for HDR content (perceptually uniform)
@@ -2901,7 +2903,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=5`, `assume_nits_range=10000.0`
 
-### `sdr_quality`
+### `sdr_quality` [↑](#categories)
 > SDR-specific quality · ↑ higher=better
 
 **[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
@@ -2912,7 +2914,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Codec & Technical (5 metrics)
 
-### `cambi`
+### `cambi` [↑](#categories)
 > CAMBI banding index (0-24, lower=better) · ↓ lower=better · 0-24
 
 **[`cambi`](src/ayase/modules/cambi.py)** — CAMBI banding/contouring detector (Netflix, 0-24, lower=better)
@@ -2920,7 +2922,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `warning_threshold=5.0`
 
-### `codec_artifacts`
+### `codec_artifacts` [↑](#categories)
 > Block artifact severity 0-100 (lower=better) · ↓ lower=better
 
 **[`codec_specific_quality`](src/ayase/modules/codec_specific_quality.py)** — Codec-level efficiency, GOP quality, and artifact detection
@@ -2929,7 +2931,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/30/1)
 - **Config**: `max_frames=100`, `subsample=10`, `warning_efficiency=30.0`, `warning_artifacts=40.0`
 
-### `codec_efficiency`
+### `codec_efficiency` [↑](#categories)
 > Quality-per-bit efficiency 0-100 (higher=better) · ↑ higher=better
 
 **[`codec_specific_quality`](src/ayase/modules/codec_specific_quality.py)** — Codec-level efficiency, GOP quality, and artifact detection
@@ -2938,7 +2940,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/30/1)
 - **Config**: `max_frames=100`, `subsample=10`, `warning_efficiency=30.0`, `warning_artifacts=40.0`
 
-### `gop_quality`
+### `gop_quality` [↑](#categories)
 > GOP structure appropriateness 0-100 (higher=better) · ↑ higher=better
 
 **[`codec_specific_quality`](src/ayase/modules/codec_specific_quality.py)** — Codec-level efficiency, GOP quality, and artifact detection
@@ -2947,7 +2949,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/30/1)
 - **Config**: `max_frames=100`, `subsample=10`, `warning_efficiency=30.0`, `warning_artifacts=40.0`
 
-### `p1204_mos`
+### `p1204_mos` [↑](#categories)
 > ITU-T P.1204.3 bitstream MOS (1-5) · 1-5
 
 **[`p1204`](src/ayase/modules/p1204.py)** — ITU-T P.1204.3 bitstream NR quality (2020)
@@ -2959,7 +2961,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Depth & Spatial (5 metrics)
 
-### `depth_anything_consistency`
+### `depth_anything_consistency` [↑](#categories)
 > Temporal depth consistency · ↑ higher=better
 
 **[`depth_anything`](src/ayase/modules/depth_anything.py)** — Depth Anything V2 monocular depth estimation and consistency
@@ -2969,7 +2971,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf)
 - **Config**: `model_name=depth-anything/Depth-Anything-V2-Small-hf`, `subsample=8`
 
-### `depth_anything_score`
+### `depth_anything_score` [↑](#categories)
 > Monocular depth quality · ↑ higher=better
 
 **[`depth_anything`](src/ayase/modules/depth_anything.py)** — Depth Anything V2 monocular depth estimation and consistency
@@ -2979,7 +2981,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf)
 - **Config**: `model_name=depth-anything/Depth-Anything-V2-Small-hf`, `subsample=8`
 
-### `depth_quality`
+### `depth_quality` [↑](#categories)
 > Depth map quality 0-100 (higher=better) · ↑ higher=better
 
 **[`depth_map_quality`](src/ayase/modules/depth_map_quality.py)** — Monocular depth map quality (sharpness, completeness, edge alignment)
@@ -2989,7 +2991,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/intel-isl/MiDaS)
 - **Config**: `model_type=MiDaS_small`, `device=auto`, `subsample=10`, `max_frames=30`
 
-### `multiview_consistency`
+### `multiview_consistency` [↑](#categories)
 > Geometric consistency 0-1 (higher=better) · ↑ higher=better
 
 **[`multi_view_consistency`](src/ayase/modules/multi_view_consistency.py)** — Geometric multi-view consistency via epipolar analysis
@@ -2997,7 +2999,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Config**: `subsample=5`, `max_pairs=30`, `min_matches=20`
 
-### `stereo_comfort_score`
+### `stereo_comfort_score` [↑](#categories)
 > Stereo viewing comfort 0-100 (higher=better) · ↑ higher=better
 
 **[`stereoscopic_quality`](src/ayase/modules/stereoscopic_quality.py)** — Stereo 3D comfort and quality assessment
@@ -3008,7 +3010,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Production Quality (5 metrics)
 
-### `banding_severity`
+### `banding_severity` [↑](#categories)
 > Colour banding 0-100 (lower=better) · ↓ lower=better
 
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
@@ -3016,7 +3018,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=150`
 
-### `color_grading_score`
+### `color_grading_score` [↑](#categories)
 > Colour consistency 0-100 · ↑ higher=better · 0-100
 
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
@@ -3024,7 +3026,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=150`
 
-### `exposure_consistency`
+### `exposure_consistency` [↑](#categories)
 > Exposure stability 0-100 · ↑ higher=better · 0-100
 
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
@@ -3032,7 +3034,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=150`
 
-### `focus_quality`
+### `focus_quality` [↑](#categories)
 > Sharpness/focus quality 0-100 · ↑ higher=better · 0-100
 
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
@@ -3040,7 +3042,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `max_frames=150`
 
-### `white_balance_score`
+### `white_balance_score` [↑](#categories)
 > White balance accuracy 0-100 · ↑ higher=better · 0-100
 
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
@@ -3051,7 +3053,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## OCR & Text (7 metrics)
 
-### `auto_caption`
+### `auto_caption` [↑](#categories)
 > Generated caption · type: str
 
 **[`captioning`](src/ayase/modules/captioning.py)** — Generates captions using BLIP + computes BLEU score (EvalCrafter blip_bleu)
@@ -3061,7 +3063,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/Salesforce/blip-image-captioning-base)
 - **Config**: `model_name=Salesforce/blip-image-captioning-base`, `num_frames=5`
 
-### `ocr_area_ratio`
+### `ocr_area_ratio` [↑](#categories)
 > 0-1 · 0-1
 
 **[`text_detection`](src/ayase/modules/text.py)** — Detects text/watermarks using OCR (PaddleOCR / Tesseract)
@@ -3070,7 +3072,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: paddleocr, pytesseract
 - **Config**: `use_paddle=True`, `max_text_area=0.05`
 
-### `ocr_cer`
+### `ocr_cer` [↑](#categories)
 > Character Error Rate (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR)
@@ -3079,7 +3081,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: paddleocr
 - **Config**: `num_frames=8`, `lang=en`
 
-### `ocr_fidelity`
+### `ocr_fidelity` [↑](#categories)
 > OCR text accuracy vs caption (0-100, higher=better) · ↑ higher=better · 0-100
 
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR)
@@ -3088,7 +3090,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: paddleocr
 - **Config**: `num_frames=8`, `lang=en`
 
-### `ocr_score`
+### `ocr_score` [↑](#categories)
 > ↑ higher=better
 
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR)
@@ -3097,7 +3099,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: paddleocr
 - **Config**: `num_frames=8`, `lang=en`
 
-### `ocr_wer`
+### `ocr_wer` [↑](#categories)
 > Word Error Rate (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR)
@@ -3106,7 +3108,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: paddleocr
 - **Config**: `num_frames=8`, `lang=en`
 
-### `text_overlay_score`
+### `text_overlay_score` [↑](#categories)
 > Text overlay severity (0-1) · ↑ higher=better · 0-1
 
 **[`text_overlay`](src/ayase/modules/text_overlay.py)** — Text overlay / subtitle detection in video frames
@@ -3118,7 +3120,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Safety & Ethics (7 metrics)
 
-### `ai_generated_probability`
+### `ai_generated_probability` [↑](#categories)
 > AI-generated content likelihood 0-1 · 0-1
 
 **[`watermark_classifier`](src/ayase/modules/watermark_classifier.py)** — Classifies video for watermarks using a pretrained model or custom ResNet-50 weights
@@ -3129,7 +3131,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/umm-maybe/AI-image-detector)
 - **Config**: `model_weights_path=`, `hf_model=umm-maybe/AI-image-detector`, `threshold=0.5`
 
-### `bias_score`
+### `bias_score` [↑](#categories)
 > Representation imbalance indicator 0-1 · ↑ higher=better · 0-1
 
 **[`bias_detection`](src/ayase/modules/bias_detection.py)** — Demographic representation analysis (face count, age distribution)
@@ -3137,7 +3139,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `subsample=10`, `max_frames=30`, `warning_threshold=0.7`
 
-### `deepfake_probability`
+### `deepfake_probability` [↑](#categories)
 > Synthetic/deepfake likelihood 0-1 · 0-1
 
 **[`deepfake_detection`](src/ayase/modules/deepfake_detection.py)** — Synthetic media / deepfake likelihood estimation
@@ -3148,7 +3150,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=10`, `max_frames=60`, `warning_threshold=0.6`
 
-### `harmful_content_score`
+### `harmful_content_score` [↑](#categories)
 > Violence/gore severity 0-1 · ↑ higher=better · 0-1
 
 **[`harmful_content`](src/ayase/modules/harmful_content.py)** — Violence, gore, and disturbing content detection
@@ -3159,7 +3161,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/openai/clip-vit-base-patch32)
 - **Config**: `subsample=10`, `max_frames=60`, `warning_threshold=0.4`
 
-### `nsfw_score`
+### `nsfw_score` [↑](#categories)
 > 0-1, likelihood of being NSFW · ↑ higher=better · 0-1
 
 **[`nsfw`](src/ayase/modules/nsfw.py)** — Detects NSFW (adult/violent) content using ViT
@@ -3169,7 +3171,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/Falconsai/nsfw_image_detection)
 - **Config**: `model_name=Falconsai/nsfw_image_detection`, `threshold=0.5`, `num_frames=8`
 
-### `watermark_probability`
+### `watermark_probability` [↑](#categories)
 > 0-1 · 0-1
 
 **[`watermark_classifier`](src/ayase/modules/watermark_classifier.py)** — Classifies video for watermarks using a pretrained model or custom ResNet-50 weights
@@ -3180,7 +3182,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/umm-maybe/AI-image-detector)
 - **Config**: `model_weights_path=`, `hf_model=umm-maybe/AI-image-detector`, `threshold=0.5`
 
-### `watermark_strength`
+### `watermark_strength` [↑](#categories)
 > Invisible watermark strength 0-1 · 0-1
 
 **[`watermark_robustness`](src/ayase/modules/watermark_robustness.py)** — Invisible watermark detection and strength estimation
@@ -3192,7 +3194,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Image-to-Video Reference (4 metrics)
 
-### `i2v_clip`
+### `i2v_clip` [↑](#categories)
 > CLIP image-video similarity (0-1) · 0-1
 
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
@@ -3203,7 +3205,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [GitHub](https://github.com/richzhang/PerceptualSimilarity) · [HF](https://huggingface.co/lpips/alex.pth)
 - **Config**: `window_size=16`, `stride=8`, `max_frames=256`, `clip_model=ViT-B-32`, `clip_pretrained=openai`, `dino_model=dinov2_vitb14`, `enable_clip=True`, `enable_dino=True`, `enable_lpips=True`
 
-### `i2v_dino`
+### `i2v_dino` [↑](#categories)
 > DINOv2 image-video similarity (0-1) · 0-1
 
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
@@ -3214,7 +3216,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [GitHub](https://github.com/richzhang/PerceptualSimilarity) · [HF](https://huggingface.co/lpips/alex.pth)
 - **Config**: `window_size=16`, `stride=8`, `max_frames=256`, `clip_model=ViT-B-32`, `clip_pretrained=openai`, `dino_model=dinov2_vitb14`, `enable_clip=True`, `enable_dino=True`, `enable_lpips=True`
 
-### `i2v_lpips`
+### `i2v_lpips` [↑](#categories)
 > LPIPS image-video distance (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
@@ -3225,7 +3227,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [GitHub](https://github.com/richzhang/PerceptualSimilarity) · [HF](https://huggingface.co/lpips/alex.pth)
 - **Config**: `window_size=16`, `stride=8`, `max_frames=256`, `clip_model=ViT-B-32`, `clip_pretrained=openai`, `dino_model=dinov2_vitb14`, `enable_clip=True`, `enable_dino=True`, `enable_lpips=True`
 
-### `i2v_quality`
+### `i2v_quality` [↑](#categories)
 > Aggregated I2V quality (0-100) · ↑ higher=better · 0-100
 
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
@@ -3239,7 +3241,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ## Meta & Curation (6 metrics)
 
-### `confidence_score`
+### `confidence_score` [↑](#categories)
 > Prediction confidence · ↑ higher=better
 
 **[`unqa`](src/ayase/modules/unqa.py)** — UNQA unified no-reference quality for audio/image/video (2024)
@@ -3249,7 +3251,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: unqa
 - **Config**: `subsample=8`
 
-### `llm_qa_score`
+### `llm_qa_score` [↑](#categories)
 > LMM descriptive quality rating (0-1) · ↑ higher=better · 0-1
 
 **[`llm_descriptive_qa`](src/ayase/modules/llm_descriptive_qa.py)** — LMM-based interpretable quality assessment with explanations
@@ -3260,7 +3262,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: [HF](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf)
 - **Config**: `model_name=llava-hf/llava-v1.6-mistral-7b-hf`, `use_openai=False`, `num_frames=4`, `device=auto`
 
-### `nemo_quality_label`
+### `nemo_quality_label` [↑](#categories)
 > Quality label (Low/Medium/High) · ↑ higher=better · type: str
 
 **[`nemo_curator`](src/ayase/modules/nemo_curator.py)** — Caption text quality scoring (DeBERTa/FastText/heuristic)
@@ -3270,7 +3272,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: fasttext, torch, transformers
 - **Config**: `backend=auto`, `model_name=nvidia/quality-classifier-deberta`, `min_length=10`, `max_length=2000`
 
-### `nemo_quality_score`
+### `nemo_quality_score` [↑](#categories)
 > Caption text quality (0-1) · ↑ higher=better · 0-1
 
 **[`nemo_curator`](src/ayase/modules/nemo_curator.py)** — Caption text quality scoring (DeBERTa/FastText/heuristic)
@@ -3280,7 +3282,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: fasttext, torch, transformers
 - **Config**: `backend=auto`, `model_name=nvidia/quality-classifier-deberta`, `min_length=10`, `max_length=2000`
 
-### `usability_rate`
+### `usability_rate` [↑](#categories)
 > Percentage of usable frames
 
 **[`usability_rate`](src/ayase/modules/usability_rate.py)** — Computes percentage of usable frames based on quality thresholds
@@ -3288,7 +3290,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Config**: `quality_threshold=50.0`
 
-### `vtss`
+### `vtss` [↑](#categories)
 > Video Training Suitability Score (0-1) · 0-1
 
 **[`vtss`](src/ayase/modules/vtss.py)** — Video Training Suitability Score (0-1, meta-metric)
