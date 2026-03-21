@@ -290,6 +290,21 @@ _CATEGORY_DISPLAY = {
 _CATEGORY_ORDER = list(_CATEGORY_DISPLAY.keys())
 
 
+def _get_module_file_link(cls: type) -> str:
+    """Get relative path to module source file for repo linking."""
+    try:
+        fpath = Path(inspect.getfile(cls))
+        # Walk up to find src/ayase/modules/...
+        parts = fpath.parts
+        try:
+            src_idx = parts.index("src")
+            return "/".join(parts[src_idx:])
+        except ValueError:
+            return fpath.name
+    except (TypeError, OSError):
+        return ""
+
+
 def _detect_source_links(source: str, cls: type) -> str:
     """Extract source links (paper, GitHub, HF) as compact markdown."""
     links = []
@@ -362,8 +377,8 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
 
 # ── Chart helpers ───────────────────────────────────────────────────────────
 
-_CHART_WIDTH = 900
-_CHART_HEIGHT_BAR = 400
+_CHART_WIDTH = 480
+_CHART_HEIGHT_BAR = 280
 _CHART_SCALE = 2  # retina-quality PNG export
 
 
@@ -375,6 +390,7 @@ def _generate_charts(
     output_dir: Path,
     all_packages: Optional["Counter"] = None,
     summary_stats: Optional[Dict[str, int]] = None,
+    metrics_per_cat: Optional[Dict[str, int]] = None,
 ) -> Dict[str, str]:
     """Generate PNG chart images using Plotly.
 
@@ -390,12 +406,15 @@ def _generate_charts(
         # ── Shared layout defaults ─────────────────────────────────────
         _layout = dict(
             font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=13),
-            margin=dict(l=20, r=20, t=50, b=20),
+            margin=dict(l=20, r=20, t=10, b=20),
             paper_bgcolor="white",
             plot_bgcolor="white",
         )
 
-        # ── 1. Category horizontal bar (cleaner than pie for 13+ categories)
+        # All paired charts use the same height for alignment
+        _PAIR_H = _CHART_HEIGHT_BAR
+
+        # ── 1. Category horizontal bar ─────────────────────────────────
         labels = [g for g, _ in cat_items]
         values = [s["modules"] for _, s in cat_items]
         colors = [
@@ -406,15 +425,14 @@ def _generate_charts(
         fig = go.Figure(go.Bar(
             x=values[::-1], y=labels[::-1], orientation="h",
             marker_color=colors[::-1],
-            text=values[::-1], textposition="outside", textfont_size=13,
+            text=values[::-1], textposition="outside", textfont_size=10,
         ))
         fig.update_layout(
-            **_layout, width=_CHART_WIDTH,
-            height=max(400, len(labels) * 38 + 80),
-            title=dict(text="Module Distribution by Category", font_size=16, x=0.5),
-            xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
-            yaxis=dict(autorange="reversed"),
-            bargap=0.25,
+            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
+            title=None,
+            xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
+            yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
+            bargap=0.15,
             showlegend=False,
         )
         p = output_dir / "chart_categories.png"
@@ -427,16 +445,17 @@ def _generate_charts(
         fig = go.Figure(go.Pie(
             labels=i_labels, values=i_values,
             hole=0.5, textinfo="label+percent",
-            textposition="outside", textfont_size=11,
+            textposition="inside", textfont_size=10,
+            insidetextorientation="horizontal",
             marker=dict(
                 colors=["#36A2EB", "#FF6384", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"],
                 line=dict(color="white", width=2),
             ),
         ))
         fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=450,
-            title=dict(text="Input Type Distribution", font_size=16, x=0.5),
-            legend=dict(font_size=11),
+            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
+            title=None,
+            legend=dict(font_size=10),
         )
         p = output_dir / "chart_input_types.png"
         fig.write_image(str(p), scale=_CHART_SCALE)
@@ -452,12 +471,12 @@ def _generate_charts(
         fig = go.Figure(go.Bar(
             x=s_values, y=s_labels, orientation="h",
             marker_color=s_cols,
-            text=s_values, textposition="outside", textfont_size=14,
+            text=s_values, textposition="outside", textfont_size=12,
         ))
         fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=_CHART_HEIGHT_BAR,
-            title=dict(text="Speed Tiers", font_size=16, x=0.5),
-            xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
+            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
+            title=None,
+            xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
             yaxis=dict(autorange="reversed"),
             bargap=0.35,
         )
@@ -472,14 +491,14 @@ def _generate_charts(
         fig = go.Figure(go.Bar(
             x=b_values, y=b_labels, orientation="h",
             marker_color="#5DADE2",
-            text=b_values, textposition="outside", textfont_size=13,
+            text=b_values, textposition="outside", textfont_size=11,
         ))
         fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=max(_CHART_HEIGHT_BAR, len(b_labels) * 42 + 80),
-            title=dict(text="Backend Usage (Top 10)", font_size=16, x=0.5),
-            xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
+            **_layout, width=_CHART_WIDTH, height=_PAIR_H,
+            title=None,
+            xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
             yaxis=dict(autorange="reversed"),
-            bargap=0.3,
+            bargap=0.25,
         )
         p = output_dir / "chart_backends.png"
         fig.write_image(str(p), scale=_CHART_SCALE)
@@ -496,18 +515,38 @@ def _generate_charts(
                 text=pk_values, textposition="outside", textfont_size=13,
             ))
             fig.update_layout(
-                **_layout, width=_CHART_WIDTH,
-                height=max(_CHART_HEIGHT_BAR, len(pk_labels) * 38 + 80),
-                title=dict(text="Top Required Packages", font_size=16, x=0.5),
-                xaxis=dict(title="Number of Modules", showgrid=True, gridcolor="#f0f0f0"),
-                yaxis=dict(autorange="reversed"),
-                bargap=0.3,
+                **_layout, width=_CHART_WIDTH, height=_PAIR_H,
+                title=None,
+                xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
+                yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
+                bargap=0.25,
             )
             p = output_dir / "chart_packages.png"
             fig.write_image(str(p), scale=_CHART_SCALE)
             paths["packages"] = f"docs/{p.name}"
 
-        # ── 6. Summary dashboard (number indicators) ───────────────────
+        # ── 6. Metrics per category bar ────────────────────────────────
+        if metrics_per_cat:
+            mc_items = sorted(metrics_per_cat.items(), key=lambda x: x[1])
+            mc_labels = [_CATEGORY_DISPLAY.get(k, k) for k, _ in mc_items]
+            mc_values = [v for _, v in mc_items]
+            fig = go.Figure(go.Bar(
+                x=mc_values, y=mc_labels, orientation="h",
+                marker_color="#27AE60",
+                text=mc_values, textposition="outside", textfont_size=10,
+            ))
+            fig.update_layout(
+                **_layout, width=_CHART_WIDTH, height=_PAIR_H,
+                title=None,
+                xaxis=dict(showgrid=True, gridcolor="#f0f0f0"),
+                yaxis=dict(autorange="reversed", tickfont=dict(size=9)),
+                bargap=0.15,
+            )
+            p = output_dir / "chart_metrics_per_cat.png"
+            fig.write_image(str(p), scale=_CHART_SCALE)
+            paths["metrics_per_cat"] = f"docs/{p.name}"
+
+        # ── 7. Summary dashboard (number indicators) ───────────────────
         if summary_stats:
             fig = go.Figure()
             keys = list(summary_stats.keys())
@@ -521,7 +560,7 @@ def _generate_charts(
                     domain={"x": [i / n + 0.01, (i + 1) / n - 0.01], "y": [0.1, 0.9]},
                 ))
             fig.update_layout(
-                width=_CHART_WIDTH, height=160,
+                width=_CHART_WIDTH * 2, height=120,
                 paper_bgcolor="white",
                 margin=dict(l=10, r=10, t=10, b=10),
             )
@@ -650,15 +689,22 @@ def _pie_ascii(items: List[Tuple[str, int]], total: int) -> List[str]:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _get_quality_metrics_fields() -> Dict[str, Dict]:
-    """Extract all QualityMetrics fields with metadata."""
+    """Extract all QualityMetrics fields with metadata and inline comments."""
     from .models import QualityMetrics
 
     fields_info = {}
-    # Get field groups — _FIELD_GROUPS is a class-level dict (not a Pydantic field)
     groups = QualityMetrics._FIELD_GROUPS
     if not isinstance(groups, dict):
-        # Pydantic v2 may wrap it; try .default
         groups = getattr(groups, "default", {}) or {}
+
+    # Extract inline comments from source (e.g. "blur_score: Optional[float] = None  # Laplacian variance")
+    inline_comments: Dict[str, str] = {}
+    try:
+        src = inspect.getsource(QualityMetrics)
+        for m in re.finditer(r"(\w+):\s*Optional\[.*?\]\s*=\s*None\s*#\s*(.*)", src):
+            inline_comments[m.group(1)] = m.group(2).strip()
+    except (TypeError, OSError):
+        pass
 
     for name, field_info in QualityMetrics.model_fields.items():
         annotation = field_info.annotation
@@ -670,13 +716,14 @@ def _get_quality_metrics_fields() -> Dict[str, Dict]:
             elif "str" in ann_str:
                 type_str = "str"
 
-        # Extract comment/description from source
         desc = field_info.description or ""
         group = groups.get(name, "other")
+        comment = inline_comments.get(name, "")
         fields_info[name] = {
             "type": type_str,
             "group": group,
             "description": desc,
+            "comment": comment,
         }
 
     return fields_info
@@ -831,9 +878,16 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         "GPU": gpu_count,
         "Categories": len(group_stats),
     }
+    # Count metrics per _FIELD_GROUPS category
+    metrics_per_cat_count: Dict[str, int] = defaultdict(int)
+    for field_name, info in qm_fields.items():
+        if field_writers.get(field_name):  # only count fields with writers
+            metrics_per_cat_count[info["group"]] += 1
+
     chart_paths = _generate_charts(
         cat_items, input_counts, speed_counts, all_backends, docs_dir,
         all_packages=all_packages, summary_stats=summary_stats,
+        metrics_per_cat=dict(metrics_per_cat_count),
     )
 
     # ══════════════════════════════════════════════════════════════════════
@@ -868,62 +922,60 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
           f"· **{len(qm_fields)}** QualityMetrics fields · **{tiered_count}** tiered "
           f"· **{gpu_count}** GPU · **{len(group_stats)}** categories")
 
-    # ── 2. Category Distribution ──────────────────────────────────────────
-    a("")
-    a("### Modules by Category")
-    a("")
-    if "categories" in chart_paths:
-        a(f"![Module Distribution by Category]({chart_paths['categories']})")
-    else:
+    # ── Charts (two per row via HTML table) ─────────────────────────────
+    chart_titles = {
+        "categories": "Modules by Category",
+        "input_types": "Input Types",
+        "speed": "Speed Tiers",
+        "backends": "Backend Usage",
+        "packages": "Top Packages",
+        "metrics_per_cat": "Metrics per Category",
+    }
+    chart_keys = [k for k in ("categories", "input_types", "speed", "backends", "packages", "metrics_per_cat") if k in chart_paths]
+    if chart_keys:
+        a("")
+        for i in range(0, len(chart_keys), 2):
+            pair = chart_keys[i:i+2]
+            if len(pair) == 2:
+                t1 = chart_titles.get(pair[0], "")
+                t2 = chart_titles.get(pair[1], "")
+                a("<table><tr>")
+                p0 = chart_paths[pair[0]]
+                p1 = chart_paths[pair[1]]
+                a(f'<td valign="top"><h4>{t1}</h4><img src="{p0}"/></td>')
+                a(f'<td valign="top"><h4>{t2}</h4><img src="{p1}"/></td>')
+                a("</tr></table>")
+            else:
+                t = chart_titles.get(pair[0], "")
+                a(f"<h4>{t}</h4>")
+                a("")
+                a(f"![]({chart_paths[pair[0]]})")
+            a("")
+
+    # ── Text fallbacks (when plotly is unavailable) ───────────────────
+    if not chart_paths:
+        a("")
         a("```")
         for line in _bar_chart([(g, s["modules"]) for g, s in cat_items]):
             a(line)
         a("```")
-
-    # ── 3. Input Type Breakdown ──────────────────────────────────────────
-    a("")
-    a("### By Input Type")
-    a("")
-    if "input_types" in chart_paths:
-        a(f"![Input Type Distribution]({chart_paths['input_types']})")
-    else:
+        a("")
         a("```")
         for line in _bar_chart(input_counts.most_common()):
             a(line)
         a("```")
-
-    # ── 4. Speed Tiers ───────────────────────────────────────────────────
-    a("")
-    a("### Speed Tiers")
-    a("")
-    if "speed" in chart_paths:
-        a(f"![Speed Tiers]({chart_paths['speed']})")
-    else:
+        a("")
         a("```")
         tier_labels = {"fast": "fast (CPU, <0.1s)", "medium": "medium (GPU, ~1s)", "slow": "slow (LLM/VLM, >5s)"}
         for line in _bar_chart([(tier_labels.get(t, t), c) for t, c in speed_counts.most_common()]):
             a(line)
         a("```")
-
-    # ── 5. Backend Usage ──────────────────────────────────────────────────
-    a("")
-    a("### Backend Usage")
-    a("")
-    if "backends" in chart_paths:
-        a(f"![Backend Usage]({chart_paths['backends']})")
-    else:
+        a("")
         a("```")
         for line in _bar_chart(all_backends.most_common()):
             a(line)
         a("```")
-
-    # ── 6. Top Required Packages ─────────────────────────────────────────
-    a("")
-    a("### Top Required Packages")
-    a("")
-    if "packages" in chart_paths:
-        a(f"![Top Required Packages]({chart_paths['packages']})")
-    else:
+        a("")
         a("```")
         for line in _bar_chart(all_packages.most_common(15)):
             a(line)
@@ -966,85 +1018,164 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                 print(f"  {mod_name}: {w}", file=sys.stderr)
 
     # ══════════════════════════════════════════════════════════════════════
-    # METRIC-CENTRIC TABLES (grouped by _FIELD_GROUPS category)
+    # METRIC INFO PANELS (grouped by _FIELD_GROUPS category)
     # ══════════════════════════════════════════════════════════════════════
 
-    # Build module lookup: name → enriched result dict
     mod_lookup: Dict[str, Dict] = {r["name"]: r for r in results}
+    speed_badges = {"fast": "\u26a1", "medium": "\u23f1\ufe0f", "slow": "\U0001f40c"}
 
-    # Build source links cache (per module, computed once)
-    source_links_cache: Dict[str, str] = {}
+    # Pre-compute per-module: source links, file paths, packages
+    mod_extra: Dict[str, Dict] = {}
     for name in all_modules:
         cls = ModuleRegistry.get_module(name)
         if cls is None:
             continue
-        source_links_cache[name] = _detect_source_links(_get_source(cls), cls)
+        src = _get_source(cls)
+        mod_extra[name] = {
+            "source_links": _detect_source_links(src, cls),
+            "file_path": _get_module_file_link(cls),
+        }
 
-    # Build metric rows: one per (field, writer_module) pair
-    speed_badges = {"fast": "\u26a1", "medium": "\u23f1\ufe0f", "slow": "\U0001f40c"}
-    metric_rows: Dict[str, list] = defaultdict(list)  # category → rows
+    # Build field readers: which modules READ each field (dependencies)
+    field_reader_names: Dict[str, List[str]] = defaultdict(list)
+    for consumer, field, producer in deps:
+        if consumer not in field_reader_names[field]:
+            field_reader_names[field].append(consumer)
 
+    # Group metrics by category
+    metrics_by_cat: Dict[str, list] = defaultdict(list)
     for field_name in sorted(qm_fields.keys()):
-        qm = qm_fields[field_name]
-        group = qm["group"]
+        group = qm_fields[field_name]["group"]
         writers = field_writers.get(field_name, [])
-        if not writers:
-            continue
-
-        # Get description and direction from QualityMetrics field comment
-        desc = ""
-        for r in results:
-            if field_name in r["output_fields"]:
-                desc = r["output_fields"][field_name]
-                break
-        direction = _get_score_direction(field_name, desc)
-        range_match = re.search(
-            r"\(([^)]*(?:higher|lower|dB|MOS|0-\d+|\d+-\d+)[^)]*)\)", desc or ""
-        )
-        range_str = range_match.group(1) if range_match else "—"
-
-        for mod_name in sorted(writers):
-            mod = mod_lookup.get(mod_name)
-            if mod is None:
-                continue
-            badge = speed_badges.get(mod["speed"], "")
-            chain = " → ".join(mod["fallback_chain"]) if mod["fallback_chain"] else "—"
-            gpu = "✓" if mod["gpu"] else ""
-            source = source_links_cache.get(mod_name, "—")
-            test_status = _format_test_status(mod_name, test_results)
-
-            metric_rows[group].append(
-                f"| `{field_name}` | {direction} | {range_str} "
-                f"| `{mod_name}` | {mod['input_type']} "
-                f"| {badge} {mod['speed']} | {gpu} | {chain} "
-                f"| {source} | {test_status} | {mod['description']} |"
-            )
+        if writers:
+            metrics_by_cat[group].append(field_name)
 
     a("---")
     a("")
 
-    for cat_key in _CATEGORY_ORDER:
-        rows = metric_rows.get(cat_key)
-        if not rows:
+    for cat_key in list(_CATEGORY_ORDER) + ["other"]:
+        fields = metrics_by_cat.get(cat_key)
+        if not fields:
             continue
-        display = _CATEGORY_DISPLAY.get(cat_key, cat_key)
-        a(f"## {display} ({len(rows)} metrics)")
-        a("")
-        a("| Metric | Dir | Range | Module | Input | Speed | GPU | Backend | Source | Test | Description |")
-        a("|--------|-----|-------|--------|-------|-------|-----|---------|--------|------|-------------|")
-        for row in rows:
-            a(row)
+        display = _CATEGORY_DISPLAY.get(cat_key, "Other")
+        a(f"## {display} ({len(fields)} metrics)")
         a("")
 
-    # Handle "other" category (fields not in _CATEGORY_ORDER)
-    other_rows = metric_rows.get("other")
-    if other_rows:
-        a(f"## Other ({len(other_rows)} metrics)")
-        a("")
-        a("| Metric | Dir | Range | Module | Input | Speed | GPU | Backend | Source | Test | Description |")
-        a("|--------|-----|-------|--------|-------|-------|-----|---------|--------|------|-------------|")
-        for row in other_rows:
-            a(row)
+        for field_name in fields:
+            writers = field_writers.get(field_name, [])
+            qm = qm_fields[field_name]
+            field_comment = qm.get("comment", "")
+            field_type = qm.get("type", "float")
+
+            # Get output_fields description from first writer module
+            out_desc = ""
+            for r in results:
+                if field_name in r["output_fields"]:
+                    out_desc = r["output_fields"][field_name]
+                    break
+
+            direction = _get_score_direction(field_name, out_desc or field_comment)
+
+            # Extract range, stripping direction keywords to avoid duplication
+            range_str = ""
+            range_src = out_desc or field_comment
+            if range_src:
+                range_match = re.search(
+                    r"\(([^)]*(?:higher|lower|dB|MOS|0-\d+|\d+-\d+)[^)]*)\)", range_src
+                )
+                if range_match:
+                    raw = range_match.group(1)
+                    # Strip direction text to avoid "↑ higher=better · higher=better"
+                    raw = re.sub(r",?\s*(?:higher|lower)\s*=\s*better", "", raw).strip(" ,")
+                    range_str = raw
+                else:
+                    # Try bare range like "0-10" or "1-5"
+                    bare = re.search(r"(\d+(?:\.\d+)?\s*[-–]\s*\d+(?:\.\d+)?)", range_src)
+                    if bare:
+                        range_str = bare.group(1)
+
+            # Build tagline: field comment (or module desc) + direction + range
+            tagline_parts = []
+            if field_comment:
+                tagline_parts.append(field_comment)
+            if direction != "—":
+                tagline_parts.append(direction)
+            if range_str:
+                tagline_parts.append(range_str)
+            if field_type != "float":
+                tagline_parts.append(f"type: {field_type}")
+            tagline = " · ".join(tagline_parts)
+
+            a(f"### `{field_name}`")
+            if tagline:
+                a(f"> {tagline}")
+            a("")
+
+            # Show which modules read this field
+            readers = field_reader_names.get(field_name, [])
+            if readers:
+                reader_links = []
+                for rn in sorted(readers):
+                    rextra = mod_extra.get(rn, {})
+                    rpath = rextra.get("file_path", "")
+                    reader_links.append(f"[`{rn}`]({rpath})" if rpath else f"`{rn}`")
+                a(f"Used by: {', '.join(reader_links)}")
+                a("")
+
+            # One info block per writer module
+            for mod_name in sorted(writers):
+                mod = mod_lookup.get(mod_name)
+                if mod is None:
+                    continue
+                extra = mod_extra.get(mod_name, {})
+                file_path = extra.get("file_path", "")
+                source_links = extra.get("source_links", "—")
+                chain = " → ".join(mod["fallback_chain"]) if mod["fallback_chain"] else ""
+                badge = speed_badges.get(mod["speed"], "")
+                test_status = _format_test_status(mod_name, test_results)
+                pkgs = ", ".join(mod["packages"]) if mod["packages"] else ""
+                vram = mod["vram"] or ""
+
+                if file_path:
+                    mod_link = f"[`{mod_name}`]({file_path})"
+                else:
+                    mod_link = f"`{mod_name}`"
+
+                a(f"**{mod_link}** — {mod['description']}")
+                a("")
+
+                # Info as key-value table
+                speed_str = f"{badge} {mod['speed']}"
+                if mod["gpu"]:
+                    speed_str += " · GPU"
+                rows = []
+                rows.append(f"| Input | {mod['input_type']} |")
+                rows.append(f"| Speed | {speed_str} |")
+                if chain:
+                    rows.append(f"| Backend | {chain} |")
+                if pkgs:
+                    rows.append(f"| Packages | {pkgs} |")
+                if vram:
+                    rows.append(f"| VRAM | {vram} |")
+                if source_links != "—":
+                    rows.append(f"| Source | {source_links} |")
+                if test_status != "\u2014":
+                    rows.append(f"| Test | {test_status} |")
+
+                cfg = mod.get("default_config", {})
+                cfg_items = {k: v for k, v in cfg.items()
+                             if k not in ("weights_path", "preferred_backend", "models_dir")
+                             and v is not None}
+                if cfg_items:
+                    cfg_str = ", ".join(f"`{k}={v}`" for k, v in cfg_items.items())
+                    rows.append(f"| Config | {cfg_str} |")
+
+                a("| | |")
+                a("|---|---|")
+                for row in rows:
+                    a(row)
+                a("")
+
         a("")
 
     # ── Utility & Validation Modules (no metric output) ───────────────
@@ -1055,12 +1186,15 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         a("Modules that perform validation, embedding, deduplication, or dataset-level "
           "analysis without writing individual QualityMetrics fields.")
         a("")
-        a("| Module | Input | Speed | GPU | Description |")
-        a("|--------|-------|-------|-----|-------------|")
         for r in sorted(no_output, key=lambda x: x["name"]):
+            extra = mod_extra.get(r["name"], {})
+            file_path = extra.get("file_path", "")
+            mod_link = f"[`{r['name']}`]({file_path})" if file_path else f"`{r['name']}`"
             badge = speed_badges.get(r["speed"], "")
-            gpu = "✓" if r["gpu"] else ""
-            a(f"| `{r['name']}` | {r['input_type']} | {badge} {r['speed']} | {gpu} | {r['description']} |")
+            items = [f"Input: {r['input_type']}", f"Speed: {badge} {r['speed']}"]
+            if r["gpu"]:
+                items.append("GPU")
+            a(f"- **{mod_link}** — {r['description']} · {' · '.join(items)}")
         a("")
 
     return "\n".join(L)
