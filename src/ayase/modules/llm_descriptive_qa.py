@@ -149,11 +149,14 @@ class LLMDescriptiveQAModule(PipelineModule):
 
             # Try to extract numerical score
             import re
-            score_match = re.search(r'(\d+)\s*(?:/\s*100)?', explanation)
+            # Prefer explicit N/100 pattern
+            score_match = re.search(r'(\d+)\s*/\s*100', explanation)
             if score_match:
                 quality_score = float(score_match.group(1))
             else:
-                quality_score = 50.0  # Default
+                # Fall back to last number found
+                all_numbers = re.findall(r'(\d+)', explanation)
+                quality_score = float(all_numbers[-1]) if all_numbers else 50.0
 
             return {
                 "quality_score": quality_score,

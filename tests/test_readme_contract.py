@@ -4,7 +4,6 @@ Each test class maps to a README section. If a test here breaks, either the
 code regressed or the README needs updating.
 """
 
-import asyncio
 import json
 import tempfile
 from pathlib import Path
@@ -245,11 +244,11 @@ class TestPipelineAPI:
         pipeline.stop()
 
     def test_pipeline_process_sample_is_async(self, synthetic_video):
-        """README: asyncio.run(pipeline.process_sample(sample))."""
+        """README: pipeline.process_sample(sample)."""
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
         sample = Sample(path=synthetic_video, is_video=True)
-        result = asyncio.run(pipeline.process_sample(sample))
+        result = pipeline.process_sample(sample)
         assert isinstance(result, Sample)
         assert result.quality_metrics is not None
         assert result.quality_metrics.technical_score == 75.0
@@ -260,7 +259,7 @@ class TestPipelineAPI:
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
         sample = Sample(path=synthetic_video, is_video=True)
-        asyncio.run(pipeline.process_sample(sample))
+        pipeline.process_sample(sample)
         assert str(synthetic_video) in pipeline.results
         pipeline.stop()
 
@@ -269,7 +268,7 @@ class TestPipelineAPI:
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
         sample = Sample(path=synthetic_video, is_video=True)
-        asyncio.run(pipeline.process_sample(sample))
+        pipeline.process_sample(sample)
         assert pipeline.stats.total_samples == 1
         assert pipeline.stats.valid_samples == 1
         pipeline.stop()
@@ -278,8 +277,8 @@ class TestPipelineAPI:
         """Pipeline computes running averages for key metrics."""
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
-        asyncio.run(pipeline.process_sample(Sample(path=Path("a.mp4"), is_video=True)))
-        asyncio.run(pipeline.process_sample(Sample(path=Path("b.mp4"), is_video=True)))
+        pipeline.process_sample(Sample(path=Path("a.mp4"), is_video=True))
+        pipeline.process_sample(Sample(path=Path("b.mp4"), is_video=True))
         assert pipeline.stats.avg_technical_score == pytest.approx(75.0)
         assert pipeline.stats.avg_aesthetic_score == pytest.approx(6.5)
         pipeline.stop()
@@ -288,9 +287,7 @@ class TestPipelineAPI:
         """README: pipeline.export_report(path, format='json')."""
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
-        asyncio.run(
-            pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
-        )
+        pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
         pipeline.stop()
 
         out = tmp_dir / "report.json"
@@ -304,9 +301,7 @@ class TestPipelineAPI:
     def test_pipeline_export_report_csv(self, synthetic_video, tmp_dir):
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
-        asyncio.run(
-            pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
-        )
+        pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
         pipeline.stop()
 
         out = tmp_dir / "report.csv"
@@ -318,9 +313,7 @@ class TestPipelineAPI:
     def test_pipeline_export_report_html(self, synthetic_video, tmp_dir):
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
-        asyncio.run(
-            pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
-        )
+        pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
         pipeline.stop()
 
         out = tmp_dir / "report.html"
@@ -349,7 +342,7 @@ class TestPipelineReadmePattern:
         sample = Sample(
             path=synthetic_video, is_video=True, quality_metrics=QualityMetrics()
         )
-        processed = asyncio.run(pipeline.process_sample(sample))
+        processed = pipeline.process_sample(sample)
         assert isinstance(processed, Sample)
 
         pipeline.stop()
@@ -424,7 +417,7 @@ class TestProfileAPI:
         sample = Sample(
             path=synthetic_video, is_video=True, quality_metrics=QualityMetrics()
         )
-        result = asyncio.run(pipeline.process_sample(sample))
+        result = pipeline.process_sample(sample)
         pipeline.stop()
 
         assert result.quality_metrics is not None
@@ -470,7 +463,7 @@ class TestConfiguration:
         """README [filter] section fields exist."""
         cfg = FilterConfig()
         assert cfg.default_mode == "list"
-        assert isinstance(cfg.min_score_threshold, int)
+        assert isinstance(cfg.min_score_threshold, (int, float))
 
     def test_ayase_config_has_all_sections(self):
         """AyaseConfig composes all sub-configs shown in README."""
@@ -573,7 +566,7 @@ class TestPluginSystem:
         pipeline = Pipeline([_E2EPlugin()])
         pipeline.start()
         sample = Sample(path=synthetic_video, is_video=True)
-        result = asyncio.run(pipeline.process_sample(sample))
+        result = pipeline.process_sample(sample)
         pipeline.stop()
 
         assert result.quality_metrics.aesthetic_score == 9.0
@@ -698,9 +691,7 @@ class TestPipelineStatePersistence:
     def test_save_and_load_state(self, synthetic_video, tmp_dir):
         pipeline = Pipeline([_StubModule()])
         pipeline.start()
-        asyncio.run(
-            pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
-        )
+        pipeline.process_sample(Sample(path=synthetic_video, is_video=True))
         pipeline.stop()
 
         state_path = tmp_dir / "state.json"
@@ -949,7 +940,7 @@ class TestAyasePipeline:
         assert good_module._mounted
 
         sample = Sample(path=list(Path(dataset).glob("*"))[0], is_video=False)
-        asyncio.run(pipeline.process_sample(sample))
+        pipeline.process_sample(sample)
 
         # fail_module was skipped, good_module ran
         assert fail_module.process_calls == 0

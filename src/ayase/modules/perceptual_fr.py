@@ -141,12 +141,11 @@ class PerceptualFRModule(PipelineModule):
             if vsi is not None:
                 sample.quality_metrics.vsi_score = vsi
 
-            logger.debug(
-                f"Perceptual FR for {sample.path.name}: "
-                f"FSIM={fsim:.3f} GMSD={gmsd:.4f} VSI={vsi:.3f}"
-                if fsim is not None
-                else f"Perceptual FR: no scores"
-            )
+            parts = []
+            if fsim is not None: parts.append(f"FSIM={fsim:.3f}")
+            if gmsd is not None: parts.append(f"GMSD={gmsd:.4f}")
+            if vsi is not None: parts.append(f"VSI={vsi:.3f}")
+            if parts: logger.debug("Perceptual FR for %s: %s", sample.path.name, " ".join(parts))
 
         except Exception as e:
             logger.error(f"Perceptual FR failed for {sample.path}: {e}")

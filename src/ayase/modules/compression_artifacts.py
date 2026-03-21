@@ -197,6 +197,7 @@ class CompressionArtifactsModule(PipelineModule):
         # Process video
         try:
             cap = cv2.VideoCapture(str(sample.path))
+            max_frames = self.config.get("max_frames", 300)
             artifacts_scores = []
             frame_idx = 0
 
@@ -208,6 +209,8 @@ class CompressionArtifactsModule(PipelineModule):
                 if frame_idx % self.subsample == 0:
                     score = self._compute_artifacts_score(frame)
                     artifacts_scores.append(score)
+                    if len(artifacts_scores) >= max_frames:
+                        break
 
                 frame_idx += 1
 

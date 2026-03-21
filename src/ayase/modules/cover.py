@@ -41,6 +41,10 @@ class COVERModule(PipelineModule):
                 self._model.eval()
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
                 self._model = self._model.to(device)
+                try:
+                    self._device = next(self._model.parameters()).device
+                except StopIteration:
+                    self._device = torch.device("cpu")
                 self._ml_available = True
                 self._backend = "cover"
                 logger.info("COVER model loaded on %s", device)
@@ -50,6 +54,10 @@ class COVERModule(PipelineModule):
 
                 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
                 self._model = pyiqa.create_metric("dover", device=device)
+                try:
+                    self._device = next(self._model.parameters()).device
+                except StopIteration:
+                    self._device = torch.device("cpu")
                 self._ml_available = True
                 self._backend = "dover"
                 logger.info("COVER fallback: using DOVER on %s", device)
@@ -93,7 +101,7 @@ class COVERModule(PipelineModule):
         if not frames:
             return
 
-        device = next(self._model.parameters()).device
+        device = self._device
         tensors = []
         for frame in frames:
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -114,7 +122,12 @@ class COVERModule(PipelineModule):
             sample.quality_metrics.cover_score = float(result)
 
     def _process_dover_fallback(self, sample: Sample) -> None:
-        """Process with DOVER as approximation for COVER."""
+        """Process with DOVER as approximation for COVER.
+
+        NOTE: DOVER is applied per-frame as an image metric here, which is an
+        approximation — the real COVER model processes temporal features across
+        the full video. Scores should be treated as approximate.
+        """
         import cv2
         import torch
 
@@ -128,13 +141,14 @@ class COVERModule(PipelineModule):
             tensor = (
                 torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
             )
-            device = next(self._model.parameters()).device
+            device = self._device
             tensor = tensor.to(device)
             with torch.no_grad():
                 score = self._model(tensor).item()
             scores.append(score)
 
         overall = float(np.mean(scores))
+        logger.debug("COVER fallback: using DOVER per-frame (approximate)")
         sample.quality_metrics.cover_score = overall
         # DOVER doesn't separate branches, but we approximate
         sample.quality_metrics.cover_technical = overall
@@ -147,7 +161,7 @@ class COVERModule(PipelineModule):
         frames = []
         if sample.is_video:
             cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
             indices = list(range(0, total, max(1, total // subsample)))[:subsample]
             for idx in indices:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, idx)

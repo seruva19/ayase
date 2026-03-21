@@ -96,11 +96,18 @@ class HDRMetadataModule(PipelineModule):
             if idx % self.subsample == 0:
                 frame_f = frame.astype(np.float32)
                 lum = _bt709_luminance(frame_f)
-                # Normalize to [0,1] signal range
-                signal = lum / 255.0
-                # Apply PQ EOTF for proper HDR10 luminance mapping
-                # (PQ is highly nonlinear; linear scaling would be incorrect)
-                lum_nits = _pq_eotf(signal)
+
+                # Detect HDR: uint16/float32 source or high dynamic range values
+                is_hdr = frame.dtype in (np.uint16, np.float32, np.float64) or frame.max() > 255
+
+                if is_hdr:
+                    # Apply PQ EOTF for proper HDR10 luminance mapping
+                    signal = lum / (65535.0 if frame.dtype == np.uint16 else max(float(lum.max()), 1.0))
+                    lum_nits = _pq_eotf(signal)
+                else:
+                    # SDR content: use raw luminance values directly (cd/m^2 proxy)
+                    lum_nits = lum
+
                 frame_avg = float(np.mean(lum_nits))
                 frame_max = float(np.max(lum_nits))
                 frame_averages.append(frame_avg)

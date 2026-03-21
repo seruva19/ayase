@@ -261,6 +261,7 @@ class TemporalFlickeringModule(PipelineModule):
     def _load_all_frames(self, sample: Sample) -> List[np.ndarray]:
         max_frames = self.config.get("max_frames", 300)
         frames = []
+        cap = None
         try:
             cap = cv2.VideoCapture(str(sample.path))
             total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -284,7 +285,9 @@ class TemporalFlickeringModule(PipelineModule):
                         break
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     frames.append(frame)
-            cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames: {e}")
+        finally:
+            if cap is not None:
+                cap.release()
         return frames

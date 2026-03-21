@@ -106,9 +106,9 @@ class STLPIPSModule(PipelineModule):
             temporal_quality = float(np.mean(temporal_scores))
 
             # Weighted combination (temporal matters more for video)
-            st_quality = 0.4 * spatial_quality + 0.6 * temporal_quality
+            st_distance = 0.4 * (1.0 - spatial_quality) + 0.6 * (1.0 - temporal_quality)
 
-            sample.quality_metrics.st_lpips = float(np.clip(st_quality, 0.0, 1.0))
+            sample.quality_metrics.st_lpips = float(np.clip(st_distance, 0.0, 1.0))
         except Exception as e:
             logger.warning("ST-LPIPS failed: %s", e)
         return sample

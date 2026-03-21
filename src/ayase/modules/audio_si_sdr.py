@@ -18,6 +18,8 @@ References:
 """
 
 import logging
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -42,6 +44,24 @@ class AudioSISDRModule(PipelineModule):
         self.target_sr = self.config.get("target_sr", 16000)
         self.warning_threshold = self.config.get("warning_threshold", 0.0)
 
+    def _extract_audio(self, video_path: Path) -> Optional[Path]:
+        """Extract audio from a video file to a temporary WAV."""
+        try:
+            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            tmp.close()
+            result = subprocess.run(
+                ["ffmpeg", "-y", "-i", str(video_path), "-vn", "-ac", "1",
+                 "-ar", str(self.target_sr), tmp.name],
+                capture_output=True, timeout=30,
+            )
+            if result.returncode != 0:
+                Path(tmp.name).unlink(missing_ok=True)
+                return None
+            return Path(tmp.name)
+        except Exception:
+            Path(tmp.name).unlink(missing_ok=True)
+            return None
+
     def process(self, sample: Sample) -> Sample:
         reference = getattr(sample, "reference_path", None)
         if reference is None:
@@ -50,9 +70,19 @@ class AudioSISDRModule(PipelineModule):
         if not reference.exists():
             return sample
 
+        ref_tmp = None
+        deg_tmp = None
         try:
-            ref_audio = self._load_audio(reference)
-            deg_audio = self._load_audio(sample.path)
+            if sample.is_video:
+                deg_tmp = self._extract_audio(sample.path)
+                ref_tmp = self._extract_audio(reference)
+                if deg_tmp is None or ref_tmp is None:
+                    return sample
+                ref_audio = self._load_audio(ref_tmp)
+                deg_audio = self._load_audio(deg_tmp)
+            else:
+                ref_audio = self._load_audio(reference)
+                deg_audio = self._load_audio(sample.path)
 
             if ref_audio is None or deg_audio is None:
                 return sample
@@ -81,6 +111,11 @@ class AudioSISDRModule(PipelineModule):
 
         except Exception as e:
             logger.warning(f"SI-SDR failed for {sample.path}: {e}")
+        finally:
+            if ref_tmp is not None:
+                ref_tmp.unlink(missing_ok=True)
+            if deg_tmp is not None:
+                deg_tmp.unlink(missing_ok=True)
 
         return sample
 

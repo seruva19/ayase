@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.17** · Generated 2026-03-21 11:48 · **312 modules** · **341 metrics**
+> **Version 0.1.17** · Generated 2026-03-21 16:53 · **312 modules** · **341 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -10,81 +10,20 @@
 
 **312** modules · **338** output fields · **341** metrics · **100** tiered · **102** GPU · **13** categories
 
-<h4>Modules by Category</h4>
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Input Types</h4><img src="docs/chart_input_types.png" width="100%"/></td>
+</tr></table>
 
-```mermaid
----
-config:
-  theme: neutral
----
-xychart-beta horizontal
-    x-axis ["No-Reference Quality", "Full-Reference & Distribution", "Motion & Temporal", "Text & Semantic", "Video Quality Assessment", "Audio Quality", "Video Generation", "Safety & Content", "Face & Identity", "HDR & Color", "Codec & Technical", "Depth", "Image-to-Video Reference"]
-    y-axis "Modules"
-    bar [168, 44, 23, 16, 16, 14, 9, 6, 5, 4, 3, 3, 1]
-```
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Speed Tiers</h4><img src="docs/chart_speed.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Backend Usage</h4><img src="docs/chart_backends.png" width="100%"/></td>
+</tr></table>
 
-<h4>Input Types</h4>
-
-```mermaid
-pie title Input Types
-    "image+video" : 147
-    "video-only" : 78
-    "full-reference" : 67
-    "caption-required" : 12
-    "audio" : 8
-```
-
-<h4>Speed Tiers</h4>
-
-```mermaid
----
-config:
-  theme: neutral
----
-xychart-beta horizontal
-    x-axis ["Fast (CPU)", "Medium (GPU)", "Slow (LLM/VLM)"]
-    y-axis "Modules"
-    bar [185, 120, 7]
-```
-
-<h4>Backend Usage</h4>
-
-```mermaid
----
-config:
-  theme: neutral
----
-xychart-beta horizontal
-    x-axis ["torch", "opencv", "pyiqa", "transformers", "ffmpeg", "torchvision", "piq", "torchmetrics"]
-    y-axis "Modules"
-    bar [111, 63, 53, 44, 14, 11, 3, 1]
-```
-
-<h4>Top Packages</h4>
-
-```mermaid
----
-config:
-  theme: neutral
----
-xychart-beta horizontal
-    x-axis ["torch", "opencv-python", "pyiqa", "transformers", "Pillow", "scipy", "torchvision", "librosa", "soundfile", "open3d", "mediapipe", "scikit-learn"]
-    y-axis "Modules"
-    bar [111, 64, 53, 44, 39, 14, 13, 9, 9, 5, 4, 4]
-```
-
-<h4>Metrics per Category</h4>
-
-```mermaid
----
-config:
-  theme: neutral
----
-xychart-beta horizontal
-    x-axis ["No-Reference Quality", "Full-Reference Quality", "Text-Video Alignment", "Temporal Consistency", "Motion & Dynamics", "Basic Visual Quality", "Audio Quality", "Face & Identity", "Scene & Content", "HDR & Color", "Aesthetics", "Safety & Ethics", "OCR & Text", "Meta & Curation", "Production Quality", "Codec & Technical", "Depth & Spatial", "Image-to-Video Reference", "distribution"]
-    y-axis "Metrics"
-    bar [95, 57, 26, 24, 19, 15, 15, 14, 14, 10, 9, 7, 7, 6, 5, 5, 5, 4, 1]
-```
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Top Packages</h4><img src="docs/chart_packages.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Metrics per Category</h4><img src="docs/chart_metrics_per_cat.png" width="100%"/></td>
+</tr></table>
 
 [No-Reference Quality](#no-reference-quality-95-metrics) (95) · [Full-Reference Quality](#full-reference-quality-57-metrics) (57) · [Text-Video Alignment](#text-video-alignment-26-metrics) (26) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-19-metrics) (19) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-15-metrics) (15) · [Face & Identity](#face--identity-14-metrics) (14) · [Scene & Content](#scene--content-14-metrics) (14) · [HDR & Color](#hdr--color-10-metrics) (10) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Utility & Validation](#utility--validation-46-modules) (46)
 
@@ -350,7 +289,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 **[`fast_vqa`](src/ayase/modules/fast_vqa.py)** — Deep Learning Video Quality Assessment (FAST-VQA)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: decord, torch, traceback
+- **Packages**: PyYAML, decord, torch, traceback
 - **Config**: `model_type=FasterVQA`
 
 ### `faver_score`
@@ -564,7 +503,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 **[`naturalness`](src/ayase/modules/naturalness.py)** — Measures naturalness of content (natural vs synthetic)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
-- **Packages**: pyiqa
+- **Packages**: Pillow, pyiqa
 - **Config**: `use_pyiqa=True`, `subsample=2`, `warning_threshold=0.4`
 
 ### `niqe`
@@ -1527,6 +1466,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 **[`ws_ssim`](src/ayase/modules/ws_ssim.py)** — WS-SSIM weighted spherical SSIM
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Config**: `subsample=8`
 
 ### `xpsnr`
 > XPSNR perceptual PSNR (dB, higher=better) · ↑ higher=better · dB
@@ -1735,7 +1675,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 
 **[`umtscore`](src/ayase/modules/umtscore.py)** — UMTScore video-text alignment via UMT features
 
-- **Input**: img/vid · **Speed**: ⏱️ medium
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium
 - **Backend**: heuristic → native → clip
 - **Packages**: Pillow, torch, transformers, umt
 - **VRAM**: ~600 MB
@@ -2286,7 +2226,7 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Packages**: cpbd
-- **Config**: `threshold_cpbd=0.65`, `threshold_heuristic=10.0`
+- **Config**: `threshold_cpbd=0.65`, `threshold_heuristic=0.3`
 
 ### `imaging_artifacts_score`
 > Imaging edge-density artifacts (0-1, higher=cleaner) · ↑ higher=better · 0-1, higher=cleaner
@@ -3355,7 +3295,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **VRAM**: ~800 MB
-- **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'temporal_consistency': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
+- **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
 ## Utility & Validation (46 modules)

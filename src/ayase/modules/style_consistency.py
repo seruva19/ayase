@@ -43,13 +43,15 @@ class StyleConsistencyModule(PipelineModule):
         return sample
 
     def _analyze_histogram_consistency(self, sample: Sample) -> float:
+        max_frames = self.config.get("max_frames", 300)
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
             return 1.0
 
         prev_hist = None
         correlations = []
-        
+        sampled = 0
+
         frame_idx = 0
         while True:
             ret, frame = cap.read()
@@ -60,6 +62,10 @@ class StyleConsistencyModule(PipelineModule):
                 frame_idx += 1
                 continue
             frame_idx += 1
+            sampled += 1
+
+            if sampled > max_frames:
+                break
 
             # Calculate HSV histogram
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -71,7 +77,7 @@ class StyleConsistencyModule(PipelineModule):
                 correlations.append(score)
 
             prev_hist = hist
-            
+
         cap.release()
         
         if not correlations:

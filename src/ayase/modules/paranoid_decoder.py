@@ -27,8 +27,7 @@ class ParanoidDecoderModule(PipelineModule):
         self.strict_mode = self.config.get("strict_mode", True)
         self._ffmpeg_available = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         self._ffmpeg_available = shutil.which("ffmpeg") is not None
         if not self._ffmpeg_available:
             logger.warning("ffmpeg not found. ParanoidDecoderModule disabled.")

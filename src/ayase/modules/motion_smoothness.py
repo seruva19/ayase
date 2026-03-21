@@ -212,23 +212,23 @@ class MotionSmoothnessModule(PipelineModule):
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
         frames = []
         cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        try:
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        if total <= 0:
+            if total <= 0:
+                return []
+
+            n = min(self.max_frames, total)
+            indices = np.linspace(0, total - 1, n, dtype=int)
+
+            for idx in indices:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
+                ret, frame = cap.read()
+                if ret:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    frames.append(frame)
+        finally:
             cap.release()
-            return []
-
-        n = min(self.max_frames, total)
-        indices = np.linspace(0, total - 1, n, dtype=int)
-
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-            ret, frame = cap.read()
-            if ret:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frames.append(frame)
-
-        cap.release()
         return frames
 
 

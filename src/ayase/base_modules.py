@@ -135,10 +135,10 @@ class BatchMetricModule(PipelineModule):
                     reference_sample = Sample(
                         path=reference_path,
                         is_video=sample.is_video,
-                        video_metadata=sample.video_metadata,
-                        image_metadata=sample.image_metadata,
-                        audio_metadata=sample.audio_metadata,
-                        caption=sample.caption,
+                        video_metadata=None,
+                        image_metadata=None,
+                        audio_metadata=None,
+                        caption=None,
                     )
                     extractor = getattr(self, "extract_reference_features", self.extract_features)
                     ref_features = extractor(reference_sample)
@@ -160,6 +160,7 @@ class BatchMetricModule(PipelineModule):
             # Not enough samples for distribution metric
             self._feature_cache = []
             self._reference_cache = []
+            super().on_dispose()
             return
 
         try:
@@ -184,6 +185,8 @@ class BatchMetricModule(PipelineModule):
             # Clean up cache
             self._feature_cache = []
             self._reference_cache = []
+
+        super().on_dispose()
 
 
 class NoReferenceModule(PipelineModule):

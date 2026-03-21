@@ -128,7 +128,8 @@ class FineVQModule(PipelineModule):
                 score = None
 
             if score is not None:
-                sample.quality_metrics.finevq_score = float(np.clip(score, 0.0, 1.0))
+                # Don't clamp: real FineVQ model may output scores outside [0,1]
+                sample.quality_metrics.finevq_score = float(score)
             else:
                 self._process_handcrafted(sample)
         except Exception as e:

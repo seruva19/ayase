@@ -60,12 +60,13 @@ def _blockiness(gray: np.ndarray, block_size: int = 8) -> float:
     interior_g = []
 
     for y in range(block_size, h - 1, block_size):
-        g = np.mean(np.abs(np.diff(gray[y, :].astype(np.float64))))
+        # Measure gradient ACROSS the block boundary (row y-1 vs row y)
+        g = np.mean(np.abs(gray[y, :].astype(np.float64) - gray[y - 1, :].astype(np.float64)))
         boundary_g.append(g)
 
     for y in range(1, h - 1):
         if y % block_size != 0:
-            g = np.mean(np.abs(np.diff(gray[y, :].astype(np.float64))))
+            g = np.mean(np.abs(gray[y, :].astype(np.float64) - gray[y - 1, :].astype(np.float64)))
             interior_g.append(g)
 
     if not interior_g:

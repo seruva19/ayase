@@ -39,38 +39,39 @@ class MotionModule(PipelineModule):
         if not cap.isOpened():
             return
 
-        prev_gray = None
-        flows = []
-        diffs = []
-        
-        frame_idx = 0
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-                
-            if frame_idx % self.sample_rate != 0:
+        try:
+            prev_gray = None
+            flows = []
+            diffs = []
+
+            frame_idx = 0
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+
+                if frame_idx % self.sample_rate != 0:
+                    frame_idx += 1
+                    continue
+
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+                if prev_gray is not None:
+                    # 1. Optical Flow (Farneback) - Dense
+                    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+                    mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+                    avg_flow = np.mean(mag)
+                    flows.append(avg_flow)
+
+                    # 2. Pixel Difference (Flickering/Static check)
+                    diff = cv2.absdiff(prev_gray, gray)
+                    avg_diff = np.mean(diff)
+                    diffs.append(avg_diff)
+
+                prev_gray = gray
                 frame_idx += 1
-                continue
-                
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            
-            if prev_gray is not None:
-                # 1. Optical Flow (Farneback) - Dense
-                flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-                mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-                avg_flow = np.mean(mag)
-                flows.append(avg_flow)
-                
-                # 2. Pixel Difference (Flickering/Static check)
-                diff = cv2.absdiff(prev_gray, gray)
-                avg_diff = np.mean(diff)
-                diffs.append(avg_diff)
-                
-            prev_gray = gray
-            frame_idx += 1
-            
-        cap.release()
+        finally:
+            cap.release()
 
         if not flows:
             return

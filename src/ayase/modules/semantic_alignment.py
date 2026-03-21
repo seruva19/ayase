@@ -29,8 +29,7 @@ class SemanticAlignmentModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor

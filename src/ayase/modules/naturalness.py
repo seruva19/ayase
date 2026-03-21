@@ -150,7 +150,9 @@ class NaturalnessModule(NoReferenceModule):
                 # Use pyiqa BRISQUE
                 # BRISQUE returns 0-100 (lower is better)
                 # Convert to naturalness score (higher is better)
-                brisque_score = self._metric(str(sample_path)).item()
+                from PIL import Image
+                img = Image.open(str(sample_path)).convert("RGB")
+                brisque_score = self._metric(img).item()
                 # Normalize: BRISQUE ~0 is natural, ~100 is unnatural
                 naturalness = 1.0 - min(brisque_score / 100.0, 1.0)
                 return float(naturalness)

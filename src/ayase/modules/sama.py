@@ -85,9 +85,10 @@ class SAMAModule(PipelineModule):
                 if total_patches == 0:
                     continue
 
-                # Random masking
+                # Random masking (deterministic)
+                rng = np.random.RandomState(42)
                 n_visible = max(int(total_patches * (1 - self.mask_ratio)), 1)
-                patch_indices = np.random.choice(total_patches, n_visible, replace=False)
+                patch_indices = rng.choice(total_patches, n_visible, replace=False)
 
                 patch_qualities = []
                 for pidx in patch_indices:

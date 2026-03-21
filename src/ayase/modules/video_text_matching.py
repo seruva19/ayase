@@ -36,8 +36,7 @@ class VideoTextMatchingModule(PipelineModule):
         self._ml_available = False
         self._is_xclip = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             import torch
             self._device = "cuda" if torch.cuda.is_available() else "cpu"

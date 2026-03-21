@@ -36,7 +36,7 @@ class P1204Module(PipelineModule):
         vm = sample.video_metadata
         if vm is None: return None
         # Resolution factor
-        pixels = vm.width * vm.height
+        pixels = max(vm.width * vm.height, 1)
         if pixels >= 3840*2160: res_f = 1.0
         elif pixels >= 1920*1080: res_f = 0.9
         elif pixels >= 1280*720: res_f = 0.75

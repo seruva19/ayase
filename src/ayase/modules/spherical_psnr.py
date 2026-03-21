@@ -63,7 +63,11 @@ class SphericalPSNRModule(ReferenceBasedModule):
         ws_mse = np.sum(weights * diff_sq) / np.sum(weights)
         ws_psnr = 10 * np.log10(255**2 / max(ws_mse, 1e-10))
 
-        # CPP-PSNR approximation (similar weighting)
-        cpp_psnr = ws_psnr * 0.998  # Very close to WS-PSNR for most content
+        # CPP-PSNR: Craster Parabolic Projection weighting
+        # Weight for latitude theta is cos(theta) * (1 - sin^2(theta)/3)
+        cpp_weights = np.cos(lat) * (1.0 - np.sin(lat) ** 2 / 3.0)
+        cpp_weights = np.broadcast_to(cpp_weights, (h, w))
+        cpp_mse = np.sum(cpp_weights * diff_sq) / np.sum(cpp_weights)
+        cpp_psnr = 10 * np.log10(255**2 / max(cpp_mse, 1e-10))
 
         return {"s_psnr": float(s_psnr), "ws_psnr": float(ws_psnr), "cpp_psnr": float(cpp_psnr)}

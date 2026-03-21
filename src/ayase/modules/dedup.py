@@ -18,13 +18,16 @@ class DeduplicationModule(PipelineModule):
         super().__init__(config)
         self.seen_hashes: Dict[str, str] = {} # hash -> filename
         self._imagehash_available = False
-        
+
         try:
             import imagehash
             self.imagehash = imagehash
             self._imagehash_available = True
         except ImportError:
             logger.warning("imagehash not installed. Deduplication disabled.")
+
+    def setup(self) -> None:
+        self.seen_hashes = {}
 
     def process(self, sample: Sample) -> Sample:
         if not self._imagehash_available:

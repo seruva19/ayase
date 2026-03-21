@@ -33,10 +33,10 @@ class HDRSDRVQAModule(PipelineModule):
     def _detect_hdr(self, frame: np.ndarray, video_path=None) -> bool:
         """Detect if content is HDR based on pixel dtype and (for video) ffprobe metadata."""
         # Fast path: dtype-based detection
-        if frame.dtype == np.uint16:
+        # Note: cv2.VideoCapture usually returns uint8, but some builds
+        # may return float32 for HDR content.
+        if frame.dtype in (np.uint16, np.float32, np.float64):
             return True
-        if np.issubdtype(frame.dtype, np.floating):
-            return bool(frame.max() > 1.0)
 
         # For video files, probe color space metadata via ffprobe
         if video_path is not None:

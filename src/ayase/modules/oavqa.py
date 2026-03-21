@@ -24,7 +24,7 @@ class OAVQAModule(PipelineModule):
                 am = sample.audio_metadata
                 # Higher bitrate and sample rate = better audio
                 br_q = min((am.bitrate or 128000)/320000, 1) if am.bitrate else 0.5
-                sr_q = min(am.sample_rate/48000, 1)
+                sr_q = min(am.sample_rate/48000, 1) if am.sample_rate else 0.5
                 aq = 0.5*br_q + 0.5*sr_q
             score = 0.6*vq + 0.4*aq
             if sample.quality_metrics is None: sample.quality_metrics = QualityMetrics()

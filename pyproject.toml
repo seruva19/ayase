@@ -170,6 +170,7 @@ dev = [
     "black>=24.0.0",
     "ruff>=0.1.0",
     "mypy>=1.8.0",
+    "seaborn>=0.13.0",
 ]
 all = [
     "ayase[ml,dev,tui,v-perceptual,v-iqa,v-motion,v-ocr,v-face,v-identity,v-object,v-watermark,v-audio,v-text,v-align,v-scene,v-umap,v-nemo,v-ml]",

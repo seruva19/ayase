@@ -292,14 +292,21 @@ class DOVERModule(PipelineModule):
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
             models_dir = self.config.get("models_dir", None)
+            old_torch_home = os.environ.get("TORCH_HOME")
             if models_dir:
                 os.environ["TORCH_HOME"] = str(models_dir)
 
-            self._model = pyiqa.create_metric("dover", device=self._device, as_loss=False)
-            self._ml_available = True
-            self._backend = "pyiqa"
-            logger.info(f"DOVER (pyiqa) initialised on {self._device}")
-            return True
+            try:
+                self._model = pyiqa.create_metric("dover", device=self._device, as_loss=False)
+                self._ml_available = True
+                self._backend = "pyiqa"
+                logger.info(f"DOVER (pyiqa) initialised on {self._device}")
+                return True
+            finally:
+                if old_torch_home is not None:
+                    os.environ["TORCH_HOME"] = old_torch_home
+                else:
+                    os.environ.pop("TORCH_HOME", None)
 
         except ImportError:
             return False

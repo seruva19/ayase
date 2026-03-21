@@ -95,7 +95,7 @@ class VideoRewardModule(PipelineModule):
 
             with torch.no_grad():
                 outputs = self._model(**inputs)
-                score = outputs.logits.squeeze().item()
+                score = outputs.logits.squeeze(-1).mean().item()
 
             sample.quality_metrics.video_reward_score = float(score)
         except Exception as e:

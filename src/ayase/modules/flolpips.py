@@ -115,9 +115,8 @@ class FloLPIPSModule(PipelineModule):
                 flow_lpips_scores.append(score)
 
             mean_dist = float(np.mean(flow_lpips_scores))
-            quality = 1.0 / (1.0 + mean_dist * 5.0)
 
-            sample.quality_metrics.flolpips = float(np.clip(quality, 0.0, 1.0))
+            sample.quality_metrics.flolpips = float(mean_dist)
         except Exception as e:
             logger.warning("FloLPIPS failed: %s", e)
         return sample

@@ -23,6 +23,12 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
+def _bt709_luminance(img: np.ndarray) -> np.ndarray:
+    """Convert BGR image to grayscale using BT.709 luminance weights."""
+    # OpenCV loads in BGR order
+    return 0.0722 * img[:, :, 0] + 0.7152 * img[:, :, 1] + 0.2126 * img[:, :, 2]
+
+
 class HDRVQMModule(PipelineModule):
     name = "hdr_vqm"
     description = "HDR-aware video quality (PU21+wavelet FR or gamma heuristic fallback)"
@@ -92,9 +98,9 @@ class HDRVQMModule(PipelineModule):
             h, w = dist.shape[:2]
             ref = cv2.resize(ref, (w, h))
 
-            # Convert to grayscale
-            ref_gray = np.mean(ref, axis=2) if len(ref.shape) == 3 else ref
-            dist_gray = np.mean(dist, axis=2) if len(dist.shape) == 3 else dist
+            # Convert to grayscale using BT.709 luminance weights
+            ref_gray = _bt709_luminance(ref) if len(ref.shape) == 3 else ref
+            dist_gray = _bt709_luminance(dist) if len(dist.shape) == 3 else dist
 
             # Apply PU21 encoding
             ref_pu = self._pu21_encode(ref_gray, is_hdr)
@@ -204,7 +210,7 @@ class HDRVQMModule(PipelineModule):
         else:
             pu = frame.astype(np.float64) / 255.0
 
-        gray_pu = np.mean(pu, axis=2) if len(pu.shape) == 3 else pu
+        gray_pu = _bt709_luminance(pu) if len(pu.shape) == 3 else pu
 
         # Sharpness in PU space
         lap = cv2.Laplacian(gray_pu.astype(np.float64), cv2.CV_64F)
@@ -251,8 +257,8 @@ class HDRVQMModule(PipelineModule):
                 f1 = f1 / 255.0
                 f2 = f2 / 255.0
 
-            g1 = np.mean(f1, axis=2) if len(f1.shape) == 3 else f1
-            g2 = np.mean(f2, axis=2) if len(f2.shape) == 3 else f2
+            g1 = _bt709_luminance(f1) if len(f1.shape) == 3 else f1
+            g2 = _bt709_luminance(f2) if len(f2.shape) == 3 else f2
 
             diff = np.abs(g1 - g2)
             flicker = np.mean(diff)

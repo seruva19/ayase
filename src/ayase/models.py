@@ -1057,7 +1057,7 @@ class Sample(BaseModel):
     @property
     def aspect_ratio(self) -> Optional[float]:
         """Calculate aspect ratio."""
-        if self.width and self.height:
+        if self.width is not None and self.height is not None:
             return self.width / self.height
         return None
 

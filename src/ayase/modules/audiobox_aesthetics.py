@@ -197,7 +197,7 @@ class AudioboxAestheticsModule(PipelineModule):
 
             logger.debug(
                 f"Audiobox for {sample.path.name}: "
-                f"prod={scores.get('production'):.3f} enjoy={scores.get('enjoyment'):.3f}"
+                f"prod={scores.get('production', 0.0):.3f} enjoy={scores.get('enjoyment', 0.0):.3f}"
             )
         except Exception as e:
             logger.error(f"Audiobox Aesthetics failed: {e}")

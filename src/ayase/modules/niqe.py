@@ -93,38 +93,39 @@ class NIQEModule(NoReferenceModule):
         """Compute NIQE for video (average across frames)."""
         try:
             cap = cv2.VideoCapture(str(sample_path))
-            niqe_scores = []
-            frame_idx = 0
+            try:
+                niqe_scores = []
+                frame_idx = 0
 
-            # Create temporary directory for frames
-            import tempfile
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmpdir_path = Path(tmpdir)
+                # Create temporary directory for frames
+                import tempfile
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    tmpdir_path = Path(tmpdir)
 
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
+                    while True:
+                        ret, frame = cap.read()
+                        if not ret:
+                            break
 
-                    # Subsample frames
-                    if frame_idx % self.subsample != 0:
+                        # Subsample frames
+                        if frame_idx % self.subsample != 0:
+                            frame_idx += 1
+                            continue
+
+                        # Save frame temporarily
+                        frame_path = tmpdir_path / f"frame_{frame_idx}.png"
+                        cv2.imwrite(str(frame_path), frame)
+
+                        # Compute NIQE
+                        try:
+                            score = self._niqe_metric(str(frame_path)).item()
+                            niqe_scores.append(score)
+                        except Exception as e:
+                            logger.debug(f"Failed to compute NIQE for frame {frame_idx}: {e}")
+
                         frame_idx += 1
-                        continue
-
-                    # Save frame temporarily
-                    frame_path = tmpdir_path / f"frame_{frame_idx}.png"
-                    cv2.imwrite(str(frame_path), frame)
-
-                    # Compute NIQE
-                    try:
-                        score = self._niqe_metric(str(frame_path)).item()
-                        niqe_scores.append(score)
-                    except Exception as e:
-                        logger.debug(f"Failed to compute NIQE for frame {frame_idx}: {e}")
-
-                    frame_idx += 1
-
-            cap.release()
+            finally:
+                cap.release()
 
             if not niqe_scores:
                 return None

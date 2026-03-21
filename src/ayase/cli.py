@@ -1,6 +1,6 @@
 """CLI interface for Ayase using Typer."""
 
-import asyncio
+
 import csv
 import datetime
 import json
@@ -130,11 +130,11 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
     return modules
 
 
-async def _process_samples(
+def _process_samples(
     pipeline: Pipeline, samples: Iterable[Sample],
 ) -> Pipeline:
     for sample in samples:
-        processed = await pipeline.process_sample(sample)
+        processed = pipeline.process_sample(sample)
         pipeline.results[str(processed.path)] = processed
     return pipeline
 
@@ -212,9 +212,6 @@ def main(
         import logging
         logging.basicConfig(level=logging.DEBUG, format="%(name)s %(levelname)s: %(message)s")
         console.print("[dim]Verbose mode enabled[/dim]")
-    config = AyaseConfig.load()
-    _discover_all_modules(config)
-    _print_readiness()
 
 
 @app.command()
@@ -291,7 +288,7 @@ def scan(
     p = Pipeline(modules)
     p.start()
     samples = scan_dataset(dataset_path, include_videos=True, include_images=True)
-    asyncio.run(_process_samples(p, samples))
+    _process_samples(p, samples)
     p.stop()
     _export_artifacts(p, config, "scan")
 
@@ -320,7 +317,7 @@ def scan(
                 recs_str = "; ".join(
                     [i.recommendation for i in s.validation_issues if i.recommendation]
                 )
-                score = s.quality_metrics.technical_score if s.quality_metrics else 0
+                score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
                 writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, f"{score:.2f}"])
         elif format == "html":
             import tempfile
@@ -382,7 +379,7 @@ def run(
         console.print("[yellow]No valid files found to process.[/yellow]")
         raise typer.Exit(code=0)
 
-    asyncio.run(_process_samples(p, all_samples))
+    _process_samples(p, all_samples)
     p.stop()
     _export_artifacts(p, config, "run")
 
@@ -409,7 +406,7 @@ def run(
             writer.writerow(["Path", "Valid", "Issues", "Technical Score"])
             for s in p.results.values():
                 issues = "; ".join([i.message for i in s.validation_issues])
-                score = s.quality_metrics.technical_score if s.quality_metrics else 0
+                score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
                 writer.writerow([str(s.path), s.is_valid, issues, f"{score:.2f}"])
 
 
@@ -443,7 +440,7 @@ def filter(
     console.print(f"[bold]Output:[/bold] {output}")
     console.print(f"[bold]Mode:[/bold] {mode}")
 
-    if min_score:
+    if min_score is not None:
         console.print(f"[bold]Minimum {metric}:[/bold] {min_score}")
     if aspect_ratio:
         console.print(f"[bold]Aspect ratio:[/bold] {aspect_ratio}")
@@ -456,8 +453,8 @@ def filter(
     pipeline = Pipeline(modules)
     pipeline.start()
 
-    samples = scan_dataset(dataset_path, include_videos=True, include_images=False)
-    asyncio.run(_process_samples(pipeline, samples))
+    samples = scan_dataset(dataset_path, include_videos=True, include_images=True)
+    _process_samples(pipeline, samples)
     pipeline.stop()
 
     target_ar = None
@@ -480,7 +477,7 @@ def filter(
 
     candidates = []
     for sample in pipeline.results.values():
-        if min_score:
+        if min_score is not None:
             score = 0.0
             if sample.quality_metrics:
                 score = getattr(sample.quality_metrics, metric, None) or 0.0
@@ -488,7 +485,7 @@ def filter(
                 continue
         if target_ar and sample.aspect_ratio and abs(sample.aspect_ratio - target_ar) > 0.01:
             continue
-        if target_res and (sample.width, sample.height) != target_res:
+        if target_res and (sample.width is None or sample.height is None or (sample.width, sample.height) != target_res):
             continue
         candidates.append(sample)
 
@@ -541,7 +538,7 @@ def stats(
     pipeline = Pipeline(modules)
     pipeline.start()
     samples = scan_dataset(dataset_path, include_videos=True, include_images=False)
-    asyncio.run(_process_samples(pipeline, samples))
+    _process_samples(pipeline, samples)
     pipeline.stop()
 
     if format == "json":

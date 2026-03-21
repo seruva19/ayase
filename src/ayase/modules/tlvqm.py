@@ -32,6 +32,8 @@ class TLVQMModule(PipelineModule):
         self._svr_model = None
         self._backend = "handcrafted"
         self._device = None
+        self.mos_min = self.config.get("mos_min", 1.0)
+        self.mos_max = self.config.get("mos_max", 5.0)
 
     def setup(self) -> None:
         # Tier 1: CNN-TLVQM model (custom fine-tuned weights)
@@ -182,7 +184,7 @@ class TLVQMModule(PipelineModule):
 
         if self._backend == "cnn_svr" and self._svr_model is not None:
             prediction = self._svr_model.predict(combined.reshape(1, -1))[0]
-            return float((prediction - 1.0) / 4.0)
+            return float((prediction - self.mos_min) / (self.mos_max - self.mos_min))
 
         # Heuristic proxy: without the trained SVR regressor, we map the
         # L2 norm of CNN features to [0,1].  This is *not* calibrated to

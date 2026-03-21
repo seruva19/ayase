@@ -23,7 +23,7 @@ class StructuralModule(PipelineModule):
     def setup(self) -> None:
         try:
             import scenedetect  # noqa: F401
-            from scenedetect import VideoManager, SceneManager  # noqa: F401
+            from scenedetect import open_video, SceneManager  # noqa: F401
             from scenedetect.detectors import ContentDetector  # noqa: F401
 
             self._scenedetect_available = True
@@ -44,17 +44,15 @@ class StructuralModule(PipelineModule):
 
     def _check_scene_cuts(self, sample: Sample) -> None:
         try:
-            from scenedetect import VideoManager, SceneManager
+            from scenedetect import open_video, SceneManager
             from scenedetect.detectors import ContentDetector
 
-            video_manager = VideoManager([str(sample.path)])
+            video = open_video(str(sample.path))
             scene_manager = SceneManager()
             scene_manager.add_detector(ContentDetector())
 
-            video_manager.start()
-            scene_manager.detect_scenes(frame_source=video_manager)
+            scene_manager.detect_scenes(video=video)
             scene_list = scene_manager.get_scene_list()
-            video_manager.release()
 
             if len(scene_list) > 1:
                 sample.validation_issues.append(

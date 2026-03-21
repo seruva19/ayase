@@ -26,8 +26,6 @@ ayase.export("report.json")
 
 # --- Option 2: Low-level API (full control) ---
 
-import asyncio
-
 from ayase.config import AyaseConfig
 from ayase.pipeline import ModuleRegistry, Pipeline
 from ayase.scanner import scan_dataset
@@ -41,7 +39,7 @@ pipeline.start()
 
 samples = scan_dataset(Path("./my_dataset"), recursive=True)
 for sample in samples:
-    asyncio.run(pipeline.process_sample(sample))
+    pipeline.process_sample(sample)
 
 pipeline.stop()
 pipeline.export_report(Path("report.json"), format="json")

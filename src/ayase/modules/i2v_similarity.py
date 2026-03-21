@@ -79,8 +79,7 @@ class I2VSimilarityModule(PipelineModule):
     #  Lifecycle                                                          #
     # ------------------------------------------------------------------ #
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         try:
             import torch
 

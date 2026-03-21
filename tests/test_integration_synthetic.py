@@ -398,10 +398,8 @@ class TestPipelineE2E:
         pipeline = Pipeline(modules)
         pipeline.start()
 
-        import asyncio
-
         sample = _sample(moving_video)
-        asyncio.run(pipeline.process_sample(sample))
+        pipeline.process_sample(sample)
 
         assert sample.video_metadata is not None
         assert sample.quality_metrics is not None

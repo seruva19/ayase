@@ -232,9 +232,8 @@ class AIGVAssessorModule(PipelineModule):
 
         with torch.no_grad():
             outputs = self._clip_model(**inputs)
-            # Image-text similarity
+            # Image-text similarity (CLIP logits are cosine similarity * 100)
             logits = outputs.logits_per_text  # [1, num_images]
-            similarities = logits.softmax(dim=-1).cpu().numpy().flatten()
+            score = logits[0].mean().item() / 100.0
 
-        alignment = float(np.mean(similarities))
-        sample.quality_metrics.aigv_alignment = float(np.clip(alignment, 0.0, 1.0))
+        sample.quality_metrics.aigv_alignment = float(np.clip(score, 0.0, 1.0))

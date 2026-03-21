@@ -83,7 +83,7 @@ class P1203Module(PipelineModule):
         try:
             bitrate = meta.bitrate
             if bitrate is None or bitrate <= 0:
-                if meta.duration > 0 and meta.file_size > 0:
+                if meta.duration > 0 and meta.file_size and meta.file_size > 0:
                     bitrate = int(meta.file_size * 8 / meta.duration)
                 else:
                     return None

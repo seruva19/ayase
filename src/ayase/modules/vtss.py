@@ -24,7 +24,7 @@ class VTSSModule(PipelineModule):
             "aesthetic": 0.15,
             "technical": 0.15,
             "motion": 0.10,
-            "temporal_consistency": 0.15,
+            "clip_temp": 0.15,
             "blur": 0.10,
             "noise": 0.10,
             "scene_stability": 0.10,
@@ -64,10 +64,10 @@ class VTSSModule(PipelineModule):
                 total_weight += weights.get("motion", 0.10)
 
             # Temporal consistency
-            tc = qm.temporal_consistency
+            tc = qm.clip_temp
             if tc is not None:
-                scores.append(weights.get("temporal_consistency", 0.15) * min(1.0, tc))
-                total_weight += weights.get("temporal_consistency", 0.15)
+                scores.append(weights.get("clip_temp", 0.15) * min(1.0, tc))
+                total_weight += weights.get("clip_temp", 0.15)
 
             # Sharpness (inverse of blur)
             if qm.blur_score is not None:

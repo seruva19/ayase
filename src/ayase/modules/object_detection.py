@@ -28,8 +28,7 @@ class ObjectDetectionModule(PipelineModule):
         self._ml_available = False
         self._mode = "yolo" # yolo or grit
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         # 1. Try GRiT if requested
         if self.use_grit:
             try:
@@ -94,32 +93,34 @@ class ObjectDetectionModule(PipelineModule):
             all_detected_classes = set()
             if not hasattr(sample, 'detections') or sample.detections is None:
                 sample.detections = []
-            # Strategy: Store detections from the *middle* frame for visualization, 
-            # but use ALL frames for consistency check.
-            
-            # Or store all? If 8 frames x 10 objects = 80 items. Reasonable.
-            
+
+            # Track how many detections existed before this module runs
+            pre_existing_count = len(sample.detections)
+
             for i, image in enumerate(frames):
                 if self._mode == "grit":
                     self._process_grit_frame(sample, image, all_detected_classes, frame_idx=i)
                 else:
                     self._process_yolo_frame(sample, image, all_detected_classes, frame_idx=i)
-            
+
+            # Only consider detections added by THIS module
+            own_detections = sample.detections[pre_existing_count:]
+
             # Consistency check using caption (Union of all frames)
             self._check_consistency(sample, all_detected_classes)
 
-            confidences = [d.get("conf") for d in sample.detections if d.get("conf") is not None]
+            confidences = [d.get("conf") for d in own_detections if d.get("conf") is not None]
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             if confidences:
                 sample.quality_metrics.detection_score = float(np.mean(confidences)) * 100.0
             else:
                 sample.quality_metrics.detection_score = 0.0
-            sample.quality_metrics.count_score = min(len(sample.detections) / 10.0, 1.0) * 100.0
+            sample.quality_metrics.count_score = min(len(own_detections) / 10.0, 1.0) * 100.0
 
-            if sample.detections:
+            if own_detections:
                 label_scores = {}
-                for d in sample.detections:
+                for d in own_detections:
                     label = d.get("label")
                     conf = d.get("conf", 0.0)
                     if label is None:

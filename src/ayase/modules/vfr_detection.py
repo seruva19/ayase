@@ -26,8 +26,7 @@ class VFRDetectionModule(PipelineModule):
         self.jitter_threshold_ms = self.config.get("jitter_threshold_ms", 2.0)
         self._ffprobe_available = False
 
-    def on_mount(self) -> None:
-        super().on_mount()
+    def setup(self) -> None:
         self._ffprobe_available = shutil.which("ffprobe") is not None
         if not self._ffprobe_available:
             logger.warning("ffprobe not found. VFRDetectionModule disabled.")

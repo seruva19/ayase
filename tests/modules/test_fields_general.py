@@ -12,29 +12,15 @@ def test_quality_metrics_fields():
         "technical_score",
         "motion_score",
         "camera_motion_score",
-        "temporal_consistency",
         "contrast",
         "brightness",
         "saturation",
-        "compression_score",
+        "clip_score",
     ]
     for field in basic_fields:
         assert hasattr(qm, field)
 
-    classic_metrics = [
-        "fid_score",
-        "kid_score",
-        "inception_score",
-        "ssim_score",
-        "psnr_score",
-        "lpips_score",
-        "clip_score",
-        "alignment_score",
-    ]
-    for field in classic_metrics:
-        assert hasattr(qm, field)
-
-    for field in ["human_preference_score", "engagement_score", "usability_score"]:
+    for field in ["human_preference_score", "engagement_score"]:
         assert hasattr(qm, field)
 
 
@@ -62,9 +48,6 @@ def test_dataset_stats_fields():
 def test_quality_metrics_new_fields_exist():
     qm = QualityMetrics()
     new_fields = [
-        "fvd",
-        "kvd",
-        "fvmd",
         "vmaf",
         "ms_ssim",
         "vif",

@@ -237,7 +237,7 @@ class FVDModule(BatchMetricModule):
                     path=Path(reference_path) if isinstance(reference_path, str) else reference_path,
                     is_video=True,
                 )
-                ref_features = self.extract_features(ref_sample)
+                ref_features = self.extract_reference_features(ref_sample)
                 if ref_features is not None:
                     self._reference_cache.append(ref_features)
             except Exception as e:
