@@ -517,7 +517,7 @@ class QualityMetrics(BaseModel):
     # -- Fields -----------------------------------------------------------
 
     blur_score: Optional[float] = None  # Laplacian variance
-    aesthetic_score: Optional[float] = None  # 0-10, from aesthetic predictor
+    aesthetic_score: Optional[float] = None  # 0-100, normalized from aesthetic predictor
     clip_score: Optional[float] = None  # Caption-image alignment
     brightness: Optional[float] = None
     contrast: Optional[float] = None

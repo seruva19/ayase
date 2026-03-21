@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.17** · Generated 2026-03-21 19:34 · **317 modules** · **348 metrics**
+> **Version 0.1.18** · Generated 2026-03-21 20:23 · **317 modules** · **348 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -2345,7 +2345,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 - **Source**: <a href="https://github.com/christophschuhmann/improved-aesthetic-predictor" target="_blank">GitHub</a> · <a href="https://huggingface.co/openai/clip-vit-large-patch14" target="_blank">HF</a>
 
 ### `aesthetic_score` [↑](#categories)
-> 0-10, from aesthetic predictor · ↑ higher=better · 0-10
+> 0-100, normalized from aesthetic predictor · ↑ higher=better · 0-100
 
 Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_rate`](src/ayase/modules/usability_rate.py)
 
