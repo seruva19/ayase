@@ -5,6 +5,45 @@ All notable changes to Ayase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.18]
+
+### Added
+
+- **kid**: Kernel Inception Distance batch distribution metric (clean-fid/native)
+- **image_reward**: ImageReward human preference scoring for text-to-image
+- **image_lpips**: LPIPS perceptual distance + dataset diversity metric
+- **concept_presence**: Concept detection via face detection + CLIP
+- **face_cross_similarity**: Pairwise ArcFace cosine similarity matrix across dataset
+
+### Fixed
+
+- Fix 156 audit issues across 312 modules and core framework
+- Fix 14 field collisions (each module now writes to unique QualityMetrics field)
+- Fix 3 wrong HuggingFace model IDs (kandinsky, VideoReward, vjepa)
+- Fix on_mount vs setup lifecycle in 12 modules
+- Fix pyiqa device detection in 27 modules (fragile next(parameters).device)
+- Fix 7 format string crashes on None values
+- Fix algorithm bugs: t2v_compbench CLIP sim, commonsense scoring, chronomagic inversion
+- Fix deepfake FFT spectral check (was triggering on all images)
+- Fix SSIM negative variance in ws_ssim/pu_metrics
+- Fix CPP-PSNR (was fabricated, now proper projection)
+- Fix HDR metadata PQ EOTF applied to SDR content
+- Add frame limits to 7 modules that read entire videos
+- Add try/finally for VideoCapture in 5 modules
+- Add audio extraction from video for audio_estoi, audio_si_sdr
+- Remove async from process_sample (no await, adds overhead)
+- Fix stale cache in pipeline load_state
+- Fix path traversal in config.py
+- Security: replace eval() with getattr(), default trust_remote_code=False
+
+### Changed
+
+- METRICS.md: metric-centric info panels, seaborn charts, clickable nav, source links
+- MODELS.md: info panels, pyiqa as table, URL validation, weight file grouping
+- Remove 21 orphaned QualityMetrics fields (batch-only moved to DatasetStats)
+- Remove deprecated property aliases (fid_score, kid_score, etc.)
+- Remove test_golden_values.py (fragile, superseded by integration tests)
+
 ## [0.1.14]
 
 ### Added
