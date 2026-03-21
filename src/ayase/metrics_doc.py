@@ -900,6 +900,8 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
 
     # ── Category navigation ─────────────────────────────────────────────
     a("")
+    a('<a id="categories"></a>')
+    a("")
     nav_parts = []
     for cat_key in _CATEGORY_ORDER:
         fields = metrics_by_cat.get(cat_key)
@@ -970,7 +972,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                 tagline_parts.append(f"type: {field_type}")
             tagline = " · ".join(tagline_parts)
 
-            a(f"### `{field_name}`")
+            a(f"### `{field_name}` [↑](#categories)")
             if tagline:
                 a(f"> {tagline}")
             a("")
