@@ -438,116 +438,130 @@ def _extract_required_files(cls) -> Dict[str, str]:
     return getattr(cls, "required_files", {}) or {}
 
 
-def _bar_chart(items, max_width=30):
-    if not items:
-        return []
-    max_val = max(v for _, v in items)
-    max_label = max(len(str(lb)) for lb, _ in items)
-    lines = []
-    for label, val in items:
-        bar_len = int(val / max(max_val, 1) * max_width)
-        bar = "█" * bar_len
-        lines.append(f"  {str(label):<{max_label}}  {bar} {val}")
-    return lines
-
-
-_CHART_WIDTH = 900
-_CHART_SCALE = 2
-
-
-def _generate_model_charts(
-    source_counts, comm_yes, comm_no, comm_unknown,
-    total_models, total_hf, total_pyiqa, output_dir: Path,
+def _generate_charts(
+    source_counts: Dict[str, int],
+    license_counts: List[tuple],
+    vram_tiers: List[tuple],
+    top_used: List[tuple],
+    output_dir: Path,
 ) -> Dict[str, str]:
-    """Generate Plotly charts for MODELS.md."""
+    """Generate PNG charts using seaborn/matplotlib.
+
+    Returns dict of chart_name -> relative path to PNG file.
+    """
     paths: Dict[str, str] = {}
     try:
-        import plotly.graph_objects as go
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        import seaborn as sns
 
         output_dir.mkdir(parents=True, exist_ok=True)
-        _layout = dict(
-            font=dict(family="Inter, Segoe UI, Helvetica, Arial, sans-serif", size=13),
-            margin=dict(l=20, r=20, t=50, b=20),
-            paper_bgcolor="white", plot_bgcolor="white",
-        )
+        _colors = ['#6C5CE7', '#00B894', '#FD79A8', '#0984E3', '#FDCB6E',
+                    '#E17055', '#00CEC9', '#636E72', '#A29BFE', '#FAB1A0',
+                    '#55EFC4', '#DFE6E9', '#74B9FF']
 
-        # ── 1. Summary indicators ─────────────────────────────────────
-        fig = go.Figure()
-        stats = {"Models": total_models, "HuggingFace": total_hf,
-                 "pyiqa": total_pyiqa, "Sources": len(source_counts)}
-        n = len(stats)
-        for i, (label, value) in enumerate(stats.items()):
-            fig.add_trace(go.Indicator(
-                mode="number", value=value,
-                title={"text": label, "font": {"size": 14}},
-                number={"font": {"size": 36, "color": "#2C3E50"}},
-                domain={"x": [i / n + 0.01, (i + 1) / n - 0.01], "y": [0.1, 0.9]},
-            ))
-        fig.update_layout(width=_CHART_WIDTH, height=140,
-                          paper_bgcolor="white", margin=dict(l=10, r=10, t=10, b=10))
-        p = output_dir / "models_summary.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["summary"] = f"docs/{p.name}"
+        _W = 5  # uniform width for all charts (paired 2-per-row)
 
-        # ── 2. Sources — sunburst chart ────────────────────────────────
+        def _save_bar(items, fname, palette=None):
+            sns.set_theme(style="whitegrid", font_scale=0.9)
+            labels = [l for l, _ in items]
+            values = [v for _, v in items]
+            cols = (palette or _colors)[:len(items)]
+            fig, ax = plt.subplots(figsize=(_W, max(2.5, len(items) * 0.32)))
+            bars = ax.barh(labels[::-1], values[::-1], color=cols[::-1],
+                           height=0.65, edgecolor="none")
+            ax.bar_label(bars, padding=4, fontsize=9, color="#333")
+            ax.set_xlim(0, max(values) * 1.12)
+            ax.xaxis.set_visible(False)
+            for spine in ("top", "right", "bottom"):
+                ax.spines[spine].set_visible(False)
+            ax.grid(axis="x", alpha=0.3)
+            ax.grid(axis="y", visible=False)
+            plt.tight_layout()
+            p = output_dir / fname
+            plt.savefig(str(p), dpi=150, bbox_inches="tight", facecolor="white")
+            plt.close()
+            return f"docs/{p.name}"
+
+        # 1. Sources bar
         src_items = sorted(source_counts.items(), key=lambda x: -x[1])
-        labels = [s for s, _ in src_items]
-        values = [c for _, c in src_items]
-        colors = ["#3498DB", "#E74C3C", "#2ECC71", "#F39C12", "#9B59B6", "#1ABC9C", "#E67E22"]
-        fig = go.Figure(go.Pie(
-            labels=labels, values=values,
-            hole=0.4, textinfo="label+value",
-            textposition="outside", textfont_size=12,
-            marker=dict(colors=colors[:len(labels)],
-                        line=dict(color="white", width=2)),
-            sort=False,
-        ))
-        fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=450,
-            title=dict(text="Models by Source", font_size=16, x=0.5),
-            legend=dict(font_size=11),
-        )
-        p = output_dir / "models_sources.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["sources"] = f"docs/{p.name}"
+        paths["sources"] = _save_bar(src_items, "models_sources.png")
 
-        # ── 3. License — pie chart ─────────────────────────────────────
-        lic_labels = []
-        lic_values = []
-        lic_colors = []
-        if comm_yes:
-            lic_labels.append(f"Commercial OK ({comm_yes})")
-            lic_values.append(comm_yes)
-            lic_colors.append("#2ECC71")
-        if comm_no:
-            lic_labels.append(f"Non-commercial ({comm_no})")
-            lic_values.append(comm_no)
-            lic_colors.append("#E74C3C")
-        if comm_unknown:
-            lic_labels.append(f"Research / Unspecified ({comm_unknown})")
-            lic_values.append(comm_unknown)
-            lic_colors.append("#95A5A6")
-        fig = go.Figure(go.Pie(
-            labels=lic_labels, values=lic_values,
-            hole=0.45, textinfo="label+percent",
-            textposition="outside", textfont_size=13,
-            marker=dict(colors=lic_colors, line=dict(color="white", width=2)),
-            sort=False,
-        ))
-        fig.update_layout(
-            **_layout, width=_CHART_WIDTH, height=380,
-            title=dict(text="License Distribution", font_size=16, x=0.5),
-            showlegend=False,
-        )
-        p = output_dir / "models_licenses.png"
-        fig.write_image(str(p), scale=_CHART_SCALE)
-        paths["licenses"] = f"docs/{p.name}"
+        # 2. License bar
+        if license_counts:
+            lic_colors = []
+            for label, _ in license_counts:
+                if "Commercial" in label:
+                    lic_colors.append("#00B894")
+                elif "Non" in label:
+                    lic_colors.append("#E17055")
+                else:
+                    lic_colors.append("#636E72")
+            paths["licenses"] = _save_bar(
+                license_counts, "models_licenses.png", palette=lic_colors)
+
+        # 3. VRAM tiers bar
+        if vram_tiers:
+            paths["vram"] = _save_bar(
+                vram_tiers, "models_vram.png",
+                palette=["#74B9FF"] * len(vram_tiers))
+
+        # 4. Top used models bar
+        if top_used:
+            paths["top_used"] = _save_bar(
+                top_used, "models_top_used.png",
+                palette=["#A29BFE"] * len(top_used))
 
     except ImportError:
-        pass
+        pass  # seaborn/matplotlib not available
     except Exception as exc:
-        logger.warning(f"Model chart generation failed: {exc}")
+        logger.warning(f"Chart generation failed: {exc}")
+
     return paths
+
+
+def _format_params(n: Optional[int]) -> Optional[str]:
+    """Format parameter count as human-readable string."""
+    if not n:
+        return None
+    if n >= 1_000_000_000:
+        return f"{n / 1e9:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1e6:.0f}M"
+    return f"{n / 1e3:.0f}K"
+
+
+def _format_downloads(n: Optional[int]) -> Optional[str]:
+    """Format download count as human-readable string."""
+    if not n:
+        return None
+    if n >= 1_000_000:
+        return f"{n / 1e6:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1e3:.0f}K"
+    return str(n)
+
+
+def _classify_vram_tier(vram_str: Optional[str]) -> Optional[str]:
+    """Classify a VRAM estimate into a tier for charting."""
+    if not vram_str or vram_str == "N/A":
+        return None
+    try:
+        val = float(re.search(r"~?([\d.]+)", vram_str).group(1))
+        if "GB" in vram_str:
+            val *= 1024
+        if val <= 200:
+            return "< 200 MB"
+        if val <= 600:
+            return "200-600 MB"
+        if val <= 1500:
+            return "0.6-1.5 GB"
+        if val <= 6000:
+            return "1.5-6 GB"
+        return "> 6 GB"
+    except (AttributeError, ValueError):
+        return None
 
 
 def generate_models_doc(fetch_licenses: bool = True) -> str:
@@ -560,8 +574,8 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     all_modules = ModuleRegistry.list_modules()
 
     # Collect all model references
-    entries: Dict[str, ModelEntry] = {}  # key → ModelEntry
-    source_counts = defaultdict(int)  # source type → count
+    entries: Dict[str, ModelEntry] = {}  # key -> ModelEntry
+    source_counts: Dict[str, int] = defaultdict(int)  # source type -> count
 
     for mod_name in sorted(all_modules):
         cls = ModuleRegistry.get_module(mod_name)
@@ -786,23 +800,45 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
                     entry.commercial_ok = comm
                     break
 
-    # ── Generate charts ────────────────────────────────────────────────
+    # ── Compute chart data ───────────────────────────────────────────────
     total_models = len(entries)
-    total_hf = source_counts.get("huggingface", 0)
-    total_pyiqa = source_counts.get("pyiqa", 0)
 
     comm_yes = sum(1 for e in entries.values() if e.commercial_ok is True)
     comm_no = sum(1 for e in entries.values() if e.commercial_ok is False)
     comm_unknown = sum(1 for e in entries.values() if e.commercial_ok is None)
 
+    license_counts = []
+    if comm_yes:
+        license_counts.append((f"Commercial OK ({comm_yes})", comm_yes))
+    if comm_no:
+        license_counts.append((f"Non-commercial ({comm_no})", comm_no))
+    if comm_unknown:
+        license_counts.append((f"Research / Unspecified ({comm_unknown})", comm_unknown))
+
+    # VRAM tiers
+    from collections import Counter
+    vram_counter: Counter = Counter()
+    for e in entries.values():
+        tier = _classify_vram_tier(e.vram_estimate)
+        if tier:
+            vram_counter[tier] += 1
+    tier_order = ["< 200 MB", "200-600 MB", "0.6-1.5 GB", "1.5-6 GB", "> 6 GB"]
+    vram_tiers = [(t, vram_counter[t]) for t in tier_order if vram_counter[t]]
+
+    # Top used models (most modules)
+    top_used_entries = sorted(entries.values(), key=lambda e: -len(e.modules))[:12]
+    top_used = [(e.name.split("/")[-1] if "/" in e.name else e.name, len(e.modules))
+                for e in top_used_entries if len(e.modules) > 1]
+
     docs_dir = Path(__file__).parent.parent.parent / "docs"
-    chart_paths = _generate_model_charts(
-        source_counts, comm_yes, comm_no, comm_unknown,
-        total_models, total_hf, total_pyiqa, docs_dir,
+    chart_paths = _generate_charts(
+        dict(source_counts), license_counts, vram_tiers, top_used, docs_dir,
     )
 
-    # ── Build document ───────────────────────────────────────────────────
-    L = []
+    # ══════════════════════════════════════════════════════════════════════
+    # BUILD DOCUMENT
+    # ══════════════════════════════════════════════════════════════════════
+    L: List[str] = []
     a = L.append
 
     from datetime import datetime
@@ -818,24 +854,36 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     a(">")
     a("> `ayase modules models -o MODELS.md` to regenerate")
 
-    # Summary with chart
+    # ── Summary ──────────────────────────────────────────────────────────
     a("")
     a("## Summary")
     a("")
-    if "summary" in chart_paths:
-        a(f"![Summary]({chart_paths['summary']})")
-        a("")
+    a(f"**{total_models}** models · **{source_counts.get('huggingface', 0)}** HuggingFace "
+      f"· **{source_counts.get('pyiqa', 0)}** pyiqa · **{len(source_counts)}** sources")
 
-    # By Source chart
-    a("### Models by Source")
-    a("")
-    if "sources" in chart_paths:
-        a(f"![Models by Source]({chart_paths['sources']})")
-    else:
-        a("```")
-        for line in _bar_chart(sorted(source_counts.items(), key=lambda x: -x[1])):
-            a(line)
-        a("```")
+    # ── Charts (2-per-row) ───────────────────────────────────────────────
+    chart_titles = {
+        "sources": "Models by Source",
+        "licenses": "License Distribution",
+        "vram": "VRAM Tiers",
+        "top_used": "Top Used Models",
+    }
+    chart_order = [k for k in ("sources", "licenses", "vram", "top_used") if k in chart_paths]
+    for i in range(0, len(chart_order), 2):
+        pair = chart_order[i:i + 2]
+        if len(pair) == 2:
+            t1, t2 = chart_titles[pair[0]], chart_titles[pair[1]]
+            p1, p2 = chart_paths[pair[0]], chart_paths[pair[1]]
+            a("")
+            a('<table width="100%"><tr>')
+            a(f'<td width="50%" valign="top"><h4>{t1}</h4><img src="{p1}" width="100%"/></td>')
+            a(f'<td width="50%" valign="top"><h4>{t2}</h4><img src="{p2}" width="100%"/></td>')
+            a("</tr></table>")
+        else:
+            a("")
+            a(f"<h4>{chart_titles[pair[0]]}</h4>")
+            a("")
+            a(f"![]({chart_paths[pair[0]]})")
 
     # Estimated total download size
     known_sizes = []
@@ -853,179 +901,328 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
         total_mb = sum(known_sizes)
         a("")
         if total_mb > 1024:
-            a(f"**Estimated total download size (all models):** ~{total_mb/1024:.0f} GB")
+            a(f"**Estimated total download size (all models):** ~{total_mb / 1024:.0f} GB")
         else:
             a(f"**Estimated total download size (all models):** ~{total_mb:.0f} MB")
         a("")
         a("*Note: Most modules auto-download only the models they need on first use. "
           "You rarely need all models at once.*")
 
-    # ── License Summary ────────────────────────────────────────────────
+    # ── License warning ──────────────────────────────────────────────────
     comm_research = sum(1 for e in entries.values()
                         if e.license and "research" in (e.license or "").lower()
                         and e.commercial_ok is None)
-
-    a("")
-    a("### License Overview")
-    a("")
-    if "licenses" in chart_paths:
-        a(f"![License Distribution]({chart_paths['licenses']})")
-    else:
-        lic_items = [
-            ("Commercial OK", comm_yes),
-            ("Non-commercial", comm_no),
-            ("Research / unspecified", comm_unknown),
-        ]
-        a("```")
-        for line in _bar_chart(lic_items):
-            a(line)
-        a("```")
-    a("")
     if comm_no > 0 or comm_research > 0:
+        a("")
         a("> [!WARNING]")
         a("> **Commercial use:** Stick to modules whose models are marked "
           "\"Commercial OK\" above. Most pyiqa metrics marked \"research\" "
           "are re-implementations under pyiqa's MIT license, but the original "
           "training data or architecture may carry restrictions — verify before "
           "commercial deployment.")
-        a("")
 
-    # ── HuggingFace Models ───────────────────────────────────────────────
-    hf_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "huggingface"]
-    if hf_entries:
-        a("")
-        a("## HuggingFace Models")
-        a("")
-        a("| Model | License | Params | Downloads | Task | Used By |")
-        a("|-------|---------|--------|-----------|------|---------|")
-        for _key, e in hf_entries:
-            mods = ", ".join(f"`{m}`" for m in e.modules[:5])
-            if len(e.modules) > 5:
-                mods += f" +{len(e.modules)-5}"
-            lic = e.license or "?"
-            # Format parameters
-            if e.parameters:
-                if e.parameters >= 1_000_000_000:
-                    params = f"{e.parameters/1e9:.1f}B"
-                elif e.parameters >= 1_000_000:
-                    params = f"{e.parameters/1e6:.0f}M"
-                else:
-                    params = f"{e.parameters/1e3:.0f}K"
-            else:
-                params = "?"
-            # Format downloads
-            if e.downloads:
-                if e.downloads >= 1_000_000:
-                    dl = f"{e.downloads/1e6:.1f}M"
-                elif e.downloads >= 1_000:
-                    dl = f"{e.downloads/1e3:.0f}K"
-                else:
-                    dl = str(e.downloads)
-            else:
-                dl = "?"
-            task = e.pipeline_tag or "?"
-            link = f"[{e.name}]({e.url})" if e.url else e.name
-            arxiv_link = f" [[paper]](https://arxiv.org/abs/{e.arxiv})" if e.arxiv else ""
-            a(f"| {link}{arxiv_link} | {lic} | {params} | {dl} | {task} | {mods} |")
-
-    # ── pyiqa Models ─────────────────────────────────────────────────────
+    # ── Category navigation ──────────────────────────────────────────────
+    # Prepare section data for navigation and rendering
+    hf_entries = [(k, e) for k, e in sorted(entries.items())
+                  if e.source == "huggingface" and not (e.notes and "From `" in (e.notes or ""))]
+    hf_file_entries = [(k, e) for k, e in sorted(entries.items())
+                       if e.source == "huggingface" and e.notes and "From `" in (e.notes or "")]
     pyiqa_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pyiqa"]
+    tv_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torchvision"]
+    clip_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "clip"]
+    hub_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torch_hub"]
+    ff_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "ffmpeg"]
+    pip_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pip"]
+
+    # Group weight files by parent repo
+    weight_file_repos: Dict[str, List[tuple]] = defaultdict(list)
+    for _key, e in hf_file_entries:
+        # Extract repo name from notes "From `repo` repo"
+        m = re.search(r"From `([^`]+)` repo", e.notes or "")
+        if m:
+            weight_file_repos[m.group(1)].append(e)
+
+    nav_sections = []
+    if hf_entries:
+        nav_sections.append((f"HuggingFace ({len(hf_entries)})", "huggingface-models"))
+    if weight_file_repos:
+        total_wf = sum(len(v) for v in weight_file_repos.values())
+        nav_sections.append((f"Weight Files ({total_wf})", "weight-file-repos"))
     if pyiqa_entries:
+        nav_sections.append((f"pyiqa ({len(pyiqa_entries)})", "pyiqa-metrics"))
+    if tv_entries:
+        nav_sections.append((f"torchvision ({len(tv_entries)})", "torchvision-models"))
+    if clip_entries:
+        nav_sections.append((f"CLIP / OpenCLIP ({len(clip_entries)})", "clip--openclip"))
+    if hub_entries:
+        nav_sections.append((f"torch.hub ({len(hub_entries)})", "torchhub"))
+    if ff_entries:
+        nav_sections.append((f"FFmpeg ({len(ff_entries)})", "ffmpeg"))
+    if pip_entries:
+        nav_sections.append((f"pip Packages ({len(pip_entries)})", "pip-packages"))
+    nav_sections.append(("Quick Install Guide", "quick-install-guide"))
+
+    a("")
+    a(" · ".join(f"[{label}](#{anchor})" for label, anchor in nav_sections))
+    a("")
+    a("---")
+    a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: HuggingFace Models
+    # ══════════════════════════════════════════════════════════════════════
+    if hf_entries:
+        a(f"## HuggingFace Models")
         a("")
-        a("## pyiqa Metrics")
+
+        for _key, e in hf_entries:
+            # Heading with link
+            if e.url:
+                a(f"### [`{e.name}`]({e.url})")
+            else:
+                a(f"### `{e.name}`")
+
+            # Tagline: pipeline_tag + license
+            tagline_parts = []
+            if e.pipeline_tag:
+                tagline_parts.append(e.pipeline_tag)
+            if e.license:
+                tagline_parts.append(e.license)
+            if tagline_parts:
+                a(f"> {' · '.join(tagline_parts)}")
+            a("")
+
+            # Used by
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+
+            # Parameters + Downloads
+            info_parts = []
+            params = _format_params(e.parameters)
+            if params:
+                info_parts.append(f"**Parameters**: {params}")
+            dl = _format_downloads(e.downloads)
+            if dl:
+                info_parts.append(f"**Downloads**: {dl}")
+            if info_parts:
+                a(f"- {' · '.join(info_parts)}")
+
+            # VRAM + Disk
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+
+            # Source link (arXiv)
+            if e.arxiv:
+                a(f"- **Source**: [arXiv](https://arxiv.org/abs/{e.arxiv})")
+
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: Weight File Repos (grouped)
+    # ══════════════════════════════════════════════════════════════════════
+    if weight_file_repos:
+        a(f"## Weight File Repos")
+        a("")
+
+        for repo_name, files in sorted(weight_file_repos.items()):
+            repo_url = f"https://huggingface.co/{repo_name}"
+            a(f"### [`{repo_name}`]({repo_url})")
+            a("> Pre-trained weight files for ayase modules")
+            a("")
+            for fe in sorted(files, key=lambda x: x.name):
+                file_mods = ", ".join(f"`{m}`" for m in fe.modules)
+                a(f"- `{fe.name}` — used by {file_mods}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: pyiqa Metrics
+    # ══════════════════════════════════════════════════════════════════════
+    if pyiqa_entries:
+        a(f"## pyiqa Metrics")
         a("")
         a("All auto-download weights on first `pyiqa.create_metric()` call. "
           "pyiqa itself is MIT-licensed; underlying model licenses vary.")
         a("")
-        a("| Metric | License | Commercial | Task | VRAM | Used By |")
-        a("|--------|---------|------------|------|------|---------|")
-        for _key, e in pyiqa_entries:
-            mods = ", ".join(f"`{m}`" for m in e.modules[:4])
-            if len(e.modules) > 4:
-                mods += f" +{len(e.modules)-4}"
-            vram = e.vram_estimate or "~200 MB"
-            task = e.task or "IQA"
-            lic = e.license or "research"
-            comm = {True: "Yes", False: "No", None: "?"}[e.commercial_ok]
-            a(f"| `{e.name}` | {lic} | {comm} | {task} | {vram} | {mods} |")
 
-    # ── torchvision Models ───────────────────────────────────────────────
-    tv_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torchvision"]
+        for _key, e in pyiqa_entries:
+            metric_name = e.name.split("/")[-1] if "/" in e.name else e.name
+            a(f"### `{e.name}`")
+
+            # Tagline: task + license
+            tagline_parts = []
+            if e.task:
+                tagline_parts.append(e.task)
+            if e.license:
+                tagline_parts.append(e.license)
+            if tagline_parts:
+                a(f"> {' · '.join(tagline_parts)}")
+            a("")
+
+            # Used by
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+
+            # VRAM + Disk
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+
+            # Commercial status
+            if e.commercial_ok is True:
+                a("- **Commercial**: Yes")
+            elif e.commercial_ok is False:
+                a("- **Commercial**: No")
+
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: torchvision Models
+    # ══════════════════════════════════════════════════════════════════════
     if tv_entries:
-        a("")
-        a("## torchvision Models")
+        a(f"## torchvision Models")
         a("")
         a("Bundled with `pip install torchvision`. Weights download on first use.")
         a("")
-        a("| Model | Disk | VRAM | Used By |")
-        a("|-------|------|------|---------|")
+
         for _key, e in tv_entries:
-            mods = ", ".join(f"`{m}`" for m in e.modules[:5])
-            disk = e.size_estimate or "?"
-            vram = e.vram_estimate or "?"
-            a(f"| `{e.name}` | {disk} | {vram} | {mods} |")
+            a(f"### `{e.name}`")
 
-    # ── CLIP Models ──────────────────────────────────────────────────────
-    clip_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "clip"]
-    if clip_entries:
-        a("")
-        a("## CLIP Models")
-        a("")
-        a("| Model | Disk | VRAM | Used By |")
-        a("|-------|------|------|---------|")
-        for _key, e in clip_entries:
-            mods = ", ".join(f"`{m}`" for m in e.modules[:5])
-            if len(e.modules) > 5:
-                mods += f" +{len(e.modules)-5}"
-            disk = e.size_estimate or "?"
-            vram = e.vram_estimate or "?"
-            a(f"| `{e.name}` | {disk} | {vram} | {mods} |")
+            tagline_parts = ["torchvision"]
+            lic_key = f"tv:{e.name.split('/')[-1]}"
+            lic_info = _KNOWN_LICENSES.get(lic_key)
+            if lic_info:
+                tagline_parts.append(lic_info[0])
+            a(f"> {' · '.join(tagline_parts)}")
+            a("")
 
-    # ── torch.hub Models ────────────────────────────────────────────────
-    hub_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torch_hub"]
-    if hub_entries:
-        a("")
-        a("## torch.hub Models")
-        a("")
-        a("| Repo | Disk | VRAM | Used By |")
-        a("|------|------|------|---------|")
-        for _key, e in hub_entries:
             mods = ", ".join(f"`{m}`" for m in e.modules)
-            disk = e.size_estimate or "?"
-            vram = e.vram_estimate or "?"
-            a(f"| `{e.name}` | {disk} | {vram} | {mods} |")
+            a(f"- **Used by**: {mods}")
 
-    # ── FFmpeg Models ────────────────────────────────────────────────────
-    ff_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "ffmpeg"]
-    if ff_entries:
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: CLIP / OpenCLIP
+    # ══════════════════════════════════════════════════════════════════════
+    if clip_entries:
+        a(f"## CLIP / OpenCLIP")
         a("")
-        a("## FFmpeg Models")
+
+        for _key, e in clip_entries:
+            a(f"### `{e.name}`")
+
+            tagline_parts = []
+            lic_key = f"clip:{e.name.replace('CLIP ', '')}"
+            lic_info = _KNOWN_LICENSES.get(lic_key)
+            if lic_info:
+                tagline_parts.append(lic_info[0])
+            if tagline_parts:
+                a(f"> {' · '.join(tagline_parts)}")
+            a("")
+
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: torch.hub
+    # ══════════════════════════════════════════════════════════════════════
+    if hub_entries:
+        a(f"## torch.hub")
+        a("")
+
+        for _key, e in hub_entries:
+            a(f"### `{e.name}`")
+
+            tagline_parts = ["torch.hub"]
+            lic_key = f"hub:{e.name}"
+            lic_info = _KNOWN_LICENSES.get(lic_key)
+            if lic_info:
+                tagline_parts.append(lic_info[0])
+            a(f"> {' · '.join(tagline_parts)}")
+            a("")
+
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: FFmpeg
+    # ══════════════════════════════════════════════════════════════════════
+    if ff_entries:
+        a(f"## FFmpeg")
         a("")
         a("Require FFmpeg compiled with libvmaf. No separate download needed.")
         a("")
-        a("| Model | Used By |")
-        a("|-------|---------|")
+
         for _key, e in ff_entries:
-            mods = ", ".join(f"`{m}`" for m in e.modules)
-            a(f"| `{e.name}` | {mods} |")
+            a(f"### `{e.name}`")
 
-    # ── Local/Downloaded Files ───────────────────────────────────────────
-    local_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "local"]
-    if local_entries:
-        a("")
-        a("## Local Weight Files")
-        a("")
-        a("Downloaded by the pipeline on first use via `required_files`.")
-        a("")
-        a("| File | URL | Used By |")
-        a("|------|-----|---------|")
-        for _key, e in local_entries:
-            mods = ", ".join(f"`{m}`" for m in e.modules)
-            url = e.url or "—"
-            a(f"| `{e.name}` | {url} | {mods} |")
+            tagline_parts = ["built-in"]
+            lic_key = f"ff:{e.name.split('/')[-1]}"
+            lic_info = _KNOWN_LICENSES.get(lic_key)
+            if lic_info:
+                tagline_parts.append(lic_info[0])
+            a(f"> {' · '.join(tagline_parts)}")
+            a("")
 
-    # ── Quick Install Guide ──────────────────────────────────────────────
-    a("")
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: pip Packages
+    # ══════════════════════════════════════════════════════════════════════
+    if pip_entries:
+        a(f"## pip Packages")
+        a("")
+
+        for _key, e in pip_entries:
+            a(f"### `{e.name}`")
+            if e.notes:
+                a(f"> {e.notes}")
+            a("")
+
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+            if e.install:
+                a(f"- **Install**: `{e.install}`")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: Quick Install Guide
+    # ══════════════════════════════════════════════════════════════════════
     a("## Quick Install Guide")
     a("")
     a("Install all model dependencies at once:")
