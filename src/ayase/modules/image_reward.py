@@ -43,6 +43,24 @@ class ImageRewardModule(PipelineModule):
     def setup(self) -> None:
         # Tier 1: image-reward library
         try:
+            # Shim: image-reward imports several functions from
+            # transformers.modeling_utils that were moved to
+            # transformers.pytorch_utils in transformers >= 4.50.
+            import transformers.modeling_utils as _mu
+
+            try:
+                from transformers import pytorch_utils as _pu
+
+                for _fn in (
+                    "apply_chunking_to_forward",
+                    "find_pruneable_heads_and_indices",
+                    "prune_linear_layer",
+                ):
+                    if hasattr(_pu, _fn) and not hasattr(_mu, _fn):
+                        setattr(_mu, _fn, getattr(_pu, _fn))
+            except ImportError:
+                pass
+
             import ImageReward as ir_lib
 
             self._model = ir_lib.load(self.model_name)
