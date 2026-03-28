@@ -21,6 +21,13 @@ from .pipeline import ModuleRegistry, PipelineModule
 _IMPORT_TO_PIP = {
     "cv2": "opencv-python",
     "PIL": "Pillow",
+    "colour": "colour-science",
+    "joblib": "joblib",
+    "matplotlib": "matplotlib",
+    "mpi4py": "mpi4py",
+    "numba": "numba",
+    "pypapi": "pypapi",
+    "pyrtools": "pyrtools",
     "skimage": "scikit-image",
     "sklearn": "scikit-learn",
     "skvideo": "scikit-video",
@@ -56,6 +63,7 @@ _IMPORT_TO_PIP = {
     "onnxruntime": "onnxruntime",
     "ptlflow": "ptlflow",
     "pywt": "PyWavelets",
+    "xgboost": "xgboost",
 }
 
 _STDLIB_MODULES = {
@@ -78,6 +86,8 @@ _VRAM_PATTERNS = {
     r"resnet|r3d_18|inception": "~200 MB",
     r"DOVER|dover": "~800 MB",
     r"q-align|q_align": "~14 GB",
+    r"pickscore": "~2.5 GB",
+    r"hpsv3": "~16 GB",
 }
 
 
@@ -406,8 +416,8 @@ def _generate_charts(
 
         def _save_bar(items, fname, palette=None):
             sns.set_theme(style="whitegrid", font_scale=0.9)
-            labels = [l for l, _ in items]
-            values = [v for _, v in items]
+            labels = [label for label, _ in items]
+            values = [value for _, value in items]
             cols = (palette or _colors)[:len(items)]
             fig, ax = plt.subplots(figsize=(_W, max(2.5, len(items) * 0.32)))
             bars = ax.barh(labels[::-1], values[::-1], color=cols[::-1],
@@ -427,8 +437,8 @@ def _generate_charts(
 
         def _save_pie(items, fname, colors=None):
             sns.set_theme(style="white", font_scale=0.85)
-            labels = [l for l, _ in items]
-            values = [v for _, v in items]
+            labels = [label for label, _ in items]
+            values = [value for _, value in items]
             palette = colors or sns.color_palette("husl", len(items))
             fig, ax = plt.subplots(figsize=(_W, _W * 0.6))
             wedges, texts, autotexts = ax.pie(
