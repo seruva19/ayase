@@ -46,6 +46,8 @@ def _validate_urls(entries: Dict[str, "ModelEntry"]) -> List[str]:
                 warnings.append(f"  {key}: HTTP {resp.status} — {url}")
         except urllib.error.HTTPError as e:
             warnings.append(f"  {key}: HTTP {e.code} — {url}")
+        except urllib.error.URLError:
+            return ["__NETWORK_UNAVAILABLE__"]
         except Exception as e:
             warnings.append(f"  {key}: {type(e).__name__} — {url}")
     return warnings
@@ -94,6 +96,7 @@ _SIZE_DB = {
     "depth-anything/Depth-Anything-V2-Small-hf": ("~100 MB", "~200 MB"),
     "intel-isl/MiDaS": ("~400 MB", "~400 MB"),
     "TIGER-Lab/VideoScore": ("~14 GB", "~14 GB"),
+    "Qwen/Qwen2-VL-7B-Instruct": ("~15 GB", "~16 GB"),
     "google/vit-base-patch16-224": ("~350 MB", "~400 MB"),
     "facebook/dinov2-vitb14": ("~350 MB", "~400 MB"),
     # pyiqa models (downloaded on first use)
@@ -124,6 +127,24 @@ _SIZE_DB = {
     "ffmpeg:vmaf_4k_v0.6.1": ("built-in", "N/A"),
     "ffmpeg:xpsnr": ("built-in", "N/A"),
     "ffmpeg:cambi": ("built-in", "N/A"),
+}
+
+_MODULE_MODEL_HINTS = {
+    "hpsv3": [
+        {
+            "name": "MizzenAI/HPSv3",
+            "source": "huggingface",
+            "url": "https://huggingface.co/MizzenAI/HPSv3",
+            "install": "pip install ayase",
+            "notes": "Reward head checkpoint",
+        },
+        {
+            "name": "Qwen/Qwen2-VL-7B-Instruct",
+            "source": "huggingface",
+            "url": "https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct",
+            "install": "pip install ayase",
+        },
+    ],
 }
 
 _TASK_DB = {
@@ -174,7 +195,6 @@ _TASK_DB = {
     "nlpd": "Normalized Laplacian pyramid distance",
     "pieapp": "Pairwise learned perceptual distance",
     "mad": "Most apparent distortion FR-IQA",
-    "deepwsd": "Deep Wasserstein distance FR-IQA",
     "promptiqa": "Few-shot prompt-based NR-IQA",
     "qcn": "Geometric order blind IQA",
     "deepdc": "Deep distribution conformance",
@@ -549,7 +569,7 @@ def _generate_charts(
 
         def _save_bar(items, fname, palette=None):
             sns.set_theme(style="whitegrid", font_scale=0.9)
-            labels = [l for l, _ in items]
+            labels = [label for label, _ in items]
             values = [v for _, v in items]
             cols = (palette or _colors)[:len(items)]
             fig, ax = plt.subplots(figsize=(_W, max(2.5, len(items) * 0.32)))
@@ -682,6 +702,21 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
                     size_estimate=disk,
                     vram_estimate=vram,
                     install="pip install transformers",
+                )
+            entries[key].modules.append(mod_name)
+
+        for hint in _MODULE_MODEL_HINTS.get(mod_name, []):
+            key = f"hf:{hint['name']}"
+            if key not in entries:
+                disk, vram = _SIZE_DB.get(hint["name"], (None, None))
+                entries[key] = ModelEntry(
+                    name=hint["name"],
+                    source=hint.get("source", "huggingface"),
+                    url=hint.get("url"),
+                    install=hint.get("install"),
+                    size_estimate=disk,
+                    vram_estimate=vram,
+                    notes=hint.get("notes"),
                 )
             entries[key].modules.append(mod_name)
 
@@ -1015,18 +1050,21 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     # ── Validate URLs (stderr warnings only) ────────────────────────────
     if fetch_licenses:
         url_warnings = _validate_urls(entries)
-        # Filter out 401 (gated/private repos — expected for some HF models)
-        real_broken = [w for w in url_warnings if "HTTP 401" not in w]
-        gated = [w for w in url_warnings if "HTTP 401" in w]
         import sys
-        if real_broken:
-            print(f"WARNING: {len(real_broken)} broken model URL(s):", file=sys.stderr)
-            for w in real_broken:
-                print(w, file=sys.stderr)
-        if gated:
-            print(f"INFO: {len(gated)} gated/private model(s) (auth required):", file=sys.stderr)
-            for w in gated:
-                print(w, file=sys.stderr)
+        if url_warnings == ["__NETWORK_UNAVAILABLE__"]:
+            print("INFO: URL validation skipped (network unavailable).", file=sys.stderr)
+        else:
+            # Filter out 401 (gated/private repos — expected for some HF models)
+            real_broken = [w for w in url_warnings if "HTTP 401" not in w]
+            gated = [w for w in url_warnings if "HTTP 401" in w]
+            if real_broken:
+                print(f"WARNING: {len(real_broken)} broken model URL(s):", file=sys.stderr)
+                for w in real_broken:
+                    print(w, file=sys.stderr)
+            if gated:
+                print(f"INFO: {len(gated)} gated/private model(s) (auth required):", file=sys.stderr)
+                for w in gated:
+                    print(w, file=sys.stderr)
 
     # ── Category navigation ──────────────────────────────────────────────
     # Prepare section data for navigation and rendering
@@ -1312,23 +1350,10 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     # ══════════════════════════════════════════════════════════════════════
     a("## Quick Install Guide")
     a("")
-    a("Install all model dependencies at once:")
+    a("Install Ayase with the bundled runtime dependencies:")
     a("")
     a("```bash")
-    a("# Core (covers ~80% of modules)")
-    a("pip install torch torchvision pyiqa piq opencv-python Pillow transformers")
-    a("")
-    a("# Audio metrics")
-    a("pip install librosa soundfile pesq pystoi")
-    a("")
-    a("# Additional NR/FR metrics")
-    a("pip install lpips dreamsim ssimulacra2 stlpips-pytorch")
-    a("")
-    a("# Video-specific")
-    a("pip install decord scenedetect")
-    a("")
-    a("# Optional heavy models (LLaVA, Q-Align)")
-    a("pip install accelerate bitsandbytes  # for efficient LLM loading")
+    a("pip install ayase")
     a("```")
 
     a("")

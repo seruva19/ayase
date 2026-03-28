@@ -90,6 +90,12 @@ def test_quality_metrics_new_fields_exist():
         "banding_severity",
         "qalign_quality",
         "qalign_aesthetic",
+        "pickscore_score",
+        "hpsv3_score",
+        "chipqa_score",
+        "hdr_chipqa_score",
+        "hdrmax_score",
+        "brightrate_score",
         "face_quality_score",
         "face_identity_consistency",
         "face_expression_smoothness",
@@ -110,7 +116,7 @@ def test_quality_metrics_new_fields_exist():
         "musiq_score",
         "contrique_score",
         "mdtvsfa_score",
-    ]
+        ]
     for field in new_fields:
         assert hasattr(qm, field)
         assert getattr(qm, field) is None

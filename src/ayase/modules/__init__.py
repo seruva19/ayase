@@ -54,7 +54,9 @@ _IMPORTS = [
     ("VQAScoreModule", ".vqa_score"),
     ("TIFAModule", ".tifa"),
     ("DSGModule", ".dsg"),
+    ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),
+    ("HPSv3Module", ".hpsv3"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("FastVQAModule", ".fast_vqa"),
@@ -66,6 +68,7 @@ _IMPORTS = [
     ("NIQEModule", ".niqe"),
     ("CLIPIQAModule", ".clip_iqa"),
     ("ImagingQualityModule", ".imaging_quality"),
+    ("ChipQAModule", ".chipqa"),
     # --- Full-reference quality ---
     ("VMAFModule", ".vmaf"),
     ("DISTSModule", ".dists"),
@@ -120,6 +123,9 @@ _IMPORTS = [
     ("BeatAlignmentModule", ".beat_alignment"),
     # --- HDR / codec ---
     ("HDRMetadataModule", ".hdr_metadata"),
+    ("HDRChipQAModule", ".hdr_chipqa"),
+    ("HDRMAXModule", ".hdrmax"),
+    ("BrightRateModule", ".brightrate"),
     ("ProductionQualityModule", ".production_quality"),
     # --- Dataset operations ---
     ("DeduplicationModule", ".dedup"),

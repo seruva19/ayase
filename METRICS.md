@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.18** · Generated 2026-03-21 20:23 · **317 modules** · **348 metrics**
+> **Version 0.1.19** · Generated 2026-03-28 22:34 · **324 modules** · **354 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -8,7 +8,7 @@
 
 ## Summary
 
-**317** modules · **345** output fields · **348** metrics · **104** tiered · **106** GPU · **13** categories
+**324** modules · **351** output fields · **354** metrics · **110** tiered · **108** GPU · **13** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -27,11 +27,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-95-metrics) (95) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-27-metrics) (27) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-19-metrics) (19) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-15-metrics) (15) · [Face & Identity](#face--identity-17-metrics) (17) · [Scene & Content](#scene--content-16-metrics) (16) · [HDR & Color](#hdr--color-10-metrics) (10) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Utility & Validation](#utility--validation-47-modules) (47)
+[No-Reference Quality](#no-reference-quality-96-metrics) (96) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-29-metrics) (29) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-19-metrics) (19) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-15-metrics) (15) · [Face & Identity](#face--identity-17-metrics) (17) · [Scene & Content](#scene--content-16-metrics) (16) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Utility & Validation](#utility--validation-48-modules) (48)
 
 ---
 
-## No-Reference Quality (95 metrics)
+## No-Reference Quality (96 metrics)
 
 ### `adadqa_score` [↑](#categories)
 > Ada-DQA adaptive diverse (higher=better) · ↑ higher=better
@@ -121,6 +121,16 @@
 - **Backend**: heuristic → native → pyiqa
 - **Packages**: bvqi, pyiqa, torch
 - **Config**: `subsample=8`
+
+### `chipqa_score` [↑](#categories)
+> ChipQA space-time-chip NR-VQA (higher=better) · ↑ higher=better
+
+**[`chipqa`](src/ayase/modules/chipqa.py)** — ChipQA no-reference video quality via official feature extractor and LIVE-Livestream SVR
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: chipqa
+- **Packages**: joblib, matplotlib, numba, opencv-python, scikit-learn, scipy
+- **Config**: `timeout_sec=1800`
 
 ### `clifvqa_score` [↑](#categories)
 > CLiF-VQA human feelings (higher=better) · ↑ higher=better
@@ -1488,7 +1498,7 @@ Used by: [`internvqa`](src/ayase/modules/internvqa.py)
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 
 
-## Text-Video Alignment (27 metrics)
+## Text-Video Alignment (29 metrics)
 
 ### `aigcvqa_alignment` [↑](#categories)
 > AIGC-VQA text-video alignment
@@ -1628,6 +1638,17 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **Packages**: dsg
 - **Config**: `threshold=0.25`, `subsample=4`
 
+### `hpsv3_score` [↑](#categories)
+> HPSv3 human preference reward mu (higher=better) · ↑ higher=better
+
+**[`hpsv3`](src/ayase/modules/hpsv3.py)** — HPSv3 wide-spectrum human preference scoring (frame-averaged on video)
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: hpsv3
+- **Packages**: huggingface_hub, safetensors, torch, transformers
+- **VRAM**: ~16 GB
+- **Config**: `num_frames=5`, `device=auto`
+
 ### `image_reward_score` [↑](#categories)
 > Human preference reward (-2..+2, higher=better) · ↑ higher=better · -2..+2
 
@@ -1639,6 +1660,18 @@ Used by: [`aigv_assessor`](src/ayase/modules/aigv_assessor.py)
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Config**: `model_name=ImageReward-v1.0`, `num_frames=5`, `warning_threshold=0.0`
+
+### `pickscore_score` [↑](#categories)
+> PickScore prompt-image preference score (higher=better) · ↑ higher=better
+
+**[`pickscore`](src/ayase/modules/pickscore.py)** — PickScore prompt-conditioned human preference scoring (frame-averaged on video)
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: pickscore
+- **Packages**: torch, transformers
+- **VRAM**: ~2.5 GB
+- **Source**: <a href="https://huggingface.co/yuvalkirstain/PickScore_v1" target="_blank">HF</a>
+- **Config**: `model_name=yuvalkirstain/PickScore_v1`, `processor_name=laion/CLIP-ViT-H-14-laion2B-s32B-b79K`, `num_frames=5`, `device=auto`
 
 ### `sd_score` [↑](#categories)
 > SD-reference similarity (0-1) · ↑ higher=better · 0-1
@@ -2900,7 +2933,19 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`
 
 
-## HDR & Color (10 metrics)
+## HDR & Color (13 metrics)
+
+### `brightrate_score` [↑](#categories)
+> BrightRate HDR UGC NR-VQA (higher=better) · ↑ higher=better
+
+**[`brightrate`](src/ayase/modules/brightrate.py)** — BrightRate HDR no-reference video quality via official BrightVQ inference script
+
+- **Input**: vid · **Speed**: ⏱️ medium
+- **Backend**: brightrate
+- **Packages**: imageio_ffmpeg, joblib, numba, pandas, pyiqa, scikit-learn, scipy, torch, torchvision
+- **VRAM**: ~600 MB
+- **Source**: <a href="https://huggingface.co/CLIP/clip_feats.py" target="_blank">HF</a>
+- **Config**: `timeout_sec=3600`, `num_frames=30`, `num_workers=1`, `parallel_level=video`, `ffmpeg_path=`, `read_yuv=False`
 
 ### `delta_ictcp` [↑](#categories)
 > Delta ICtCp HDR color difference (lower=better) · ↓ lower=better
@@ -2909,6 +2954,17 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Config**: `subsample=5`
+
+### `hdr_chipqa_score` [↑](#categories)
+> HDR-ChipQA HDR NR-VQA (higher=better) · ↑ higher=better
+
+**[`hdr_chipqa`](src/ayase/modules/hdr_chipqa.py)** — HDR-ChipQA no-reference HDR video quality via official feature extractor and LIVE-HDR SVR
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: hdr_chipqa
+- **Packages**: joblib, matplotlib, numba, opencv-python, scikit-learn, scipy
+- **Source**: <a href="https://huggingface.co/utils/colour_utils.py" target="_blank">HF</a>
+- **Config**: `timeout_sec=1800`, `width=3840`, `height=2160`, `bit_depth=10`, `color_space=BT2020`
 
 ### `hdr_quality` [↑](#categories)
 > HDR-specific quality · ↑ higher=better
@@ -2945,6 +3001,16 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: gamma_heuristic → pu21_wavelet
 - **Packages**: PyWavelets, opencv-python
 - **Config**: `subsample=8`
+
+### `hdrmax_score` [↑](#categories)
+> HDRMAX / HDR-VMAF family score (higher=better) · ↑ higher=better
+
+**[`hdrmax`](src/ayase/modules/hdrmax.py)** — HDRMAX full-reference HDR video quality via official HDRMAX feature and prediction scripts
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: hdrmax
+- **Packages**: PyWavelets, colour-science, joblib, matplotlib, pandas, pyrtools, scikit-image, scipy
+- **Config**: `mode=hdrvmaf`, `timeout_sec=3600`, `ffmpeg_bin=ffmpeg`, `njobs=1`
 
 ### `max_cll` [↑](#categories)
 > MaxCLL content light level (nits)
@@ -3375,7 +3441,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Utility & Validation (47 modules)
+## Utility & Validation (48 modules)
 
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
@@ -3391,6 +3457,7 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 - **[`diversity`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast
 - **[`diversity_selection`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast
 - **[`embedding`](src/ayase/modules/embedding.py)** — Calculates X-CLIP embeddings for similarity search · Input: img/vid · Speed: ⏱️ medium · GPU
+- **[`example`](example_plugin.py)** — Example plugin that logs sample paths (template for custom plugins) · Input: img/vid · Speed: ⚡ fast
 - **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms · Input: img/vid · Speed: ⚡ fast
 - **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance for audio generation (batch metric, 2019) · Input: audio · Speed: ⚡ fast
 - **[`fgd`](src/ayase/modules/fgd.py)** — Frechet Gesture Distance for motion generation (batch metric, 2020) · Input: vid · Speed: ⚡ fast

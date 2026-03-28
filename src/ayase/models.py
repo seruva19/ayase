@@ -123,6 +123,9 @@ class QualityMetrics(BaseModel):
         "video_reward_score": "alignment",
         "tifa_score": "alignment",
         "image_reward_score": "alignment",
+        "pickscore_score": "alignment",
+        "hpsv3_score": "alignment",
+        "chipqa_score": "nr_quality",
         # Motion & dynamics
         "motion_score": "motion",
         "camera_motion_score": "motion",
@@ -316,6 +319,9 @@ class QualityMetrics(BaseModel):
         "delta_ictcp": "hdr",
         "hdr_technical_score": "hdr",
         "hdr_vqm": "hdr",
+        "hdr_chipqa_score": "hdr",
+        "hdrmax_score": "hdr",
+        "brightrate_score": "hdr",
         # Codec
         "codec_efficiency": "codec",
         "gop_quality": "codec",
@@ -780,6 +786,9 @@ class QualityMetrics(BaseModel):
 
     # ImageReward (human preference for text-to-image)
     image_reward_score: Optional[float] = None  # Human preference reward (-2..+2, higher=better)
+    pickscore_score: Optional[float] = None  # PickScore prompt-image preference score (higher=better)
+    hpsv3_score: Optional[float] = None  # HPSv3 human preference reward mu (higher=better)
+    chipqa_score: Optional[float] = None  # ChipQA space-time-chip NR-VQA (higher=better)
 
     # Text overlay (NVIDIA Curator)
     text_overlay_score: Optional[float] = None  # Text overlay severity (0-1)
@@ -802,6 +811,9 @@ class QualityMetrics(BaseModel):
     c3dvqa_score: Optional[float] = None  # C3DVQA 3D CNN spatiotemporal FR
     flolpips: Optional[float] = None  # FloLPIPS flow-based perceptual FR
     hdr_vqm: Optional[float] = None  # HDR-VQM HDR video quality FR
+    hdr_chipqa_score: Optional[float] = None  # HDR-ChipQA HDR NR-VQA (higher=better)
+    hdrmax_score: Optional[float] = None  # HDRMAX / HDR-VMAF family score (higher=better)
+    brightrate_score: Optional[float] = None  # BrightRate HDR UGC NR-VQA (higher=better)
     st_lpips: Optional[float] = None  # ST-LPIPS spatiotemporal perceptual FR
 
     # Video curation signals

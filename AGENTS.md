@@ -30,9 +30,13 @@ src/ayase/
 ├── modules/             # All pipeline modules (auto-discovered at runtime)
 │   ├── __init__.py      # Explicit imports of key modules + __all__
 │   └── *.py             # All auto-discovered at runtime via ModuleRegistry
-├── third_party/         # Vendored code (DOVER, FastVQA, Kandinsky)
+├── third_party/         # Bundled third-party source trees used by selected modules
 │   ├── dover/
 │   ├── fastvqa/
+│   ├── brightvq/
+│   ├── hdr_chipqa/
+│   ├── hdrmax/
+│   ├── hpsv3/
 │   └── kandinsky/
 └── utils/
     └── sampling.py
@@ -68,7 +72,7 @@ Before setting `sample.quality_metrics.my_field = value`, the field must exist i
 
 ### 4. Never Break Existing Tests
 
-All tests must pass. Run `pytest tests/ -x -q` before considering any change complete. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
+Run relevant **light tests** before considering any change complete. By default, use focused unit/contract tests for the files or modules you changed. Do **not** run `pytest tests/ -x -q` unless the user explicitly asks for the full suite. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
 
 ### 5. Module `__init__.py` vs Auto-Discovery
 
@@ -257,7 +261,11 @@ resolved = resolve_model_path("openai/clip-vit-base-patch32", models_dir)
 # Returns: "models/openai/clip-vit-base-patch32" or "models/openai--clip-vit-base-patch32" or original name
 
 # For individual weight files — downloads if not cached
-path = download_model_file("dover/DOVER.pth", "https://github.com/.../DOVER.pth", models_dir)
+path = download_model_file(
+    "dover/DOVER.pth",
+    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth",
+    models_dir,
+)
 ```
 
 The `models_dir` value comes from `AyaseConfig.general.models_dir` and is injected into module config by `instantiate_profile_modules()`.
@@ -337,14 +345,18 @@ All 39 TUI tests depend on these. Do NOT rename or remove:
 ### Running Tests
 
 ```bash
-# Full suite (fast — excludes model downloads)
-pytest tests/ -x -q
+# Default verification: focused light tests only
+pytest tests/modules/per_module/test_<module>.py -q
+pytest tests/test_readme_contract.py tests/modules/test_metrics_table.py -q
 
 # Specific category
 pytest tests/modules/test_motion_scene_semantic_metrics.py -v
 
 # TUI tests only
 pytest tests/test_tui.py -v
+
+# Full suite (run only when the user explicitly asks for it)
+pytest tests/ -x -q
 
 # Smoke test all modules (slow — may download models)
 pytest tests/test_module_smoke.py -v --timeout=300
@@ -426,9 +438,13 @@ Three modules accept explicit expected values for evaluation use cases (bypassin
 
 ## Vendored Third-Party Code
 
-`src/ayase/third_party/` contains vendored copies of:
+`src/ayase/third_party/` contains bundled source trees for:
 - **DOVER** (ICCV 2023) — video quality assessment models
 - **FastVQA** — fast video quality assessment
+- **BrightVQ / BrightRate** — HDR UGC video quality assessment
+- **HDR-ChipQA / ChipQA** — no-reference HDR/video quality assessment
+- **HDRMAX** — HDR full-reference quality assessment
+- **HPSv3** — prompt-conditioned preference scoring utilities
 - **Kandinsky** — video motion predictor
 
 These have known issues:
@@ -446,13 +462,14 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 - [ ] Add `Optional[float] = None` fields to `QualityMetrics` in `models.py`
 - [ ] Add fields to `_FIELD_GROUPS` in `models.py`
 - [ ] Register in `modules/__init__.py` if it's a key module
-- [ ] Add optional deps to `pyproject.toml` if needed (and update `all` extras)
+- [ ] Add or update shared runtime deps in `pyproject.toml` if needed
 
 ### 2. Tests
 
 - [ ] Write tests in `tests/modules/test_*.py`
 - [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count
-- [ ] Run `pytest tests/ -x -q` — full regression must pass
+- [ ] Run a focused light test suite covering the changed files/modules
+- [ ] Run `pytest tests/ -x -q` only if the user explicitly asks for the full regression suite
 
 ### 3. METRICS.md & MODELS.md (auto-generated)
 
