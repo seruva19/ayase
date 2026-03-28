@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.18"
+version = "0.1.19"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -40,129 +40,52 @@ dependencies = [
     "pandas>=2.1.0,<3.0",
     "imageio>=2.33.0,<3.0",
     "imageio-ffmpeg>=0.4.9,<1.0",
+    "textual>=0.52.0",
+    "torch>=2.1.0,<3.0",
+    "torchvision>=0.16.0,<1.0",
+    "transformers>=4.45.0,<6.0",
+    "huggingface-hub>=0.20.0",
+    "safetensors>=0.4.0",
+    "timm>=0.9.12",
+    "einops>=0.7.0",
+    "lpips>=0.1.4",
+    "open-clip-torch>=2.24.0",
+    "pyiqa>=0.1.13,<1.0",
+    "scipy>=1.11.0",
+    "scikit-image>=0.19.0",
+    "scikit-video>=1.1.11",
+    "scikit-learn>=1.3.0",
+    "joblib>=1.3.0",
+    "numba>=0.58.0",
+    "matplotlib>=3.7.0",
+    "colour-science>=0.4.0",
+    "PyWavelets>=1.3.0",
+    "pyrtools>=1.0.9",
+    "decord>=0.6.0",
+    "PyYAML>=6.0",
+    "requests>=2.31.0",
+    "nltk>=3.8.0",
+    "accelerate>=0.25.0",
+    "diffusers>=0.25.0",
+    "paddlepaddle>=2.5.0,<3.0",
+    "paddleocr>=2.7.0,<3.0",
+    "python-Levenshtein>=0.21.0",
+    "mediapipe>=0.10.0,<1.0",
+    "insightface>=0.7.0",
+    "onnxruntime>=1.14.0",
+    "ultralytics>=8.0.0,<9.0",
+    "invisible-watermark>=0.2.0",
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    "t2v-metrics>=1.0.0",
+    "transnetv2-pytorch>=1.0.0",
+    "umap-learn>=0.5.0",
     "tomli>=2.0.1,<3.0;python_version<'3.11'",
     "tomli-w>=1.0.0,<2.0",
     "typing_extensions>=4.0.0;python_version<'3.11'",
 ]
 
 [project.optional-dependencies]
-i-core = []
-v-perceptual = [
-    "torch>=2.1.0,<3.0",
-    "torchvision>=0.16.0,<1.0",
-    "timm>=0.9.12",
-    "einops>=0.7.0",
-    "lpips>=0.1.4",
-    "open-clip-torch>=2.24.0",
-]
-v-iqa = [
-    "torch>=2.1.0,<3.0",
-    "torchvision>=0.16.0,<1.0",
-    "pyiqa>=0.1.13,<1.0",
-    "scipy>=1.11.0",
-    "scikit-video>=1.1.11",
-]
-v-motion = [
-    "torch>=2.1.0,<3.0",
-    "torchvision>=0.16.0,<1.0",
-    "decord>=0.6.0",
-]
-v-ocr = [
-    "paddlepaddle>=2.5.0,<3.0",
-    "paddleocr>=2.7.0,<3.0",
-    "python-Levenshtein>=0.21.0",
-]
-v-face = [
-    "mediapipe>=0.10.0,<1.0",
-]
-v-identity = [
-    "insightface>=0.7.0",
-    "onnxruntime>=1.14.0",
-]
-v-object = [
-    "ultralytics>=8.0.0,<9.0",
-]
-v-watermark = [
-    "invisible-watermark>=0.2.0",
-]
-v-audio = [
-    "librosa>=0.10.0",
-    "soundfile>=0.12.0",
-]
-v-text = [
-    "torch>=2.1.0,<3.0",
-    "transformers>=4.36.0,<5.0",
-    "requests>=2.31.0",
-    "PyYAML>=6.0",
-]
-v-align = [
-    "t2v-metrics>=1.0.0",
-]
-v-scene = [
-    "transnetv2-pytorch>=1.0.0",
-]
-v-umap = [
-    "umap-learn>=0.5.0",
-    "scikit-learn>=1.3.0",
-    "torch>=2.1.0,<3.0",
-    "open-clip-torch>=2.24.0",
-]
-v-nemo = [
-    "torch>=2.1.0,<3.0",
-    "transformers>=4.36.0,<5.0",
-    "huggingface-hub>=0.20.0",
-]
-v-ml = [
-    "ayase[ml]",
-]
-ml = [
-    # NOTE: For CUDA support, install torch/torchvision from PyTorch index:
-    #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
-    "torch>=2.1.0,<3.0",
-    "torchvision>=0.16.0,<1.0",
-    "transformers>=4.36.0,<5.0",
-    "timm>=0.9.12",
-    "decord>=0.6.0",
-    "PyYAML>=6.0",
-    "requests>=2.31.0",
-    "scikit-learn>=1.3.0",
-    "safetensors>=0.4.0",
-    "huggingface-hub>=0.20.0",
-
-    # Distribution / numerical
-    "scipy>=1.11.0",
-    "scikit-video>=1.1.11",
-
-    # No-reference metrics
-    "pyiqa>=0.1.13,<1.0",
-
-    # Advanced models
-    "lpips>=0.1.4",
-    "einops>=0.7.0",
-
-    # Captioning / BLEU scoring
-    "nltk>=3.8.0",
-
-    # Large model support
-    "accelerate>=0.25.0",
-
-    # Diffusion models (SD reference scoring)
-    "diffusers>=0.25.0",
-
-    # I2V similarity (CLIP sliding-window)
-    "open-clip-torch>=2.24.0",
-
-    # OCR fidelity
-    "paddlepaddle>=2.5.0,<3.0",
-    "paddleocr>=2.7.0,<3.0",
-    "python-Levenshtein>=0.21.0",
-
-    # Object detection
-    "ultralytics>=8.0.0,<9.0",
-]
-tui = [
-    "textual>=0.52.0",
-]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -171,9 +94,6 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.8.0",
     "seaborn>=0.13.0",
-]
-all = [
-    "ayase[ml,dev,tui,v-perceptual,v-iqa,v-motion,v-ocr,v-face,v-identity,v-object,v-watermark,v-audio,v-text,v-align,v-scene,v-umap,v-nemo,v-ml]",
 ]
 
 [project.urls]
