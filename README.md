@@ -4,7 +4,7 @@ Modular media quality metrics toolkit for video, image, and audio datasets.
 
 ## Overview
 
-- **317 modules**, **348 quality metrics** across visual, temporal, audio, perceptual, and safety categories
+- **324 modules**, **354 quality metrics** across visual, temporal, audio, perceptual, and safety categories
 - Modular pipeline - modules compute raw values, downstream apps decide what to do with them
 - CLI and Python API with profile-based configuration
 - See [METRICS.md](METRICS.md) for the full reference, [MODELS.md](MODELS.md) for all pretrained weights
@@ -12,15 +12,12 @@ Modular media quality metrics toolkit for video, image, and audio datasets.
 ## Installation
 
 ```bash
-pip install ayase                # Core (metadata/structural checks only)
-pip install ayase[ml]            # Everything
-pip install ayase[v-iqa]         # PyIQA, BRISQUE, NIQE, scikit-video
-pip install ayase[v-perceptual]  # CLIP, LPIPS, open-clip, timm
-pip install ayase[v-motion]      # RAFT optical flow, decord
-pip install ayase[dev]           # pytest, black, ruff, mypy
+pip install ayase
 ```
 
-Models are downloaded and cached automatically on first use.
+Ayase ships with the shared runtime dependencies used by the bundled metrics.
+Some model implementations include source files under `src/ayase/third_party/`; model binaries are
+downloaded and cached automatically on first use when they are not packaged in the repository.
 
 ## Quick Start
 
