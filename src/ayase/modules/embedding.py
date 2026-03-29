@@ -147,28 +147,20 @@ class EmbeddingModule(PipelineModule):
             # model.get_video_features(**inputs)?
             # HuggingFace XCLIPModel has get_video_features.
 
-            try:
-                video_features = self._model.get_video_features(pixel_values=pixel_values)
-            except AttributeError:
-                # Fallback to manual forward pass if get_video_features doesn't exist (older transformers?)
-                # But transformers>=4.36 should have it.
+            # Manual forward pass — handles both named-tuple and plain-tuple returns
+            # from vision_model and mit (transformers version compatibility)
+            batch_size_v = pixel_values.shape[0]
+            num_frames_v = pixel_values.shape[1]
+            pv_flat = pixel_values.reshape(-1, *pixel_values.shape[2:])
 
-                # Re-implementing logic from embedding_calculator.py just in case
-                vision_outputs = self._model.vision_model(
-                    pixel_values=pixel_values.reshape(
-                        -1, pixel_values.shape[-3], pixel_values.shape[-2], pixel_values.shape[-1]
-                    ),
-                )
-                frame_embeds = vision_outputs.pooler_output
-                frame_embeds = self._model.visual_projection(frame_embeds)
+            vision_outputs = self._model.vision_model(pixel_values=pv_flat)
+            frame_embeds = vision_outputs[1] if isinstance(vision_outputs, tuple) else vision_outputs.pooler_output
+            frame_embeds = self._model.visual_projection(frame_embeds)
 
-                # Reshape back
-                batch_size = pixel_values.shape[0]
-                num_frames = pixel_values.shape[1]
-                cls_features = frame_embeds.view(batch_size, num_frames, -1)
+            cls_features = frame_embeds.view(batch_size_v, num_frames_v, -1)
 
-                mit_outputs = self._model.mit(cls_features)
-                video_features = mit_outputs.pooler_output
+            mit_outputs = self._model.mit(cls_features)
+            video_features = mit_outputs[1] if isinstance(mit_outputs, tuple) else mit_outputs.pooler_output
 
             # Normalize
             video_features = video_features / video_features.norm(p=2, dim=-1, keepdim=True)
