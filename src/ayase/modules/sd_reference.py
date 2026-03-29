@@ -164,7 +164,7 @@ class SDReferenceModule(PipelineModule):
         import torch
 
         with torch.no_grad():
-            inputs = self._clip_processor(text=[prompt], return_tensors="pt", padding=True).to(self._device)
+            inputs = self._clip_processor(text=[prompt], return_tensors="pt", padding=True, truncation=True).to(self._device)
             text_feat = self._clip_model.get_text_features(**inputs)
             text_feat = text_feat / text_feat.norm(p=2, dim=-1, keepdim=True)
         sims = frame_embeds @ text_feat.T  # [T, 1]

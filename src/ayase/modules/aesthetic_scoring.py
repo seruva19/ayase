@@ -62,14 +62,25 @@ class AestheticScoringModule(PipelineModule):
             
             state_dict = torch.load(str(weight_path), map_location=self._device, weights_only=True)
             
-            # The model is a simple Linear(768, 1) usually, or MLP.
-            # Inspection of the .pth usually reveals keys like 'weight', 'bias'.
-            # LAION V2 is a simple linear regressor on normalized embeddings.
-            
-            self._linear = nn.Linear(768, 1)
-            self._linear.weight.data = state_dict['weight'].to(self._device)
-            self._linear.bias.data = state_dict['bias'].to(self._device)
+            # LAION Aesthetic V2 is an MLP: 768 -> 1024 -> 128 -> 64 -> 16 -> 1
+            # Keys in state_dict: layers.0.weight, layers.0.bias, ..., layers.7.weight, layers.7.bias
+            class _AestheticMLP(nn.Module):
+                def __init__(self):
+                    super().__init__()
+                    self.layers = nn.Sequential(
+                        nn.Linear(768, 1024), nn.Dropout(0.2),
+                        nn.Linear(1024, 128), nn.Dropout(0.2),
+                        nn.Linear(128, 64), nn.Dropout(0.1),
+                        nn.Linear(64, 16),
+                        nn.Linear(16, 1),
+                    )
+                def forward(self, x):
+                    return self.layers(x)
+
+            self._linear = _AestheticMLP()
+            self._linear.load_state_dict(state_dict)
             self._linear.to(self._device)
+            self._linear.eval()
             
             self._ml_available = True
             logger.info("Loaded LAION-Aesthetics V2 predictor.")
