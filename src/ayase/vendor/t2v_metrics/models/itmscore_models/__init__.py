@@ -17,10 +17,15 @@ def _ensure_names():
     if _names_loaded:
         return
     import importlib
+    import logging
+    logger = logging.getLogger(__name__)
     for key, (mod_path, models_attr, _) in _MODULE_KEY_TO_IMPORT.items():
-        mod = importlib.import_module(mod_path, package=__name__)
-        for name in getattr(mod, models_attr):
-            _MODEL_NAME_TO_MODULE[name] = key
+        try:
+            mod = importlib.import_module(mod_path, package=__name__)
+            for name in getattr(mod, models_attr):
+                _MODEL_NAME_TO_MODULE[name] = key
+        except ImportError as exc:
+            logger.debug("Skipped %s: %s", key, exc)
     _names_loaded = True
 
 
