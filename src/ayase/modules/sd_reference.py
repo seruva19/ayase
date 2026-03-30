@@ -19,6 +19,7 @@ import numpy as np
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ class SDReferenceModule(PipelineModule):
         with torch.no_grad():
             for img in pil_frames:
                 inputs = self._clip_processor(images=img, return_tensors="pt").to(self._device)
-                feat = self._clip_model.get_image_features(**inputs)
+                feat = extract_features(self._clip_model.get_image_features(**inputs))
                 embeds.append(feat)
         embeds = torch.cat(embeds, dim=0)
         return embeds / embeds.norm(p=2, dim=-1, keepdim=True)
@@ -149,7 +150,7 @@ class SDReferenceModule(PipelineModule):
 
             with torch.no_grad():
                 inputs = self._clip_processor(images=pil_img, return_tensors="pt").to(self._device)
-                feat = self._clip_model.get_image_features(**inputs)
+                feat = extract_features(self._clip_model.get_image_features(**inputs))
                 embeds.append(feat)
 
         embeds = torch.cat(embeds, dim=0)
@@ -165,7 +166,7 @@ class SDReferenceModule(PipelineModule):
 
         with torch.no_grad():
             inputs = self._clip_processor(text=[prompt], return_tensors="pt", padding=True, truncation=True).to(self._device)
-            text_feat = self._clip_model.get_text_features(**inputs)
+            text_feat = extract_features(self._clip_model.get_text_features(**inputs))
             text_feat = text_feat / text_feat.norm(p=2, dim=-1, keepdim=True)
         sims = frame_embeds @ text_feat.T  # [T, 1]
         return float(sims.mean().item())

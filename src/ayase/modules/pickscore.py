@@ -14,6 +14,7 @@ from PIL import Image
 
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -136,8 +137,8 @@ class PickScoreModule(PipelineModule):
             ).to(self._device)
 
             with torch.no_grad():
-                text_features = self._model.get_text_features(**text_inputs)
-                image_features = self._model.get_image_features(**image_inputs)
+                text_features = extract_features(self._model.get_text_features(**text_inputs))
+                image_features = extract_features(self._model.get_image_features(**image_inputs))
 
             text_features = self._unwrap_features(text_features)
             image_features = self._unwrap_features(image_features)

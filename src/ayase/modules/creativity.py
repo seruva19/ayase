@@ -16,6 +16,7 @@ import numpy as np
 
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,7 @@ class CreativityModule(PipelineModule):
             # Pre-compute common prompt embeddings
             with torch.no_grad():
                 inputs = self._clip_processor(text=_COMMON_PROMPTS, return_tensors="pt", padding=True).to(self._device)
-                text_features = self._clip_model.get_text_features(**inputs)
+                text_features = extract_features(self._clip_model.get_text_features(**inputs))
                 self._common_embeddings = text_features / text_features.norm(dim=-1, keepdim=True)
 
             # Pre-load LAION aesthetic model for reuse
@@ -191,7 +192,7 @@ class CreativityModule(PipelineModule):
 
         with torch.no_grad():
             inputs = self._clip_processor(images=pil_image, return_tensors="pt").to(self._device)
-            image_features = self._clip_model.get_image_features(**inputs)
+            image_features = extract_features(self._clip_model.get_image_features(**inputs))
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
             # Novelty = distance from common prompts

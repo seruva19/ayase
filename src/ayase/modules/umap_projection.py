@@ -23,6 +23,7 @@ import cv2
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
+from ayase.compat import extract_features
 from ayase.models import Sample
 
 logger = logging.getLogger(__name__)
@@ -119,7 +120,7 @@ class UMAPProjectionModule(BatchMetricModule):
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
             with torch.no_grad():
-                emb = self._clip_model.get_image_features(**inputs)
+                emb = extract_features(self._clip_model.get_image_features(**inputs))
                 emb = emb / emb.norm(dim=-1, keepdim=True)
 
             return emb.squeeze(0).cpu().numpy()
