@@ -21,6 +21,7 @@ import numpy as np
 
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class VideoMemorabilityModule(PipelineModule):
         inputs = self._clip_processor(images=pil_frames, return_tensors="pt").to(self._device)
 
         with torch.no_grad():
-            outputs = self._feature_model.get_image_features(**inputs)
+            outputs = extract_features(self._feature_model.get_image_features(**inputs))
             features = outputs.cpu().numpy()  # [N, D]
 
         # Memorability indicators from CLIP space:

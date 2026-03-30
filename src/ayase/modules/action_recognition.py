@@ -5,6 +5,7 @@ from typing import Optional, List
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class ActionRecognitionModule(PipelineModule):
                 return_tensors="pt", padding=True, truncation=True,
             )
             with torch.no_grad():
-                features = self._clip_model.get_text_features(tokens["input_ids"].to(self._device))
+                features = extract_features(self._clip_model.get_text_features(tokens["input_ids"].to(self._device)))
 
         return features / features.norm(p=2, dim=-1, keepdim=True)
 

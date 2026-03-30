@@ -23,6 +23,7 @@ import numpy as np
 
 from ayase.models import Sample
 from ayase.base_modules import BatchMetricModule
+from ayase.compat import extract_features as _extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
             inputs = {k: v.to(device) for k, v in inputs.items()}
 
             with torch.no_grad():
-                emb = self._clip_model.get_image_features(**inputs)
+                emb = _extract_features(self._clip_model.get_image_features(**inputs))
                 emb = emb / emb.norm(dim=-1, keepdim=True)
 
             return emb.squeeze(0).cpu().numpy()
