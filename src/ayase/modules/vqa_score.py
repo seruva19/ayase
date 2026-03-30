@@ -30,7 +30,7 @@ class VQAScoreModule(PipelineModule):
 
     def setup(self) -> None:
         try:
-            from t2v_metrics import VQAScore as VQAScoreMetric
+            from ayase.vendor.t2v_metrics import VQAScore as VQAScoreMetric
 
             model_name = self.config.get("model", "clip-flant5-xxl")
             self._model = VQAScoreMetric(model=model_name)

@@ -30,6 +30,8 @@ src/ayase/
 ├── modules/             # All pipeline modules (auto-discovered at runtime)
 │   ├── __init__.py      # Explicit imports of key modules + __all__
 │   └── *.py             # All auto-discovered at runtime via ModuleRegistry
+├── vendor/              # Vendored packages with unresolvable dependency conflicts
+│   └── t2v_metrics/     # VQAScore, CLIPScore, ITMScore (from github.com/linzhiqiu/t2v_metrics)
 ├── third_party/         # Bundled third-party source trees used by selected modules
 │   ├── dover/
 │   ├── fastvqa/
@@ -519,6 +521,25 @@ ayase modules sync-readme               # Update module/field counts in README.m
 3. **`tests/modules/test_metrics_table.py`** — parses README `## Metrics` table and verifies 1:1 match with QualityMetrics fields in order
 
 Other contract tests: golden values (`test_golden_values.py`, ±2% tolerance), public API surface (`TestPipelineAPI`, `TestProfileAPI`, `TestSampleModel`), CLI commands, TUI widget IDs.
+
+## Dependency Conflicts: Vendoring Policy
+
+When an external dependency has an **unresolvable version conflict** (e.g., transitive dependency pins an incompatible version of a shared package), **vendor the entire package** into `src/ayase/vendor/` rather than fighting pip resolver or weakening version constraints.
+
+Procedure:
+1. Clone the conflicting package source
+2. Copy the Python package directory into `src/ayase/vendor/<package_name>/`
+3. Remove the package from `pyproject.toml` dependencies
+4. Update imports in ayase modules: `from ayase.vendor.<package> import ...`
+5. Add `__init__.py` to `vendor/` if missing
+
+Current vendored packages in `vendor/`:
+- **t2v_metrics** — vendored due to `image-reward` pinning `timm==0.6.13` (conflicts with ayase's `timm>=0.9.12`)
+
+Rules:
+- Do NOT modify vendored source code unless strictly necessary (same as `third_party/`)
+- Do NOT run Black/Ruff on vendored code
+- Document the vendoring reason in this section
 
 ## Common Pitfalls
 
