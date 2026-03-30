@@ -19,6 +19,7 @@ import numpy as np
 
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ class ChronoMagicModule(PipelineModule):
             pil_img = Image.fromarray(rgb)
             inputs = self._clip_processor(images=pil_img, return_tensors="pt").to(self._device)
             with torch.no_grad():
-                features = self._clip_model.get_image_features(**inputs)
+                features = extract_features(self._clip_model.get_image_features(**inputs))
                 features = features / features.norm(dim=-1, keepdim=True)
                 embeddings.append(features.cpu().numpy().flatten())
 

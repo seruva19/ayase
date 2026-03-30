@@ -14,6 +14,7 @@ import numpy as np
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,7 @@ class CLIPTemporalModule(PipelineModule):
         with torch.no_grad():
             for pil_img in pil_frames:
                 inputs = self._processor(images=pil_img, return_tensors="pt").to(self._device)
-                feats = self._model.get_image_features(**inputs)  # [1, D]
+                feats = extract_features(self._model.get_image_features(**inputs))  # [1, D]
                 embeddings.append(feats)
         return torch.cat(embeddings, dim=0)  # [T, D]
 

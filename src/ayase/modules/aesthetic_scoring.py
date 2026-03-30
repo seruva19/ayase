@@ -10,6 +10,7 @@ import urllib.request
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +118,7 @@ class AestheticScoringModule(PipelineModule):
                 inputs = self._processor(images=pil_image, return_tensors="pt").to(self._device)
 
                 with torch.no_grad():
-                    image_features = self._model.get_image_features(**inputs)
+                    image_features = extract_features(self._model.get_image_features(**inputs))
                     image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
 
                     # Predict score
