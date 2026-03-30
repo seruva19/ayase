@@ -1,24 +1,32 @@
-from .blip2_itm_model import BLIP2_ITM_MODELS, BLIP2ITMScoreModel
-from .umt_itm_model import UMT_ITM_MODELS, UMTITMScoreModel
-from .internvideo2_itm_model import INTERNVIDEO2_ITM_MODELS, InternVideo2ITMScoreModel
+# Lazy imports — models are loaded only when requested via get_itmscore_model().
+
 from ...constants import HF_CACHE_DIR
 
-ALL_ITM_MODELS = [
-    BLIP2_ITM_MODELS,
-    UMT_ITM_MODELS,
-    INTERNVIDEO2_ITM_MODELS,
-]
+_MODEL_REGISTRY = {
+    "blip2_itm": (".blip2_itm_model", "BLIP2_ITM_MODELS", "BLIP2ITMScoreModel"),
+    "umt_itm": (".umt_itm_model", "UMT_ITM_MODELS", "UMTITMScoreModel"),
+    "internvideo2_itm": (".internvideo2_itm_model", "INTERNVIDEO2_ITM_MODELS", "InternVideo2ITMScoreModel"),
+}
+
+
+def _load_entry(key):
+    import importlib
+    mod_path, models_attr, cls_attr = _MODEL_REGISTRY[key]
+    mod = importlib.import_module(mod_path, package=__name__)
+    return getattr(mod, models_attr), getattr(mod, cls_attr)
+
 
 def list_all_itmscore_models():
-    return [model for models in ALL_ITM_MODELS for model in models]
+    all_models = []
+    for key in _MODEL_REGISTRY:
+        models_dict, _ = _load_entry(key)
+        all_models.extend(models_dict)
+    return all_models
+
 
 def get_itmscore_model(model_name, device='cuda', cache_dir=HF_CACHE_DIR):
-    assert model_name in list_all_itmscore_models()
-    if model_name in BLIP2_ITM_MODELS:
-        return BLIP2ITMScoreModel(model_name, device=device, cache_dir=cache_dir)
-    elif model_name in UMT_ITM_MODELS:
-        return UMTITMScoreModel(model_name, device=device, cache_dir=cache_dir)
-    elif model_name in INTERNVIDEO2_ITM_MODELS:
-        return InternVideo2ITMScoreModel(model_name, device=device, cache_dir=cache_dir)
-    else:
-        raise NotImplementedError()
+    for key in _MODEL_REGISTRY:
+        models_dict, model_cls = _load_entry(key)
+        if model_name in models_dict:
+            return model_cls(model_name, device=device, cache_dir=cache_dir)
+    raise NotImplementedError(f"Unknown ITMScore model: {model_name}")
