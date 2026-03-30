@@ -1,32 +1,41 @@
-# Lazy imports — models are loaded only when requested via get_itmscore_model().
+# Lazy imports — model modules are loaded only when instantiated.
 
 from ...constants import HF_CACHE_DIR
 
-_MODEL_REGISTRY = {
+_MODEL_NAME_TO_MODULE = {}
+_names_loaded = False
+
+_MODULE_KEY_TO_IMPORT = {
     "blip2_itm": (".blip2_itm_model", "BLIP2_ITM_MODELS", "BLIP2ITMScoreModel"),
     "umt_itm": (".umt_itm_model", "UMT_ITM_MODELS", "UMTITMScoreModel"),
     "internvideo2_itm": (".internvideo2_itm_model", "INTERNVIDEO2_ITM_MODELS", "InternVideo2ITMScoreModel"),
 }
 
 
-def _load_entry(key):
+def _ensure_names():
+    global _names_loaded
+    if _names_loaded:
+        return
     import importlib
-    mod_path, models_attr, cls_attr = _MODEL_REGISTRY[key]
-    mod = importlib.import_module(mod_path, package=__name__)
-    return getattr(mod, models_attr), getattr(mod, cls_attr)
+    for key, (mod_path, models_attr, _) in _MODULE_KEY_TO_IMPORT.items():
+        mod = importlib.import_module(mod_path, package=__name__)
+        for name in getattr(mod, models_attr):
+            _MODEL_NAME_TO_MODULE[name] = key
+    _names_loaded = True
 
 
 def list_all_itmscore_models():
-    all_models = []
-    for key in _MODEL_REGISTRY:
-        models_dict, _ = _load_entry(key)
-        all_models.extend(models_dict)
-    return all_models
+    _ensure_names()
+    return list(_MODEL_NAME_TO_MODULE.keys())
 
 
 def get_itmscore_model(model_name, device='cuda', cache_dir=HF_CACHE_DIR):
-    for key in _MODEL_REGISTRY:
-        models_dict, model_cls = _load_entry(key)
-        if model_name in models_dict:
-            return model_cls(model_name, device=device, cache_dir=cache_dir)
-    raise NotImplementedError(f"Unknown ITMScore model: {model_name}")
+    _ensure_names()
+    if model_name not in _MODEL_NAME_TO_MODULE:
+        raise NotImplementedError(f"Unknown ITMScore model: {model_name}")
+    key = _MODEL_NAME_TO_MODULE[model_name]
+    mod_path, _, cls_attr = _MODULE_KEY_TO_IMPORT[key]
+    import importlib
+    mod = importlib.import_module(mod_path, package=__name__)
+    model_cls = getattr(mod, cls_attr)
+    return model_cls(model_name, device=device, cache_dir=cache_dir)
