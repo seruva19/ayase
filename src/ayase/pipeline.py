@@ -10,7 +10,7 @@ import tempfile
 import urllib.request
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Type, Any, Union
+from typing import Callable, Dict, Iterable, List, Optional, Type, Any, Union
 
 from .models import Sample, DatasetStats
 
@@ -278,6 +278,7 @@ class Pipeline:
         self.results: Dict[str, Sample] = {}
         self.stats = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
         self._batch_modules: List[PipelineModule] = []  # Modules that need batch processing
+        self._hooks: Dict[str, Dict[str, Callable[[Sample], Sample]]] = {}
         # Maps stats field name -> (QualityMetrics field name, count)
         self._AVG_METRIC_MAP: Dict[str, str] = {
             "avg_technical_score": "technical_score",
@@ -302,6 +303,37 @@ class Pipeline:
         if module not in self._batch_modules:
             self._batch_modules.append(module)
             logger.debug(f"Registered batch module: {module.name}")
+
+    def add_hook(
+        self,
+        module_name: str,
+        *,
+        before: Optional[Callable[[Sample], Sample]] = None,
+        after: Optional[Callable[[Sample], Sample]] = None,
+    ) -> None:
+        """Register before/after hooks for a module.
+
+        Hooks are called around ``module.process(sample)`` inside
+        ``process_sample()``.  A *before* hook can modify the sample
+        (e.g. condense a caption) before the module sees it; an *after*
+        hook can restore the original state so subsequent modules are
+        unaffected.
+
+        Calling ``add_hook`` again for the same *module_name* replaces
+        previously registered callbacks.
+
+        Args:
+            module_name: ``PipelineModule.name`` of the target module.
+            before: ``(Sample) -> Sample`` called before ``process()``.
+            after:  ``(Sample) -> Sample`` called after ``process()``.
+        """
+        entry: Dict[str, Callable[[Sample], Sample]] = {}
+        if before is not None:
+            entry["before"] = before
+        if after is not None:
+            entry["after"] = after
+        if entry:
+            self._hooks[module_name] = entry
 
     def add_dataset_metric(self, metric_name: str, value: float) -> None:
         """Add a dataset-level metric to stats.
@@ -373,7 +405,12 @@ class Pipeline:
             if not getattr(module, "_mounted", False):
                 continue
             try:
+                hooks = self._hooks.get(module.name)
+                if hooks and "before" in hooks:
+                    sample = hooks["before"](sample)
                 sample = module.process(sample)
+                if hooks and "after" in hooks:
+                    sample = hooks["after"](sample)
             except Exception as e:
                 logger.error(f"Error in module {module.name} for {sample.path}: {e}")
 
