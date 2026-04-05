@@ -156,6 +156,9 @@ def test_dataset_stats_new_fields():
         "outlier_count",
         "class_balance_score",
         "duplicate_pairs",
+        "verse_bench_overall",
+        "verse_bench_metrics",
+        "verse_bench_breakdown",
     ]
     for field in new_fields:
         assert hasattr(stats, field)

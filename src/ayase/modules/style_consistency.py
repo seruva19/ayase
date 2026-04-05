@@ -1,3 +1,8 @@
+"""Temporal style consistency via HSV histogram correlation across frames.
+
+Lightweight proxy for Gram Matrix consistency. Compares color distributions
+between sampled frames. Values below 0.8 indicate style drift."""
+
 import logging
 import cv2
 import numpy as np

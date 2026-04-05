@@ -1,3 +1,8 @@
+"""Camera-stabilized motion scoring using ORB+Homography and Farneback optical flow.
+
+Separates scene motion from camera motion by compensating for homography
+transforms. Returns stabilized_motion_score and stabilized_camera_score."""
+
 import cv2
 import numpy as np
 import logging

@@ -1,3 +1,8 @@
+"""Audio-text semantic alignment verification using CLAP.
+
+Computes cosine similarity between audio embeddings and caption text.
+Low alignment scores indicate mismatched audio-description pairs."""
+
 import logging
 import numpy as np
 from typing import Optional

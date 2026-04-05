@@ -1,3 +1,8 @@
+"""Spatial relationship verification between caption keywords and detected bounding boxes.
+
+Checks positional constraints (left/right/top/bottom/center/foreground/background)
+mentioned in the caption against object detection coordinates."""
+
 import logging
 from typing import List, Dict
 

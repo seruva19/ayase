@@ -1,3 +1,8 @@
+"""NSFW content detection using a ViT-based image classification model.
+
+Classifies frames as normal or NSFW using Falconsai/nsfw_image_detection.
+Returns nsfw_score (0-1, higher = more likely NSFW). Checks up to 8 frames."""
+
 import logging
 from PIL import Image
 from typing import Optional

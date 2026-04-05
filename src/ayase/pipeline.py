@@ -37,6 +37,8 @@ class PipelineModule(ABC):
     default_config: Dict[str, Any] = {}
     required_packages: List[str] = []
     required_files: Dict[str, str] = {}
+    models: List[Dict[str, str]] = []
+    metric_info: Dict[str, str] = {}
 
     _global_test_mode: bool = False
 
@@ -216,6 +218,8 @@ class PipelineModule(ABC):
             "input_type": input_type,
             "output_fields": outputs,
             "default_config": dict(cls.default_config) if cls.default_config else {},
+            "models": list(cls.models) if cls.models else [],
+            "metric_info": dict(cls.metric_info) if cls.metric_info else {},
         }
 
     def _check_required_packages(self) -> List[str]:
@@ -335,7 +339,7 @@ class Pipeline:
         if entry:
             self._hooks[module_name] = entry
 
-    def add_dataset_metric(self, metric_name: str, value: float) -> None:
+    def add_dataset_metric(self, metric_name: str, value: Any) -> None:
         """Add a dataset-level metric to stats.
 
         Used by batch metric modules (FVD, KVD, etc.) to store their results.
@@ -347,7 +351,10 @@ class Pipeline:
         # Store in DatasetStats
         if hasattr(self.stats, metric_name):
             setattr(self.stats, metric_name, value)
-            logger.info(f"Dataset metric {metric_name} = {value:.4f}")
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                logger.info("Dataset metric %s = %.4f", metric_name, value)
+            else:
+                logger.info("Dataset metric %s updated", metric_name)
         else:
             logger.warning(f"Unknown dataset metric: {metric_name}")
 

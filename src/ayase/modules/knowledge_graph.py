@@ -1,3 +1,8 @@
+"""Dataset knowledge graph construction from detections and embedding clustering.
+
+Aggregates action and style detections across samples into a graph structure.
+Uses KMeans clustering on embeddings to group semantically similar videos."""
+
 import logging
 import json
 from typing import List, Dict, Set, Any

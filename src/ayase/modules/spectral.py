@@ -1,3 +1,9 @@
+"""Spectral complexity analysis via DINOv2 feature SVD effective rank.
+
+Computes effective rank and spectral entropy of frame-level DINOv2 features.
+Low rank indicates static/redundant content; high entropy indicates chaos.
+Returns spectral_entropy and spectral_rank."""
+
 import logging
 import numpy as np
 import cv2

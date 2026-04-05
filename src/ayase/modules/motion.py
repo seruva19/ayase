@@ -1,3 +1,8 @@
+"""Motion dynamics analysis via Farneback dense optical flow with effective FPS detection.
+
+Computes mean optical flow magnitude across sampled frame pairs. Also detects
+duplicate frames to estimate effective vs container FPS. Returns motion_score."""
+
 import logging
 import cv2
 import numpy as np

@@ -1,3 +1,8 @@
+"""Subject consistency via DINOv2-base pairwise frame similarity (VBench-style).
+
+Computes all-pairs cosine similarity of CLS-token embeddings across frames.
+Returns subject_consistency (0-1, higher = more consistent). Warns below 0.6."""
+
 import logging
 import cv2
 import numpy as np

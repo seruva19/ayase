@@ -1,3 +1,8 @@
+"""Structural integrity checks: scene cuts and letterboxing/black bar detection.
+
+Uses PySceneDetect for cut detection and luminance thresholding for black bars.
+Recommends splitting multi-scene videos and cropping letterboxed content."""
+
 import logging
 import cv2
 import numpy as np

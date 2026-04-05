@@ -1,3 +1,8 @@
+"""Video-text alignment via X-CLIP (temporal) or frame-averaged CLIP similarity.
+
+Supports X-CLIP for video-native temporal matching or standard CLIP for
+frame-averaged scoring. Returns video_text_score and video_text_temporal consistency."""
+
 import logging
 import numpy as np
 import cv2

@@ -1,3 +1,8 @@
+"""Full bitstream validation via FFmpeg decode with error detection.
+
+Decodes the entire video using ffmpeg -xerror to catch codec-level corruption
+that metadata checks miss. Includes a configurable timeout for safety."""
+
 import logging
 import subprocess
 import os
