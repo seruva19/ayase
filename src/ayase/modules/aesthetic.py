@@ -1,3 +1,8 @@
+"""Aesthetic quality estimation using Aesthetic Predictor V2.5 (SigLIP-based).
+
+Scores images/video frames on a 0-100 normalized scale. Higher scores indicate
+better perceptual aesthetic quality. Processes up to 5 uniformly sampled frames."""
+
 import logging
 import cv2
 import numpy as np

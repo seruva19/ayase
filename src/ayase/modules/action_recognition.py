@@ -1,3 +1,8 @@
+"""Human action recognition using VideoMAE with optional CLIP caption matching.
+
+Classifies video actions via VideoMAE/UMT and optionally scores alignment with
+caption text using CLIP. Returns action_confidence and action_score (0-100, higher is better)."""
+
 import logging
 import cv2
 import numpy as np

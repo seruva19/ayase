@@ -1,3 +1,8 @@
+"""Variable Frame Rate (VFR) and temporal jitter detection via ffprobe.
+
+Analyzes frame timestamp consistency to detect VFR containers that may cause
+inconsistent motion dynamics. Reports max and average jitter in milliseconds."""
+
 import logging
 import subprocess
 import json

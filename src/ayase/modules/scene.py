@@ -1,3 +1,8 @@
+"""Scene cut and shot detection using PySceneDetect ContentDetector.
+
+Counts scene boundaries and flags videos with excessive shot counts.
+Useful for identifying multi-scene clips that should be split for training."""
+
 import logging
 from typing import List, Tuple
 

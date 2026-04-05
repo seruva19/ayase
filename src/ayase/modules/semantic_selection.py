@@ -1,3 +1,8 @@
+"""Greedy semantic diversity selection based on VLM-extracted style traits.
+
+Identifies a diverse subset by maximizing trait coverage and quality.
+Runs in post_process phase. Requires vlm_judge traits as input."""
+
 import logging
 import numpy as np
 from typing import List, Dict, Set

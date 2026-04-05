@@ -1,3 +1,8 @@
+"""Object detection using YOLOv8, YOLO-World, or GRiT with caption consistency checks.
+
+Detects objects across 8 sampled frames and compares results against the caption.
+Returns detection_score, count_score, and detection_diversity."""
+
 import logging
 import cv2
 import numpy as np

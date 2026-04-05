@@ -96,6 +96,7 @@ _SIZE_DB = {
     "depth-anything/Depth-Anything-V2-Small-hf": ("~100 MB", "~200 MB"),
     "intel-isl/MiDaS": ("~400 MB", "~400 MB"),
     "TIGER-Lab/VideoScore": ("~14 GB", "~14 GB"),
+    "TIGER-Lab/VideoScore2": ("~15 GB", "~16 GB"),
     "Qwen/Qwen2-VL-7B-Instruct": ("~15 GB", "~16 GB"),
     "google/vit-base-patch16-224": ("~350 MB", "~400 MB"),
     "facebook/dinov2-vitb14": ("~350 MB", "~400 MB"),
@@ -720,6 +721,41 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
                 )
             entries[key].modules.append(mod_name)
 
+        for decl in getattr(cls, "models", []) or []:
+            src_type = decl.get("type", "other")
+            model_id = decl.get("id", "")
+            if not model_id:
+                continue
+            source_prefix = {
+                "huggingface": "hf",
+                "pyiqa": "pyiqa",
+                "torch_hub": "hub",
+                "torchvision": "tv",
+                "clip": "clip",
+                "pip_package": "pip",
+                "local": "file",
+                "other": "other",
+            }.get(src_type, "other")
+            key = f"{source_prefix}:{model_id}"
+            if key not in entries:
+                url = decl.get("url")
+                if src_type == "huggingface" and "/" in model_id and not url:
+                    url = f"https://huggingface.co/{model_id}"
+                disk, vram = _SIZE_DB.get(model_id, (decl.get("size"), decl.get("vram")))
+                entries[key] = ModelEntry(
+                    name=model_id,
+                    source=src_type,
+                    url=url,
+                    install=decl.get("install"),
+                    size_estimate=disk,
+                    vram_estimate=vram,
+                    task=decl.get("task"),
+                    auto_download=decl.get("auto_download", True),
+                    notes=decl.get("notes"),
+                )
+            if mod_name not in entries[key].modules:
+                entries[key].modules.append(mod_name)
+
         # pyiqa
         for metric in _extract_pyiqa_metrics(source):
             key = f"pyiqa:{metric}"
@@ -986,6 +1022,10 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
     a("")
     a(f"**{total_models}** models · **{source_counts.get('huggingface', 0)}** HuggingFace "
       f"· **{source_counts.get('pyiqa', 0)}** pyiqa · **{len(source_counts)}** sources")
+    a("")
+    a("*License labels in this document cover model weights and runtime assets referenced by Ayase modules.*")
+    a("*They do not describe the license of Ayase source code or vendored third-party source trees.*")
+    a("*Resolution order: hardcoded source mappings, HuggingFace metadata when available, then parent-repo inheritance for weight files.*")
 
     # ── Charts (2-per-row) ───────────────────────────────────────────────
     chart_titles = {

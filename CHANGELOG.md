@@ -105,6 +105,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **videoscore2**: VideoScore2 generative video evaluation with visual quality, text-video alignment, and physical/common-sense consistency outputs
+- 3 new QualityMetrics fields for VideoScore2: `videoscore2_visual`, `videoscore2_alignment`, `videoscore2_physical`
+- **verse_bench**: native Ayase Verse-Bench aggregation over vendored inferencers, with dataset-level outputs stored in `DatasetStats` when a materialized benchmark dataset is provided
+- 3 new DatasetStats fields for Verse-Bench: `verse_bench_overall`, `verse_bench_metrics`, `verse_bench_breakdown`
+- `models` and `metric_info` class-level declarations on `PipelineModule` for explicit model/metadata documentation in `MODELS.md` and `METRICS.md`
+- Module-level docstrings added to 46 modules that were missing them
+- Module docstring requirement documented in AGENTS.md (Section 7)
+- Model/metric declaration rules documented in AGENTS.md (Section 8)
+
+### Changed
+
+- **verse_bench**: added missing runtime dependencies to the base install (`moviepy`, `pyloudnorm`, `python_speech_features`, `wget`) so `pip install ayase` includes the vendored benchmark inferencer requirements
+- `PipelineModule.get_metadata()` now returns `models` and `metric_info` fields
+- `MODELS.md` generator reads `cls.models` declarations in addition to regex scanning
+- `METRICS.md` generator merges `cls.metric_info` descriptions into auto-inferred output fields
+- Removed unused vendor files from `verse_bench`: `aesthetic/musiq/` training code, `aesthetic/manica_utils/process.py`
+
 ## [0.1.19] - 2026-03-28
 
 ### Added

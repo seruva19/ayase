@@ -1,3 +1,8 @@
+"""Temporal speed style classification (static, slow_motion, normal, timelapse).
+
+Classifies video motion style using Farneback optical flow magnitude statistics.
+Purely heuristic-based with no ML dependencies."""
+
 import logging
 import cv2
 import numpy as np

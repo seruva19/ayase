@@ -1,3 +1,8 @@
+"""Audio stream presence and quality validation via ffprobe/ffmpeg.
+
+Checks for audio stream existence, sample rate, bit rate, and silence.
+Emits audio tags for downstream modules. Requires ffprobe in PATH."""
+
 import logging
 import os
 import subprocess

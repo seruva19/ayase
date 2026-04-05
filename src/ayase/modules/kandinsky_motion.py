@@ -1,3 +1,8 @@
+"""Video/camera motion analysis using the Kandinsky VideoMAE-V2 motion predictor.
+
+Predicts camera_movement_score, object_movement_score, and dynamics_score.
+Flags static videos with low dynamics scores."""
+
 import logging
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule

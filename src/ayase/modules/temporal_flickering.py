@@ -1,3 +1,9 @@
+"""Temporal flickering detection via RAFT optical flow warping error with occlusion masking.
+
+Computes forward-backward flow consistency to detect occlusions, then measures
+MSE in non-occluded regions. Falls back to Farneback when RAFT unavailable.
+Returns warping_error."""
+
 import logging
 import cv2
 import numpy as np

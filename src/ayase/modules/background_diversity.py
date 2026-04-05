@@ -1,3 +1,8 @@
+"""Background complexity and stability analysis using rembg segmentation.
+
+Computes Shannon entropy of background HSV histograms to detect concept
+bleeding. Also measures M-PSNR for background stability across frames."""
+
 import logging
 import cv2
 import numpy as np

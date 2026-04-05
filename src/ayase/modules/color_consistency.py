@@ -1,3 +1,8 @@
+"""Color attribute verification between caption mentions and actual HSV color distribution.
+
+Parses color keywords from the caption and checks for their presence in the image.
+Returns color_score (0-100). Flags colors mentioned in caption but absent in content."""
+
 import logging
 import cv2
 import numpy as np

@@ -1,3 +1,9 @@
+"""Comprehensive no-reference technical quality assessment using classical CV methods.
+
+Computes blur (Laplacian variance), brightness, contrast, saturation, noise,
+artifacts, and resolution into a weighted composite technical_score (0-100).
+Also outputs gradient_detail."""
+
 import cv2
 import logging
 import numpy as np

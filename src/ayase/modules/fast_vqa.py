@@ -1,3 +1,8 @@
+"""FAST-VQA / FasterVQA deep learning video quality assessment.
+
+Uses DiViDeAddEvaluator with spatial fragment sampling from the FAST-VQA framework.
+Returns fast_vqa_score (0-100, higher = better). Supports 5 model variants."""
+
 import logging
 from pathlib import Path
 import urllib.request

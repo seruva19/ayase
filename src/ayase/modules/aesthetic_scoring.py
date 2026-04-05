@@ -1,3 +1,8 @@
+"""Aesthetic scoring using the LAION-Aesthetics V2 MLP on CLIP-ViT-L/14 features.
+
+Returns aesthetic_mlp_score on the original 1-10 scale. Scores below 4.5 are
+flagged as low aesthetic quality. Processes 8 uniformly sampled frames."""
+
 import logging
 import cv2
 import numpy as np

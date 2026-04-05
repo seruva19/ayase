@@ -1,3 +1,8 @@
+"""Watermark and AI-generated image detection using ResNet-50 or HuggingFace classifier.
+
+Two-tier detection: custom ResNet-50 weights for watermarks, or HuggingFace
+AI-image-detector as fallback. Returns watermark_probability or ai_generated_probability (0-1)."""
+
 import logging
 
 import cv2

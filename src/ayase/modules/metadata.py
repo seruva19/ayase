@@ -1,3 +1,8 @@
+"""Video/image metadata extraction and validation (resolution, FPS, duration, aspect ratio).
+
+Populates VideoMetadata or ImageMetadata on the sample. Validates against
+configurable thresholds for minimum resolution, FPS, and duration bounds."""
+
 import logging
 import cv2
 from pathlib import Path

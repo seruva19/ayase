@@ -1,3 +1,8 @@
+"""Advanced semantic verification and classification using Vision-Language Models (LLaVA).
+
+Three modes: verify (caption hallucination check), traits (style extraction),
+and presets (shot scale, mood, time-of-day classification). Falls back to heuristics without ML."""
+
 import logging
 import numpy as np
 import cv2
