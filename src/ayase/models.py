@@ -114,9 +114,11 @@ class QualityMetrics(BaseModel):
         "t2v_alignment": "alignment",
         "vqa_score_alignment": "alignment",
         "videoscore_alignment": "alignment",
+        "videoscore2_alignment": "alignment",
         "aigv_alignment": "alignment",
         "sd_score": "alignment",
         "videoscore_factual": "alignment",
+        "videoscore2_physical": "alignment",
         "vqa_a_score": "alignment",
         "vqa_t_score": "alignment",
         "video_text_score": "alignment",
@@ -209,6 +211,7 @@ class QualityMetrics(BaseModel):
         "spectral_entropy": "nr_quality",
         "spectral_rank": "nr_quality",
         "videoscore_visual": "nr_quality",
+        "videoscore2_visual": "nr_quality",
         # Perceptual similarity (full-reference)
         "vmaf": "fr_quality",
         "ms_ssim": "fr_quality",
@@ -742,6 +745,9 @@ class QualityMetrics(BaseModel):
     videoscore_dynamic: Optional[float] = None  # VideoScore dynamic degree
     videoscore_alignment: Optional[float] = None  # VideoScore text-video alignment
     videoscore_factual: Optional[float] = None  # VideoScore factual consistency
+    videoscore2_visual: Optional[float] = None  # VideoScore2 visual quality
+    videoscore2_alignment: Optional[float] = None  # VideoScore2 text-video alignment
+    videoscore2_physical: Optional[float] = None  # VideoScore2 physical/common-sense consistency
 
     # Face-specific IQA
     face_iqa_score: Optional[float] = None  # TOPIQ-face face quality (higher=better)
@@ -1186,5 +1192,10 @@ class DatasetStats(BaseModel):
 
     # Image LPIPS diversity (dataset-level)
     lpips_diversity: Optional[float] = None  # Average pairwise LPIPS across dataset (higher=more diverse)
+
+    # Verse-Bench benchmark (dataset-level)
+    verse_bench_overall: Optional[float] = None  # Official Verse-Bench final score
+    verse_bench_metrics: Optional[Dict[str, float]] = None  # Raw Verse-Bench component metrics
+    verse_bench_breakdown: Optional[Dict[str, float]] = None  # Verse-Bench subscores and overall
 
 

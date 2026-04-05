@@ -1,3 +1,8 @@
+"""Overexposure, underexposure, and low contrast detection via luminance histogram analysis.
+
+Checks pixel distribution in the grayscale channel for clipped shadows/highlights
+and insufficient dynamic range. No ML dependencies required."""
+
 import logging
 import cv2
 import numpy as np

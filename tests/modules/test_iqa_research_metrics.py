@@ -113,6 +113,13 @@ def test_videoscore_basics():
     _test_module_basics(VideoScoreModule, "videoscore")
 
 
+def test_videoscore2_basics():
+    from ayase.modules.videoscore2 import VideoScore2Module
+    from .conftest import _test_module_basics
+
+    _test_module_basics(VideoScore2Module, "videoscore2")
+
+
 def test_face_iqa_basics():
     from ayase.modules.face_iqa import FaceIQAModule
     from .conftest import _test_module_basics
@@ -146,6 +153,9 @@ def test_research_qualitymetrics_fields():
         "videoscore_dynamic",
         "videoscore_alignment",
         "videoscore_factual",
+        "videoscore2_visual",
+        "videoscore2_alignment",
+        "videoscore2_physical",
         "face_iqa_score",
     ]
     for field in fields:

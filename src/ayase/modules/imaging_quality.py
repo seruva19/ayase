@@ -1,3 +1,8 @@
+"""Technical imaging quality assessment: noise estimation, BRISQUE (optional), and FFT analysis.
+
+Computes Immerkaer noise sigma, edge density, and high-frequency energy ratio.
+Returns imaging_noise_score and imaging_artifacts_score (0-1, higher = cleaner)."""
+
 import logging
 import cv2
 import numpy as np

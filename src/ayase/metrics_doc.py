@@ -39,6 +39,7 @@ _IMPORT_TO_PIP = {
     "torchvision": "torchvision",
     "torchmetrics": "torchmetrics",
     "transformers": "transformers",
+    "qwen_vl_utils": "qwen-vl-utils",
     "clip": "clip (openai)",
     "open_clip": "open-clip-torch",
     "decord": "decord",
@@ -88,6 +89,7 @@ _VRAM_PATTERNS = {
     r"q-align|q_align": "~14 GB",
     r"pickscore": "~2.5 GB",
     r"hpsv3": "~16 GB",
+    r"videoscore2|VideoScore2": "~16 GB",
 }
 
 
@@ -122,7 +124,7 @@ def _get_group(name: str, input_type: str) -> str:
             "hdr_vqm", "cgvqm", "movie",
         ),
         "Video Generation": (
-            "videoscore", "video_reward", "aigv", "chronomagic",
+            "videoscore", "videoscore2", "video_reward", "aigv", "chronomagic",
             "t2v_comp", "video_type", "video_memor", "t2v_score",
         ),
         "Audio-Visual": ("av_sync", "audio_visual"),
@@ -205,7 +207,7 @@ def _detect_gpu(source: str) -> bool:
 
 
 def _detect_speed_tier(source: str, backends: List[str]) -> str:
-    if any(kw in source for kw in ("llava", "q_align", "Q-Align", "LLM", "CausalLM")):
+    if any(kw in source for kw in ("llava", "q_align", "Q-Align", "LLM", "CausalLM", "Vision2Seq")):
         return "slow"
     if any(b in backends for b in ("pyiqa", "transformers", "torchvision")):
         return "medium"
@@ -692,6 +694,16 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         meta["hf_models"] = _detect_hf_models(source)
         meta["vram"] = _estimate_vram(source)
         meta["paper"] = _detect_paper(cls)
+
+        declared_metric_info = getattr(cls, "metric_info", None) or {}
+        if declared_metric_info:
+            enriched = {}
+            for fname, desc in meta.get("output_fields", {}).items():
+                enriched[fname] = declared_metric_info.get(fname, desc)
+            for fname, desc in declared_metric_info.items():
+                if fname not in enriched:
+                    enriched[fname] = desc
+            meta["output_fields"] = enriched
 
         for b in meta["backends"]:
             all_backends[b] += 1

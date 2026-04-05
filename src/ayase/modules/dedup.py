@@ -1,3 +1,8 @@
+"""Perceptual duplicate detection using pHash (perceptual hashing) across the dataset.
+
+Computes a perceptual hash of the middle frame and flags exact hash matches.
+Cross-sample deduplication requires processing the full dataset."""
+
 import logging
 import cv2
 import numpy as np

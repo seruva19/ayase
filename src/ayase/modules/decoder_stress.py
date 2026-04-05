@@ -1,3 +1,8 @@
+"""Random-access decoder stress test for video seek table and bitstream integrity.
+
+Probes deterministic random frame positions via cv2 seek to verify the video
+can be decoded at arbitrary offsets. Detects corrupted seek tables and black frames."""
+
 import logging
 import cv2
 import random

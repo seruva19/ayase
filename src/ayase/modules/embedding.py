@@ -1,3 +1,8 @@
+"""X-CLIP video embedding computation for similarity search and downstream analysis.
+
+Extracts normalized video-level features via X-CLIP vision model with MIT
+(temporal attention). Stores L2-normalized embedding on sample.embedding."""
+
 import logging
 import cv2
 import numpy as np

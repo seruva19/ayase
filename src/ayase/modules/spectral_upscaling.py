@@ -1,3 +1,8 @@
+"""Fake HD / upscaled content detection via FFT high-frequency energy analysis.
+
+Real high-resolution content has significant energy in high frequencies,
+while upscaled content shows a sharp spectral drop-off. Warns on low HF energy ratios."""
+
 import logging
 import cv2
 import numpy as np

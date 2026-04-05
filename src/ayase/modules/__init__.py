@@ -75,6 +75,7 @@ _IMPORTS = [
     ("PerceptualFRModule", ".perceptual_fr"),
     # --- SOTA video quality (CVPR/NeurIPS/EMNLP 2024-2025) ---
     ("VideoScoreModule", ".videoscore"),
+    ("VideoScore2Module", ".videoscore2"),
     ("VideoRewardModule", ".video_reward"),
     ("RQVQAModule", ".rqvqa"),
     ("AIGVAssessorModule", ".aigv_assessor"),
@@ -145,6 +146,7 @@ _IMPORTS = [
     ("CreativityModule", ".creativity"),
     ("ChronoMagicModule", ".chronomagic"),
     ("T2VCompBenchModule", ".t2v_compbench"),
+    ("VerseBenchModule", ".verse_bench"),
     # --- Image LPIPS & Concept Presence ---
     ("ImageLPIPSModule", ".image_lpips"),
     ("ConceptPresenceModule", ".concept_presence"),

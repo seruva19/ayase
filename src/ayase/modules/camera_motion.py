@@ -1,3 +1,8 @@
+"""Camera motion stability analysis via ORB feature matching and homography estimation.
+
+Separates global camera motion from local scene motion to detect jitter/shake.
+Returns camera_motion_score (0-1, higher = more stable). Inspired by VMBench."""
+
 import logging
 import cv2
 import numpy as np

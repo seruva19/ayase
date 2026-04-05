@@ -1,3 +1,8 @@
+"""Motion smoothness via RIFE video frame interpolation reconstruction error (VBench).
+
+Interpolates middle frames from neighbors and measures L1 error. Falls back to
+Farneback flow-based warping proxy when RIFE is unavailable. Returns motion_smoothness (0-1)."""
+
 import logging
 import os
 import cv2

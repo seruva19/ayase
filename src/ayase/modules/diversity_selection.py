@@ -1,3 +1,8 @@
+"""Cross-sample redundancy detection using embedding cosine similarity.
+
+Identifies semantically redundant samples by comparing normalized embeddings.
+Keeps the highest-quality sample in each similarity cluster. Runs in post_process phase."""
+
 import logging
 import numpy as np
 from typing import List

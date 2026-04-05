@@ -1,3 +1,8 @@
+"""Background consistency via CLIP pairwise frame similarity (VBench-style).
+
+Computes all-pairs cosine similarity across uniformly sampled frames.
+Returns background_consistency (0-1, higher = more consistent). Warns below 0.5."""
+
 import logging
 import cv2
 import numpy as np

@@ -1,3 +1,8 @@
+"""RAFT optical flow magnitude analysis across all consecutive frame pairs.
+
+Uses RAFT-Large or RAFT-Small from torchvision to compute mean flow score.
+Higher flow_score indicates more motion. Low scores flag static content."""
+
 import logging
 import numpy as np
 import cv2

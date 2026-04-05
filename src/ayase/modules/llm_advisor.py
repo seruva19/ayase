@@ -1,3 +1,8 @@
+"""Rule-based quality advisor that generates actionable recommendations from metric values.
+
+Analyzes blur, brightness, contrast, noise, aesthetics, CLIP alignment, motion,
+NSFW, watermarks, OCR overlays, and VQA scores. No ML model used despite the name."""
+
 import logging
 from typing import List, Optional
 

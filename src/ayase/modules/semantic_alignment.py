@@ -1,3 +1,8 @@
+"""Text-video semantic alignment scoring using CLIP cosine similarity.
+
+Averages CLIP image-text similarity across uniformly sampled frames.
+Returns clip_score (typically 0-0.4, higher = better alignment). Warns below 0.2."""
+
 import logging
 import cv2
 import numpy as np

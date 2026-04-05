@@ -1,3 +1,8 @@
+"""Zero-shot scene context tagging using CLIP with predefined label candidates.
+
+Classifies images into scene categories (outdoors, nature, urban, etc.) via
+CLIP zero-shot prediction. Returns top-3 tags with confidence scores."""
+
 import logging
 import cv2
 import numpy as np

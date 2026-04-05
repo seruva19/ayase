@@ -82,7 +82,63 @@ Run relevant **light tests** before considering any change complete. By default,
 
 ### 6. Module Metadata Introspection
 
-`PipelineModule.get_metadata()` returns `{name, description, input_type, output_fields, default_config}` by introspecting the module's own source. Used by `ayase modules docs` CLI command to generate METRICS.md. No manual metadata needed — everything is inferred from existing code.
+`PipelineModule.get_metadata()` returns `{name, description, input_type, output_fields, default_config, models, metric_info}` by introspecting the module's own source. Used by `ayase modules docs` CLI command to generate METRICS.md and MODELS.md. No manual metadata needed — everything is inferred from existing code.
+
+### 7. Module Docstrings
+
+Every module file in `src/ayase/modules/` **must** have a module-level docstring (triple-quoted string at the top of the file, before imports). The docstring should:
+
+- Start with a concise one-line summary of what the module measures
+- Optionally include additional lines with: method details, score direction (higher/lower = better), model used, or special requirements
+- Be used by `ayase modules docs` for auto-generating METRICS.md
+
+Example:
+
+```python
+"""Aesthetic quality estimation using Aesthetic Predictor V2.5 (SigLIP-based).
+
+Scores images/video frames on a 0-100 normalized scale. Higher scores indicate
+better perceptual aesthetic quality. Processes up to 5 uniformly sampled frames.
+"""
+
+import logging
+...
+```
+
+### 8. Model and Metric Declarations
+
+Modules that use models or produce metrics not discoverable by the standard regex scanner (vendored code, env-var-based paths, non-standard loading) **must** declare them via class-level `models` and `metric_info` attributes. These are picked up by `ayase modules docs` and `ayase modules models` for auto-generated documentation.
+
+**`models`** — list of dicts, each with at minimum `id` and `type`:
+
+```python
+models = [
+    {"id": "google/siglip-so400m-patch14-384", "type": "huggingface", "task": "SigLIP vision encoder"},
+    {"id": "checkpoint.pt", "type": "local", "task": "MANIQA quality assessment"},
+    {"id": "hear21passt", "type": "pip_package", "install": "pip install hear21passt", "task": "PaSST audio model"},
+]
+```
+
+Valid `type` values: `huggingface`, `local`, `pyiqa`, `torch_hub`, `torchvision`, `clip`, `pip_package`, `other`
+
+Optional fields per entry: `url`, `install`, `task`, `size`, `vram`, `auto_download`, `notes`
+
+**`metric_info`** — dict mapping `QualityMetrics` / `DatasetStats` field names to human descriptions:
+
+```python
+metric_info = {
+    "verse_bench_overall": "Weighted aggregate score (0-1, higher=better)",
+    "verse_bench_metrics": "Raw 12-component metric dict",
+}
+```
+
+**When to declare:** Only when the auto-generator cannot discover models/metrics via regex scanning. Most modules using standard `from_pretrained()` or `pyiqa.create_metric()` patterns do NOT need declarations. Required for:
+- Vendored inferencers (e.g., `verse_bench`)
+- Models loaded via env vars or config-resolved paths
+- Models loaded inside vendored/third-party submodules
+- Dataset-level metrics written via `pipeline.add_dataset_metric()`
+
+**Backward compatibility:** Both default to empty (`[]` / `{}`). Existing modules keep working without changes.
 
 ## Code Style
 

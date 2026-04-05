@@ -1,3 +1,8 @@
+"""Cumulative Probability of Blur Detection (CPBD) for perceptual sharpness assessment.
+
+Uses the cpbd library with a Laplacian-variance heuristic fallback.
+Returns cpbd_score (0-1, higher = sharper). Warns on the blurriest frame."""
+
 import logging
 import cv2
 import numpy as np

@@ -1,3 +1,8 @@
+"""Text and watermark overlay detection using PaddleOCR or Tesseract OCR.
+
+Measures the area ratio of detected text regions relative to the frame.
+Returns ocr_area_ratio. Warns when text coverage exceeds the configured threshold."""
+
 import logging
 import cv2
 import numpy as np
