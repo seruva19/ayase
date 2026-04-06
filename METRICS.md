@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.25** · Generated 2026-04-06 00:35 · **326 modules** · **357 metrics**
+> **Version 0.1.28** · Generated 2026-04-06 15:17 · **328 modules** · **362 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -8,7 +8,7 @@
 
 ## Summary
 
-**326** modules · **357** output fields · **357** metrics · **112** tiered · **110** GPU · **13** categories
+**328** modules · **362** output fields · **362** metrics · **113** tiered · **111** GPU · **13** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -27,7 +27,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-97-metrics) (97) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-31-metrics) (31) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-19-metrics) (19) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-15-metrics) (15) · [Face & Identity](#face--identity-17-metrics) (17) · [Scene & Content](#scene--content-16-metrics) (16) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Utility & Validation](#utility--validation-48-modules) (48)
+[No-Reference Quality](#no-reference-quality-97-metrics) (97) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-31-metrics) (31) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-19-metrics) (19) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-20-metrics) (20) · [Face & Identity](#face--identity-17-metrics) (17) · [Scene & Content](#scene--content-16-metrics) (16) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Utility & Validation](#utility--validation-49-modules) (49)
 
 ---
 
@@ -2754,7 +2754,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 
-## Audio Quality (15 metrics)
+## Audio Quality (20 metrics)
 
 ### `audiobox_enjoyment` [↑](#categories)
 > Audiobox content enjoyment
@@ -2888,6 +2888,66 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, soundfile
 - **Test**: ✅⏳
 - **Config**: `target_sr=16000`, `warning_threshold=0.0`
+
+### `song_eval_clarity` [↑](#categories)
+> SongEval clarity of song structure (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: songeval
+- **Packages**: librosa, muq, safetensors, torch
+- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/song_eval/model.safetensors" target="_blank">HF</a>
+- **Test**: ✅⏳
+- **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
+
+### `song_eval_coherence` [↑](#categories)
+> SongEval overall coherence (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: songeval
+- **Packages**: librosa, muq, safetensors, torch
+- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/song_eval/model.safetensors" target="_blank">HF</a>
+- **Test**: ✅⏳
+- **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
+
+### `song_eval_memorability` [↑](#categories)
+> SongEval memorability (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: songeval
+- **Packages**: librosa, muq, safetensors, torch
+- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/song_eval/model.safetensors" target="_blank">HF</a>
+- **Test**: ✅⏳
+- **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
+
+### `song_eval_musicality` [↑](#categories)
+> SongEval overall musicality (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: songeval
+- **Packages**: librosa, muq, safetensors, torch
+- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/song_eval/model.safetensors" target="_blank">HF</a>
+- **Test**: ✅⏳
+- **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
+
+### `song_eval_naturalness` [↑](#categories)
+> SongEval vocal breathing/phrasing naturalness (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: songeval
+- **Packages**: librosa, muq, safetensors, torch
+- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/song_eval/model.safetensors" target="_blank">HF</a>
+- **Test**: ✅⏳
+- **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
 ### `utmos_score` [↑](#categories)
 > UTMOS predicted MOS (1-5, higher=better) · ↑ higher=better · 1-5
@@ -3831,7 +3891,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Utility & Validation (48 modules)
+## Utility & Validation (49 modules)
 
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
@@ -3848,6 +3908,7 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 - **[`diversity`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast
 - **[`diversity_selection`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast
 - **[`embedding`](src/ayase/modules/embedding.py)** — Calculates X-CLIP embeddings for similarity search · Input: img/vid · Speed: ⏱️ medium · GPU
+- **[`example`](example_plugin.py)** — Example plugin that logs sample paths (template for custom plugins) · Input: img/vid · Speed: ⚡ fast
 - **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms · Input: img/vid · Speed: ⚡ fast
 - **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance for audio generation (batch metric, 2019) · Input: audio · Speed: ⚡ fast
 - **[`fgd`](src/ayase/modules/fgd.py)** — Frechet Gesture Distance for motion generation (batch metric, 2020) · Input: vid · Speed: ⚡ fast

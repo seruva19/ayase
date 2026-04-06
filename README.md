@@ -4,7 +4,7 @@ Modular media quality metrics toolkit for video, image, and audio datasets.
 
 ## Overview
 
-- **327 modules**, **357 quality metrics** across visual, temporal, audio, perceptual, and safety categories
+- **328 modules**, **362 quality metrics** across visual, temporal, audio, perceptual, and safety categories
 - Modular pipeline - modules compute raw values, downstream apps decide what to do with them
 - CLI and Python API with profile-based configuration
 - See [METRICS.md](METRICS.md) for the full reference, [MODELS.md](MODELS.md) for all pretrained weights
