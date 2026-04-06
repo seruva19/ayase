@@ -105,12 +105,12 @@ class _StubModule(PipelineModule):
 class TestMetricCount:
     """Verify the metric count claimed in the overview."""
 
-    def test_quality_metrics_has_357_fields(self):
+    def test_quality_metrics_has_362_fields(self):
         """README: '251 quality metrics across visual, temporal, audio, …'"""
         qm = QualityMetrics()
         # Pydantic model_fields gives declared fields (excludes _FIELD_GROUPS etc.)
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 357, f"Expected 357, got {field_count}"
+        assert field_count == 362, f"Expected 362, got {field_count}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -144,7 +144,7 @@ README_METRICS = sorted(QualityMetrics.model_fields.keys())
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 357
+        assert len(README_METRICS) == 362
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):

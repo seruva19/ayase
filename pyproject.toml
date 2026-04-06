@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.27"
+version = "0.1.28"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -78,6 +78,7 @@ dependencies = [
     "ultralytics>=8.0.0,<9.0",
     "invisible-watermark>=0.2.0",
     "librosa>=0.10.0",
+    "muq>=0.1.0",
     "moviepy>=1.0.3,<2.0",
     "pyloudnorm>=0.1.1,<1.0",
     "python_speech_features>=0.6,<1.0",
