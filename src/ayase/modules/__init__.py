@@ -122,6 +122,7 @@ _IMPORTS = [
     ("AudioPESQModule", ".audio_pesq"),
     ("DNSMOSModule", ".dnsmos"),
     ("BeatAlignmentModule", ".beat_alignment"),
+    ("SongEvalModule", ".song_eval"),
     # --- HDR / codec ---
     ("HDRMetadataModule", ".hdr_metadata"),
     ("HDRChipQAModule", ".hdr_chipqa"),

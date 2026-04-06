@@ -465,6 +465,11 @@ class QualityMetrics(BaseModel):
         # Audio aesthetics
         "audiobox_production": "audio",
         "audiobox_enjoyment": "audio",
+        "song_eval_coherence": "audio",
+        "song_eval_musicality": "audio",
+        "song_eval_memorability": "audio",
+        "song_eval_clarity": "audio",
+        "song_eval_naturalness": "audio",
         # Talking head / lip sync
         "thqa_score": "nr_quality",
         "lse_d": "temporal",
@@ -1024,6 +1029,11 @@ class QualityMetrics(BaseModel):
     # Audio aesthetics
     audiobox_production: Optional[float] = None  # Audiobox production quality
     audiobox_enjoyment: Optional[float] = None  # Audiobox content enjoyment
+    song_eval_coherence: Optional[float] = None  # SongEval overall coherence (1-5, higher=better)
+    song_eval_musicality: Optional[float] = None  # SongEval overall musicality (1-5, higher=better)
+    song_eval_memorability: Optional[float] = None  # SongEval memorability (1-5, higher=better)
+    song_eval_clarity: Optional[float] = None  # SongEval clarity of song structure (1-5, higher=better)
+    song_eval_naturalness: Optional[float] = None  # SongEval vocal breathing/phrasing naturalness (1-5, higher=better)
 
     # Talking head / lip sync
     thqa_score: Optional[float] = None  # THQA talking head quality (higher=better)
