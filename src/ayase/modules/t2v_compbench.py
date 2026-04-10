@@ -12,7 +12,6 @@ Seven compositional sub-metrics for text-to-video generation evaluation:
 Backend tiers:
   1. **YOLO+Depth+CLIP** — YOLO-World detection + Depth Anything V2 + CLIP verification
   2. **CLIP-only** — CLIP text-image matching (no detection, skip spatial/numeracy)
-  3. **Heuristic** — Text parsing + basic spatial analysis
 
 Video-only (requires caption).
 """
@@ -63,7 +62,7 @@ ACTION_VERBS = [
 
 class T2VCompBenchModule(PipelineModule):
     name = "t2v_compbench"
-    description = "T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP / heuristic)"
+    description = "T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP)"
     default_config = {
         "subsample": 8,
         "enable_attribute": True,
@@ -77,7 +76,8 @@ class T2VCompBenchModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
         self._yolo = None
         self._depth = None
         self._clip_model = None
@@ -85,6 +85,9 @@ class T2VCompBenchModule(PipelineModule):
         self._device = "cpu"
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: YOLO-World + Depth Anything + CLIP
         try:
             import torch
@@ -98,13 +101,14 @@ class T2VCompBenchModule(PipelineModule):
 
         if yolo_ok and clip_ok:
             self._backend = "yolo_depth" if depth_ok else "yolo_clip"
+            self._ml_available = True
             logger.info("T2VCompBench using YOLO+CLIP%s backend", "+Depth" if depth_ok else "")
         elif clip_ok:
             self._backend = "clip"
+            self._ml_available = True
             logger.info("T2VCompBench using CLIP-only backend")
         else:
-            self._backend = "heuristic"
-            logger.info("T2VCompBench using heuristic backend")
+            logger.warning("T2VCompBench: no ML backend available")
 
     def _try_load_yolo(self) -> bool:
         try:
@@ -145,6 +149,8 @@ class T2VCompBenchModule(PipelineModule):
             return False
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
         if not sample.is_video:
             return sample
         if not sample.caption or not sample.caption.text:
@@ -161,12 +167,10 @@ class T2VCompBenchModule(PipelineModule):
 
             scores = {}
 
-            if self._backend == "yolo_depth":
+            if self._backend in ("yolo_depth", "yolo_clip"):
                 scores = self._compute_yolo_depth(frames, caption)
             elif self._backend == "clip":
                 scores = self._compute_clip_only(frames, caption)
-            else:
-                scores = self._compute_heuristic(frames, caption)
 
             # Write scores to quality metrics
             qm = sample.quality_metrics
@@ -559,74 +563,3 @@ class T2VCompBenchModule(PipelineModule):
 
         return scores
 
-    # ------------------------------------------------------------------ #
-    # Tier 3: Heuristic                                                    #
-    # ------------------------------------------------------------------ #
-
-    def _compute_heuristic(self, frames: list, caption: str) -> Dict[str, float]:
-        scores = {}
-        caption_lower = caption.lower()
-
-        # Attribute: check if descriptive adjectives are present
-        attrs = self._parse_attributes(caption)
-        scores["attribute"] = min(1.0, len(attrs) / 3.0) if attrs else 0.5
-
-        # Relations: check if relation words are present
-        rels = self._parse_relations(caption)
-        scores["object_rel"] = min(1.0, len(rels) / 2.0) if rels else 0.5
-
-        # Action: estimate motion magnitude per frame
-        actions = self._parse_actions(caption)
-        if actions:
-            grays = [cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) for f in frames]
-            motion_mags = []
-            for i in range(len(grays) - 1):
-                diff = np.abs(grays[i + 1].astype(float) - grays[i].astype(float)).mean()
-                motion_mags.append(diff)
-            avg_motion = float(np.mean(motion_mags)) if motion_mags else 0
-            # Actions imply motion — higher motion = better
-            scores["action"] = min(avg_motion / 20.0, 1.0)
-        else:
-            scores["action"] = 0.5
-
-        # Spatial: basic edge/region analysis
-        spatials = self._parse_spatial(caption)
-        scores["spatial"] = 0.5
-
-        # Numeracy: edge detection for distinct objects
-        counts = self._parse_count(caption)
-        if counts:
-            # Count contours as proxy for object count
-            gray = cv2.cvtColor(frames[len(frames) // 2], cv2.COLOR_BGR2GRAY)
-            edges = cv2.Canny(gray, 50, 150)
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            # Filter small contours
-            h, w = gray.shape
-            min_area = h * w * 0.01
-            large_contours = [c for c in contours if cv2.contourArea(c) > min_area]
-            detected_count = len(large_contours)
-
-            count_scores = []
-            for expected_num, _ in counts:
-                if expected_num == 0:
-                    count_scores.append(1.0 if detected_count == 0 else 0.0)
-                elif expected_num > 0:
-                    count_scores.append(max(0.0, 1.0 - abs(detected_count - expected_num) / (expected_num + 1)))
-            scores["numeracy"] = float(np.mean(count_scores)) if count_scores else 0.5
-        else:
-            scores["numeracy"] = 0.5
-
-        # Scene: temporal consistency of frames
-        if len(frames) >= 3:
-            grays = [cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) for f in frames]
-            hist_corrs = []
-            for i in range(len(grays) - 1):
-                h1 = cv2.calcHist([grays[i]], [0], None, [64], [0, 256])
-                h2 = cv2.calcHist([grays[i + 1]], [0], None, [64], [0, 256])
-                corr = cv2.compareHist(h1, h2, cv2.HISTCMP_CORREL)
-                hist_corrs.append(max(corr, 0.0))
-            scores["scene"] = float(np.mean(hist_corrs))
-        else:
-            scores["scene"] = 0.5
-
-        return scores

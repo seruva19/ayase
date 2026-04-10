@@ -98,9 +98,8 @@ class I2VSimilarityModule(PipelineModule):
         if not (self._clip_available or self._dino_available or self._lpips_available):
             logger.warning("No I2V sub-metrics available. Module effectively disabled.")
 
-    # Original: https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt
     _CLIP_URLS = {
-        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/ViT-B-32.pt",
+        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/ViT-B-32.safetensors",
     }
 
     def _init_clip(self) -> None:
@@ -109,12 +108,12 @@ class I2VSimilarityModule(PipelineModule):
             from ayase.config import download_model_file
 
             models_dir = self.config.get("models_dir", "models")
-            local_clip = Path(str(models_dir)) / "open_clip" / f"{self.clip_model_name}.pt"
+            local_clip = Path(str(models_dir)) / "open_clip" / f"{self.clip_model_name}.safetensors"
 
             # Auto-download if missing
             if not local_clip.exists() and self.clip_model_name in self._CLIP_URLS:
                 download_model_file(
-                    f"open_clip/{self.clip_model_name}.pt",
+                    f"open_clip/{self.clip_model_name}.safetensors",
                     self._CLIP_URLS[self.clip_model_name],
                     models_dir,
                 )

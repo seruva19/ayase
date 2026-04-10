@@ -4,6 +4,8 @@ Dataset-level distribution metric via pyiqa. Compares feature
 distributions at multiple scales using sliced Wasserstein distance.
 Lower score indicates more similar distributions.
 
+Backend: **pyiqa** ``msswd`` metric.
+
 msswd_score — LOWER = better (closer distributions)
 """
 
@@ -34,25 +36,24 @@ class MSSWDModule(BatchMetricModule):
         self.num_projections = self.config.get("num_projections", 128)
         self.feature_dim = self.config.get("feature_dim", 64)
         self._model = None
-        self._backend = "heuristic"
+        self._ml_available = False
 
     def setup(self) -> None:
-        # Tier 1: Try pyiqa MSSWD
+        if self.test_mode:
+            return
         try:
             import pyiqa
             self._model = pyiqa.create_metric("msswd", device="cpu")
-            self._backend = "pyiqa"
+            self._ml_available = True
             logger.info("MSSWD (pyiqa) initialised")
-            return
-        except (ImportError, Exception):
-            pass
-
-        # Tier 2: Heuristic fallback
-        self._backend = "heuristic"
-        logger.info("MSSWD (heuristic) initialised — install pyiqa for full model")
+        except (ImportError, Exception) as e:
+            logger.warning("MSSWD: pyiqa not available: %s", e)
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract multi-scale spatial features from a sample."""
+        if not self._ml_available:
+            return None
+
         if sample.is_video:
             cap = cv2.VideoCapture(str(sample.path))
             try:

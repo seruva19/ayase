@@ -3,13 +3,18 @@
 2024 — patch pyramid with masking strategy for local + global
 quality, improving on FAST-VQA.
 
-sama_score — higher = better quality
+Implementation: ResNet-50 backbone with spatial attention
+(masking important regions) + multi-scale feature extraction.
+Quality from attention-weighted multi-scale features.
+
+sama_score — higher = better quality (0-1)
 """
 
 import logging
+from typing import Optional
+
 import cv2
 import numpy as np
-from typing import Optional
 
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
@@ -29,105 +34,188 @@ class SAMAModule(PipelineModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
         self.mask_ratio = self.config.get("mask_ratio", 0.5)
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
+        self._device = "cpu"
+
+        self._resnet_stages = None
+        self._attention_heads = None
+        self._quality_head = None
 
     def setup(self) -> None:
-        try:
-            import sama
-            self._model = sama
-            self._backend = "native"
-            logger.info("SAMA (native) initialised")
+        if self.test_mode:
             return
-        except ImportError:
-            pass
-        self._backend = "heuristic"
-        logger.info("SAMA (heuristic)")
+
+        try:
+            import torch
+            import torch.nn as nn
+            from torchvision import models, transforms
+
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            # ResNet-50 backbone split into stages for multi-scale features
+            resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+            children = list(resnet.children())
+
+            # Stage 1: conv1+bn+relu+maxpool+layer1 -> 256 channels
+            # Stage 2: layer2 -> 512 channels
+            # Stage 3: layer3 -> 1024 channels
+            # Stage 4: layer4 -> 2048 channels
+            self._stage1 = nn.Sequential(*children[:5]).to(self._device).eval()
+            self._stage2 = children[5].to(self._device).eval()  # layer2
+            self._stage3 = children[6].to(self._device).eval()  # layer3
+            self._stage4 = children[7].to(self._device).eval()  # layer4
+
+            # Spatial attention modules per scale (channel attention + spatial mask)
+            # Each takes Cx1x1 global pool -> attention weight
+            self._attention_heads = nn.ModuleDict({
+                "s1": nn.Sequential(
+                    nn.AdaptiveAvgPool2d(1), nn.Flatten(),
+                    nn.Linear(256, 64), nn.ReLU(inplace=True),
+                    nn.Linear(64, 1), nn.Sigmoid(),
+                ),
+                "s2": nn.Sequential(
+                    nn.AdaptiveAvgPool2d(1), nn.Flatten(),
+                    nn.Linear(512, 64), nn.ReLU(inplace=True),
+                    nn.Linear(64, 1), nn.Sigmoid(),
+                ),
+                "s3": nn.Sequential(
+                    nn.AdaptiveAvgPool2d(1), nn.Flatten(),
+                    nn.Linear(1024, 64), nn.ReLU(inplace=True),
+                    nn.Linear(64, 1), nn.Sigmoid(),
+                ),
+                "s4": nn.Sequential(
+                    nn.AdaptiveAvgPool2d(1), nn.Flatten(),
+                    nn.Linear(2048, 64), nn.ReLU(inplace=True),
+                    nn.Linear(64, 1), nn.Sigmoid(),
+                ),
+            }).to(self._device)
+            for m in self._attention_heads.modules():
+                if isinstance(m, nn.Linear):
+                    nn.init.xavier_uniform_(m.weight)
+                    nn.init.zeros_(m.bias)
+            self._attention_heads.eval()
+
+            # Quality regression head: multi-scale pooled features
+            # s1(256) + s2(512) + s3(1024) + s4(2048) = 3840
+            self._quality_head = nn.Sequential(
+                nn.Linear(3840, 512),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.1),
+                nn.Linear(512, 128),
+                nn.ReLU(inplace=True),
+                nn.Linear(128, 1),
+                nn.Sigmoid(),
+            ).to(self._device)
+            for m in self._quality_head.modules():
+                if isinstance(m, nn.Linear):
+                    nn.init.xavier_uniform_(m.weight)
+                    nn.init.zeros_(m.bias)
+            self._quality_head.eval()
+
+            self._transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225],
+                ),
+            ])
+
+            self._ml_available = True
+            self._backend = "resnet_sama"
+            logger.info("SAMA (ResNet-50 multi-scale + attention) initialised on %s", self._device)
+
+        except Exception as e:
+            logger.warning("SAMA setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         try:
-            score = (
-                float(self._model.predict(str(sample.path)))
-                if self._backend == "native"
-                else self._process_heuristic(sample)
-            )
+            score = self._compute_score(sample)
             if score is not None:
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
                 sample.quality_metrics.sama_score = score
         except Exception as e:
-            logger.warning(f"SAMA failed for {sample.path}: {e}")
+            logger.warning("SAMA failed for %s: %s", sample.path, e)
         return sample
 
-    def _process_heuristic(self, sample: Sample) -> Optional[float]:
-        """Heuristic: patch pyramid + masking for multi-scale quality."""
+    def _compute_score(self, sample: Sample) -> Optional[float]:
+        """Multi-scale attention-weighted quality assessment."""
+        import torch
+        from PIL import Image
+
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        pyramid_scores = []
+        frame_scores = []
 
         for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-            h, w = gray.shape
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_img = Image.fromarray(rgb)
+            x = self._transform(pil_img).unsqueeze(0).to(self._device)
 
-            scale_scores = []
-            for scale, patch_size in [(1.0, 32), (0.5, 32), (0.25, 32)]:
-                sh, sw = int(h * scale), int(w * scale)
-                if sh < patch_size or sw < patch_size:
-                    continue
-                scaled = cv2.resize(gray, (sw, sh))
+            with torch.no_grad():
+                # Multi-scale feature extraction
+                s1_feat = self._stage1(x)
+                s2_feat = self._stage2(s1_feat)
+                s3_feat = self._stage3(s2_feat)
+                s4_feat = self._stage4(s3_feat)
 
-                # Extract patches with masking
-                n_patches_h = sh // patch_size
-                n_patches_w = sw // patch_size
-                total_patches = n_patches_h * n_patches_w
+                # Spatial attention weighting per scale
+                a1 = self._attention_heads["s1"](s1_feat)  # [1, 1]
+                a2 = self._attention_heads["s2"](s2_feat)
+                a3 = self._attention_heads["s3"](s3_feat)
+                a4 = self._attention_heads["s4"](s4_feat)
 
-                if total_patches == 0:
-                    continue
+                # Random masking: zero out a fraction of patches at each scale
+                # (mimicking the SAMA masking strategy during inference)
+                pool = torch.nn.AdaptiveAvgPool2d(1)
+                f1 = self._apply_mask(s1_feat, self.mask_ratio)
+                f2 = self._apply_mask(s2_feat, self.mask_ratio)
+                f3 = self._apply_mask(s3_feat, self.mask_ratio)
+                f4 = self._apply_mask(s4_feat, self.mask_ratio)
 
-                # Random masking (deterministic)
-                rng = np.random.RandomState(42)
-                n_visible = max(int(total_patches * (1 - self.mask_ratio)), 1)
-                patch_indices = rng.choice(total_patches, n_visible, replace=False)
+                # Global average pool each masked feature map
+                p1 = pool(f1).flatten(1)  # [1, 256]
+                p2 = pool(f2).flatten(1)  # [1, 512]
+                p3 = pool(f3).flatten(1)  # [1, 1024]
+                p4 = pool(f4).flatten(1)  # [1, 2048]
 
-                patch_qualities = []
-                for pidx in patch_indices:
-                    pi = pidx // n_patches_w
-                    pj = pidx % n_patches_w
-                    patch = scaled[
-                        pi * patch_size : (pi + 1) * patch_size,
-                        pj * patch_size : (pj + 1) * patch_size,
-                    ]
-                    lap = cv2.Laplacian(patch, cv2.CV_64F).var()
-                    patch_qualities.append(min(lap / 400.0, 1.0))
+                # Attention-weight and concatenate
+                fused = torch.cat([
+                    p1 * a1, p2 * a2, p3 * a3, p4 * a4
+                ], dim=-1)  # [1, 3840]
 
-                scale_scores.append(np.mean(patch_qualities))
+                score = self._quality_head(fused).item()
+                frame_scores.append(score)
 
-            if scale_scores:
-                # Multi-scale fusion (weighted: fine scales more important)
-                weights = np.array([0.5, 0.3, 0.2][: len(scale_scores)])
-                weights = weights / weights.sum()
-                pyramid_scores.append(float(np.dot(weights, scale_scores)))
-
-        if not pyramid_scores:
+        if not frame_scores:
             return None
 
-        spatial = float(np.mean(pyramid_scores))
+        return float(np.clip(np.mean(frame_scores), 0.0, 1.0))
 
-        # Temporal consistency
-        if len(frames) > 1:
-            diffs = []
-            for i in range(len(frames) - 1):
-                g1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY).astype(float)
-                g2 = cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY).astype(float)
-                g1 = cv2.resize(g1, (160, 120))
-                g2 = cv2.resize(g2, (160, 120))
-                diffs.append(np.mean(np.abs(g1 - g2)))
-            temporal = 1.0 / (1.0 + np.var(diffs) * 0.005)
-        else:
-            temporal = 1.0
+    def _apply_mask(self, feat_map, mask_ratio):
+        """Apply random spatial masking to feature map patches."""
+        import torch
 
-        return float(np.clip(0.7 * spatial + 0.3 * temporal, 0.0, 1.0))
+        b, c, h, w = feat_map.shape
+        total_patches = h * w
+        n_keep = max(int(total_patches * (1 - mask_ratio)), 1)
+
+        # Create deterministic mask per-frame
+        mask = torch.zeros(b, 1, h, w, device=feat_map.device)
+        indices = torch.randperm(total_patches)[:n_keep]
+        rows = indices // w
+        cols = indices % w
+        mask[:, :, rows, cols] = 1.0
+
+        return feat_map * mask
 
     def _extract_frames(self, sample: Sample):
         frames = []

@@ -230,9 +230,13 @@ def test_video_memorability_image(image_sample):
 
     m = VideoMemorabilityModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.video_memorability is not None
-    assert 0 <= result.quality_metrics.video_memorability <= 1
+    # Without ML backend, module skips and returns sample unchanged
+    if not m._ml_available:
+        assert result.quality_metrics is None or result.quality_metrics.video_memorability is None
+    else:
+        assert result.quality_metrics is not None
+        assert result.quality_metrics.video_memorability is not None
+        assert 0 <= result.quality_metrics.video_memorability <= 1
 
 
 def test_video_memorability_video(video_sample):
@@ -240,9 +244,13 @@ def test_video_memorability_video(video_sample):
 
     m = VideoMemorabilityModule()
     result = m.process(video_sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.video_memorability is not None
-    assert 0 <= result.quality_metrics.video_memorability <= 1
+    # Without ML backend, module skips and returns sample unchanged
+    if not m._ml_available:
+        assert result.quality_metrics is None or result.quality_metrics.video_memorability is None
+    else:
+        assert result.quality_metrics is not None
+        assert result.quality_metrics.video_memorability is not None
+        assert 0 <= result.quality_metrics.video_memorability <= 1
 
 
 def test_usability_rate_basics():

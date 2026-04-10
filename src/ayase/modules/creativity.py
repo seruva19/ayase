@@ -5,7 +5,6 @@ Assesses artistic novelty and creative interpretation quality.
 Backend tiers:
   1. **VLM** — LLaVA-1.5-7b with creativity assessment prompt
   2. **CLIP** — CLIP novelty distance + LAION aesthetic score
-  3. **Heuristic** — Color entropy + composition asymmetry + saturation variance
 """
 
 import logging
@@ -37,14 +36,15 @@ _COMMON_PROMPTS = [
 
 class CreativityModule(PipelineModule):
     name = "creativity"
-    description = "Artistic novelty assessment (VLM / CLIP / heuristic)"
+    description = "Artistic novelty assessment (VLM / CLIP)"
     default_config = {
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = "heuristic"
+        self._ml_available = False
+        self._backend = None
         self._vlm_model = None
         self._vlm_processor = None
         self._clip_model = None
@@ -54,6 +54,9 @@ class CreativityModule(PipelineModule):
         self._device = "cpu"
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: LLaVA VLM
         try:
             import torch
@@ -70,6 +73,7 @@ class CreativityModule(PipelineModule):
             self._vlm_model.eval()
             self._vlm_processor = LlavaNextProcessor.from_pretrained(vlm_name, cache_dir=models_dir)
             self._backend = "vlm"
+            self._ml_available = True
             logger.info("Creativity loaded LLaVA on %s", self._device)
             return
         except Exception as e:
@@ -105,14 +109,18 @@ class CreativityModule(PipelineModule):
                 pass
 
             self._backend = "clip"
+            self._ml_available = True
             logger.info("Creativity loaded CLIP on %s", self._device)
             return
         except Exception as e:
             logger.info("CLIP unavailable for creativity: %s", e)
 
-        logger.info("Creativity using heuristic backend")
+        logger.warning("Creativity unavailable: install transformers")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         image = self._load_image(sample)
         if image is None:
             return sample
@@ -126,7 +134,7 @@ class CreativityModule(PipelineModule):
             elif self._backend == "clip":
                 score = self._compute_clip(image)
             else:
-                score = self._compute_heuristic(image)
+                return sample
 
             if score is not None:
                 sample.quality_metrics.creativity_score = score
@@ -215,38 +223,6 @@ class CreativityModule(PipelineModule):
         # Normalize novelty to reasonable range
         novelty_normalized = min(max(novelty * 2.0, 0.0), 1.0)
         score = 0.6 * novelty_normalized + 0.4 * aesthetic_score
-        return float(np.clip(score, 0.0, 1.0))
-
-    # ------------------------------------------------------------------ #
-    # Tier 3: Heuristic                                                    #
-    # ------------------------------------------------------------------ #
-
-    def _compute_heuristic(self, image: np.ndarray) -> Optional[float]:
-        h, w = image.shape[:2]
-
-        # Color entropy
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        hue_hist = cv2.calcHist([hsv], [0], None, [36], [0, 180])
-        hue_hist = hue_hist.flatten() / (h * w)
-        hue_entropy = float(-np.sum(hue_hist[hue_hist > 0] * np.log2(hue_hist[hue_hist > 0] + 1e-10)))
-        color_score = min(hue_entropy / 5.17, 1.0)  # max for 36 bins
-
-        # Composition asymmetry (creative images tend to be less symmetric)
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        left = gray[:, :w // 2]
-        right = np.fliplr(gray[:, w // 2:w // 2 * 2])
-        if left.shape == right.shape:
-            symmetry = 1.0 - float(np.mean(np.abs(left - right)) / 255.0)
-            asymmetry_score = 1.0 - symmetry  # Higher asymmetry = more creative
-        else:
-            asymmetry_score = 0.5
-
-        # Saturation variance (creative images often have varied saturation)
-        sat = hsv[..., 1].astype(np.float32)
-        sat_var = float(np.std(sat) / 128.0)
-        sat_score = min(sat_var, 1.0)
-
-        score = (color_score + asymmetry_score + sat_score) / 3.0
         return float(np.clip(score, 0.0, 1.0))
 
     # ------------------------------------------------------------------ #

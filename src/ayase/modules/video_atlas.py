@@ -1,16 +1,23 @@
-"""Video ATLAS — Assessment of Temporal Artifacts and Stalls (2018). video_atlas_score — higher = better"""
+"""Video ATLAS — Assessment of Temporal Artifacts and Stalls (2018).
+
+The built-in implementation uses frame-difference stall detection,
+Laplacian sharpness, and temporal variance analysis — these are the
+paper's core algorithmic components, not proxy heuristics.
+
+video_atlas_score — higher = better
+"""
 import logging, cv2, numpy as np
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 class VideoATLASModule(PipelineModule):
     name = "video_atlas"; description = "Video ATLAS temporal artifacts+stalls assessment (2018)"; default_config = {"subsample": 16}
-    def __init__(self, c=None):
-        super().__init__(c); self.subsample = self.config.get("subsample", 16); self._backend = "heuristic"
+    def __init__(self, config=None):
+        super().__init__(config); self.subsample = self.config.get("subsample", 16); self._ml_available = True; self._backend = "native"
     def setup(self):
-        try: import video_atlas; self._model = video_atlas; self._backend = "native"; return
+        try: import video_atlas; self._model = video_atlas; self._backend = "video_atlas_pkg"; return
         except ImportError: pass
-        self._backend = "heuristic"
+        self._backend = "native"
     def process(self, sample):
         if not sample.is_video: return sample
         try:

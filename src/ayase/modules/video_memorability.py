@@ -1,6 +1,6 @@
 """Video Memorability module.
 
-Estimates content memorability using deep feature statistics or visual heuristics.
+Estimates content memorability using deep feature statistics.
 
 **Important:** This is an *approximation* based on feature-space statistics
 (magnitude, diversity, uniqueness), NOT a trained memorability predictor.
@@ -11,7 +11,6 @@ Scores should be treated as relative indicators, not calibrated probabilities.
 Backend tiers:
   1. **CLIP features** — semantic richness, frame diversity, uniqueness
   2. **DINOv2 features** — similar feature-space analysis
-  3. **Heuristic** — edge density, color saturation, intensity variance
 """
 
 import logging
@@ -28,18 +27,22 @@ logger = logging.getLogger(__name__)
 
 class VideoMemorabilityModule(PipelineModule):
     name = "video_memorability"
-    description = "Content memorability approximation (CLIP/DINOv2 feature statistics, not a trained predictor)"
+    description = "Content memorability approximation (CLIP/DINOv2 feature statistics)"
     default_config = {
         "subsample": 5,
     }
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
         self._feature_model = None
         self._device = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: CLIP feature extraction + memorability regression
         try:
             import torch
@@ -50,6 +53,7 @@ class VideoMemorabilityModule(PipelineModule):
             self._clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
             self._device = device
             self._backend = "clip"
+            self._ml_available = True
             logger.info("VideoMemorability using CLIP features on %s", device)
             return
         except (ImportError, Exception) as e:
@@ -63,16 +67,17 @@ class VideoMemorabilityModule(PipelineModule):
             self._feature_model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14").to(device).eval()
             self._device = device
             self._backend = "dinov2"
+            self._ml_available = True
             logger.info("VideoMemorability using DINOv2 features on %s", device)
             return
         except (ImportError, Exception) as e:
-            logger.info("DINOv2 unavailable: %s", e)
-
-        # Tier 2: Heuristic
-        self._backend = "heuristic"
+            logger.warning("VideoMemorability: no ML backend available: %s", e)
 
     def process(self, sample: Sample) -> Sample:
         """Process sample to predict memorability."""
+        if not self._ml_available:
+            return sample
+
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
 
@@ -85,10 +90,8 @@ class VideoMemorabilityModule(PipelineModule):
 
             if self._backend == "clip":
                 memorability = self._compute_clip_memorability(frames)
-            elif self._backend == "dinov2":
-                memorability = self._compute_dinov2_memorability(frames)
             else:
-                memorability = self._compute_heuristic_memorability(frames)
+                memorability = self._compute_dinov2_memorability(frames)
 
             sample.quality_metrics.video_memorability = float(np.clip(memorability, 0.0, 1.0))
             logger.debug("Memorability for %s: %.3f", sample.path.name, memorability)
@@ -167,7 +170,7 @@ class VideoMemorabilityModule(PipelineModule):
                 features_list.append(features.cpu().numpy().flatten())
 
         if not features_list:
-            return self._compute_heuristic_memorability(frames)
+            return 0.5  # Cannot compute without features
 
         features = np.stack(features_list)
 
@@ -186,30 +189,6 @@ class VideoMemorabilityModule(PipelineModule):
 
         memorability = 0.5 * min(1.0, richness) + 0.5 * min(1.0, diversity)
         return float(memorability)
-
-    def _compute_heuristic_memorability(self, frames: list) -> float:
-        """Compute memorability using visual heuristics."""
-        import cv2
-
-        mem_scores = []
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            # Visual complexity (edge density)
-            edges = cv2.Canny(gray, 50, 150)
-            complexity = np.count_nonzero(edges) / edges.size
-
-            # Color vividness (saturation)
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            vividness = hsv[:, :, 1].mean() / 255.0
-
-            # Uniqueness (local variance)
-            variance = gray.std() / 255.0
-
-            memorability = complexity * 0.3 + vividness * 0.4 + variance * 0.3
-            mem_scores.append(float(np.clip(memorability, 0.0, 1.0)))
-
-        return float(np.mean(mem_scores)) if mem_scores else 0.5
 
     def _load_frames(self, sample: Sample) -> list:
         import cv2

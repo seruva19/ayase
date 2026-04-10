@@ -6,7 +6,6 @@ from the ``stlpips-pytorch`` package when available.
 Backend tiers:
   1. **stlpips-pytorch** — real ST-LPIPS model (``pip install stlpips-pytorch``)
   2. **lpips** — standard LPIPS-Alex applied to consecutive frames
-  3. **heuristic** — OpenCV gradient/flow-based structural proxy
 """
 
 import logging
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class STLPIPSModule(PipelineModule):
     name = "st_lpips"
-    description = "Spatiotemporal perceptual video quality (ST-LPIPS model, LPIPS, or heuristic fallback)"
+    description = "Spatiotemporal perceptual video quality (ST-LPIPS model or LPIPS)"
     default_config = {
         "subsample": 8,
     }
@@ -30,12 +29,15 @@ class STLPIPSModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
-        self._backend = "heuristic"
+        self._backend = None
         self._stlpips_model = None
         self._lpips_model = None
         self._device = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: Real ST-LPIPS from stlpips-pytorch
         try:
             import torch
@@ -66,13 +68,11 @@ class STLPIPSModule(PipelineModule):
             logger.info("ST-LPIPS using LPIPS-Alex fallback on %s", device)
             return
         except (ImportError, Exception) as e:
-            logger.info("LPIPS unavailable, using heuristic: %s", e)
-
-        # Tier 3: heuristic (no ML needed)
-        self._backend = "heuristic"
-        self._ml_available = True
+            logger.warning("ST-LPIPS: no ML backend available: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         if not sample.is_video:
@@ -117,9 +117,7 @@ class STLPIPSModule(PipelineModule):
         """Compute per-frame spatial perceptual quality using the best backend."""
         if self._backend == "stlpips":
             return self._spatial_quality_stlpips(frames)
-        elif self._backend == "lpips":
-            return self._spatial_quality_lpips(frames)
-        return self._spatial_quality_heuristic(frames)
+        return self._spatial_quality_lpips(frames)
 
     def _spatial_quality_lpips_impl(self, frames, model) -> list:
         """LPIPS-based spatial quality: distance between frame and its blurred version."""
@@ -150,39 +148,11 @@ class STLPIPSModule(PipelineModule):
         """Spatial quality using standard LPIPS model."""
         return self._spatial_quality_lpips_impl(frames, self._lpips_model)
 
-    def _spatial_quality_heuristic(self, frames) -> list:
-        """Heuristic spatial quality from multi-scale structural features."""
-        import cv2
-
-        scores = []
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-
-            # Multi-scale structural features
-            features = []
-            current = gray.copy()
-            for scale in range(3):
-                lap_var = cv2.Laplacian(current, cv2.CV_64F).var()
-                features.append(min(1.0, lap_var / 500.0))
-                h, w = current.shape
-                current = cv2.resize(current, (max(1, w // 2), max(1, h // 2)))
-
-            gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-            gy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-            grad_mag = np.sqrt(gx ** 2 + gy ** 2)
-            complexity = min(1.0, np.mean(grad_mag) / 50.0)
-            features.append(complexity)
-
-            scores.append(float(np.mean(features)))
-        return scores
-
     def _temporal_quality(self, frames) -> list:
         """Compute temporal perceptual consistency using the best available backend."""
         if self._backend == "stlpips":
             return self._temporal_quality_stlpips(frames)
-        elif self._backend == "lpips":
-            return self._temporal_quality_lpips(frames)
-        return self._temporal_quality_heuristic(frames)
+        return self._temporal_quality_lpips(frames)
 
     def _temporal_quality_stlpips(self, frames) -> list:
         """Compute temporal quality using real ST-LPIPS model."""
@@ -234,34 +204,3 @@ class STLPIPSModule(PipelineModule):
 
         return scores
 
-    def _temporal_quality_heuristic(self, frames) -> list:
-        """Compute temporal quality using optical flow heuristic."""
-        import cv2
-
-        scores = []
-        for i in range(len(frames) - 1):
-            g1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY).astype(np.float64)
-            g2 = cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY).astype(np.float64)
-
-            flow = cv2.calcOpticalFlowFarneback(
-                g1.astype(np.uint8), g2.astype(np.uint8),
-                None, 0.5, 3, 15, 3, 5, 1.2, 0
-            )
-
-            h, w = g1.shape
-            map_x, map_y = np.meshgrid(np.arange(w), np.arange(h))
-            map_x = (map_x + flow[..., 0]).astype(np.float32)
-            map_y = (map_y + flow[..., 1]).astype(np.float32)
-            warped = cv2.remap(g1.astype(np.float32), map_x, map_y,
-                               cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
-
-            residual = np.mean(np.abs(warped - g2.astype(np.float32)))
-            consistency = 1.0 / (1.0 + residual / 20.0)
-
-            dt = g2 - g1
-            dt_grad = cv2.Sobel(dt.astype(np.float64), cv2.CV_64F, 1, 0, ksize=3)
-            smoothness = 1.0 / (1.0 + np.std(dt_grad) / 20.0)
-
-            scores.append(0.6 * consistency + 0.4 * smoothness)
-
-        return scores
