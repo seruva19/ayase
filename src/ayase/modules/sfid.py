@@ -32,25 +32,29 @@ class SFIDModule(BatchMetricModule):
         self.spatial_patches = self.config.get("spatial_patches", 4)
         self.feature_dim = self.config.get("feature_dim", 128)
         self._model = None
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: Try pyiqa SFID
         try:
             import pyiqa
             self._model = pyiqa.create_metric("sfid", device="cpu")
             self._backend = "pyiqa"
+            self._ml_available = True
             logger.info("SFID (pyiqa) initialised")
             return
-        except (ImportError, Exception):
-            pass
-
-        # Tier 2: Heuristic fallback
-        self._backend = "heuristic"
-        logger.info("SFID (heuristic) initialised — install pyiqa for full model")
+        except (ImportError, Exception) as e:
+            logger.warning("SFID: pyiqa backend unavailable: %s", e)
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract spatial patch features from a sample."""
+        if not self._ml_available:
+            return None
+
         if sample.is_video:
             cap = cv2.VideoCapture(str(sample.path))
             try:

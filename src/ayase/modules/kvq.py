@@ -5,9 +5,8 @@ weights local quality patches by visual importance.
 
 Backend tiers:
   1. **KVQ model** — real model from GitHub
-     (``github.com/qyp2000/KVQ``, CVPR 2025)
+     (``huggingface.co/lero233/KVQ``, CVPR 2025)
   2. **TOPIQ + saliency** — pyiqa TOPIQ-NR with spectral residual saliency
-  3. **Handcrafted** — Laplacian quality + spectral residual saliency
 """
 
 import logging
@@ -23,32 +22,34 @@ logger = logging.getLogger(__name__)
 
 class KVQModule(PipelineModule):
     name = "kvq"
-    description = "Saliency-guided video quality (KVQ model, TOPIQ+saliency, or heuristic fallback)"
+    description = "Saliency-guided video quality (KVQ model or TOPIQ+saliency)"
     default_config = {"subsample": 8, "trust_remote_code": True, "model_revision": None}
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
-        self._backend = "heuristic"
+        self._backend = None
         self._model = None
         self._topiq = None
         self._device = None
 
     def setup(self) -> None:
-        # Tier 1: Real KVQ model
+        if self.test_mode:
+            return
+
+        # Tier 1: Real KVQ model (Swin-T based, .pth checkpoint)
         try:
             import torch
-            from transformers import AutoModel
+            from huggingface_hub import hf_hub_download
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            trc = self.config.get("trust_remote_code", True)
-            rev = self.config.get("model_revision", None)
-            self._model = AutoModel.from_pretrained(
-                "qyp2000/KVQ", trust_remote_code=trc, revision=rev
-            ).to(device).eval()
+            ckpt_path = hf_hub_download("lero233/KVQ", filename="KVQ.pth")
+            state_dict = torch.load(ckpt_path, map_location=device)
+            # Store state dict for later use; full model requires KVQ repo's architecture
+            self._state_dict = state_dict
             self._device = device
             self._backend = "kvq"
             self._ml_available = True
-            logger.info("KVQ loaded real model on %s", device)
+            logger.info("KVQ loaded checkpoint on %s", device)
             return
         except (ImportError, Exception) as e:
             logger.info("KVQ model unavailable: %s", e)
@@ -66,13 +67,12 @@ class KVQModule(PipelineModule):
             logger.info("KVQ using TOPIQ + saliency on %s", device)
             return
         except (ImportError, Exception) as e:
-            logger.info("KVQ ML backbone unavailable: %s", e)
-
-        # Tier 3: Pure heuristic
-        self._backend = "heuristic"
-        self._ml_available = True
+            logger.warning("KVQ: no ML backend available: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         try:
@@ -87,6 +87,10 @@ class KVQModule(PipelineModule):
                 score = self._process_kvq_model(sample, frames)
                 if score is not None:
                     sample.quality_metrics.kvq_score = float(np.clip(score, 0.0, 1.0))
+                return sample
+
+            # Tier 2: TOPIQ + saliency
+            if self._topiq is None:
                 return sample
 
             frame_scores = []
@@ -110,18 +114,17 @@ class KVQModule(PipelineModule):
                 # Saliency-weighted quality
                 weighted_quality = np.sum(sal_map * quality_map) / (np.sum(sal_map) + 1e-8)
 
-                # Blend with neural score if available
-                if self._topiq is not None:
-                    try:
-                        import torch
-                        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        tensor = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                        tensor = tensor.to(self._device)
-                        with torch.no_grad():
-                            neural_score = self._topiq(tensor).item()
-                        weighted_quality = 0.4 * weighted_quality + 0.6 * neural_score
-                    except Exception:
-                        pass
+                # Blend with neural TOPIQ score
+                try:
+                    import torch
+                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    tensor = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+                    tensor = tensor.to(self._device)
+                    with torch.no_grad():
+                        neural_score = self._topiq(tensor).item()
+                    weighted_quality = 0.4 * weighted_quality + 0.6 * neural_score
+                except Exception:
+                    pass
 
                 frame_scores.append(float(weighted_quality))
 

@@ -1,4 +1,4 @@
-from ayase.models import CaptionMetadata, QualityMetrics
+from ayase.models import CaptionMetadata
 
 
 def test_nemo_curator_basics():
@@ -20,70 +20,18 @@ def test_nemo_curator_config():
 def test_nemo_curator_skip_without_caption(image_sample):
     from ayase.modules.nemo_curator import NemoCuratorModule
 
-    m = NemoCuratorModule({"backend": "heuristic"})
-    m.setup()
+    m = NemoCuratorModule()
     result = m.process(image_sample)
     # No caption → metrics untouched
     assert result.quality_metrics is None or result.quality_metrics.nemo_quality_score is None
 
 
-def test_nemo_curator_heuristic_scoring(image_sample):
-    from ayase.modules.nemo_curator import NemoCuratorModule
-
-    m = NemoCuratorModule({"backend": "heuristic"})
-    m.setup()
-    image_sample.caption = CaptionMetadata(
-        text="A beautifully composed sunset over the ocean, with vibrant orange and purple hues reflecting off the calm water.",
-        length=113,
-    )
-    result = m.process(image_sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.nemo_quality_score is not None
-    assert 0.0 <= result.quality_metrics.nemo_quality_score <= 1.0
-    assert result.quality_metrics.nemo_quality_label in ("Low", "Medium", "High")
-
-
-def test_nemo_curator_low_quality(image_sample):
-    from ayase.modules.nemo_curator import NemoCuratorModule
-
-    m = NemoCuratorModule({"backend": "heuristic"})
-    m.setup()
-    image_sample.caption = CaptionMetadata(text="ok", length=2)
-    result = m.process(image_sample)
-    assert result.quality_metrics.nemo_quality_score < 0.5
-
-
-def test_nemo_curator_repetition_penalty(image_sample):
-    from ayase.modules.nemo_curator import NemoCuratorModule
-
-    m = NemoCuratorModule({"backend": "heuristic"})
-    m.setup()
-
-    image_sample.caption = CaptionMetadata(
-        text="dog dog dog dog dog dog dog dog dog dog", length=39
-    )
-    result = m.process(image_sample)
-    bad_score = result.quality_metrics.nemo_quality_score
-
-    image_sample.quality_metrics = QualityMetrics()
-    image_sample.caption = CaptionMetadata(
-        text="A well-composed photograph showing diverse elements in natural lighting.",
-        length=71,
-    )
-    result = m.process(image_sample)
-    good_score = result.quality_metrics.nemo_quality_score
-
-    assert good_score > bad_score
-
-
-def test_nemo_curator_setup_not_called_warns(image_sample, caplog):
+def test_nemo_curator_setup_not_called_skips(image_sample):
     from ayase.modules.nemo_curator import NemoCuratorModule
 
     m = NemoCuratorModule()
-    # Deliberately skip setup()
+    # Deliberately skip setup() — without ML backend, module skips gracefully
     image_sample.caption = CaptionMetadata(text="Some caption text here.", length=23)
     result = m.process(image_sample)
-    # Should still produce a score via heuristic fallback
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.nemo_quality_score is not None
-    assert "setup() was not called" in caplog.text
+    # Without ML backend, module returns sample unchanged (metrics stay None)
+    assert result.quality_metrics is None or result.quality_metrics.nemo_quality_score is None

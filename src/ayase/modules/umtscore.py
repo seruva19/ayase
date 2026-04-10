@@ -31,14 +31,19 @@ class UMTScoreModule(PipelineModule):
         self._model = None
         self._clip_model = None
         self._clip_processor = None
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: Try UMT model
         try:
             import umt
             self._model = umt
             self._backend = "native"
+            self._ml_available = True
             logger.info("UMTScore (native) initialised")
             return
         except ImportError:
@@ -54,16 +59,16 @@ class UMTScoreModule(PipelineModule):
                 "openai/clip-vit-base-patch32"
             )
             self._backend = "clip"
+            self._ml_available = True
             logger.info("UMTScore (CLIP proxy) initialised")
             return
-        except (ImportError, Exception):
-            pass
-
-        # Tier 3: Heuristic fallback
-        self._backend = "heuristic"
-        logger.info("UMTScore (heuristic) initialised — install transformers for CLIP proxy")
+        except (ImportError, Exception) as e:
+            logger.warning("UMTScore: no ML backend available: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         try:
             caption = getattr(sample, "caption", None)
             if not caption:
@@ -73,10 +78,8 @@ class UMTScoreModule(PipelineModule):
 
             if self._backend == "native":
                 score = float(self._model.score(str(sample.path), caption_text))
-            elif self._backend == "clip":
-                score = self._process_clip(sample, caption_text)
             else:
-                score = self._process_heuristic(sample, caption_text)
+                score = self._process_clip(sample, caption_text)
 
             if score is not None:
                 if sample.quality_metrics is None:
@@ -114,42 +117,6 @@ class UMTScoreModule(PipelineModule):
             scores.append(sim)
 
         return float(np.clip(np.mean(scores), 0.0, 1.0))
-
-    def _process_heuristic(self, sample: Sample, caption: str) -> Optional[float]:
-        """Heuristic: simple content-text alignment estimation."""
-        frames = self._extract_frames(sample)
-        if not frames:
-            return None
-
-        # Analyze visual content features
-        visual_features = []
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-            b, g, r = (
-                frame[:, :, 0].astype(np.float64),
-                frame[:, :, 1].astype(np.float64),
-                frame[:, :, 2].astype(np.float64),
-            )
-
-            # Basic visual descriptors
-            brightness = np.mean(gray) / 255.0
-            contrast = np.std(gray) / 128.0
-            colorfulness = (np.std(r - g) + np.std(0.5 * (r + g) - b)) / 256.0
-            sharpness = min(cv2.Laplacian(gray, cv2.CV_64F).var() / 1000.0, 1.0)
-            visual_features.append([brightness, contrast, colorfulness, sharpness])
-
-        avg_features = np.mean(visual_features, axis=0)
-
-        # Text analysis heuristic: longer, more descriptive captions suggest
-        # more alignment potential; visual richness correlates with alignment
-        words = caption.lower().split()
-        text_richness = min(len(words) / 20.0, 1.0)
-        visual_richness = float(np.mean(avg_features))
-
-        # Heuristic alignment: rich visuals + rich text = likely aligned
-        score = 0.5 * visual_richness + 0.3 * text_richness + 0.2
-
-        return float(np.clip(score, 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample) -> list:
         """Extract frames from video or image."""

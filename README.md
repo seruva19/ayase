@@ -1,50 +1,54 @@
 # Ayase
 
-Modular media quality metrics toolkit for video, image, and audio datasets.
+Modular media quality metrics for video, image, and audio datasets.
 
-## Overview
+> **Work in progress** - APIs and module interfaces may change before 1.0.
 
-- **328 modules**, **362 quality metrics** across visual, temporal, audio, perceptual, and safety categories
-- Modular pipeline - modules compute raw values, downstream apps decide what to do with them
-- CLI and Python API with profile-based configuration
-- See [METRICS.md](METRICS.md) for the full reference, [MODELS.md](MODELS.md) for all pretrained weights
+## What It Does
 
-## Installation
+Ayase runs quality assessment modules over a dataset and writes structured per-sample metrics. 327 modules produce 364 metrics across 19 categories (NR-IQA, FR-IQA, NR-VQA, temporal, motion, audio, face, safety, aesthetics, text-video alignment, and more). Modules are independent - pick only what you need.
+
+Full metric catalog: [METRICS.md](METRICS.md). Pretrained model catalog: [MODELS.md](MODELS.md).
+
+## Install
 
 ```bash
 pip install ayase
 ```
 
-Ayase ships with the shared runtime dependencies used by the bundled metrics.
-Some model implementations include source files under `src/ayase/third_party/`; model binaries are
-downloaded and cached automatically on first use when they are not packaged in the repository.
+Modules that require ML backends (torch, transformers, pyiqa, insightface, etc.) skip gracefully when the backend is not installed. Model weights are downloaded and cached on first use.
 
-## Quick Start
+## CLI
 
 ```bash
-ayase scan ./my_dataset
-ayase scan ./my_dataset --modules metadata,basic_quality,motion
-ayase modules list
-ayase modules check
-ayase filter ./my_dataset --min-score 70 --output ./filtered
+ayase scan ./dataset                                    # all modules
+ayase scan ./dataset --modules metadata,basic_quality   # selected modules
+ayase modules list                                      # show all 327 modules
+ayase modules check                                     # verify which backends are available
+ayase filter ./dataset --min-score 70 --output ./good   # filter by quality
+ayase stats ./dataset                                   # dataset statistics
+ayase tui                                               # terminal UI
 ```
+
+## Python API
 
 ```python
 from ayase import AyasePipeline
 
-ayase = AyasePipeline(modules=["basic", "aesthetic", "motion"])
-results = ayase.run("./my_dataset")
+pipeline = AyasePipeline(modules=["basic", "metadata", "motion"])
+results = pipeline.run("./my_dataset")
 
 for path, sample in results.items():
-    if sample.quality_metrics:
-        print(f"{sample.path.name}: score={sample.quality_metrics.technical_score}")
+    qm = sample.quality_metrics
+    if qm:
+        print(f"{sample.path.name}: technical={qm.technical_score} blur={qm.blur_score}")
 
-ayase.export("report.json")
+pipeline.export("report.json")   # also: report.csv, report.html
 ```
 
 ## Configuration
 
-Create `ayase.toml` in your project root:
+`ayase.toml` in project root:
 
 ```toml
 [general]
@@ -58,36 +62,42 @@ default_format = "json"
 artifacts_dir = "reports"
 ```
 
-## Writing Plugins
+## Custom Modules
 
 ```python
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
+from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+import cv2
 
-class MyCheck(PipelineModule):
-    name = "my_check"
-    description = "Custom quality check"
-    default_config = {"threshold": 0.5}
+class BlurCheck(PipelineModule):
+    name = "blur_check"
+    description = "Flag blurry frames via Laplacian variance"
+    default_config = {"threshold": 100.0}
 
     def process(self, sample: Sample) -> Sample:
-        # Your logic here
+        img = cv2.imread(str(sample.path), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            return sample
+        score = float(cv2.Laplacian(img, cv2.CV_64F).var())
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.blur_score = score
+        if score < self.config.get("threshold", 100.0):
+            sample.validation_issues.append({"severity": "warning", "message": f"Blurry ({score:.0f})"})
         return sample
 ```
 
-```bash
-ayase scan ./data --modules metadata,my_check
-```
+Modules auto-register via `__init_subclass__`. Config is available as `self.config`.
 
 ## Development
 
 ```bash
 git clone <repo-url> && cd ayase
 pip install -e ".[dev]"
-pytest
+pytest                    # 8000+ tests, ~4 min
+pytest tests/ --full      # with ML model loading
 ```
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
-
-**Model licenses:** ML models downloaded at runtime have their own licenses (Apache 2.0, BSD, CC-BY-NC, etc.). Users are responsible for compliance. See [MODELS.md](MODELS.md) for the full catalog with license info. No model weights are bundled with this package.
+MIT. Model weights downloaded at runtime carry their own licenses - see [MODELS.md](MODELS.md).

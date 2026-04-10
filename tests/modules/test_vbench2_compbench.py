@@ -24,16 +24,6 @@ class TestPhysicsModule:
         result = mod.process(image_sample)
         assert result.quality_metrics is None or result.quality_metrics.physics_score is None
 
-    def test_video_heuristic(self, video_sample):
-        from ayase.modules.physics import PhysicsModule
-        mod = PhysicsModule()
-        # Don't call setup — stays on heuristic
-        result = mod.process(video_sample)
-        qm = result.quality_metrics
-        assert qm is not None
-        assert qm.physics_score is not None
-        assert 0.0 <= qm.physics_score <= 1.0
-
     def test_score_from_tracks(self):
         from ayase.modules.physics import PhysicsModule
         mod = PhysicsModule()
@@ -52,25 +42,6 @@ class TestHumanFidelityModule:
         from ayase.modules.human_fidelity import HumanFidelityModule
         _test_module_basics(HumanFidelityModule, "human_fidelity")
 
-    def test_image_heuristic(self, image_sample):
-        from ayase.modules.human_fidelity import HumanFidelityModule
-        mod = HumanFidelityModule()
-        # Heuristic backend — may return None if no human detected
-        result = mod.process(image_sample)
-        # Either None (no human) or a valid score
-        if result.quality_metrics and result.quality_metrics.human_fidelity_score is not None:
-            assert 0.0 <= result.quality_metrics.human_fidelity_score <= 1.0
-
-    def test_heuristic_scoring(self):
-        from ayase.modules.human_fidelity import HumanFidelityModule
-        mod = HumanFidelityModule()
-        # Create a simple image with skin-toned region
-        img = np.zeros((256, 256, 3), dtype=np.uint8)
-        # Add a face-like region (won't pass Haar but tests the code path)
-        img[50:150, 80:180] = [150, 180, 200]  # skin-ish in BGR
-        score, issues = mod._compute_heuristic(img)
-        # May or may not detect a face, but should not crash
-        assert score is None or (0.0 <= score <= 1.0)
 
 
 class TestCommonsenseModule:
@@ -78,25 +49,6 @@ class TestCommonsenseModule:
         from ayase.modules.commonsense import CommonsenseModule
         _test_module_basics(CommonsenseModule, "commonsense")
 
-    def test_image_heuristic(self, image_sample):
-        from ayase.modules.commonsense import CommonsenseModule
-        mod = CommonsenseModule()
-        result = mod.process(image_sample)
-        qm = result.quality_metrics
-        assert qm is not None
-        assert qm.commonsense_score is not None
-        assert 0.0 <= qm.commonsense_score <= 1.0
-
-    def test_heuristic_natural_image(self):
-        from ayase.modules.commonsense import CommonsenseModule
-        mod = CommonsenseModule()
-        # Create gradient image (somewhat natural-looking)
-        img = np.zeros((256, 256, 3), dtype=np.uint8)
-        for x in range(256):
-            img[:, x, :] = x
-        score, issues = mod._compute_heuristic(img)
-        assert score is not None
-        assert 0.0 <= score <= 1.0
 
 
 class TestDynamicsControllabilityModule:
@@ -146,31 +98,6 @@ class TestCreativityModule:
         from ayase.modules.creativity import CreativityModule
         _test_module_basics(CreativityModule, "creativity")
 
-    def test_image_heuristic(self, image_sample):
-        from ayase.modules.creativity import CreativityModule
-        mod = CreativityModule()
-        result = mod.process(image_sample)
-        qm = result.quality_metrics
-        assert qm is not None
-        assert qm.creativity_score is not None
-        assert 0.0 <= qm.creativity_score <= 1.0
-
-    def test_heuristic_colorful_vs_gray(self):
-        from ayase.modules.creativity import CreativityModule
-        mod = CreativityModule()
-
-        # Colorful image
-        colorful = np.random.randint(0, 256, (256, 256, 3), dtype=np.uint8)
-        score_colorful = mod._compute_heuristic(colorful)
-
-        # Gray image
-        gray_img = np.ones((256, 256, 3), dtype=np.uint8) * 128
-        score_gray = mod._compute_heuristic(gray_img)
-
-        assert score_colorful is not None
-        assert score_gray is not None
-        # Colorful should score higher on creativity heuristic
-        assert score_colorful > score_gray
 
 
 class TestChronoMagicModule:
@@ -183,17 +110,6 @@ class TestChronoMagicModule:
         mod = ChronoMagicModule()
         result = mod.process(image_sample)
         assert result.quality_metrics is None or result.quality_metrics.chronomagic_mt_score is None
-
-    def test_video_heuristic(self, video_sample):
-        from ayase.modules.chronomagic import ChronoMagicModule
-        mod = ChronoMagicModule()
-        result = mod.process(video_sample)
-        qm = result.quality_metrics
-        assert qm is not None
-        assert qm.chronomagic_mt_score is not None
-        assert qm.chronomagic_ch_score is not None
-        assert 0.0 <= qm.chronomagic_mt_score <= 1.0
-        assert 0.0 <= qm.chronomagic_ch_score <= 1.0
 
     def test_heuristic_smooth_video(self):
         from ayase.modules.chronomagic import ChronoMagicModule
@@ -233,16 +149,6 @@ class TestT2VCompBenchModule:
         mod = T2VCompBenchModule()
         result = mod.process(video_sample)
         assert result.quality_metrics is None or result.quality_metrics.compbench_overall is None
-
-    def test_video_heuristic(self, video_sample):
-        from ayase.modules.t2v_compbench import T2VCompBenchModule
-        mod = T2VCompBenchModule()
-        video_sample.caption = CaptionMetadata(text="two red balls moving fast across a park scene", length=46)
-        result = mod.process(video_sample)
-        qm = result.quality_metrics
-        assert qm is not None
-        assert qm.compbench_overall is not None
-        assert 0.0 <= qm.compbench_overall <= 1.0
 
     def test_parse_attributes(self):
         from ayase.modules.t2v_compbench import T2VCompBenchModule

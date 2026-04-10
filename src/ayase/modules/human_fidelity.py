@@ -6,7 +6,6 @@ detection and landmark analysis.
 Backend tiers:
   1. **DWPose** — Full-body + hand + face landmarks (dwpose / mmpose)
   2. **MediaPipe** — 33 body landmarks
-  3. **Heuristic** — Haar cascades + skin segmentation
 """
 
 import logging
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class HumanFidelityModule(PipelineModule):
     name = "human_fidelity"
-    description = "Human body/hand/face fidelity (DWPose / MediaPipe / heuristic)"
+    description = "Human body/hand/face fidelity (DWPose / MediaPipe)"
     default_config = {}
 
     # MediaPipe landmark indices for anatomy checks
@@ -42,17 +41,22 @@ class HumanFidelityModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
         self._mp_available = False
         self._dwpose_available = False
         self.mp_pose = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: DWPose
         try:
             from dwpose import DWposeDetector  # noqa: F401
             self._dwpose_available = True
             self._backend = "dwpose"
+            self._ml_available = True
             logger.info("HumanFidelity using DWPose backend")
             return
         except ImportError:
@@ -64,15 +68,18 @@ class HumanFidelityModule(PipelineModule):
             self.mp_pose = mp.solutions.pose
             self._mp_available = True
             self._backend = "mediapipe"
+            self._ml_available = True
             logger.info("HumanFidelity using MediaPipe backend")
             return
         except ImportError:
             pass
 
-        # Tier 3: Heuristic
-        logger.info("HumanFidelity using heuristic backend (Haar + skin)")
+        logger.warning("HumanFidelity: no backend available (install dwpose or mediapipe)")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         image = self._load_image(sample)
         if image is None:
             return sample
@@ -86,7 +93,7 @@ class HumanFidelityModule(PipelineModule):
             elif self._backend == "mediapipe":
                 score, issues = self._compute_mediapipe(image)
             else:
-                score, issues = self._compute_heuristic(image)
+                return sample
 
             if score is not None:
                 sample.quality_metrics.human_fidelity_score = score
@@ -226,45 +233,7 @@ class HumanFidelityModule(PipelineModule):
             return float(np.clip(score, 0.0, 1.0)), issues
 
     # ------------------------------------------------------------------ #
-    # Tier 3: Heuristic                                                    #
-    # ------------------------------------------------------------------ #
-
-    def _compute_heuristic(self, image: np.ndarray) -> tuple:
-        issues = []
-        h, w = image.shape[:2]
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        # Face detection via Haar cascade
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        )
-        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-        face_score = min(len(faces) * 0.5, 1.0) if len(faces) > 0 else 0.0
-
-        # Skin detection via HSV range
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        lower_skin = np.array([0, 20, 70], dtype=np.uint8)
-        upper_skin = np.array([20, 255, 255], dtype=np.uint8)
-        skin_mask = cv2.inRange(hsv, lower_skin, upper_skin)
-        skin_ratio = float(np.sum(skin_mask > 0)) / (h * w)
-
-        # Body score based on skin presence
-        body_score = min(skin_ratio * 5.0, 1.0)  # ~20% skin = 1.0
-
-        # Hand region approximation (skin regions in lower-middle area)
-        hand_region = skin_mask[h // 2:, w // 4: 3 * w // 4]
-        hand_ratio = float(np.sum(hand_region > 0)) / (hand_region.size + 1)
-        hand_score = min(hand_ratio * 8.0, 1.0)
-
-        if len(faces) == 0 and skin_ratio < 0.05:
-            # No human detected — return None
-            return None, issues
-
-        score = 0.4 * body_score + 0.3 * hand_score + 0.3 * face_score
-        return float(np.clip(score, 0.0, 1.0)), issues
-
-    # ------------------------------------------------------------------ #
-    # Helpers (preserved from original)                                    #
+    # Helpers                                                              #
     # ------------------------------------------------------------------ #
 
     def _compute_limb_lengths(self, landmarks, img_w: int, img_h: int) -> dict:

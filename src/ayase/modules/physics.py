@@ -7,7 +7,6 @@ gravity violations).
 Backend tiers:
   1. **CoTracker** — Facebook's dense point tracking model
   2. **Lucas-Kanade** — OpenCV sparse optical flow tracking
-  3. **Heuristic** — Frame differencing + pixel acceleration
 """
 
 import logging
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class PhysicsModule(PipelineModule):
     name = "physics"
-    description = "Physics plausibility via trajectory analysis (CoTracker / LK / heuristic)"
+    description = "Physics plausibility via trajectory analysis (CoTracker / Lucas-Kanade)"
     default_config = {
         "subsample": 16,
         "accel_threshold": 50.0,
@@ -32,12 +31,15 @@ class PhysicsModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = "heuristic"
+        self._backend = None
         self._ml_available = False
         self._cotracker = None
         self._device = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: CoTracker
         try:
             import torch
@@ -61,10 +63,12 @@ class PhysicsModule(PipelineModule):
             self._ml_available = True
             logger.info("Physics using Lucas-Kanade optical flow")
         except AttributeError:
-            logger.info("Physics falling back to heuristic")
+            logger.warning("No physics backend available (install torch for CoTracker)")
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:
+            return sample
+        if not self._ml_available:
             return sample
 
         if sample.quality_metrics is None:
@@ -99,9 +103,9 @@ class PhysicsModule(PipelineModule):
             try:
                 return self._compute_lk(sample)
             except Exception as e:
-                logger.info("LK failed for physics: %s, falling back to heuristic", e)
+                logger.warning("LK failed for physics: %s", e)
 
-        return self._compute_heuristic(sample)
+        return None
 
     # ------------------------------------------------------------------ #
     # Tier 1: CoTracker                                                    #
@@ -213,59 +217,6 @@ class PhysicsModule(PipelineModule):
         trajectories = [t[:min_pts] for t in trajectories]
         tracks = np.array(trajectories)  # [T, N, 2]
         return self._score_from_tracks(tracks, accel_threshold)
-
-    # ------------------------------------------------------------------ #
-    # Tier 3: Heuristic (frame differencing)                               #
-    # ------------------------------------------------------------------ #
-
-    def _compute_heuristic(self, sample: Sample) -> Optional[float]:
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total < 10:
-            cap.release()
-            return None
-
-        num_frames = min(self.config.get("subsample", 16), total)
-        indices = list(range(0, total, max(1, total // num_frames)))[:num_frames]
-
-        diffs = []
-        prev_gray = None
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if not ret:
-                continue
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32)
-            if prev_gray is not None:
-                diff = np.abs(gray - prev_gray).mean()
-                diffs.append(diff)
-            prev_gray = gray
-        cap.release()
-
-        if len(diffs) < 3:
-            return None
-
-        diffs = np.array(diffs)
-        velocities = diffs
-        accelerations = np.abs(np.diff(velocities))
-
-        if len(accelerations) == 0:
-            return 1.0
-
-        # Fraction of frames with plausible acceleration
-        threshold = self.config.get("accel_threshold", 50.0) * 0.2  # scaled for pixel diffs
-        teleport_frac = float(np.mean(accelerations > threshold))
-        gravity_score = 1.0 - teleport_frac
-
-        # Smoothness of velocity changes
-        if velocities.std() > 1e-6:
-            cv = float(accelerations.std() / (velocities.mean() + 1e-6))
-            smoothness = 1.0 / (1.0 + cv)
-        else:
-            smoothness = 1.0
-
-        score = 0.5 * gravity_score + 0.5 * smoothness
-        return float(np.clip(score, 0.0, 1.0))
 
     # ------------------------------------------------------------------ #
     # Shared scoring                                                       #

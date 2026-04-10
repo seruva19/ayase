@@ -6,6 +6,10 @@ existing VQA methods across 8 datasets.
 
 GitHub: https://github.com/GZHU-DVL/CLIPVQA
 
+Backend tiers:
+  1. **clipvqa** — native clipvqa package
+  2. **CLIP** — CLIP features with self-attention temporal pooling
+
 clipvqa_score — higher = better quality
 """
 
@@ -34,19 +38,24 @@ class CLIPVQAModule(PipelineModule):
         self._clip_model = None
         self._clip_processor = None
         self._device = "cpu"
-        self._backend = "heuristic"
+        self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         try:
             import clipvqa
             self._model = clipvqa
             self._backend = "native"
+            self._ml_available = True
             logger.info("CLIPVQA (native) initialised")
             return
         except ImportError:
             pass
 
-        # Tier 2: CLIP heuristic
+        # Tier 2: CLIP
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
@@ -59,22 +68,25 @@ class CLIPVQAModule(PipelineModule):
                 "openai/clip-vit-base-patch32", cache_dir="models"
             )
             self._backend = "clip"
-            logger.info(f"CLIPVQA (CLIP heuristic) initialised on {self._device}")
+            self._ml_available = True
+            logger.info(f"CLIPVQA (CLIP) initialised on {self._device}")
             return
         except (ImportError, Exception):
             pass
 
-        self._backend = "heuristic"
-        logger.info("CLIPVQA (heuristic) — install clipvqa or transformers for better accuracy")
+        logger.warning("CLIPVQA unavailable: install clipvqa or transformers")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         try:
             if self._backend == "native":
                 score = float(self._model.predict(str(sample.path)))
             elif self._backend == "clip":
                 score = self._process_clip(sample)
             else:
-                score = self._process_heuristic(sample)
+                return sample
 
             if score is not None:
                 if sample.quality_metrics is None:
@@ -135,29 +147,6 @@ class CLIPVQAModule(PipelineModule):
             score = quality_scores[0] if quality_scores else None
 
         return score
-
-    def _process_heuristic(self, sample: Sample) -> Optional[float]:
-        """Heuristic: multi-scale quality with temporal attention-like weighting."""
-        frames = self._extract_frames(sample)
-        if not frames:
-            return None
-
-        per_frame = []
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-            sharpness = min(cv2.Laplacian(gray, cv2.CV_64F).var() / 500.0, 1.0)
-            contrast = min(gray.std() / 65.0, 1.0)
-            per_frame.append(0.6 * sharpness + 0.4 * contrast)
-
-        # Attention-like: weight frames by their distinctiveness
-        if len(per_frame) > 1:
-            arr = np.array(per_frame)
-            weights = np.exp(arr) / np.sum(np.exp(arr))
-            score = float(np.dot(weights, arr))
-        else:
-            score = per_frame[0]
-
-        return float(np.clip(score, 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample):
         frames = []

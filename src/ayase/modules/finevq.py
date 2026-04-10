@@ -8,7 +8,6 @@ Backend tiers:
   1. **FineVQ model** — real FineVQ model from HuggingFace
      (``IntMeGroup/FineVQ_score``)
   2. **TOPIQ + handcrafted** — pyiqa TOPIQ-NR backbone + OpenCV features
-  3. **Handcrafted only** — pure OpenCV heuristic features
 """
 
 import logging
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class FineVQModule(PipelineModule):
     name = "finevq"
-    description = "Fine-grained video quality (FineVQ model, TOPIQ+handcrafted, or heuristic fallback)"
+    description = "Fine-grained video quality (FineVQ model or TOPIQ+handcrafted)"
     default_config = {
         "subsample": 8,
         "trust_remote_code": True,
@@ -41,13 +40,16 @@ class FineVQModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
-        self._backend = "heuristic"
+        self._backend = None
         self._model = None
         self._processor = None
         self._topiq = None
         self._device = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: Real FineVQ model from HuggingFace
         try:
             import torch
@@ -80,19 +82,18 @@ class FineVQModule(PipelineModule):
             logger.info("FineVQ initialised (TOPIQ backbone) on %s", device)
             return
         except (ImportError, Exception) as e:
-            logger.info("FineVQ ML backbone unavailable, using handcrafted features: %s", e)
-
-        # Tier 3: Pure handcrafted
-        self._backend = "heuristic"
-        self._ml_available = True
+            logger.warning("FineVQ: no ML backend available: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         try:
             if self._backend == "finevq":
                 self._process_real_model(sample)
-            else:
+            elif self._backend == "topiq_handcrafted":
                 self._process_handcrafted(sample)
         except Exception as e:
             logger.warning("FineVQ failed: %s", e)
@@ -130,11 +131,8 @@ class FineVQModule(PipelineModule):
             if score is not None:
                 # Don't clamp: real FineVQ model may output scores outside [0,1]
                 sample.quality_metrics.finevq_score = float(score)
-            else:
-                self._process_handcrafted(sample)
         except Exception as e:
-            logger.info("FineVQ model inference failed: %s, falling back", e)
-            self._process_handcrafted(sample)
+            logger.warning("FineVQ model inference failed: %s", e)
 
     def _process_handcrafted(self, sample: Sample) -> None:
         """Process using handcrafted features (+optional TOPIQ)."""

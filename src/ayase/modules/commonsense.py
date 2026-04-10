@@ -5,8 +5,7 @@ placement, interaction plausibility, layout consistency).
 
 Backend tiers:
   1. **VLM** — LLaVA-1.5-7b with structured scoring prompt
-  2. **ViLT** — ViLT VQA with 5 diagnostic questions → numeric score
-  3. **Heuristic** — Color distribution + spatial frequency analysis
+  2. **ViLT** — ViLT VQA with 5 diagnostic questions -> numeric score
 """
 
 import logging
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class CommonsenseModule(PipelineModule):
     name = "commonsense"
-    description = "Common sense adherence (VLM / ViLT VQA / heuristic)"
+    description = "Common sense adherence (VLM / ViLT VQA)"
     default_config = {
         "model_name": "dandelin/vilt-b32-finetuned-vqa",
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
@@ -31,7 +30,8 @@ class CommonsenseModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = "heuristic"
+        self._ml_available = False
+        self._backend = None
         self._vlm_model = None
         self._vlm_processor = None
         self._vilt_model = None
@@ -39,6 +39,9 @@ class CommonsenseModule(PipelineModule):
         self._device = "cpu"
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: LLaVA VLM
         try:
             import torch
@@ -55,6 +58,7 @@ class CommonsenseModule(PipelineModule):
             self._vlm_model.eval()
             self._vlm_processor = LlavaNextProcessor.from_pretrained(vlm_name, cache_dir=models_dir)
             self._backend = "vlm"
+            self._ml_available = True
             logger.info("Commonsense loaded LLaVA on %s", self._device)
             return
         except Exception as e:
@@ -74,14 +78,18 @@ class CommonsenseModule(PipelineModule):
                 vilt_name, cache_dir=models_dir, use_safetensors=True,
             ).to(self._device)
             self._backend = "vilt"
+            self._ml_available = True
             logger.info("Commonsense loaded ViLT VQA on %s", self._device)
             return
         except Exception as e:
             logger.info("ViLT unavailable for commonsense: %s", e)
 
-        logger.info("Commonsense using heuristic backend")
+        logger.warning("Commonsense unavailable: install transformers")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         image = self._load_image(sample)
         if image is None:
             return sample
@@ -95,7 +103,7 @@ class CommonsenseModule(PipelineModule):
             elif self._backend == "vilt":
                 score, issues = self._compute_vilt(image)
             else:
-                score, issues = self._compute_heuristic(image)
+                return sample
 
             if score is not None:
                 sample.quality_metrics.commonsense_score = score
@@ -145,7 +153,7 @@ class CommonsenseModule(PipelineModule):
                 loc = float(scores.get("location", 3))
                 inter = float(scores.get("interaction", 3))
                 layout = float(scores.get("layout", 3))
-                # Normalize 1-5 → 0-1
+                # Normalize 1-5 -> 0-1
                 score = (loc + inter + layout) / 15.0
                 return float(np.clip(score, 0.0, 1.0)), issues
         except (json.JSONDecodeError, ValueError):
@@ -215,56 +223,6 @@ class CommonsenseModule(PipelineModule):
 
         score = correct_count / len(questions)
         return float(score), issues
-
-    # ------------------------------------------------------------------ #
-    # Tier 3: Heuristic                                                    #
-    # ------------------------------------------------------------------ #
-
-    def _compute_heuristic(self, image: np.ndarray) -> tuple:
-        issues = []
-        h, w = image.shape[:2]
-
-        # Color distribution analysis
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        # Natural images have diverse hue distribution
-        hue_hist = cv2.calcHist([hsv], [0], None, [18], [0, 180])
-        hue_hist = hue_hist.flatten() / (h * w)
-        hue_entropy = float(-np.sum(hue_hist[hue_hist > 0] * np.log2(hue_hist[hue_hist > 0] + 1e-10)))
-        # Normalize to 0-1 (max entropy for 18 bins = log2(18) ≈ 4.17)
-        hue_score = min(hue_entropy / 4.17, 1.0)
-
-        # Spatial frequency — natural images follow 1/f power law
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        dft = np.fft.fft2(gray)
-        magnitude = np.abs(np.fft.fftshift(dft))
-        # Radial average of power spectrum
-        cy, cx = h // 2, w // 2
-        y, x = np.ogrid[:h, :w]
-        r = np.sqrt((x - cx) ** 2 + (y - cy) ** 2).astype(int)
-        max_r = min(cy, cx)
-        radial_mean = np.zeros(max_r)
-        for ri in range(1, max_r):
-            mask = r == ri
-            if mask.any():
-                radial_mean[ri] = magnitude[mask].mean()
-
-        # Check power law: log(power) vs log(freq) should be approximately linear
-        valid = radial_mean[1:] > 0
-        if valid.sum() > 10:
-            freqs = np.arange(1, max_r)
-            log_freq = np.log(freqs[valid])
-            log_power = np.log(radial_mean[1:][valid])
-            # Linear fit
-            coeffs = np.polyfit(log_freq, log_power, 1)
-            slope = coeffs[0]
-            # Natural images have slope around -2
-            deviation = abs(slope - (-2.0))
-            freq_score = max(0.0, 1.0 - deviation / 3.0)
-        else:
-            freq_score = 0.5
-
-        score = 0.5 * hue_score + 0.5 * freq_score
-        return float(np.clip(score, 0.0, 1.0)), issues
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #

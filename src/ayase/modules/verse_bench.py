@@ -65,7 +65,7 @@ class VerseBenchModule(PipelineModule):
         {"id": "hear21passt", "type": "pip_package", "install": "pip install hear21passt", "task": "PaSST audio model for KL divergence"},
         {"id": "24-01-04T16-39-21.pt", "type": "local", "task": "Syncformer AV sync model (AST + MotionFormer)"},
         {"id": "syncnet_v2.model", "type": "local", "task": "SyncNet v2 lip-sync model"},
-        {"id": "iic/SenseVoiceSmall", "type": "huggingface", "task": "SenseVoice ASR for WER computation"},
+        {"id": "FunAudioLLM/SenseVoiceSmall", "type": "huggingface", "task": "SenseVoice ASR for WER computation"},
         {"id": "fsmn-vad", "type": "huggingface", "task": "FSMN voice activity detection (FunASR)"},
     ]
     metric_info = {

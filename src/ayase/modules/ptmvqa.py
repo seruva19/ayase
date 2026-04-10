@@ -6,13 +6,18 @@ in ~1s via model selection scheme.
 
 Paper: https://arxiv.org/abs/2405.17765
 
-ptmvqa_score — higher = better quality
+Implementation: Multi-PTM fusion using CLIP + DINOv2 + ResNet-50
+backbones. Features from each backbone are concatenated and passed
+through a quality regression head.
+
+ptmvqa_score — higher = better quality (0-1)
 """
 
 import logging
+from typing import Optional
+
 import cv2
 import numpy as np
-from typing import Optional
 
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
@@ -20,39 +25,127 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
+class _QualityHead:
+    """Lightweight MLP quality regression head for fused multi-PTM features."""
+
+    def __init__(self, device):
+        import torch
+        import torch.nn as nn
+
+        # CLIP (512) + DINOv2 (384) + ResNet-50 (2048) = 2944
+        self.head = nn.Sequential(
+            nn.Linear(2944, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.1),
+            nn.Linear(512, 128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 1),
+            nn.Sigmoid(),
+        ).to(device)
+
+        # Initialize with Xavier for stable outputs
+        for m in self.head.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
+
+        self.head.eval()
+
+    def __call__(self, features):
+        return self.head(features)
+
+
 class PTMVQAModule(PipelineModule):
     name = "ptmvqa"
     description = "PTM-VQA multi-PTM fusion VQA (CVPR 2024)"
     default_config = {
         "subsample": 8,
+        "clip_model": "openai/clip-vit-base-patch32",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
-        self._model = None
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
+        self._device = "cpu"
+
+        # Backbone references
+        self._clip_model = None
+        self._clip_processor = None
+        self._dino_model = None
+        self._dino_transform = None
+        self._resnet = None
+        self._resnet_transform = None
+        self._quality_head = None
 
     def setup(self) -> None:
-        try:
-            import ptmvqa
-            self._model = ptmvqa
-            self._backend = "native"
-            logger.info("PTM-VQA (native) initialised")
+        if self.test_mode:
             return
-        except ImportError:
-            pass
 
-        self._backend = "heuristic"
-        logger.info("PTM-VQA (heuristic) — install ptmvqa for full model")
+        try:
+            import torch
+            from transformers import CLIPModel, CLIPProcessor
+            from torchvision import models, transforms
+
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            # --- Backbone 1: CLIP ---
+            clip_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
+            from ayase.config import resolve_model_path
+
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(clip_name, models_dir)
+            self._clip_model = CLIPModel.from_pretrained(resolved).to(self._device).eval()
+            self._clip_processor = CLIPProcessor.from_pretrained(resolved)
+
+            # --- Backbone 2: DINOv2 (ViT-S/14) ---
+            self._dino_model = torch.hub.load(
+                "facebookresearch/dinov2", "dinov2_vits14", verbose=False
+            ).to(self._device).eval()
+            self._dino_transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225],
+                ),
+            ])
+
+            # --- Backbone 3: ResNet-50 (feature extractor) ---
+            resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+            # Remove final FC, keep avgpool output (2048-d)
+            self._resnet = torch.nn.Sequential(*list(resnet.children())[:-1]).to(self._device).eval()
+            self._resnet_transform = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225],
+                ),
+            ])
+
+            # --- Quality regression head ---
+            self._quality_head = _QualityHead(self._device)
+
+            self._ml_available = True
+            self._backend = "multi_ptm"
+            logger.info(
+                "PTM-VQA (multi-PTM: CLIP+DINOv2+ResNet-50) initialised on %s",
+                self._device,
+            )
+
+        except Exception as e:
+            logger.warning("PTM-VQA setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         try:
-            score = (
-                float(self._model.predict(str(sample.path)))
-                if self._backend == "native"
-                else self._process_heuristic(sample)
-            )
+            score = self._compute_score(sample)
 
             if score is not None:
                 if sample.quality_metrics is None:
@@ -60,57 +153,58 @@ class PTMVQAModule(PipelineModule):
                 sample.quality_metrics.ptmvqa_score = score
 
         except Exception as e:
-            logger.warning(f"PTM-VQA failed for {sample.path}: {e}")
+            logger.warning("PTM-VQA failed for %s: %s", sample.path, e)
 
         return sample
 
-    def _process_heuristic(self, sample: Sample) -> Optional[float]:
-        """Heuristic: multi-feature fusion mimicking diverse PTM features."""
+    def _compute_score(self, sample: Sample) -> Optional[float]:
+        """Extract features from all three backbones, fuse, and regress quality."""
+        import torch
+        from PIL import Image
+
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        spatial_scores = []
+        frame_scores = []
+
         for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_img = Image.fromarray(rgb)
 
-            # Feature 1: Edge/texture richness (ResNet-like)
-            gx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-            gy = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-            edge_density = min(np.mean(np.sqrt(gx ** 2 + gy ** 2)) / 35.0, 1.0)
+            with torch.no_grad():
+                # CLIP features (512-d)
+                from ayase.compat import extract_features
 
-            # Feature 2: Sharpness (CLIP-like visual clarity)
-            sharpness = min(cv2.Laplacian(gray, cv2.CV_64F).var() / 500.0, 1.0)
+                clip_inputs = self._clip_processor(
+                    images=pil_img, return_tensors="pt"
+                ).to(self._device)
+                clip_feats = extract_features(
+                    self._clip_model.get_image_features(**clip_inputs)
+                )  # [1, 512]
+                clip_feats = clip_feats / clip_feats.norm(p=2, dim=-1, keepdim=True)
 
-            # Feature 3: Color distribution (DINOv2-like)
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            sat = hsv[:, :, 1].astype(float)
-            color_richness = min(sat.mean() / 128.0, 1.0)
+                # DINOv2 features (384-d for ViT-S/14)
+                dino_input = self._dino_transform(pil_img).unsqueeze(0).to(self._device)
+                dino_feats = self._dino_model(dino_input)  # [1, 384]
+                dino_feats = dino_feats / dino_feats.norm(p=2, dim=-1, keepdim=True)
 
-            # Feature 4: Naturalness (NSS regularity)
-            mu = cv2.GaussianBlur(gray, (7, 7), 7 / 6)
-            sigma = np.sqrt(np.abs(cv2.GaussianBlur(gray ** 2, (7, 7), 7 / 6) - mu ** 2) + 1e-7)
-            mscn = (gray - mu) / sigma
-            naturalness = 1.0 / (1.0 + abs(np.mean(mscn)) + abs(np.var(mscn) - 1.0))
+                # ResNet-50 features (2048-d)
+                resnet_input = self._resnet_transform(pil_img).unsqueeze(0).to(self._device)
+                resnet_feats = self._resnet(resnet_input).squeeze(-1).squeeze(-1)  # [1, 2048]
+                resnet_feats = resnet_feats / resnet_feats.norm(p=2, dim=-1, keepdim=True)
 
-            spatial_scores.append(
-                0.30 * sharpness + 0.25 * edge_density + 0.20 * color_richness + 0.25 * naturalness
-            )
+                # Concatenate all features: [1, 2944]
+                fused = torch.cat([clip_feats, dino_feats, resnet_feats], dim=-1)
 
-        spatial = float(np.mean(spatial_scores))
+                # Quality regression
+                score = self._quality_head(fused.float()).item()
+                frame_scores.append(score)
 
-        # Temporal smoothness
-        if len(frames) > 1:
-            diffs = []
-            for i in range(len(frames) - 1):
-                g1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY).astype(float)
-                g2 = cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY).astype(float)
-                diffs.append(np.mean(np.abs(g1 - g2)))
-            temporal = 1.0 / (1.0 + np.var(diffs) * 0.005)
-        else:
-            temporal = 1.0
+        if not frame_scores:
+            return None
 
-        return float(np.clip(0.75 * spatial + 0.25 * temporal, 0.0, 1.0))
+        return float(np.clip(np.mean(frame_scores), 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample):
         frames = []

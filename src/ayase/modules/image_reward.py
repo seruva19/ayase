@@ -17,8 +17,6 @@ from PIL import Image
 
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
-
 logger = logging.getLogger(__name__)
 
 
@@ -39,10 +37,10 @@ class ImageRewardModule(PipelineModule):
         self._model = None
         self._device = "cpu"
         self._ml_available = False
-        self._backend = None  # "image_reward" or "heuristic"
 
     def setup(self) -> None:
-        # Tier 1: image-reward library
+        if self.test_mode:
+            return
         try:
             # Shim: image-reward imports several functions from
             # transformers.modeling_utils that were moved to
@@ -65,45 +63,12 @@ class ImageRewardModule(PipelineModule):
             import ImageReward as ir_lib
 
             self._model = ir_lib.load(self.model_name)
-            self._backend = "image_reward"
             self._ml_available = True
             logger.info(f"ImageReward module initialized with {self.model_name}")
-            return
         except ImportError:
-            logger.debug("image-reward library not available, trying heuristic fallback")
+            logger.warning("ImageReward: image-reward library not installed, module disabled")
         except Exception as e:
             logger.warning(f"Failed to load ImageReward model: {e}")
-
-        # Tier 2: Heuristic fallback (CLIP similarity * aesthetic proxy)
-        try:
-            import torch
-            from transformers import CLIPModel, CLIPProcessor
-
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            from ayase.config import resolve_model_path
-
-            models_dir = self.config.get("models_dir", "models")
-            clip_model_name = "openai/clip-vit-base-patch32"
-            resolved = resolve_model_path(clip_model_name, models_dir)
-
-            self._clip_model = CLIPModel.from_pretrained(resolved, use_safetensors=True).to(
-                self._device
-            )
-            self._clip_processor = CLIPProcessor.from_pretrained(resolved)
-            self._backend = "heuristic"
-            self._ml_available = True
-            logger.info("ImageReward module initialized with CLIP heuristic fallback")
-            return
-        except ImportError:
-            logger.debug("transformers not available for heuristic fallback")
-        except Exception as e:
-            logger.debug(f"Heuristic fallback setup failed: {e}")
-
-        logger.warning(
-            "ImageReward: no backend available (install image-reward or transformers). "
-            "Module disabled."
-        )
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -129,10 +94,7 @@ class ImageRewardModule(PipelineModule):
             if not frames:
                 return sample
 
-            if self._backend == "image_reward":
-                score = self._score_image_reward(frames, caption_text)
-            else:
-                score = self._score_heuristic(frames, caption_text)
+            score = self._score_image_reward(frames, caption_text)
 
             if score is not None:
                 if sample.quality_metrics is None:
@@ -181,65 +143,6 @@ class ImageRewardModule(PipelineModule):
             return None
 
         return float(np.mean(scores))
-
-    def _score_heuristic(self, frames: List[Image.Image], caption: str) -> Optional[float]:
-        """Approximate ImageReward using CLIP similarity as a proxy.
-
-        Computes CLIP cosine similarity between image and caption. Maps the
-        similarity range [0, 0.4] to the typical ImageReward range [-2, +2].
-
-        Args:
-            frames: List of PIL images
-            caption: Text prompt
-
-        Returns:
-            Approximate reward score
-        """
-        try:
-            import torch
-
-            # Encode text once
-            text_inputs = self._clip_processor(
-                text=[caption],
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-            ).to(self._device)
-
-            with torch.no_grad():
-                text_features = extract_features(self._clip_model.get_text_features(**text_inputs))
-                text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
-
-            similarities = []
-            for pil_image in frames:
-                image_inputs = self._clip_processor(
-                    images=pil_image,
-                    return_tensors="pt",
-                ).to(self._device)
-
-                with torch.no_grad():
-                    image_features = extract_features(self._clip_model.get_image_features(**image_inputs))
-                    image_features = image_features / image_features.norm(
-                        p=2, dim=-1, keepdim=True
-                    )
-                    sim = (image_features @ text_features.T).item()
-                    similarities.append(sim)
-
-            if not similarities:
-                return None
-
-            avg_sim = float(np.mean(similarities))
-
-            # Map CLIP similarity [0, 0.4] to ImageReward-like range [-2, +2]
-            # CLIP sim ~0.2 is typical neutral, map to 0
-            reward_approx = (avg_sim - 0.2) * 10.0
-            reward_approx = max(-2.0, min(2.0, reward_approx))
-
-            return reward_approx
-
-        except Exception as e:
-            logger.debug(f"Heuristic scoring failed: {e}")
-            return None
 
     def _load_frames(self, sample: Sample) -> List[Image.Image]:
         """Load frames from video (uniformly sampled) or single image.

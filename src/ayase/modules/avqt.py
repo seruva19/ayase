@@ -1,20 +1,28 @@
-"""AVQT — Apple Advanced Video Quality Tool.
+"""AVQT -- Apple Advanced Video Quality Tool.
 
 Apple's perceptual video quality metric for content delivery.
-Multi-scale perceptual comparison with human visual system modeling.
+Full-reference metric using deep perceptual features with multi-scale
+comparison modelling the human visual system.
 
-avqt_score — higher = better quality
+Implementation:
+    1. Tier 1: AVQT CLI tool (if installed on macOS).
+    2. Tier 2: VGG-16 multi-scale feature comparison (deep FR metric).
+       - Extract VGG-16 features at conv2_2, conv3_3, conv4_3, conv5_3.
+       - Compute MS-SSIM-like comparison at each feature scale.
+       - Temporal pooling across frames with hysteresis weighting.
+
+avqt_score -- higher = better quality (0-1)
 """
 
 import logging
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import cv2
 import numpy as np
 
-from ayase.models import Sample, QualityMetrics
+from ayase.models import QualityMetrics, Sample
 from ayase.base_modules import ReferenceBasedModule
 
 logger = logging.getLogger(__name__)
@@ -26,17 +34,24 @@ class AVQTModule(ReferenceBasedModule):
     metric_field = "avqt_score"
     default_config = {
         "subsample": 8,
+        "hysteresis_weight": 0.1,  # Weight for temporal hysteresis
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
-        self._model = None
+        self.hysteresis_weight = self.config.get("hysteresis_weight", 0.1)
         self._cli_available = False
-        self._backend = "heuristic"
+        self._vgg = None
+        self._transform = None
+        self._device = "cpu"
+        self._ml_available = False
 
     def setup(self) -> None:
-        # Tier 1: Try AVQT CLI tool
+        if self.test_mode:
+            return
+
+        # Tier 1: Try AVQT CLI tool (macOS only)
         try:
             result = subprocess.run(
                 ["avqt", "--version"],
@@ -46,22 +61,57 @@ class AVQTModule(ReferenceBasedModule):
             )
             if result.returncode == 0:
                 self._cli_available = True
-                self._backend = "cli"
+                self._ml_available = True
                 logger.info("AVQT (CLI) initialised")
                 return
         except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
             pass
 
-        # Tier 2: Heuristic fallback
-        self._backend = "heuristic"
-        logger.info("AVQT (heuristic) initialised — install avqt CLI for full model")
+        # Tier 2: VGG-16 multi-scale deep FR metric
+        try:
+            import torch
+            import torchvision.models as models
+            from torchvision import transforms
+
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            vgg16 = models.vgg16(weights=models.VGG16_Weights.DEFAULT).features.eval()
+            self._vgg = vgg16.to(self._device)
+
+            # Feature layers: conv2_2(8), conv3_3(15), conv4_3(22), conv5_3(29)
+            self._feature_layers = [8, 15, 22, 29]
+            self._layer_weights = [0.15, 0.25, 0.30, 0.30]
+
+            self._transform = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225],
+                ),
+            ])
+
+            self._ml_available = True
+            logger.info("AVQT initialised with VGG-16 deep features on %s", self._device)
+
+        except ImportError:
+            logger.warning(
+                "AVQT: torch/torchvision not installed. Install with: pip install torch torchvision"
+            )
+        except Exception as e:
+            logger.warning("AVQT setup failed: %s", e)
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
-        if self._backend == "cli":
+        if not self._ml_available:
+            return None
+
+        if self._cli_available:
             return self._compute_cli(sample_path, reference_path)
-        return self._compute_heuristic(sample_path, reference_path)
+
+        return self._compute_vgg(sample_path, reference_path)
 
     def _compute_cli(
         self, sample_path: Path, reference_path: Path
@@ -75,7 +125,6 @@ class AVQTModule(ReferenceBasedModule):
                 timeout=300,
             )
             if result.returncode == 0:
-                # Parse score from output
                 for line in result.stdout.strip().split("\n"):
                     line = line.strip()
                     if "score" in line.lower() or "avqt" in line.lower():
@@ -87,10 +136,91 @@ class AVQTModule(ReferenceBasedModule):
                                 continue
             return None
         except (subprocess.TimeoutExpired, OSError) as e:
-            logger.warning(f"AVQT CLI failed: {e}")
+            logger.warning("AVQT CLI failed: %s", e)
             return None
 
-    def _read_frames(self, path: Path) -> list:
+    def _compute_vgg(
+        self, sample_path: Path, reference_path: Path
+    ) -> Optional[float]:
+        """Compute AVQT-like quality using VGG-16 multi-scale features."""
+        dist_frames = self._read_frames(sample_path)
+        ref_frames = self._read_frames(reference_path)
+
+        if not dist_frames or not ref_frames:
+            return None
+
+        n_frames = min(len(dist_frames), len(ref_frames))
+        dist_frames = dist_frames[:n_frames]
+        ref_frames = ref_frames[:n_frames]
+
+        frame_scores = []
+        prev_score = None
+
+        for i in range(n_frames):
+            ref_feats = self._extract_vgg_features(ref_frames[i])
+            dist_feats = self._extract_vgg_features(dist_frames[i])
+
+            if ref_feats is None or dist_feats is None:
+                continue
+
+            # Multi-scale feature comparison
+            scale_scores = []
+            for rf, df, w in zip(ref_feats, dist_feats, self._layer_weights):
+                # Cosine similarity between feature maps
+                rf_flat = rf.flatten()
+                df_flat = df.flatten()
+                cos_sim = float(np.dot(rf_flat, df_flat) / (
+                    np.linalg.norm(rf_flat) * np.linalg.norm(df_flat) + 1e-10
+                ))
+                # Also compute L2 distance for complementary info
+                l2_dist = float(np.mean((rf - df) ** 2))
+                l2_quality = 1.0 / (1.0 + l2_dist * 5.0)
+
+                combined = 0.5 * max(cos_sim, 0.0) + 0.5 * l2_quality
+                scale_scores.append(w * combined)
+
+            frame_quality = sum(scale_scores)
+
+            # Temporal hysteresis: blend with previous score
+            if prev_score is not None:
+                frame_quality = (
+                    (1.0 - self.hysteresis_weight) * frame_quality
+                    + self.hysteresis_weight * prev_score
+                )
+            prev_score = frame_quality
+
+            frame_scores.append(frame_quality)
+
+        if not frame_scores:
+            return None
+
+        # Mean temporal pooling
+        score = float(np.mean(frame_scores))
+        return float(np.clip(score, 0.0, 1.0))
+
+    def _extract_vgg_features(self, frame: np.ndarray) -> Optional[List[np.ndarray]]:
+        """Extract multi-scale VGG-16 features from a frame."""
+        import torch
+
+        try:
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            tensor = self._transform(rgb).unsqueeze(0).to(self._device)
+
+            features = []
+            x = tensor
+            with torch.no_grad():
+                for idx, layer in enumerate(self._vgg):
+                    x = layer(x)
+                    if idx in self._feature_layers:
+                        feat = x.cpu().numpy()[0]
+                        features.append(feat)
+
+            return features if len(features) == len(self._feature_layers) else None
+        except Exception as e:
+            logger.debug("VGG feature extraction failed: %s", e)
+            return None
+
+    def _read_frames(self, path: Path) -> List[np.ndarray]:
         """Read frames from video or image."""
         frames = []
         is_video = path.suffix.lower() in {
@@ -118,65 +248,13 @@ class AVQTModule(ReferenceBasedModule):
 
         return frames
 
-    def _compute_heuristic(
-        self, sample_path: Path, reference_path: Path
-    ) -> Optional[float]:
-        """Heuristic: multi-scale perceptual comparison."""
-        dist_frames = self._read_frames(sample_path)
-        ref_frames = self._read_frames(reference_path)
-
-        if not dist_frames or not ref_frames:
-            return None
-
-        n_frames = min(len(dist_frames), len(ref_frames))
-        dist_frames = dist_frames[:n_frames]
-        ref_frames = ref_frames[:n_frames]
-
-        frame_scores = []
-        for i in range(n_frames):
-            dist_gray = cv2.cvtColor(dist_frames[i], cv2.COLOR_BGR2GRAY).astype(np.float64)
-            ref_gray = cv2.cvtColor(ref_frames[i], cv2.COLOR_BGR2GRAY).astype(np.float64)
-
-            # Resize if needed
-            if dist_gray.shape != ref_gray.shape:
-                dist_gray = cv2.resize(dist_gray, (ref_gray.shape[1], ref_gray.shape[0]))
-
-            # Multi-scale comparison (3 scales)
-            scale_scores = []
-            d_cur, r_cur = dist_gray.copy(), ref_gray.copy()
-
-            for s in range(3):
-                if d_cur.shape[0] < 8 or d_cur.shape[1] < 8:
-                    break
-
-                # SSIM-like comparison at this scale
-                c1 = (0.01 * 255) ** 2
-                c2 = (0.03 * 255) ** 2
-
-                mu_d = cv2.GaussianBlur(d_cur, (11, 11), 1.5)
-                mu_r = cv2.GaussianBlur(r_cur, (11, 11), 1.5)
-                sigma_d2 = cv2.GaussianBlur(d_cur ** 2, (11, 11), 1.5) - mu_d ** 2
-                sigma_r2 = cv2.GaussianBlur(r_cur ** 2, (11, 11), 1.5) - mu_r ** 2
-                sigma_dr = cv2.GaussianBlur(d_cur * r_cur, (11, 11), 1.5) - mu_d * mu_r
-
-                ssim_map = ((2 * mu_d * mu_r + c1) * (2 * sigma_dr + c2)) / (
-                    (mu_d ** 2 + mu_r ** 2 + c1) * (sigma_d2 + sigma_r2 + c2)
-                )
-                scale_scores.append(float(np.mean(ssim_map)))
-
-                # Downsample
-                if d_cur.shape[0] > 16 and d_cur.shape[1] > 16:
-                    d_cur = cv2.pyrDown(d_cur)
-                    r_cur = cv2.pyrDown(r_cur)
-
-            if scale_scores:
-                # Weight finer scales more (perceptual importance)
-                weights = [0.5, 0.3, 0.2][: len(scale_scores)]
-                weights = np.array(weights) / sum(weights)
-                frame_scores.append(float(np.sum(np.array(scale_scores) * weights)))
-
-        if not frame_scores:
-            return None
-
-        score = float(np.mean(frame_scores))
-        return float(np.clip(score, 0.0, 1.0))
+    def on_dispose(self) -> None:
+        self._vgg = None
+        import gc
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass

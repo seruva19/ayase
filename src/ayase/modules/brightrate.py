@@ -32,10 +32,10 @@ _HDR_NIQE_PARAMS_URL = (
     "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/frames_modelparameters.mat"
 )
 _CLIP_VIT_B32_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/ViT-B-32.pt"
+    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/ViT-B-32.safetensors"
 )
 _CLIP_VIT_L14_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/ViT-L-14.pt"
+    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/ViT-L-14.safetensors"
 )
 _CLIPIQA_VITL14_URL = (
     "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/CLIPIQA+_ViTL14_512-e66488f2.pth"
@@ -245,8 +245,8 @@ class BrightRateModule(PipelineModule):
             ("regressor", "brightvq/brightrate_brightvq.pt", _BRIGHTRATE_MODEL_URL),
             ("contrique", "brightvq/CONTRIQUE_checkpoint25.tar", _CONTRIQUE_MODEL_URL),
             ("hdr_niqe_params", "brightvq/frames_modelparameters.mat", _HDR_NIQE_PARAMS_URL),
-            ("clip_vit_b32", "brightvq/ViT-B-32.pt", _CLIP_VIT_B32_URL),
-            ("clip_vit_l14", "brightvq/ViT-L-14.pt", _CLIP_VIT_L14_URL),
+            ("clip_vit_b32", "brightvq/ViT-B-32.safetensors", _CLIP_VIT_B32_URL),
+            ("clip_vit_l14", "brightvq/ViT-L-14.safetensors", _CLIP_VIT_L14_URL),
             ("clipiqa_vitl14", "brightvq/CLIPIQA+_ViTL14_512-e66488f2.pth", _CLIPIQA_VITL14_URL),
         ]:
             resolved = self._resolve_asset_path(key, relative_path, url, models_dir)

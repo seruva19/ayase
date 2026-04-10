@@ -32,23 +32,25 @@ class MaxVQAModule(PipelineModule):
         self._model = None
         self._clip_model = None
         self._clip_processor = None
-        self._backend = "heuristic"
+        self._backend = None
+        self._ml_available = False
 
     def setup(self) -> None:
         if self.test_mode:
-            self._backend = "heuristic"
             return
 
+        # Tier 1: native maxvqa package
         try:
             import maxvqa
             self._model = maxvqa
             self._backend = "native"
+            self._ml_available = True
             logger.info("MaxVQA (native) initialised")
             return
         except ImportError:
             pass
 
-        # Tier 2: CLIP-based heuristic
+        # Tier 2: CLIP-based quality scoring
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
@@ -62,22 +64,25 @@ class MaxVQAModule(PipelineModule):
             )
             self._device = device
             self._backend = "clip"
-            logger.info(f"MaxVQA (CLIP heuristic) initialised on {device}")
+            self._ml_available = True
+            logger.info(f"MaxVQA (CLIP) initialised on {device}")
             return
         except (ImportError, Exception):
             pass
 
-        self._backend = "heuristic"
-        logger.info("MaxVQA (heuristic) — install maxvqa or transformers for better accuracy")
+        logger.warning("MaxVQA: no backend available (install maxvqa or transformers)")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         try:
             if self._backend == "native":
                 score = self._process_native(sample)
             elif self._backend == "clip":
                 score = self._process_clip(sample)
             else:
-                score = self._process_heuristic(sample)
+                return sample
 
             if score is not None:
                 if sample.quality_metrics is None:
@@ -121,31 +126,6 @@ class MaxVQAModule(PipelineModule):
                 scores.append(float(logits[0, 0].cpu()))
 
         return float(np.mean(scores))
-
-    def _process_heuristic(self, sample: Sample) -> Optional[float]:
-        """Heuristic: multi-attribute quality scoring."""
-        frames = self._extract_frames(sample)
-        if not frames:
-            return None
-
-        scores = []
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-            sharpness = min(cv2.Laplacian(gray, cv2.CV_64F).var() / 500.0, 1.0)
-            contrast = min(gray.std() / 65.0, 1.0)
-            brightness = 1.0 - abs(gray.mean() - 127.5) / 127.5
-
-            b, g, r = frame[:, :, 0].astype(float), frame[:, :, 1].astype(float), frame[:, :, 2].astype(float)
-            colorfulness = min(
-                (np.sqrt((r - g).var() + (0.5 * (r + g) - b).var()) +
-                 0.3 * np.sqrt((r - g).mean() ** 2 + (0.5 * (r + g) - b).mean() ** 2)) / 100.0,
-                1.0,
-            )
-
-            score = 0.35 * sharpness + 0.25 * contrast + 0.20 * brightness + 0.20 * colorfulness
-            scores.append(score)
-
-        return float(np.clip(np.mean(scores), 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample):
         frames = []

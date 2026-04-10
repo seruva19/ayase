@@ -11,14 +11,12 @@ Outputs:
 
 Requires ``sample.reference_path`` for per-sample LPIPS.
 
-Tiered backends:
-    1. **lpips** library (AlexNet, VGG, or SqueezeNet backbone)
-    2. **Heuristic** — SSIM-based proxy via OpenCV
+Backend: **lpips** library (AlexNet, VGG, or SqueezeNet backbone).
 """
 
 import logging
 import random
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -41,15 +39,15 @@ class ImageLPIPSModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
-        self._backend = "heuristic"
         self._lpips_model = None
         self._device = None
         # Cache tensors for diversity computation
         self._tensor_cache: List[Tuple[str, object]] = []
 
     def setup(self) -> None:
-        """Load LPIPS model with tiered fallback."""
-        # Tier 1: Real LPIPS model
+        """Load LPIPS model."""
+        if self.test_mode:
+            return
         try:
             import torch
             import lpips
@@ -59,17 +57,10 @@ class ImageLPIPSModule(PipelineModule):
             self._lpips_model = lpips.LPIPS(net=net).to(device)
             self._lpips_model.eval()
             self._device = device
-            self._backend = "lpips"
             self._ml_available = True
             logger.info("ImageLPIPS: loaded LPIPS-%s on %s", net, device)
-            return
         except (ImportError, Exception) as e:
-            logger.info("LPIPS library unavailable: %s", e)
-
-        # Tier 2: Heuristic (SSIM-based proxy)
-        self._backend = "heuristic"
-        self._ml_available = True
-        logger.info("ImageLPIPS: using SSIM-based heuristic fallback")
+            logger.warning("ImageLPIPS: lpips library unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -168,13 +159,7 @@ class ImageLPIPSModule(PipelineModule):
         self._tensor_cache.append((path, img))
 
     def _compute_distance(self, img_a: np.ndarray, img_b: np.ndarray) -> Optional[float]:
-        """Compute perceptual distance between two RGB images using best backend."""
-        if self._backend == "lpips":
-            return self._compute_lpips(img_a, img_b)
-        return self._compute_heuristic(img_a, img_b)
-
-    def _compute_lpips(self, img_a: np.ndarray, img_b: np.ndarray) -> Optional[float]:
-        """Compute distance using real LPIPS model."""
+        """Compute perceptual distance between two RGB images using LPIPS."""
         try:
             import torch
 
@@ -188,40 +173,4 @@ class ImageLPIPSModule(PipelineModule):
             return float(dist)
         except Exception as e:
             logger.debug("LPIPS computation failed: %s", e)
-            return None
-
-    def _compute_heuristic(self, img_a: np.ndarray, img_b: np.ndarray) -> Optional[float]:
-        """SSIM-based perceptual distance proxy.
-
-        Converts SSIM (1=identical, -1=different) to a distance in [0, 1].
-        """
-        try:
-            gray_a = cv2.cvtColor(img_a, cv2.COLOR_RGB2GRAY).astype(np.float64)
-            gray_b = cv2.cvtColor(img_b, cv2.COLOR_RGB2GRAY).astype(np.float64)
-
-            # Compute SSIM manually
-            c1 = (0.01 * 255) ** 2
-            c2 = (0.03 * 255) ** 2
-
-            mu_a = cv2.GaussianBlur(gray_a, (11, 11), 1.5)
-            mu_b = cv2.GaussianBlur(gray_b, (11, 11), 1.5)
-
-            mu_a_sq = mu_a ** 2
-            mu_b_sq = mu_b ** 2
-            mu_ab = mu_a * mu_b
-
-            sigma_a_sq = cv2.GaussianBlur(gray_a ** 2, (11, 11), 1.5) - mu_a_sq
-            sigma_b_sq = cv2.GaussianBlur(gray_b ** 2, (11, 11), 1.5) - mu_b_sq
-            sigma_ab = cv2.GaussianBlur(gray_a * gray_b, (11, 11), 1.5) - mu_ab
-
-            ssim_map = ((2 * mu_ab + c1) * (2 * sigma_ab + c2)) / (
-                (mu_a_sq + mu_b_sq + c1) * (sigma_a_sq + sigma_b_sq + c2)
-            )
-            ssim_val = float(np.mean(ssim_map))
-
-            # Convert SSIM to distance: SSIM=1 -> dist=0, SSIM=0 -> dist=0.5
-            distance = float(np.clip((1.0 - ssim_val) / 2.0, 0.0, 1.0))
-            return distance
-        except Exception as e:
-            logger.debug("Heuristic SSIM distance failed: %s", e)
             return None
