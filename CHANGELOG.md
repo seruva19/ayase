@@ -5,6 +5,21 @@ All notable changes to Ayase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Replace all heuristic fallback backends with real ML implementations across 79 modules
+- Modules now gracefully skip when ML backend is unavailable instead of computing proxy values
+- CLIP weights on AkaneTendo25/ayase-models converted from .pt to .safetensors
+- Fix model references: KVQ (lero233/KVQ), AIGV-Assessor (IntMeGroup/), SenseVoice (FunAudioLLM/)
+
+### Added
+
+- **dino_face_identity**: DINOv2 face identity fields in QualityMetrics
+- **test_docs_integrity**: 327 new tests verifying module documentation, field writes, model references, and no-heuristic enforcement
+- Paper-accurate implementations: VSFA (quality-aware temporal pooling), VIDEVAL (60 hand-crafted features), VIIDEO/V-BLIINDS (scikit-video backend), face IQA (CR-FIQA/MagFace/SER-FIQ/GraFIQs via InsightFace), ModularBVQA (Laplacian+SlowFast rectifiers), Zoom-VQA (dual-branch IQA+VQA)
+
 ## [0.1.18]
 
 ### Added
