@@ -161,10 +161,14 @@ def test_aigv_assessor_video(video_sample):
     result = m.process(video_sample)
     qm = result.quality_metrics
     assert qm is not None
-    assert qm.aigv_static is not None
-    assert 0 <= qm.aigv_static <= 1
-    assert qm.aigv_temporal is not None
-    assert qm.aigv_dynamic is not None
+    # Without ML backend, module skips and metrics stay None
+    if not m._ml_available:
+        assert qm.aigv_static is None
+    else:
+        assert qm.aigv_static is not None
+        assert 0 <= qm.aigv_static <= 1
+        assert qm.aigv_temporal is not None
+        assert qm.aigv_dynamic is not None
 
 
 def test_aigv_assessor_image(image_sample):

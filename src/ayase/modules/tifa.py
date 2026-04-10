@@ -11,7 +11,6 @@ Also checks for a sidecar ``.txt`` file next to the sample.
 Tiered backends:
     1. Rule-based question generation + ViLT VQA (dandelin/vilt-b32-finetuned-vqa)
     2. CLIP text-image cosine similarity proxy
-    3. Heuristic — caption complexity-based estimate
 """
 
 import logging
@@ -128,7 +127,8 @@ class TIFAModule(PipelineModule):
         self.vqa_model = self.config.get("vqa_model", "dandelin/vilt-b32-finetuned-vqa")
         self.num_questions = self.config.get("num_questions", 8)
         self.subsample = self.config.get("subsample", 4)
-        self._backend = None  # "vilt" | "clip" | "heuristic"
+        self._backend = None  # "vilt" | "clip"
+        self._ml_available = False
         self._model = None
         self._processor = None
         self._clip_model = None
@@ -136,6 +136,9 @@ class TIFAModule(PipelineModule):
         self._device = "cpu"
 
     def setup(self):
+        if self.test_mode:
+            return
+
         # Tier 1: ViLT VQA
         try:
             import torch
@@ -148,6 +151,7 @@ class TIFAModule(PipelineModule):
                 self.vqa_model, cache_dir=models_dir
             ).to(self._device)
             self._backend = "vilt"
+            self._ml_available = True
             logger.info(f"TIFA: using ViLT VQA backend on {self._device}.")
             return
         except Exception:
@@ -166,16 +170,18 @@ class TIFAModule(PipelineModule):
             )
             self._clip_processor = CLIPProcessor.from_pretrained(clip_name, cache_dir=models_dir)
             self._backend = "clip"
+            self._ml_available = True
             logger.info("TIFA: using CLIP similarity proxy.")
             return
         except Exception:
             pass
 
-        # Tier 3: Heuristic
-        self._backend = "heuristic"
-        logger.info("TIFA: using heuristic fallback (no ML models).")
+        logger.warning("TIFA: no ML backend available.")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         caption_text = self._get_caption(sample)
         if not caption_text:
             return sample
@@ -183,10 +189,8 @@ class TIFAModule(PipelineModule):
         try:
             if self._backend == "vilt":
                 score = self._compute_vilt(sample, caption_text)
-            elif self._backend == "clip":
-                score = self._compute_clip(sample, caption_text)
             else:
-                score = self._compute_heuristic(caption_text)
+                score = self._compute_clip(sample, caption_text)
 
             if score is None:
                 return sample
@@ -274,19 +278,6 @@ class TIFAModule(PipelineModule):
             similarities.append(float(np.clip(sim, 0.0, 1.0)))
 
         return float(np.mean(similarities)) if similarities else None
-
-    def _compute_heuristic(self, caption: str) -> float:
-        """Estimate TIFA from caption complexity: shorter/simpler = easier to match."""
-        words = caption.split()
-        n = len(words)
-        if n <= 5:
-            return 0.75
-        elif n <= 15:
-            return 0.60
-        elif n <= 30:
-            return 0.45
-        else:
-            return 0.35
 
     # -- Frame loading ----------------------------------------------------------
 

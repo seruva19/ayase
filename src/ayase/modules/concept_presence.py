@@ -17,7 +17,6 @@ Tiered backends (face):
 
 Tiered backends (CLIP):
     1. **transformers** CLIPModel — HuggingFace CLIP
-    2. **Heuristic** — color-histogram template matching proxy
 """
 
 import logging
@@ -64,13 +63,16 @@ class ConceptPresenceModule(PipelineModule):
         self._haar_cascade = None  # OpenCV Haar cascade
 
         # CLIP backend state
-        self._clip_backend: Optional[str] = None  # "transformers" | "heuristic"
+        self._clip_backend: Optional[str] = None  # "transformers"
         self._clip_model = None
         self._clip_processor = None
         self._clip_device = "cpu"
 
     def setup(self) -> None:
         """Initialize face detection and CLIP backends with tiered fallback."""
+        if self.test_mode:
+            return
+
         self._setup_face_backend()
         self._setup_clip_backend()
 
@@ -148,9 +150,7 @@ class ConceptPresenceModule(PipelineModule):
         except (ImportError, Exception) as e:
             logger.info("Transformers CLIP unavailable: %s", e)
 
-        # Tier 2: Heuristic (color-histogram matching)
-        self._clip_backend = "heuristic"
-        logger.info("ConceptPresence: using heuristic fallback for concept matching")
+        logger.info("ConceptPresence: no CLIP backend available")
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -278,13 +278,13 @@ class ConceptPresenceModule(PipelineModule):
     def _detect_concepts_clip(
         self, frames: List[np.ndarray], concepts: List[str]
     ) -> tuple:
-        """Detect concepts using CLIP or heuristic.
+        """Detect concepts using CLIP.
 
         Returns (max_confidence, count_above_threshold).
         """
-        if self._clip_backend == "transformers":
-            return self._detect_concepts_transformers(frames, concepts)
-        return self._detect_concepts_heuristic(frames, concepts)
+        if self._clip_backend != "transformers":
+            return 0.0, 0
+        return self._detect_concepts_transformers(frames, concepts)
 
     def _detect_concepts_transformers(
         self, frames: List[np.ndarray], concepts: List[str]
@@ -336,46 +336,6 @@ class ConceptPresenceModule(PipelineModule):
 
         except Exception as e:
             logger.debug("CLIP concept detection failed: %s", e)
-            return 0.0, 0
-
-    def _detect_concepts_heuristic(
-        self, frames: List[np.ndarray], concepts: List[str]
-    ) -> tuple:
-        """Heuristic concept presence via color-histogram complexity.
-
-        Returns a rough proxy: high complexity = likely has some concept present.
-        Cannot distinguish between specific concepts.
-        """
-        try:
-            threshold = self.config.get("clip_threshold", 0.25)
-            confidences = []
-
-            for frame in frames:
-                # Compute color histogram complexity as a proxy for content richness
-                hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-                hist_h = cv2.calcHist([hsv], [0], None, [180], [0, 180])
-                hist_s = cv2.calcHist([hsv], [1], None, [256], [0, 256])
-
-                # Normalize
-                hist_h = hist_h / (hist_h.sum() + 1e-10)
-                hist_s = hist_s / (hist_s.sum() + 1e-10)
-
-                # Entropy as content richness proxy
-                h_entropy = float(-np.sum(hist_h[hist_h > 0] * np.log2(hist_h[hist_h > 0])))
-                s_entropy = float(-np.sum(hist_s[hist_s > 0] * np.log2(hist_s[hist_s > 0])))
-
-                # Normalize to 0-1 range
-                # Max entropy for 180 bins ~= 7.5, for 256 bins ~= 8.0
-                confidence = min(1.0, (h_entropy / 7.5 + s_entropy / 8.0) / 2.0)
-                confidences.append(confidence)
-
-            max_conf = max(confidences) if confidences else 0.0
-            count = sum(1 for c in confidences if c >= threshold)
-            # Heuristic can only say "something is there", count = 1 or 0
-            return max_conf, min(count, len(concepts))
-
-        except Exception as e:
-            logger.debug("Heuristic concept detection failed: %s", e)
             return 0.0, 0
 
     # -- Frame loading ----------------------------------------------------------

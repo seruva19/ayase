@@ -101,6 +101,15 @@ def load(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_a
     else:
         raise RuntimeError(f"Model {name} not found; available models = {available_models()}")
 
+    # Support safetensors format (preferred — no pickle, no security warnings)
+    if model_path.endswith(".safetensors"):
+        from safetensors.torch import load_file
+        state_dict = load_file(model_path, device="cpu")
+        model = build_model(state_dict).to(device)
+        if str(device) == "cpu":
+            model.float()
+        return model
+
     with open(model_path, 'rb') as opened_file:
         try:
             # loading JIT archive

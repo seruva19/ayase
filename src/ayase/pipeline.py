@@ -20,16 +20,17 @@ logger = logging.getLogger(__name__)
 class PipelineModule(ABC):
     """Base class for all quality assessment modules.
 
-    Supports a ``test_mode`` flag that forces heuristic-only backends,
-    skipping heavy ML model downloads. Activate via:
+    Supports a ``test_mode`` flag that skips ML model loading,
+    allowing fast unit testing without GPU or large downloads.
+    Activate via:
 
     - ``Module({"test_mode": True})`` — per-instance
     - ``AYASE_TEST_MODE=1`` environment variable — global
     - ``PipelineModule.set_test_mode(True)`` — class-level toggle
 
-    In test mode, ``setup()`` is still called but modules should skip
-    ML model loading when ``self.test_mode`` is True and fall through
-    to their heuristic backend instead.
+    In test mode, ``setup()`` returns early and modules leave
+    ``_ml_available = False``.  ``process()`` then returns the
+    sample unchanged (no metrics computed).
     """
 
     name: str = "unnamed_module"

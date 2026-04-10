@@ -262,6 +262,8 @@ class QualityMetrics(BaseModel):
         "face_recognition_score": "face",
         "face_cross_similarity": "face",
         "face_identity_count": "face",
+        "dino_face_identity": "face",
+        "dino_face_identity_max": "face",
         # OCR & text
         "ocr_area_ratio": "text",
         "ocr_score": "text",
@@ -570,6 +572,8 @@ class QualityMetrics(BaseModel):
     face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
     face_cross_similarity: Optional[float] = None  # Avg pairwise face similarity (0-1, higher=more consistent)
     face_identity_count: Optional[int] = None  # Number of unique identities detected
+    dino_face_identity: Optional[float] = None  # DINOv2 face identity cosine similarity (0-1, higher=better)
+    dino_face_identity_max: Optional[float] = None  # Max DINOv2 face identity across frames (0-1, higher=better)
     ocr_score: Optional[float] = None
     ocr_fidelity: Optional[float] = None  # OCR text accuracy vs caption (0-100, higher=better)
     ocr_cer: Optional[float] = None  # Character Error Rate (0-1, lower=better)

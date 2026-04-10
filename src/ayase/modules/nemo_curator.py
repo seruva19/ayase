@@ -1,7 +1,7 @@
 """NeMo Curator Quality module.
 
 Scores the quality of caption text associated with a sample using a
-three-tier backend:
+tiered backend:
 
   1. **DeBERTa quality classifier** — ``nvidia/quality-classifier-deberta``
      from HuggingFace, the same model used inside NeMo Curator's
@@ -12,8 +12,6 @@ three-tier backend:
      Requires ``pip install transformers torch huggingface_hub``.
   2. **FastText** quality filter — ``pip install fasttext``.
      Requires a pre-trained quality model file (set ``fasttext_model`` in config).
-  3. **Heuristic** — always works; checks length, punctuation ratio,
-     capitalisation, repetition, and special-character ratio.
 
 Only processes samples that have ``sample.caption.text``.  Stores
 ``nemo_quality_score`` (0–1) and ``nemo_quality_label``
@@ -21,7 +19,6 @@ Only processes samples that have ``sample.caption.text``.  Stores
 """
 
 import logging
-import re
 from typing import Optional, Tuple
 
 from ayase.models import QualityMetrics, Sample
@@ -69,9 +66,9 @@ def _get_quality_model_class():
 
 class NemoCuratorModule(PipelineModule):
     name = "nemo_curator"
-    description = "Caption text quality scoring (DeBERTa/FastText/heuristic)"
+    description = "Caption text quality scoring (DeBERTa/FastText)"
     default_config = {
-        "backend": "auto",  # auto | deberta | fasttext | heuristic
+        "backend": "auto",  # auto | deberta | fasttext
         "model_name": _DEBERTA_MODEL_ID,
         "min_length": 10,
         "max_length": 2000,
@@ -80,6 +77,7 @@ class NemoCuratorModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._backend: Optional[str] = None
+        self._ml_available = False
         self._deberta_model = None
         self._deberta_tokenizer = None
         self._deberta_config = None
@@ -89,6 +87,9 @@ class NemoCuratorModule(PipelineModule):
         self.max_length = self.config.get("max_length", 2000)
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         preferred = self.config.get("backend", "auto")
 
         # Tier 1: DeBERTa quality classifier (nvidia/quality-classifier-deberta)
@@ -113,6 +114,7 @@ class NemoCuratorModule(PipelineModule):
                 self._deberta_device = device
 
                 self._backend = "deberta"
+                self._ml_available = True
                 logger.info(f"NeMo Curator: DeBERTa classifier on {device}")
                 return
             except ImportError:
@@ -132,9 +134,10 @@ class NemoCuratorModule(PipelineModule):
                     if os.path.exists(model_path):
                         self._fasttext_model = fasttext.load_model(model_path)
                         self._backend = "fasttext"
+                        self._ml_available = True
                         logger.info("NeMo Curator: using FastText backend")
                         return
-                # No model file → fall through
+                # No model file -> fall through
                 if preferred == "fasttext":
                     logger.warning("FastText model file not found")
             except ImportError:
@@ -143,11 +146,12 @@ class NemoCuratorModule(PipelineModule):
             except Exception as e:
                 logger.warning(f"FastText init failed: {e}")
 
-        # Tier 3: Heuristic (always works)
-        self._backend = "heuristic"
-        logger.info("NeMo Curator: using heuristic backend")
+        logger.warning("NeMo Curator: no backend available (install transformers+torch or fasttext)")
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         if not sample.caption or not sample.caption.text:
             return sample
 
@@ -166,14 +170,11 @@ class NemoCuratorModule(PipelineModule):
         return sample
 
     def _score_text(self, text: str) -> Tuple[float, str]:
-        if self._backend is None:
-            logger.warning("NeMo Curator: setup() was not called, using heuristic fallback")
-            self._backend = "heuristic"
         if self._backend == "deberta" and self._deberta_model is not None:
             return self._score_deberta(text)
         if self._backend == "fasttext" and self._fasttext_model is not None:
             return self._score_fasttext(text)
-        return self._score_heuristic(text)
+        raise RuntimeError("No NeMo Curator backend available")
 
     # ── Tier 1: DeBERTa ─────────────────────────────────────────────
 
@@ -214,8 +215,7 @@ class NemoCuratorModule(PipelineModule):
 
             return score, best_label
         except Exception as e:
-            logger.debug(f"DeBERTa scoring failed, falling back to heuristic: {e}")
-            return self._score_heuristic(text)
+            raise RuntimeError(f"DeBERTa scoring failed: {e}") from e
 
     # ── Tier 2: FastText ─────────────────────────────────────────────
 
@@ -233,64 +233,8 @@ class NemoCuratorModule(PipelineModule):
             base = label_map.get(label, 0.5)
             score = base * conf + 0.5 * (1 - conf)
             return max(0.0, min(1.0, score)), self._label_from_score(score)
-        except Exception:
-            return self._score_heuristic(text)
-
-    # ── Tier 3: Heuristic ────────────────────────────────────────────
-
-    def _score_heuristic(self, text: str) -> Tuple[float, str]:
-        score = 0.0
-        total_weight = 0.0
-
-        # Length check (weight 0.3)
-        length = len(text)
-        if length < self.min_length:
-            len_score = length / max(self.min_length, 1)
-        elif length > self.max_length:
-            len_score = max(0.0, 1.0 - (length - self.max_length) / self.max_length)
-        else:
-            len_score = 1.0
-        score += len_score * 0.3
-        total_weight += 0.3
-
-        # Punctuation ratio (weight 0.15)
-        punct_count = sum(1 for c in text if c in ".,;:!?")
-        word_count = max(len(text.split()), 1)
-        punct_ratio = punct_count / word_count
-        punct_score = 1.0 if 0.05 <= punct_ratio <= 0.4 else max(0.0, 1.0 - abs(punct_ratio - 0.2) * 3)
-        score += punct_score * 0.15
-        total_weight += 0.15
-
-        # Capitalisation (weight 0.15)
-        if text and text[0].isupper():
-            cap_score = 1.0
-        elif text and text[0].isalpha():
-            cap_score = 0.3
-        else:
-            cap_score = 0.5
-        score += cap_score * 0.15
-        total_weight += 0.15
-
-        # Repetition detection (weight 0.25)
-        words = text.lower().split()
-        if len(words) >= 3:
-            unique_ratio = len(set(words)) / len(words)
-            rep_score = min(unique_ratio * 1.2, 1.0)
-        else:
-            rep_score = 0.5
-        score += rep_score * 0.25
-        total_weight += 0.25
-
-        # Special character ratio (weight 0.15)
-        special_count = len(re.findall(r'[^a-zA-Z0-9\s.,;:!?\'"()-]', text))
-        special_ratio = special_count / max(len(text), 1)
-        special_score = max(0.0, 1.0 - special_ratio * 10)
-        score += special_score * 0.15
-        total_weight += 0.15
-
-        final = score / max(total_weight, 1e-6)
-        final = max(0.0, min(1.0, final))
-        return final, self._label_from_score(final)
+        except Exception as e:
+            raise RuntimeError(f"FastText scoring failed: {e}") from e
 
     @staticmethod
     def _label_from_score(score: float) -> str:

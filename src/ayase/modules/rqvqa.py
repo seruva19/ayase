@@ -5,9 +5,8 @@ semantic coherence, and overall impression.
 
 Backend tiers:
   1. **RQ-VQA model** — real model from GitHub
-     (``github.com/sunwei925/RQ-VQA``, CVPR 2024 NTIRE winner)
+     (weights from ``AkaneTendo25/ayase-models``, original: ``sunwei925/RQ-VQA``)
   2. **CLIP-IQA+ backbone** — pyiqa CLIP-IQA+ with handcrafted features
-  3. **Handcrafted only** — pure OpenCV heuristic
 """
 
 import logging
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class RQVQAModule(PipelineModule):
     name = "rqvqa"
-    description = "Multi-attribute video quality (RQ-VQA model, CLIP-IQA+, or heuristic fallback)"
+    description = "Multi-attribute video quality (RQ-VQA model or CLIP-IQA+)"
     default_config = {
         "subsample": 8,
         "trust_remote_code": True,
@@ -40,12 +39,15 @@ class RQVQAModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
-        self._backend = "heuristic"
+        self._backend = None
         self._model = None
         self._clipiqa = None
         self._device = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: Real RQ-VQA model (custom weights)
         try:
             import torch
@@ -56,7 +58,8 @@ class RQVQAModule(PipelineModule):
             trc = self.config.get("trust_remote_code", True)
             rev = self.config.get("model_revision", None)
             self._model = AutoModel.from_pretrained(
-                "sunwei925/RQ-VQA", trust_remote_code=trc, revision=rev
+                "AkaneTendo25/ayase-models", subfolder="rqvqa",
+                trust_remote_code=trc, revision=rev
             ).to(device).eval()
             self._device = device
             self._backend = "rqvqa"
@@ -79,13 +82,12 @@ class RQVQAModule(PipelineModule):
             logger.info("RQ-VQA using CLIP-IQA+ backbone on %s", device)
             return
         except (ImportError, Exception) as e:
-            logger.info("RQ-VQA ML backbone unavailable: %s", e)
-
-        # Tier 3: Pure heuristic
-        self._backend = "heuristic"
-        self._ml_available = True
+            logger.warning("RQ-VQA: no ML backend available: %s", e)
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         try:
@@ -102,62 +104,64 @@ class RQVQAModule(PipelineModule):
                     sample.quality_metrics.rqvqa_score = float(np.clip(score, 0.0, 1.0))
                 return sample
 
-            dims = self.config.get("dimensions", self.default_config["dimensions"])
+            # CLIP-IQA+ backbone
+            if self._backend == "clipiqa" and self._clipiqa is not None:
+                import torch
 
-            # Clarity: Laplacian sharpness + contrast
-            clarity_scores = []
-            for f in frames:
-                gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
-                lap = cv2.Laplacian(gray, cv2.CV_64F).var()
-                contrast = gray.std() / 128.0
-                clarity_scores.append(min(1.0, (lap / 500.0 + contrast) / 2.0))
+                dims = self.config.get("dimensions", self.default_config["dimensions"])
 
-            # Aesthetics: Color harmony + rule of thirds
-            aes_scores = []
-            for f in frames:
-                hsv = cv2.cvtColor(f, cv2.COLOR_BGR2HSV)
-                h_hist = cv2.calcHist([hsv], [0], None, [12], [0, 180]).flatten()
-                h_hist = h_hist / (h_hist.sum() + 1e-8)
-                hue_entropy = -np.sum(h_hist[h_hist > 0] * np.log2(h_hist[h_hist > 0]))
-                aes = 1.0 - abs(hue_entropy - 2.5) / 3.5
-                aes_scores.append(max(0.0, min(1.0, aes)))
-
-            # Motion naturalness: optical flow smoothness
-            motion_scores = []
-            if len(frames) >= 2 and sample.is_video:
-                for i in range(len(frames) - 1):
-                    g1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
-                    g2 = cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY)
-                    flow = cv2.calcOpticalFlowFarneback(
-                        g1, g2, None, 0.5, 3, 15, 3, 5, 1.2, 0
-                    )
-                    mag = np.sqrt(flow[..., 0] ** 2 + flow[..., 1] ** 2)
-                    smoothness = 1.0 / (1.0 + np.std(mag) / 5.0)
-                    mag_score = float(np.exp(-0.5 * ((np.mean(mag) - 5.0) / 8.0) ** 2))
-                    motion_scores.append(0.5 * smoothness + 0.5 * mag_score)
-            else:
-                motion_scores = [0.8]
-
-            # Semantic coherence: inter-frame histogram correlation
-            coherence_scores = []
-            if len(frames) >= 2:
-                prev_hist = None
+                # Clarity: Laplacian sharpness + contrast
+                clarity_scores = []
                 for f in frames:
                     gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
-                    hist = cv2.calcHist([gray], [0], None, [64], [0, 256]).flatten()
-                    hist = hist / (hist.sum() + 1e-8)
-                    if prev_hist is not None:
-                        corr = float(np.corrcoef(hist, prev_hist)[0, 1])
-                        coherence_scores.append(max(0.0, corr))
-                    prev_hist = hist
-            if not coherence_scores:
-                coherence_scores = [1.0]
+                    lap = cv2.Laplacian(gray, cv2.CV_64F).var()
+                    contrast = gray.std() / 128.0
+                    clarity_scores.append(min(1.0, (lap / 500.0 + contrast) / 2.0))
 
-            # Overall impression: ML-based if available
-            impression_scores = []
-            if self._clipiqa is not None:
+                # Aesthetics: Color harmony + rule of thirds
+                aes_scores = []
+                for f in frames:
+                    hsv = cv2.cvtColor(f, cv2.COLOR_BGR2HSV)
+                    h_hist = cv2.calcHist([hsv], [0], None, [12], [0, 180]).flatten()
+                    h_hist = h_hist / (h_hist.sum() + 1e-8)
+                    hue_entropy = -np.sum(h_hist[h_hist > 0] * np.log2(h_hist[h_hist > 0]))
+                    aes = 1.0 - abs(hue_entropy - 2.5) / 3.5
+                    aes_scores.append(max(0.0, min(1.0, aes)))
+
+                # Motion naturalness: optical flow smoothness
+                motion_scores = []
+                if len(frames) >= 2 and sample.is_video:
+                    for i in range(len(frames) - 1):
+                        g1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
+                        g2 = cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY)
+                        flow = cv2.calcOpticalFlowFarneback(
+                            g1, g2, None, 0.5, 3, 15, 3, 5, 1.2, 0
+                        )
+                        mag = np.sqrt(flow[..., 0] ** 2 + flow[..., 1] ** 2)
+                        smoothness = 1.0 / (1.0 + np.std(mag) / 5.0)
+                        mag_score = float(np.exp(-0.5 * ((np.mean(mag) - 5.0) / 8.0) ** 2))
+                        motion_scores.append(0.5 * smoothness + 0.5 * mag_score)
+                else:
+                    motion_scores = [0.8]
+
+                # Semantic coherence: inter-frame histogram correlation
+                coherence_scores = []
+                if len(frames) >= 2:
+                    prev_hist = None
+                    for f in frames:
+                        gray = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+                        hist = cv2.calcHist([gray], [0], None, [64], [0, 256]).flatten()
+                        hist = hist / (hist.sum() + 1e-8)
+                        if prev_hist is not None:
+                            corr = float(np.corrcoef(hist, prev_hist)[0, 1])
+                            coherence_scores.append(max(0.0, corr))
+                        prev_hist = hist
+                if not coherence_scores:
+                    coherence_scores = [1.0]
+
+                # Overall impression: CLIP-IQA+ scoring
+                impression_scores = []
                 try:
-                    import torch
                     for f in frames[:4]:
                         rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
                         tensor = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
@@ -167,25 +171,26 @@ class RQVQAModule(PipelineModule):
                         impression_scores.append(s)
                 except Exception:
                     pass
-            if not impression_scores:
-                impression_scores = [
-                    np.mean([np.mean(clarity_scores), np.mean(aes_scores),
-                             np.mean(motion_scores), np.mean(coherence_scores)])
-                ]
+                if not impression_scores:
+                    impression_scores = [
+                        np.mean([np.mean(clarity_scores), np.mean(aes_scores),
+                                 np.mean(motion_scores), np.mean(coherence_scores)])
+                    ]
 
-            sub = {
-                "clarity": float(np.mean(clarity_scores)),
-                "aesthetics": float(np.mean(aes_scores)),
-                "motion_naturalness": float(np.mean(motion_scores)),
-                "semantic_coherence": float(np.mean(coherence_scores)),
-                "overall_impression": float(np.mean(impression_scores)),
-            }
+                sub = {
+                    "clarity": float(np.mean(clarity_scores)),
+                    "aesthetics": float(np.mean(aes_scores)),
+                    "motion_naturalness": float(np.mean(motion_scores)),
+                    "semantic_coherence": float(np.mean(coherence_scores)),
+                    "overall_impression": float(np.mean(impression_scores)),
+                }
 
-            total = sum(dims.get(k, 0.2) * v for k, v in sub.items())
-            total_w = sum(dims.get(k, 0.2) for k in sub)
-            score = total / max(total_w, 1e-8)
+                total = sum(dims.get(k, 0.2) * v for k, v in sub.items())
+                total_w = sum(dims.get(k, 0.2) for k in sub)
+                score = total / max(total_w, 1e-8)
 
-            sample.quality_metrics.rqvqa_score = float(np.clip(score, 0.0, 1.0))
+                sample.quality_metrics.rqvqa_score = float(np.clip(score, 0.0, 1.0))
+
         except Exception as e:
             logger.warning("RQ-VQA failed: %s", e)
         return sample
