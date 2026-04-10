@@ -175,12 +175,6 @@ class UnifiedVQAModule(PipelineModule):
         feat_std = np.std(dist_matrix, axis=0)
         feat_norm = float(np.linalg.norm(feat_mean))
 
-        # Per-frame feature norms (for attention weighting)
-        frame_norms = np.linalg.norm(dist_matrix, axis=1)
-
-        # Attention weights: frames with higher feature norms are more informative
-        attention = frame_norms / (frame_norms.sum() + 1e-10)
-
         # NR quality components
         # Feature magnitude correlates with content quality
         nr_magnitude = float(np.clip(feat_norm / 20.0, 0.0, 1.0))
@@ -208,7 +202,6 @@ class UnifiedVQAModule(PipelineModule):
 
         if ref_features is not None and len(ref_features) > 0:
             # FR mode: compute feature distances
-            ref_matrix = np.array(ref_features)
             n = min(len(dist_features), len(ref_features))
 
             fr_sims = []
