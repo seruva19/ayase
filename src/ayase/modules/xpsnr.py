@@ -69,7 +69,7 @@ class XPSNRModule(ReferenceBasedModule):
             if match:
                 return float(match.group(1))
 
-            logger.debug(f"Could not parse XPSNR from output")
+            logger.debug("Could not parse XPSNR from output")
             return None
         except subprocess.TimeoutExpired:
             return None

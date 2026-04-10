@@ -346,7 +346,7 @@ class ZoomVQAModule(PipelineModule):
 
     def _extract_iqa_feature(
         self, rgb: np.ndarray, use_patch_transform: bool = False
-    ) -> Optional["torch.Tensor"]:
+    ) -> Optional[object]:
         """Extract spatial features from an image using IQA backbone."""
         import torch
 
