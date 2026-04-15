@@ -82,6 +82,7 @@ def instantiate_profile_modules(
 
         params: Dict[str, Any] = {
             "models_dir": str(cfg.general.models_dir),
+            "parallel_jobs": cfg.general.parallel_jobs,
         }
 
         per_module = loaded.module_config.get(module_name, {})
