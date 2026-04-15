@@ -5,6 +5,23 @@ All notable changes to Ayase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Core config loading now lets `AYASE_*` environment overrides take precedence over TOML values
+- Pipeline cache and resume state now validate caption/reference context, reject stale persisted entries, and keep aggregate stats consistent when entries are replaced or skipped
+- Resume state now records a pipeline fingerprint, rejects incompatible or legacy untrusted caches, and rolls back partial module registrations from failed imports
+- Resume loading now replaces prior in-memory state, fingerprints effective `test_mode`, makes `modules check` mount modules with the loaded runtime config for real readiness, hard-fails unknown `run`/`stats` format values, guarantees TUI pipeline cleanup after execution errors, and resets `AyasePipeline.run()` state between runs
+- Corrupt state files now leave the current in-memory pipeline state intact, and plugin readiness no longer keeps stale entries after broken plugin files are removed
+- External plugins now reload when their source files change, unregister when removed, and repeated low-level `Pipeline.start()`/`stop()` cycles begin with a fresh run state
+- `AyasePipeline.run()` now preserves caller-installed pipeline hooks and public module-config overrides across fresh run rebuilds, and external plugin readiness entries are namespaced by plugin file path so same-named plugins in different folders no longer overwrite each other
+- Required model/weight downloads now reject path-escaping filenames and save atomically
+- TUI and CLI file execution paths now attach sidecar captions consistently and inject the same runtime config (`models_dir`, `parallel_jobs`) as the profile/API path
+- `ayase stats` now counts image-only datasets, `filter --mode list` no longer requires `--output`, and `scan`/`run` no longer create hidden artifact reports when stdout or explicit `--output` is used
+- Duplicate module names now fail fast during auto-registration instead of silently overwriting each other
+- Install/runtime docs no longer reference nonexistent extras, and the legacy `requirements-lock.txt` workflow was removed to keep `pip install ayase` as the single supported install path
+
 ## [0.1.29]
 
 ### Changed
@@ -138,6 +155,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `MODELS.md` generator reads `cls.models` declarations in addition to regex scanning
 - `METRICS.md` generator merges `cls.metric_info` descriptions into auto-inferred output fields
 - Removed unused vendor files from `verse_bench`: `aesthetic/musiq/` training code, `aesthetic/manica_utils/process.py`
+
+### Fixed
+
+- Config precedence now applies `AYASE_*` environment overrides on top of TOML/default values instead of silently letting file values win
+- Pipeline cache reuse now respects caption/reference context instead of reusing stale results solely by file path
+- Required model-file downloads now reject path-escaping targets and use atomic `.part` writes before replacing the final file
+- CLI `stats` now counts image-only datasets, and `filter --mode list` no longer requires `--output`
+- CLI `scan`/`run` no longer create surprise report artifacts when the user already chose explicit stdout or `--output`
+- Module registry now rejects duplicate module names instead of silently overwriting the first registration
+- Docker/TUI docs no longer reference non-existent install extras in the single-install distribution
 
 ## [0.1.19] - 2026-03-28
 

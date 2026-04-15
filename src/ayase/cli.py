@@ -20,7 +20,7 @@ from typing_extensions import Annotated
 from . import __version__
 from .config import AyaseConfig
 from .pipeline import Pipeline, ModuleRegistry, PipelineModule
-from .scanner import scan_dataset, VIDEO_EXTENSIONS, IMAGE_EXTENSIONS
+from .scanner import DatasetScanner, scan_dataset, sample_from_path
 from .models import Sample
 
 app = typer.Typer(
@@ -121,6 +121,8 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
             try:
                 if "models_dir" not in params and config:
                     params["models_dir"] = str(config.general.models_dir)
+                if "parallel_jobs" not in params and config:
+                    params["parallel_jobs"] = config.general.parallel_jobs
                 modules.append(module_cls(config=params))
             except Exception as e:
                 console.print(f"[red]Error initializing module '{name}': {e}[/red]")
@@ -132,11 +134,58 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
 
 def _process_samples(
     pipeline: Pipeline, samples: Iterable[Sample],
-) -> Pipeline:
+) -> int:
+    processed_count = 0
     for sample in samples:
-        processed = pipeline.process_sample(sample)
-        pipeline.results[str(processed.path)] = processed
-    return pipeline
+        pipeline.process_sample(sample)
+        processed_count += 1
+    return processed_count
+
+
+def _run_pipeline(pipeline: Pipeline, samples: Iterable[Sample]) -> int:
+    """Run a pipeline over samples and always dispose mounted modules."""
+    started = False
+    try:
+        pipeline.start()
+        started = True
+        return _process_samples(pipeline, samples)
+    finally:
+        if started:
+            pipeline.stop()
+
+
+def _iter_dataset_samples(
+    dataset_path: Path,
+    *,
+    include_videos: bool = True,
+    include_images: bool = True,
+    recursive: bool = True,
+) -> Iterable[Sample]:
+    scanner = DatasetScanner(
+        dataset_path=dataset_path,
+        include_videos=include_videos,
+        include_images=include_images,
+        recursive=recursive,
+    )
+    return scanner.scan()
+
+
+def _iter_input_samples(paths: Iterable[Path], *, recursive: bool) -> Iterable[Sample]:
+    for path in paths:
+        if path.is_dir():
+            yield from _iter_dataset_samples(
+                path,
+                include_videos=True,
+                include_images=True,
+                recursive=recursive,
+            )
+            continue
+
+        sample = sample_from_path(path)
+        if sample is None:
+            console.print(f"[red]Unsupported file type: {path}[/red]")
+            continue
+        yield sample
 
 
 def _write_markdown_report(pipeline: Pipeline) -> str:
@@ -184,6 +233,7 @@ def _instantiate_modules(module_names: List[str], config: AyaseConfig) -> List[P
             continue
         params = {
             "models_dir": str(config.general.models_dir),
+            "parallel_jobs": config.general.parallel_jobs,
         }
         try:
             modules.append(module_cls(config=params))
@@ -243,7 +293,7 @@ def scan(
     ] = None,
     jobs: Annotated[
         Optional[int],
-        typer.Option("--jobs", "-j", help="Number of parallel jobs"),
+        typer.Option("--jobs", "-j", help="Parallel job hint for capable modules/backends"),
     ] = None,
     quick: Annotated[
         bool,
@@ -269,6 +319,8 @@ def scan(
             console.print("[cyan]Deep scan mode enabled[/cyan]")
 
     config = AyaseConfig.load()
+    if jobs is not None:
+        config.general.parallel_jobs = jobs
     if dataset_path is None:
         dataset_path = config.pipeline.dataset_path
     if dataset_path is None:
@@ -286,11 +338,8 @@ def scan(
         modules = _instantiate_modules(module_names, config)
 
     p = Pipeline(modules)
-    p.start()
-    samples = scan_dataset(dataset_path, include_videos=True, include_images=True)
-    _process_samples(p, samples)
-    p.stop()
-    _export_artifacts(p, config, "scan")
+    samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
+    _run_pipeline(p, samples)
 
     if format == "markdown":
         report = _write_markdown_report(p)
@@ -358,30 +407,11 @@ def run(
     config = AyaseConfig.load()
     modules = _parse_pipeline_str(pipeline, config)
     p = Pipeline(modules)
-    p.start()
 
-    all_samples = []
-    for path in paths:
-        if path.is_dir():
-            all_samples.extend(
-                scan_dataset(path, include_videos=True, include_images=True, recursive=recursive)
-            )
-        else:
-            suffix = path.suffix.lower()
-            is_video = suffix in VIDEO_EXTENSIONS
-            is_image = suffix in IMAGE_EXTENSIONS
-            if not is_video and not is_image:
-                console.print(f"[red]Unsupported file type: {path}[/red]")
-                continue
-            all_samples.append(Sample(path=path, is_video=is_video))
-
-    if not all_samples:
+    processed_count = _run_pipeline(p, _iter_input_samples(paths, recursive=recursive))
+    if processed_count == 0:
         console.print("[yellow]No valid files found to process.[/yellow]")
         raise typer.Exit(code=0)
-
-    _process_samples(p, all_samples)
-    p.stop()
-    _export_artifacts(p, config, "run")
 
     if format == "json":
         data = {
@@ -408,12 +438,15 @@ def run(
                 issues = "; ".join([i.message for i in s.validation_issues])
                 score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
                 writer.writerow([str(s.path), s.is_valid, issues, f"{score:.2f}"])
+    else:
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(code=1)
 
 
 @app.command()
 def filter(
     dataset_path: Annotated[Path, typer.Argument(help="Path to dataset directory")],
-    output: Annotated[Path, typer.Option("--output", "-o", help="Output directory")],
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output directory")] = None,
     min_score: Annotated[
         Optional[int],
         typer.Option("--min-score", help="Minimum metric score [0-100]"),
@@ -437,7 +470,8 @@ def filter(
 ) -> None:
     """Filter dataset based on quality metrics."""
     console.print(f"[bold magenta]Filtering dataset:[/bold magenta] {dataset_path}")
-    console.print(f"[bold]Output:[/bold] {output}")
+    if output is not None:
+        console.print(f"[bold]Output:[/bold] {output}")
     console.print(f"[bold]Mode:[/bold] {mode}")
 
     if min_score is not None:
@@ -451,11 +485,9 @@ def filter(
     module_names = _select_modules(quick=False, deep=False, config=config)
     modules = _instantiate_modules(module_names, config)
     pipeline = Pipeline(modules)
-    pipeline.start()
 
-    samples = scan_dataset(dataset_path, include_videos=True, include_images=True)
-    _process_samples(pipeline, samples)
-    pipeline.stop()
+    samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
+    _run_pipeline(pipeline, samples)
 
     target_ar = None
     if aspect_ratio:
@@ -536,10 +568,8 @@ def stats(
     module_names = _select_modules(quick=True, deep=False, config=config)
     modules = _instantiate_modules(module_names, config)
     pipeline = Pipeline(modules)
-    pipeline.start()
-    samples = scan_dataset(dataset_path, include_videos=True, include_images=False)
-    _process_samples(pipeline, samples)
-    pipeline.stop()
+    samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
+    _run_pipeline(pipeline, samples)
 
     if format == "json":
         console.print_json(data=pipeline.stats.model_dump())
@@ -554,6 +584,9 @@ def stats(
         finally:
             tmp_path.unlink(missing_ok=True)
         return
+    if format != "text":
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(code=1)
 
     stats = pipeline.stats
     console.print(f"Total samples: {stats.total_samples}")
@@ -588,24 +621,56 @@ def modules_list() -> None:
 
 @modules_app.command("check")
 def modules_check() -> None:
-    """Verify all modules can be loaded without errors."""
+    """Verify import/readiness using discovery and declared package requirements."""
     config = AyaseConfig.load()
     _discover_all_modules(config)
     all_modules = ModuleRegistry.list_modules()
+    readiness = ModuleRegistry.readiness_report()
 
-    if not all_modules:
+    if not all_modules and not readiness:
         console.print("[yellow]No modules discovered.[/yellow]")
         raise typer.Exit(code=0)
 
     errors = 0
+    for name, info in sorted(readiness.items()):
+        if info.get("status") != "ready":
+            error = info.get("error") or "import failed"
+            console.print(f"  [red]FAIL[/red] {name}: {error}")
+            errors += 1
+
     for name in sorted(all_modules):
         cls = ModuleRegistry.get_module(name)
+        module = None
         try:
-            cls()
+            module = cls(
+                config={
+                    "models_dir": str(config.general.models_dir),
+                    "parallel_jobs": config.general.parallel_jobs,
+                }
+            )
+            missing = module._check_required_packages()
+            if missing:
+                console.print(
+                    f"  [red]FAIL[/red] {name}: missing declared packages: {', '.join(missing)}"
+                )
+                errors += 1
+                continue
+            module.on_mount()
+            if not getattr(module, "_mounted", False):
+                console.print(f"  [red]FAIL[/red] {name}: module did not mount successfully")
+                errors += 1
+                continue
             console.print(f"  [green]OK[/green]  {name}")
         except Exception as e:
             console.print(f"  [red]FAIL[/red] {name}: {e}")
             errors += 1
+        finally:
+            if module is not None:
+                try:
+                    module.on_dispose()
+                except Exception as e:
+                    console.print(f"  [red]FAIL[/red] {name}: cleanup failed: {e}")
+                    errors += 1
 
     if errors:
         console.print(f"\n[red]{errors} module(s) failed to load.[/red]")
@@ -764,7 +829,7 @@ def tui() -> None:
     except ImportError as e:
         console.print(f"[red]Error launching TUI: {e}[/red]")
         console.print(
-            "[yellow]Please ensure 'textual' is installed: pip install ayase[tui][/yellow]"
+            "[yellow]This install is missing required runtime dependencies. Reinstall with: pip install --upgrade --force-reinstall ayase[/yellow]"
         )
     except Exception as e:
         console.print(f"[red]Unexpected error: {e}[/red]")

@@ -16,17 +16,19 @@ Full metric catalog: [METRICS.md](METRICS.md). Pretrained model catalog: [MODELS
 pip install ayase
 ```
 
-Modules that require ML backends (torch, transformers, pyiqa, insightface, etc.) skip gracefully when the backend is not installed. Model weights are downloaded and cached on first use.
+Ayase is distributed as a single install. Runtime dependencies are managed by the
+project itself, and model weights are downloaded and cached on first use.
 
 ## CLI
 
 ```bash
-ayase scan ./dataset                                    # all modules
+ayase scan ./dataset                                    # default balanced pipeline
+ayase scan ./dataset --deep                             # run every discovered module
 ayase scan ./dataset --modules metadata,basic_quality   # selected modules
 ayase modules list                                      # show all 327 modules
-ayase modules check                                     # verify which backends are available
+ayase modules check                                     # import/dependency readiness
 ayase filter ./dataset --min-score 70 --output ./good   # filter by quality
-ayase stats ./dataset                                   # dataset statistics
+ayase stats ./dataset                                   # dataset statistics for images/video
 ayase tui                                               # terminal UI
 ```
 
@@ -52,7 +54,7 @@ pipeline.export("report.json")   # also: report.csv, report.html
 
 ```toml
 [general]
-parallel_jobs = 8
+parallel_jobs = 8  # concurrency hint passed to capable modules/backends
 
 [pipeline]
 modules = ["metadata", "basic_quality", "motion"]
@@ -65,7 +67,7 @@ artifacts_dir = "reports"
 ## Custom Modules
 
 ```python
-from ayase.models import Sample, QualityMetrics
+from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 import cv2
 
@@ -83,7 +85,12 @@ class BlurCheck(PipelineModule):
             sample.quality_metrics = QualityMetrics()
         sample.quality_metrics.blur_score = score
         if score < self.config.get("threshold", 100.0):
-            sample.validation_issues.append({"severity": "warning", "message": f"Blurry ({score:.0f})"})
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Blurry ({score:.0f})",
+                )
+            )
         return sample
 ```
 

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch, AsyncMock
 
 import pytest
 
+import ayase.tui as tui_module
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.tui import (
     AyaseApp,
@@ -149,6 +150,14 @@ class TestAppLifecycle:
         finally:
             for p in patches:
                 p.stop()
+
+    def test_app_module_configs_are_instance_isolated(self):
+        app_a = AyaseApp()
+        app_b = AyaseApp()
+
+        app_a.update_module_config("metadata", {"threshold": 0.8})
+
+        assert app_b.module_configs == {}
 
 
 # ---------------------------------------------------------------------------
@@ -454,6 +463,31 @@ class TestModuleConfigWidget:
             for p in patches:
                 p.stop()
 
+    @pytest.mark.asyncio
+    async def test_internal_runtime_config_is_hidden(self):
+        app = AyaseApp()
+        patches = _patch_registry_and_config()
+        for p in patches:
+            p.start()
+        try:
+            async with app.run_test() as pilot:
+                app.selected_path = Path("/tmp/fake")
+                app.switch_mode("config")
+                await pilot.pause()
+                panel = app.screen.query_one("#config_panel")
+                panel.remove_children()
+                widget = ModuleConfigWidget(
+                    "internal_mod",
+                    {"models_dir": "models", "parallel_jobs": 8},
+                )
+                await panel.mount(widget)
+                await pilot.pause()
+                labels = widget.query(".no-config")
+                assert len(labels) > 0
+        finally:
+            for p in patches:
+                p.stop()
+
 
 # ---------------------------------------------------------------------------
 # Execution screen
@@ -539,6 +573,142 @@ class TestExecutionScreen:
         finally:
             for p in patches:
                 p.stop()
+
+    @pytest.mark.asyncio
+    async def test_execution_uses_caption_sidecars_and_runtime_config(self, tmp_path):
+        media_path = tmp_path / "clip.mp4"
+        media_path.write_bytes(b"\x00" * 100)
+        (tmp_path / "clip.txt").write_text("caption from sidecar", encoding="utf-8")
+
+        class CaptureModule(FakePipelineModule):
+            name = "metadata"
+            description = "Capture TUI sample context"
+            seen_captions: List[Optional[str]] = []
+            seen_configs: List[Dict[str, object]] = []
+
+            def __init__(self, config=None):
+                super().__init__(config)
+                type(self).seen_configs.append(dict(self.config))
+
+            def process(self, sample):
+                type(self).seen_captions.append(sample.caption.text if sample.caption else None)
+                return sample
+
+        CaptureModule.seen_captions = []
+        CaptureModule.seen_configs = []
+
+        app = AyaseApp()
+        patches = _patch_registry_and_config()
+        patches[2] = patch("ayase.tui.ModuleRegistry.get_module", return_value=CaptureModule)
+        for p in patches:
+            p.start()
+        try:
+            async with app.run_test() as pilot:
+                app.selected_path = tmp_path
+                app.selected_modules = ["metadata"]
+                app.switch_mode("execution")
+                await pilot.pause(delay=1.0)
+                title = app.screen.query_one("#status_title")
+                assert "COMPLETE" in str(title.render())
+                assert CaptureModule.seen_captions == ["caption from sidecar"]
+                assert CaptureModule.seen_configs
+                assert (
+                    CaptureModule.seen_configs[0]["parallel_jobs"]
+                    == app.ayase_config.general.parallel_jobs
+                )
+                assert (
+                    CaptureModule.seen_configs[0]["models_dir"]
+                    == str(app.ayase_config.general.models_dir)
+                )
+        finally:
+            for p in patches:
+                p.stop()
+
+    @pytest.mark.asyncio
+    async def test_execution_stops_pipeline_when_ui_update_fails(self, monkeypatch):
+        class DummyLog:
+            def write(self, *args, **kwargs):
+                return None
+
+        class DummyProgress:
+            def update(self, *args, **kwargs):
+                return None
+
+            def advance(self, *args, **kwargs):
+                return None
+
+        class DummyLabel:
+            def __init__(self, *, fail: bool = False):
+                self.fail = fail
+                self.disabled = False
+                self.value = None
+
+            def update(self, value):
+                self.value = value
+                if self.fail:
+                    raise RuntimeError("ui boom")
+
+        class DummyPipeline:
+            last = None
+
+            def __init__(self, modules):
+                self.modules = modules
+                self.started = False
+                self.stopped = False
+                type(self).last = self
+
+            def start(self):
+                self.started = True
+
+            def process_sample(self, sample):
+                return sample
+
+            def stop(self):
+                self.stopped = True
+
+            def export_report(self, *args, **kwargs):
+                return None
+
+        class FakeScreen:
+            def __init__(self):
+                self._abort = False
+                self.app = MagicMock()
+                self.app.selected_path = Path("/tmp/fake")
+                self.app.selected_modules = []
+                self.app.module_configs = {}
+                self.app.ayase_config = None
+                self.app.pipeline = None
+                self._widgets = {
+                    "RichLog": DummyLog(),
+                    "ProgressBar": DummyProgress(),
+                    "#stat_total": DummyLabel(),
+                    "#stat_processed": DummyLabel(fail=True),
+                    "#stat_failed": DummyLabel(),
+                    "#status_title": DummyLabel(),
+                    "#btn_results": DummyLabel(),
+                    "#btn_abort": DummyLabel(),
+                }
+
+            def query_one(self, selector, *args):
+                key = selector if isinstance(selector, str) else selector.__name__
+                return self._widgets[key]
+
+        monkeypatch.setattr(tui_module, "Pipeline", DummyPipeline)
+        monkeypatch.setattr(
+            tui_module,
+            "_discover_selected_samples",
+            lambda path: [Sample(path=Path("clip.mp4"), is_video=True)],
+        )
+
+        screen = FakeScreen()
+        await ExecutionScreen.run_pipeline(screen)
+
+        assert DummyPipeline.last is not None
+        assert DummyPipeline.last.started is True
+        assert DummyPipeline.last.stopped is True
+        assert screen._widgets["#status_title"].value == "ANALYSIS FAILED"
+        assert screen._widgets["#btn_results"].disabled is False
+        assert screen._widgets["#btn_abort"].disabled is True
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Stage 1: base — core dependencies only (no ML frameworks)
+# Stage 1: base — single-install runtime image
 # ---------------------------------------------------------------------------
 FROM python:3.12-slim AS base
 
@@ -28,7 +28,7 @@ WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ayase/__init__.py src/ayase/__init__.py
 
-# Install core dependencies (no optional extras)
+# Install the full single-install runtime distribution
 RUN pip install --no-cache-dir . && \
     rm -rf /tmp/*
 
@@ -45,18 +45,8 @@ USER ayase
 ENTRYPOINT ["ayase"]
 
 # ---------------------------------------------------------------------------
-# Stage 2: ml — extends base with the [ml] optional-dependency group
+# Stage 2: compatibility alias for the single-install runtime image
 # ---------------------------------------------------------------------------
 FROM base AS ml
-
-# Switch back to root to install additional packages
-USER root
-
-# Install ML extras (torch, torchvision, transformers, etc.)
-RUN pip install --no-cache-dir ".[ml]" && \
-    rm -rf /tmp/*
-
-# Drop back to non-root
-USER ayase
 
 ENTRYPOINT ["ayase"]
