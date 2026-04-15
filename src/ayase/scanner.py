@@ -204,3 +204,23 @@ def scan_dataset(
     )
 
     return list(scanner.scan())
+
+
+def sample_from_path(path: Path) -> Optional[Sample]:
+    """Build a single sample from a media file, including any matching sidecar caption."""
+    suffix = path.suffix.lower()
+    is_video = suffix in VIDEO_EXTENSIONS
+    is_image = suffix in IMAGE_EXTENSIONS
+    if not path.is_file() or (not is_video and not is_image):
+        return None
+
+    scanner = DatasetScanner(
+        dataset_path=path.parent,
+        include_videos=True,
+        include_images=True,
+        recursive=False,
+    )
+    caption_map, caption_stem_map = scanner._build_caption_map()
+    caption_path = scanner._find_caption(path, caption_map, caption_stem_map)
+    caption = scanner._load_caption(caption_path) if caption_path else None
+    return Sample(path=path, is_video=is_video, caption=caption)

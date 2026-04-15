@@ -1,5 +1,7 @@
 """Configuration management for Ayase."""
 
+import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, List
 
@@ -133,23 +135,75 @@ class AyaseConfig(BaseSettings):
             return tomllib.load(f)
 
     @classmethod
+    def _load_env_overrides(cls) -> Dict[str, Any]:
+        """Read ``AYASE_*`` env vars into a nested dict understood by Pydantic.
+
+        Only variables targeting real top-level config sections are considered so
+        runtime env vars like ``AYASE_TEST_MODE`` do not get treated as config.
+        """
+        valid_sections = set(cls.model_fields.keys())
+        nested: Dict[str, Any] = {}
+
+        for key, value in os.environ.items():
+            if not key.startswith("AYASE_"):
+                continue
+
+            parts = key[len("AYASE_") :].lower().split("__")
+            if not parts or parts[0] not in valid_sections:
+                continue
+
+            cursor: Dict[str, Any] = nested
+            for part in parts[:-1]:
+                child = cursor.get(part)
+                if not isinstance(child, dict):
+                    child = {}
+                    cursor[part] = child
+                cursor = child
+            parsed: Any = value
+            stripped = value.lstrip()
+            if stripped.startswith("[") or stripped.startswith("{"):
+                try:
+                    parsed = json.loads(value)
+                except json.JSONDecodeError:
+                    parsed = value
+            cursor[parts[-1]] = parsed
+
+        return nested
+
+    @staticmethod
+    def _merge_nested(base: Dict[str, Any], overrides: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively merge nested dicts, preferring override values."""
+        merged = dict(base)
+        for key, value in overrides.items():
+            current = merged.get(key)
+            if isinstance(current, dict) and isinstance(value, dict):
+                merged[key] = AyaseConfig._merge_nested(current, value)
+            else:
+                merged[key] = value
+        return merged
+
+    @classmethod
     def load(cls, config_path: Optional[Path] = None) -> "AyaseConfig":
         """Load configuration from file or defaults."""
+        file_data: Dict[str, Any] = {}
         if config_path and config_path.exists():
-            return cls(**cls._load_toml(config_path))
+            file_data = cls._load_toml(config_path)
+        else:
+            # Try default locations
+            default_paths = [
+                Path("ayase.toml"),
+                Path.home() / ".config" / "ayase" / "config.toml",
+            ]
 
-        # Try default locations
-        default_paths = [
-            Path("ayase.toml"),
-            Path.home() / ".config" / "ayase" / "config.toml",
-        ]
+            for path in default_paths:
+                if path.exists():
+                    file_data = cls._load_toml(path)
+                    break
 
-        for path in default_paths:
-            if path.exists():
-                return cls(**cls._load_toml(path))
+        merged = cls._merge_nested(file_data, cls._load_env_overrides())
 
-        # Return default config
-        return cls()
+        # Validate explicit data only; defaults are filled by the model itself.
+        return cls.model_validate(merged)
 
     def save(self, config_path: Path) -> None:
         """Save configuration to TOML file."""

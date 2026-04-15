@@ -30,6 +30,7 @@ from textual.binding import Binding
 
 from ayase.pipeline import Pipeline, ModuleRegistry
 from ayase.models import Sample, ValidationSeverity
+from ayase.scanner import DatasetScanner, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
 
 import ayase
 
@@ -49,6 +50,50 @@ def _available_drives() -> List[str]:
         except OSError:
             pass
     return drives
+
+
+_TUI_VIDEO_EXTENSIONS = set(VIDEO_EXTENSIONS) | {".gif"}
+_TUI_SUPPORTED_EXTENSIONS = set(IMAGE_EXTENSIONS) | _TUI_VIDEO_EXTENSIONS
+
+
+def _discover_selected_samples(path: Path) -> List[Sample]:
+    """Discover samples for the TUI using the same caption contract as the CLI scanner."""
+    if path.is_file():
+        dataset_root = path.parent
+        files = [path] if path.suffix.lower() in _TUI_SUPPORTED_EXTENSIONS else []
+        recursive = False
+    else:
+        dataset_root = path
+        pattern = "**/*"
+        files = [
+            file_path
+            for file_path in path.glob(pattern)
+            if file_path.is_file() and file_path.suffix.lower() in _TUI_SUPPORTED_EXTENSIONS
+        ]
+        recursive = True
+
+    if not files:
+        return []
+
+    scanner = DatasetScanner(
+        dataset_path=dataset_root,
+        include_videos=True,
+        include_images=True,
+        recursive=recursive,
+    )
+    caption_map, caption_stem_map = scanner._build_caption_map()
+    samples: List[Sample] = []
+    for file_path in sorted(files):
+        caption_path = scanner._find_caption(file_path, caption_map, caption_stem_map)
+        caption = scanner._load_caption(caption_path) if caption_path else None
+        samples.append(
+            Sample(
+                path=file_path,
+                is_video=file_path.suffix.lower() in _TUI_VIDEO_EXTENSIONS,
+                caption=caption,
+            )
+        )
+    return samples
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +257,7 @@ class ModuleConfigWidget(Static):
         # Filter out internal/ambiguous config keys
         display_config = {
             k: v for k, v in self.current_config.items()
-            if k not in ("models_dir",)
+            if k not in ("models_dir", "parallel_jobs")
         }
 
         if not display_config:
@@ -639,6 +684,7 @@ class ExecutionScreen(Screen):
                     config["models_dir"] = str(
                         self.app.ayase_config.general.models_dir
                     )
+                    config["parallel_jobs"] = self.app.ayase_config.general.parallel_jobs
 
                 log.write(f"  Init [bold]{name}[/bold]")
                 module = cls(config)
@@ -652,21 +698,9 @@ class ExecutionScreen(Screen):
         self.app.pipeline = pipeline
 
         path = self.app.selected_path
-        files: list = []
-        if path.is_file():
-            files = [path]
-        else:
-            files = [
-                f
-                for f in path.rglob("*")
-                if f.suffix.lower()
-                in {
-                    ".mp4", ".mkv", ".mov", ".avi",
-                    ".jpg", ".png", ".jpeg", ".webp", ".gif",
-                }
-            ]
+        samples = _discover_selected_samples(path)
 
-        if not files:
+        if not samples:
             log.write(f"[bold red]NO MEDIA FILES FOUND IN:[/bold red] {path}")
             log.write(
                 "Please select a different folder or check file extensions."
@@ -675,39 +709,54 @@ class ExecutionScreen(Screen):
             self.query_one("#status_title").update("ANALYSIS FAILED")
             return
 
-        total = len(files)
+        total = len(samples)
         self.query_one("#stat_total", Label).update(str(total))
         progress.update(total=total)
 
-        pipeline.start()
+        started = False
+        run_error: Optional[Exception] = None
+        stop_error: Optional[Exception] = None
 
-        for i, file_path in enumerate(files):
-            if self._abort:
-                log.write("[bold yellow]ABORTED BY USER[/bold yellow]")
-                break
+        try:
+            pipeline.start()
+            started = True
 
-            log.write(f"[{i + 1}/{total}] {file_path.name}")
-            VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".gif"}
-            sample = Sample(
-                path=file_path,
-                is_video=file_path.suffix.lower() in VIDEO_EXTS,
-            )
+            for i, sample in enumerate(samples):
+                if self._abort:
+                    log.write("[bold yellow]ABORTED BY USER[/bold yellow]")
+                    break
 
-            try:
-                result = pipeline.process_sample(sample)
-                processed += 1
-                issues = len(result.validation_issues)
-                if issues > 0:
-                    log.write(f"  -> [yellow]{issues} issues[/yellow]")
-            except Exception as e:
-                failed += 1
-                log.write(f"  -> [bold red]ERROR: {e}[/bold red]")
+                log.write(f"[{i + 1}/{total}] {sample.path.name}")
 
-            self.query_one("#stat_processed", Label).update(str(processed))
-            self.query_one("#stat_failed", Label).update(str(failed))
-            progress.advance(1)
+                try:
+                    result = pipeline.process_sample(sample)
+                    processed += 1
+                    issues = len(result.validation_issues)
+                    if issues > 0:
+                        log.write(f"  -> [yellow]{issues} issues[/yellow]")
+                except Exception as e:
+                    failed += 1
+                    log.write(f"  -> [bold red]ERROR: {e}[/bold red]")
 
-        pipeline.stop()
+                self.query_one("#stat_processed", Label).update(str(processed))
+                self.query_one("#stat_failed", Label).update(str(failed))
+                progress.advance(1)
+        except Exception as e:
+            run_error = e
+            log.write(f"[bold red]UNEXPECTED ERROR:[/bold red] {e}")
+        finally:
+            if started:
+                try:
+                    pipeline.stop()
+                except Exception as e:
+                    stop_error = e
+                    log.write(f"[bold red]STOP FAILED:[/bold red] {e}")
+
+        if run_error or stop_error:
+            self.query_one("#status_title").update("ANALYSIS FAILED")
+            self.query_one("#btn_results").disabled = False
+            self.query_one("#btn_abort").disabled = True
+            return
 
         try:
             if self.app.ayase_config:
@@ -1308,6 +1357,14 @@ class AyaseApp(App):
     pipeline: Pipeline | None = None
     ayase_config: Any = None
     readiness_data: Dict[str, Dict[str, Optional[str]]] = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.module_configs = {}
+        self.module_order = []
+        self.pipeline = None
+        self.ayase_config = None
+        self.readiness_data = {}
 
     def on_mount(self) -> None:
         from ayase.config import AyaseConfig
