@@ -50,7 +50,7 @@ class VideoRewardModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._quality_embeds = None
         self._low_quality_embeds = None
 

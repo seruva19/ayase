@@ -63,7 +63,7 @@ class T2VEvalModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._real_embeds = None
         self._fake_embeds = None
         self._quality_pos = None

@@ -59,7 +59,7 @@ class DynamicsControllabilityModule(PipelineModule):
         super().__init__(config)
         self._backend = "farneback"
         self._cotracker = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         # Tier 1: CoTracker

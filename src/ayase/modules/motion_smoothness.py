@@ -23,6 +23,23 @@ class MotionSmoothnessModule(PipelineModule):
         "vfi_error_threshold": 0.08,
         "max_frames": 64,
     }
+    models = [
+        {
+            "id": "flownet.pkl",
+            "type": "local",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/motion_smoothness/flownet.pkl",
+            "task": "Bundled RIFE HD v3 interpolation weights",
+        },
+        {
+            "id": "rife_model",
+            "type": "pip_package",
+            "install": "pip install rife-model",
+            "task": "Optional external RIFE interpolation fallback",
+        },
+    ]
+    metric_info = {
+        "motion_smoothness": "VFI or optical-flow reconstruction smoothness (0-1, higher=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

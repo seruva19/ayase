@@ -25,7 +25,7 @@ class RAFTMotionModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._transforms = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         try:

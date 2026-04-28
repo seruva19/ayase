@@ -35,12 +35,24 @@ class ImageLPIPSModule(PipelineModule):
         "resize": 256,  # Resize images before computing LPIPS
         "diversity_max_pairs": 500,  # Max pairs for diversity computation
     }
+    models = [
+        {
+            "id": "lpips",
+            "type": "pip_package",
+            "install": "pip install lpips",
+            "task": "LPIPS AlexNet/VGG/SqueezeNet perceptual distance model",
+        },
+    ]
+    metric_info = {
+        "image_lpips": "Per-sample LPIPS distance to reference image (lower=better)",
+        "lpips_diversity": "Dataset average pairwise LPIPS distance (higher=more diverse)",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
         self._lpips_model = None
-        self._device = None
+        self._device = "cpu"
         # Cache tensors for diversity computation
         self._tensor_cache: List[Tuple[str, object]] = []
 

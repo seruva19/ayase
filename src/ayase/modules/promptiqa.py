@@ -34,6 +34,9 @@ class PromptIQAModule(PipelineModule):
         self._backend = "none"
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
+
         # Tier 1: Real PromptIQA from pyiqa
         try:
             import pyiqa

@@ -36,6 +36,17 @@ class UMAPProjectionModule(BatchMetricModule):
         "device": "auto",
         "min_samples": 3,
     }
+    models = [
+        {
+            "id": "openai/clip-vit-base-patch32",
+            "type": "huggingface",
+            "task": "CLIP embedding extractor for projection",
+        },
+    ]
+    metric_info = {
+        "umap_spread": "Spread of dataset embeddings in the 2-D projection",
+        "umap_coverage": "Coverage of occupied projection space (0-1, higher=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

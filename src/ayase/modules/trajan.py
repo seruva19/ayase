@@ -33,7 +33,7 @@ class TRAJANModule(PipelineModule):
         self._ml_available = False
         self._backend = "lk"
         self._cotracker = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         # Tier 1: CoTracker from Facebook Research

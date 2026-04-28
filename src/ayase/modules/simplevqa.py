@@ -49,7 +49,7 @@ class SimpleVQAModule(PipelineModule):
         self._spatial_backbone = None
         self._spatial_quality_head = None
         self._temporal_quality_head = None
-        self._device = None
+        self._device = "cpu"
         self._transform = None
         self._fast_transform = None
 

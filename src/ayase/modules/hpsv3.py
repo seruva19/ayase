@@ -29,6 +29,21 @@ class HPSv3Module(PipelineModule):
         "device": "auto",
         "warning_threshold": None,
     }
+    models = [
+        {
+            "id": "MizzenAI/HPSv3",
+            "type": "huggingface",
+            "task": "HPSv3 prompt-conditioned reward model",
+        },
+        {
+            "id": "Qwen/Qwen2-VL-7B-Instruct",
+            "type": "huggingface",
+            "task": "Vision-language backbone used by HPSv3",
+        },
+    ]
+    metric_info = {
+        "hpsv3_score": "HPSv3 human preference reward mean over sampled frames (higher=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

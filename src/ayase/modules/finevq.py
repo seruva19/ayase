@@ -44,7 +44,7 @@ class FineVQModule(PipelineModule):
         self._model = None
         self._processor = None
         self._topiq = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:

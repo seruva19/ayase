@@ -46,7 +46,7 @@ class QCLIPModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._quality_embeds = None
         self._quality_weights = None
 

@@ -49,7 +49,7 @@ class VideoScore2Module(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._backend = None
-        self._device = None
+        self._device = "cpu"
         self._model = None
         self._processor = None
         self._tokenizer = None

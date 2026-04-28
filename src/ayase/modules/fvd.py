@@ -30,6 +30,16 @@ class FVDModule(BatchMetricModule):
         "device": "auto",
         "subsample_videos": None,  # Max videos to process (None = all)
     }
+    models = [
+        {
+            "id": "torchvision/r3d_18",
+            "type": "torchvision",
+            "task": "Kinetics-400 R3D-18 video feature extractor",
+        },
+    ]
+    metric_info = {
+        "fvd": "Frechet Video Distance between generated and reference video distributions (lower=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

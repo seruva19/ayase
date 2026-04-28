@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.30]
+
+### Added
+
+- **unified_vqa**: added a dedicated `unified_vqa_score` metric while preserving the legacy `dover_score` compatibility alias when unset.
+- **kandinsky_motion**: added declared camera, object, and dynamics motion metrics and model metadata.
+
+### Changed
+
+- Generated docs now use packaged-only module discovery by default, document DatasetStats outputs, and keep README counts aligned with the docs generator.
+- `METRICS.md` now always includes static per-module test coverage links, even when generated without live pytest status collection.
+- Model docs now classify CLIP variants separately from HuggingFace repositories and support offline deterministic regeneration.
+
+### Fixed
+
+- Pipeline module and hook execution now rejects non-`Sample` returns without corrupting the current sample.
+- Dataset-level modules and vendored/third-party model modules now declare required `metric_info` / `models` metadata for docs generation.
+- Core config and pipeline typing now pass the configured strict MyPy target.
+
 ### Fixed
 
 - Core config loading now lets `AYASE_*` environment overrides take precedence over TOML values

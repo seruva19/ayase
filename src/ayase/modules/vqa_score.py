@@ -22,6 +22,22 @@ class VQAScoreModule(PipelineModule):
         "model": "clip-flant5-xxl",
         "subsample": 4,
     }
+    models = [
+        {
+            "id": "clip-flant5-xxl",
+            "type": "other",
+            "task": "Vendored t2v_metrics VQAScore model",
+            "install": "bundled in ayase.vendor.t2v_metrics",
+        },
+        {
+            "id": "ViT-B/32",
+            "type": "clip",
+            "task": "OpenAI CLIP fallback for text-visual alignment",
+        },
+    ]
+    metric_info = {
+        "vqa_score_alignment": "VQAScore text-visual alignment probability (0-1, higher=better)",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -49,7 +49,7 @@ class VQA2Module(PipelineModule):
         self._backend = None
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._quality_embeds = None
         self._quality_weights = None
 

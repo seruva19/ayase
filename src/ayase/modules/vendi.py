@@ -29,6 +29,17 @@ class VendiModule(BatchMetricModule):
         "max_samples": 1000,
         "resize": 224,
     }
+    models = [
+        {
+            "id": "vendi_score",
+            "type": "pip_package",
+            "install": "pip install vendi-score",
+            "task": "Optional Vendi Score entropy backend",
+        },
+    ]
+    metric_info = {
+        "vendi": "Vendi Score dataset diversity from similarity-matrix entropy (higher=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -28,7 +28,7 @@ class PtlflowMotionModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         try:
