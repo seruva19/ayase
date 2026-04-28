@@ -27,6 +27,16 @@ class KVDModule(BatchMetricModule):
         "bandwidth": 1.0,  # Kernel bandwidth
         "device": "auto",
     }
+    models = [
+        {
+            "id": "torchvision/r3d_18",
+            "type": "torchvision",
+            "task": "Kinetics-400 R3D-18 video feature extractor",
+        },
+    ]
+    metric_info = {
+        "kvd": "Kernel Video Distance via MMD over video features (lower=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

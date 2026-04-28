@@ -35,6 +35,29 @@ class KIDModule(BatchMetricModule):
         "batch_size": 32,
         "resize": 299,  # Input size for InceptionV3
     }
+    models = [
+        {
+            "id": "torchvision/inception_v3",
+            "type": "torchvision",
+            "task": "InceptionV3 feature extractor for native KID",
+        },
+        {
+            "id": "cleanfid",
+            "type": "pip_package",
+            "install": "pip install clean-fid",
+            "task": "Optional KID backend",
+        },
+        {
+            "id": "torch-fidelity",
+            "type": "pip_package",
+            "install": "pip install torch-fidelity",
+            "task": "Optional KID backend",
+        },
+    ]
+    metric_info = {
+        "kid": "Kernel Inception Distance estimate (lower=better)",
+        "kid_std": "Standard deviation over KID subsets",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

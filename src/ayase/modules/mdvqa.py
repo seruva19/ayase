@@ -42,7 +42,7 @@ class MDVQAModule(PipelineModule):
         self._semantic_head = None
         self._distortion_head = None
         self._motion_head = None
-        self._device = None
+        self._device = "cpu"
         self._transform = None
 
     def setup(self) -> None:

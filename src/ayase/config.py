@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, cast
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -132,7 +132,7 @@ class AyaseConfig(BaseSettings):
             import tomli as tomllib
 
         with open(path, "rb") as f:
-            return tomllib.load(f)
+            return cast(Dict[str, Any], tomllib.load(f))
 
     @classmethod
     def _load_env_overrides(cls) -> Dict[str, Any]:
@@ -203,7 +203,7 @@ class AyaseConfig(BaseSettings):
         merged = cls._merge_nested(file_data, cls._load_env_overrides())
 
         # Validate explicit data only; defaults are filled by the model itself.
-        return cls.model_validate(merged)
+        return cast("AyaseConfig", cls.model_validate(merged))
 
     def save(self, config_path: Path) -> None:
         """Save configuration to TOML file."""

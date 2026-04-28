@@ -12,7 +12,7 @@ import inspect
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from .pipeline import ModuleRegistry, PipelineModule
 
@@ -103,6 +103,11 @@ def _get_source(cls) -> str:
         return inspect.getsource(cls)
     except (TypeError, OSError):
         return ""
+
+
+def _looks_like_clip_variant(model_id: str) -> bool:
+    """Return True for OpenAI CLIP variant names such as ViT-B/32 or RN50."""
+    return model_id.startswith(("ViT-", "RN"))
 
 
 def _get_group(name: str, input_type: str) -> str:
@@ -222,7 +227,10 @@ def _detect_hf_models(source: str) -> List[str]:
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
         # Filter likely HF repos (org/model format)
-        if not any(x in candidate for x in ("http", "path", "file", "dir")):
+        if (
+            not _looks_like_clip_variant(candidate)
+            and not any(x in candidate for x in ("http", "path", "file", "dir"))
+        ):
             if candidate not in models:
                 models.append(candidate)
     return models[:3]  # Cap at 3
@@ -276,6 +284,11 @@ def _detect_fields_written(source: str) -> Set[str]:
     return writes
 
 
+def _detect_dataset_fields_written(source: str) -> Set[str]:
+    """Find DatasetStats fields written through pipeline.add_dataset_metric()."""
+    return set(re.findall(r'add_dataset_metric\(\s*["\'](\w+)["\']', source))
+
+
 _UTILITY_MODULES = {"embedding", "dedup", "diversity_selection", "knowledge_graph"}
 
 # ── Metric category display names and ordering ────────────────────────────
@@ -290,6 +303,7 @@ _CATEGORY_DISPLAY = {
     "audio": "Audio Quality",
     "face": "Face & Identity",
     "scene": "Scene & Content",
+    "distribution": "Distribution & Generation",
     "hdr": "HDR & Color",
     "codec": "Codec & Technical",
     "spatial": "Depth & Spatial",
@@ -331,7 +345,10 @@ def _detect_source_links(source: str, cls: type) -> str:
     # HuggingFace
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
-        if not any(x in candidate for x in ("http", "path", "file", "dir", "main/")):
+        if (
+            not _looks_like_clip_variant(candidate)
+            and not any(x in candidate for x in ("http", "path", "file", "dir", "main/"))
+        ):
             links.append(f'<a href="https://huggingface.co/{candidate}" target="_blank">HF</a>')
             break
     # Paper citation from docstring
@@ -369,6 +386,7 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
     # metric_field, add_dataset_metric, or is a batch/dataset-level module.
     has_output = (
         meta["output_fields"]
+        or meta.get("dataset_output_fields")
         or "validation_issues" in full_source
         or re.search(r'metric_field\s*=\s*["\']', full_source)
         or "add_dataset_metric" in full_source
@@ -494,13 +512,58 @@ def _generate_charts(
                 mc_display, "chart_metrics_per_cat.png",
                 palette=["#00B894"] * len(mc_items))
 
-    except ImportError:
-        pass  # seaborn/matplotlib not available
+    except ImportError as exc:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Chart generation skipped: matplotlib/seaborn not installed (%s). "
+            "Install with `pip install matplotlib seaborn` to embed charts.",
+            exc,
+        )
     except Exception as exc:
         import logging
         logging.getLogger(__name__).warning(f"Chart generation failed: {exc}")
 
     return paths
+
+
+def _collect_test_coverage(module_names: Iterable[str]) -> Dict[str, List[str]]:
+    """Map module names to repository test files that reference them.
+
+    This is deterministic and does not execute pytest, so METRICS.md can always
+    include test coverage links even when regenerated with ``--no-tests``.
+    """
+    project_root = Path(__file__).parent.parent.parent
+    tests_root = project_root / "tests"
+    coverage: Dict[str, Set[str]] = {name: set() for name in module_names}
+    if not tests_root.exists():
+        return {}
+
+    module_names_set = set(module_names)
+    for test_path in tests_root.rglob("test_*.py"):
+        rel = test_path.relative_to(project_root).as_posix()
+        stem = test_path.stem
+        if stem.startswith("test_"):
+            stem_name = stem[5:]
+            if stem_name in module_names_set:
+                coverage[stem_name].add(rel)
+
+        try:
+            text = test_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+
+        for m in re.finditer(r"ayase\.modules\.([a-zA-Z0-9_]+)", text):
+            mod_name = m.group(1)
+            if mod_name in module_names_set:
+                coverage[mod_name].add(rel)
+
+        # Fallback for tests that assert registry names without importing the
+        # exact module path. Require quoted names to keep false positives low.
+        for mod_name in module_names_set:
+            if f'"{mod_name}"' in text or f"'{mod_name}'" in text:
+                coverage[mod_name].add(rel)
+
+    return {name: sorted(paths) for name, paths in coverage.items() if paths}
 
 
 def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
@@ -587,6 +650,30 @@ def _format_test_status(module_name: str, test_results: Dict) -> str:
     return f"{light}{full}"
 
 
+def _format_test_coverage(
+    module_name: str,
+    test_coverage: Dict[str, List[str]],
+    test_results: Dict,
+) -> str:
+    """Format deterministic test coverage links plus optional live status."""
+    paths = test_coverage.get(module_name, [])
+    if paths:
+        links = []
+        for path in paths[:3]:
+            label = Path(path).name
+            links.append(f"[`{label}`]({path})")
+        if len(paths) > 3:
+            links.append(f"+{len(paths) - 3} more")
+        coverage = "covered by " + ", ".join(links)
+    else:
+        coverage = "no dedicated test reference found"
+
+    status = _format_test_status(module_name, test_results)
+    if status != "\u2014":
+        return f"{coverage} · live: {status}"
+    return coverage
+
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # QualityMetrics introspection
@@ -633,6 +720,44 @@ def _get_quality_metrics_fields() -> Dict[str, Dict]:
     return fields_info
 
 
+def _get_dataset_stats_fields() -> Dict[str, Dict]:
+    """Extract DatasetStats fields with type metadata and inline comments."""
+    from .models import DatasetStats
+
+    fields_info = {}
+    inline_comments: Dict[str, str] = {}
+    try:
+        src = inspect.getsource(DatasetStats)
+        for m in re.finditer(r"(\w+):\s*Optional\[.*?\]\s*=\s*None\s*#\s*(.*)", src):
+            inline_comments[m.group(1)] = m.group(2).strip()
+    except (TypeError, OSError):
+        pass
+
+    for name, field_info in DatasetStats.model_fields.items():
+        annotation = field_info.annotation
+        type_str = "object"
+        if annotation is not None:
+            ann_str = str(annotation)
+            if "int" in ann_str:
+                type_str = "int"
+            elif "float" in ann_str:
+                type_str = "float"
+            elif "str" in ann_str:
+                type_str = "str"
+            elif "Dict" in ann_str or "dict" in ann_str:
+                type_str = "dict"
+            elif "List" in ann_str or "list" in ann_str:
+                type_str = "list"
+
+        fields_info[name] = {
+            "type": type_str,
+            "description": field_info.description or "",
+            "comment": inline_comments.get(name, ""),
+        }
+
+    return fields_info
+
+
 def _get_score_direction(field_name: str, desc: str) -> str:
     """Determine score direction from field name and description."""
     desc_lower = (desc or "").lower()
@@ -657,15 +782,19 @@ def _get_score_direction(field_name: str, desc: str) -> str:
 # Main generator
 # ══════════════════════════════════════════════════════════════════════════════
 
-def generate_metrics_doc(run_tests: bool = True) -> str:
+def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) -> str:
     """Generate METRICS.md content with charts, test status, and version header.
 
     Args:
         run_tests: If True, run pytest to collect test pass/fail status
                    for each module. Adds checkmark emojis to module tables.
+        include_plugins: If True, include plugin/test modules currently
+                         registered in addition to packaged ayase modules.
     """
     ModuleRegistry.discover_modules()
-    all_modules = ModuleRegistry.list_modules()
+    all_modules = ModuleRegistry.list_modules(packaged_only=not include_plugins)
+    qm_fields = _get_quality_metrics_fields()
+    ds_fields = _get_dataset_stats_fields()
 
     # ── Collect module data ──────────────────────────────────────────────
     results: List[Dict] = []
@@ -674,6 +803,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
     all_packages: Counter = Counter()
     field_writers: Dict[str, List[str]] = defaultdict(list)  # field → [module names]
     field_readers: Dict[str, List[str]] = defaultdict(list)  # field → [module names]
+    dataset_field_writers: Dict[str, List[str]] = defaultdict(list)
     speed_counts: Counter = Counter()
     gpu_count = 0
 
@@ -701,9 +831,17 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
             for fname, desc in meta.get("output_fields", {}).items():
                 enriched[fname] = declared_metric_info.get(fname, desc)
             for fname, desc in declared_metric_info.items():
-                if fname not in enriched:
+                if fname in qm_fields and fname not in enriched:
                     enriched[fname] = desc
             meta["output_fields"] = enriched
+
+            dataset_enriched = {}
+            for fname, desc in meta.get("dataset_output_fields", {}).items():
+                dataset_enriched[fname] = declared_metric_info.get(fname, desc)
+            for fname, desc in declared_metric_info.items():
+                if fname in ds_fields and fname not in dataset_enriched:
+                    dataset_enriched[fname] = desc
+            meta["dataset_output_fields"] = dataset_enriched
 
         for b in meta["backends"]:
             all_backends[b] += 1
@@ -717,6 +855,10 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         written = _detect_fields_written(source)
         for f in written:
             field_writers[f].append(name)
+        dataset_written = set(meta.get("dataset_output_fields", {})) | _detect_dataset_fields_written(source)
+        for f in dataset_written:
+            if f in ds_fields:
+                dataset_field_writers[f].append(name)
         read = _detect_fields_read(source)
         for f in read:
             field_readers[f].append(name)
@@ -731,15 +873,20 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
 
     # ── Compute stats ────────────────────────────────────────────────────
     total_modules = len(results)
-    total_outputs = sum(len(r["output_fields"]) for r in results)
+    total_outputs = sum(
+        len(r["output_fields"]) + len(r.get("dataset_output_fields", {})) for r in results
+    )
     unique_outputs: Set[str] = set()
     for r in results:
         unique_outputs.update(r["output_fields"].keys())
+        unique_outputs.update(r.get("dataset_output_fields", {}).keys())
 
     group_stats = defaultdict(lambda: {"modules": 0, "fields": 0})
     for r in results:
         group_stats[r["group"]]["modules"] += 1
-        group_stats[r["group"]]["fields"] += len(r["output_fields"])
+        group_stats[r["group"]]["fields"] += (
+            len(r["output_fields"]) + len(r.get("dataset_output_fields", {}))
+        )
 
     input_counts: Counter = Counter()
     for r in results:
@@ -759,8 +906,6 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
 
     tiered_count = sum(1 for r in results if r["tiered"])
 
-    # QualityMetrics introspection
-    qm_fields = _get_quality_metrics_fields()
     written_fields = set(field_writers.keys())
     all_qm_field_names = set(qm_fields.keys())
     orphaned = all_qm_field_names - written_fields
@@ -778,7 +923,9 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                     if producer != r["name"]:
                         deps.append((r["name"], field, producer))
 
-    # ── Run tests to get status (optional) ────────────────────────────────
+    # ── Collect test coverage (always) and live status (optional) ─────────
+    test_coverage = _collect_test_coverage(all_modules.keys())
+    covered_modules = sum(1 for r in results if r["name"] in test_coverage)
     test_results = _collect_test_status(run_tests=run_tests)
 
     # ── Generate charts ──────────────────────────────────────────────────
@@ -815,15 +962,37 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
     a(">")
     a("> `ayase modules docs -o METRICS.md` to regenerate")
     a(">")
-    a(f"> Tests: `pytest tests/` (light) · `pytest tests/ --full` (with ML models)")
+    a(f"> Tests: **{covered_modules}/{total_modules} modules** have static test references · "
+      "`pytest tests/` (light) · `pytest tests/ --full` (with ML models)")
+    if not run_tests:
+        a("")
+        a("> [!NOTE]")
+        a("> Static test coverage links are included below. Live pass/fail status "
+          "was not collected for this regeneration (`--no-tests` was passed). "
+          "Re-run with `ayase modules docs --run-tests` to add live status.")
 
     # ── 1. Summary ─────────────────────────────────────────────────────
+    # Count categories that will actually be rendered (metric sections + utility).
+    rendered_cat_keys = {
+        qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields
+    }
+    has_dataset_outputs = bool(dataset_field_writers)
+    no_output_count = sum(
+        1 for r in results
+        if not r["output_fields"] and not r.get("dataset_output_fields")
+    )
+    total_categories = (
+        len(rendered_cat_keys)
+        + (1 if has_dataset_outputs else 0)
+        + (1 if no_output_count else 0)
+    )
+
     a("")
     a("## Summary")
     a("")
     a(f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
       f"· **{len(qm_fields)}** metrics · **{tiered_count}** tiered "
-      f"· **{gpu_count}** GPU · **{len(group_stats)}** categories")
+      f"· **{gpu_count}** GPU · **{total_categories}** categories")
 
     # ── 2. Charts ─────────────────────────────────────────────────────
     chart_titles = {
@@ -880,6 +1049,13 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         print(f"WARNING: {len(real_orphans)} orphaned QualityMetrics field(s):", file=sys.stderr)
         for f in sorted(real_orphans):
             print(f"  {f}", file=sys.stderr)
+        a("")
+        a("> [!WARNING]")
+        a(f"> **{len(real_orphans)} orphaned QualityMetrics field(s)** — declared "
+          "in `QualityMetrics` but never written by any module. Either wire a "
+          "module to populate them or drop the field from the model:")
+        a(">")
+        a("> " + ", ".join(f"`{f}`" for f in sorted(real_orphans)))
 
     if all_warnings:
         print(f"WARNING: {len(all_warnings)} module(s) with static health issues:", file=sys.stderr)
@@ -934,8 +1110,19 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
         anchor = re.sub(r"[^a-z0-9 -]", "", display.lower()).replace(" ", "-")
         anchor = f"{anchor}-{len(fields)}-metrics"
         nav_parts.append(f"[{display}](#{anchor}) ({len(fields)})")
-    no_out_count = len([r for r in results if not r["output_fields"]])
-    nav_parts.append(f"[Utility & Validation](#utility--validation-{no_out_count}-modules) ({no_out_count})")
+    dataset_field_count = len(dataset_field_writers)
+    if dataset_field_count:
+        nav_parts.append(
+            f"[Dataset-Level Metrics](#dataset-level-metrics-{dataset_field_count}-fields) "
+            f"({dataset_field_count})"
+        )
+    no_out_count = len(
+        [r for r in results if not r["output_fields"] and not r.get("dataset_output_fields")]
+    )
+    if no_out_count:
+        nav_parts.append(
+            f"[Utility & Validation](#utility--validation-{no_out_count}-modules) ({no_out_count})"
+        )
     a(" · ".join(nav_parts))
     a("")
     a("---")
@@ -1020,7 +1207,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                 source_links = extra.get("source_links", "—")
                 chain = " → ".join(mod["fallback_chain"]) if mod["fallback_chain"] else ""
                 badge = speed_badges.get(mod["speed"], "")
-                test_status = _format_test_status(mod_name, test_results)
+                test_coverage_text = _format_test_coverage(mod_name, test_coverage, test_results)
                 pkgs = ", ".join(mod["packages"]) if mod["packages"] else ""
                 vram = mod["vram"] or ""
 
@@ -1045,8 +1232,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
                     a(f"- **VRAM**: {vram}")
                 if source_links != "—":
                     a(f"- **Source**: {source_links}")
-                if test_status != "\u2014":
-                    a(f"- **Test**: {test_status}")
+                a(f"- **Tests**: {test_coverage_text}")
 
                 cfg = mod.get("default_config", {})
                 cfg_items = {k: v for k, v in cfg.items()
@@ -1059,8 +1245,59 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
 
         a("")
 
+    # ── Dataset-level metrics (DatasetStats fields) ───────────────────
+    if dataset_field_writers:
+        a(f"## Dataset-Level Metrics ({len(dataset_field_writers)} fields)")
+        a("")
+        a(
+            "Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` "
+            "after batch/post-processing."
+        )
+        a("")
+
+        for field_name in sorted(dataset_field_writers):
+            ds = ds_fields.get(field_name, {})
+            field_comment = ds.get("comment", "")
+            field_type = ds.get("type", "object")
+            tagline_parts = []
+            if field_comment:
+                tagline_parts.append(field_comment)
+            direction = _get_score_direction(field_name, field_comment)
+            if direction != "—":
+                tagline_parts.append(direction)
+            tagline_parts.append(f"type: {field_type}")
+            tagline = " · ".join(tagline_parts)
+
+            a(f"### `{field_name}` [↑](#categories)")
+            if tagline:
+                a(f"> {tagline}")
+            a("")
+
+            for mod_name in sorted(dataset_field_writers[field_name]):
+                mod = mod_lookup.get(mod_name)
+                if mod is None:
+                    continue
+                extra = mod_extra.get(mod_name, {})
+                file_path = extra.get("file_path", "")
+                mod_link = f"[`{mod_name}`]({file_path})" if file_path else f"`{mod_name}`"
+                desc = mod.get("dataset_output_fields", {}).get(field_name, "")
+                if not desc:
+                    desc = mod["description"]
+                badge = speed_badges.get(mod["speed"], "")
+                speed_str = f"{badge} {mod['speed']}"
+                if mod["gpu"]:
+                    speed_str += " · GPU"
+                a(f"**{mod_link}** — {desc}")
+                a("")
+                a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
+                test_coverage_text = _format_test_coverage(mod_name, test_coverage, test_results)
+                a(f"- **Tests**: {test_coverage_text}")
+                a("")
+
     # ── Utility & Validation Modules (no metric output) ───────────────
-    no_output = [r for r in results if not r["output_fields"]]
+    no_output = [
+        r for r in results if not r["output_fields"] and not r.get("dataset_output_fields")
+    ]
     if no_output:
         a(f"## Utility & Validation ({len(no_output)} modules)")
         a("")
@@ -1075,6 +1312,7 @@ def generate_metrics_doc(run_tests: bool = True) -> str:
             items = [f"Input: {r['input_type']}", f"Speed: {badge} {r['speed']}"]
             if r["gpu"]:
                 items.append("GPU")
+            items.append(f"Tests: {_format_test_coverage(r['name'], test_coverage, test_results)}")
             a(f"- **{mod_link}** — {r['description']} · {' · '.join(items)}")
         a("")
 

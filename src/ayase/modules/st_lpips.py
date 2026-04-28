@@ -32,7 +32,7 @@ class STLPIPSModule(PipelineModule):
         self._backend = None
         self._stlpips_model = None
         self._lpips_model = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:

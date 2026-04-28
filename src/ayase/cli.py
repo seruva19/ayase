@@ -687,9 +687,12 @@ def modules_docs(
 
     Single command to regenerate everything:
         ayase modules docs -o METRICS.md --run-tests
+
+    Discovery is intentionally limited to modules shipped with ayase —
+    user-local plugin folders are skipped so the published doc reflects
+    the package contents, not whichever experiments live in `plugins/`.
     """
-    config = AyaseConfig.load()
-    _discover_all_modules(config)
+    ModuleRegistry.discover_modules()
 
     from .metrics_doc import generate_metrics_doc
 
@@ -713,14 +716,24 @@ def modules_docs(
 @modules_app.command("models")
 def modules_models(
     output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: stdout)")] = None,
+    fetch_licenses: Annotated[
+        bool,
+        typer.Option(
+            "--fetch-licenses/--no-fetch-licenses",
+            help="Query HuggingFace API for license/download metadata",
+        ),
+    ] = True,
 ) -> None:
-    """Generate MODELS.md catalog of all ML models and weights."""
-    config = AyaseConfig.load()
-    _discover_all_modules(config)
+    """Generate MODELS.md catalog of all ML models and weights.
+
+    Limited to packaged modules; local plugin folders are ignored so the
+    published catalog reflects what ships with ayase.
+    """
+    ModuleRegistry.discover_modules()
 
     from .models_doc import generate_models_doc
 
-    content = generate_models_doc()
+    content = generate_models_doc(fetch_licenses=fetch_licenses)
 
     if output:
         output.write_text(content, encoding="utf-8")
@@ -733,33 +746,85 @@ def modules_models(
 def modules_sync_readme(
     readme: Annotated[Path, typer.Option("--readme", "-r", help="README.md path")] = Path("README.md"),
 ) -> None:
-    """Update module/field counts in README.md to match reality."""
+    """Update module/field counts in README.md to match reality.
+
+    Counts only packaged modules (skips user plugin folders) so README
+    matches METRICS.md / MODELS.md.
+    """
     import re as _re
 
-    config = AyaseConfig.load()
-    _discover_all_modules(config)
+    ModuleRegistry.discover_modules()
 
-    all_modules = ModuleRegistry.list_modules()
+    all_modules = ModuleRegistry.list_modules(packaged_only=True)
     total = len([n for n in all_modules if ModuleRegistry.get_module(n) is not None])
 
     from .models import QualityMetrics
     n_fields = len(QualityMetrics.model_fields)
+
+    # Compute category count consistently with metrics_doc.py: rendered metric
+    # categories (groups that have at least one written metric) + utility section
+    # if there are any modules without output fields.
+    from .metrics_doc import _get_quality_metrics_fields
+
+    qm_fields = _get_quality_metrics_fields()
+    field_writers: set[str] = set()
+    has_no_output_modules = False
+    for name in all_modules:
+        cls = ModuleRegistry.get_module(name)
+        if cls is None:
+            continue
+        meta = cls.get_metadata()
+        if not meta.get("output_fields") and not meta.get("dataset_output_fields"):
+            has_no_output_modules = True
+        for fn in meta.get("output_fields", {}):
+            field_writers.add(fn)
+    has_dataset_outputs = any(
+        ModuleRegistry.get_module(name) is not None
+        and ModuleRegistry.get_module(name).get_metadata().get("dataset_output_fields")
+        for name in all_modules
+    )
+    rendered_cats = {qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields}
+    n_categories = (
+        len(rendered_cats)
+        + (1 if has_dataset_outputs else 0)
+        + (1 if has_no_output_modules else 0)
+    )
 
     if not readme.exists():
         console.print(f"[red]{readme} not found[/red]")
         raise typer.Exit(code=1)
 
     text = readme.read_text(encoding="utf-8")
-    new_text = _re.sub(
-        r"\*\*\d+ modules\*\*,\s*\*\*\d+ quality metrics\*\*",
-        f"**{total} modules**, **{n_fields} quality metrics**",
-        text,
-    )
+    patterns = [
+        # Legacy bold form: "**N modules**, **M quality metrics**"
+        (
+            r"\*\*\d+ modules\*\*,\s*\*\*\d+ quality metrics\*\*",
+            f"**{total} modules**, **{n_fields} quality metrics**",
+        ),
+        # Prose form: "327 modules produce 364 metrics across 19 categories"
+        (
+            r"\b\d+ modules produce \d+ metrics across \d+ categories\b",
+            f"{total} modules produce {n_fields} metrics across {n_categories} categories",
+        ),
+        # CLI snippet: "show all 327 modules"
+        (
+            r"show all \d+ modules",
+            f"show all {total} modules",
+        ),
+    ]
+    new_text = text
+    for pat, repl in patterns:
+        new_text = _re.sub(pat, repl, new_text)
     if new_text != text:
         readme.write_text(new_text, encoding="utf-8")
-        console.print(f"[green]Updated README.md: {total} modules, {n_fields} fields[/green]")
+        console.print(
+            f"[green]Updated README.md: {total} modules, {n_fields} metrics, {n_categories} categories[/green]"
+        )
     else:
-        console.print(f"[green]README.md already up to date ({total} modules, {n_fields} fields)[/green]")
+        console.print(
+            f"[green]README.md already up to date "
+            f"({total} modules, {n_fields} metrics, {n_categories} categories)[/green]"
+        )
 
 
 # Config subcommand

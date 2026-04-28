@@ -31,25 +31,28 @@ class KVQModule(PipelineModule):
         self._backend = None
         self._model = None
         self._topiq = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Tier 1: Real KVQ model (Swin-T based, .pth checkpoint)
+        # Tier 1: Real KVQ model via transformers AutoModel (requires
+        # trust_remote_code-compatible config on the HF repo).
         try:
             import torch
-            from huggingface_hub import hf_hub_download
+            from transformers import AutoModel
+
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            ckpt_path = hf_hub_download("lero233/KVQ", filename="KVQ.pth")
-            state_dict = torch.load(ckpt_path, map_location=device)
-            # Store state dict for later use; full model requires KVQ repo's architecture
-            self._state_dict = state_dict
+            trc = self.config.get("trust_remote_code", True)
+            rev = self.config.get("model_revision", None)
+            self._model = AutoModel.from_pretrained(
+                "lero233/KVQ", trust_remote_code=trc, revision=rev
+            ).to(device).eval()
             self._device = device
             self._backend = "kvq"
             self._ml_available = True
-            logger.info("KVQ loaded checkpoint on %s", device)
+            logger.info("KVQ loaded real model on %s", device)
             return
         except (ImportError, Exception) as e:
             logger.info("KVQ model unavailable: %s", e)

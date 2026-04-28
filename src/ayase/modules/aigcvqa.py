@@ -58,7 +58,7 @@ class AIGCVQAModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         # Pre-encoded prompt embeddings
         self._tech_pos = None
         self._tech_neg = None

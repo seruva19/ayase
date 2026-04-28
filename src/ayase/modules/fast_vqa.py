@@ -46,6 +46,29 @@ class FastVQAModule(PipelineModule):
     name = "fast_vqa"
     description = "Deep Learning Video Quality Assessment (FAST-VQA)"
     default_config = {"model_type": "FasterVQA"}
+    models = [
+        {
+            "id": "FAST_VQA_3D_1_1.pth",
+            "type": "local",
+            "url": FASTVQA_MODEL_URLS["FAST_VQA_3D_1_1.pth"],
+            "task": "FAST-VQA / FasterVQA video quality checkpoint",
+        },
+        {
+            "id": "FAST_VQA_B_1_4.pth",
+            "type": "local",
+            "url": FASTVQA_MODEL_URLS["FAST_VQA_B_1_4.pth"],
+            "task": "FAST-VQA base video quality checkpoint",
+        },
+        {
+            "id": "FAST_VQA_M_1_4.pth",
+            "type": "local",
+            "url": FASTVQA_MODEL_URLS["FAST_VQA_M_1_4.pth"],
+            "task": "FAST-VQA motion-aware video quality checkpoint",
+        },
+    ]
+    metric_info = {
+        "fast_vqa_score": "FAST-VQA / FasterVQA score normalized to 0-100 (higher=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

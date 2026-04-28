@@ -27,6 +27,9 @@ class FMDModule(BatchMetricModule):
         "num_frames": 16,
         "subsample_videos": None,
     }
+    metric_info = {
+        "fmd": "Frechet Motion Distance between generated and reference motion distributions (lower=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

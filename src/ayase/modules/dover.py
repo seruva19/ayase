@@ -46,6 +46,38 @@ class DOVERModule(PipelineModule):
         "weights_path": None,  # Explicit path to DOVER.pth (optional)
         "preferred_backend": None,  # "native", "onnx", or "pyiqa" — None = auto (native first)
     }
+    models = [
+        {
+            "id": "DOVER.pth",
+            "type": "local",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth",
+            "task": "Native DOVER video quality weights",
+            "notes": "Resolved from weights_path or models_dir",
+        },
+        {
+            "id": "onnx_dover.onnx",
+            "type": "local",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/onnx_dover.onnx",
+            "task": "Optional ONNX DOVER backend",
+        },
+        {
+            "id": "convnext_tiny_1k_224_ema.pth",
+            "type": "local",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/convnext_tiny_1k_224_ema.pth",
+            "task": "ConvNeXt-Tiny aesthetic backbone",
+        },
+        {
+            "id": "dover",
+            "type": "pyiqa",
+            "task": "pyiqa DOVER fallback metric",
+            "install": "pip install pyiqa",
+        },
+    ]
+    metric_info = {
+        "dover_score": "DOVER fused overall quality (0-1 sigmoid, higher=better)",
+        "dover_technical": "DOVER technical quality sub-score (0-1 sigmoid)",
+        "dover_aesthetic": "DOVER aesthetic quality sub-score (0-1 sigmoid)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -310,7 +310,7 @@ class VIDEVALModule(PipelineModule):
         self._scaler = None
         # Fallback linear head (torch)
         self._quality_head = None
-        self._device = None
+        self._device = "cpu"
         self._ml_available = False
         self._backend = "none"
 

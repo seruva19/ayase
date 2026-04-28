@@ -42,7 +42,7 @@ class RQVQAModule(PipelineModule):
         self._backend = None
         self._model = None
         self._clipiqa = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:

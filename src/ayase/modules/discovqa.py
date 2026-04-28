@@ -58,7 +58,7 @@ class DisCoVQAModule(PipelineModule):
         self._content_gate_bias = None
         self._temporal_attn = None
         self._quality_head = None
-        self._device = None
+        self._device = "cpu"
         self._transform = None
 
     def setup(self) -> None:

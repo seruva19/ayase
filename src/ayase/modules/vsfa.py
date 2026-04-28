@@ -51,7 +51,7 @@ class VSFAModule(PipelineModule):
         self._backbone = None
         self._gru = None
         self._fc = None
-        self._device = None
+        self._device = "cpu"
         self._transform = None
 
     # ------------------------------------------------------------------

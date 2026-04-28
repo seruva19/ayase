@@ -64,7 +64,7 @@ class ModularBVQAModule(PipelineModule):
         self._base_head = None
         self._spatial_rectifier = None
         self._temporal_rectifier = None
-        self._device = None
+        self._device = "cpu"
         self._transform = None
         self._use_clip = False
         self._pretrained_loaded = False
