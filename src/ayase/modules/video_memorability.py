@@ -37,7 +37,7 @@ class VideoMemorabilityModule(PipelineModule):
         self._backend = None
         self._ml_available = False
         self._feature_model = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:

@@ -30,6 +30,17 @@ class FADModule(BatchMetricModule):
         "subsample_videos": None,
         "sample_rate": 16000,
     }
+    models = [
+        {
+            "id": "frechet_audio_distance",
+            "type": "pip_package",
+            "install": "pip install frechet_audio_distance",
+            "task": "Optional FAD audio embedding backend",
+        },
+    ]
+    metric_info = {
+        "fad": "Frechet Audio Distance between generated and reference audio distributions (lower=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -195,7 +195,7 @@ class RAPIQUEModule(PipelineModule):
         self._ml_available = False
         self._backbone = None
         self._quality_head = None
-        self._device = None
+        self._device = "cpu"
         self._transform = None
 
     def setup(self) -> None:

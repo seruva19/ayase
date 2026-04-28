@@ -44,9 +44,9 @@ class PipelineModule(ABC):
 
     _global_test_mode: bool = False
 
-    def __init__(self, config: Dict[str, Any] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = {**self.default_config, **(config or {})}
-        self.pipeline = None  # Will be set by Pipeline during initialization
+        self.pipeline: Optional["Pipeline"] = None
         self._mounted = False
 
     @property
@@ -68,7 +68,7 @@ class PipelineModule(ABC):
         """Enable/disable test mode globally for all modules."""
         cls._global_test_mode = enabled
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if cls.name != "unnamed_module":
             ModuleRegistry.register(cls)
@@ -112,6 +112,30 @@ class PipelineModule(ABC):
         """Called when the pipeline finishes processing all samples. Use for cleanup."""
         # Backward compatibility for existing teardown()
         self.teardown()
+        self._release_torch_resources()
+
+    def _release_torch_resources(self) -> None:
+        """Best-effort release of torch model attrs and CUDA memory.
+
+        Drops any instance attribute that is a torch.nn.Module so the GC
+        can reclaim weights, then empties the CUDA cache if torch is
+        already loaded. Skipped silently when torch isn't imported.
+        """
+        torch_mod = sys.modules.get("torch")
+        if torch_mod is None:
+            return
+        try:
+            nn_module_cls = torch_mod.nn.Module
+        except AttributeError:
+            return
+        for attr_name, attr_val in list(self.__dict__.items()):
+            if isinstance(attr_val, nn_module_cls):
+                setattr(self, attr_name, None)
+        try:
+            if torch_mod.cuda.is_available():
+                torch_mod.cuda.empty_cache()
+        except Exception:
+            pass
 
     def setup(self) -> None:
         """Load ML models and weights. Override in subclasses.
@@ -138,14 +162,18 @@ class PipelineModule(ABC):
         default_config.  All inferred from existing code — no duplication.
         """
         import re as _re
-        from .models import QualityMetrics
+        from .models import QualityMetrics, DatasetStats
 
-        # Field descriptions from QualityMetrics (source comments + pydantic fields)
+        # Field descriptions from QualityMetrics / DatasetStats
+        # (source comments + pydantic fields).
         field_descs: Dict[str, str] = {}
+        dataset_field_descs: Dict[str, str] = {}
         try:
             # Use pydantic model_fields for reliable field enumeration
             for fname in QualityMetrics.model_fields:
                 field_descs[fname] = ""
+            for fname in DatasetStats.model_fields:
+                dataset_field_descs[fname] = ""
             # Enrich with inline comments from source
             src_models = inspect.getsource(QualityMetrics)
             for m in _re.finditer(
@@ -153,6 +181,12 @@ class PipelineModule(ABC):
             ):
                 if m.group(1) in field_descs:
                     field_descs[m.group(1)] = m.group(2).strip()
+            src_stats = inspect.getsource(DatasetStats)
+            for m in _re.finditer(
+                r"(\w+):\s*Optional\[.*?#\s*(.*)", src_stats
+            ):
+                if m.group(1) in dataset_field_descs:
+                    dataset_field_descs[m.group(1)] = m.group(2).strip()
         except (TypeError, OSError):
             pass
 
@@ -214,11 +248,18 @@ class PipelineModule(ABC):
                 if field not in outputs and field in field_descs:
                     outputs[field] = field_descs[field]
 
+        dataset_outputs: Dict[str, str] = {}
+        for m in _re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', src):
+            field = m.group(1)
+            if field not in dataset_outputs and field in dataset_field_descs:
+                dataset_outputs[field] = dataset_field_descs[field]
+
         return {
             "name": cls.name,
             "description": cls.description,
             "input_type": input_type,
             "output_fields": outputs,
+            "dataset_output_fields": dataset_outputs,
             "default_config": dict(cls.default_config) if cls.default_config else {},
             "models": list(cls.models) if cls.models else [],
             "metric_info": dict(cls.metric_info) if cls.metric_info else {},
@@ -667,12 +708,44 @@ class Pipeline:
             try:
                 hooks = self._hooks.get(module.name)
                 if hooks and "before" in hooks:
-                    sample = hooks["before"](sample)
-                sample = module.process(sample)
+                    hooked = hooks["before"](sample)
+                    if not isinstance(hooked, Sample):
+                        logger.error(
+                            "Before-hook for module %s returned %s for %s; "
+                            "skipping module",
+                            module.name,
+                            type(hooked).__name__,
+                            str_path,
+                        )
+                        continue
+                    sample = hooked
+
+                processed = module.process(sample)
+                if not isinstance(processed, Sample):
+                    logger.error(
+                        "Module %s returned %s for %s; keeping previous sample",
+                        module.name,
+                        type(processed).__name__,
+                        str_path,
+                    )
+                    continue
+                sample = processed
+
                 if hooks and "after" in hooks:
-                    sample = hooks["after"](sample)
+                    restored = hooks["after"](sample)
+                    if not isinstance(restored, Sample):
+                        logger.error(
+                            "After-hook for module %s returned %s for %s; "
+                            "keeping module output",
+                            module.name,
+                            type(restored).__name__,
+                            str_path,
+                        )
+                        continue
+                    sample = restored
             except Exception as e:
-                logger.error(f"Error in module {module.name} for {sample.path}: {e}")
+                sample_path = getattr(sample, "path", str_path)
+                logger.error(f"Error in module {module.name} for {sample_path}: {e}")
 
         # Cache the result and keep aggregate stats in sync.
         self._store_result(str_path, sample, signature=signature, manifest=manifest)
@@ -882,9 +955,18 @@ class ModuleRegistry:
         return cls._modules.get(name)
 
     @classmethod
-    def list_modules(cls) -> Dict[str, str]:
-        """Return dict of name -> description."""
-        return {name: cls._modules[name].description for name in cls._modules}
+    def is_packaged_module(cls, module_cls: Type[PipelineModule]) -> bool:
+        """Return whether a registered module ships from ``ayase.modules``."""
+        return getattr(module_cls, "__module__", "").startswith("ayase.modules.")
+
+    @classmethod
+    def list_modules(cls, packaged_only: bool = False) -> Dict[str, str]:
+        """Return dict of name -> description, sorted by name for stable iteration."""
+        return {
+            name: cls._modules[name].description
+            for name in sorted(cls._modules)
+            if not packaged_only or cls.is_packaged_module(cls._modules[name])
+        }
 
     @classmethod
     def _record_readiness(cls, label: str, ok: bool, error: Optional[str] = None) -> None:
@@ -1084,6 +1166,7 @@ class AyasePipeline:
         else:
             self._modules = []
 
+        self.pipeline: Pipeline
         self._rebuild_pipeline()
 
     def _clone_modules(

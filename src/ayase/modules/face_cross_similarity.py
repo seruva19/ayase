@@ -43,6 +43,27 @@ class FaceCrossSimilarityModule(PipelineModule):
         "max_cache_size": 10000,
         "device": "auto",
     }
+    models = [
+        {
+            "id": "buffalo_l",
+            "type": "other",
+            "install": "pip install insightface onnxruntime",
+            "task": "InsightFace ArcFace face embedding model",
+        },
+        {
+            "id": "ArcFace",
+            "type": "pip_package",
+            "install": "pip install deepface",
+            "task": "DeepFace ArcFace fallback embeddings",
+        },
+    ]
+    metric_info = {
+        "face_cross_similarity": "Per-sample average cosine similarity to other dataset faces",
+        "face_identity_count": "Number of faces detected for the sample",
+        "face_similarity_matrix": "Dataset NxN pairwise face similarity matrix",
+        "avg_face_cross_similarity": "Dataset-wide average pairwise face similarity",
+        "identity_cluster_count": "Estimated number of identity clusters in the dataset",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

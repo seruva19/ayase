@@ -59,7 +59,7 @@ class VADERModule(PipelineModule):
         self._backend = None
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         # CLIP fallback pre-encoded prompts
         self._aes_pos_embeds = None
         self._aes_neg_embeds = None

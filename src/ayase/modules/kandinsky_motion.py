@@ -1,10 +1,11 @@
 """Video/camera motion analysis using the Kandinsky VideoMAE-V2 motion predictor.
 
-Predicts camera_movement_score, object_movement_score, and dynamics_score.
-Flags static videos with low dynamics scores."""
+Predicts Kandinsky camera, object, and dynamics scores. Higher values indicate
+more motion in the corresponding channel. Flags static videos with low dynamics.
+"""
 
 import logging
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
+from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,19 @@ class KandinskyMotionModule(PipelineModule):
     name = "kandinsky_motion"
     description = "Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2)"
     default_config = {"models_dir": "models"}
+    models = [
+        {
+            "id": "ai-forever/kandinsky-video-motion-predictor",
+            "type": "huggingface",
+            "task": "VideoMAE-V2 camera/object/dynamics motion predictor",
+            "notes": "Loaded through bundled Kandinsky third-party wrapper",
+        },
+    ]
+    metric_info = {
+        "kandinsky_camera_motion_score": "Camera motion prediction score (higher=more camera motion)",
+        "kandinsky_object_motion_score": "Object motion prediction score (higher=more object motion)",
+        "kandinsky_dynamics_score": "Overall dynamics prediction score (higher=more dynamic)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -79,8 +93,10 @@ class KandinskyMotionModule(PipelineModule):
             
             # Add to metrics or issues
             if sample.quality_metrics is None:
-                from ayase.models import QualityMetrics
                 sample.quality_metrics = QualityMetrics()
+            sample.quality_metrics.kandinsky_camera_motion_score = float(cam_score)
+            sample.quality_metrics.kandinsky_object_motion_score = float(obj_score)
+            sample.quality_metrics.kandinsky_dynamics_score = float(dyn_score)
             
             # Interpret scores (Assuming 0-1 or 0-10 scale?)
             # VideoMAE scores are typically logits or normalized. 

@@ -26,9 +26,13 @@ VALID_ALL_FIELDS: Set[str] = VALID_QM_FIELDS | VALID_DS_FIELDS
 
 
 def _all_module_classes() -> Dict[str, type]:
-    """Return {name: class} for every registered module."""
+    """Return {name: class} for every packaged ayase module."""
     ModuleRegistry.discover_modules()
-    return dict(ModuleRegistry._modules)
+    return {
+        name: ModuleRegistry.get_module(name)
+        for name in ModuleRegistry.list_modules(packaged_only=True)
+        if ModuleRegistry.get_module(name) is not None
+    }
 
 
 ALL_MODULES = _all_module_classes()
@@ -100,7 +104,7 @@ class TestGetMetadata:
         cls = ALL_MODULES[name]
         meta = cls.get_metadata()
         for key in ("name", "description", "input_type", "output_fields",
-                     "default_config"):
+                     "dataset_output_fields", "default_config"):
             assert key in meta, f"{name} missing metadata key: {key}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
@@ -112,6 +116,17 @@ class TestGetMetadata:
                if f not in VALID_QM_FIELDS]
         assert not bad, (
             f"{name} declares output fields not in QualityMetrics: {bad}"
+        )
+
+    @pytest.mark.parametrize("name", MODULE_NAMES)
+    def test_dataset_output_fields_are_valid_dataset_stats(self, name: str) -> None:
+        """Every dataset-level output field must exist in DatasetStats."""
+        cls = ALL_MODULES[name]
+        meta = cls.get_metadata()
+        bad = [f for f in meta.get("dataset_output_fields", {})
+               if f not in VALID_DS_FIELDS]
+        assert not bad, (
+            f"{name} declares dataset output fields not in DatasetStats: {bad}"
         )
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
@@ -437,6 +452,21 @@ class TestMetricInfo:
             f"{name} metric_info has non-string values for: {bad}"
         )
 
+    @pytest.mark.parametrize("name", MODULE_NAMES)
+    def test_dataset_metric_writes_have_metric_info(self, name: str) -> None:
+        """DatasetStats writes are not discoverable from QualityMetrics output fields."""
+        cls = ALL_MODULES[name]
+        src = _get_full_source(cls)
+        dataset_fields = {
+            m.group(1)
+            for m in re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', src)
+            if m.group(1) in VALID_DS_FIELDS
+        }
+        missing = [f for f in sorted(dataset_fields) if f not in cls.metric_info]
+        assert not missing, (
+            f"{name} writes DatasetStats fields without metric_info: {missing}"
+        )
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 12. models attribute consistency (for modules that declare it)
@@ -445,6 +475,11 @@ class TestMetricInfo:
 
 class TestModelsAttr:
     """If a module sets models=[], validate structure."""
+
+    VALID_MODEL_TYPES = {
+        "huggingface", "local", "pyiqa", "torch_hub", "torchvision",
+        "clip", "pip_package", "other",
+    }
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_models_entries_have_required_keys(self, name: str) -> None:
@@ -457,6 +492,19 @@ class TestModelsAttr:
             )
             assert "id" in entry, f"{name} models[{i}] missing 'id'"
             assert "type" in entry, f"{name} models[{i}] missing 'type'"
+            assert entry["type"] in self.VALID_MODEL_TYPES, (
+                f"{name} models[{i}] has invalid type: {entry['type']!r}"
+            )
+
+    @pytest.mark.parametrize("name", MODULE_NAMES)
+    def test_vendor_or_third_party_modules_declare_models(self, name: str) -> None:
+        cls = ALL_MODULES[name]
+        src = _get_full_source(cls)
+        if "ayase.vendor" not in src and "ayase.third_party" not in src:
+            return
+        assert cls.models, (
+            f"{name} uses vendored/third_party model code but has no class-level models metadata"
+        )
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -480,3 +528,134 @@ class TestNoHeuristicBackends:
                     f"{name} sets _backend='heuristic' outside test_mode "
                     f"at line {i + 1}"
                 )
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 14. Generated docs match the regenerated output (drift detector)
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_GENERATED_TIMESTAMP_RE = re.compile(r"Generated \d{4}-\d{2}-\d{2} \d{2}:\d{2}")
+
+
+def _normalize_doc(text: str) -> str:
+    """Strip volatile fields (generation timestamp) from a doc for diffing."""
+    return _GENERATED_TIMESTAMP_RE.sub("Generated <timestamp>", text)
+
+
+def _diff(expected: str, actual: str, path: Path) -> str:
+    import difflib
+
+    diff = difflib.unified_diff(
+        expected.splitlines(keepends=True),
+        actual.splitlines(keepends=True),
+        fromfile=f"{path.name} (committed)",
+        tofile=f"{path.name} (regenerated)",
+        n=3,
+    )
+    return "".join(diff)[:6000]
+
+
+class TestGeneratedDocsAreFresh:
+    """METRICS.md and MODELS.md must match what the generators currently produce.
+
+    Catches the common failure mode where a module is added/renamed/edited
+    but the docs are not regenerated. Run ``ayase modules docs -o METRICS.md``
+    and ``ayase modules models -o MODELS.md`` (and ``ayase modules sync-readme``)
+    to refresh.
+    """
+
+    def test_metrics_md_matches_generator(self) -> None:
+        from ayase.metrics_doc import generate_metrics_doc
+
+        committed_path = _REPO_ROOT / "METRICS.md"
+        if not committed_path.exists():
+            pytest.skip("METRICS.md is not present in the working tree")
+
+        # Use --no-tests so the diff doesn't churn on test status flips.
+        regenerated = _normalize_doc(generate_metrics_doc(run_tests=False))
+        committed = _normalize_doc(committed_path.read_text(encoding="utf-8"))
+
+        if committed != regenerated:
+            pytest.fail(
+                "METRICS.md is stale. Run `ayase modules docs --no-tests "
+                "-o METRICS.md` to refresh.\n\n"
+                + _diff(committed, regenerated, committed_path)
+            )
+
+    def test_models_md_matches_generator(self) -> None:
+        from ayase.models_doc import generate_models_doc
+
+        committed_path = _REPO_ROOT / "MODELS.md"
+        if not committed_path.exists():
+            pytest.skip("MODELS.md is not present in the working tree")
+
+        # Disable HF API calls so the test is deterministic and offline-safe.
+        regenerated = _normalize_doc(generate_models_doc(fetch_licenses=False))
+        committed = _normalize_doc(committed_path.read_text(encoding="utf-8"))
+
+        if committed != regenerated:
+            pytest.fail(
+                "MODELS.md is stale. Run `ayase modules models -o MODELS.md` "
+                "to refresh.\n\n"
+                + _diff(committed, regenerated, committed_path)
+            )
+
+    def test_readme_counts_match_registry(self) -> None:
+        readme_path = _REPO_ROOT / "README.md"
+        if not readme_path.exists():
+            pytest.skip("README.md is not present in the working tree")
+
+        from ayase.metrics_doc import _get_quality_metrics_fields
+
+        ModuleRegistry.discover_modules()
+        all_modules = ModuleRegistry.list_modules(packaged_only=True)
+        total = len([n for n in all_modules
+                     if ModuleRegistry.get_module(n) is not None])
+        n_fields = len(QualityMetrics.model_fields)
+        qm_fields = _get_quality_metrics_fields()
+
+        field_writers: Set[str] = set()
+        has_no_output_modules = False
+        for name in all_modules:
+            cls = ModuleRegistry.get_module(name)
+            if cls is None:
+                continue
+            meta = cls.get_metadata()
+            if not meta.get("output_fields") and not meta.get("dataset_output_fields"):
+                has_no_output_modules = True
+            for fn in meta.get("output_fields", {}):
+                field_writers.add(fn)
+        rendered_cats = {qm_fields[fn]["group"]
+                         for fn in field_writers if fn in qm_fields}
+        has_dataset_outputs = any(
+            ModuleRegistry.get_module(name) is not None
+            and ModuleRegistry.get_module(name).get_metadata().get("dataset_output_fields")
+            for name in all_modules
+        )
+        n_categories = (
+            len(rendered_cats)
+            + (1 if has_dataset_outputs else 0)
+            + (1 if has_no_output_modules else 0)
+        )
+
+        text = readme_path.read_text(encoding="utf-8")
+        prose_match = re.search(
+            r"(\d+) modules produce (\d+) metrics across (\d+) categories",
+            text,
+        )
+        if prose_match:
+            r_modules, r_fields, r_cats = (int(x) for x in prose_match.groups())
+            assert (r_modules, r_fields, r_cats) == (total, n_fields, n_categories), (
+                f"README.md prose counts ({r_modules} modules, {r_fields} metrics, "
+                f"{r_cats} categories) don't match registry ({total}, {n_fields}, "
+                f"{n_categories}). Run `ayase modules sync-readme`."
+            )
+
+        cli_matches = re.findall(r"show all (\d+) modules", text)
+        for m in cli_matches:
+            assert int(m) == total, (
+                f"README.md CLI snippet says 'show all {m} modules' but "
+                f"registry has {total}. Run `ayase modules sync-readme`."
+            )

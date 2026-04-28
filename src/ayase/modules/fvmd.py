@@ -29,6 +29,9 @@ class FVMDModule(BatchMetricModule):
         "flow_method": "farneback",  # Optical flow method
         "subsample_videos": None,  # Max videos to process
     }
+    metric_info = {
+        "fvmd": "Frechet Video Motion Distance from optical-flow features (lower=better)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -33,7 +33,7 @@ class AIGVAssessorModule(PipelineModule):
         self._processor = None
         self._clip_model = None
         self._clip_processor = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:

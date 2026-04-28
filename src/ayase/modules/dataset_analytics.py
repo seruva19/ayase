@@ -36,6 +36,13 @@ class DatasetAnalyticsModule(BatchMetricModule):
         "outlier_iqr_factor": 1.5,  # IQR multiplier for outlier detection
         "device": "auto",
     }
+    metric_info = {
+        "diversity_score": "Dataset visual diversity score (0-1, higher=more diverse)",
+        "semantic_coverage": "Embedding-space coverage score (0-1, higher=more coverage)",
+        "outlier_count": "Number of statistical outliers detected in the dataset",
+        "duplicate_pairs": "Count of near-duplicate sample pairs",
+        "class_balance_score": "Class/category balance score (0-1, higher=balanced)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

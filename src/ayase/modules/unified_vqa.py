@@ -12,7 +12,8 @@ Implementation:
 Temporal aggregation uses attention-weighted pooling based on frame-level
 feature magnitudes (informative frames get higher weight).
 
-Stores result in dover_score when that field is unset (shared NR quality field).
+Stores result in unified_vqa_score. For backward compatibility, also writes
+dover_score when that legacy shared NR quality field is unset.
 """
 
 import logging
@@ -33,6 +34,18 @@ class UnifiedVQAModule(PipelineModule):
     default_config = {
         "subsample": 8,
         "clip_model": "ViT-B/32",
+    }
+    models = [
+        {"id": "ViT-B/32", "type": "clip", "task": "CLIP visual feature backbone"},
+        {
+            "id": "torchvision/resnet50",
+            "type": "torchvision",
+            "task": "Fallback visual feature backbone",
+        },
+    ]
+    metric_info = {
+        "unified_vqa_score": "Unified-VQA FR/NR quality score (0-1, higher=better)",
+        "dover_score": "Backward-compatible alias when dover_score is otherwise unset",
     }
 
     def __init__(self, config=None):
@@ -149,7 +162,9 @@ class UnifiedVQAModule(PipelineModule):
             if score is not None:
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
-                # Store in dover_score as proxy (shared NR quality field)
+                sample.quality_metrics.unified_vqa_score = score
+                # Backward compatibility: older integrations used dover_score
+                # as the shared NR-quality slot for this module.
                 if sample.quality_metrics.dover_score is None:
                     sample.quality_metrics.dover_score = score
 

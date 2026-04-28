@@ -131,6 +131,9 @@ class QualityMetrics(BaseModel):
         # Motion & dynamics
         "motion_score": "motion",
         "camera_motion_score": "motion",
+        "kandinsky_camera_motion_score": "motion",
+        "kandinsky_object_motion_score": "motion",
+        "kandinsky_dynamics_score": "motion",
         "flow_score": "motion",
         "motion_ac_score": "motion",
         "motion_smoothness": "motion",
@@ -165,6 +168,7 @@ class QualityMetrics(BaseModel):
         # Perceptual quality (no-reference)
         "fast_vqa_score": "nr_quality",
         "dover_score": "nr_quality",
+        "unified_vqa_score": "nr_quality",
         "dover_technical": "nr_quality",
         "topiq_score": "nr_quality",
         "liqe_score": "nr_quality",
@@ -543,6 +547,9 @@ class QualityMetrics(BaseModel):
     fast_vqa_score: Optional[float] = None  # 0-100
     motion_score: Optional[float] = None  # Scene motion intensity
     camera_motion_score: Optional[float] = None  # Camera motion intensity
+    kandinsky_camera_motion_score: Optional[float] = None  # Kandinsky camera motion prediction
+    kandinsky_object_motion_score: Optional[float] = None  # Kandinsky object motion prediction
+    kandinsky_dynamics_score: Optional[float] = None  # Kandinsky dynamics prediction
     stabilized_motion_score: Optional[float] = None  # Stabilized scene motion (camera-invariant)
     stabilized_camera_score: Optional[float] = None  # Stabilized camera motion estimate
     technical_score: Optional[float] = None  # Composite technical score
@@ -658,6 +665,7 @@ class QualityMetrics(BaseModel):
 
     # SOTA no-reference VQA
     dover_score: Optional[float] = None  # DOVER overall (higher=better)
+    unified_vqa_score: Optional[float] = None  # Unified-VQA FR/NR quality (0-1, higher=better)
     dover_technical: Optional[float] = None  # DOVER technical quality
     dover_aesthetic: Optional[float] = None  # DOVER aesthetic quality
     internvqa_score: Optional[float] = None  # InternVQA video quality (higher=better)

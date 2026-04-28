@@ -35,7 +35,7 @@ class FloLPIPSModule(PipelineModule):
         self._lpips_model = None
         self._raft_model = None
         self._raft_transforms = None
-        self._device = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         import_ok = False

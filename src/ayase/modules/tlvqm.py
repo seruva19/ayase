@@ -31,7 +31,7 @@ class TLVQMModule(PipelineModule):
         self._cnn_model = None
         self._svr_model = None
         self._backend = "handcrafted"
-        self._device = None
+        self._device = "cpu"
         self.mos_min = self.config.get("mos_min", 1.0)
         self.mos_max = self.config.get("mos_max", 5.0)
 

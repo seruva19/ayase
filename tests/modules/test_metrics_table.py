@@ -7,32 +7,37 @@ doc, and every QualityMetrics field is accounted for.
 
 from pathlib import Path
 
-from ayase.models import QualityMetrics
+from ayase.models import DatasetStats, QualityMetrics
 
 
 def _load_metrics_md_fields():
-    """Extract all backtick-quoted field names from METRICS.md output columns."""
+    """Extract metric field headings from generated METRICS.md."""
     metrics_path = Path("METRICS.md")
     if not metrics_path.exists():
         return set()
     text = metrics_path.read_text(encoding="utf-8")
     import re
-    # Match field names in output column: `field_name` - description
-    return set(re.findall(r"`(\w+)`\s*-\s*", text))
+    return set(re.findall(r"^### `(\w+)`", text, flags=re.MULTILINE))
 
 
 def test_metrics_table_matches_quality_metrics():
     """Verify METRICS.md references are consistent with QualityMetrics model."""
     fields_in_doc = _load_metrics_md_fields()
     model_fields = set(QualityMetrics.model_fields.keys())
+    dataset_fields = set(DatasetStats.model_fields.keys())
 
     # Every field mentioned in METRICS.md must exist in QualityMetrics
-    unknown = fields_in_doc - model_fields
+    unknown = fields_in_doc - model_fields - dataset_fields
     # Filter out non-field references (e.g. config keys)
     unknown = {f for f in unknown if not any(
         kw in f for kw in ("threshold", "model", "subsample", "device", "mode")
     )}
     assert not unknown, f"METRICS.md references unknown fields: {unknown}"
 
+    documented_qm_fields = fields_in_doc & model_fields
+    allowed_missing = {"engagement_score", "human_preference_score", "perceptual_hash"}
+    missing = model_fields - documented_qm_fields
+    assert missing <= allowed_missing, f"METRICS.md omits QualityMetrics fields: {missing}"
+
     # QualityMetrics field count must be correct
-    assert len(model_fields) == 364, f"Expected 364 fields, got {len(model_fields)}"
+    assert len(model_fields) == 368, f"Expected 368 fields, got {len(model_fields)}"

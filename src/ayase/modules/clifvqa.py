@@ -57,7 +57,7 @@ class CLiFVQAModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._pos_embeds = None
         self._neg_embeds = None
 

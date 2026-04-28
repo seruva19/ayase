@@ -25,12 +25,23 @@ class JEDiModule(PipelineModule):
         "trust_remote_code": True,
         "model_revision": None,
     }
+    models = [
+        {
+            "id": "facebook/vjepa2-vitg-fpc64-256",
+            "type": "huggingface",
+            "task": "V-JEPA2 video feature extractor for JEDi",
+            "notes": "Requires trust_remote_code",
+        },
+    ]
+    metric_info = {
+        "jedi": "JEDi V-JEPA embedding distance via MMD (lower=better)",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
         self._model = None
-        self._device = None
+        self._device = "cpu"
         self._feature_cache: List[np.ndarray] = []
 
     def setup(self) -> None:

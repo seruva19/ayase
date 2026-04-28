@@ -64,7 +64,7 @@ class AIGVQAModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._spatial_pos = None
         self._spatial_neg = None
         self._aes_pos = None

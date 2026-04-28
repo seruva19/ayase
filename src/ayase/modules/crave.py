@@ -57,7 +57,7 @@ class CRAVEModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._device = None
+        self._device = "cpu"
         self._quality_pos = None
         self._quality_neg = None
 

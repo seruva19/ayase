@@ -41,6 +41,12 @@ class GenerativeDistributionModule(BatchMetricModule):
         "k": 5,  # Neighbours for manifold estimation
         "device": "auto",
     }
+    metric_info = {
+        "precision": "Generated-sample precision against the real manifold (0-1, higher=better)",
+        "recall": "Real-distribution coverage by generated samples (0-1, higher=better)",
+        "coverage": "Fraction of real samples covered by generated neighbours (0-1, higher=better)",
+        "density": "Average normalized generated-sample density around real samples",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

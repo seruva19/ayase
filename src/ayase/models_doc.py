@@ -445,7 +445,7 @@ def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
             models.add(candidate)
     # Model names from default_config
     if default_config:
-        for key in ("model_name", "vlm_model", "vlm_model_name", "clip_model",
+        for key in ("model_name", "vlm_model", "vlm_model_name",
                      "sdxl_model", "vqa_model", "xclip_model_name"):
             val = default_config.get(key, "")
             if isinstance(val, str) and "/" in val and not val.startswith(("http", "/")):
@@ -492,13 +492,19 @@ def _extract_torchvision_models(source: str) -> List[str]:
     return sorted(models)
 
 
-def _extract_clip_models(source: str) -> List[str]:
+def _extract_clip_models(source: str, default_config: dict = None) -> List[str]:
     """Extract CLIP model variants."""
     models = set()
     for m in re.finditer(r'clip\.load\s*\(\s*["\']([^"\']+)["\']', source):
         models.add(m.group(1))
     for m in re.finditer(r'open_clip\.create_model\s*\(\s*["\']([^"\']+)["\']', source):
         models.add(f"open_clip:{m.group(1)}")
+    if default_config:
+        val = default_config.get("clip_model", "")
+        if isinstance(val, str) and (
+            val.startswith(("ViT-", "RN")) or val in {"ViT-B/32", "ViT-B/16", "ViT-L/14"}
+        ):
+            models.add(val)
     return sorted(models)
 
 
@@ -618,8 +624,12 @@ def _generate_charts(
                 top_used, "models_top_used.png",
                 palette=["#A29BFE"] * len(top_used))
 
-    except ImportError:
-        pass  # seaborn/matplotlib not available
+    except ImportError as exc:
+        logger.warning(
+            "Chart generation skipped: matplotlib/seaborn not installed (%s). "
+            "Install with `pip install matplotlib seaborn` to embed charts.",
+            exc,
+        )
     except Exception as exc:
         logger.warning(f"Chart generation failed: {exc}")
 
@@ -669,14 +679,16 @@ def _classify_vram_tier(vram_str: Optional[str]) -> Optional[str]:
         return None
 
 
-def generate_models_doc(fetch_licenses: bool = True) -> str:
+def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = False) -> str:
     """Generate MODELS.md content.
 
     Args:
         fetch_licenses: If True, query HuggingFace API for model licenses.
+        include_plugins: If True, include plugin/test modules currently
+                         registered in addition to packaged ayase modules.
     """
     ModuleRegistry.discover_modules()
-    all_modules = ModuleRegistry.list_modules()
+    all_modules = ModuleRegistry.list_modules(packaged_only=not include_plugins)
 
     # Collect all model references
     entries: Dict[str, ModelEntry] = {}  # key -> ModelEntry
@@ -803,7 +815,7 @@ def generate_models_doc(fetch_licenses: bool = True) -> str:
             entries[key].modules.append(mod_name)
 
         # CLIP
-        for clip_model in _extract_clip_models(source):
+        for clip_model in _extract_clip_models(source, default_config):
             key = f"clip:{clip_model}"
             if key not in entries:
                 disk, vram = _SIZE_DB.get(f"clip:{clip_model}", (None, None))
