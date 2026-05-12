@@ -35,11 +35,17 @@ class TextDetectionModule(PipelineModule):
         # 1. Try PaddleOCR
         if self.use_paddle:
             try:
+                # Paddle 3.0 PIR runtime has an oneDNN bug that breaks
+                # ConvertPirAttribute2RuntimeAttribute on CPU init. Disabling
+                # MKL-DNN before importing paddle sidesteps it.
+                import os
+                os.environ.setdefault("FLAGS_use_mkldnn", "0")
                 from paddleocr import PaddleOCR
-                # Initialize PaddleOCR (downloads model if needed)
-                # use_angle_cls=True, lang='en'
                 logger.info("Loading PaddleOCR...")
-                self._model = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+                # paddleocr 3.x removed use_angle_cls / show_log; angle
+                # classification is now controlled by use_textline_orientation
+                # (default True).
+                self._model = PaddleOCR(lang='en')
                 self._engine = 'paddle'
                 self._ocr_available = True
                 return
@@ -79,14 +85,21 @@ class TextDetectionModule(PipelineModule):
                 total_area = image.shape[0] * image.shape[1]
 
                 if self._engine == 'paddle':
-                    result = self._model.ocr(image, cls=True)
+                    # paddleocr 3.x: .ocr(...) is replaced by .predict(...);
+                    # result[0] is a dict with dt_polys / rec_texts / rec_scores.
+                    result = self._model.predict(image)
                     if result and result[0]:
-                        for line in result[0]:
-                            box = line[0]
-                            txt, conf = line[1]
-                            w = np.linalg.norm(np.array(box[0]) - np.array(box[1]))
-                            h = np.linalg.norm(np.array(box[0]) - np.array(box[3]))
-                            text_area += w * h
+                        r = result[0]
+                        polys = r.get("dt_polys") or []
+                        texts = r.get("rec_texts") or []
+                        scores = r.get("rec_scores") or []
+                        for poly, txt, conf in zip(polys, texts, scores):
+                            if conf < 0.5:
+                                continue
+                            pts = np.asarray(poly, dtype=np.float64)
+                            x_min, y_min = pts.min(axis=0)
+                            x_max, y_max = pts.max(axis=0)
+                            text_area += float((x_max - x_min) * (y_max - y_min))
                             found_text_frame.append(txt)
 
                 elif self._engine == 'tesseract':
