@@ -119,7 +119,7 @@ class EmbeddingModule(PipelineModule):
 
             inputs = self._processor(
                 text=None,  # We only want visual embedding
-                images=pil_images,
+                videos=[pil_images],  # X-CLIP expects list-of-clips, each a list of frames
                 return_tensors="pt",
                 padding=True,
             )
