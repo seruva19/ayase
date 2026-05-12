@@ -18,6 +18,7 @@ Requires ffmpeg for audio extraction.
 
 import logging
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -35,14 +36,47 @@ class AudioVisualSyncModule(PipelineModule):
     name = "av_sync"
     description = "Audio-video synchronisation offset detection"
     default_config = {
+        "backend": "energy",  # energy | syncformer
         "max_frames": 600,
+        "segment_size_sec": None,
         "warning_threshold_ms": 80.0,  # Warn if |offset| > 80 ms
+    }
+    models = [
+        {
+            "id": "Synchformer",
+            "type": "local",
+            "task": "Optional learned A/V offset backend when local weights are configured",
+        },
+    ]
+    metric_info = {
+        "av_sync_offset": "Estimated audio-video offset in milliseconds",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
+        self.backend = self.config.get("backend", "energy")
         self.max_frames = self.config.get("max_frames", 600)
+        self.segment_size_sec = self.config.get("segment_size_sec", None)
         self.warning_threshold = self.config.get("warning_threshold_ms", 80.0)
+        self._backend = "energy"
+        self._syncformer = None
+
+    def setup(self) -> None:
+        if self.backend != "syncformer":
+            return
+        try:
+            vendor_root = Path(__file__).resolve().parents[1] / "vendor" / "verse_bench"
+            sys.path.insert(0, str(vendor_root))
+            from syncformer.syncformer_inferencer import SyncformerInferencer
+
+            models_dir = Path(self.config.get("models_dir", "models"))
+            model_path = Path(self.config.get("syncformer_model_path", models_dir / "syncformer"))
+            self._syncformer = SyncformerInferencer(str(model_path))
+            self._backend = "syncformer"
+            logger.info("AudioVisualSync initialised with Synchformer backend")
+        except Exception as e:
+            logger.warning("Synchformer backend unavailable (%s); using energy backend", e)
+            self._backend = "energy"
 
     # ------------------------------------------------------------------
     def _extract_audio_pcm(self, video_path: Path, sr: int = 16000) -> Optional[np.ndarray]:
@@ -105,6 +139,11 @@ class AudioVisualSyncModule(PipelineModule):
         if sample.audio_metadata is None:
             return sample
 
+        if self._backend == "syncformer" and self._syncformer is not None:
+            offset = self._compute_syncformer(sample.path)
+            if offset is not None:
+                return self._store_offset(sample, offset)
+
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
             return sample
@@ -120,7 +159,11 @@ class AudioVisualSyncModule(PipelineModule):
             visual_energy = []
             idx = 0
 
-            while idx < self.max_frames:
+            frame_limit = self.max_frames
+            if self.segment_size_sec is not None:
+                frame_limit = min(frame_limit, max(1, int(float(self.segment_size_sec) * fps)))
+
+            while idx < frame_limit:
                 ret, frame = cap.read()
                 if not ret:
                     break
@@ -182,28 +225,7 @@ class AudioVisualSyncModule(PipelineModule):
 
             offset_ms = float(best_lag_frames / fps * 1000.0)
 
-            # Store result
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            sample.quality_metrics.av_sync_offset = offset_ms
-
-            if abs(offset_ms) > self.warning_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"A/V sync offset: {offset_ms:+.1f} ms",
-                        details={
-                            "offset_ms": offset_ms,
-                            "threshold_ms": self.warning_threshold,
-                        },
-                        recommendation=(
-                            "Audio and video are noticeably out of sync. "
-                            "Check muxing, frame rate conversion, or "
-                            "audio processing pipeline."
-                        ),
-                    )
-                )
+            self._store_offset(sample, offset_ms)
 
             logger.debug(
                 f"A/V sync for {sample.path.name}: {offset_ms:+.1f} ms "
@@ -215,6 +237,38 @@ class AudioVisualSyncModule(PipelineModule):
             if cap.isOpened():
                 cap.release()
 
+        return sample
+
+    def _compute_syncformer(self, video_path: Path) -> Optional[float]:
+        try:
+            offset_sec = float(self._syncformer.infer(str(video_path)))
+            return offset_sec * 1000.0
+        except Exception as e:
+            logger.warning("Synchformer inference failed for %s: %s", video_path, e)
+            return None
+
+    def _store_offset(self, sample: Sample, offset_ms: float) -> Sample:
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+
+        sample.quality_metrics.av_sync_offset = offset_ms
+
+        if abs(offset_ms) > self.warning_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"A/V sync offset: {offset_ms:+.1f} ms",
+                    details={
+                        "offset_ms": offset_ms,
+                        "threshold_ms": self.warning_threshold,
+                    },
+                    recommendation=(
+                        "Audio and video are noticeably out of sync. "
+                        "Check muxing, frame rate conversion, or "
+                        "audio processing pipeline."
+                    ),
+                )
+            )
         return sample
 
 

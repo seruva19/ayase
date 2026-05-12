@@ -34,14 +34,23 @@ class DNSMOSModule(PipelineModule):
     def setup(self) -> None:
         # Try torchmetrics DNSMOS
         try:
-            from torchmetrics.audio import DeepNoiseSuppression
-            self._metric_cls = DeepNoiseSuppression
+            import torchmetrics.audio as tm_audio
+
+            self._metric_cls = getattr(
+                tm_audio,
+                "DeepNoiseSuppressionMeanOpinionScore",
+                None,
+            )
+            if self._metric_cls is None:
+                self._metric_cls = getattr(tm_audio, "DeepNoiseSuppression", None)
+            if self._metric_cls is None:
+                raise ImportError("torchmetrics.audio DNSMOS class not found")
             self._backend = "torchmetrics"
             self._ml_available = True
             logger.info("DNSMOS module initialised (torchmetrics)")
             return
-        except (ImportError, Exception):
-            pass
+        except Exception as e:
+            logger.debug("DNSMOS torchmetrics setup failed: %s", e)
 
         logger.warning("DNSMOS requires torchmetrics[audio]")
 
@@ -86,6 +95,21 @@ class DNSMOSModule(PipelineModule):
                     "bak": float(result.get("BAK", result.get("bak", 0))),
                     "ovrl": float(result.get("OVRL", result.get("ovrl", 0))),
                 }
+            if hasattr(result, "detach"):
+                values = result.detach().cpu().reshape(-1).tolist()
+            elif isinstance(result, (list, tuple)):
+                values = list(result)
+            else:
+                values = [result]
+            if len(values) >= 3:
+                return {
+                    "sig": float(values[0]),
+                    "bak": float(values[1]),
+                    "ovrl": float(values[2]),
+                }
+            if len(values) == 1:
+                value = float(values[0])
+                return {"sig": value, "bak": value, "ovrl": value}
             return None
         except Exception as e:
             logger.debug(f"DNSMOS torchmetrics failed: {e}")

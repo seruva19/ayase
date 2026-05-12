@@ -29,6 +29,10 @@ class FADModule(BatchMetricModule):
     default_config = {
         "subsample_videos": None,
         "sample_rate": 16000,
+        "infinity": False,
+        "infinity_subsample_sizes": [4, 8, 16, 32],
+        "infinity_repeats": 8,
+        "random_seed": 1234,
     }
     models = [
         {
@@ -40,6 +44,7 @@ class FADModule(BatchMetricModule):
     ]
     metric_info = {
         "fad": "Frechet Audio Distance between generated and reference audio distributions (lower=better)",
+        "fad_infinity": "FAD extrapolated to infinite sample size using 1/n regression (lower=better)",
     }
 
     def __init__(self, config=None):
@@ -49,6 +54,10 @@ class FADModule(BatchMetricModule):
         self._backend = None
         self.subsample_videos = self.config.get("subsample_videos", None)
         self.sample_rate = self.config.get("sample_rate", 16000)
+        self.infinity = self.config.get("infinity", False)
+        self.infinity_subsample_sizes = self.config.get("infinity_subsample_sizes", [4, 8, 16, 32])
+        self.infinity_repeats = self.config.get("infinity_repeats", 8)
+        self.random_seed = self.config.get("random_seed", 1234)
         self._processed_count = 0
 
     def setup(self) -> None:
@@ -187,10 +196,38 @@ class FADModule(BatchMetricModule):
                 ref_array = features_array[:mid]
                 features_array = features_array[mid:]
 
+            if self.infinity:
+                return self._compute_fad_infinity(features_array, ref_array)
             return self._frechet_distance(features_array, ref_array)
         except Exception as e:
             logger.error(f"FAD computation failed: {e}")
             return float("inf")
+
+    def _compute_fad_infinity(self, gen: np.ndarray, ref: np.ndarray) -> float:
+        """Estimate FAD∞ by extrapolating FAD scores against 1 / sample_size."""
+        n_max = min(len(gen), len(ref))
+        sizes = sorted({
+            int(s)
+            for s in self.infinity_subsample_sizes
+            if isinstance(s, (int, float)) and 2 <= int(s) <= n_max
+        })
+        if not sizes:
+            return self._frechet_distance(gen, ref)
+
+        rng = np.random.default_rng(int(self.random_seed))
+        xs = []
+        ys = []
+        for size in sizes:
+            repeats = max(1, int(self.infinity_repeats))
+            for _ in range(repeats):
+                g_idx = rng.choice(len(gen), size=size, replace=False)
+                r_idx = rng.choice(len(ref), size=size, replace=False)
+                ys.append(self._frechet_distance(gen[g_idx], ref[r_idx]))
+                xs.append(1.0 / size)
+        if len(ys) < 2:
+            return float(ys[0]) if ys else self._frechet_distance(gen, ref)
+        slope, intercept = np.polyfit(np.asarray(xs), np.asarray(ys), deg=1)
+        return float(max(intercept, 0.0))
 
     def _frechet_distance(self, feat1: np.ndarray, feat2: np.ndarray) -> float:
         mu1 = np.mean(feat1, axis=0)
@@ -236,7 +273,7 @@ class FADModule(BatchMetricModule):
 
             if hasattr(self, "pipeline") and self.pipeline:
                 if hasattr(self.pipeline, "add_dataset_metric"):
-                    self.pipeline.add_dataset_metric("fad", score)
+                    self.pipeline.add_dataset_metric("fad_infinity" if self.infinity else "fad", score)
         except Exception as e:
             logger.error(f"FAD failed: {e}")
         finally:

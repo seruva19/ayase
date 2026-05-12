@@ -6,7 +6,7 @@ Modular media quality metrics for video, image, and audio datasets.
 
 ## What It Does
 
-Ayase runs quality assessment modules over a dataset and writes structured per-sample metrics. 327 modules produce 368 metrics across 21 categories (NR-IQA, FR-IQA, NR-VQA, temporal, motion, audio, face, safety, aesthetics, text-video alignment, and more). Modules are independent - pick only what you need.
+Ayase runs quality assessment modules over a dataset and writes structured per-sample metrics. 341 modules produce 377 metrics across 21 categories (NR-IQA, FR-IQA, NR-VQA, temporal, motion, audio, face, safety, aesthetics, text-video alignment, and more). Modules are independent - pick only what you need.
 
 Full metric catalog: [METRICS.md](METRICS.md). Pretrained model catalog: [MODELS.md](MODELS.md).
 
@@ -25,7 +25,7 @@ project itself, and model weights are downloaded and cached on first use.
 ayase scan ./dataset                                    # default balanced pipeline
 ayase scan ./dataset --deep                             # run every discovered module
 ayase scan ./dataset --modules metadata,basic_quality   # selected modules
-ayase modules list                                      # show all 327 modules
+ayase modules list                                      # show all 341 modules
 ayase modules check                                     # import/dependency readiness
 ayase filter ./dataset --min-score 70 --output ./good   # filter by quality
 ayase stats ./dataset                                   # dataset statistics for images/video

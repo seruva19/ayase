@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.30** · Generated 2026-04-28 15:05 · **327 modules** · **368 metrics**
+> **Version 0.1.30** · Generated 2026-05-05 03:31 · **341 modules** · **377 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **327/327 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **341/341 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**327** modules · **393** output fields · **368** metrics · **86** tiered · **155** GPU · **21** categories
+**341** modules · **410** output fields · **377** metrics · **98** tiered · **164** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -30,7 +30,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-98-metrics) (98) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-31-metrics) (31) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-22-metrics) (22) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-20-metrics) (20) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-16-metrics) (16) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-28-fields) (28) · [Utility & Validation](#utility--validation-32-modules) (32)
+[No-Reference Quality](#no-reference-quality-98-metrics) (98) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-32-metrics) (32) · [Temporal Consistency](#temporal-consistency-24-metrics) (24) · [Motion & Dynamics](#motion--dynamics-22-metrics) (22) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-28-metrics) (28) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-16-metrics) (16) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-36-fields) (36) · [Utility & Validation](#utility--validation-33-modules) (33)
 
 ---
 
@@ -1716,7 +1716,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py)
 
 
-## Text-Video Alignment (31 metrics)
+## Text-Video Alignment (32 metrics)
 
 ### `aigcvqa_alignment` [↑](#categories)
 > AIGC-VQA text-video alignment
@@ -1753,17 +1753,29 @@
 - **Tests**: covered by [`test_captioning.py`](tests/modules/per_module/test_captioning.py)
 - **Config**: `model_name=Salesforce/blip-image-captioning-base`, `num_frames=5`
 
+### `blip_score` [↑](#categories)
+> BLIP image-text matching score (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`blip_score`](src/ayase/modules/blip_score.py)** — BLIP image-text matching alignment score
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: torch, transformers
+- **Source**: <a href="https://huggingface.co/Salesforce/blip-itm-large-coco" target="_blank">HF</a>
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `model_name=Salesforce/blip-itm-large-coco`, `max_frames=8`, `warning_threshold=0.4`, `device=auto`
+
 ### `clip_score` [↑](#categories)
 > Caption-image alignment · ↑ higher=better
 
 **[`semantic_alignment`](src/ayase/modules/semantic_alignment.py)** — Checks alignment between video and caption (CLIP Score)
 
-- **Input**: vid +cap · **Speed**: ⏱️ medium · GPU
-- **Packages**: torch, transformers
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: transformers → open_clip
+- **Packages**: open-clip-torch, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_semantic_alignment.py`](tests/modules/per_module/test_semantic_alignment.py)
-- **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, `warning_threshold=0.2`
+- **Config**: `model_name=openai/clip-vit-base-patch32`, `backend=auto`, `pretrained=laion2b_s34b_b79k`, `max_frames=32`, `warning_threshold=0.2`
 
 ### `compbench_action` [↑](#categories)
 > Action binding (0-1) · 0-1
@@ -2833,7 +2845,37 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 
-## Audio Quality (20 metrics)
+## Audio Quality (28 metrics)
+
+### `aqascore_score` [↑](#categories)
+> AQAScore audio question-answering alignment (0-1) · ↑ higher=better · 0-1
+
+**[`aqascore`](src/ayase/modules/aqascore.py)** — AQAScore opt-in audio question-answering alignment
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: caption_proxy → qwen_omni
+- **Packages**: torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-7B" target="_blank">HF</a>
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `enabled=False`, `model_name=Qwen/Qwen2.5-Omni-7B`, `sample_rate=16000`, `device=auto`
+
+### `asr_cer` [↑](#categories)
+> ASR character error rate vs reference text (0-1, lower=better) · ↓ lower=better · 0-1
+
+**[`asr_cer`](src/ayase/modules/asr_cer.py)** — ASR character error rate against expected speech text
+
+- **Input**: img/vid +cap · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `model_name=large-v3`, `device=auto`
+
+### `asr_wer` [↑](#categories)
+> ASR word error rate vs reference text (0-1, lower=better) · ↓ lower=better · 0-1
+
+**[`asr_wer`](src/ayase/modules/asr_wer.py)** — ASR word error rate against expected speech text
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `model_name=large-v3`, `device=auto`
 
 ### `audiobox_enjoyment` [↑](#categories)
 > Audiobox content enjoyment
@@ -2863,9 +2905,10 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`av_sync`](src/ayase/modules/audio_visual_sync.py)** — Audio-video synchronisation offset detection
 
 - **Input**: audio · **Speed**: ⚡ fast
-- **Packages**: soundfile
+- **Backend**: energy → syncformer
+- **Packages**: soundfile, syncformer
 - **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
-- **Config**: `max_frames=600`, `warning_threshold_ms=80.0`
+- **Config**: `backend=energy`, `max_frames=600`, `warning_threshold_ms=80.0`
 
 ### `dnsmos_bak` [↑](#categories)
 > DNSMOS background quality (1-5, higher=better) · ↑ higher=better · 1-5
@@ -2906,6 +2949,17 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, pystoi, soundfile
 - **Tests**: covered by [`test_audio_estoi.py`](tests/modules/per_module/test_audio_estoi.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py)
 - **Config**: `target_sr=10000`, `warning_threshold=0.5`
+
+### `human_clap_score` [↑](#categories)
+> Human-CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`human_clap`](src/ayase/modules/human_clap.py)** — Human-CLAP audio-text relevance score
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: torch, transformers
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
 
 ### `lpdist_score` [↑](#categories)
 > Log-Power Spectral Distance (lower=better) · ↓ lower=better
@@ -2950,6 +3004,18 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_p1203.py`](tests/modules/per_module/test_p1203.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py)
 - **Config**: `display_size=phone`
 
+### `pam_score` [↑](#categories)
+> PAM anti-prompt perceptual audio quality (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`pam`](src/ayase/modules/pam.py)** — PAM anti-prompt no-reference perceptual audio quality
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: signal_proxy → clap
+- **Packages**: torch, transformers
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `device=auto`, `positive_prompts=['clear high quality natural audio', 'clean intelligible speech or music']`, `negative_prompts=['noisy distorted clipped low quality audio', 'muffled corrupted unpleasant sound']`
+
 ### `pesq_score` [↑](#categories)
 > PESQ (-0.5 to 4.5, higher=better) · ↑ higher=better · -0.5 to 4.5
 
@@ -2959,6 +3025,18 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, pesq, soundfile
 - **Tests**: covered by [`test_audio_pesq.py`](tests/modules/per_module/test_audio_pesq.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
+
+### `scoreq_score` [↑](#categories)
+> SCOREQ speech naturalness score (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`scoreq`](src/ayase/modules/scoreq.py)** — SCOREQ no-reference speech naturalness score
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Backend**: signal_proxy → scoreq
+- **Packages**: scoreq
+- **Source**: <a href="https://github.com/alessandroragano/scoreq" target="_blank">GitHub</a> · <a href="https://huggingface.co/alessandroragano/scoreq" target="_blank">HF</a>
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `sample_rate=16000`, `warning_threshold=0.45`
 
 ### `si_sdr_score` [↑](#categories)
 > Scale-Invariant SDR (dB, higher=better) · ↑ higher=better · dB
@@ -3030,6 +3108,17 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_song_eval.py`](tests/modules/per_module/test_song_eval.py)
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
+### `ttsds2_score` [↑](#categories)
+> TTSDS2 speech quality score (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`ttsds2`](src/ayase/modules/ttsds2.py)** — TTSDS2 opt-in speech quality benchmark score
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Backend**: signal_proxy → ttsds2
+- **Packages**: ttsds2
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `enabled=False`, `sample_rate=16000`
+
 ### `utmos_score` [↑](#categories)
 > UTMOS predicted MOS (1-5, higher=better) · ↑ higher=better · 1-5
 
@@ -3039,6 +3128,18 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa, soundfile, torch
 - **Tests**: covered by [`test_audio_utmos.py`](tests/modules/per_module/test_audio_utmos.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py)
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
+
+### `utmos_v2_score` [↑](#categories)
+> UTMOSv2 predicted MOS (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`audio_utmos_v2`](src/ayase/modules/audio_utmos_v2.py)** — UTMOSv2 no-reference MOS prediction for speech quality
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: signal_proxy → utmosv2_package → torch_hub
+- **Packages**: torch, utmosv2
+- **Source**: <a href="https://huggingface.co/sarulab-speech/UTMOSv2" target="_blank">HF</a>
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Config**: `target_sr=16000`, `warning_threshold=3.0`, `use_torch_hub=False`
 
 ### `visqol` [↑](#categories)
 > ViSQOL audio quality MOS (1-5, higher=better) · ↑ higher=better · 1-5
@@ -4011,7 +4112,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (28 fields)
+## Dataset-Level Metrics (36 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -4030,6 +4131,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
+
+### `cmmd` [↑](#categories)
+> CLIP Maximum Mean Discrepancy (lower=better) · ↓ lower=better · type: float
+
+**[`cmmd`](src/ayase/modules/cmmd.py)** — CLIP Maximum Mean Discrepancy between generated and reference sets (lower=better)
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 
 ### `coverage` [↑](#categories)
 > Diversity of generated samples (0-1) · type: float
@@ -4087,7 +4196,15 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance between generated and reference audio distributions (lower=better)
 
 - **Input**: audio · **Speed**: ⚡ fast
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_infinity` [↑](#categories)
+> FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — FAD extrapolated to infinite sample size using 1/n regression (lower=better)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 
 ### `fgd` [↑](#categories)
 > Frechet Gesture Distance (lower=better) · ↓ lower=better · type: float
@@ -4096,6 +4213,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Tests**: covered by [`test_fgd.py`](tests/modules/per_module/test_fgd.py)
+
+### `fid` [↑](#categories)
+> Fréchet Inception Distance · ↓ lower=better · type: float
+
+**[`fid`](src/ayase/modules/fid.py)** — Fréchet Inception Distance between generated and reference image sets (lower=better)
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py)
 
 ### `fmd` [↑](#categories)
 > Frechet Motion Distance (lower=better) · ↓ lower=better · type: float
@@ -4142,6 +4267,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: vid · **Speed**: ⚡ fast
 - **Tests**: covered by [`test_jedi.py`](tests/modules/per_module/test_jedi.py), [`test_jedi_metric.py`](tests/modules/per_module/test_jedi_metric.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 
+### `kad` [↑](#categories)
+> Kernel Audio Distance (lower=better) · ↓ lower=better · type: float
+
+**[`kad`](src/ayase/modules/kad.py)** — Kernel Audio Distance between generated and reference audio sets (lower=better)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
 ### `kid` [↑](#categories)
 > Kernel Inception Distance (lower=better) · ↓ lower=better · type: float
 
@@ -4181,6 +4314,38 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
+
+### `prdc_coverage` [↑](#categories)
+> PRDC coverage in DINOv2 space (0-1) · type: float
+
+**[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Fraction of reference samples with a generated neighbour in range (0-1)
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `prdc_density` [↑](#categories)
+> PRDC density in DINOv2 space · type: float
+
+**[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Average generated-sample density around reference samples
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `prdc_precision` [↑](#categories)
+> PRDC precision in DINOv2 space (0-1) · type: float
+
+**[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Fraction of generated samples inside the reference manifold (0-1)
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `prdc_recall` [↑](#categories)
+> PRDC recall in DINOv2 space (0-1) · type: float
+
+**[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Fraction of reference samples covered by generated samples (0-1)
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 
 ### `precision` [↑](#categories)
 > Quality of generated samples (0-1) · type: float
@@ -4264,10 +4429,11 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
 
-## Utility & Validation (32 modules)
+## Utility & Validation (33 modules)
 
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
+- **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
 - **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py)
