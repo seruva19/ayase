@@ -109,6 +109,7 @@ class QualityMetrics(BaseModel):
         "cover_semantic": "aesthetic",
         # Text-video alignment
         "clip_score": "alignment",
+        "blip_score": "alignment",
         "blip_bleu": "alignment",
         "t2v_score": "alignment",
         "t2v_alignment": "alignment",
@@ -296,6 +297,14 @@ class QualityMetrics(BaseModel):
         "si_sdr_score": "audio",
         "lpdist_score": "audio",
         "utmos_score": "audio",
+        "utmos_v2_score": "audio",
+        "asr_cer": "audio",
+        "asr_wer": "audio",
+        "scoreq_score": "audio",
+        "ttsds2_score": "audio",
+        "human_clap_score": "audio",
+        "pam_score": "audio",
+        "aqascore_score": "audio",
         "av_sync_offset": "audio",
         "visqol": "audio",
         "dnsmos_overall": "audio",
@@ -570,6 +579,7 @@ class QualityMetrics(BaseModel):
     detection_diversity: Optional[float] = None  # Object detection category entropy
     sd_score: Optional[float] = None  # SD-reference similarity (0-1)
     gradient_detail: Optional[float] = None  # Sobel gradient detail (0-100)
+    blip_score: Optional[float] = None  # BLIP image-text matching score (0-1, higher=better)
     blip_bleu: Optional[float] = None
     detection_score: Optional[float] = None
     count_score: Optional[float] = None
@@ -661,6 +671,14 @@ class QualityMetrics(BaseModel):
     si_sdr_score: Optional[float] = None  # Scale-Invariant SDR (dB, higher=better)
     lpdist_score: Optional[float] = None  # Log-Power Spectral Distance (lower=better)
     utmos_score: Optional[float] = None  # UTMOS predicted MOS (1-5, higher=better)
+    utmos_v2_score: Optional[float] = None  # UTMOSv2 predicted MOS (1-5, higher=better)
+    asr_cer: Optional[float] = None  # ASR character error rate vs reference text (0-1, lower=better)
+    asr_wer: Optional[float] = None  # ASR word error rate vs reference text (0-1, lower=better)
+    scoreq_score: Optional[float] = None  # SCOREQ speech naturalness score (0-1, higher=better)
+    ttsds2_score: Optional[float] = None  # TTSDS2 speech quality score (0-1, higher=better)
+    human_clap_score: Optional[float] = None  # Human-CLAP audio-text relevance (0-1, higher=better)
+    pam_score: Optional[float] = None  # PAM anti-prompt perceptual audio quality (0-1, higher=better)
+    aqascore_score: Optional[float] = None  # AQAScore audio question-answering alignment (0-1)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
 
     # SOTA no-reference VQA
@@ -1171,9 +1189,14 @@ class DatasetStats(BaseModel):
     kvd: Optional[float] = None  # Kernel Video Distance
     fvmd: Optional[float] = None  # Fréchet Video Motion Distance
     fid: Optional[float] = None  # Fréchet Inception Distance
+    cmmd: Optional[float] = None  # CLIP Maximum Mean Discrepancy (lower=better)
     jedi: Optional[float] = None  # JEDi (V-JEPA + MMD, ICLR 2025)
     kid: Optional[float] = None  # Kernel Inception Distance (lower=better)
     kid_std: Optional[float] = None  # KID standard deviation
+    prdc_precision: Optional[float] = None  # PRDC precision in DINOv2 space (0-1)
+    prdc_recall: Optional[float] = None  # PRDC recall in DINOv2 space (0-1)
+    prdc_density: Optional[float] = None  # PRDC density in DINOv2 space
+    prdc_coverage: Optional[float] = None  # PRDC coverage in DINOv2 space (0-1)
 
     # Generative distribution metrics (dataset-level)
     precision: Optional[float] = None  # Quality of generated samples (0-1)
@@ -1199,6 +1222,8 @@ class DatasetStats(BaseModel):
 
     # Batch distribution metrics (dataset-level)
     fad: Optional[float] = None  # Frechet Audio Distance (lower=better)
+    fad_infinity: Optional[float] = None  # FAD extrapolated to infinite sample size (lower=better)
+    kad: Optional[float] = None  # Kernel Audio Distance (lower=better)
     fgd: Optional[float] = None  # Frechet Gesture Distance (lower=better)
     fmd: Optional[float] = None  # Frechet Motion Distance (lower=better)
     msswd: Optional[float] = None  # Multi-Scale Sliced Wasserstein (lower=better)

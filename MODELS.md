@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.30** · Generated 2026-04-28 14:36 · **179 models** across **10 sources**
+> **Version 0.1.30** · Generated 2026-05-05 02:55 · **191 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**179** models · **54** HuggingFace · **61** pyiqa · **10** sources
+**191** models · **58** HuggingFace · **61** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (37)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (41)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -79,10 +79,18 @@
 - **Used by**: `hpsv3`
 - **VRAM**: ~16 GB · **Disk**: ~15 GB
 
+### <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-7B" target="_blank">`Qwen/Qwen2.5-Omni-7B`</a> [↑](#categories)
+
+- **Used by**: `aqascore`
+
 ### <a href="https://huggingface.co/Salesforce/blip-image-captioning-base" target="_blank">`Salesforce/blip-image-captioning-base`</a> [↑](#categories)
 
 - **Used by**: `captioning`
 - **VRAM**: ~1 GB · **Disk**: ~990 MB
+
+### <a href="https://huggingface.co/Salesforce/blip-itm-large-coco" target="_blank">`Salesforce/blip-itm-large-coco`</a> [↑](#categories)
+
+- **Used by**: `blip_score`
 
 ### <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">`TIGER-Lab/VideoScore`</a> [↑](#categories)
 
@@ -114,7 +122,7 @@
 
 ### <a href="https://huggingface.co/facebook/dinov2-large" target="_blank">`facebook/dinov2-large`</a> [↑](#categories)
 
-- **Used by**: `verse_bench`
+- **Used by**: `prdc_dinov2`, `verse_bench`
 
 ### <a href="https://huggingface.co/facebook/vjepa2-vitg-fpc64-256" target="_blank">`facebook/vjepa2-vitg-fpc64-256`</a> [↑](#categories)
 
@@ -134,7 +142,7 @@
 
 ### <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">`laion/clap-htsat-fused`</a> [↑](#categories)
 
-- **Used by**: `audio_text_alignment`
+- **Used by**: `audio_text_alignment`, `human_clap`, `pam`
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 
 ### <a href="https://huggingface.co/lero233/KVQ" target="_blank">`lero233/KVQ`</a> [↑](#categories)
@@ -164,6 +172,10 @@
 
 - **Used by**: `semantic_segmentation_consistency`
 
+### <a href="https://huggingface.co/open_clip/ViT-B-32" target="_blank">`open_clip/ViT-B-32`</a> [↑](#categories)
+
+- **Used by**: `semantic_alignment`
+
 ### <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">`openai/clip-vit-base-patch32`</a> [↑](#categories)
 
 - **Used by**: `action_recognition`, `aigcvqa`, `aigv_assessor`, `aigvqa`, `background_consistency`, `chronomagic`, `clifvqa`, `clip_temporal`, `clipvqa`, `concept_presence`, `crave`, `creativity`, `dataset_analytics`, `deepfake_detection`, `generative_distribution`, `harmful_content`, `maxvqa`, `ptmvqa`, `qclip`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `t2v_compbench`, `t2v_score`, `t2veval`, `tifa`, `ugvq`, `umap_projection`, `umtscore`, `video_memorability`, `video_text_matching`, `video_type_classifier`, `videoreward`, `vqa2`, `vqathinker`, `vqinsight`, `world_consistency`
@@ -173,6 +185,10 @@
 
 - **Used by**: `aesthetic_scoring`, `vader`
 - **VRAM**: ~1.5 GB · **Disk**: ~1.7 GB
+
+### <a href="https://huggingface.co/openai/clip-vit-large-patch14-336" target="_blank">`openai/clip-vit-large-patch14-336`</a> [↑](#categories)
+
+- **Used by**: `cmmd`
 
 ### <a href="https://huggingface.co/q-future/one-align" target="_blank">`q-future/one-align`</a> [↑](#categories)
 
@@ -296,7 +312,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `torchvision/inception_v3` [↑](#categories)
 > torchvision · BSD-3-Clause
 
-- **Used by**: `inception_score`, `kid`
+- **Used by**: `fid`, `inception_score`, `kid`
 - **VRAM**: ~200 MB · **Disk**: ~100 MB
 
 ### `torchvision/r3d_18` [↑](#categories)
@@ -336,7 +352,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `torchvision/inception_v3` [↑](#categories)
 > torchvision · BSD-3-Clause
 
-- **Used by**: `kid`
+- **Used by**: `fid`, `kid`
 
 ### `torchvision/r3d_18` [↑](#categories)
 > torchvision · BSD-3-Clause
@@ -370,6 +386,10 @@ Bundled with `pip install torchvision`. Weights download on first use.
 - **Used by**: `lmmvqa`, `mdvqa`, `modularbvqa`, `presresq`, `unified_vqa`, `vqa_score`
 - **VRAM**: ~600 MB · **Disk**: ~340 MB
 
+### `open_clip/ViT-B-32` [↑](#categories)
+
+- **Used by**: `semantic_alignment`
+
 ## torch.hub
 
 ### `facebookresearch/co-tracker` [↑](#categories)
@@ -387,6 +407,11 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 - **Used by**: `depth_consistency`, `depth_map_quality`
 - **VRAM**: ~400 MB · **Disk**: ~400 MB
+
+### `sarulab-speech/UTMOSv2` [↑](#categories)
+> torch.hub
+
+- **Used by**: `audio_utmos_v2`
 
 ### `tarepan/SpeechMOS:v1.2.0` [↑](#categories)
 > torch.hub · MIT
