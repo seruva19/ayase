@@ -144,17 +144,24 @@ class OCRFidelityModule(PipelineModule):
                     "others": [bool, object, bytes, str, _np.void],
                 }
 
+            # Paddle 3.0 PIR runtime has an oneDNN bug on CPU init; disable
+            # MKL-DNN before importing paddle. Harmless on 2.x.
+            import os
+            os.environ.setdefault("FLAGS_use_mkldnn", "0")
+
             from paddleocr import PaddleOCR
             import paddleocr
 
             logger.info("Loading PaddleOCR for OCR Fidelity...")
-            # PaddleOCR >=3.x removed the show_log argument
+            # PaddleOCR 3.x dropped show_log AND use_angle_cls (replaced by
+            # use_textline_orientation, default True).
             ocr_version = getattr(paddleocr, "__version__", "0.0.0")
             major = int(ocr_version.split(".")[0])
             if major >= 3:
-                self._ocr = PaddleOCR(use_angle_cls=True, lang=self.lang)
+                self._ocr = PaddleOCR(lang=self.lang)
             else:
                 self._ocr = PaddleOCR(use_angle_cls=True, lang=self.lang, show_log=False)
+            self._ocr_major = major
             self._ocr_available = True
         except ImportError:
             logger.warning("PaddleOCR not installed. OCR Fidelity disabled.")
@@ -188,13 +195,23 @@ class OCRFidelityModule(PipelineModule):
 
             # Run OCR on each frame, collect all recognized text
             all_recognized: List[str] = []
+            major = getattr(self, "_ocr_major", 3)
             for frame in frames:
-                result = self._ocr.ocr(frame, cls=True)
-                if result and result[0]:
-                    for line in result[0]:
-                        txt = line[1][0]
-                        if txt:
-                            all_recognized.append(txt)
+                if major >= 3:
+                    # paddleocr 3.x: .predict(frame); result[0] is a dict
+                    # carrying dt_polys / rec_texts / rec_scores.
+                    result = self._ocr.predict(frame)
+                    if result and result[0]:
+                        for txt in (result[0].get("rec_texts") or []):
+                            if txt:
+                                all_recognized.append(txt)
+                else:
+                    result = self._ocr.ocr(frame, cls=True)
+                    if result and result[0]:
+                        for line in result[0]:
+                            txt = line[1][0]
+                            if txt:
+                                all_recognized.append(txt)
 
             recognized = " ".join(all_recognized).lower()
 
