@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.31]
+
+### Added
+
+- **blip_score**: added BLIP caption-alignment scoring for visual samples.
+- **cmmd**: added dataset CMMD distribution scoring with model and proxy backends.
+- **prdc_dinov2**: added precision, recall, density, and coverage dataset metrics.
+- **fid**: added dataset FID scoring with Inception and proxy feature backends.
+- **asr_cer** and **asr_wer**: added cached ASR transcript error-rate metrics.
+- **scoreq**, **ttsds2**, and **audio_utmos_v2**: added speech-quality scoring modules with graceful proxy fallbacks.
+- **human_clap** and **pam**: added CLAP-based audio-text relevance and anti-prompt metrics.
+- **kad**: added Kernel Audio Distance dataset scoring.
+- **aqascore**: added opt-in audio question-answering quality scoring.
+- **image**: added public `ayase.image` loading and frame-sampling helpers for downstream image adapters.
+
+### Changed
+
+- **semantic_alignment**: added configurable OpenCLIP backend support for legacy image-to-image adapter compatibility.
+- **fad**: added optional FAD∞ extrapolation mode alongside the existing FAD dataset metric.
+
+### Fixed
+
+- **dnsmos**: fixed torchmetrics backend detection to use `DeepNoiseSuppressionMeanOpinionScore`.
+- **audio_visual_sync**: added configurable segment sizing and an optional Synchformer backend hook while preserving the energy-correlation default.
+
 ## [0.1.30]
 
 ### Added

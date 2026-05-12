@@ -107,7 +107,7 @@ class TestMetricCount:
 
     def test_quality_metrics_field_count(self):
         field_count = len(QualityMetrics.model_fields)
-        assert field_count == 368, f"Expected 368, got {field_count}"
+        assert field_count == 377, f"Expected 377, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README metric count must match QualityMetrics fields."""
@@ -149,7 +149,7 @@ README_METRICS = sorted(QualityMetrics.model_fields.keys())
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 368
+        assert len(README_METRICS) == 377
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
