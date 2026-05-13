@@ -1,14 +1,24 @@
 """Video/image metadata extraction and validation (resolution, FPS, duration, aspect ratio).
 
-Populates VideoMetadata or ImageMetadata on the sample. Validates against
-configurable thresholds for minimum resolution, FPS, and duration bounds."""
+Populates VideoMetadata / ImageMetadata, plus AudioMetadata when a video has
+an audio stream. Validates against configurable thresholds for minimum
+resolution, FPS, and duration bounds."""
 
+import json as _json
 import logging
+import subprocess
 import cv2
 from pathlib import Path
 from typing import Optional
 
-from ayase.models import Sample, ValidationIssue, ValidationSeverity, VideoMetadata, ImageMetadata
+from ayase.models import (
+    AudioMetadata,
+    ImageMetadata,
+    Sample,
+    ValidationIssue,
+    ValidationSeverity,
+    VideoMetadata,
+)
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
@@ -74,6 +84,8 @@ class MetadataModule(PipelineModule):
             duration=duration,
             file_size=sample.path.stat().st_size,
         )
+
+        self._probe_audio(sample, fallback_duration=duration)
 
         # Validation logic
         min_dim = min(width, height)
@@ -157,3 +169,53 @@ class MetadataModule(PipelineModule):
                     recommendation=f"Upscale content to at least {self.min_resolution}p using AI upscalers (e.g., Real-ESRGAN) or discard."
                 )
             )
+
+    def _probe_audio(self, sample: Sample, fallback_duration: float = 0.0) -> None:
+        """Populate sample.audio_metadata via ffprobe if the file has an audio stream."""
+        try:
+            result = subprocess.run(
+                [
+                    "ffprobe", "-v", "error",
+                    "-select_streams", "a:0",
+                    "-show_entries", "stream=codec_name,channels,sample_rate,bit_rate,duration",
+                    "-of", "json",
+                    str(sample.path),
+                ],
+                capture_output=True, timeout=10,
+            )
+            if result.returncode != 0:
+                return
+            streams = (_json.loads(result.stdout or b"{}") or {}).get("streams") or []
+            if not streams:
+                return
+            s = streams[0]
+            try:
+                sample_rate = int(s.get("sample_rate") or 0)
+                channels = int(s.get("channels") or 0)
+            except (TypeError, ValueError):
+                return
+            if sample_rate <= 0 or channels <= 0:
+                return
+            try:
+                duration = float(s.get("duration") or 0.0)
+            except (TypeError, ValueError):
+                duration = 0.0
+            if duration <= 0:
+                duration = fallback_duration
+            bitrate = None
+            if s.get("bit_rate"):
+                try:
+                    bitrate = int(s["bit_rate"])
+                except (TypeError, ValueError):
+                    bitrate = None
+            sample.audio_metadata = AudioMetadata(
+                sample_rate=sample_rate,
+                channels=channels,
+                bitrate=bitrate,
+                codec=str(s.get("codec_name") or "unknown"),
+                duration=duration,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+        except Exception as e:
+            logger.debug(f"Audio metadata probe failed for {sample.path}: {e}")
