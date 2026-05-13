@@ -55,7 +55,16 @@ class DNSMOSModule(PipelineModule):
         logger.warning("DNSMOS requires torchmetrics[audio]")
 
     def _extract_audio(self, sample_path: Path) -> Optional[tuple]:
-        """Extract audio waveform and sample rate from video/audio file."""
+        """Extract audio waveform + sample rate.
+
+        Fast path: pipe PCM directly out of ffmpeg (no tempfile, no librosa
+        audioread fallback). Falls back to soundfile / librosa for pure audio
+        formats or environments without ffmpeg.
+        """
+        ffmpeg_result = self._ffmpeg_pipe_pcm(sample_path, sr=16000)
+        if ffmpeg_result is not None:
+            return ffmpeg_result
+
         try:
             import soundfile as sf
             audio, sr = sf.read(str(sample_path))
@@ -71,6 +80,32 @@ class DNSMOSModule(PipelineModule):
             pass
 
         return None
+
+    def _ffmpeg_pipe_pcm(self, path: Path, sr: int = 16000) -> Optional[tuple]:
+        """Decode mono float32 PCM from any container via ffmpeg stdout pipe."""
+        import subprocess
+        try:
+            proc = subprocess.run(
+                [
+                    "ffmpeg", "-v", "error", "-nostdin",
+                    "-i", str(path),
+                    "-vn", "-ac", "1", "-ar", str(sr),
+                    "-f", "s16le", "-",
+                ],
+                capture_output=True, timeout=60,
+            )
+            if proc.returncode != 0 or not proc.stdout:
+                return None
+            import numpy as np
+            audio = np.frombuffer(proc.stdout, dtype=np.int16).astype(np.float32) / 32768.0
+            if audio.size == 0:
+                return None
+            return audio, sr
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+        except Exception as e:
+            logger.debug(f"ffmpeg audio extraction failed for {path}: {e}")
+            return None
 
     def _compute_torchmetrics(self, audio, sr: int) -> Optional[dict]:
         try:
