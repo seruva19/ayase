@@ -134,21 +134,46 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
 
 def _process_samples(
     pipeline: Pipeline, samples: Iterable[Sample],
+    *,
+    checkpoint_every: int = 0,
+    checkpoint_fn=None,
 ) -> int:
     processed_count = 0
     for sample in samples:
         pipeline.process_sample(sample)
         processed_count += 1
+        if (
+            checkpoint_every > 0
+            and checkpoint_fn is not None
+            and processed_count % checkpoint_every == 0
+        ):
+            try:
+                checkpoint_fn(pipeline, processed_count)
+            except Exception as e:
+                console.print(
+                    f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
+                )
     return processed_count
 
 
-def _run_pipeline(pipeline: Pipeline, samples: Iterable[Sample]) -> int:
+def _run_pipeline(
+    pipeline: Pipeline,
+    samples: Iterable[Sample],
+    *,
+    checkpoint_every: int = 0,
+    checkpoint_fn=None,
+) -> int:
     """Run a pipeline over samples and always dispose mounted modules."""
     started = False
     try:
         pipeline.start()
         started = True
-        return _process_samples(pipeline, samples)
+        return _process_samples(
+            pipeline,
+            samples,
+            checkpoint_every=checkpoint_every,
+            checkpoint_fn=checkpoint_fn,
+        )
     finally:
         if started:
             pipeline.stop()
@@ -402,13 +427,38 @@ def run(
         bool,
         typer.Option("--recursive/--no-recursive", help="Scan directories recursively"),
     ] = True,
+    checkpoint_every: Annotated[
+        int,
+        typer.Option(
+            "--checkpoint-every",
+            help="When --format=json with --output, write partial results every N samples (0=only at end). Survives crashes / kills.",
+        ),
+    ] = 0,
 ) -> None:
     """Run a specific quality assessment pipeline on target paths."""
     config = AyaseConfig.load()
     modules = _parse_pipeline_str(pipeline, config)
     p = Pipeline(modules)
 
-    processed_count = _run_pipeline(p, _iter_input_samples(paths, recursive=recursive))
+    checkpoint_fn = None
+    if checkpoint_every > 0 and format == "json" and output is not None:
+        def _write_checkpoint(pipeline: Pipeline, count: int) -> None:
+            data = {
+                "stats": pipeline.stats.model_dump(),
+                "samples": [s.model_dump(mode="json") for s in pipeline.results.values()],
+            }
+            tmp = output.with_suffix(output.suffix + ".tmp")
+            tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            tmp.replace(output)
+            console.print(f"[dim]checkpoint: {count} samples written to {output}[/dim]")
+        checkpoint_fn = _write_checkpoint
+
+    processed_count = _run_pipeline(
+        p,
+        _iter_input_samples(paths, recursive=recursive),
+        checkpoint_every=checkpoint_every,
+        checkpoint_fn=checkpoint_fn,
+    )
     if processed_count == 0:
         console.print("[yellow]No valid files found to process.[/yellow]")
         raise typer.Exit(code=0)
