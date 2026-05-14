@@ -1,7 +1,16 @@
-"""Recognize Anything Model (RAM) tagging module.
+"""Recognize Anything Model (RAM++) tagging module.
 
-From Data-Juicer's video_tagging_from_frames_filter.
-RAM auto-tags images with 6,449 tag categories.
+Auto-tags video frames with multi-label tags from RAM++ (4,585 tag classes).
+The HuggingFace repo `xinyu1205/recognize-anything-plus-model` only hosts
+raw `.pth` checkpoints, not a transformers-compatible model — so we use the
+official `recognize-anything` PyPI/GitHub package for loading and inference.
+
+Installation:
+    pip install git+https://github.com/xinyu1205/recognize-anything.git
+
+The package brings in a vendored Swin transformer + BLIP-style image-tag
+contrastive head. Image is preprocessed to 384x384 and run through the
+model; `inference_ram()` returns space-separated EN tag string per image.
 """
 
 import logging
@@ -15,45 +24,55 @@ logger = logging.getLogger(__name__)
 
 class RAMTaggingModule(PipelineModule):
     name = "ram_tagging"
-    description = "RAM (Recognize Anything Model) auto-tagging for video frames"
+    description = "RAM++ multi-label tagging on sampled video frames"
     default_config = {
-        "model_name": "xinyu1205/recognize-anything-plus-model",
+        "repo_id": "xinyu1205/recognize-anything-plus-model",
+        "checkpoint_filename": "ram_plus_swin_large_14m.pth",
+        "image_size": 384,
+        "vit": "swin_l",
         "subsample": 4,
-        "trust_remote_code": False,
-        "model_revision": None,
     }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
         self._model = None
-        self._processor = None
+        self._transform = None
         self._device = "cpu"
 
     def setup(self) -> None:
         try:
             import torch
-            from transformers import AutoModelForImageClassification, AutoProcessor
-
-            model_name = self.config.get(
-                "model_name", "xinyu1205/recognize-anything-plus-model"
+            from huggingface_hub import hf_hub_download
+            from ram.models import ram_plus
+            from ram import get_transform
+        except ImportError as e:
+            logger.warning(
+                "RAM tagging unavailable: %s. "
+                "Install with: pip install git+https://github.com/xinyu1205/recognize-anything.git",
+                e,
             )
+            return
+
+        try:
+            ckpt = hf_hub_download(
+                repo_id=self.config.get("repo_id"),
+                filename=self.config.get("checkpoint_filename"),
+            )
+            image_size = int(self.config.get("image_size", 384))
+            vit = self.config.get("vit", "swin_l")
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-            trc = self.config.get("trust_remote_code", False)
-            rev = self.config.get("model_revision", None)
-            self._processor = AutoProcessor.from_pretrained(
-                model_name, trust_remote_code=trc, revision=rev
-            )
-            self._model = AutoModelForImageClassification.from_pretrained(
-                model_name, trust_remote_code=trc, revision=rev
-            ).to(device)
-            self._model.eval()
+            model = ram_plus(pretrained=ckpt, image_size=image_size, vit=vit)
+            model.eval()
+            self._model = model.to(device)
+            self._transform = get_transform(image_size=image_size)
             self._device = device
             self._ml_available = True
-            logger.info("RAM model loaded on %s", device)
-        except (ImportError, Exception) as e:
-            logger.warning("RAM tagging unavailable: %s", e)
+            logger.info("RAM++ model loaded on %s (image_size=%d, vit=%s)",
+                        device, image_size, vit)
+        except Exception as e:
+            logger.warning("RAM tagging setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -65,6 +84,7 @@ class RAMTaggingModule(PipelineModule):
             import cv2
             import torch
             from PIL import Image
+            from ram import inference_ram
 
             frames = self._load_frames(sample)
             if not frames:
@@ -74,27 +94,19 @@ class RAMTaggingModule(PipelineModule):
             for frame in frames:
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 pil_img = Image.fromarray(rgb)
-
-                inputs = self._processor(images=pil_img, return_tensors="pt").to(
-                    self._device
-                )
+                img = self._transform(pil_img).unsqueeze(0).to(self._device)
                 with torch.no_grad():
-                    outputs = self._model(**inputs)
-
-                logits = outputs.logits
-                probs = torch.sigmoid(logits)
-                threshold = 0.5
-                predicted = (probs > threshold).squeeze()
-                if hasattr(self._model.config, "id2label"):
-                    for idx in predicted.nonzero(as_tuple=True)[0]:
-                        tag = self._model.config.id2label.get(idx.item(), "")
-                        if tag:
-                            all_tags.add(tag)
+                    tags_en, _ = inference_ram(img, self._model)
+                # tags_en is "tag1 | tag2 | tag3 ..."
+                for t in (tags_en or "").split("|"):
+                    t = t.strip()
+                    if t:
+                        all_tags.add(t)
 
             if all_tags:
                 sample.quality_metrics.ram_tags = ", ".join(sorted(all_tags))
         except Exception as e:
-            logger.warning("RAM tagging failed: %s", e)
+            logger.warning("RAM tagging failed for %s: %s", sample.path, e)
         return sample
 
     def _load_frames(self, sample: Sample) -> list:
