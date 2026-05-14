@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.30** · Generated 2026-05-05 03:31 · **341 modules** · **377 metrics**
+> **Version 0.1.35** · Generated 2026-05-14 14:45 · **341 modules** · **377 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -3493,13 +3493,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `ram_tags` [↑](#categories)
 > Comma-separated RAM auto-tags · type: str
 
-**[`ram_tagging`](src/ayase/modules/ram_tagging.py)** — RAM (Recognize Anything Model) auto-tagging for video frames
+**[`ram_tagging`](src/ayase/modules/ram_tagging.py)** — RAM++ multi-label tagging on sampled video frames
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
-- **Source**: <a href="https://huggingface.co/xinyu1205/recognize-anything-plus-model" target="_blank">HF</a>
+- **Packages**: Pillow, huggingface_hub, opencv-python, ram, torch
+- **Source**: <a href="https://github.com/xinyu1205/recognize-anything.git" target="_blank">GitHub</a> · <a href="https://huggingface.co/xinyu1205/recognize-anything-plus-model" target="_blank">HF</a>
 - **Tests**: covered by [`test_ram_tagging.py`](tests/modules/per_module/test_ram_tagging.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `model_name=xinyu1205/recognize-anything-plus-model`, `subsample=4`, `trust_remote_code=False`
+- **Config**: `repo_id=xinyu1205/recognize-anything-plus-model`, `checkpoint_filename=ram_plus_swin_large_14m.pth`, `image_size=384`, `vit=swin_l`, `subsample=4`
 
 ### `scene_complexity` [↑](#categories)
 > Visual complexity score
