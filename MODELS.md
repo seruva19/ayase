@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.30** · Generated 2026-05-05 02:55 · **191 models** across **10 sources**
+> **Version 0.1.35** · Generated 2026-05-14 14:46 · **190 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**191** models · **58** HuggingFace · **61** pyiqa · **10** sources
+**190** models · **57** HuggingFace · **61** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (41)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (40)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -205,10 +205,6 @@
 ### <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0" target="_blank">`stabilityai/stable-diffusion-xl-base-1.0`</a> [↑](#categories)
 
 - **Used by**: `sd_reference`
-
-### <a href="https://huggingface.co/xinyu1205/recognize-anything-plus-model" target="_blank">`xinyu1205/recognize-anything-plus-model`</a> [↑](#categories)
-
-- **Used by**: `ram_tagging`
 
 ### <a href="https://huggingface.co/yuvalkirstain/PickScore_v1" target="_blank">`yuvalkirstain/PickScore_v1`</a> [↑](#categories)
 

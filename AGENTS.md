@@ -109,6 +109,20 @@ import logging
 
 Modules that use models or produce metrics not discoverable by the standard regex scanner (vendored code, env-var-based paths, non-standard loading) **must** declare them via class-level `models` and `metric_info` attributes. These are picked up by `ayase modules docs` and `ayase modules models` for auto-generated documentation.
 
+### 9. Deployment Prep Trigger
+
+When the user says any of these phrases or close variants, **immediately run the release checklist, including documentation regeneration**: "prepare for deploy", "prepare for deployment", "prepare release", "release prep", "ready to deploy", "deploy", "publish", "build for PyPI".
+
+This trigger is mandatory even if no source files changed in the current turn. Do not merely describe the checklist. Before saying deployment prep is complete, run:
+
+```bash
+ayase modules docs -o METRICS.md
+ayase modules models -o MODELS.md
+ayase modules sync-readme
+```
+
+If the `ayase` console script is unavailable, use the equivalent `python -m ayase ...` commands. If any command is blocked or fails, report that explicitly and do not claim deploy prep is complete.
+
 **`models`** — list of dicts, each with at minimum `id` and `type`:
 
 ```python
@@ -513,6 +527,8 @@ These have known issues:
 ## Release Checklist
 
 After implementing any change (new modules, new metrics, bug fixes), complete ALL applicable steps before considering done:
+
+**Mandatory trigger:** If the user asks to deploy, prepare for deploy, prepare a release, publish, or build for PyPI, run this checklist now. Documentation regeneration is not optional and must not be skipped because the source change happened in an earlier turn.
 
 ### 1. Code
 
