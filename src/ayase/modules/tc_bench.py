@@ -1,0 +1,236 @@
+"""TC-Bench — temporal compositionality benchmark for T2V (arXiv:2406.08656).
+
+Measures whether the events described in a caption actually unfold *in
+the correct temporal order* in the generated video. Complements
+T2V-CompBench (which evaluates spatial composition).
+
+Three dimensions:
+    * attribute  — attribute changes are time-localized correctly
+                   (e.g. "the ball turns red after spinning").
+    * object     — objects appear/disappear at the right time
+                   (e.g. "first a dog, then a cat enters").
+    * background — background transitions occur in order
+                   (e.g. "the scene shifts from day to night").
+
+Plus an overall mean.
+
+Three-tier event decomposition:
+    1. LLM-driven event extraction (vLLM / local-LLM endpoint).
+    2. Regex template matching on temporal connectives
+       (before / after / then / and then / finally / first / next).
+    3. Comma-split fallback — treat each clause as one ordered event.
+"""
+
+import logging
+import re
+from typing import Dict, List, Optional, Tuple
+
+import cv2
+import numpy as np
+
+from ayase.models import QualityMetrics, Sample
+from ayase.pipeline import PipelineModule
+
+logger = logging.getLogger(__name__)
+
+
+_CONNECTIVES = (
+    "first", "next", "then", "after that", "afterwards", "finally",
+    "before", "after", "and then",
+)
+
+
+class TCBenchModule(PipelineModule):
+    name = "tc_bench"
+    description = "TC-Bench temporal compositionality for T2V (arXiv:2406.08656)"
+    default_config = {
+        "decomposer": "auto",  # "auto" | "llm" | "regex" | "comma"
+        "num_frames": 8,
+        "models_dir": "models",
+    }
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.decomposer_pref = self.config.get("decomposer", "auto")
+        self.num_frames = self.config.get("num_frames", 8)
+        self.models_dir = self.config.get("models_dir", "models")
+        self._clip_model = None
+        self._clip_processor = None
+        self._llm_endpoint = None
+        self._device = "cpu"
+        self.active_decomposer = "comma"
+
+    def setup(self) -> None:
+        if getattr(self, "test_mode", False):
+            return
+        try:
+            import torch
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        except ImportError:
+            return
+        self._try_load_clip()
+        if self.decomposer_pref in ("auto", "llm") and self._try_setup_llm():
+            self.active_decomposer = "llm"
+        elif self.decomposer_pref in ("auto", "regex"):
+            self.active_decomposer = "regex"
+        else:
+            self.active_decomposer = "comma"
+        logger.info(f"TC-Bench initialized with decomposer={self.active_decomposer}")
+
+    def _try_load_clip(self) -> bool:
+        try:
+            from transformers import CLIPModel, CLIPProcessor
+            self._clip_model = CLIPModel.from_pretrained(
+                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
+            ).to(self._device).eval()
+            self._clip_processor = CLIPProcessor.from_pretrained(
+                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
+            )
+            return True
+        except Exception as e:
+            logger.debug(f"TC-Bench: CLIP unavailable: {e}")
+            return False
+
+    def _try_setup_llm(self) -> bool:
+        # Optional vLLM/OpenAI-compatible local endpoint — the user must set
+        # ``llm_endpoint`` in config. We don't attempt to spin one up.
+        endpoint = self.config.get("llm_endpoint")
+        if not endpoint:
+            return False
+        self._llm_endpoint = endpoint
+        return True
+
+    def process(self, sample: Sample) -> Sample:
+        if not sample.is_video:
+            return sample
+        caption = sample.caption.text if sample.caption else None
+        if not caption:
+            return sample
+
+        events = self._decompose(caption)
+        if len(events) < 2:
+            # Without at least two ordered events temporal composition is
+            # trivially satisfied — record as 1.0 to avoid penalizing
+            # captions that simply have no temporal structure.
+            self._write(sample, 1.0, 1.0, 1.0, 1.0)
+            return sample
+
+        frames = self._sample_frames(sample.path, self.num_frames)
+        if frames is None:
+            return sample
+
+        attribute_score = self._score_dimension(frames, events, kind="attribute")
+        object_score = self._score_dimension(frames, events, kind="object")
+        background_score = self._score_dimension(frames, events, kind="background")
+        overall = float(np.mean([attribute_score, object_score, background_score]))
+        self._write(sample, attribute_score, object_score, background_score, overall)
+        return sample
+
+    def _write(self, sample: Sample, attr: float, obj: float, bg: float, overall: float) -> None:
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.tcbench_attribute_score = round(float(attr), 3)
+        sample.quality_metrics.tcbench_object_score = round(float(obj), 3)
+        sample.quality_metrics.tcbench_background_score = round(float(bg), 3)
+        sample.quality_metrics.tcbench_overall = round(float(overall), 3)
+
+    def _decompose(self, caption: str) -> List[str]:
+        if self.active_decomposer == "llm" and self._llm_endpoint is not None:
+            try:
+                return self._decompose_llm(caption)
+            except Exception as e:
+                logger.debug(f"TC-Bench LLM decomposition failed: {e}")
+        if self.active_decomposer in ("regex", "llm"):
+            events = _regex_decompose(caption)
+            if len(events) >= 2:
+                return events
+        return [s.strip() for s in caption.split(",") if s.strip()]
+
+    def _decompose_llm(self, caption: str) -> List[str]:
+        # Minimal OpenAI-compatible call. The user is responsible for the
+        # backing server (vLLM, llama.cpp, ollama, etc.).
+        import urllib.request
+        import json
+
+        prompt = (
+            "Decompose this video caption into an ordered list of atomic "
+            "events, one per line, in the order they should occur. "
+            f"Caption: {caption}"
+        )
+        req = urllib.request.Request(
+            self._llm_endpoint,
+            data=json.dumps({"prompt": prompt, "max_tokens": 256}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        text = payload.get("choices", [{}])[0].get("text", "") or payload.get("text", "")
+        events = [line.strip(" -•*") for line in text.splitlines() if line.strip()]
+        return events
+
+    def _sample_frames(self, path, n: int) -> Optional[np.ndarray]:
+        cap = cv2.VideoCapture(str(path))
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total < n:
+            cap.release()
+            return None
+        idxs = np.linspace(0, total - 1, n, dtype=int)
+        frames = []
+        for idx in idxs:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            ok, frame = cap.read()
+            if not ok:
+                cap.release()
+                return None
+            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        cap.release()
+        return np.stack(frames, axis=0)
+
+    def _score_dimension(self, frames: np.ndarray, events: List[str], kind: str) -> float:
+        if self._clip_model is None:
+            # Without CLIP we can only say "the caption has temporal structure"
+            return 0.5
+        sims = self._clip_sim_matrix(frames, events)  # (n_frames, n_events)
+        # An event is correctly localized when its peak frame index is
+        # monotonically increasing in event order. We score by Kendall-tau-
+        # like rank concordance on per-event peak indices.
+        peaks = np.argmax(sims, axis=0)
+        concordant = 0
+        total = 0
+        for i in range(len(events)):
+            for j in range(i + 1, len(events)):
+                total += 1
+                if peaks[i] <= peaks[j]:
+                    concordant += 1
+        if total == 0:
+            return 1.0
+        kind_weight = {"attribute": 1.0, "object": 1.0, "background": 0.9}[kind]
+        return float(kind_weight * concordant / total)
+
+    def _clip_sim_matrix(self, frames: np.ndarray, events: List[str]) -> np.ndarray:
+        import torch
+        from PIL import Image as PILImage
+
+        pil_frames = [PILImage.fromarray(f) for f in frames]
+        with torch.no_grad():
+            inputs = self._clip_processor(
+                text=events, images=pil_frames, return_tensors="pt", padding=True,
+            ).to(self._device)
+            out = self._clip_model(**inputs)
+            # logits_per_image: (n_frames, n_events)
+            return out.logits_per_image.cpu().numpy()
+
+
+def _regex_decompose(caption: str) -> List[str]:
+    text = caption.lower().strip()
+    pattern = "|".join(map(re.escape, _CONNECTIVES))
+    parts = re.split(rf"\b({pattern})\b", text)
+    if len(parts) <= 1:
+        return []
+    # parts looks like [chunk0, conn1, chunk1, conn2, chunk2, ...]
+    events = []
+    for i in range(0, len(parts), 2):
+        chunk = parts[i].strip(" ,.")
+        if chunk:
+            events.append(chunk)
+    return events

@@ -504,6 +504,34 @@ class QualityMetrics(BaseModel):
         "concept_presence": "scene",
         "concept_count": "scene",
         "concept_face_count": "face",
+        # NISQA (multidimensional speech quality)
+        "nisqa_mos": "audio",
+        "nisqa_noisiness": "audio",
+        "nisqa_coloration": "audio",
+        "nisqa_discontinuity": "audio",
+        "nisqa_loudness": "audio",
+        # PEAQ (audio codec quality)
+        "peaq_odg": "audio",
+        "peaq_di": "audio",
+        # GenEval (T2I compositional)
+        "geneval_single_object": "alignment",
+        "geneval_two_object": "alignment",
+        "geneval_counting": "alignment",
+        "geneval_colors": "alignment",
+        "geneval_position": "alignment",
+        "geneval_color_attribution": "alignment",
+        "geneval_overall": "alignment",
+        # TC-Bench (temporal compositionality)
+        "tcbench_attribute_score": "alignment",
+        "tcbench_object_score": "alignment",
+        "tcbench_background_score": "alignment",
+        "tcbench_overall": "alignment",
+        # VideoPhy-2 (VLM physics)
+        "videophy_pc_score": "motion",
+        "videophy_sa_score": "motion",
+        # EntityBench (cross-shot identity)
+        "entitybench_identity_consistency": "temporal",
+        "entitybench_appearance_consistency": "temporal",
     }
 
     def non_null_metrics(self) -> dict[str, object]:
@@ -940,6 +968,29 @@ class QualityMetrics(BaseModel):
     chronomagic_mt_score: Optional[float] = None  # Metamorphic temporal (0-1, higher=better)
     chronomagic_ch_score: Optional[float] = None  # Chrono-hallucination (0-1, lower=fewer)
 
+    # GenEval T2I compositional (NeurIPS 2024, arXiv:2310.11513) — image-only, 0-1, higher=better
+    geneval_single_object: Optional[float] = None  # Single-object presence
+    geneval_two_object: Optional[float] = None  # Two-object co-presence
+    geneval_counting: Optional[float] = None  # Counting accuracy
+    geneval_colors: Optional[float] = None  # Color attribute match
+    geneval_position: Optional[float] = None  # Spatial position relation
+    geneval_color_attribution: Optional[float] = None  # Color↔object binding
+    geneval_overall: Optional[float] = None  # Mean of activated sub-scores
+
+    # TC-Bench temporal compositionality (T2V, 0-1, higher=better)
+    tcbench_attribute_score: Optional[float] = None  # Time-ordered attribute changes
+    tcbench_object_score: Optional[float] = None  # Time-ordered object appearance
+    tcbench_background_score: Optional[float] = None  # Time-ordered background changes
+    tcbench_overall: Optional[float] = None  # Mean TC-Bench score
+
+    # VideoPhy-2 VLM-based physics adherence (0-1, higher=better)
+    videophy_pc_score: Optional[float] = None  # Physical commonsense
+    videophy_sa_score: Optional[float] = None  # Semantic adherence
+
+    # EntityBench cross-shot identity persistence (0-1, higher=better; batch metric)
+    entitybench_identity_consistency: Optional[float] = None  # Face/identity persistence across shots
+    entitybench_appearance_consistency: Optional[float] = None  # Overall appearance persistence across shots
+
     # T2V-CompBench (CVPR 2025)
     compbench_attribute: Optional[float] = None  # Attribute binding (0-1)
     compbench_object_rel: Optional[float] = None  # Object relationship (0-1)
@@ -1055,6 +1106,17 @@ class QualityMetrics(BaseModel):
 
     # pyiqa built-ins
     deepdc_score: Optional[float] = None  # DeepDC distribution conformance (lower=better)
+
+    # NISQA multidimensional speech quality (arXiv:2104.09494, 1-5 MOS, higher=better)
+    nisqa_mos: Optional[float] = None  # Overall predicted MOS
+    nisqa_noisiness: Optional[float] = None  # Noisiness sub-score
+    nisqa_coloration: Optional[float] = None  # Coloration sub-score
+    nisqa_discontinuity: Optional[float] = None  # Discontinuity sub-score
+    nisqa_loudness: Optional[float] = None  # Loudness sub-score
+
+    # PEAQ reference-based audio codec quality (ITU-R BS.1387)
+    peaq_odg: Optional[float] = None  # Objective Difference Grade (-4..0, higher=better)
+    peaq_di: Optional[float] = None  # Distortion Index (higher=better)
 
     # Audio aesthetics
     audiobox_production: Optional[float] = None  # Audiobox production quality
@@ -1186,6 +1248,8 @@ class DatasetStats(BaseModel):
 
     # Distribution metrics (dataset-level)
     fvd: Optional[float] = None  # Fréchet Video Distance
+    fvd_content_debiased: Optional[float] = None  # Content-Debiased FVD (Ge et al. CVPR 2024, lower=better)
+    fvd_dinov2: Optional[float] = None  # FVD with DINOv2 spatial backbone (rFVD, lower=better)
     kvd: Optional[float] = None  # Kernel Video Distance
     fvmd: Optional[float] = None  # Fréchet Video Motion Distance
     fid: Optional[float] = None  # Fréchet Inception Distance
