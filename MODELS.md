@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.35** · Generated 2026-05-14 14:46 · **190 models** across **10 sources**
+> **Version 0.1.35** · Generated 2026-05-16 00:37 · **193 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**190** models · **57** HuggingFace · **61** pyiqa · **10** sources
+**193** models · **60** HuggingFace · **61** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (40)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (43)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -106,6 +106,10 @@
 
 - **Used by**: `kandinsky_motion`
 
+### <a href="https://huggingface.co/application/json" target="_blank">`application/json`</a> [↑](#categories)
+
+- **Used by**: `tc_bench`
+
 ### <a href="https://huggingface.co/dandelin/vilt-b32-finetuned-vqa" target="_blank">`dandelin/vilt-b32-finetuned-vqa`</a> [↑](#categories)
 
 - **Used by**: `commonsense`, `tifa`
@@ -118,7 +122,7 @@
 
 ### <a href="https://huggingface.co/facebook/dinov2-base" target="_blank">`facebook/dinov2-base`</a> [↑](#categories)
 
-- **Used by**: `subject_consistency`
+- **Used by**: `entitybench`, `fvd`, `subject_consistency`
 
 ### <a href="https://huggingface.co/facebook/dinov2-large" target="_blank">`facebook/dinov2-large`</a> [↑](#categories)
 
@@ -149,6 +153,10 @@
 
 - **Used by**: `kvq`
 
+### <a href="https://huggingface.co/llava-hf/LLaVA-NeXT-Video-7B-hf" target="_blank">`llava-hf/LLaVA-NeXT-Video-7B-hf`</a> [↑](#categories)
+
+- **Used by**: `videophy`
+
 ### <a href="https://huggingface.co/llava-hf/llava-1.5-7b-hf" target="_blank">`llava-hf/llava-1.5-7b-hf`</a> [↑](#categories)
 
 - **Used by**: `commonsense`, `creativity`, `vlm_judge`
@@ -178,7 +186,7 @@
 
 ### <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">`openai/clip-vit-base-patch32`</a> [↑](#categories)
 
-- **Used by**: `action_recognition`, `aigcvqa`, `aigv_assessor`, `aigvqa`, `background_consistency`, `chronomagic`, `clifvqa`, `clip_temporal`, `clipvqa`, `concept_presence`, `crave`, `creativity`, `dataset_analytics`, `deepfake_detection`, `generative_distribution`, `harmful_content`, `maxvqa`, `ptmvqa`, `qclip`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `t2v_compbench`, `t2v_score`, `t2veval`, `tifa`, `ugvq`, `umap_projection`, `umtscore`, `video_memorability`, `video_text_matching`, `video_type_classifier`, `videoreward`, `vqa2`, `vqathinker`, `vqinsight`, `world_consistency`
+- **Used by**: `action_recognition`, `aigcvqa`, `aigv_assessor`, `aigvqa`, `background_consistency`, `chronomagic`, `clifvqa`, `clip_temporal`, `clipvqa`, `concept_presence`, `crave`, `creativity`, `dataset_analytics`, `deepfake_detection`, `entitybench`, `generative_distribution`, `geneval`, `harmful_content`, `maxvqa`, `ptmvqa`, `qclip`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `t2v_compbench`, `t2v_score`, `t2veval`, `tc_bench`, `tifa`, `ugvq`, `umap_projection`, `umtscore`, `video_memorability`, `video_text_matching`, `video_type_classifier`, `videoreward`, `vqa2`, `vqathinker`, `vqinsight`, `world_consistency`
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 
 ### <a href="https://huggingface.co/openai/clip-vit-large-patch14" target="_blank">`openai/clip-vit-large-patch14`</a> [↑](#categories)
@@ -205,6 +213,10 @@
 ### <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0" target="_blank">`stabilityai/stable-diffusion-xl-base-1.0`</a> [↑](#categories)
 
 - **Used by**: `sd_reference`
+
+### <a href="https://huggingface.co/torchvision/r3d_18" target="_blank">`torchvision/r3d_18`</a> [↑](#categories)
+
+- **Used by**: `fvd`
 
 ### <a href="https://huggingface.co/yuvalkirstain/PickScore_v1" target="_blank">`yuvalkirstain/PickScore_v1`</a> [↑](#categories)
 
@@ -412,7 +424,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `tarepan/SpeechMOS:v1.2.0` [↑](#categories)
 > torch.hub · MIT
 
-- **Used by**: `audio_utmos`
+- **Used by**: `audio_nisqa`, `audio_utmos`
 - **VRAM**: ~200 MB · **Disk**: ~100 MB
 
 ## FFmpeg
@@ -489,7 +501,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `insightface` [↑](#categories)
 > InsightFace (face recognition)
 
-- **Used by**: `concept_presence`, `crfiqa`, `dino_face_identity`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`, `serfiq`
+- **Used by**: `concept_presence`, `crfiqa`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`, `serfiq`
 - **Install**: `pip install insightface`
 
 ### `joblib` [↑](#categories)
@@ -543,7 +555,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `ultralytics` [↑](#categories)
 > YOLOv8 object detection
 
-- **Used by**: `object_detection`, `object_permanence`, `t2v_compbench`
+- **Used by**: `geneval`, `object_detection`, `object_permanence`, `t2v_compbench`
 - **Install**: `pip install ultralytics`
 
 ## Quick Install Guide
