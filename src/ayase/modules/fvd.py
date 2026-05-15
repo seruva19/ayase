@@ -29,6 +29,13 @@ class FVDModule(BatchMetricModule):
         "batch_size": 8,
         "device": "auto",
         "subsample_videos": None,  # Max videos to process (None = all)
+        # Backbone selection — controls both feature extractor and which
+        # dataset-level field receives the score. "r3d18" preserves legacy
+        # behavior (writes ``fvd``). "content_debiased" applies the Ge et al.
+        # CVPR 2024 bias correction (writes ``fvd_content_debiased``).
+        # "dinov2" swaps the spatial backbone for DINOv2 per
+        # arXiv:2402.01717 (writes ``fvd_dinov2``).
+        "backbone": "r3d18",
     }
     models = [
         {
@@ -39,6 +46,15 @@ class FVDModule(BatchMetricModule):
     ]
     metric_info = {
         "fvd": "Frechet Video Distance between generated and reference video distributions (lower=better)",
+        "fvd_content_debiased": "Content-Debiased FVD (Ge et al. CVPR 2024, lower=better)",
+        "fvd_dinov2": "FVD with DINOv2 spatial backbone (rFVD, lower=better)",
+    }
+
+    _VALID_BACKBONES = ("r3d18", "content_debiased", "dinov2")
+    _BACKBONE_TO_METRIC = {
+        "r3d18": "fvd",
+        "content_debiased": "fvd_content_debiased",
+        "dinov2": "fvd_dinov2",
     }
 
     def __init__(self, config=None):
@@ -48,83 +64,122 @@ class FVDModule(BatchMetricModule):
         self.batch_size = self.config.get("batch_size", 8)
         self.device_config = self.config.get("device", "auto")
         self.subsample_videos = self.config.get("subsample_videos", None)
+        backbone = self.config.get("backbone", "r3d18")
+        if backbone not in self._VALID_BACKBONES:
+            logger.warning(
+                f"FVD: unknown backbone '{backbone}', falling back to r3d18"
+            )
+            backbone = "r3d18"
+        self.backbone = backbone
+        self.metric_name = self._BACKBONE_TO_METRIC[self.backbone]
         self.device = None
         self._ml_available = False
         self._r3d_model = None
+        self._dinov2_model = None
+        self._dinov2_processor = None
         self._processed_count = 0
 
     def setup(self) -> None:
         try:
             import torch
-            import torch.nn as nn
-            from torchvision.models.video import r3d_18, R3D_18_Weights
 
-            # Set device
             if self.device_config == "auto":
                 self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             else:
                 self.device = torch.device(self.device_config)
 
-            # Load R3D-18 pretrained on Kinetics-400 (3D CNN for video features)
-            weights = R3D_18_Weights.KINETICS400_V1
-            self._r3d_model = r3d_18(weights=weights)
-            self._r3d_model.fc = nn.Identity()
-            self._r3d_model = self._r3d_model.to(self.device)
-            self._r3d_model.eval()
-
-            self._ml_available = True
-            logger.info(f"FVD module initialized with R3D-18 on {self.device}")
+            if self.backbone in ("r3d18", "content_debiased"):
+                self._setup_r3d18()
+            elif self.backbone == "dinov2":
+                self._setup_dinov2()
 
         except ImportError as e:
-            logger.warning(f"Missing dependencies for FVD (torch/torchvision required): {e}")
+            logger.warning(f"Missing dependencies for FVD (torch required): {e}")
         except Exception as e:
-            logger.warning(f"Failed to setup FVD: {e}")
+            logger.warning(f"Failed to setup FVD ({self.backbone}): {e}")
+
+    def _setup_r3d18(self) -> None:
+        import torch.nn as nn
+        from torchvision.models.video import r3d_18, R3D_18_Weights
+
+        weights = R3D_18_Weights.KINETICS400_V1
+        self._r3d_model = r3d_18(weights=weights)
+        self._r3d_model.fc = nn.Identity()
+        self._r3d_model = self._r3d_model.to(self.device)
+        self._r3d_model.eval()
+        self._ml_available = True
+        logger.info(
+            f"FVD module initialized with R3D-18 on {self.device} (backbone={self.backbone})"
+        )
+
+    def _setup_dinov2(self) -> None:
+        from transformers import AutoModel, AutoImageProcessor
+
+        model_id = "facebook/dinov2-base"
+        self._dinov2_processor = AutoImageProcessor.from_pretrained(model_id)
+        self._dinov2_model = AutoModel.from_pretrained(model_id).to(self.device)
+        self._dinov2_model.eval()
+        self._ml_available = True
+        logger.info(f"FVD module initialized with DINOv2 on {self.device}")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract I3D features from a video sample.
-
-        Args:
-            sample: Video sample to extract features from
-
-        Returns:
-            Feature vector (numpy array), or None if extraction failed
-        """
+        """Extract features from a video sample using the configured backbone."""
         if not sample.is_video:
             return None
 
-        # Check subsample limit
         if self.subsample_videos is not None and self._processed_count >= self.subsample_videos:
             return None
 
         try:
-            # Load video frames
             frames = self._load_video_frames(sample.path, self.num_frames)
             if frames is None or len(frames) != self.num_frames:
                 return None
 
-            import torch
+            if self.backbone == "dinov2":
+                features = self._extract_dinov2_features(frames)
+            else:
+                features = self._extract_r3d18_features(frames)
 
-            # Preprocess frames for I3D
-            # Expected input: (B, C, T, H, W)
-            frames_tensor = torch.from_numpy(frames).permute(3, 0, 1, 2).unsqueeze(0)  # (1, C, T, H, W)
-            frames_tensor = frames_tensor.float().to(self.device)
-
-            # Normalize (ImageNet stats)
-            mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1, 1).to(self.device)
-            std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1, 1).to(self.device)
-            frames_tensor = (frames_tensor / 255.0 - mean) / std
-
-            # Extract features
-            with torch.no_grad():
-                features = self._r3d_model(frames_tensor)
-                features = features.cpu().numpy().flatten()
+            if features is None:
+                return None
 
             self._processed_count += 1
             return features
 
         except Exception as e:
-            logger.debug(f"Failed to extract I3D features from {sample.path}: {e}")
+            logger.debug(f"Failed to extract features from {sample.path}: {e}")
             return None
+
+    def _extract_r3d18_features(self, frames: np.ndarray) -> Optional[np.ndarray]:
+        import torch
+
+        # (T, H, W, C) → (1, C, T, H, W)
+        frames_tensor = torch.from_numpy(frames).permute(3, 0, 1, 2).unsqueeze(0)
+        frames_tensor = frames_tensor.float().to(self.device)
+        mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1, 1).to(self.device)
+        std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1, 1).to(self.device)
+        frames_tensor = (frames_tensor / 255.0 - mean) / std
+
+        with torch.no_grad():
+            features = self._r3d_model(frames_tensor)
+            return features.cpu().numpy().flatten()
+
+    def _extract_dinov2_features(self, frames: np.ndarray) -> Optional[np.ndarray]:
+        import torch
+
+        # DINOv2 is a per-frame ViT. Pool the [CLS] token per frame then
+        # concatenate mean+std across the time axis to keep temporal signal
+        # (this matches the rFVD construction in arXiv:2402.01717).
+        with torch.no_grad():
+            inputs = self._dinov2_processor(
+                images=[frames[t] for t in range(frames.shape[0])],
+                return_tensors="pt",
+            )
+            pixel_values = inputs["pixel_values"].to(self.device)
+            outputs = self._dinov2_model(pixel_values=pixel_values)
+            cls = outputs.last_hidden_state[:, 0, :]  # (T, D)
+            cls_np = cls.cpu().numpy()
+            return np.concatenate([cls_np.mean(axis=0), cls_np.std(axis=0)], axis=0)
 
     def extract_reference_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract reference features without consuming subsample budget."""
@@ -202,6 +257,19 @@ class FVDModule(BatchMetricModule):
                 ref_array = features_array[:mid]
                 features_array = features_array[mid:]
 
+            # Content-debiased FVD (Ge et al. CVPR 2024): subtract the joint
+            # feature-distribution mean so that content shifts shared between
+            # generated and reference distributions cancel out, leaving the
+            # generation-specific component. This is the per-dimension
+            # equivalent of the per-class debiasing in the original paper
+            # when content classes are not known a priori.
+            if self.backbone == "content_debiased":
+                joint_mean = np.mean(
+                    np.concatenate([features_array, ref_array], axis=0), axis=0
+                )
+                features_array = features_array - joint_mean
+                ref_array = ref_array - joint_mean
+
             # Compute statistics
             mu1 = np.mean(features_array, axis=0)
             sigma1 = np.cov(features_array, rowvar=False)
@@ -270,15 +338,17 @@ class FVDModule(BatchMetricModule):
             )
 
             logger.info(
-                f"FVD computed: {fvd_score:.2f} "
+                f"{self.metric_name} computed: {fvd_score:.2f} "
                 f"(generated: {len(self._feature_cache)}, "
-                f"reference: {len(self._reference_cache)})"
+                f"reference: {len(self._reference_cache)}, "
+                f"backbone={self.backbone})"
             )
 
-            # Store in pipeline stats if available
+            # Store in pipeline stats if available — metric name is backbone-aware
+            # so legacy callers using backbone="r3d18" still see ``fvd``.
             if hasattr(self, "pipeline") and self.pipeline:
                 if hasattr(self.pipeline, "add_dataset_metric"):
-                    self.pipeline.add_dataset_metric("fvd", fvd_score)
+                    self.pipeline.add_dataset_metric(self.metric_name, fvd_score)
 
         except Exception as e:
             logger.error(f"Failed to compute FVD: {e}")
