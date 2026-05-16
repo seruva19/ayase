@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.35** · Generated 2026-05-16 00:21 · **347 modules** · **399 metrics**
+> **Version 0.1.35** · Generated 2026-05-16 03:50 · **347 modules** · **399 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -3169,9 +3169,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
-- **Packages**: librosa, nisqa, soundfile, torch
+- **Packages**: librosa, soundfile, torch
 - **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py)
-- **Config**: `target_sr=16000`, `backend=auto`
+- **Config**: `target_sr=48000`, `backend=auto`
 
 ### `nisqa_discontinuity` [↑](#categories)
 > Discontinuity sub-score
@@ -3179,9 +3179,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
-- **Packages**: librosa, nisqa, soundfile, torch
+- **Packages**: librosa, soundfile, torch
 - **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py)
-- **Config**: `target_sr=16000`, `backend=auto`
+- **Config**: `target_sr=48000`, `backend=auto`
 
 ### `nisqa_loudness` [↑](#categories)
 > Loudness sub-score
@@ -3189,9 +3189,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
-- **Packages**: librosa, nisqa, soundfile, torch
+- **Packages**: librosa, soundfile, torch
 - **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py)
-- **Config**: `target_sr=16000`, `backend=auto`
+- **Config**: `target_sr=48000`, `backend=auto`
 
 ### `nisqa_mos` [↑](#categories)
 > Overall predicted MOS
@@ -3199,9 +3199,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
-- **Packages**: librosa, nisqa, soundfile, torch
+- **Packages**: librosa, soundfile, torch
 - **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py)
-- **Config**: `target_sr=16000`, `backend=auto`
+- **Config**: `target_sr=48000`, `backend=auto`
 
 ### `nisqa_noisiness` [↑](#categories)
 > Noisiness sub-score
@@ -3209,9 +3209,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
-- **Packages**: librosa, nisqa, soundfile, torch
+- **Packages**: librosa, soundfile, torch
 - **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py)
-- **Config**: `target_sr=16000`, `backend=auto`
+- **Config**: `target_sr=48000`, `backend=auto`
 
 ### `oavqa_score` [↑](#categories)
 > OAVQA omnidirectional AV (higher=better) · ↑ higher=better

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.35** · Generated 2026-05-16 00:37 · **193 models** across **10 sources**
+> **Version 0.1.35** · Generated 2026-05-16 03:50 · **195 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**193** models · **60** HuggingFace · **61** pyiqa · **10** sources
+**195** models · **61** HuggingFace · **61** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (43)](#huggingface-models) · [Weight Files (17)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (43)](#huggingface-models) · [Weight Files (18)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -242,6 +242,7 @@
 - `dinov2_vitb14_pretrain.pth` — used by `i2v_similarity`
 - `flownet.pkl` — used by `motion_smoothness`
 - `frames_modelparameters.mat` — used by `brightrate`
+- `nisqa.tar` — used by `audio_nisqa`
 - `onnx_dover.onnx` — used by `dover`
 - `sac+logos+ava1-l14-linearMSE.pth` — used by `aesthetic_scoring`
 
