@@ -8,9 +8,15 @@ Reference: Mittag et al., "NISQA: A Deep CNN-Self-Attention Model for
 Multidimensional Speech Quality Prediction with Crowdsourced Datasets"
 (Interspeech 2021, arXiv:2104.09494).
 
+The upstream PyPI ``nisqa`` package pins old torch/numpy and cascading-
+downgrades half the env on install. To avoid that, the inference code is
+vendored at ``ayase/third_party/nisqa/`` (MIT-licensed, source-identical
+to https://github.com/gabrielmittag/NISQA) and the ~1 MB checkpoint is
+auto-fetched from ``AkaneTendo25/ayase-models``.
+
 Tiered backend:
-    1. ``nisqa`` package (real model) if installed.
-    2. UTMOS-derived proxy mapping when only UTMOS is available.
+    1. Vendored NISQA + downloaded ``nisqa.tar`` checkpoint.
+    2. UTMOS-derived proxy mapping (torch.hub SpeechMOS).
     3. Spectral-flatness / SNR signal-proxy fallback so the module is always
        runnable in CPU-only test environments.
 """
@@ -27,18 +33,35 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
+_NISQA_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/nisqa/nisqa.tar"
+_NISQA_WEIGHTS_FILENAME = "nisqa/nisqa.tar"
+
+
 class AudioNISQAModule(PipelineModule):
     name = "audio_nisqa"
     description = "NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)"
     default_config = {
-        "target_sr": 16000,
+        "target_sr": 48000,  # NISQA expects 48 kHz internally
         "backend": "auto",  # "auto" | "nisqa" | "utmos_proxy" | "spectral"
+        "models_dir": "models",
+        "weights_path": None,  # optional override; otherwise auto-download
     }
+    models = [
+        {
+            "id": "nisqa.tar",
+            "type": "local",
+            "url": _NISQA_WEIGHTS_URL,
+            "task": "NISQAv2 multidimensional speech quality (MIT)",
+            "notes": "~1 MB; vendored source at ayase/third_party/nisqa/",
+        },
+    ]
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.target_sr = self.config.get("target_sr", 16000)
+        self.target_sr = self.config.get("target_sr", 48000)
         self.backend_pref = self.config.get("backend", "auto")
+        self.models_dir = self.config.get("models_dir", "models")
+        self.weights_path = self.config.get("weights_path", None)
         self._nisqa_model = None
         self._utmos_model = None
         self._device = "cpu"
@@ -54,15 +77,26 @@ class AudioNISQAModule(PipelineModule):
         logger.info("NISQA module using spectral signal-proxy fallback (no real model loaded)")
 
     def _try_setup_nisqa(self) -> bool:
+        # nisqaModel's __init__ requires ``deg`` to point at a real audio file
+        # — so we only resolve weights here and defer model construction to
+        # the first process() call (see :meth:`_score_with_nisqa`).
         try:
-            from nisqa.NISQA_model import nisqaModel  # type: ignore
-
+            from ayase.third_party.nisqa import nisqaModel  # noqa: F401 — import check only
+            from ayase.config import download_model_file
+            import tempfile
             import torch
 
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._nisqa_model = nisqaModel({"pretrained_model": "nisqa.tar"})
+
+            weights = self.weights_path
+            if not weights:
+                weights = str(download_model_file(
+                    _NISQA_WEIGHTS_FILENAME, _NISQA_WEIGHTS_URL, self.models_dir,
+                ))
+            self._nisqa_weights = weights
+            self._nisqa_output_dir = tempfile.mkdtemp(prefix="ayase_nisqa_")
             self.active_backend = "nisqa"
-            logger.info("NISQA module initialized with real NISQA model")
+            logger.info("NISQA module initialized with vendored real model (weights=%s)", weights)
             return True
         except Exception as e:
             logger.debug(f"NISQA real model unavailable: {e}")
@@ -111,7 +145,9 @@ class AudioNISQAModule(PipelineModule):
         return sample
 
     def _score_with_nisqa(self, audio: np.ndarray) -> Tuple[float, float, float, float, float]:
-        # The real nisqa package operates on file paths. We dump a temp wav.
+        # NISQA operates on file paths and returns a pandas DataFrame with
+        # one row per file. Dump a temp wav, point ``deg`` at it, predict.
+        from ayase.third_party.nisqa import nisqaModel
         import tempfile
         import soundfile as sf
 
@@ -119,13 +155,29 @@ class AudioNISQAModule(PipelineModule):
             sf.write(tmp.name, audio, self.target_sr)
             tmp_path = tmp.name
         try:
-            result = self._nisqa_model.predict(tmp_path)
+            if self._nisqa_model is None:
+                self._nisqa_model = nisqaModel({
+                    "mode": "predict_file",
+                    "pretrained_model": self._nisqa_weights,
+                    "deg": tmp_path,
+                    "output_dir": self._nisqa_output_dir,
+                    "tr_bs_val": 1,
+                    "tr_num_workers": 0,
+                    "ms_channel": 1,
+                })
+            else:
+                self._nisqa_model.args["deg"] = tmp_path
+                # Re-load the per-file dataset now that ``deg`` points at the
+                # current temp wav (NISQA caches the file list internally).
+                self._nisqa_model._loadDatasets()
+            df = self._nisqa_model.predict()
+            row = df.iloc[0]
             return (
-                float(result.get("mos_pred", 3.0)),
-                float(result.get("noi_pred", 3.0)),
-                float(result.get("col_pred", 3.0)),
-                float(result.get("dis_pred", 3.0)),
-                float(result.get("loud_pred", 3.0)),
+                float(row["mos_pred"]),
+                float(row["noi_pred"]),
+                float(row["col_pred"]),
+                float(row["dis_pred"]),
+                float(row["loud_pred"]),
             )
         finally:
             Path(tmp_path).unlink(missing_ok=True)
