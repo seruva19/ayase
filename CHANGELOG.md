@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.36]
+
+### Added
+
+- **fvd**: added `content_debiased` and `dinov2` backbones (Ge et al. CVPR 2024 + rFVD); legacy `r3d18` remains the default.
+- **audio_nisqa**: added NISQA multidimensional speech quality (MOS, noisiness, coloration, discontinuity, loudness) with vendored upstream source and auto-downloaded weights to avoid the `pip install nisqa` dependency cascade.
+- **audio_peaq**: added reference-based ITU-R BS.1387 audio codec quality (ODG, DI) with peaqb/Bark-band/log-spectral-distance tiers.
+- **geneval**: added GenEval T2I compositional benchmark (NeurIPS 2024) with mmdetection/YOLO/CLIP tiers.
+- **tc_bench**: added TC-Bench temporal compositionality scoring for text-to-video.
+- **videophy**: added VideoPhy-2 VLM-based physics adherence (LLaVA-NeXT-Video / vlm_judge / trajectory tiers).
+- **entitybench**: added cross-shot identity/appearance consistency batch metric (DINOv2+InsightFace / CLIP / histogram tiers).
+
+### Changed
+
+- **deps**: tightened pins so fresh installs get GPU-working torch on CUDA 12.x drivers - `torch<2.8`, added `torchaudio<2.8`, capped `transformers<5.0` and `huggingface-hub<2.0`, dropped deprecated `typer[all]` extra.
+
 ## [0.1.31]
 
 ### Added
