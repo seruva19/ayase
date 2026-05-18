@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from .config import AyaseConfig
 from .pipeline import ModuleRegistry, PipelineModule
+from .runtime import runtime_module_config
 
 
 class PipelineProfile(BaseModel):
@@ -80,10 +81,7 @@ def instantiate_profile_modules(
         if module_cls is None:
             raise ValueError(f"Unknown module in profile: {module_name}")
 
-        params: Dict[str, Any] = {
-            "models_dir": str(cfg.general.models_dir),
-            "parallel_jobs": cfg.general.parallel_jobs,
-        }
+        params: Dict[str, Any] = runtime_module_config(cfg)
 
         per_module = loaded.module_config.get(module_name, {})
         if per_module:

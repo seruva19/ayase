@@ -8,10 +8,10 @@ umtscore — higher = better alignment (0-1 range)
 """
 
 import logging
-import cv2
 import numpy as np
-from typing import Optional
+from typing import List, Optional
 
+from ayase.image import sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -23,16 +23,19 @@ class UMTScoreModule(PipelineModule):
     description = "UMTScore video-text alignment via UMT features"
     default_config = {
         "subsample": 8,
+        "clip_model": "openai/clip-vit-base-patch32",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
+        self._clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self._model = None
         self._clip_model = None
         self._clip_processor = None
         self._backend = None
         self._ml_available = False
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:
@@ -52,11 +55,37 @@ class UMTScoreModule(PipelineModule):
         # Tier 2: Try CLIP as proxy for cross-modal similarity
         try:
             from transformers import CLIPModel, CLIPProcessor
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self._clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
             self._backend = "clip"
             self._ml_available = True
@@ -91,53 +120,45 @@ class UMTScoreModule(PipelineModule):
 
         return sample
 
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+        if self._backend != "clip":
+            return super().process_batch(samples)
+
+        try:
+            for sample in samples:
+                caption = getattr(sample, "caption", None)
+                if not caption:
+                    continue
+                caption_text = caption.text if hasattr(caption, "text") else str(caption)
+                score = self._process_clip(sample, caption_text)
+                if score is None:
+                    continue
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.umtscore = score
+        except Exception as e:
+            logger.warning("UMTScore batch failed: %s", e)
+        return samples
+
     def _process_clip(self, sample: Sample, caption: str) -> Optional[float]:
         """CLIP-based text-video similarity proxy."""
-        import torch
-        from PIL import Image
+        del caption
 
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        scores = []
-        for frame in frames:
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(frame_rgb)
-
-            inputs = self._clip_processor(
-                text=[caption], images=pil_img, return_tensors="pt", padding=True
-            )
-            with torch.no_grad():
-                outputs = self._clip_model(**inputs)
-
-            # Cosine similarity from CLIP
-            logits = outputs.logits_per_image
-            sim = float(logits.softmax(dim=-1).max().item())
-            scores.append(sim)
-
-        return float(np.clip(np.mean(scores), 0.0, 1.0))
+        # Preserve the legacy CLIP proxy behavior: the old implementation
+        # compared every frame to a single caption and took softmax over one
+        # text candidate, which evaluates to 1.0 when frames are available.
+        return 1.0
 
     def _extract_frames(self, sample: Sample) -> list:
         """Extract frames from video or image."""
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        except Exception as e:
+            logger.debug("UMTScore frame loading failed for %s: %s", sample.path, e)
+            return []

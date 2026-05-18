@@ -25,8 +25,15 @@ from typing import Dict, List, Optional, Tuple
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +57,14 @@ class GenEvalModule(PipelineModule):
     description = "GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)"
     default_config = {
         "backend": "auto",  # "auto" | "mmdet" | "yolo" | "clip"
+        "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.backend_pref = self.config.get("backend", "auto")
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.models_dir = self.config.get("models_dir", "models")
         self._device = "cpu"
         self._mmdet = None
@@ -87,11 +96,36 @@ class GenEvalModule(PipelineModule):
     def _try_load_clip(self) -> bool:
         try:
             from transformers import CLIPModel, CLIPProcessor
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
-            ).to(self._device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            resolved = resolve_model_path(self.clip_model_name, self.models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
             return True
         except Exception as e:
@@ -135,7 +169,7 @@ class GenEvalModule(PipelineModule):
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         parsed = _parse_caption(caption)
-        scores = self._score(img_rgb, caption, parsed)
+        scores = self._score(sample, img_rgb, caption, parsed)
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
@@ -148,7 +182,62 @@ class GenEvalModule(PipelineModule):
         sample.quality_metrics.geneval_overall = scores["overall"]
         return sample
 
-    def _score(self, image: np.ndarray, caption: str, parsed: dict) -> Dict[str, float]:
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if self.active_backend != "clip" or self._clip_model is None:
+            return super().process_batch(samples)
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                if sample.is_video:
+                    continue
+                caption = sample.caption.text if sample.caption else None
+                if not caption:
+                    continue
+                img = sample.load_image()
+                if img is None:
+                    continue
+                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                prepared.append((sample, caption, _parse_caption(caption)))
+                image_groups.append(arrays_to_pil([img_rgb]))
+                cache_keys.append(("geneval_image", media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                image_groups,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for (sample, caption, parsed), image_features in zip(prepared, feature_groups):
+                scores = self._score_from_features(image_features, caption, parsed)
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.geneval_single_object = scores["single_object"]
+                sample.quality_metrics.geneval_two_object = scores["two_object"]
+                sample.quality_metrics.geneval_counting = scores["counting"]
+                sample.quality_metrics.geneval_colors = scores["colors"]
+                sample.quality_metrics.geneval_position = scores["position"]
+                sample.quality_metrics.geneval_color_attribution = scores["color_attribution"]
+                sample.quality_metrics.geneval_overall = scores["overall"]
+        except Exception as e:
+            logger.warning("GenEval batch failed: %s", e)
+        return samples
+
+    def _score(
+        self,
+        sample: Sample,
+        image: np.ndarray,
+        caption: str,
+        parsed: dict,
+    ) -> Dict[str, float]:
         scores: Dict[str, float] = {}
         # CLIP-based scoring is shared by all tiers; detection tiers add
         # spatial/counting signal on top.
@@ -158,18 +247,33 @@ class GenEvalModule(PipelineModule):
                 "position", "color_attribution", "overall",
             )}
 
-        clip_score = self._clip_match(image, caption)
+        image_features = self._clip_image_features(sample, image)
+        return self._score_from_features(image_features, caption, parsed, image=image)
+
+    def _score_from_features(
+        self,
+        image_features,
+        caption: str,
+        parsed: dict,
+        image: Optional[np.ndarray] = None,
+    ) -> Dict[str, float]:
+        scores: Dict[str, float] = {}
+        clip_score = self._clip_match_features(image_features, caption)
         # Per-task heuristics — the CLIP score is a single floor; tasks that
         # the caption does not exercise return clip_score so the metric
         # remains comparable across captions.
         scores["single_object"] = clip_score if parsed["objects"] else 0.0
         scores["two_object"] = clip_score if len(parsed["objects"]) >= 2 else 0.0
-        scores["colors"] = self._score_colors(image, parsed) if parsed["color_pairs"] else clip_score
+        scores["colors"] = (
+            self._score_colors(image_features, parsed) if parsed["color_pairs"] else clip_score
+        )
         scores["color_attribution"] = (
-            self._score_color_attribution(image, parsed) if len(parsed["color_pairs"]) >= 2 else clip_score
+            self._score_color_attribution(image_features, parsed)
+            if len(parsed["color_pairs"]) >= 2
+            else clip_score
         )
 
-        if self.active_backend in ("mmdet", "yolo"):
+        if self.active_backend in ("mmdet", "yolo") and image is not None:
             scores["counting"] = self._score_counting_detection(image, parsed) if parsed["count"] else clip_score
             scores["position"] = self._score_position_detection(image, parsed) if parsed["positions"] else clip_score
         else:
@@ -182,41 +286,57 @@ class GenEvalModule(PipelineModule):
         scores["overall"] = float(np.mean(active)) if active else 0.0
         return {k: round(float(v), 3) for k, v in scores.items()}
 
-    def _clip_match(self, image: np.ndarray, text: str) -> float:
-        try:
-            import torch
-            from PIL import Image as PILImage
+    def _clip_image_features(self, sample: Sample, image: np.ndarray):
+        return cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            arrays_to_pil([image]),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("geneval_image", media_state_key(sample.path)),
+        )
 
-            inputs = self._clip_processor(
-                text=[text], images=PILImage.fromarray(image),
-                return_tensors="pt", padding=True,
-            ).to(self._device)
-            with torch.no_grad():
-                out = self._clip_model(**inputs)
-                # logits_per_image is already a similarity score (>0)
-                sim = out.logits_per_image[0, 0].item() / 100.0
+    def _clip_match_features(self, image_features, text: str) -> float:
+        try:
+            text_features = cached_clip_text_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                [text],
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_key=("geneval_text", text),
+            )
+            scale = getattr(self._clip_model, "logit_scale", None)
+            if scale is not None:
+                logits = (image_features @ text_features.T) * scale.exp()
+            else:
+                logits = image_features @ text_features.T
+            # Preserve the previous CLIPModel forward scaling.
+            sim = logits[0, 0].item() / 100.0
             return float(np.clip(sim, 0.0, 1.0))
         except Exception as e:
             logger.debug(f"GenEval CLIP scoring failed: {e}")
             return 0.0
 
-    def _score_colors(self, image: np.ndarray, parsed: dict) -> float:
+    def _score_colors(self, image_features, parsed: dict) -> float:
         if not parsed["color_pairs"]:
             return 0.0
         # CLIP zero-shot: "a photo of a <color> <object>" vs "a photo of an object"
         scores = []
         for color, obj in parsed["color_pairs"]:
-            pos = self._clip_match(image, f"a photo of a {color} {obj}")
+            pos = self._clip_match_features(image_features, f"a photo of a {color} {obj}")
             scores.append(pos)
         return float(np.mean(scores))
 
-    def _score_color_attribution(self, image: np.ndarray, parsed: dict) -> float:
+    def _score_color_attribution(self, image_features, parsed: dict) -> float:
         # Color attribution: every (color, obj) pair must be detected with
         # the right binding. CLIP cannot do this exactly, but the geometric
         # mean of pairwise scores approximates the joint probability.
         scores = []
         for color, obj in parsed["color_pairs"]:
-            scores.append(self._clip_match(image, f"a {color} {obj}"))
+            scores.append(self._clip_match_features(image_features, f"a {color} {obj}"))
         return float(np.prod(scores) ** (1.0 / max(1, len(scores))))
 
     def _score_counting_detection(self, image: np.ndarray, parsed: dict) -> float:

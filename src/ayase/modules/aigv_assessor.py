@@ -14,8 +14,10 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import cached_clip_image_features, cached_clip_text_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,12 @@ logger = logging.getLogger(__name__)
 class AIGVAssessorModule(PipelineModule):
     name = "aigv_assessor"
     description = "AI-generated video quality (AIGV-Assessor model or CLIP proxy)"
-    default_config = {"subsample": 8, "trust_remote_code": True, "model_revision": None}
+    default_config = {
+        "subsample": 8,
+        "clip_model": "openai/clip-vit-base-patch32",
+        "trust_remote_code": True,
+        "model_revision": None,
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
@@ -33,6 +40,7 @@ class AIGVAssessorModule(PipelineModule):
         self._processor = None
         self._clip_model = None
         self._clip_processor = None
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self._device = "cpu"
 
     def setup(self) -> None:
@@ -66,12 +74,39 @@ class AIGVAssessorModule(PipelineModule):
 
         # Tier 2: CLIP for alignment
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._device = device
             self._backend = "clip"
             self._ml_available = True
@@ -102,22 +137,9 @@ class AIGVAssessorModule(PipelineModule):
     def _compute_real_model(self, sample: Sample) -> None:
         """Compute dimensions using the real AIGV-Assessor model."""
         import torch
-        import cv2
-        from PIL import Image
 
         subsample = self.config.get("subsample", 8)
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frames.append(Image.fromarray(rgb))
-        cap.release()
+        frames = arrays_to_pil(sample_frames(sample.path, max_frames=subsample, color="rgb"))
 
         if not frames:
             return
@@ -151,37 +173,37 @@ class AIGVAssessorModule(PipelineModule):
         if not (sample.caption and sample.caption.text):
             return
 
-        import torch
-        import cv2
-        from PIL import Image
-
         subsample = self.config.get("subsample", 8)
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frames.append(Image.fromarray(rgb))
-        cap.release()
+        frames = arrays_to_pil(sample_frames(sample.path, max_frames=subsample, color="rgb"))
 
         if not frames:
             return
 
         text = sample.caption.text
         pil_frames = frames[:4]
-
-        inputs = self._clip_processor(
-            text=[text], images=pil_frames, return_tensors="pt", padding=True
-        ).to(self._device)
-
-        with torch.no_grad():
-            outputs = self._clip_model(**inputs)
-            logits = outputs.logits_per_text  # [1, num_images]
-            score = logits[0].mean().item() / 100.0
+        image_features = cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            pil_frames,
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(subsample, 4, media_state_key(sample.path)),
+        )
+        text_features = cached_clip_text_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            [text],
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("aigv_assessor_caption", text),
+        )
+        scale = getattr(self._clip_model, "logit_scale", None)
+        if scale is not None:
+            logits = (text_features @ image_features.T) * scale.exp()
+        else:
+            logits = text_features @ image_features.T
+        score = logits[0].mean().item() / 100.0
 
         sample.quality_metrics.aigv_alignment = float(np.clip(score, 0.0, 1.0))

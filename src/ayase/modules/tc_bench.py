@@ -25,11 +25,17 @@ import logging
 import re
 from typing import Dict, List, Optional, Tuple
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, is_video_path, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +52,7 @@ class TCBenchModule(PipelineModule):
     default_config = {
         "decomposer": "auto",  # "auto" | "llm" | "regex" | "comma"
         "num_frames": 8,
+        "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
 
@@ -53,6 +60,7 @@ class TCBenchModule(PipelineModule):
         super().__init__(config)
         self.decomposer_pref = self.config.get("decomposer", "auto")
         self.num_frames = self.config.get("num_frames", 8)
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.models_dir = self.config.get("models_dir", "models")
         self._clip_model = None
         self._clip_processor = None
@@ -80,11 +88,36 @@ class TCBenchModule(PipelineModule):
     def _try_load_clip(self) -> bool:
         try:
             from transformers import CLIPModel, CLIPProcessor
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
-            ).to(self._device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            resolved = resolve_model_path(self.clip_model_name, self.models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
             return True
         except Exception as e:
@@ -119,12 +152,61 @@ class TCBenchModule(PipelineModule):
         if frames is None:
             return sample
 
-        attribute_score = self._score_dimension(frames, events, kind="attribute")
-        object_score = self._score_dimension(frames, events, kind="object")
-        background_score = self._score_dimension(frames, events, kind="background")
+        sims = self._clip_sim_matrix(sample, frames, events) if self._clip_model is not None else None
+        attribute_score = self._score_dimension(sims, events, kind="attribute")
+        object_score = self._score_dimension(sims, events, kind="object")
+        background_score = self._score_dimension(sims, events, kind="background")
         overall = float(np.mean([attribute_score, object_score, background_score]))
         self._write(sample, attribute_score, object_score, background_score, overall)
         return sample
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if self._clip_model is None:
+            return super().process_batch(samples)
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                if not sample.is_video:
+                    continue
+                caption = sample.caption.text if sample.caption else None
+                if not caption:
+                    continue
+                events = self._decompose(caption)
+                if len(events) < 2:
+                    self._write(sample, 1.0, 1.0, 1.0, 1.0)
+                    continue
+                frames = self._sample_frames(sample.path, self.num_frames)
+                if frames is None:
+                    continue
+                prepared.append((sample, events))
+                image_groups.append(arrays_to_pil(list(frames)))
+                cache_keys.append((self.num_frames, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                image_groups,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for (sample, events), image_features in zip(prepared, feature_groups):
+                sims = self._clip_sim_matrix_from_features(image_features, events)
+                attribute_score = self._score_dimension(sims, events, kind="attribute")
+                object_score = self._score_dimension(sims, events, kind="object")
+                background_score = self._score_dimension(sims, events, kind="background")
+                overall = float(np.mean([attribute_score, object_score, background_score]))
+                self._write(sample, attribute_score, object_score, background_score, overall)
+        except Exception as e:
+            logger.warning("TC-Bench batch failed: %s", e)
+        return samples
 
     def _write(self, sample: Sample, attr: float, obj: float, bg: float, overall: float) -> None:
         if sample.quality_metrics is None:
@@ -169,28 +251,15 @@ class TCBenchModule(PipelineModule):
         return events
 
     def _sample_frames(self, path, n: int) -> Optional[np.ndarray]:
-        cap = cv2.VideoCapture(str(path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total < n:
-            cap.release()
+        frames = sample_frames(path, max_frames=n, color="rgb")
+        if is_video_path(path) and len(frames) < n:
             return None
-        idxs = np.linspace(0, total - 1, n, dtype=int)
-        frames = []
-        for idx in idxs:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ok, frame = cap.read()
-            if not ok:
-                cap.release()
-                return None
-            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        cap.release()
         return np.stack(frames, axis=0)
 
-    def _score_dimension(self, frames: np.ndarray, events: List[str], kind: str) -> float:
-        if self._clip_model is None:
+    def _score_dimension(self, sims: Optional[np.ndarray], events: List[str], kind: str) -> float:
+        if sims is None:
             # Without CLIP we can only say "the caption has temporal structure"
             return 0.5
-        sims = self._clip_sim_matrix(frames, events)  # (n_frames, n_events)
         # An event is correctly localized when its peak frame index is
         # monotonically increasing in event order. We score by Kendall-tau-
         # like rank concordance on per-event peak indices.
@@ -207,18 +276,39 @@ class TCBenchModule(PipelineModule):
         kind_weight = {"attribute": 1.0, "object": 1.0, "background": 0.9}[kind]
         return float(kind_weight * concordant / total)
 
-    def _clip_sim_matrix(self, frames: np.ndarray, events: List[str]) -> np.ndarray:
-        import torch
-        from PIL import Image as PILImage
+    def _clip_sim_matrix(
+        self,
+        sample: Sample,
+        frames: np.ndarray,
+        events: List[str],
+    ) -> np.ndarray:
+        image_features = cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            arrays_to_pil(list(frames)),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(self.num_frames, media_state_key(sample.path)),
+        )
+        return self._clip_sim_matrix_from_features(image_features, events)
 
-        pil_frames = [PILImage.fromarray(f) for f in frames]
-        with torch.no_grad():
-            inputs = self._clip_processor(
-                text=events, images=pil_frames, return_tensors="pt", padding=True,
-            ).to(self._device)
-            out = self._clip_model(**inputs)
-            # logits_per_image: (n_frames, n_events)
-            return out.logits_per_image.cpu().numpy()
+    def _clip_sim_matrix_from_features(self, image_features, events: List[str]) -> np.ndarray:
+        text_features = cached_clip_text_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            events,
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("tc_bench_events", tuple(events)),
+        )
+        scale = getattr(self._clip_model, "logit_scale", None)
+        if scale is not None:
+            logits = (image_features @ text_features.T) * scale.exp()
+        else:
+            logits = image_features @ text_features.T
+        return logits.detach().float().cpu().numpy()
 
 
 def _regex_decompose(caption: str) -> List[str]:

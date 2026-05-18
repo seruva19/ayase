@@ -87,6 +87,7 @@ class QAlignModule(PipelineModule):
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoProcessor
+            from ayase.runtime import from_pretrained_with_attention
 
             if self.device_config == "auto":
                 self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -123,8 +124,11 @@ class QAlignModule(PipelineModule):
                 )
 
             # Load model
-            self._model = AutoModelForCausalLM.from_pretrained(
+            self._model = from_pretrained_with_attention(
+                AutoModelForCausalLM,
                 self.model_name,
+                self.config,
+                device=str(self.device),
                 trust_remote_code=trc,
                 revision=rev,
                 torch_dtype=dtype,
@@ -205,6 +209,7 @@ class QAlignModule(PipelineModule):
     def _assess(self, image_path: str, prompt: str) -> Optional[float]:
         """Run the model with a quality prompt and return the score."""
         try:
+            import torch
             from PIL import Image
 
             img = Image.open(image_path).convert("RGB")

@@ -7,6 +7,7 @@ text-video alignment, factual consistency. EMNLP 2024.
 import logging
 from typing import Optional
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -33,16 +34,20 @@ class VideoScoreModule(PipelineModule):
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoProcessor
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             model_name = self.config.get("model_name", "TIGER-Lab/VideoScore")
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
 
             trc = self.config.get("trust_remote_code", True)
             rev = self.config.get("model_revision", None)
             self._processor = AutoProcessor.from_pretrained(model_name, trust_remote_code=trc, revision=rev)
-            self._model = AutoModelForCausalLM.from_pretrained(
+            self._model = from_pretrained_with_attention(
+                AutoModelForCausalLM,
                 model_name,
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                self.config,
+                device=device,
+                torch_dtype=torch.float16 if str(device).startswith("cuda") else torch.float32,
                 trust_remote_code=trc,
                 revision=rev,
             ).to(device)
@@ -72,28 +77,13 @@ class VideoScoreModule(PipelineModule):
         return sample
 
     def _compute_scores(self, sample: Sample) -> Optional[dict]:
-        import cv2
         import torch
         from PIL import Image
 
         num_frames = self.config.get("num_frames", 8)
 
         # Load frames
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // num_frames)))[:num_frames]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(Image.fromarray(rgb))
-            cap.release()
-        else:
-            img = Image.open(str(sample.path)).convert("RGB")
-            frames = [img]
+        frames = arrays_to_pil(sample_frames(sample.path, max_frames=num_frames, color="rgb"))
 
         if not frames:
             return None

@@ -34,6 +34,7 @@ class HumanCLAPModule(PipelineModule):
     metric_info = {
         "human_clap_score": "Audio-text relevance from a CLAP/Human-CLAP backend (0-1)",
     }
+    metric_field_name = "human_clap_score"
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -82,7 +83,7 @@ class HumanCLAPModule(PipelineModule):
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.human_clap_score = float(score)
+            setattr(sample.quality_metrics, self.metric_field_name, float(score))
 
             if score < self.warning_threshold:
                 sample.validation_issues.append(

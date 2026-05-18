@@ -45,16 +45,42 @@ class AestheticScoringModule(PipelineModule):
             import torch
             import torch.nn as nn
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading Aesthetic Scoring models on {self._device}...")
             
             models_dir = self.config.get("models_dir", "models")
 
             # Load CLIP
             model_name = "openai/clip-vit-large-patch14"
-            self._model = CLIPModel.from_pretrained(model_name, cache_dir=models_dir, use_safetensors=True).to(self._device)
-            self._processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    model_name,
+                    self.config,
+                    device=self._device,
+                    cache_dir=models_dir,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    model_name,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_clip,
+            )
 
             # Load MLP Head
             weight_dir = Path(models_dir) / "aesthetic_scoring"
@@ -110,25 +136,16 @@ class AestheticScoringModule(PipelineModule):
             import torch
             from PIL import Image
 
-            # Batch process frames if possible to save overhead?
-            # For simplicity and safety with varying sizes, we loop.
-            
-            scores = []
-            
-            for image in frames:
-                # Convert BGR to RGB
-                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                pil_image = Image.fromarray(image_rgb)
+            pil_images = [
+                Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)) for image in frames
+            ]
+            inputs = self._processor(images=pil_images, return_tensors="pt").to(self._device)
 
-                inputs = self._processor(images=pil_image, return_tensors="pt").to(self._device)
-
-                with torch.no_grad():
-                    image_features = extract_features(self._model.get_image_features(**inputs))
-                    image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
-
-                    # Predict score
-                    score_tensor = self._linear(image_features.float())
-                    scores.append(score_tensor.item())
+            with torch.no_grad():
+                image_features = extract_features(self._model.get_image_features(**inputs))
+                image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
+                score_tensor = self._linear(image_features.float()).flatten()
+                scores = [float(value) for value in score_tensor.detach().cpu().tolist()]
 
             if not scores:
                 return sample

@@ -32,6 +32,13 @@ class FrameSampler:
         frames = []
 
         try:
+            if uniform:
+                from ayase.runtime import current_pipeline
+
+                pipeline = current_pipeline()
+                if pipeline is not None and hasattr(pipeline, "sample_frames"):
+                    return pipeline.sample_frames(source, max_frames=num_frames, color="bgr")
+
             # Check if likely an image by extension first (optimization)
             if source_path.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff")):
                 img = cv2.imread(source_path)

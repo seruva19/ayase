@@ -25,13 +25,16 @@ modularbvqa_score — higher = better quality (0-1)
 """
 
 import logging
+import hashlib
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 
+from ayase.image import arrays_to_pil
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import cached_openai_clip_image_features, shared_openai_clip_resource
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,8 @@ class ModularBVQAModule(PipelineModule):
         self.weights_path = self.config.get("weights_path", "")
         self._ml_available = False
         self._backbone = None
+        self._clip_model = None
+        self._clip_preprocess = None
         self._base_head = None
         self._spatial_rectifier = None
         self._temporal_rectifier = None
@@ -164,12 +169,13 @@ class ModularBVQAModule(PipelineModule):
     def _try_load_clip(self) -> int:
         """Try loading CLIP ViT-B/32. Returns feature dim or 0 on failure."""
         try:
-            import clip
-            import torch
-
-            model, preprocess = clip.load("ViT-B/32", device=self._device)
+            model, preprocess = shared_openai_clip_resource(
+                self,
+                self.config.get("clip_model", "ViT-B/32"),
+                device=self._device,
+            )
+            self._clip_model = model
             self._backbone = model.visual
-            self._backbone.eval()
             self._clip_preprocess = preprocess
             self._use_clip = True
             logger.debug("ModularBVQA: CLIP ViT-B/32 loaded (correct backbone per paper)")
@@ -479,12 +485,18 @@ class ModularBVQAModule(PipelineModule):
         import torch
 
         if self._use_clip:
-            from PIL import Image
-            pil_img = Image.fromarray(rgb)
-            tensor = self._clip_preprocess(pil_img).unsqueeze(0).to(self._device)
-            feat = self._backbone(tensor)
-            if feat.dim() == 1:
-                feat = feat.unsqueeze(0)
+            contiguous = np.ascontiguousarray(rgb)
+            digest = hashlib.blake2b(contiguous.tobytes(), digest_size=16).hexdigest()
+            feat = cached_openai_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_preprocess,
+                arrays_to_pil([contiguous]),
+                model_key=self.config.get("clip_model", "ViT-B/32"),
+                device=self._device,
+                cache_key=("modularbvqa_frame", contiguous.shape, digest),
+                normalize=False,
+            )
             return feat.float()
         else:
             tensor = self._transform(rgb).unsqueeze(0).to(self._device)

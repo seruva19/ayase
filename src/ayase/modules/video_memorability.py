@@ -18,6 +18,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
 from ayase.compat import extract_features
@@ -47,10 +48,38 @@ class VideoMemorabilityModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._feature_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+            device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            model_name = "openai/clip-vit-base-patch32"
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    model_name,
+                    self.config,
+                    device=device,
+                    cache_dir=models_dir,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
+                return model, processor
+
+            self._feature_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    model_name,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._device = device
             self._backend = "clip"
             self._ml_available = True
@@ -62,8 +91,9 @@ class VideoMemorabilityModule(PipelineModule):
         # Tier 1b: DINOv2 feature extraction
         try:
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._feature_model = torch.hub.load("facebookresearch/dinov2", "dinov2_vits14").to(device).eval()
             self._device = device
             self._backend = "dinov2"
@@ -191,22 +221,5 @@ class VideoMemorabilityModule(PipelineModule):
         return float(memorability)
 
     def _load_frames(self, sample: Sample) -> list:
-        import cv2
-
         subsample = self.config.get("subsample", 5)
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        return sample_frames(sample.path, max_frames=subsample, color="bgr")

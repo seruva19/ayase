@@ -24,6 +24,7 @@ from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -74,7 +75,8 @@ class VideoPhyModule(PipelineModule):
             return
         try:
             import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import resolve_torch_device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
             return
 
@@ -92,13 +94,19 @@ class VideoPhyModule(PipelineModule):
         try:
             import torch
             from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration
+            from ayase.runtime import from_pretrained_with_attention
 
-            dtype = torch.float16 if self._device == "cuda" else torch.float32
+            dtype = torch.float16 if str(self._device).startswith("cuda") else torch.float32
             self._vlm_processor = LlavaNextVideoProcessor.from_pretrained(
                 self.model_name, cache_dir=self.models_dir,
             )
-            self._vlm_model = LlavaNextVideoForConditionalGeneration.from_pretrained(
-                self.model_name, cache_dir=self.models_dir, torch_dtype=dtype,
+            self._vlm_model = from_pretrained_with_attention(
+                LlavaNextVideoForConditionalGeneration,
+                self.model_name,
+                self.config,
+                device=self._device,
+                cache_dir=self.models_dir,
+                torch_dtype=dtype,
             ).to(self._device).eval()
             return True
         except Exception as e:
@@ -108,7 +116,14 @@ class VideoPhyModule(PipelineModule):
     def _try_setup_vlm_judge(self) -> bool:
         try:
             from ayase.modules.vlm_judge import VLMJudgeModule
-            self._vlm_judge = VLMJudgeModule(config={"mode": "verify"})
+            self._vlm_judge = VLMJudgeModule(
+                config={
+                    "mode": "verify",
+                    "models_dir": self.models_dir,
+                    "device": self.config.get("device", "auto"),
+                    "attention_backend": self.config.get("attention_backend", "auto"),
+                }
+            )
             self._vlm_judge.on_mount()
             return getattr(self._vlm_judge, "_ml_available", False)
         except Exception as e:
@@ -209,21 +224,9 @@ class VideoPhyModule(PipelineModule):
         return 0.5, 0.5
 
     def _sample_frames(self, path, n: int) -> Optional[np.ndarray]:
-        cap = cv2.VideoCapture(str(path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total < n:
-            cap.release()
+        frames = sample_frames(path, max_frames=n, color="rgb")
+        if len(frames) < n:
             return None
-        idxs = np.linspace(0, total - 1, n, dtype=int)
-        frames = []
-        for idx in idxs:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ok, frame = cap.read()
-            if not ok:
-                cap.release()
-                return None
-            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        cap.release()
         return np.stack(frames, axis=0)
 
 

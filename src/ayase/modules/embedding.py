@@ -4,11 +4,9 @@ Extracts normalized video-level features via X-CLIP vision model with MIT
 (temporal attention). Stores L2-normalized embedding on sample.embedding."""
 
 import logging
-import cv2
-import numpy as np
-from PIL import Image
 from typing import Optional, List
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -35,18 +33,42 @@ class EmbeddingModule(PipelineModule):
         try:
             import torch
             from transformers import XCLIPProcessor, XCLIPModel
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading X-CLIP ({self.model_name}) on {self._device}...")
 
-            self._model = XCLIPModel.from_pretrained(
-                self.model_name, cache_dir="models", use_safetensors=True
-            )
-            self._model = self._model.to(self._device)
-            self._model.eval()
-            self._model.config.return_dict = True
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.model_name, models_dir)
 
-            self._processor = XCLIPProcessor.from_pretrained(self.model_name, cache_dir="models")
+            def load_xclip():
+                model = from_pretrained_with_attention(
+                    XCLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                model.config.return_dict = True
+                processor = XCLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_xclip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_xclip,
+            )
 
             self._ml_available = True
 
@@ -80,33 +102,13 @@ class EmbeddingModule(PipelineModule):
         return sample
 
     def _extract_frames(self, video_path, num_frames=8):
-        frames = []
         try:
-            if str(video_path).lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp")):
-                # It's an image
-                img = cv2.imread(str(video_path))
-                if img is not None:
-                    # Repeat the image num_frames times to simulate a video for X-CLIP
-                    # Or just use 1 frame if model supports it, but X-CLIP expects video
-                    # Actually X-CLIP is a video model, so it expects a sequence.
-                    # We can just duplicate the image.
-                    frame = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                    frames = [frame] * num_frames
-            else:
-                # Video
-                cap = cv2.VideoCapture(str(video_path))
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-                if total_frames > 0:
-                    indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-                    for idx in indices:
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                        ret, frame = cap.read()
-                        if ret:
-                            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
+            frames = sample_frames(video_path, max_frames=num_frames, color="rgb")
+            if frames and len(frames) < num_frames:
+                frames = frames + [frames[-1]] * (num_frames - len(frames))
         except Exception as e:
             logger.debug(f"Failed to load frames for embedding: {e}")
+            frames = []
 
         return frames if frames else None
 
@@ -115,7 +117,7 @@ class EmbeddingModule(PipelineModule):
 
         with torch.no_grad():
             # Prepare inputs
-            pil_images = [Image.fromarray(f) for f in frames]
+            pil_images = arrays_to_pil(frames)
 
             inputs = self._processor(
                 text=None,  # We only want visual embedding

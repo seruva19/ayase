@@ -54,18 +54,19 @@ class AQAScoreModule(PipelineModule):
             import torch
             import transformers
             from transformers import AutoProcessor
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             model_cls = getattr(transformers, "Qwen2_5OmniForConditionalGeneration", None)
             if model_cls is None:
                 raise ImportError("Qwen2_5OmniForConditionalGeneration unavailable")
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            self._device = resolve_torch_device(self.device_config)
             models_dir = self.config.get("models_dir", "models")
             self._processor = AutoProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
-            self._model = model_cls.from_pretrained(
+            self._model = from_pretrained_with_attention(
+                model_cls,
                 self.model_name,
+                self.config,
+                device=self._device,
                 cache_dir=models_dir,
                 torch_dtype="auto",
                 device_map="auto" if self._device == "cuda" else None,

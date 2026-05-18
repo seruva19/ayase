@@ -7,6 +7,7 @@ import os
 import pkgutil
 import sys
 import tempfile
+from time import perf_counter
 import urllib.request
 from abc import ABC, abstractmethod
 from copy import deepcopy
@@ -14,6 +15,7 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Set, Type, Any, Union
 
 from .models import Sample, DatasetStats
+from .runtime import clone_frames, pipeline_context, runtime_module_config
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +86,33 @@ class PipelineModule(ABC):
             The updated sample
         """
         raise NotImplementedError("PipelineModule subclasses must implement process().")
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        """Process multiple samples.
+
+        Subclasses may override this for real batched inference. The default
+        implementation preserves legacy single-sample behavior and catches
+        per-sample failures so one bad item does not abort the whole batch.
+        """
+        processed_samples = []
+        for sample in samples:
+            try:
+                processed = self.process(sample)
+            except Exception as e:
+                logger.error(f"Error in module {self.name} for {sample.path}: {e}")
+                processed_samples.append(sample)
+                continue
+            if not isinstance(processed, Sample):
+                logger.error(
+                    "Module %s returned %s for %s; keeping previous sample",
+                    self.name,
+                    type(processed).__name__,
+                    sample.path,
+                )
+                processed_samples.append(sample)
+                continue
+            processed_samples.append(processed)
+        return processed_samples
 
     def on_mount(self) -> None:
         """Called when the module is loaded/initialized. Use for loading models/weights.
@@ -236,8 +265,9 @@ class PipelineModule(ABC):
             field = m.group(1)
             if field not in outputs and field in field_descs:
                 outputs[field] = field_descs[field]
-        # Pattern 2: metric_field = "FIELD" (base class auto-assignment)
-        for m in _re.finditer(r'metric_field\s*=\s*["\'](\w+)["\']', src):
+        # Pattern 2: metric_field = "FIELD" / metric_field_name = "FIELD"
+        # (base class or lightweight subclass auto-assignment)
+        for m in _re.finditer(r'metric_field(?:_name)?\s*=\s*["\'](\w+)["\']', src):
             field = m.group(1)
             if field not in outputs and field in field_descs:
                 outputs[field] = field_descs[field]
@@ -339,7 +369,18 @@ class Pipeline:
         "issues_by_type",
         "severity_distribution",
     }
-    _RUNTIME_CONFIG_KEYS = {"models_dir", "parallel_jobs"}
+    _RUNTIME_CONFIG_KEYS = {
+        "models_dir",
+        "parallel_jobs",
+        "device",
+        "dtype",
+        "amp_enabled",
+        "attention_backend",
+        "frame_cache_enabled",
+        "timing_enabled",
+        "sample_batch_size",
+        "max_clip_images_per_forward",
+    }
 
     def __init__(self, modules: List[PipelineModule]):
         self.modules = modules
@@ -349,6 +390,17 @@ class Pipeline:
         self.stats = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
         self._batch_modules: List[PipelineModule] = []  # Modules that need batch processing
         self._hooks: Dict[str, Dict[str, Callable[[Sample], Sample]]] = {}
+        self.module_timings: Dict[str, float] = {}
+        self.module_call_counts: Dict[str, int] = {}
+        self._frame_cache: Dict[tuple[Any, ...], List[Any]] = {}
+        self._runtime_resource_cache: Dict[tuple[Any, ...], Any] = {}
+        self._runtime_value_cache: Dict[tuple[Any, ...], Any] = {}
+        self._frame_cache_enabled = any(
+            bool(module.config.get("frame_cache_enabled", True)) for module in self.modules
+        ) if self.modules else True
+        self._timing_enabled = any(
+            bool(module.config.get("timing_enabled", True)) for module in self.modules
+        ) if self.modules else True
         # Maps stats field name -> (QualityMetrics field name, count)
         self._AVG_METRIC_MAP: Dict[str, str] = {
             "avg_technical_score": "technical_score",
@@ -361,6 +413,87 @@ class Pipeline:
         # Give modules access to pipeline for batch metrics
         for module in self.modules:
             module.pipeline = self
+
+    @staticmethod
+    def _path_cache_state(path: Path) -> tuple[str, Optional[int], Optional[int]]:
+        """Return a file state tuple suitable for runtime cache keys."""
+        resolved = str(Path(path).resolve())
+        try:
+            stat = Path(path).stat()
+            return resolved, stat.st_size, stat.st_mtime_ns
+        except OSError:
+            return resolved, None, None
+
+    def _frame_cache_key(self, kind: str, path: Path, *parts: Any) -> tuple[Any, ...]:
+        return (kind, *self._path_cache_state(path), *parts)
+
+    def sample_frames(self, path: Path, max_frames: int = 8, color: str = "rgb") -> List[Any]:
+        """Load uniformly spaced frames, reusing a per-sample runtime cache."""
+        from .image import _sample_frames_uncached
+
+        if not self._frame_cache_enabled:
+            return _sample_frames_uncached(path, max_frames=max_frames, color=color)
+
+        key = self._frame_cache_key("frames", Path(path), int(max_frames), str(color))
+        cached = self._frame_cache.get(key)
+        if cached is None:
+            cached = _sample_frames_uncached(path, max_frames=max_frames, color=color)
+            self._frame_cache[key] = clone_frames(cached)
+        return clone_frames(cached)
+
+    def load_representative_frame(self, path: Path, color: str = "rgb") -> Optional[Any]:
+        """Load one representative frame, reusing a per-sample runtime cache."""
+        from .image import _load_representative_frame_uncached
+
+        if not self._frame_cache_enabled:
+            return _load_representative_frame_uncached(path, color=color)
+
+        key = self._frame_cache_key("representative", Path(path), str(color))
+        cached = self._frame_cache.get(key)
+        if cached is None:
+            frame = _load_representative_frame_uncached(path, color=color)
+            cached = [] if frame is None else [frame]
+            self._frame_cache[key] = clone_frames(cached)
+        frames = clone_frames(cached)
+        return frames[0] if frames else None
+
+    def _record_module_timing(self, module_name: str, elapsed: float, calls: int = 1) -> None:
+        if not self._timing_enabled:
+            return
+        self.module_timings[module_name] = self.module_timings.get(module_name, 0.0) + elapsed
+        self.module_call_counts[module_name] = self.module_call_counts.get(module_name, 0) + calls
+
+    def get_timing_report(self) -> Dict[str, Dict[str, float]]:
+        """Return per-module runtime totals for the latest pipeline run."""
+        report: Dict[str, Dict[str, float]] = {}
+        for name, total_seconds in self.module_timings.items():
+            calls = self.module_call_counts.get(name, 0)
+            report[name] = {
+                "seconds": total_seconds,
+                "calls": float(calls),
+                "avg_seconds": total_seconds / calls if calls else 0.0,
+            }
+        return report
+
+    def get_runtime_resource(self, key: tuple[Any, ...], factory: Callable[[], Any]) -> Any:
+        """Return a shared resource for this pipeline run."""
+        if key not in self._runtime_resource_cache:
+            self._runtime_resource_cache[key] = factory()
+        return self._runtime_resource_cache[key]
+
+    def get_runtime_value(self, key: tuple[Any, ...], factory: Callable[[], Any]) -> Any:
+        """Return a shared value for the sample currently being processed."""
+        if key not in self._runtime_value_cache:
+            self._runtime_value_cache[key] = factory()
+        return self._runtime_value_cache[key]
+
+    def peek_runtime_value(self, key: tuple[Any, ...], default: Any = None) -> Any:
+        """Return a cached runtime value without constructing it."""
+        return self._runtime_value_cache.get(key, default)
+
+    def set_runtime_value(self, key: tuple[Any, ...], value: Any) -> None:
+        """Store a value in the current runtime cache."""
+        self._runtime_value_cache[key] = value
 
     @staticmethod
     def _sample_cache_signature(sample: Sample) -> tuple[object, ...]:
@@ -647,6 +780,10 @@ class Pipeline:
         if self._start_needs_reset:
             self._clear_loaded_state()
             self._start_needs_reset = False
+        self.module_timings = {}
+        self.module_call_counts = {}
+        self._frame_cache = {}
+        self._runtime_value_cache = {}
         for module in self.modules:
             try:
                 if not getattr(module, "_mounted", False):
@@ -685,6 +822,7 @@ class Pipeline:
             logger.info(f"Processed {len(self._batch_modules)} batch metric modules")
             for module in self._batch_modules:
                 logger.debug(f"  - {module.name}")
+        self._runtime_resource_cache = {}
         self._start_needs_reset = True
 
     def process_sample(self, sample: Sample) -> Sample:
@@ -702,11 +840,92 @@ class Pipeline:
         ):
             return cached
 
-        for module in self.modules:
-            if not getattr(module, "_mounted", False):
-                continue
-            try:
-                hooks = self._hooks.get(module.name)
+        self._frame_cache = {}
+        self._runtime_value_cache = {}
+        try:
+            with pipeline_context(self):
+                for module in self.modules:
+                    if not getattr(module, "_mounted", False):
+                        continue
+                    started_at = perf_counter()
+                    try:
+                        hooks = self._hooks.get(module.name)
+                        if hooks and "before" in hooks:
+                            hooked = hooks["before"](sample)
+                            if not isinstance(hooked, Sample):
+                                logger.error(
+                                    "Before-hook for module %s returned %s for %s; "
+                                    "skipping module",
+                                    module.name,
+                                    type(hooked).__name__,
+                                    str_path,
+                                )
+                                continue
+                            sample = hooked
+
+                        processed = module.process(sample)
+                        if not isinstance(processed, Sample):
+                            logger.error(
+                                "Module %s returned %s for %s; keeping previous sample",
+                                module.name,
+                                type(processed).__name__,
+                                str_path,
+                            )
+                            continue
+                        sample = processed
+
+                        if hooks and "after" in hooks:
+                            restored = hooks["after"](sample)
+                            if not isinstance(restored, Sample):
+                                logger.error(
+                                    "After-hook for module %s returned %s for %s; "
+                                    "keeping module output",
+                                    module.name,
+                                    type(restored).__name__,
+                                    str_path,
+                                )
+                                continue
+                            sample = restored
+                    except Exception as e:
+                        sample_path = getattr(sample, "path", str_path)
+                        logger.error(f"Error in module {module.name} for {sample_path}: {e}")
+                    finally:
+                        self._record_module_timing(module.name, perf_counter() - started_at)
+        finally:
+            self._frame_cache = {}
+            self._runtime_value_cache = {}
+
+        # Cache the result and keep aggregate stats in sync.
+        self._store_result(str_path, sample, signature=signature, manifest=manifest)
+
+        return sample
+
+    @staticmethod
+    def _coerce_batch_size(batch_size: Optional[int]) -> int:
+        try:
+            return max(1, int(batch_size or 1))
+        except (TypeError, ValueError):
+            return 1
+
+    def _process_module_batch(
+        self,
+        module: PipelineModule,
+        samples: List[Sample],
+    ) -> List[Sample]:
+        """Run one module across a sample batch while preserving hook semantics."""
+
+        if not samples:
+            return []
+
+        started_at = perf_counter()
+        working = list(samples)
+        try:
+            hooks = self._hooks.get(module.name)
+            eligible_samples: List[Sample] = []
+            eligible_positions: List[int] = []
+
+            for idx, sample in enumerate(working):
+                str_path = str(sample.path)
                 if hooks and "before" in hooks:
                     hooked = hooks["before"](sample)
                     if not isinstance(hooked, Sample):
@@ -718,39 +937,150 @@ class Pipeline:
                             str_path,
                         )
                         continue
+                    working[idx] = hooked
                     sample = hooked
 
-                processed = module.process(sample)
+                eligible_samples.append(sample)
+                eligible_positions.append(idx)
+
+            if not eligible_samples:
+                return working
+
+            processed_batch = module.process_batch(eligible_samples)
+            if not isinstance(processed_batch, list):
+                logger.error(
+                    "Module %s returned %s for a batch; keeping previous samples",
+                    module.name,
+                    type(processed_batch).__name__,
+                )
+                return working
+            if len(processed_batch) != len(eligible_samples):
+                logger.error(
+                    "Module %s returned %d samples for a batch of %d; "
+                    "keeping previous samples",
+                    module.name,
+                    len(processed_batch),
+                    len(eligible_samples),
+                )
+                return working
+
+            after_positions: List[int] = []
+            for pos, previous, processed in zip(
+                eligible_positions,
+                eligible_samples,
+                processed_batch,
+            ):
                 if not isinstance(processed, Sample):
                     logger.error(
                         "Module %s returned %s for %s; keeping previous sample",
                         module.name,
                         type(processed).__name__,
-                        str_path,
+                        previous.path,
                     )
                     continue
-                sample = processed
+                working[pos] = processed
+                after_positions.append(pos)
 
-                if hooks and "after" in hooks:
-                    restored = hooks["after"](sample)
+            if hooks and "after" in hooks:
+                for pos in after_positions:
+                    restored = hooks["after"](working[pos])
                     if not isinstance(restored, Sample):
                         logger.error(
                             "After-hook for module %s returned %s for %s; "
                             "keeping module output",
                             module.name,
                             type(restored).__name__,
-                            str_path,
+                            working[pos].path,
                         )
                         continue
-                    sample = restored
-            except Exception as e:
-                sample_path = getattr(sample, "path", str_path)
-                logger.error(f"Error in module {module.name} for {sample_path}: {e}")
+                    working[pos] = restored
 
-        # Cache the result and keep aggregate stats in sync.
-        self._store_result(str_path, sample, signature=signature, manifest=manifest)
+        except Exception as e:
+            sample_path = getattr(samples[0], "path", "<batch>")
+            logger.error(f"Error in module {module.name} for batch starting at {sample_path}: {e}")
+            return list(samples)
+        finally:
+            self._record_module_timing(
+                module.name,
+                perf_counter() - started_at,
+                calls=len(samples),
+            )
 
-        return sample
+        return working
+
+    def _process_sample_batch(self, samples: List[Sample]) -> List[Sample]:
+        """Run all active modules over a batch and store results in input order."""
+
+        if not samples:
+            return []
+
+        outputs: List[Optional[Sample]] = [None] * len(samples)
+        pending_samples: List[Sample] = []
+        pending_meta: List[tuple[int, str, tuple[object, ...], Dict[str, Any]]] = []
+
+        for idx, sample in enumerate(samples):
+            str_path = str(sample.path)
+            signature = self._sample_cache_signature(sample)
+            manifest = self._sample_state_manifest(sample)
+            cached = self.results.get(str_path)
+            if (
+                cached is not None
+                and self._result_signatures.get(str_path) == signature
+                and self._result_manifests.get(str_path) == manifest
+            ):
+                outputs[idx] = cached
+                continue
+
+            pending_samples.append(sample)
+            pending_meta.append((idx, str_path, signature, manifest))
+
+        if pending_samples:
+            active_samples = pending_samples
+            self._frame_cache = {}
+            self._runtime_value_cache = {}
+            try:
+                with pipeline_context(self):
+                    for module in self.modules:
+                        if not getattr(module, "_mounted", False):
+                            continue
+                        active_samples = self._process_module_batch(module, active_samples)
+            finally:
+                self._frame_cache = {}
+                self._runtime_value_cache = {}
+
+            for (idx, str_path, signature, manifest), sample in zip(pending_meta, active_samples):
+                self._store_result(str_path, sample, signature=signature, manifest=manifest)
+                outputs[idx] = sample
+
+        return [sample for sample in outputs if sample is not None]
+
+    def process_samples(
+        self,
+        samples: Iterable[Sample],
+        *,
+        batch_size: Optional[int] = None,
+    ) -> List[Sample]:
+        """Run all active modules on multiple samples.
+
+        ``batch_size=1`` preserves the legacy per-sample execution path. Larger
+        values process samples module-by-module within each chunk, allowing
+        modules to override ``process_batch()`` for true batched inference.
+        """
+
+        size = self._coerce_batch_size(batch_size)
+        if size <= 1:
+            return [self.process_sample(sample) for sample in samples]
+
+        processed: List[Sample] = []
+        batch: List[Sample] = []
+        for sample in samples:
+            batch.append(sample)
+            if len(batch) >= size:
+                processed.extend(self._process_sample_batch(batch))
+                batch = []
+        if batch:
+            processed.extend(self._process_sample_batch(batch))
+        return processed
 
     def export_report(self, path: Path, format: str = "json") -> None:
         """Export a detailed validation report.
@@ -1186,14 +1516,7 @@ class AyasePipeline:
             cls = ModuleRegistry.get_module(name)
             if cls is None:
                 raise ValueError(f"Unknown module: {name}")
-            result.append(
-                cls(
-                    config={
-                        "models_dir": str(self.config.general.models_dir),
-                        "parallel_jobs": self.config.general.parallel_jobs,
-                    }
-                )
-            )
+            result.append(cls(config=runtime_module_config(self.config)))
         return result
 
     @staticmethod
@@ -1239,8 +1562,8 @@ class AyasePipeline:
         pipeline = self._rebuild_pipeline(preserve_public_state=True)
         pipeline.start()
         try:
-            for sample in samples:
-                pipeline.process_sample(sample)
+            batch_size = getattr(self.config.general, "sample_batch_size", 1)
+            pipeline.process_samples(samples, batch_size=batch_size)
         finally:
             pipeline.stop()
 

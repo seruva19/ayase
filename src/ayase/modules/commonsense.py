@@ -14,6 +14,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from ayase.image import load_representative_frame
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -46,14 +47,21 @@ class CommonsenseModule(PipelineModule):
         try:
             import torch
             from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             vlm_name = self.config.get("vlm_model", "llava-hf/llava-1.5-7b-hf")
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
             dtype = torch.float16 if self._device == "cuda" else torch.float32
 
-            self._vlm_model = LlavaNextForConditionalGeneration.from_pretrained(
-                vlm_name, torch_dtype=dtype, cache_dir=models_dir, low_cpu_mem_usage=True,
+            self._vlm_model = from_pretrained_with_attention(
+                LlavaNextForConditionalGeneration,
+                vlm_name,
+                self.config,
+                device=self._device,
+                torch_dtype=dtype,
+                cache_dir=models_dir,
+                low_cpu_mem_usage=True,
             ).to(self._device)
             self._vlm_model.eval()
             self._vlm_processor = LlavaNextProcessor.from_pretrained(vlm_name, cache_dir=models_dir)
@@ -68,14 +76,20 @@ class CommonsenseModule(PipelineModule):
         try:
             import torch
             from transformers import ViltProcessor, ViltForQuestionAnswering
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             vilt_name = self.config.get("model_name", "dandelin/vilt-b32-finetuned-vqa")
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
 
             self._vilt_processor = ViltProcessor.from_pretrained(vilt_name, cache_dir=models_dir)
-            self._vilt_model = ViltForQuestionAnswering.from_pretrained(
-                vilt_name, cache_dir=models_dir, use_safetensors=True,
+            self._vilt_model = from_pretrained_with_attention(
+                ViltForQuestionAnswering,
+                vilt_name,
+                self.config,
+                device=self._device,
+                cache_dir=models_dir,
+                use_safetensors=True,
             ).to(self._device)
             self._backend = "vilt"
             self._ml_available = True
@@ -230,14 +244,6 @@ class CommonsenseModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

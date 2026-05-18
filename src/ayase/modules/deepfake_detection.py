@@ -20,8 +20,10 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.runtime import cached_clip_image_features, cached_clip_text_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ class DeepfakeDetectionModule(PipelineModule):
     default_config = {
         "subsample": 10,
         "max_frames": 60,
+        "clip_model": "openai/clip-vit-base-patch32",
         "warning_threshold": 0.6,
     }
 
@@ -39,25 +42,51 @@ class DeepfakeDetectionModule(PipelineModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 10)
         self.max_frames = self.config.get("max_frames", 60)
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.warning_threshold = self.config.get("warning_threshold", 0.6)
 
         self._clip_model = None
         self._clip_processor = None
+        self._clip_device = "cpu"
         self._clip_available = False
 
     def setup(self) -> None:
         # Try to load CLIP for zero-shot classification
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32"
-            ).to(device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
+
+            device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
+            self._clip_device = device
             self._clip_available = True
             logger.info(f"Deepfake detection: CLIP classifier on {device}")
         except ImportError:
@@ -166,16 +195,18 @@ class DeepfakeDetectionModule(PipelineModule):
 
     def _clip_fake_score(self, frame_bgr: np.ndarray) -> Optional[float]:
         """Zero-shot real/fake classification via CLIP."""
-        if not self._clip_available:
-            return None
+        scores = self._clip_fake_scores([frame_bgr])
+        return scores[0] if scores else None
 
+    def _clip_fake_scores(
+        self,
+        frames_bgr: list[np.ndarray],
+        cache_key: Optional[tuple] = None,
+    ) -> list[Optional[float]]:
+        """Zero-shot real/fake classification via CLIP for multiple frames."""
+        if not self._clip_available or not frames_bgr:
+            return [None] * len(frames_bgr)
         try:
-            import torch
-            from PIL import Image
-
-            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(rgb)
-
             texts = [
                 "a real photograph",
                 "a computer generated image",
@@ -183,35 +214,50 @@ class DeepfakeDetectionModule(PipelineModule):
                 "a natural photo",
             ]
 
-            inputs = self._clip_processor(
-                text=texts, images=pil_img, return_tensors="pt", padding=True
+            rgb_frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames_bgr]
+            image_features = cached_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil(rgb_frames),
+                model_key=self.clip_model_name,
+                device=self._clip_device,
+                cache_key=cache_key or ("deepfake_frames", len(frames_bgr)),
             )
-            device = next(self._clip_model.parameters()).device
-            inputs = {k: v.to(device) for k, v in inputs.items()}
-
-            with torch.no_grad():
-                outputs = self._clip_model(**inputs)
-                logits = outputs.logits_per_image[0]
-                probs = torch.softmax(logits, dim=0).cpu().numpy()
+            text_features = cached_clip_text_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                texts,
+                model_key=self.clip_model_name,
+                device=self._clip_device,
+                cache_key=("deepfake_prompts",),
+            )
+            scale = getattr(self._clip_model, "logit_scale", None)
+            if scale is not None:
+                logits = (image_features @ text_features.T) * scale.exp()
+            else:
+                logits = image_features @ text_features.T
+            probs = logits.softmax(dim=-1).detach().float().cpu().numpy()
 
             # probs[0] = real photo, probs[1] = CG, probs[2] = deepfake, probs[3] = natural
-            fake_prob = float(probs[1] + probs[2])
-            return fake_prob
+            return [float(row[1] + row[2]) for row in probs]
 
         except Exception as e:
             logger.debug(f"CLIP fake detection failed: {e}")
-            return None
+            return [None] * len(frames_bgr)
 
     # ------------------------------------------------------------------
     # Process
     # ------------------------------------------------------------------
 
-    def _score_frame(self, frame_bgr: np.ndarray) -> float:
+    def _score_frame(self, frame_bgr: np.ndarray, clip_score: Optional[float] = None) -> float:
         """Combined deepfake score for one frame."""
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
 
         spectral = self._spectral_score(gray)
-        clip_score = self._clip_fake_score(frame_bgr)
+        if clip_score is None:
+            clip_score = self._clip_fake_score(frame_bgr)
 
         if clip_score is not None:
             # Weighted combination
@@ -257,14 +303,15 @@ class DeepfakeDetectionModule(PipelineModule):
         img = cv2.imread(str(path))
         if img is None:
             return None
-        return self._score_frame(img)
+        clip_scores = self._clip_fake_scores([img], cache_key=("deepfake_image", media_state_key(path)))
+        return self._score_frame(img, clip_scores[0] if clip_scores else None)
 
     def _process_video(self, path: Path) -> Optional[float]:
         cap = cv2.VideoCapture(str(path))
         if not cap.isOpened():
             return None
 
-        scores = []
+        frames = []
         idx = 0
 
         while idx < self.max_frames:
@@ -272,9 +319,18 @@ class DeepfakeDetectionModule(PipelineModule):
             if not ret:
                 break
             if idx % self.subsample == 0:
-                s = self._score_frame(frame)
-                scores.append(s)
+                frames.append(frame)
             idx += 1
 
         cap.release()
+        if not frames:
+            return None
+        clip_scores = self._clip_fake_scores(
+            frames,
+            cache_key=("deepfake_video", self.subsample, self.max_frames, media_state_key(path)),
+        )
+        scores = [
+            self._score_frame(frame, clip_score)
+            for frame, clip_score in zip(frames, clip_scores)
+        ]
         return float(np.mean(scores)) if scores else None

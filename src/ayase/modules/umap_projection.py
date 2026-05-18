@@ -23,8 +23,9 @@ import cv2
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
-from ayase.compat import extract_features
+from ayase.image import arrays_to_pil, load_representative_frame
 from ayase.models import Sample
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class UMAPProjectionModule(BatchMetricModule):
     default_config = {
         "device": "auto",
         "min_samples": 3,
+        "clip_model": "openai/clip-vit-base-patch32",
     }
     models = [
         {
@@ -52,30 +54,51 @@ class UMAPProjectionModule(BatchMetricModule):
         super().__init__(config)
         self.device_config = self.config.get("device", "auto")
         self.min_samples = self.config.get("min_samples", 3)
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
 
         self._clip_model = None
         self._clip_processor = None
+        self._clip_device = "cpu"
         self._clip_available = False
 
         self._sample_refs: List[Sample] = []
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            device = self.device_config
-            if device == "auto":
-                device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            self._clip_model = (
-                CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-                .to(device)
-                .eval()
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
+
+            device = resolve_torch_device(self.device_config)
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
+            self._clip_device = device
             self._clip_available = True
             logger.info(f"UMAP projection: CLIP on {device}")
         except ImportError:
@@ -93,7 +116,7 @@ class UMAPProjectionModule(BatchMetricModule):
             if frame is None:
                 return None
 
-            emb = self._clip_embedding(frame)
+            emb = self._clip_embedding(frame, cache_key=("umap_projection", media_state_key(sample.path)))
             feature = emb if emb is not None else self._colour_histogram(frame)
 
             # Only track the sample ref when we actually return a feature,
@@ -106,35 +129,27 @@ class UMAPProjectionModule(BatchMetricModule):
 
     @staticmethod
     def _read_frame(sample: Sample) -> Optional[np.ndarray]:
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            cap.set(cv2.CAP_PROP_POS_FRAMES, max(total // 2, 0))
-            ret, frame = cap.read()
-            cap.release()
-            return frame if ret else None
-        frame = cv2.imread(str(sample.path))
-        return frame
+        return load_representative_frame(sample.path, color="bgr")
 
-    def _clip_embedding(self, frame_bgr: np.ndarray) -> Optional[np.ndarray]:
+    def _clip_embedding(
+        self,
+        frame_bgr: np.ndarray,
+        cache_key: Optional[tuple] = None,
+    ) -> Optional[np.ndarray]:
         if not self._clip_available:
             return None
         try:
-            import torch
-            from PIL import Image
-
             rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(rgb)
-
-            inputs = self._clip_processor(images=pil_img, return_tensors="pt")
-            device = next(self._clip_model.parameters()).device
-            inputs = {k: v.to(device) for k, v in inputs.items()}
-
-            with torch.no_grad():
-                emb = extract_features(self._clip_model.get_image_features(**inputs))
-                emb = emb / emb.norm(dim=-1, keepdim=True)
-
-            return emb.squeeze(0).cpu().numpy()
+            emb = cached_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil([rgb]),
+                model_key=self.clip_model_name,
+                device=self._clip_device,
+                cache_key=cache_key or ("umap_projection_frame", rgb.shape, rgb.tobytes()),
+            )
+            return emb.squeeze(0).detach().float().cpu().numpy()
         except Exception as e:
             logger.debug(f"CLIP embedding failed: {e}")
             return None

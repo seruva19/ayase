@@ -13,6 +13,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from ayase.image import load_representative_frame
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 from ayase.compat import extract_features
@@ -61,14 +62,21 @@ class CreativityModule(PipelineModule):
         try:
             import torch
             from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             vlm_name = self.config.get("vlm_model", "llava-hf/llava-1.5-7b-hf")
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
             dtype = torch.float16 if self._device == "cuda" else torch.float32
 
-            self._vlm_model = LlavaNextForConditionalGeneration.from_pretrained(
-                vlm_name, torch_dtype=dtype, cache_dir=models_dir, low_cpu_mem_usage=True,
+            self._vlm_model = from_pretrained_with_attention(
+                LlavaNextForConditionalGeneration,
+                vlm_name,
+                self.config,
+                device=self._device,
+                torch_dtype=dtype,
+                cache_dir=models_dir,
+                low_cpu_mem_usage=True,
             ).to(self._device)
             self._vlm_model.eval()
             self._vlm_processor = LlavaNextProcessor.from_pretrained(vlm_name, cache_dir=models_dir)
@@ -83,16 +91,37 @@ class CreativityModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
+            model_name = "openai/clip-vit-base-patch32"
 
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=models_dir,
-            ).to(self._device)
-            self._clip_model.eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=models_dir,
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    model_name,
+                    self.config,
+                    device=self._device,
+                    cache_dir=models_dir,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    model_name,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
 
             # Pre-compute common prompt embeddings
@@ -231,14 +260,6 @@ class CreativityModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

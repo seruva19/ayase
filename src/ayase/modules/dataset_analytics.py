@@ -21,9 +21,10 @@ from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, load_representative_frame
 from ayase.models import Sample
 from ayase.base_modules import BatchMetricModule
-from ayase.compat import extract_features as _extract_features
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -60,19 +61,42 @@ class DatasetAnalyticsModule(BatchMetricModule):
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            device = self.device_config
-            if device == "auto":
-                device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32"
-            ).to(device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
+
+            device = resolve_torch_device(self.device_config)
+            models_dir = self.config.get("models_dir", "models")
+            model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
+            resolved = resolve_model_path(model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
+            self._clip_device = device
+            self._clip_model_name = model_name
             self._clip_available = True
             logger.info(f"Dataset analytics: CLIP embeddings on {device}")
         except ImportError:
@@ -108,26 +132,26 @@ class DatasetAnalyticsModule(BatchMetricModule):
             hist /= total
         return hist
 
-    def _clip_embedding(self, frame_bgr: np.ndarray) -> Optional[np.ndarray]:
+    def _clip_embedding(
+        self,
+        frame_bgr: np.ndarray,
+        cache_key: Optional[tuple] = None,
+    ) -> Optional[np.ndarray]:
         """Extract CLIP image embedding."""
         if not self._clip_available:
             return None
         try:
-            import torch
-            from PIL import Image
-
             rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(rgb)
-
-            inputs = self._clip_processor(images=pil_img, return_tensors="pt")
-            device = next(self._clip_model.parameters()).device
-            inputs = {k: v.to(device) for k, v in inputs.items()}
-
-            with torch.no_grad():
-                emb = _extract_features(self._clip_model.get_image_features(**inputs))
-                emb = emb / emb.norm(dim=-1, keepdim=True)
-
-            return emb.squeeze(0).cpu().numpy()
+            emb = cached_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil([rgb]),
+                model_key=getattr(self, "_clip_model_name", "openai/clip-vit-base-patch32"),
+                device=getattr(self, "_clip_device", "cpu"),
+                cache_key=cache_key or ("dataset_analytics_frame", rgb.shape, rgb.tobytes()),
+            )
+            return emb.squeeze(0).detach().float().cpu().numpy()
         except Exception as e:
             logger.debug(f"CLIP embedding failed: {e}")
             return None
@@ -135,18 +159,9 @@ class DatasetAnalyticsModule(BatchMetricModule):
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract features from a sample (overrides BatchMetricModule)."""
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, total // 2)
-                ret, frame = cap.read()
-                cap.release()
-                if not ret:
-                    return None
-            else:
-                frame = cv2.imread(str(sample.path))
-                if frame is None:
-                    return None
+            frame = load_representative_frame(sample.path, color="bgr")
+            if frame is None:
+                return None
 
             # dHash for duplicate detection
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -157,7 +172,10 @@ class DatasetAnalyticsModule(BatchMetricModule):
             self._histograms.append(self._colour_histogram(frame))
 
             # CLIP embedding (primary features for diversity/coverage)
-            emb = self._clip_embedding(frame)
+            emb = self._clip_embedding(
+                frame,
+                cache_key=("dataset_analytics", media_state_key(sample.path)),
+            )
             return emb
 
         except Exception as e:

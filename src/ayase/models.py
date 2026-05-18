@@ -107,6 +107,7 @@ class QualityMetrics(BaseModel):
         "dover_aesthetic": "aesthetic",
         "cover_aesthetic": "aesthetic",
         "cover_semantic": "aesthetic",
+        "aesthetic_score_legacy": "aesthetic",
         # Text-video alignment
         "clip_score": "alignment",
         "blip_score": "alignment",
@@ -303,6 +304,10 @@ class QualityMetrics(BaseModel):
         "scoreq_score": "audio",
         "ttsds2_score": "audio",
         "human_clap_score": "audio",
+        "laion_clap_score": "audio",
+        "ms_clap_score": "audio",
+        "clap_score": "audio",
+        "imagebind_score": "audio",
         "pam_score": "audio",
         "aqascore_score": "audio",
         "av_sync_offset": "audio",
@@ -705,6 +710,10 @@ class QualityMetrics(BaseModel):
     scoreq_score: Optional[float] = None  # SCOREQ speech naturalness score (0-1, higher=better)
     ttsds2_score: Optional[float] = None  # TTSDS2 speech quality score (0-1, higher=better)
     human_clap_score: Optional[float] = None  # Human-CLAP audio-text relevance (0-1, higher=better)
+    laion_clap_score: Optional[float] = None  # LAION-CLAP audio-text relevance (0-1, higher=better)
+    ms_clap_score: Optional[float] = None  # Microsoft CLAP audio-text relevance (0-1, higher=better)
+    clap_score: Optional[float] = None  # Generic CLAP audio-text relevance (0-1, higher=better)
+    imagebind_score: Optional[float] = None  # ImageBind audio-text relevance (0-1, higher=better)
     pam_score: Optional[float] = None  # PAM anti-prompt perceptual audio quality (0-1, higher=better)
     aqascore_score: Optional[float] = None  # AQAScore audio question-answering alignment (0-1)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
@@ -718,6 +727,7 @@ class QualityMetrics(BaseModel):
     topiq_score: Optional[float] = None  # TOPIQ transformer-based IQA (higher=better)
     liqe_score: Optional[float] = None  # LIQE lightweight IQA (higher=better)
     clip_iqa_score: Optional[float] = None  # CLIP-IQA semantic quality (0-1, higher=better)
+    aesthetic_score_legacy: Optional[float] = None  # Legacy NIMA aesthetic score (1-10, higher=better)
 
     # Professional production quality
     color_grading_score: Optional[float] = None  # Colour consistency 0-100
@@ -1287,6 +1297,15 @@ class DatasetStats(BaseModel):
     # Batch distribution metrics (dataset-level)
     fad: Optional[float] = None  # Frechet Audio Distance (lower=better)
     fad_infinity: Optional[float] = None  # FAD extrapolated to infinite sample size (lower=better)
+    fad_vggish: Optional[float] = None  # Frechet Audio Distance with VGGish backbone (lower=better)
+    fad_vggish_infinity: Optional[float] = None  # VGGish FAD extrapolated to infinite sample size (lower=better)
+    fad_panns: Optional[float] = None  # Frechet Audio Distance with PANNs CNN14 backbone (lower=better)
+    fad_panns_infinity: Optional[float] = None  # PANNs FAD extrapolated to infinite sample size (lower=better)
+    fad_passt: Optional[float] = None  # Frechet Audio Distance with PaSST backbone (lower=better)
+    fad_passt_infinity: Optional[float] = None  # PaSST FAD extrapolated to infinite sample size (lower=better)
+    audio_isc_mean: Optional[float] = None  # Inception Score for Audio mean (higher=better)
+    audio_isc_std: Optional[float] = None  # Inception Score for Audio standard deviation
+    audio_kl: Optional[float] = None  # Audio classifier distribution KL divergence (lower=better)
     kad: Optional[float] = None  # Kernel Audio Distance (lower=better)
     fgd: Optional[float] = None  # Frechet Gesture Distance (lower=better)
     fmd: Optional[float] = None  # Frechet Motion Distance (lower=better)

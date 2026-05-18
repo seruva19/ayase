@@ -11,11 +11,17 @@ clifvqa_score --- higher = better quality (0-1 range)
 import logging
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,32 +71,56 @@ class CLiFVQAModule(PipelineModule):
         if self.test_mode:
             return
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            self._device = torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._model = CLIPModel.from_pretrained(self._clip_model_name)
-            self._processor = CLIPProcessor.from_pretrained(self._clip_model_name)
-            self._model.to(self._device).eval()
 
-            with torch.no_grad():
-                pos_inputs = self._processor(
-                    text=_POSITIVE_FEELINGS, return_tensors="pt", padding=True
-                ).to(self._device)
-                self._pos_embeds = self._model.get_text_features(**pos_inputs)
-                self._pos_embeds = self._pos_embeds / self._pos_embeds.norm(
-                    dim=-1, keepdim=True
-                )
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self._clip_model_name, models_dir)
 
-                neg_inputs = self._processor(
-                    text=_NEGATIVE_FEELINGS, return_tensors="pt", padding=True
-                ).to(self._device)
-                self._neg_embeds = self._model.get_text_features(**neg_inputs)
-                self._neg_embeds = self._neg_embeds / self._neg_embeds.norm(
-                    dim=-1, keepdim=True
-                )
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
+
+            self._pos_embeds = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _POSITIVE_FEELINGS,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
+            self._neg_embeds = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _NEGATIVE_FEELINGS,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
 
             self._ml_available = True
             logger.info("CLiF-VQA (CLIP feelings) initialised on %s", self._device)
@@ -111,27 +141,74 @@ class CLiFVQAModule(PipelineModule):
             logger.warning("CLiF-VQA failed for %s: %s", sample.path, e)
         return sample
 
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                frames = self._extract_frames(sample)
+                if not frames:
+                    continue
+                prepared.append(sample)
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.subsample, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._model,
+                self._processor,
+                image_groups,
+                model_key=self._clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for sample, image_features in zip(prepared, feature_groups):
+                score = self._score_features(image_features)
+                if score is None:
+                    continue
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.clifvqa_score = score
+        except Exception as e:
+            logger.warning("CLiF-VQA batch failed: %s", e)
+
+        return samples
+
     def _compute_feeling_score(self, sample: Sample) -> Optional[float]:
         """Score frames via CLIP similarity with feeling prompts."""
-        import torch
-        from PIL import Image
 
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        pil_frames = [
-            Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in frames
-        ]
+        image_features = cached_clip_image_features(
+            self,
+            self._model,
+            self._processor,
+            arrays_to_pil(frames),
+            model_key=self._clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        return self._score_features(image_features)
+
+    def _score_features(self, image_features) -> Optional[float]:
+        import torch
+
+        if image_features is None or image_features.size(0) == 0:
+            return None
 
         frame_scores = []
         with torch.no_grad():
-            for pil_img in pil_frames:
-                inputs = self._processor(
-                    images=pil_img, return_tensors="pt"
-                ).to(self._device)
-                img_emb = self._model.get_image_features(**inputs)
-                img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
+            for img_emb in image_features:
+                img_emb = img_emb.unsqueeze(0)
 
                 # Per-dimension feeling similarity
                 pos_sims = (img_emb @ self._pos_embeds.T).squeeze(0)  # (7,)
@@ -148,24 +225,8 @@ class CLiFVQAModule(PipelineModule):
         return float(np.clip(np.mean(frame_scores), 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-            indices = np.linspace(
-                0, total - 1, min(self.subsample, total), dtype=int
-            )
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        except Exception as e:
+            logger.debug("CLiF-VQA frame loading failed for %s: %s", sample.path, e)
+            return []

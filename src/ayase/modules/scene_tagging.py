@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from typing import Optional
 
+from ayase.image import load_representative_frame
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -47,15 +48,41 @@ class SceneTaggingModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading CLIP for Scene Tagging on {self._device}...")
 
             models_dir = self.config.get("models_dir", "models")
 
             model_name = "openai/clip-vit-base-patch32"
-            self._model = CLIPModel.from_pretrained(model_name, cache_dir=models_dir, use_safetensors=True).to(self._device)
-            self._processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    model_name,
+                    self.config,
+                    device=self._device,
+                    cache_dir=models_dir,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    model_name,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_clip,
+            )
             self._ml_available = True
 
         except ImportError:
@@ -109,14 +136,6 @@ class SceneTaggingModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

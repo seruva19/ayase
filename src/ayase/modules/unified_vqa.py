@@ -17,13 +17,21 @@ dover_score when that legacy shared NR quality field is unset.
 """
 
 import logging
+import hashlib
 from typing import List, Optional
 
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_openai_clip_image_features,
+    media_state_key,
+    resolve_torch_device,
+    shared_openai_clip_resource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,14 +88,12 @@ class UnifiedVQAModule(PipelineModule):
     def _try_clip_setup(self) -> bool:
         """Try to set up CLIP backbone."""
         try:
-            import torch
-            import clip
-
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._clip_model, self._clip_preprocess = clip.load(
-                self.clip_model_name, device=self._device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._clip_model, self._clip_preprocess = shared_openai_clip_resource(
+                self,
+                self.clip_model_name,
+                device=self._device,
             )
-            self._clip_model.eval()
             self._ml_available = True
             self._backend = "clip"
             logger.info("Unified-VQA initialised with CLIP (%s) on %s", self.clip_model_name, self._device)
@@ -142,7 +148,10 @@ class UnifiedVQAModule(PipelineModule):
                 return sample
 
             # Extract features for distorted frames
-            dist_features = self._extract_features_batch(frames)
+            dist_features = self._extract_features_batch(
+                frames,
+                cache_key=(self.subsample, media_state_key(sample.path)),
+            )
             if not dist_features:
                 return sample
 
@@ -155,7 +164,10 @@ class UnifiedVQAModule(PipelineModule):
                 if ref_path.exists():
                     ref_frames = self._extract_frames_from_path(ref_path, sample.is_video)
                     if ref_frames:
-                        ref_features = self._extract_features_batch(ref_frames)
+                        ref_features = self._extract_features_batch(
+                            ref_frames,
+                            cache_key=(self.subsample, media_state_key(ref_path)),
+                        )
 
             score = self._compute_quality(dist_features, ref_features)
 
@@ -235,8 +247,32 @@ class UnifiedVQAModule(PipelineModule):
 
         return float(np.clip(score, 0.0, 1.0))
 
-    def _extract_features_batch(self, frames: List[np.ndarray]) -> List[np.ndarray]:
+    def _extract_features_batch(
+        self,
+        frames: List[np.ndarray],
+        cache_key: Optional[tuple] = None,
+    ) -> List[np.ndarray]:
         """Extract features from a batch of frames."""
+        if self._backend == "clip":
+            try:
+                rgb_frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]
+                image_features = cached_openai_clip_image_features(
+                    self,
+                    self._clip_model,
+                    self._clip_preprocess,
+                    arrays_to_pil(rgb_frames),
+                    model_key=self.clip_model_name,
+                    device=self._device,
+                    cache_key=cache_key or ("unified_vqa_frames", len(frames)),
+                    normalize=False,
+                )
+                return [
+                    row.detach().float().cpu().numpy().astype(np.float32)
+                    for row in image_features
+                ]
+            except Exception as e:
+                logger.debug("CLIP batch feature extraction failed: %s", e)
+
         features = []
         for frame in frames:
             feat = self._extract_features(frame)
@@ -250,13 +286,20 @@ class UnifiedVQAModule(PipelineModule):
 
         try:
             if self._backend == "clip":
-                from PIL import Image
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                pil_img = Image.fromarray(rgb)
-                tensor = self._clip_preprocess(pil_img).unsqueeze(0).to(self._device)
-                with torch.no_grad():
-                    feat = self._clip_model.encode_image(tensor)
-                return feat.cpu().numpy().flatten().astype(np.float32)
+                contiguous = np.ascontiguousarray(rgb)
+                digest = hashlib.blake2b(contiguous.tobytes(), digest_size=16).hexdigest()
+                feat = cached_openai_clip_image_features(
+                    self,
+                    self._clip_model,
+                    self._clip_preprocess,
+                    arrays_to_pil([contiguous]),
+                    model_key=self.clip_model_name,
+                    device=self._device,
+                    cache_key=("unified_vqa_frame", contiguous.shape, digest),
+                    normalize=False,
+                )
+                return feat.squeeze(0).detach().float().cpu().numpy().astype(np.float32)
 
             else:  # resnet
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -275,26 +318,12 @@ class UnifiedVQAModule(PipelineModule):
 
     def _extract_frames_from_path(self, path, is_video: bool) -> List[np.ndarray]:
         """Extract frames from a path."""
-        frames = []
-        if is_video:
-            cap = cv2.VideoCapture(str(path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
-        else:
-            img = cv2.imread(str(path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            rgb_frames = sample_frames(path, max_frames=self.subsample, color="rgb")
+            return [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in rgb_frames]
+        except Exception as e:
+            logger.debug("Unified-VQA frame loading failed for %s: %s", path, e)
+            return []
 
     def on_dispose(self) -> None:
         self._clip_model = None

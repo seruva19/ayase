@@ -17,8 +17,16 @@ from typing import List, Optional
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_openai_clip_image_features,
+    cached_openai_clip_text_features,
+    media_state_key,
+    resolve_torch_device,
+    shared_openai_clip_resource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -75,21 +83,23 @@ class LMMVQAModule(PipelineModule):
     def _try_clip_setup(self) -> bool:
         try:
             import torch
-            import clip
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._clip_model, self._clip_preprocess = clip.load(
-                self.clip_model_name, device=self._device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._clip_model, self._clip_preprocess = shared_openai_clip_resource(
+                self,
+                self.clip_model_name,
+                device=self._device,
             )
-            self._clip_model.eval()
 
             # Pre-encode quality prompts
-            text_tokens = clip.tokenize(_QUALITY_PROMPTS).to(self._device)
-            with torch.no_grad():
-                self._text_features = self._clip_model.encode_text(text_tokens)
-                self._text_features = self._text_features / self._text_features.norm(
-                    dim=-1, keepdim=True
-                )
+            self._text_features = cached_openai_clip_text_features(
+                self,
+                self._clip_model,
+                _QUALITY_PROMPTS,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_key=("lmmvqa_quality_prompts",),
+            )
 
             # Temporal attention over CLIP features
             feat_dim = self._text_features.shape[1]
@@ -177,7 +187,7 @@ class LMMVQAModule(PipelineModule):
                 return sample
 
             if self._backend == "clip":
-                score = self._compute_clip_quality(frames)
+                score = self._compute_clip_quality(sample, frames)
             else:
                 score = self._compute_resnet_quality(frames)
 
@@ -191,49 +201,34 @@ class LMMVQAModule(PipelineModule):
 
         return sample
 
-    def _compute_clip_quality(self, frames: List[np.ndarray]) -> Optional[float]:
+    def _compute_clip_quality(self, sample: Sample, frames: List[np.ndarray]) -> Optional[float]:
         """Quality from CLIP: compare frames to quality-level prompts."""
-        import torch
-        from PIL import Image
+        image_features = cached_openai_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_preprocess,
+            arrays_to_pil([cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        if image_features is None or image_features.size(0) == 0:
+            return None
 
-        frame_scores = []
-        frame_feats = []
+        sims = (image_features @ self._text_features.T).detach().float().cpu().numpy()
+        quality_levels = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
+        exp_sims = np.exp(sims)
+        probs = exp_sims / np.sum(exp_sims, axis=1, keepdims=True)
+        frame_scores = np.dot(probs, quality_levels).astype(np.float32)
+        frame_feats = image_features.detach().float().cpu().numpy()
 
-        for frame in frames:
-            try:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                pil_img = Image.fromarray(rgb)
-                tensor = self._clip_preprocess(pil_img).unsqueeze(0).to(self._device)
-
-                with torch.no_grad():
-                    img_feat = self._clip_model.encode_image(tensor)
-                    img_feat = img_feat / img_feat.norm(dim=-1, keepdim=True)
-
-                    # Similarity to quality prompts
-                    sims = (img_feat @ self._text_features.T).squeeze(0)
-                    sims = sims.cpu().numpy()
-
-                frame_feats.append(img_feat.cpu().numpy().flatten())
-
-                # Weighted quality from prompt similarities
-                # Prompts ordered low->high quality, weight by position
-                quality_levels = np.array([0.1, 0.3, 0.5, 0.7, 0.9])
-                probs = np.exp(sims) / np.sum(np.exp(sims))
-                frame_q = float(np.dot(probs, quality_levels))
-                frame_scores.append(frame_q)
-
-            except Exception as e:
-                logger.debug("CLIP frame scoring failed: %s", e)
-
-        if not frame_scores:
+        if len(frame_scores) == 0:
             return None
 
         # Temporal attention pooling
         if len(frame_feats) > 1 and self._temporal_attn is not None:
             import torch as th
-            feat_tensor = th.from_numpy(
-                np.array(frame_feats, dtype=np.float32)
-            ).to(self._device)
+            feat_tensor = th.from_numpy(frame_feats.astype(np.float32)).to(self._device)
             with th.no_grad():
                 attn_logits = self._temporal_attn(feat_tensor).squeeze(-1)
                 attn_weights = th.softmax(attn_logits, dim=0).cpu().numpy()
@@ -283,28 +278,12 @@ class LMMVQAModule(PipelineModule):
         return score
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(
-                    0, total - 1, min(self.subsample, total), dtype=int
-                )
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            rgb_frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+            return [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in rgb_frames]
+        except Exception as e:
+            logger.debug("LMM-VQA frame loading failed for %s: %s", sample.path, e)
+            return []
 
     def on_dispose(self) -> None:
         self._clip_model = None
