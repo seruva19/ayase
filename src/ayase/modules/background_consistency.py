@@ -159,7 +159,9 @@ class BackgroundConsistencyModule(PipelineModule):
         similarities = []
         for i in range(embeddings.size(0)):
             for j in range(i + 1, embeddings.size(0)):
-                sim = F.cosine_similarity(embeddings[i], embeddings[j]).item()
+                # embeddings is a 2D [n_frames, D] tensor from cached_clip_image_features;
+                # indexing yields a 1D vector, so default dim=1 in cosine_similarity errors.
+                sim = F.cosine_similarity(embeddings[i:i+1], embeddings[j:j+1], dim=1).item()
                 similarities.append(sim)
 
         avg_consistency = float(np.mean(similarities))
