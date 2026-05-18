@@ -2,8 +2,9 @@
 
 - clip_temp_score: Cosine similarity between CLIP embeddings of consecutive
   frames, averaged across all pairs.  Measures temporal smoothness.
-- face_consistency_score: Cosine similarity between every frame and the FIRST
-  frame in CLIP space.  Measures identity/appearance preservation.
+- face_consistency_score: Cosine similarity between consecutive frame pairs in
+  CLIP space, averaged across the video.  Measures identity/appearance stability
+  (EvalCrafter face_consistency).
 """
 
 import logging
@@ -170,11 +171,12 @@ class CLIPTemporalModule(PipelineModule):
                 )
             )
 
-        # --- face_consistency_score: similarity to first frame (identity drift) ---
+        # --- face_consistency_score: rolling window (consecutive pairs) ---
+        # Matches EvalCrafter semantics and Ayase 0.1.11 contract — averaging
+        # similarity of neighbouring frames rather than drift from the first frame.
         face_sims = []
-        first_emb = embeddings[0]
-        for i in range(1, embeddings.size(0)):
-            sim = (first_emb @ embeddings[i]).item()
+        for i in range(embeddings.size(0) - 1):
+            sim = (embeddings[i] @ embeddings[i + 1]).item()
             face_sims.append(sim)
         face_consistency = float(np.mean(face_sims)) if face_sims else clip_temp
         sample.quality_metrics.face_consistency = face_consistency
