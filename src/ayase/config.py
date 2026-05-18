@@ -72,6 +72,14 @@ class GeneralConfig(BaseSettings):
     cache_enabled: bool = True
     cache_dir: Path = Path.home() / ".cache" / "ayase"
     models_dir: Path = Path("models")
+    device: str = "auto"
+    dtype: str = "auto"
+    amp_enabled: bool = True
+    attention_backend: str = "auto"
+    frame_cache_enabled: bool = True
+    timing_enabled: bool = True
+    sample_batch_size: int = 1
+    max_clip_images_per_forward: int = 64
 
 
 class QualityConfig(BaseSettings):

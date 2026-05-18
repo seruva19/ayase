@@ -12,9 +12,9 @@ from typing import List, Optional
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
-from ayase.compat import extract_features
-from ayase.image import image_stats_features, load_representative_frame
+from ayase.image import arrays_to_pil, image_stats_features, load_representative_frame
 from ayase.models import Sample
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -52,21 +52,42 @@ class CMMDModule(BatchMetricModule):
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
 
             from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            self._device = resolve_torch_device(self.device_config)
 
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(self.model_name, models_dir)
-            self._model = CLIPModel.from_pretrained(resolved, use_safetensors=True).to(self._device)
-            self._processor = CLIPProcessor.from_pretrained(resolved)
-            self._model.eval()
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_clip,
+            )
             self._backend = "clip"
             logger.info("CMMD initialised with %s on %s", self.model_name, self._device)
         except ImportError:
@@ -79,7 +100,7 @@ class CMMDModule(BatchMetricModule):
         if frame is None:
             return None
         if self._backend == "clip" and self._model is not None:
-            return self._extract_clip(frame)
+            return self._extract_clip(frame, cache_key=("cmmd", media_state_key(sample.path)))
         return image_stats_features(frame)
 
     def compute_distribution_metric(
@@ -100,17 +121,18 @@ class CMMDModule(BatchMetricModule):
             return float("inf")
         return float(max(self._mmd2(gen, ref), 0.0))
 
-    def _extract_clip(self, frame: np.ndarray) -> Optional[np.ndarray]:
+    def _extract_clip(self, frame: np.ndarray, cache_key: Optional[tuple] = None) -> Optional[np.ndarray]:
         try:
-            import torch
-            from PIL import Image
-
-            image = Image.fromarray(frame.astype(np.uint8)).convert("RGB")
-            inputs = self._processor(images=image, return_tensors="pt").to(self._device)
-            with torch.no_grad():
-                emb = extract_features(self._model.get_image_features(**inputs))
-                emb = emb / emb.norm(dim=-1, keepdim=True)
-            return emb.squeeze(0).cpu().numpy().astype(np.float64)
+            emb = cached_clip_image_features(
+                self,
+                self._model,
+                self._processor,
+                arrays_to_pil([frame]),
+                model_key=self.model_name,
+                device=self._device,
+                cache_key=cache_key or ("cmmd_frame", frame.shape, frame.tobytes()),
+            )
+            return emb.squeeze(0).detach().float().cpu().numpy().astype(np.float64)
         except Exception as e:
             logger.debug("CMMD CLIP extraction failed: %s", e)
             return None

@@ -17,8 +17,14 @@ from typing import Optional, Tuple
 
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_openai_clip_image_features,
+    media_state_key,
+    shared_openai_clip_resource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -138,11 +144,12 @@ class MDVQAModule(PipelineModule):
     def _try_load_clip(self) -> bool:
         """Try loading CLIP ViT-B/32 for semantic features."""
         try:
-            import clip
-
-            model, preprocess = clip.load("ViT-B/32", device=self._device)
-            self._clip_model = model.visual
-            self._clip_model.eval()
+            model, preprocess = shared_openai_clip_resource(
+                self,
+                self.config.get("clip_model", "ViT-B/32"),
+                device=self._device,
+            )
+            self._clip_model = model
             self._clip_processor = preprocess
             logger.debug("MD-VQA: CLIP ViT-B/32 loaded for semantic features")
             return True
@@ -186,25 +193,30 @@ class MDVQAModule(PipelineModule):
         if not frames_bgr:
             return 0.5, 0.5, 0.5
 
+        clip_features = None
+        if self._clip_processor is not None:
+            rgb_frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames_bgr]
+            clip_features = cached_openai_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil(rgb_frames),
+                model_key=self.config.get("clip_model", "ViT-B/32"),
+                device=self._device,
+                cache_key=(self.subsample, media_state_key(sample.path)),
+                normalize=False,
+            ).float()
+
         semantic_features = []
         distortion_features = []
 
         with torch.no_grad():
-            for frame in frames_bgr:
+            for idx, frame in enumerate(frames_bgr):
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
                 # Semantic features (CLIP or ResNet)
-                if self._clip_processor is not None:
-                    # CLIP preprocessing
-                    from PIL import Image
-                    pil_img = Image.fromarray(rgb)
-                    clip_input = self._clip_processor(pil_img).unsqueeze(0).to(
-                        self._device
-                    )
-                    sem_feat = self._clip_model(clip_input)  # (1, 512)
-                    if sem_feat.dim() == 1:
-                        sem_feat = sem_feat.unsqueeze(0)
-                    sem_feat = sem_feat.float()
+                if clip_features is not None:
+                    sem_feat = clip_features[idx:idx + 1]
                 else:
                     tensor = self._transform(rgb).unsqueeze(0).to(self._device)
                     sem_feat = self._clip_model(tensor).squeeze(-1).squeeze(-1)
@@ -280,23 +292,9 @@ class MDVQAModule(PipelineModule):
         """Load frames as BGR numpy arrays."""
         import cv2
 
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-            n_frames = min(self.subsample, total)
-            indices = np.linspace(0, total - 1, n_frames, dtype=int)
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            rgb_frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+            return [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in rgb_frames]
+        except Exception as e:
+            logger.debug("MD-VQA frame loading failed for %s: %s", sample.path, e)
+            return []

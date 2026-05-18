@@ -18,11 +18,17 @@ import re
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import CaptionMetadata, QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +124,7 @@ class TIFAModule(PipelineModule):
     description = "TIFA text-to-image faithfulness via VQA question answering (ICCV 2023)"
     default_config = {
         "vqa_model": "dandelin/vilt-b32-finetuned-vqa",
+        "clip_model": "openai/clip-vit-base-patch32",
         "num_questions": 8,
         "subsample": 4,
     }
@@ -125,6 +132,7 @@ class TIFAModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.vqa_model = self.config.get("vqa_model", "dandelin/vilt-b32-finetuned-vqa")
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.num_questions = self.config.get("num_questions", 8)
         self.subsample = self.config.get("subsample", 4)
         self._backend = None  # "vilt" | "clip"
@@ -161,14 +169,38 @@ class TIFAModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            models_dir = self.config.get("models_dir", "models")
-            clip_name = "openai/clip-vit-base-patch32"
-            self._clip_model = CLIPModel.from_pretrained(clip_name, cache_dir=models_dir).to(
-                self._device
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._clip_processor = CLIPProcessor.from_pretrained(clip_name, cache_dir=models_dir)
+
+            models_dir = self.config.get("models_dir", "models")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._backend = "clip"
             self._ml_available = True
             logger.info("TIFA: using CLIP similarity proxy.")
@@ -205,6 +237,50 @@ class TIFAModule(PipelineModule):
             logger.warning(f"TIFA failed for {sample.path}: {e}")
 
         return sample
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+        if self._backend != "clip":
+            return super().process_batch(samples)
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                caption_text = self._get_caption(sample)
+                if not caption_text:
+                    continue
+                frames = self._load_frames(sample)
+                if not frames:
+                    continue
+                prepared.append((sample, caption_text))
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.subsample, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                image_groups,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for (sample, caption_text), image_features in zip(prepared, feature_groups):
+                score = self._score_clip_features(caption_text, image_features)
+                if score is None:
+                    continue
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.tifa_score = float(np.clip(score, 0.0, 1.0))
+        except Exception as e:
+            logger.warning("TIFA batch failed: %s", e)
+        return samples
 
     # -- Caption extraction -----------------------------------------------------
 
@@ -258,50 +334,48 @@ class TIFAModule(PipelineModule):
         return correct_total / count_total
 
     def _compute_clip(self, sample: Sample, caption: str) -> Optional[float]:
-        import torch
-        from PIL import Image
-
         frames = self._load_frames(sample)
         if not frames:
             return None
 
-        similarities = []
-        for frame in frames:
-            pil_img = Image.fromarray(frame)
-            inputs = self._clip_processor(
-                text=[caption], images=pil_img, return_tensors="pt", padding=True
-            ).to(self._device)
-            with torch.no_grad():
-                outputs = self._clip_model(**inputs)
-            # Cosine similarity from CLIP logits
-            sim = outputs.logits_per_image.item() / 100.0  # normalize to ~0-1
-            similarities.append(float(np.clip(sim, 0.0, 1.0)))
+        image_features = cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            arrays_to_pil(frames),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        return self._score_clip_features(caption, image_features)
 
-        return float(np.mean(similarities)) if similarities else None
+    def _score_clip_features(self, caption: str, image_features) -> Optional[float]:
+        if image_features is None or image_features.size(0) == 0:
+            return None
+
+        text_features = cached_clip_text_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            [caption],
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("tifa_caption", caption),
+        )
+        scale = getattr(self._clip_model, "logit_scale", None)
+        if scale is not None:
+            logits = (image_features @ text_features.T) * scale.exp()
+        else:
+            logits = image_features @ text_features.T
+        similarities = (logits.squeeze(-1) / 100.0).detach().float().cpu().numpy()
+        similarities = np.clip(similarities, 0.0, 1.0)
+        return float(np.mean(similarities)) if len(similarities) else None
 
     # -- Frame loading ----------------------------------------------------------
 
     def _load_frames(self, sample: Sample):
-        frames = []
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return frames
-                n = min(self.subsample, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames.append(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
-        return frames
+        return []

@@ -10,6 +10,7 @@ import math
 from collections import Counter
 from typing import List, Optional
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -37,8 +38,9 @@ class CaptioningModule(PipelineModule):
         try:
             import torch
             from ayase.config import resolve_model_path
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(self.model_name, models_dir)
             is_blip2 = "blip2" in self.model_name.lower() or "blip-2" in self.model_name.lower()
@@ -48,16 +50,24 @@ class CaptioningModule(PipelineModule):
 
                 logger.info(f"Loading BLIP-2 ({self.model_name}) on {self._device}...")
                 self._processor = AutoProcessor.from_pretrained(resolved)
-                self._model = Blip2ForConditionalGeneration.from_pretrained(
-                    resolved, torch_dtype=torch.float16 if self._device == "cuda" else torch.float32,
+                self._model = from_pretrained_with_attention(
+                    Blip2ForConditionalGeneration,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                    torch_dtype=torch.float16 if self._device == "cuda" else torch.float32,
                 ).to(self._device)
             else:
                 from transformers import BlipProcessor, BlipForConditionalGeneration
 
                 logger.info(f"Loading BLIP ({self.model_name}) on {self._device}...")
                 self._processor = BlipProcessor.from_pretrained(resolved)
-                self._model = BlipForConditionalGeneration.from_pretrained(
-                    resolved, use_safetensors=True
+                self._model = from_pretrained_with_attention(
+                    BlipForConditionalGeneration,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                    use_safetensors=True,
                 ).to(self._device)
 
             self._ml_available = True
@@ -214,28 +224,7 @@ class CaptioningModule(PipelineModule):
     def _load_frames(self, sample: Sample) -> List:
         """Load multiple uniformly-spaced frames (EvalCrafter samples 5)."""
         try:
-            import cv2
-            import numpy as np
-
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return []
-                n = min(self.num_frames, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                frames = []
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-                cap.release()
-                return frames
-            else:
-                img = cv2.imread(str(sample.path))
-                return [img] if img is not None else []
+            return sample_frames(sample.path, max_frames=self.num_frames, color="bgr")
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
             return []

@@ -4,13 +4,14 @@ Classifies video actions via VideoMAE/UMT and optionally scores alignment with
 caption text using CLIP. Returns action_confidence and action_score (0-100, higher is better)."""
 
 import logging
-import cv2
 import numpy as np
 from typing import Optional, List
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 from ayase.compat import extract_features
+from ayase.runtime import cached_clip_text_features
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class ActionRecognitionModule(PipelineModule):
         self._processor = None
         self._clip_model = None
         self._clip_tokenizer = None
+        self._clip_processor = None
         self._device = "cpu"
         self._ml_available = False
         self._clip_available = False
@@ -94,11 +96,37 @@ class ActionRecognitionModule(PipelineModule):
         try:
             from transformers import CLIPModel, AutoTokenizer
             from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                shared_runtime_resource,
+            )
+            from transformers import CLIPProcessor
 
             models_dir = self.config.get("models_dir", "models")
             resolved_clip = resolve_model_path(self.clip_model_name, models_dir)
             logger.info(f"Loading CLIP ({self.clip_model_name}) for action matching on {self._device}...")
-            self._clip_model = CLIPModel.from_pretrained(resolved_clip).to(self._device)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved_clip,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved_clip)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved_clip,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._clip_tokenizer = AutoTokenizer.from_pretrained(resolved_clip)
             self._clip_available = True
             self._clip_backend = "transformers"
@@ -116,12 +144,16 @@ class ActionRecognitionModule(PipelineModule):
             with torch.no_grad():
                 features = self._clip_model.encode_text(tokens)
         else:
-            tokens = self._clip_tokenizer(
-                text if isinstance(text, list) else [text],
-                return_tensors="pt", padding=True, truncation=True,
+            values = text if isinstance(text, list) else [text]
+            features = cached_clip_text_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                values,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_key=("action_recognition_text", tuple(values)),
             )
-            with torch.no_grad():
-                features = extract_features(self._clip_model.get_text_features(tokens["input_ids"].to(self._device)))
 
         return features / features.norm(p=2, dim=-1, keepdim=True)
 
@@ -215,29 +247,11 @@ class ActionRecognitionModule(PipelineModule):
         return sample
 
     def _load_frames(self, sample: Sample, num_frames: int = 16) -> List[np.ndarray]:
-        frames = []
         try:
-            cap = cv2.VideoCapture(str(sample.path))
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-            if total_frames < num_frames:
-                # Loop or duplicate? Better to just take what we have and resample?
-                # VideoMAE needs exactly 16 usually for the processor
-                indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-            else:
-                indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    # Convert BGR to RGB
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(frame)
-
-            cap.release()
-        except Exception:
-            logger.debug("Failed to release video capture for action recognition.")
+            frames = sample_frames(sample.path, max_frames=num_frames, color="rgb")
+        except Exception as e:
+            logger.debug("Failed to sample frames for action recognition: %s", e)
+            frames = []
 
         # Pad if needed (though we tried to sample 16)
         if len(frames) > 0 and len(frames) < num_frames:

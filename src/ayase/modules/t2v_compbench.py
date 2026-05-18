@@ -18,13 +18,16 @@ Video-only (requires caption).
 
 import logging
 import re
+import hashlib
 from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import cached_clip_image_features, cached_clip_text_features
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +74,7 @@ class T2VCompBenchModule(PipelineModule):
         "enable_spatial": True,
         "enable_numeracy": True,
         "enable_scene": True,
+        "clip_model": "openai/clip-vit-base-patch32",
         "weights": [1, 1, 1, 1, 1, 1],
     }
 
@@ -83,6 +87,7 @@ class T2VCompBenchModule(PipelineModule):
         self._clip_model = None
         self._clip_processor = None
         self._device = "cpu"
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
 
     def setup(self) -> None:
         if self.test_mode:
@@ -122,13 +127,37 @@ class T2VCompBenchModule(PipelineModule):
     def _try_load_clip(self) -> bool:
         try:
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=models_dir,
-            ).to(self._device)
-            self._clip_model.eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=models_dir,
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
             return True
         except Exception as e:
@@ -314,37 +343,44 @@ class T2VCompBenchModule(PipelineModule):
 
     def _clip_sim(self, image: np.ndarray, text: str) -> float:
         """Compute CLIP cosine similarity between image and text."""
-        import torch
-        from PIL import Image
-
-        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(rgb)
-
-        inputs = self._clip_processor(
-            text=[text], images=pil_img, return_tensors="pt", padding=True
-        ).to(self._device)
-
-        with torch.no_grad():
-            outputs = self._clip_model(**inputs)
-            logits = outputs.logits_per_image
-            return float(logits[0, 0].item() / 100.0)
+        image_features = self._clip_image_features(image)
+        logits = self._clip_logits(image_features, [text])
+        return float(logits[0, 0].item() / 100.0)
 
     def _clip_sim_batch_text(self, image: np.ndarray, texts: List[str]) -> List[float]:
         """CLIP similarity of one image against multiple texts."""
-        import torch
-        from PIL import Image
+        image_features = self._clip_image_features(image)
+        sims = self._clip_logits(image_features, texts).softmax(dim=-1)[0]
+        return [float(s) for s in sims]
 
+    def _clip_image_features(self, image: np.ndarray):
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(rgb)
+        contiguous = np.ascontiguousarray(rgb)
+        digest = hashlib.blake2b(contiguous.tobytes(), digest_size=16).hexdigest()
+        return cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            arrays_to_pil([contiguous]),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("t2v_compbench_image", contiguous.shape, digest),
+        )
 
-        inputs = self._clip_processor(
-            text=texts, images=pil_img, return_tensors="pt", padding=True
-        ).to(self._device)
-
-        with torch.no_grad():
-            outputs = self._clip_model(**inputs)
-            sims = outputs.logits_per_image.softmax(dim=-1)[0]
-            return [float(s) for s in sims]
+    def _clip_logits(self, image_features, texts: List[str]):
+        text_features = cached_clip_text_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            texts,
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("t2v_compbench_text", tuple(texts)),
+        )
+        scale = getattr(self._clip_model, "logit_scale", None)
+        if scale is not None:
+            return (image_features @ text_features.T) * scale.exp()
+        return image_features @ text_features.T
 
     # ------------------------------------------------------------------ #
     # Tier 1: YOLO + Depth + CLIP                                          #

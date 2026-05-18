@@ -13,12 +13,12 @@ Video-only: returns None for images.
 import logging
 from typing import Optional, Tuple
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +28,14 @@ class ChronoMagicModule(PipelineModule):
     description = "ChronoMagic-Bench MTScore + CHScore (CLIP)"
     default_config = {
         "subsample": 16,
+        "clip_model": "openai/clip-vit-base-patch32",
         "hallucination_threshold": 2.0,
     }
 
     def __init__(self, config=None):
         super().__init__(config)
+        self.subsample = self.config.get("subsample", 16)
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self._ml_available = False
         self._clip_model = None
         self._clip_processor = None
@@ -44,18 +47,38 @@ class ChronoMagicModule(PipelineModule):
 
         # Tier 1: CLIP
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
 
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=models_dir,
-            ).to(self._device)
-            self._clip_model.eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=models_dir,
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
             self._ml_available = True
             logger.info("ChronoMagic loaded CLIP on %s", self._device)
@@ -92,21 +115,9 @@ class ChronoMagicModule(PipelineModule):
     # ------------------------------------------------------------------ #
 
     def _extract_frames(self, sample: Sample) -> list:
-        num_frames = self.config.get("subsample", 16)
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total < 4:
-            cap.release()
+        frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        if len(frames) < 4:
             return []
-
-        indices = list(range(0, total, max(1, total // num_frames)))[:num_frames]
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                frames.append(frame)
-        cap.release()
         return frames
 
     # ------------------------------------------------------------------ #
@@ -114,25 +125,19 @@ class ChronoMagicModule(PipelineModule):
     # ------------------------------------------------------------------ #
 
     def _compute_clip(self, sample: Sample) -> Tuple[Optional[float], Optional[float]]:
-        import torch
-        from PIL import Image
-
         frames = self._extract_frames(sample)
         if len(frames) < 4:
             return None, None
 
-        # Get CLIP embeddings for each frame
-        embeddings = []
-        for frame in frames:
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(rgb)
-            inputs = self._clip_processor(images=pil_img, return_tensors="pt").to(self._device)
-            with torch.no_grad():
-                features = extract_features(self._clip_model.get_image_features(**inputs))
-                features = features / features.norm(dim=-1, keepdim=True)
-                embeddings.append(features.cpu().numpy().flatten())
-
-        embeddings = np.array(embeddings)  # [T, D]
+        embeddings = cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            arrays_to_pil(frames),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        ).detach().float().cpu().numpy()
 
         # MTScore: temporal gradient smoothness
         gradients = np.diff(embeddings, axis=0)  # [T-1, D]

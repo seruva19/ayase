@@ -274,8 +274,9 @@ def _detect_fields_written(source: str) -> Set[str]:
     # Pattern 1: sample.quality_metrics.FIELD =
     for m in re.finditer(r"quality_metrics\.(\w+)\s*=", source):
         writes.add(m.group(1))
-    # Pattern 2: metric_field = "FIELD" (ReferenceBasedModule/NoReferenceModule auto-assignment)
-    for m in re.finditer(r'metric_field\s*=\s*["\'](\w+)["\']', source):
+    # Pattern 2: metric_field = "FIELD" / metric_field_name = "FIELD"
+    # (ReferenceBasedModule/NoReferenceModule or lightweight subclass auto-assignment)
+    for m in re.finditer(r'metric_field(?:_name)?\s*=\s*["\'](\w+)["\']', source):
         writes.add(m.group(1))
     # Pattern 3: qm.FIELD = (variable alias for quality_metrics)
     if re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", source):
@@ -388,7 +389,7 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
         meta["output_fields"]
         or meta.get("dataset_output_fields")
         or "validation_issues" in full_source
-        or re.search(r'metric_field\s*=\s*["\']', full_source)
+        or re.search(r'metric_field(?:_name)?\s*=\s*["\']', full_source)
         or "add_dataset_metric" in full_source
         or "BatchMetricModule" in full_source
     )
@@ -397,7 +398,7 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
     # Check that modules declaring output_fields actually write them
     writes_metrics = (
         "quality_metrics" in full_source
-        or re.search(r'metric_field\s*=\s*["\']', full_source)
+        or re.search(r'metric_field(?:_name)?\s*=\s*["\']', full_source)
         or re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", full_source)
     )
     if meta["output_fields"] and not writes_metrics:

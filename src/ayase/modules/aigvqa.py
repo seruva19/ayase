@@ -15,11 +15,17 @@ aigvqa_score --- higher = better (0-1 range)
 import logging
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,28 +80,72 @@ class AIGVQAModule(PipelineModule):
         if self.test_mode:
             return
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            self._device = torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._model = CLIPModel.from_pretrained(self._clip_model_name)
-            self._processor = CLIPProcessor.from_pretrained(self._clip_model_name)
-            self._model.to(self._device).eval()
 
-            def _encode_texts(texts):
-                with torch.no_grad():
-                    inp = self._processor(
-                        text=texts, return_tensors="pt", padding=True
-                    ).to(self._device)
-                    emb = self._model.get_text_features(**inp)
-                    return emb / emb.norm(dim=-1, keepdim=True)
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self._clip_model_name, models_dir)
 
-            self._spatial_pos = _encode_texts(_SPATIAL_POS)
-            self._spatial_neg = _encode_texts(_SPATIAL_NEG)
-            self._aes_pos = _encode_texts(_AESTHETIC_POS)
-            self._aes_neg = _encode_texts(_AESTHETIC_NEG)
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
+
+            self._spatial_pos = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _SPATIAL_POS,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
+            self._spatial_neg = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _SPATIAL_NEG,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
+            self._aes_pos = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _AESTHETIC_POS,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
+            self._aes_neg = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _AESTHETIC_NEG,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
 
             self._ml_available = True
             logger.info("AIGVQA (CLIP multi-dim) initialised on %s", self._device)
@@ -110,7 +160,7 @@ class AIGVQAModule(PipelineModule):
             if not frames:
                 return sample
 
-            score = self._compute_score(frames)
+            score = self._compute_score(sample, frames)
             if score is None:
                 return sample
 
@@ -123,29 +173,63 @@ class AIGVQAModule(PipelineModule):
             logger.warning("AIGVQA failed for %s: %s", sample.path, e)
         return sample
 
-    def _compute_score(self, frames: List[np.ndarray]) -> Optional[float]:
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                frames = self._extract_frames(sample)
+                if not frames:
+                    continue
+                prepared.append(sample)
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.subsample, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._model,
+                self._processor,
+                image_groups,
+                model_key=self._clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for sample, frame_stack in zip(prepared, feature_groups):
+                score = self._score_features(frame_stack)
+                if score is None:
+                    continue
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.aigvqa_score = score
+        except Exception as e:
+            logger.warning("AIGVQA batch failed: %s", e)
+
+        return samples
+
+    def _compute_score(self, sample: Sample, frames: List[np.ndarray]) -> Optional[float]:
+        frame_stack = cached_clip_image_features(
+            self,
+            self._model,
+            self._processor,
+            arrays_to_pil(frames),
+            model_key=self._clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        return self._score_features(frame_stack)
+
+    def _score_features(self, frame_stack) -> Optional[float]:
         import torch
-        from PIL import Image
 
-        pil_frames = [
-            Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in frames
-        ]
-
-        # Encode all frames
-        frame_embeds = []
-        with torch.no_grad():
-            for pil_img in pil_frames:
-                inputs = self._processor(
-                    images=pil_img, return_tensors="pt"
-                ).to(self._device)
-                emb = self._model.get_image_features(**inputs)
-                emb = emb / emb.norm(dim=-1, keepdim=True)
-                frame_embeds.append(emb)
-
-        if not frame_embeds:
+        if frame_stack is None or frame_stack.size(0) == 0:
             return None
-
-        frame_stack = torch.cat(frame_embeds, dim=0)  # (N, D)
 
         # --- Spatial quality ---
         with torch.no_grad():
@@ -162,11 +246,11 @@ class AIGVQAModule(PipelineModule):
             aesthetic = float(torch.sigmoid(ae_logits).mean().item())
 
         # --- Temporal consistency: cosine similarity between consecutive frames ---
-        if len(frame_embeds) > 1:
+        if frame_stack.size(0) > 1:
             cosine_sims = []
-            for i in range(len(frame_embeds) - 1):
+            for i in range(frame_stack.size(0) - 1):
                 sim = torch.nn.functional.cosine_similarity(
-                    frame_embeds[i], frame_embeds[i + 1]
+                    frame_stack[i].unsqueeze(0), frame_stack[i + 1].unsqueeze(0)
                 ).item()
                 cosine_sims.append(sim)
             # Combine mean consistency and smoothness (low variance)
@@ -186,24 +270,8 @@ class AIGVQAModule(PipelineModule):
         return float(np.clip(score, 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-            indices = np.linspace(
-                0, total - 1, min(self.subsample, total), dtype=int
-            )
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, f = cap.read()
-                if ret:
-                    frames.append(f)
-            cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        except Exception as e:
+            logger.debug("AIGVQA frame loading failed for %s: %s", sample.path, e)
+            return []

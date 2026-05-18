@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.36** · Generated 2026-05-16 22:05 · **347 modules** · **399 metrics**
+> **Version 0.1.37** · Generated 2026-05-18 11:28 · **354 modules** · **404 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **347/347 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **354/354 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**347** modules · **434** output fields · **399** metrics · **98** tiered · **169** GPU · **21** categories
+**354** modules · **448** output fields · **404** metrics · **98** tiered · **172** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -30,7 +30,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-98-metrics) (98) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-43-metrics) (43) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-24-metrics) (24) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-9-metrics) (9) · [Audio Quality](#audio-quality-35-metrics) (35) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-16-metrics) (16) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-38-fields) (38) · [Utility & Validation](#utility--validation-33-modules) (33)
+[No-Reference Quality](#no-reference-quality-98-metrics) (98) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-43-metrics) (43) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-24-metrics) (24) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-10-metrics) (10) · [Audio Quality](#audio-quality-39-metrics) (39) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-16-metrics) (16) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-47-fields) (47) · [Utility & Validation](#utility--validation-33-modules) (33)
 
 ---
 
@@ -64,7 +64,7 @@
 **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigcvqa.py`](tests/modules/per_module/test_aigcvqa.py)
@@ -76,7 +76,7 @@
 **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigcvqa.py`](tests/modules/per_module/test_aigcvqa.py)
@@ -89,11 +89,11 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: aigv_assessor → clip
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigv_assessor.py`](tests/modules/per_module/test_aigv_assessor.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `subsample=8`, `trust_remote_code=True`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`, `trust_remote_code=True`
 
 ### `aigvqa_score` [↑](#categories)
 > AIGVQA multi-dimensional (higher=better) · ↑ higher=better
@@ -101,7 +101,7 @@
 **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigvqa.py`](tests/modules/per_module/test_aigvqa.py)
@@ -155,7 +155,7 @@
 **[`clifvqa`](src/ayase/modules/clifvqa.py)** — CLiF-VQA human feelings VQA via CLIP (2024)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_clifvqa.py`](tests/modules/per_module/test_clifvqa.py)
@@ -178,11 +178,11 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: native → clip
-- **Packages**: Pillow, clipvqa, torch, transformers
+- **Packages**: clipvqa, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_clipvqa.py`](tests/modules/per_module/test_clipvqa.py)
-- **Config**: `subsample=8`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `cnniqa_score` [↑](#categories)
 > CNNIQA blind CNN IQA · ↑ higher=better
@@ -255,7 +255,7 @@
 **[`crave`](src/ayase/modules/crave.py)** — CRAVE content-rich AIGC video evaluator (2025)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_crave.py`](tests/modules/per_module/test_crave.py)
@@ -310,7 +310,7 @@
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip → resnet
-- **Packages**: Pillow, clip (openai), gc, torch, torchvision
+- **Packages**: gc, torch, torchvision
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/torchvision/resnet50" target="_blank">HF</a>
 - **Tests**: covered by [`test_unified_vqa.py`](tests/modules/per_module/test_unified_vqa.py)
@@ -435,7 +435,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip → resnet
-- **Packages**: Pillow, clip (openai), gc, torch, torchvision
+- **Packages**: gc, torch, torchvision
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_lmmvqa.py`](tests/modules/per_module/test_lmmvqa.py)
 - **Config**: `subsample=8`, `clip_model=ViT-B/32`
@@ -467,11 +467,11 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: native → clip
-- **Packages**: Pillow, maxvqa, torch, transformers
+- **Packages**: maxvqa, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_maxvqa.py`](tests/modules/per_module/test_maxvqa.py)
-- **Config**: `subsample=8`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `mc360iqa_score` [↑](#categories)
 > MC360IQA blind 360 (higher=better) · ↑ higher=better
@@ -501,7 +501,7 @@
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, clip (openai), opencv-python, torch, torchvision
+- **Packages**: opencv-python, torch, torchvision
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
 - **Config**: `subsample=8`, `frame_size=224`
@@ -512,7 +512,7 @@
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, clip (openai), opencv-python, torch, torchvision
+- **Packages**: opencv-python, torch, torchvision
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
 - **Config**: `subsample=8`, `frame_size=224`
@@ -523,7 +523,7 @@
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, clip (openai), opencv-python, torch, torchvision
+- **Packages**: opencv-python, torch, torchvision
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
 - **Config**: `subsample=8`, `frame_size=224`
@@ -558,7 +558,7 @@
 **[`modularbvqa`](src/ayase/modules/modularbvqa.py)** — ModularBVQA resolution/framerate-aware blind VQA (CVPR 2024) — CLIP ViT-B backbone + Laplacian spatial + SlowFast temporal rectifiers
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, clip (openai), opencv-python, torch, torchvision
+- **Packages**: opencv-python, torch, torchvision
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_modularbvqa.py`](tests/modules/per_module/test_modularbvqa.py)
 - **Config**: `subsample=8`, `frame_size=224`
@@ -650,7 +650,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip → resnet
-- **Packages**: Pillow, clip (openai), gc, torch, torchvision
+- **Packages**: gc, torch, torchvision
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_presresq.py`](tests/modules/per_module/test_presresq.py)
 - **Config**: `subsample=8`, `clip_model=ViT-B/32`
@@ -685,7 +685,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: multi_ptm
-- **Packages**: Pillow, torch, torchvision, transformers
+- **Packages**: torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_ptmvqa.py`](tests/modules/per_module/test_ptmvqa.py)
@@ -709,7 +709,7 @@
 **[`qclip`](src/ayase/modules/qclip.py)** — Q-CLIP VLM-based VQA (2025)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_qclip.py`](tests/modules/per_module/test_qclip.py)
@@ -864,12 +864,12 @@
 
 **[`t2v_score`](src/ayase/modules/t2v_score.py)** — Text-to-Video alignment and quality scoring
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid · **Speed**: ⏱️ medium
 - **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_score.py`](tests/modules/per_module/test_t2v_score.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py)
-- **Config**: `model_name=openai/clip-vit-base-patch32`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
+- **Config**: `model_name=openai/clip-vit-base-patch32`, `clip_model=openai/clip-vit-base-patch32`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
 
 ### `thqa_score` [↑](#categories)
 > THQA talking head quality (higher=better) · ↑ higher=better
@@ -931,7 +931,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip_ugvq
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_ugvq.py`](tests/modules/per_module/test_ugvq.py)
@@ -953,7 +953,7 @@
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip → resnet
-- **Packages**: Pillow, clip (openai), gc, torch, torchvision
+- **Packages**: gc, torch, torchvision
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/torchvision/resnet50" target="_blank">HF</a>
 - **Tests**: covered by [`test_unified_vqa.py`](tests/modules/per_module/test_unified_vqa.py)
@@ -976,7 +976,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: hpsv2 → clip_aesthetic
-- **Packages**: Pillow, hpsv2, torch, transformers
+- **Packages**: hpsv2, transformers
 - **VRAM**: ~1.5 GB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-large-patch14" target="_blank">HF</a>
 - **Tests**: covered by [`test_vader.py`](tests/modules/per_module/test_vader.py)
@@ -1022,7 +1022,7 @@
 **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoreward.py`](tests/modules/per_module/test_videoreward.py)
@@ -1047,7 +1047,7 @@
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: Pillow, torch, transformers
 - **Source**: <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoscore.py`](tests/modules/per_module/test_videoscore.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
@@ -1081,7 +1081,7 @@
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Backend**: qalign → clip
-- **Packages**: Pillow, pyiqa, torch, transformers
+- **Packages**: pyiqa, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_vqa2.py`](tests/modules/per_module/test_vqa2.py)
@@ -1094,7 +1094,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip_thinker
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_vqathinker.py`](tests/modules/per_module/test_vqathinker.py)
@@ -1107,7 +1107,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: clip_vqinsight
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_vqinsight.py`](tests/modules/per_module/test_vqinsight.py)
@@ -1724,7 +1724,7 @@
 **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigcvqa.py`](tests/modules/per_module/test_aigcvqa.py)
@@ -1737,11 +1737,11 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: aigv_assessor → clip
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigv_assessor.py`](tests/modules/per_module/test_aigv_assessor.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `subsample=8`, `trust_remote_code=True`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`, `trust_remote_code=True`
 
 ### `blip_bleu` [↑](#categories)
 
@@ -1769,12 +1769,12 @@
 
 **[`semantic_alignment`](src/ayase/modules/semantic_alignment.py)** — Checks alignment between video and caption (CLIP Score)
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: transformers → open_clip
 - **Packages**: open-clip-torch, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_semantic_alignment.py`](tests/modules/per_module/test_semantic_alignment.py)
+- **Tests**: covered by [`test_semantic_alignment.py`](tests/modules/per_module/test_semantic_alignment.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `backend=auto`, `pretrained=laion2b_s34b_b79k`, `max_frames=32`, `warning_threshold=0.2`
 
 ### `compbench_action` [↑](#categories)
@@ -1788,7 +1788,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `compbench_attribute` [↑](#categories)
 > Attribute binding (0-1) · 0-1
@@ -1801,7 +1801,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `compbench_numeracy` [↑](#categories)
 > Generative numeracy (0-1) · 0-1
@@ -1814,7 +1814,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `compbench_object_rel` [↑](#categories)
 > Object relationship (0-1) · 0-1
@@ -1827,7 +1827,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `compbench_overall` [↑](#categories)
 > Overall composition (0-1) · 0-1
@@ -1840,7 +1840,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `compbench_scene` [↑](#categories)
 > Scene composition (0-1) · 0-1
@@ -1853,7 +1853,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `compbench_spatial` [↑](#categories)
 > Spatial relationship (0-1) · 0-1
@@ -1866,7 +1866,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench.py`](tests/modules/per_module/test_t2v_compbench.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `weights=[1, 1, 1, 1, 1, 1]`
+- **Config**: `subsample=8`, `enable_attribute=True`, `enable_object_rel=True`, `enable_action=True`, `enable_spatial=True`, `enable_numeracy=True`, `enable_scene=True`, `clip_model=openai/clip-vit-base-patch32`, `weights=[1, 1, 1, 1, 1, 1]`
 
 ### `dsg_score` [↑](#categories)
 > DSG Davidsonian Scene Graph (higher=better) · ↑ higher=better
@@ -1884,11 +1884,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `geneval_colors` [↑](#categories)
 > Color attribute match
@@ -1896,11 +1896,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `geneval_counting` [↑](#categories)
 > Counting accuracy
@@ -1908,11 +1908,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `geneval_overall` [↑](#categories)
 > Mean of activated sub-scores
@@ -1920,11 +1920,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `geneval_position` [↑](#categories)
 > Spatial position relation
@@ -1932,11 +1932,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `geneval_single_object` [↑](#categories)
 > Single-object presence
@@ -1944,11 +1944,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `geneval_two_object` [↑](#categories)
 > Two-object co-presence
@@ -1956,11 +1956,11 @@
 **[`geneval`](src/ayase/modules/geneval.py)** — GenEval T2I compositional benchmark (NeurIPS 2024, arXiv:2310.11513)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, mmdet, torch, transformers, ultralytics
+- **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_geneval.py`](tests/modules/per_module/test_geneval.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `hpsv3_score` [↑](#categories)
 > HPSv3 human preference reward mu (higher=better) · ↑ higher=better
@@ -2015,24 +2015,24 @@
 
 **[`t2v_score`](src/ayase/modules/t2v_score.py)** — Text-to-Video alignment and quality scoring
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid · **Speed**: ⏱️ medium
 - **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_score.py`](tests/modules/per_module/test_t2v_score.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py)
-- **Config**: `model_name=openai/clip-vit-base-patch32`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
+- **Config**: `model_name=openai/clip-vit-base-patch32`, `clip_model=openai/clip-vit-base-patch32`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
 
 ### `t2v_score` [↑](#categories)
 > T2VScore alignment + quality · ↑ higher=better
 
 **[`t2v_score`](src/ayase/modules/t2v_score.py)** — Text-to-Video alignment and quality scoring
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid · **Speed**: ⏱️ medium
 - **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_score.py`](tests/modules/per_module/test_t2v_score.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py)
-- **Config**: `model_name=openai/clip-vit-base-patch32`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
+- **Config**: `model_name=openai/clip-vit-base-patch32`, `clip_model=openai/clip-vit-base-patch32`, `use_clip_fallback=True`, `num_frames=8`, `alignment_weight=0.5`, `quality_weight=0.5`, `device=auto`, `warning_threshold=0.6`
 
 ### `t2veval_score` [↑](#categories)
 > T2VEval consistency+realness (higher=better) · ↑ higher=better
@@ -2040,7 +2040,7 @@
 **[`t2veval`](src/ayase/modules/t2veval.py)** — T2VEval text-video consistency+realness (2025)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2veval.py`](tests/modules/per_module/test_t2veval.py)
@@ -2052,11 +2052,11 @@
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, torch, transformers, urllib
+- **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `tcbench_background_score` [↑](#categories)
 > Time-ordered background changes · ↑ higher=better
@@ -2064,11 +2064,11 @@
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, torch, transformers, urllib
+- **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `tcbench_object_score` [↑](#categories)
 > Time-ordered object appearance · ↑ higher=better
@@ -2076,11 +2076,11 @@
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, torch, transformers, urllib
+- **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `tcbench_overall` [↑](#categories)
 > Mean TC-Bench score
@@ -2088,11 +2088,11 @@
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, torch, transformers, urllib
+- **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `tifa_score` [↑](#categories)
 > VQA faithfulness (0-1, higher=better) · ↑ higher=better · 0-1
@@ -2105,20 +2105,20 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/dandelin/vilt-b32-finetuned-vqa" target="_blank">HF</a>
 - **Tests**: covered by [`test_tifa.py`](tests/modules/per_module/test_tifa.py), [`test_tifa.py`](tests/modules/test_tifa.py)
-- **Config**: `vqa_model=dandelin/vilt-b32-finetuned-vqa`, `num_questions=8`, `subsample=4`
+- **Config**: `vqa_model=dandelin/vilt-b32-finetuned-vqa`, `clip_model=openai/clip-vit-base-patch32`, `num_questions=8`, `subsample=4`
 
 ### `umtscore` [↑](#categories)
 > UMTScore video-text alignment · ↑ higher=better
 
 **[`umtscore`](src/ayase/modules/umtscore.py)** — UMTScore video-text alignment via UMT features
 
-- **Input**: img/vid +cap · **Speed**: ⏱️ medium
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: native → clip
-- **Packages**: Pillow, torch, transformers, umt
+- **Packages**: transformers, umt
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_umtscore.py`](tests/modules/per_module/test_umtscore.py)
-- **Config**: `subsample=8`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `video_reward_score` [↑](#categories)
 > Human preference reward · ↑ higher=better
@@ -2149,7 +2149,7 @@
 **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoreward.py`](tests/modules/per_module/test_videoreward.py)
@@ -2187,7 +2187,7 @@
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: Pillow, torch, transformers
 - **Source**: <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoscore.py`](tests/modules/per_module/test_videoscore.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
@@ -2198,7 +2198,7 @@
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: Pillow, torch, transformers
 - **Source**: <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoscore.py`](tests/modules/per_module/test_videoscore.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
@@ -2218,11 +2218,11 @@
 
 **[`vqa_score`](src/ayase/modules/vqa_score.py)** — VQAScore text-visual alignment via VQA probability (0-1, higher=better)
 
-- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, clip (openai), opencv-python, torch
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Packages**: Pillow, opencv-python
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_vqa_score.py`](tests/modules/per_module/test_vqa_score.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
-- **Config**: `model=clip-flant5-xxl`, `subsample=4`
+- **Config**: `model=clip-flant5-xxl`, `clip_model=ViT-B/32`, `subsample=4`
 
 ### `vqa_t_score` [↑](#categories)
 > ↑ higher=better
@@ -2243,11 +2243,11 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: aigv_assessor → clip
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigv_assessor.py`](tests/modules/per_module/test_aigv_assessor.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `subsample=8`, `trust_remote_code=True`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`, `trust_remote_code=True`
 
 ### `background_consistency` [↑](#categories)
 > ↑ higher=better
@@ -2276,11 +2276,11 @@
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore + CHScore (CLIP)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=16`, `hallucination_threshold=2.0`
+- **Config**: `subsample=16`, `clip_model=openai/clip-vit-base-patch32`, `hallucination_threshold=2.0`
 
 ### `chronomagic_mt_score` [↑](#categories)
 > Metamorphic temporal (0-1, higher=better) · ↑ higher=better · 0-1
@@ -2288,21 +2288,21 @@
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore + CHScore (CLIP)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=16`, `hallucination_threshold=2.0`
+- **Config**: `subsample=16`, `clip_model=openai/clip-vit-base-patch32`, `hallucination_threshold=2.0`
 
 ### `clip_temp` [↑](#categories)
 
 **[`clip_temporal`](src/ayase/modules/clip_temporal.py)** — CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_clip_temporal.py`](tests/modules/per_module/test_clip_temporal.py)
+- **Tests**: covered by [`test_clip_temporal.py`](tests/modules/per_module/test_clip_temporal.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, `temp_threshold=0.9`, `face_threshold=0.85`
 
 ### `davis_f` [↑](#categories)
@@ -2342,11 +2342,11 @@
 **[`entitybench`](src/ayase/modules/entitybench.py)** — EntityBench cross-shot identity persistence (arXiv:2605.15199)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, insightface, torch, transformers
+- **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/facebook/dinov2-base" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_entitybench.py`](tests/modules/per_module/test_entitybench.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `entitybench_identity_consistency` [↑](#categories)
 > Face/identity persistence across shots · ↑ higher=better
@@ -2354,11 +2354,11 @@
 **[`entitybench`](src/ayase/modules/entitybench.py)** — EntityBench cross-shot identity persistence (arXiv:2605.15199)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, insightface, torch, transformers
+- **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/facebook/dinov2-base" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_entitybench.py`](tests/modules/per_module/test_entitybench.py)
-- **Config**: `backend=auto`
+- **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `flicker_score` [↑](#categories)
 > Flicker severity 0-100 (lower=better) · ↓ lower=better
@@ -2489,7 +2489,7 @@
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: Pillow, torch, transformers
 - **Source**: <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoscore.py`](tests/modules/per_module/test_videoscore.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
@@ -2511,7 +2511,7 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: dinov2 → clip
-- **Packages**: Pillow, torch, torchvision, transformers
+- **Packages**: torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/facebookresearch/dinov2" target="_blank">HF</a>
 - **Tests**: covered by [`test_world_consistency.py`](tests/modules/per_module/test_world_consistency.py)
@@ -2527,11 +2527,11 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: aigv_assessor → clip
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigv_assessor.py`](tests/modules/per_module/test_aigv_assessor.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `subsample=8`, `trust_remote_code=True`
+- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`, `trust_remote_code=True`
 
 ### `bas_score` [↑](#categories)
 > BAS beat alignment score (higher=better) · ↑ higher=better
@@ -2757,7 +2757,7 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoreward.py`](tests/modules/per_module/test_videoreward.py)
@@ -2769,7 +2769,7 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: Pillow, torch, transformers
 - **Source**: <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoscore.py`](tests/modules/per_module/test_videoscore.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=8`, `trust_remote_code=True`
@@ -2919,7 +2919,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 - **Config**: `low_percentile=1`, `high_percentile=99`, `subsample=8`
 
 
-## Aesthetics (9 metrics)
+## Aesthetics (10 metrics)
 
 ### `aesthetic_mlp_score` [↑](#categories)
 > LAION Aesthetics MLP (1-10) · ↑ higher=better · 1-10
@@ -2943,6 +2943,17 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
 - **Config**: `num_frames=5`, `trust_remote_code=True`
+
+### `aesthetic_score_legacy` [↑](#categories)
+> Legacy NIMA aesthetic score (1-10, higher=better) · ↑ higher=better · 1-10
+
+**[`nima_legacy_onnx`](src/ayase/modules/nima_legacy_onnx.py)** — Legacy NIMA aesthetic score (1-10) via a frozen ONNX MobileNet export
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: Pillow, onnxruntime, torch
+- **Source**: <a href="https://huggingface.co/models/nima_mobilenet_legacy.onnx" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_path=models/nima_mobilenet_legacy.onnx`, `device=auto`, `image_size=224`
 
 ### `cover_aesthetic` [↑](#categories)
 > COVER aesthetic branch
@@ -3027,7 +3038,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 
-## Audio Quality (35 metrics)
+## Audio Quality (39 metrics)
 
 ### `aqascore_score` [↑](#categories)
 > AQAScore audio question-answering alignment (0-1) · ↑ higher=better · 0-1
@@ -3092,6 +3103,16 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `backend=energy`, `max_frames=600`, `warning_threshold_ms=80.0`
 
+### `clap_score` [↑](#categories)
+> Generic CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1, configurable backbone
+
+**[`clap_score`](src/ayase/modules/clap_score.py)** — Generic CLAP audio-text alignment cosine similarity (configurable backbone)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
 ### `dnsmos_bak` [↑](#categories)
 > DNSMOS background quality (1-5, higher=better) · ↑ higher=better · 1-5
 
@@ -3143,6 +3164,26 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
 
+### `imagebind_score` [↑](#categories)
+> ImageBind audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`imagebind_score`](src/ayase/modules/imagebind_score.py)** — ImageBind audio-text alignment cosine similarity score
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Packages**: imagebind, soundfile, torch
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=imagebind_huge`, `sample_rate=16000`, `device=auto`, `warning_threshold=0.2`
+
+### `laion_clap_score` [↑](#categories)
+> LAION-CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
 ### `lpdist_score` [↑](#categories)
 > Log-Power Spectral Distance (lower=better) · ↓ lower=better
 
@@ -3162,6 +3203,16 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: librosa
 - **Tests**: covered by [`test_audio_mcd.py`](tests/modules/per_module/test_audio_mcd.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py)
 - **Config**: `target_sr=16000`, `n_mfcc=13`, `warning_threshold=8.0`
+
+### `ms_clap_score` [↑](#categories)
+> Microsoft CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/microsoft/msclap" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=microsoft/msclap`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
 
 ### `nisqa_coloration` [↑](#categories)
 > Coloration sub-score
@@ -3423,8 +3474,8 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: insightface, mediapipe, torch, transformers
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py)
@@ -3470,10 +3521,10 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`clip_temporal`](src/ayase/modules/clip_temporal.py)** — CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_clip_temporal.py`](tests/modules/per_module/test_clip_temporal.py)
+- **Tests**: covered by [`test_clip_temporal.py`](tests/modules/per_module/test_clip_temporal.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=openai/clip-vit-base-patch32`, `max_frames=32`, `temp_threshold=0.9`, `face_threshold=0.85`
 
 ### `face_count` [↑](#categories)
@@ -3674,8 +3725,8 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: insightface, mediapipe, torch, transformers
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py)
@@ -3686,8 +3737,8 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: insightface, mediapipe, torch, transformers
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py)
@@ -3768,11 +3819,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`video_type_classifier`](src/ayase/modules/video_type_classifier.py)** — CLIP zero-shot video content type classification
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_video_type_classifier.py`](tests/modules/per_module/test_video_type_classifier.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `subsample=4`
+- **Config**: `subsample=4`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `video_type_confidence` [↑](#categories)
 > Classification confidence
@@ -3780,11 +3831,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`video_type_classifier`](src/ayase/modules/video_type_classifier.py)** — CLIP zero-shot video content type classification
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_video_type_classifier.py`](tests/modules/per_module/test_video_type_classifier.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `subsample=4`
+- **Config**: `subsample=4`, `clip_model=openai/clip-vit-base-patch32`
 
 
 ## Distribution & Generation (1 metrics)
@@ -4193,11 +4244,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`deepfake_detection`](src/ayase/modules/deepfake_detection.py)** — Synthetic media / deepfake likelihood estimation
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, scipy, torch, transformers
+- **Packages**: scipy, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_deepfake_detection.py`](tests/modules/per_module/test_deepfake_detection.py), [`test_safety_modules.py`](tests/modules/test_safety_modules.py)
-- **Config**: `subsample=10`, `max_frames=60`, `warning_threshold=0.6`
+- **Config**: `subsample=10`, `max_frames=60`, `clip_model=openai/clip-vit-base-patch32`, `warning_threshold=0.6`
 
 ### `harmful_content_score` [↑](#categories)
 > Violence/gore severity 0-1 · ↑ higher=better · 0-1
@@ -4205,11 +4256,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`harmful_content`](src/ayase/modules/harmful_content.py)** — Violence, gore, and disturbing content detection
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Packages**: Pillow, torch, transformers
+- **Packages**: transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_harmful_content.py`](tests/modules/per_module/test_harmful_content.py), [`test_safety_modules.py`](tests/modules/test_safety_modules.py)
-- **Config**: `subsample=10`, `max_frames=60`, `warning_threshold=0.4`
+- **Config**: `subsample=10`, `max_frames=60`, `clip_model=openai/clip-vit-base-patch32`, `warning_threshold=0.4`
 
 ### `nsfw_score` [↑](#categories)
 > 0-1, likelihood of being NSFW · ↑ higher=better · 0-1
@@ -4364,9 +4415,33 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (38 fields)
+## Dataset-Level Metrics (47 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
+
+### `audio_isc_mean` [↑](#categories)
+> Inception Score for Audio mean (higher=better) · ↑ higher=better · type: float
+
+**[`audio_isc`](src/ayase/modules/audio_isc.py)** — Inception Score for Audio, mean over n_splits subsets (PANNs/PASST backbone, higher=better)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+
+### `audio_isc_std` [↑](#categories)
+> Inception Score for Audio standard deviation · type: float
+
+**[`audio_isc`](src/ayase/modules/audio_isc.py)** — Inception Score for Audio, std over n_splits subsets
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+
+### `audio_kl` [↑](#categories)
+> Audio classifier distribution KL divergence (lower=better) · ↓ lower=better · type: float
+
+**[`audio_kl`](src/ayase/modules/audio_kl.py)** — KL divergence between audio classifier softmax distributions (PANNs/PASST backbone, lower=better)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 
 ### `avg_face_cross_similarity` [↑](#categories)
 > Dataset-level average · ↑ higher=better · type: float
@@ -4397,7 +4472,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Fraction of real samples covered by generated neighbours (0-1, higher=better)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Fraction of real samples covered by generated neighbours (0-1, higher=better)
@@ -4410,7 +4485,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Average normalized generated-sample density around real samples
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Average normalized generated-sample density around real samples
@@ -4445,17 +4520,65 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 ### `fad` [↑](#categories)
 > Frechet Audio Distance (lower=better) · ↓ lower=better · type: float
 
-**[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance between generated and reference audio distributions (lower=better)
+**[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, VGGish backbone (legacy alias, lower=better)
 
-- **Input**: audio · **Speed**: ⚡ fast
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 
 ### `fad_infinity` [↑](#categories)
 > FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
 
-**[`fad`](src/ayase/modules/fad.py)** — FAD extrapolated to infinite sample size using 1/n regression (lower=better)
+**[`fad`](src/ayase/modules/fad.py)** — FAD VGGish extrapolated to infinite sample size (legacy alias)
 
-- **Input**: audio · **Speed**: ⚡ fast
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_panns` [↑](#categories)
+> Frechet Audio Distance with PANNs CNN14 backbone (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, PANNs Cnn14 backbone
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_panns_infinity` [↑](#categories)
+> PANNs FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — FAD PANNs Cnn14 extrapolated to infinite sample size
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_passt` [↑](#categories)
+> Frechet Audio Distance with PaSST backbone (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, PASST backbone
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_passt_infinity` [↑](#categories)
+> PaSST FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — FAD PASST extrapolated to infinite sample size
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_vggish` [↑](#categories)
+> Frechet Audio Distance with VGGish backbone (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, VGGish backbone (lower=better)
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+
+### `fad_vggish_infinity` [↑](#categories)
+> VGGish FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+
+**[`fad`](src/ayase/modules/fad.py)** — FAD VGGish extrapolated to infinite sample size
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 
 ### `fgd` [↑](#categories)
@@ -4620,7 +4743,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Generated-sample precision against the real manifold (0-1, higher=better)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Generated-sample precision against the real manifold (0-1, higher=better)
@@ -4633,7 +4756,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Real-distribution coverage by generated samples (0-1, higher=better)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Real-distribution coverage by generated samples (0-1, higher=better)

@@ -60,16 +60,17 @@ class VideoScore2Module(PipelineModule):
             import torch
             from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer
             from qwen_vl_utils import process_vision_info
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             model_name = self.config.get("model_name", "TIGER-Lab/VideoScore2")
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(model_name, models_dir)
             revision = self.config.get("model_revision", None)
             trust_remote_code = self.config.get("trust_remote_code", True)
-            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            if str(self._device).startswith("cuda") and torch.cuda.is_bf16_supported():
                 dtype = torch.bfloat16
-            elif torch.cuda.is_available():
+            elif str(self._device).startswith("cuda"):
                 dtype = torch.float16
             else:
                 dtype = torch.float32
@@ -85,8 +86,11 @@ class VideoScore2Module(PipelineModule):
                 revision=revision,
                 use_fast=False,
             )
-            self._model = AutoModelForVision2Seq.from_pretrained(
+            self._model = from_pretrained_with_attention(
+                AutoModelForVision2Seq,
                 resolved,
+                self.config,
+                device=self._device,
                 trust_remote_code=trust_remote_code,
                 revision=revision,
                 torch_dtype=dtype,

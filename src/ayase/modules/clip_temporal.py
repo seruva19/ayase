@@ -7,14 +7,17 @@
 """
 
 import logging
-from typing import Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +47,40 @@ class CLIPTemporalModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading CLIP for temporal consistency on {self._device}...")
             from ayase.config import resolve_model_path
 
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(self.model_name, models_dir)
-            self._model = CLIPModel.from_pretrained(resolved).to(self._device).eval()
-            self._processor = CLIPProcessor.from_pretrained(resolved)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._ml_available = True
         except Exception as e:
             logger.warning(f"Failed to load CLIP for temporal: {e}")
@@ -62,95 +90,120 @@ class CLIPTemporalModule(PipelineModule):
             return sample
 
         try:
-            import torch
-
             frames = self._load_frames(sample)
             if len(frames) < 3:
                 return sample
 
             # Compute CLIP image embeddings for every frame
-            embeddings = self._embed_frames(frames)
-            if embeddings is None or embeddings.size(0) < 3:
-                return sample
-
-            # L2 normalize
-            embeddings = embeddings / embeddings.norm(p=2, dim=-1, keepdim=True)
-
-            from ayase.models import QualityMetrics
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            # --- clip_temp_score: consecutive frame pairs ---
-            consec_sims = []
-            for i in range(embeddings.size(0) - 1):
-                sim = (embeddings[i] @ embeddings[i + 1]).item()
-                consec_sims.append(sim)
-            clip_temp = float(np.mean(consec_sims))
-            sample.quality_metrics.clip_temp = clip_temp
-
-            if clip_temp < self.temp_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"Low temporal consistency (CLIP_temp={clip_temp:.3f})",
-                        details={"clip_temp": clip_temp},
-                        recommendation="Consecutive frames differ significantly; possible scene cuts or flickering.",
-                    )
-                )
-
-            # --- face_consistency_score: similarity to first frame (identity drift) ---
-            face_sims = []
-            first_emb = embeddings[0]
-            for i in range(1, embeddings.size(0)):
-                sim = (first_emb @ embeddings[i]).item()
-                face_sims.append(sim)
-            face_consistency = float(np.mean(face_sims)) if face_sims else clip_temp
-            sample.quality_metrics.face_consistency = face_consistency
-
-            if face_consistency < self.face_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.INFO,
-                        message=f"Low identity/face consistency (score={face_consistency:.3f})",
-                        details={"face_consistency": face_consistency},
-                        recommendation="Visual appearance drifts from first frame; possible subject change.",
-                    )
-                )
+            embeddings = self._embed_frames(sample, frames)
+            self._apply_scores(sample, embeddings)
 
         except Exception as e:
             logger.warning(f"CLIP temporal analysis failed for {sample.path}: {e}")
 
         return sample
 
-    def _embed_frames(self, frames):
-        import torch
-        from PIL import Image
+    def process_batch(self, samples: list[Sample]) -> list[Sample]:
+        if not self._ml_available:
+            return samples
 
-        pil_frames = [Image.fromarray(f) for f in frames]
-        embeddings = []
-        with torch.no_grad():
-            for pil_img in pil_frames:
-                inputs = self._processor(images=pil_img, return_tensors="pt").to(self._device)
-                feats = extract_features(self._model.get_image_features(**inputs))  # [1, D]
-                embeddings.append(feats)
-        return torch.cat(embeddings, dim=0)  # [T, D]
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+
+            for sample in samples:
+                if not sample.is_video:
+                    continue
+                frames = self._load_frames(sample)
+                if len(frames) < 3:
+                    continue
+                prepared.append(sample)
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.max_frames, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._model,
+                self._processor,
+                image_groups,
+                model_key=self.model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for sample, embeddings in zip(prepared, feature_groups):
+                self._apply_scores(sample, embeddings)
+        except Exception as e:
+            logger.warning("CLIP temporal batch analysis failed: %s", e)
+
+        return samples
+
+    def _apply_scores(self, sample: Sample, embeddings) -> None:
+        if embeddings is None or embeddings.size(0) < 3:
+            return
+
+        # L2 normalize defensively; cached HF features are already normalized.
+        embeddings = embeddings / embeddings.norm(p=2, dim=-1, keepdim=True)
+
+        from ayase.models import QualityMetrics
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+
+        # --- clip_temp_score: consecutive frame pairs ---
+        consec_sims = []
+        for i in range(embeddings.size(0) - 1):
+            sim = (embeddings[i] @ embeddings[i + 1]).item()
+            consec_sims.append(sim)
+        clip_temp = float(np.mean(consec_sims))
+        sample.quality_metrics.clip_temp = clip_temp
+
+        if clip_temp < self.temp_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Low temporal consistency (CLIP_temp={clip_temp:.3f})",
+                    details={"clip_temp": clip_temp},
+                    recommendation="Consecutive frames differ significantly; possible scene cuts or flickering.",
+                )
+            )
+
+        # --- face_consistency_score: similarity to first frame (identity drift) ---
+        face_sims = []
+        first_emb = embeddings[0]
+        for i in range(1, embeddings.size(0)):
+            sim = (first_emb @ embeddings[i]).item()
+            face_sims.append(sim)
+        face_consistency = float(np.mean(face_sims)) if face_sims else clip_temp
+        sample.quality_metrics.face_consistency = face_consistency
+
+        if face_consistency < self.face_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.INFO,
+                    message=f"Low identity/face consistency (score={face_consistency:.3f})",
+                    details={"face_consistency": face_consistency},
+                    recommendation="Visual appearance drifts from first frame; possible subject change.",
+                )
+            )
+
+    def _embed_frames(self, sample: Sample, frames):
+        return cached_clip_image_features(
+            self,
+            self._model,
+            self._processor,
+            arrays_to_pil(frames),
+            model_key=self.model_name,
+            device=self._device,
+            cache_key=(self.max_frames, media_state_key(sample.path)),
+        )
 
     def _load_frames(self, sample: Sample):
-        frames = []
         try:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return frames
-            n = min(self.max_frames, total)
-            indices = np.linspace(0, total - 1, n, dtype=int)
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            cap.release()
+            frames = sample_frames(sample.path, max_frames=self.max_frames, color="rgb")
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
+            frames = []
         return frames

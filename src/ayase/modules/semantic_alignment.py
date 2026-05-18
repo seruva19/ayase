@@ -4,14 +4,20 @@ Averages CLIP image-text similarity across uniformly sampled frames.
 Returns clip_score (typically 0-0.4, higher = better alignment). Warns below 0.2."""
 
 import logging
-import cv2
-import numpy as np
 from PIL import Image
-from typing import Optional, List
+from typing import List
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 from ayase.compat import extract_features
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+    shared_runtime_value,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +77,13 @@ class SemanticAlignmentModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading CLIP for Alignment on {self._device}...")
 
             from ayase.config import resolve_model_path
@@ -80,8 +91,28 @@ class SemanticAlignmentModule(PipelineModule):
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(self.model_name, models_dir)
 
-            self._model = CLIPModel.from_pretrained(resolved, use_safetensors=True).to(self._device)
-            self._processor = CLIPProcessor.from_pretrained(resolved)
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_clip,
+            )
             self._ml_available = True
             self._backend = "transformers"
 
@@ -94,8 +125,9 @@ class SemanticAlignmentModule(PipelineModule):
         try:
             import torch
             import open_clip
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             model_name = str(self.model_name)
             if model_name.startswith("open_clip:"):
                 model_name = model_name.split(":", 1)[1]
@@ -122,10 +154,7 @@ class SemanticAlignmentModule(PipelineModule):
             logger.warning("Failed to load OpenCLIP: %s", e)
             return False
 
-    def process(self, sample: Sample) -> Sample:
-        if not self._ml_available:
-            return sample
-
+    def _get_caption_text(self, sample: Sample) -> str:
         caption_text = None
         if sample.caption:
             caption_text = sample.caption.text
@@ -136,13 +165,34 @@ class SemanticAlignmentModule(PipelineModule):
                     caption_text = txt_path.read_text().strip()
                 except Exception:
                     logger.debug(f"Failed to read caption file: {txt_path}")
+        return caption_text or ""
+
+    def _apply_score(self, sample: Sample, caption_text: str, score: float) -> None:
+        if sample.quality_metrics is None:
+            from ayase.models import QualityMetrics
+            sample.quality_metrics = QualityMetrics()
+
+        sample.quality_metrics.clip_score = score
+
+        if score < self.warning_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Low semantic alignment: {score:.3f}",
+                    details={"clip_score": score, "caption": caption_text[:50] + "..."},
+                )
+            )
+
+    def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
+
+        caption_text = self._get_caption_text(sample)
 
         if not caption_text:
             return sample
 
         try:
-            import torch
-
             frames = self._load_frames(sample)
             if not frames:
                 return sample
@@ -151,98 +201,149 @@ class SemanticAlignmentModule(PipelineModule):
             if text_features is None:
                 return sample
 
-            # Compute cosine similarity for each frame, then average
-            similarities = []
-            for pil_image in frames:
-                image_features = self._encode_image(pil_image)
-                if image_features is not None:
-                    sim = (image_features @ text_features.T).item()
-                    similarities.append(sim)
-
-            if not similarities:
+            image_features = self._encode_images(sample, frames)
+            if image_features is None or image_features.size(0) == 0:
                 return sample
 
-            score = float(np.mean(similarities))
+            similarities = image_features @ text_features.T
+            score = float(similarities.mean().item())
 
-            if sample.quality_metrics is None:
-                from ayase.models import QualityMetrics
-                sample.quality_metrics = QualityMetrics()
-
-            sample.quality_metrics.clip_score = score
-
-            if score < self.warning_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"Low semantic alignment: {score:.3f}",
-                        details={"clip_score": score, "caption": caption_text[:50] + "..."},
-                    )
-                )
+            self._apply_score(sample, caption_text, score)
 
         except Exception as e:
             logger.warning(f"Semantic alignment check failed: {e}")
 
         return sample
 
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+        if self._backend != "transformers":
+            return super().process_batch(samples)
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            captions = []
+
+            for sample in samples:
+                caption_text = self._get_caption_text(sample)
+                if not caption_text:
+                    continue
+
+                frames = self._load_frames(sample)
+                if not frames:
+                    continue
+
+                prepared.append((sample, caption_text))
+                image_groups.append(frames)
+                cache_keys.append((self.max_frames, media_state_key(sample.path)))
+                captions.append(caption_text)
+
+            if not prepared:
+                return samples
+
+            text_features = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                captions,
+                model_key=self.model_name,
+                device=self._device,
+            )
+            image_feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._model,
+                self._processor,
+                image_groups,
+                model_key=self.model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+
+            for idx, ((sample, caption_text), image_features) in enumerate(
+                zip(prepared, image_feature_groups)
+            ):
+                if image_features is None or image_features.size(0) == 0:
+                    continue
+                similarities = image_features @ text_features[idx:idx + 1].T
+                score = float(similarities.mean().item())
+                self._apply_score(sample, caption_text, score)
+        except Exception as e:
+            logger.warning("Semantic alignment batch check failed: %s", e)
+
+        return samples
+
     def _encode_text(self, text: str):
         import torch
 
-        with torch.no_grad():
-            if self._backend == "open_clip":
-                tokens = self._tokenizer([text]).to(self._device)
-                features = self._model.encode_text(tokens)
-            else:
-                text_inputs = self._processor(
-                    text=[text],
-                    return_tensors="pt",
-                    padding=True,
-                    truncation=True,
-                ).to(self._device)
-                features = extract_features(self._model.get_text_features(**text_inputs))
-            return features / features.norm(p=2, dim=-1, keepdim=True)
+        def compute():
+            with torch.no_grad():
+                if self._backend == "open_clip":
+                    tokens = self._tokenizer([text]).to(self._device)
+                    features = self._model.encode_text(tokens)
+                else:
+                    text_inputs = self._processor(
+                        text=[text],
+                        return_tensors="pt",
+                        padding=True,
+                        truncation=True,
+                    ).to(self._device)
+                    features = extract_features(self._model.get_text_features(**text_inputs))
+                return features / features.norm(p=2, dim=-1, keepdim=True)
 
-    def _encode_image(self, image: Image.Image):
+        if self._backend == "transformers":
+            return cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                [text],
+                model_key=self.model_name,
+                device=self._device,
+            )
+
+        return shared_runtime_value(
+            self,
+            ("clip_text_features", self._backend, self.model_name, self._device, text),
+            compute,
+        )
+
+    def _encode_images(self, sample: Sample, images: List[Image.Image]):
         import torch
 
-        with torch.no_grad():
-            if self._backend == "open_clip":
-                tensor = self._preprocess(image).unsqueeze(0).to(self._device)
+        key = (
+            "clip_image_features",
+            self._backend,
+            self.model_name,
+            self._device,
+            self.max_frames,
+            media_state_key(sample.path),
+        )
+
+        if self._backend == "transformers":
+            return cached_clip_image_features(
+                self,
+                self._model,
+                self._processor,
+                images,
+                model_key=self.model_name,
+                device=self._device,
+                cache_key=(self.max_frames, media_state_key(sample.path)),
+            )
+
+        def compute():
+            with torch.no_grad():
+                tensors = [self._preprocess(image) for image in images]
+                tensor = torch.stack(tensors, dim=0).to(self._device)
                 features = self._model.encode_image(tensor)
-            else:
-                image_inputs = self._processor(
-                    images=image,
-                    return_tensors="pt",
-                ).to(self._device)
-                features = extract_features(self._model.get_image_features(**image_inputs))
-            return features / features.norm(p=2, dim=-1, keepdim=True)
+                return features / features.norm(p=2, dim=-1, keepdim=True)
+
+        return shared_runtime_value(self, key, compute)
 
     def _load_frames(self, sample: Sample) -> List[Image.Image]:
         """Load frames from video (uniformly sampled) or single image."""
         try:
-            if not sample.is_video:
-                bgr = cv2.imread(str(sample.path))
-                if bgr is None:
-                    return []
-                rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-                return [Image.fromarray(rgb)]
-
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-
-            n = min(self.max_frames, total)
-            indices = np.linspace(0, total - 1, n, dtype=int)
-
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ret, frame = cap.read()
-                if ret:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(Image.fromarray(rgb))
-            cap.release()
-            return frames
+            return arrays_to_pil(sample_frames(sample.path, max_frames=self.max_frames, color="rgb"))
         except Exception:
             return []

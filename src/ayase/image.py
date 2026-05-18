@@ -72,6 +72,19 @@ def image_from_bytes(data: bytes, mode: str = "RGB") -> Optional[Image.Image]:
 
 def load_representative_frame(path: Path, color: str = "rgb") -> Optional[np.ndarray]:
     """Load a still image or the middle frame of a video into a numpy array."""
+    try:
+        from .runtime import current_pipeline
+
+        pipeline = current_pipeline()
+        if pipeline is not None and hasattr(pipeline, "load_representative_frame"):
+            return pipeline.load_representative_frame(path, color=color)
+    except Exception:
+        pass
+    return _load_representative_frame_uncached(path, color=color)
+
+
+def _load_representative_frame_uncached(path: Path, color: str = "rgb") -> Optional[np.ndarray]:
+    """Uncached implementation for loading a representative frame."""
     path = Path(path)
     if is_image_path(path):
         return load_image_array(path, color=color)
@@ -102,9 +115,22 @@ def load_representative_frame(path: Path, color: str = "rgb") -> Optional[np.nda
 
 def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
     """Load uniformly spaced frames from a video, or one frame for an image."""
+    try:
+        from .runtime import current_pipeline
+
+        pipeline = current_pipeline()
+        if pipeline is not None and hasattr(pipeline, "sample_frames"):
+            return pipeline.sample_frames(path, max_frames=max_frames, color=color)
+    except Exception:
+        pass
+    return _sample_frames_uncached(path, max_frames=max_frames, color=color)
+
+
+def _sample_frames_uncached(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
+    """Uncached implementation for uniformly spaced frame sampling."""
     path = Path(path)
     if not is_video_path(path):
-        frame = load_representative_frame(path, color=color)
+        frame = _load_representative_frame_uncached(path, color=color)
         return [frame] if frame is not None else []
 
     cap = cv2.VideoCapture(str(path))

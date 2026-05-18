@@ -5,9 +5,9 @@ frame-averaged scoring. Returns video_text_score and video_text_temporal consist
 
 import logging
 import numpy as np
-import cv2
 from typing import Optional
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -44,7 +44,13 @@ class VideoTextMatchingModule(PipelineModule):
     def setup(self) -> None:
         try:
             import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up Video-Text Matching on {self._device}...")
 
             from transformers import CLIPModel, CLIPProcessor, XCLIPModel, XCLIPProcessor
@@ -53,10 +59,30 @@ class VideoTextMatchingModule(PipelineModule):
             if self.use_xclip:
                 try:
                     logger.info(f"Loading X-CLIP ({self.xclip_model_name})...")
-                    self._model = XCLIPModel.from_pretrained(
-                        self.xclip_model_name, cache_dir=models_dir
-                    ).to(self._device)
-                    self._processor = XCLIPProcessor.from_pretrained(self.xclip_model_name, cache_dir=models_dir)
+                    def load_xclip():
+                        model = from_pretrained_with_attention(
+                            XCLIPModel,
+                            self.xclip_model_name,
+                            self.config,
+                            device=self._device,
+                            cache_dir=models_dir,
+                        ).to(self._device).eval()
+                        processor = XCLIPProcessor.from_pretrained(
+                            self.xclip_model_name,
+                            cache_dir=models_dir,
+                        )
+                        return model, processor
+
+                    self._model, self._processor = shared_runtime_resource(
+                        self,
+                        (
+                            "hf_xclip",
+                            self.xclip_model_name,
+                            self._device,
+                            str(self.config.get("attention_backend", "auto")),
+                        ),
+                        load_xclip,
+                    )
                     self._is_xclip = True
                     self._ml_available = True
                     return
@@ -66,10 +92,28 @@ class VideoTextMatchingModule(PipelineModule):
 
             # Fallback to standard CLIP
             logger.info(f"Loading CLIP ({self.model_name})...")
-            self._model = CLIPModel.from_pretrained(
-                self.model_name, cache_dir=models_dir
-            ).to(self._device)
-            self._processor = CLIPProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    self.model_name,
+                    self.config,
+                    device=self._device,
+                    cache_dir=models_dir,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    self.model_name,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
 
             self._ml_available = True
 
@@ -185,23 +229,10 @@ class VideoTextMatchingModule(PipelineModule):
                     )
 
     def _load_frames(self, sample: Sample, num_frames: int = 5) -> list:
-        frames = []
         try:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                return []
-            
-            indices = np.linspace(0, total - 1, num_frames, dtype=int)
-
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(frame)
-            cap.release()
+            frames = sample_frames(sample.path, max_frames=num_frames, color="rgb")
         except Exception:
             logger.debug(f"Failed to load frames for {sample.path}")
+            frames = []
         return frames
 

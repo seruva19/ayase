@@ -20,6 +20,7 @@ from typing_extensions import Annotated
 from . import __version__
 from .config import AyaseConfig
 from .pipeline import Pipeline, ModuleRegistry, PipelineModule
+from .runtime import runtime_module_config
 from .scanner import DatasetScanner, scan_dataset, sample_from_path
 from .models import Sample
 
@@ -119,10 +120,8 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
         module_cls = ModuleRegistry.get_module(name)
         if module_cls:
             try:
-                if "models_dir" not in params and config:
-                    params["models_dir"] = str(config.general.models_dir)
-                if "parallel_jobs" not in params and config:
-                    params["parallel_jobs"] = config.general.parallel_jobs
+                for key, value in runtime_module_config(config).items():
+                    params.setdefault(key, value)
                 modules.append(module_cls(config=params))
             except Exception as e:
                 console.print(f"[red]Error initializing module '{name}': {e}[/red]")
@@ -132,6 +131,17 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
     return modules
 
 
+def _pipeline_sample_batch_size(pipeline: Pipeline) -> int:
+    """Return the configured dataset sample batch size for a pipeline."""
+    batch_size = 1
+    for module in pipeline.modules:
+        try:
+            batch_size = max(batch_size, int(module.config.get("sample_batch_size", 1)))
+        except (TypeError, ValueError):
+            continue
+    return batch_size
+
+
 def _process_samples(
     pipeline: Pipeline, samples: Iterable[Sample],
     *,
@@ -139,6 +149,39 @@ def _process_samples(
     checkpoint_fn=None,
 ) -> int:
     processed_count = 0
+    batch_size = _pipeline_sample_batch_size(pipeline)
+    if batch_size > 1:
+        batch = []
+        for sample in samples:
+            batch.append(sample)
+            if len(batch) < batch_size:
+                continue
+            processed = pipeline.process_samples(batch, batch_size=batch_size)
+            processed_count += len(processed)
+            batch = []
+            if (
+                checkpoint_every > 0
+                and checkpoint_fn is not None
+                and processed_count % checkpoint_every == 0
+            ):
+                try:
+                    checkpoint_fn(pipeline, processed_count)
+                except Exception as e:
+                    console.print(
+                        f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
+                    )
+        if batch:
+            processed = pipeline.process_samples(batch, batch_size=batch_size)
+            processed_count += len(processed)
+            if checkpoint_every > 0 and checkpoint_fn is not None:
+                try:
+                    checkpoint_fn(pipeline, processed_count)
+                except Exception as e:
+                    console.print(
+                        f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
+                    )
+        return processed_count
+
     for sample in samples:
         pipeline.process_sample(sample)
         processed_count += 1
@@ -256,10 +299,7 @@ def _instantiate_modules(module_names: List[str], config: AyaseConfig) -> List[P
         module_cls = ModuleRegistry.get_module(name)
         if not module_cls:
             continue
-        params = {
-            "models_dir": str(config.general.models_dir),
-            "parallel_jobs": config.general.parallel_jobs,
-        }
+        params = runtime_module_config(config)
         try:
             modules.append(module_cls(config=params))
         except Exception as e:
@@ -693,10 +733,7 @@ def modules_check() -> None:
         module = None
         try:
             module = cls(
-                config={
-                    "models_dir": str(config.general.models_dir),
-                    "parallel_jobs": config.general.parallel_jobs,
-                }
+                config=runtime_module_config(config)
             )
             missing = module._check_required_packages()
             if missing:

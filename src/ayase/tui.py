@@ -29,6 +29,7 @@ from textual.reactive import reactive
 from textual.binding import Binding
 
 from ayase.pipeline import Pipeline, ModuleRegistry
+from ayase.runtime import runtime_module_config
 from ayase.models import Sample, ValidationSeverity
 from ayase.scanner import DatasetScanner, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
 
@@ -257,7 +258,18 @@ class ModuleConfigWidget(Static):
         # Filter out internal/ambiguous config keys
         display_config = {
             k: v for k, v in self.current_config.items()
-            if k not in ("models_dir", "parallel_jobs")
+            if k not in (
+                "models_dir",
+                "parallel_jobs",
+                "device",
+                "dtype",
+                "amp_enabled",
+                "attention_backend",
+                "frame_cache_enabled",
+                "timing_enabled",
+                "sample_batch_size",
+                "max_clip_images_per_forward",
+            )
         }
 
         if not display_config:
@@ -681,10 +693,8 @@ class ExecutionScreen(Screen):
                 config = self.app.module_configs.get(name, {}).copy()
 
                 if self.app.ayase_config:
-                    config["models_dir"] = str(
-                        self.app.ayase_config.general.models_dir
-                    )
-                    config["parallel_jobs"] = self.app.ayase_config.general.parallel_jobs
+                    for key, value in runtime_module_config(self.app.ayase_config).items():
+                        config.setdefault(key, value)
 
                 log.write(f"  Init [bold]{name}[/bold]")
                 module = cls(config)
