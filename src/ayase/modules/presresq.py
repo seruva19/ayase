@@ -19,8 +19,16 @@ from typing import List, Optional
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_openai_clip_image_features,
+    cached_openai_clip_text_features,
+    media_state_key,
+    resolve_torch_device,
+    shared_openai_clip_resource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,22 +86,22 @@ class PreResQModule(PipelineModule):
 
     def _try_clip_setup(self) -> bool:
         try:
-            import torch
-            import clip
-
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._clip_model, self._clip_preprocess = clip.load(
-                self.clip_model_name, device=self._device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._clip_model, self._clip_preprocess = shared_openai_clip_resource(
+                self,
+                self.clip_model_name,
+                device=self._device,
             )
-            self._clip_model.eval()
 
             # Pre-encode ranking prompts
-            text_tokens = clip.tokenize(_RANK_PROMPTS).to(self._device)
-            with torch.no_grad():
-                self._text_features = self._clip_model.encode_text(text_tokens)
-                self._text_features = self._text_features / self._text_features.norm(
-                    dim=-1, keepdim=True
-                )
+            self._text_features = cached_openai_clip_text_features(
+                self,
+                self._clip_model,
+                _RANK_PROMPTS,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_key=("presresq_rank_prompts",),
+            )
 
             self._ml_available = True
             self._backend = "clip"
@@ -164,7 +172,7 @@ class PreResQModule(PipelineModule):
                 return sample
 
             if self._backend == "clip":
-                score = self._compute_clip_rank_score(frames)
+                score = self._compute_clip_rank_score(sample, frames)
             else:
                 score = self._compute_resnet_score(frames)
 
@@ -180,45 +188,30 @@ class PreResQModule(PipelineModule):
 
         return sample
 
-    def _compute_clip_rank_score(self, frames: List[np.ndarray]) -> Optional[float]:
+    def _compute_clip_rank_score(self, sample: Sample, frames: List[np.ndarray]) -> Optional[float]:
         """Rank-and-score via CLIP: compare frames against quality prompts."""
-        import torch
-        from PIL import Image
-
         n_levels = len(_RANK_PROMPTS)
         # Quality levels evenly spaced from 0 to 1
         quality_levels = np.linspace(0.0, 1.0, n_levels)
 
-        frame_scores = []
-        frame_ranks = []
+        image_features = cached_openai_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_preprocess,
+            arrays_to_pil([cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames]),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        if image_features is None or image_features.size(0) == 0:
+            return None
 
-        for frame in frames:
-            try:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                pil_img = Image.fromarray(rgb)
-                tensor = self._clip_preprocess(pil_img).unsqueeze(0).to(self._device)
+        sims = (image_features @ self._text_features.T).detach().float().cpu().numpy()
+        exp_sims = np.exp(sims - np.max(sims, axis=1, keepdims=True))
+        probs = exp_sims / np.sum(exp_sims, axis=1, keepdims=True)
+        frame_scores = np.dot(probs, quality_levels).astype(np.float32)
 
-                with torch.no_grad():
-                    img_feat = self._clip_model.encode_image(tensor)
-                    img_feat = img_feat / img_feat.norm(dim=-1, keepdim=True)
-
-                    # Similarity to each quality-level prompt
-                    sims = (img_feat @ self._text_features.T).squeeze(0)
-                    sims = sims.cpu().numpy()
-
-                # Ranking score: softmax-weighted quality level
-                exp_sims = np.exp(sims - np.max(sims))  # numerical stability
-                probs = exp_sims / np.sum(exp_sims)
-                rank_score = float(np.dot(probs, quality_levels))
-
-                # Also record the argmax rank
-                frame_ranks.append(int(np.argmax(probs)))
-                frame_scores.append(rank_score)
-
-            except Exception as e:
-                logger.debug("CLIP rank scoring failed: %s", e)
-
-        if not frame_scores:
+        if len(frame_scores) == 0:
             return None
 
         # Temporal aggregation: mean with consistency bonus
@@ -256,28 +249,12 @@ class PreResQModule(PipelineModule):
         return float(np.mean(frame_scores))
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(
-                    0, total - 1, min(self.subsample, total), dtype=int
-                )
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            rgb_frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+            return [cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) for frame in rgb_frames]
+        except Exception as e:
+            logger.debug("PreResQ frame loading failed for %s: %s", sample.path, e)
+            return []
 
     def on_dispose(self) -> None:
         self._clip_model = None

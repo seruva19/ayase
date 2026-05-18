@@ -9,6 +9,7 @@ import cv2
 from typing import Dict, List, Optional, Tuple
 from PIL import Image
 
+from ayase.image import load_representative_frame
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -71,15 +72,19 @@ class VLMJudgeModule(PipelineModule):
         try:
             import torch
             from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading VLM Judge ({self.model_name}) on {self._device}...")
 
             models_dir = self.config.get("models_dir", "models")
 
             dtype = torch.float16 if self._device == "cuda" else torch.float32
-            self._model = LlavaNextForConditionalGeneration.from_pretrained(
+            self._model = from_pretrained_with_attention(
+                LlavaNextForConditionalGeneration,
                 self.model_name,
+                self.config,
+                device=self._device,
                 torch_dtype=dtype,
                 cache_dir=models_dir,
                 low_cpu_mem_usage=True,
@@ -352,14 +357,6 @@ class VLMJudgeModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

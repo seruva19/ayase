@@ -18,11 +18,17 @@ vader_score --- higher = better (0-1 range, normalised)
 import logging
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +84,9 @@ class VADERModule(PipelineModule):
         """Try HPS v2 via the ``hpsv2`` package."""
         try:
             import hpsv2
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            self._device = torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
-            )
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             # hpsv2 provides a scoring function directly
             self._model = hpsv2
             self._ml_available = True
@@ -96,33 +100,56 @@ class VADERModule(PipelineModule):
     def _try_clip_aesthetic_setup(self) -> bool:
         """Fallback: CLIP aesthetic prompt-based scoring."""
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            self._device = torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._model = CLIPModel.from_pretrained(self._clip_model_name)
-            self._processor = CLIPProcessor.from_pretrained(self._clip_model_name)
-            self._model.to(self._device).eval()
 
-            # Pre-encode aesthetic text prompts
-            with torch.no_grad():
-                pos_inputs = self._processor(
-                    text=_AESTHETIC_POS, return_tensors="pt", padding=True
-                ).to(self._device)
-                self._aes_pos_embeds = self._model.get_text_features(**pos_inputs)
-                self._aes_pos_embeds = self._aes_pos_embeds / self._aes_pos_embeds.norm(
-                    dim=-1, keepdim=True
-                )
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self._clip_model_name, models_dir)
 
-                neg_inputs = self._processor(
-                    text=_AESTHETIC_NEG, return_tensors="pt", padding=True
-                ).to(self._device)
-                self._aes_neg_embeds = self._model.get_text_features(**neg_inputs)
-                self._aes_neg_embeds = self._aes_neg_embeds / self._aes_neg_embeds.norm(
-                    dim=-1, keepdim=True
-                )
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
+
+            self._aes_pos_embeds = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _AESTHETIC_POS,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
+            self._aes_neg_embeds = cached_clip_text_features(
+                self,
+                self._model,
+                self._processor,
+                _AESTHETIC_NEG,
+                model_key=self._clip_model_name,
+                device=self._device,
+            )
 
             self._ml_available = True
             self._backend = "clip_aesthetic"
@@ -155,21 +182,60 @@ class VADERModule(PipelineModule):
             logger.warning("VADER failed for %s: %s", sample.path, e)
         return sample
 
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+        if self._backend != "clip_aesthetic":
+            return super().process_batch(samples)
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                frames = self._extract_frames(sample)
+                if not frames:
+                    continue
+                prepared.append(sample)
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.subsample, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._model,
+                self._processor,
+                image_groups,
+                model_key=self._clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for sample, image_features in zip(prepared, feature_groups):
+                score = self._score_clip_features(image_features)
+                if score is None:
+                    continue
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.vader_score = score
+        except Exception as e:
+            logger.warning("VADER batch failed: %s", e)
+
+        return samples
+
     # ------------------------------------------------------------------
     # Tier 1: HPS v2 scoring
     # ------------------------------------------------------------------
 
     def _process_hpsv2(self, sample: Sample) -> Optional[float]:
         """Score using HPS v2 package.  Returns normalised 0-1 score."""
-        from PIL import Image
 
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        pil_frames = [
-            Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in frames
-        ]
+        pil_frames = arrays_to_pil(frames)
 
         # hpsv2.score expects (images, prompt) -> list of floats
         # Use a generic quality prompt as the conditioning text
@@ -200,34 +266,37 @@ class VADERModule(PipelineModule):
 
     def _process_clip_aesthetic(self, sample: Sample) -> Optional[float]:
         """CLIP aesthetic scoring: positive vs negative prompt similarity."""
-        import torch
-        from PIL import Image
 
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        pil_frames = [
-            Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in frames
-        ]
+        image_features = cached_clip_image_features(
+            self,
+            self._model,
+            self._processor,
+            arrays_to_pil(frames),
+            model_key=self._clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        return self._score_clip_features(image_features)
+
+    def _score_clip_features(self, image_features) -> Optional[float]:
+        if image_features is None or image_features.size(0) == 0:
+            return None
 
         frame_scores = []
-        with torch.no_grad():
-            for pil_img in pil_frames:
-                inputs = self._processor(
-                    images=pil_img, return_tensors="pt"
-                ).to(self._device)
-                img_embed = self._model.get_image_features(**inputs)
-                img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
+        for img_embed in image_features:
+            img_embed = img_embed.unsqueeze(0)
+            # Cosine similarity with positive and negative aesthetic prompts
+            pos_sim = (img_embed @ self._aes_pos_embeds.T).mean().item()
+            neg_sim = (img_embed @ self._aes_neg_embeds.T).mean().item()
 
-                # Cosine similarity with positive and negative aesthetic prompts
-                pos_sim = (img_embed @ self._aes_pos_embeds.T).mean().item()
-                neg_sim = (img_embed @ self._aes_neg_embeds.T).mean().item()
-
-                # Reward = difference, then sigmoid to [0, 1]
-                reward_logit = (pos_sim - neg_sim) * 10.0
-                reward = 1.0 / (1.0 + np.exp(-reward_logit))
-                frame_scores.append(reward)
+            # Reward = difference, then sigmoid to [0, 1]
+            reward_logit = (pos_sim - neg_sim) * 10.0
+            reward = 1.0 / (1.0 + np.exp(-reward_logit))
+            frame_scores.append(reward)
 
         if not frame_scores:
             return None
@@ -238,24 +307,8 @@ class VADERModule(PipelineModule):
     # ------------------------------------------------------------------
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-            indices = np.linspace(
-                0, total - 1, min(self.subsample, total), dtype=int
-            )
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, f = cap.read()
-                if ret:
-                    frames.append(f)
-            cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        except Exception as e:
+            logger.debug("VADER frame loading failed for %s: %s", sample.path, e)
+            return []

@@ -25,11 +25,11 @@ from typing import Any, Dict, List, Optional
 
 import cv2
 import numpy as np
-from PIL import Image
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
+from ayase.runtime import cached_clip_image_features, cached_clip_text_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -126,23 +126,41 @@ class ConceptPresenceModule(PipelineModule):
         """Try CLIP backends in order of preference."""
         # Tier 1: transformers CLIP
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
             clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(clip_model_name, models_dir)
 
-            # Try to resolve local model path
-            try:
-                from ayase.config import resolve_model_path
+            device = resolve_torch_device(self.config.get("device", "auto"))
 
-                models_dir = self.config.get("models_dir", "models")
-                resolved = resolve_model_path(clip_model_name, models_dir)
-            except Exception:
-                resolved = clip_model_name
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._clip_model = CLIPModel.from_pretrained(resolved).to(device)
-            self._clip_processor = CLIPProcessor.from_pretrained(resolved)
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._clip_device = device
             self._clip_backend = "transformers"
             logger.info("ConceptPresence: CLIP backend = transformers on %s", device)
@@ -188,7 +206,7 @@ class ConceptPresenceModule(PipelineModule):
 
             # CLIP-based concept detection
             if mode in ("clip", "combined") and concepts:
-                clip_conf, clip_count = self._detect_concepts_clip(frames, concepts)
+                clip_conf, clip_count = self._detect_concepts_clip(sample, frames, concepts)
                 concept_confidence = max(concept_confidence, clip_conf)
                 concept_count += clip_count
 
@@ -276,7 +294,7 @@ class ConceptPresenceModule(PipelineModule):
     # -- CLIP concept detection -------------------------------------------------
 
     def _detect_concepts_clip(
-        self, frames: List[np.ndarray], concepts: List[str]
+        self, sample: Sample, frames: List[np.ndarray], concepts: List[str]
     ) -> tuple:
         """Detect concepts using CLIP.
 
@@ -284,53 +302,41 @@ class ConceptPresenceModule(PipelineModule):
         """
         if self._clip_backend != "transformers":
             return 0.0, 0
-        return self._detect_concepts_transformers(frames, concepts)
+        return self._detect_concepts_transformers(sample, frames, concepts)
 
     def _detect_concepts_transformers(
-        self, frames: List[np.ndarray], concepts: List[str]
+        self, sample: Sample, frames: List[np.ndarray], concepts: List[str]
     ) -> tuple:
         """Detect concepts using HuggingFace CLIP."""
         try:
-            import torch
-
             threshold = self.config.get("clip_threshold", 0.25)
 
-            # Encode text concepts
-            text_inputs = self._clip_processor(
-                text=concepts,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-            ).to(self._clip_device)
+            clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
+            text_features = cached_clip_text_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                concepts,
+                model_key=clip_model_name,
+                device=self._clip_device,
+                cache_key=("concept_presence", tuple(concepts)),
+            )
+            image_features = cached_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil(frames),
+                model_key=clip_model_name,
+                device=self._clip_device,
+                cache_key=(self.config.get("num_frames", 5), media_state_key(sample.path)),
+            )
+            if image_features is None or image_features.size(0) == 0:
+                return 0.0, 0
 
-            with torch.no_grad():
-                text_features = extract_features(self._clip_model.get_text_features(**text_inputs))
-                text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
-
-            # Compute similarity for each frame
-            max_confidence = 0.0
-            concept_detections = set()
-
-            for frame in frames:
-                pil_image = Image.fromarray(frame)
-                image_inputs = self._clip_processor(
-                    images=pil_image,
-                    return_tensors="pt",
-                ).to(self._clip_device)
-
-                with torch.no_grad():
-                    image_features = extract_features(self._clip_model.get_image_features(**image_inputs))
-                    image_features = image_features / image_features.norm(
-                        p=2, dim=-1, keepdim=True
-                    )
-                    similarities = (image_features @ text_features.T).squeeze(0)
-
-                for idx, sim in enumerate(similarities):
-                    sim_val = sim.item()
-                    if sim_val > max_confidence:
-                        max_confidence = sim_val
-                    if sim_val >= threshold:
-                        concept_detections.add(idx)
+            similarities = image_features @ text_features.T
+            sim_values = similarities.detach().float().cpu().numpy()
+            max_confidence = float(np.max(sim_values)) if sim_values.size else 0.0
+            concept_detections = set(np.where(sim_values >= threshold)[1].tolist())
 
             return max_confidence, len(concept_detections)
 
@@ -342,27 +348,9 @@ class ConceptPresenceModule(PipelineModule):
 
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
         """Load RGB frames from image or video."""
-        frames = []
         try:
-            if not sample.is_video:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames.append(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            else:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return frames
-                num_frames = self.config.get("num_frames", 5)
-                n = min(num_frames, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
+            num_frames = self.config.get("num_frames", 5)
+            return sample_frames(sample.path, max_frames=num_frames, color="rgb")
         except Exception as e:
             logger.debug("Frame loading failed: %s", e)
-        return frames
+        return []

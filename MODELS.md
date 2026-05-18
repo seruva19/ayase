@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.36** · Generated 2026-05-16 22:05 · **195 models** across **10 sources**
+> **Version 0.1.37** · Generated 2026-05-18 11:28 · **203 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**195** models · **61** HuggingFace · **61** pyiqa · **10** sources
+**203** models · **62** HuggingFace · **61** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (43)](#huggingface-models) · [Weight Files (18)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (44)](#huggingface-models) · [Weight Files (18)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -146,7 +146,7 @@
 
 ### <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">`laion/clap-htsat-fused`</a> [↑](#categories)
 
-- **Used by**: `audio_text_alignment`, `human_clap`, `pam`
+- **Used by**: `audio_text_alignment`, `clap_score`, `human_clap`, `laion_clap_score`, `pam`
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 
 ### <a href="https://huggingface.co/lero233/KVQ" target="_blank">`lero233/KVQ`</a> [↑](#categories)
@@ -166,6 +166,10 @@
 
 - **Used by**: `llm_descriptive_qa`
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
+
+### <a href="https://huggingface.co/microsoft/msclap" target="_blank">`microsoft/msclap`</a> [↑](#categories)
+
+- **Used by**: `ms_clap_score`
 
 ### <a href="https://huggingface.co/microsoft/xclip-base-patch32" target="_blank">`microsoft/xclip-base-patch32`</a> [↑](#categories)
 
@@ -318,6 +322,11 @@
 
 Bundled with `pip install torchvision`. Weights download on first use.
 
+### `torchvision/imagebind_model` [↑](#categories)
+> torchvision
+
+- **Used by**: `imagebind_score`
+
 ### `torchvision/inception_v3` [↑](#categories)
 > torchvision · BSD-3-Clause
 
@@ -392,7 +401,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `CLIP ViT-B/32` [↑](#categories)
 > MIT (OpenAI)
 
-- **Used by**: `lmmvqa`, `mdvqa`, `modularbvqa`, `presresq`, `unified_vqa`, `vqa_score`
+- **Used by**: `lmmvqa`, `presresq`, `unified_vqa`, `vqa_score`
 - **VRAM**: ~600 MB · **Disk**: ~340 MB
 
 ### `open_clip/ViT-B-32` [↑](#categories)
@@ -526,7 +535,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `onnxruntime` [↑](#categories)
 > ONNX Runtime (model inference)
 
-- **Used by**: `dover`
+- **Used by**: `dover`, `nima_legacy_onnx`
 - **Install**: `pip install onnxruntime`
 
 ### `piq` [↑](#categories)

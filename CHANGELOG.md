@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.37]
+
+### Added
+
+- **pipeline**: added runtime timing, per-sample frame/feature caching, shared pipeline-scoped model resources, and optional attention backend config for faster inference.
+- **pipeline**: added optional dataset-level sample batching via `sample_batch_size`, `Pipeline.process_samples()`, and overridable module `process_batch()` hooks.
+- **examples**: added `examples/benchmark_inference.py` for comparing inference throughput across `sample_batch_size` values.
+- **audio_isc** and **audio_kl**: added optional dataset-level audio distribution metrics with PANNs/PaSST backends.
+- **clap_score**, **imagebind_score**, and **nima_legacy_onnx**: added first-class optional CLAP/ImageBind audio-text alignment and legacy NIMA ONNX modules.
+
+### Changed
+
+- **video modules**: batched selected CLIP/DINO/VLM frame inference paths and reused shared frame sampling to reduce duplicate video decoding.
+- **CLIP VQA modules**: extended shared CLIP model, frame, and feature reuse to Q-CLIP, VQA^2, UGVQ, VQAThinker, VQ-Insight, VideoReward, and background consistency.
+- **CLIP modules**: added true cross-sample CLIP frame batching for semantic alignment, CLIP temporal consistency, and the shared-cache CLIP VQA/reward modules.
+- **CLIP modules**: extended shared HuggingFace CLIP/X-CLIP loading, feature caching, and batch feature paths across temporal, safety, compositional, distribution, and dataset-analytics modules.
+- **OpenAI CLIP modules**: shared `clip.load()` resources and cached OpenAI CLIP text/image features across LMM-VQA, PreResQ, VQAScore fallback, MD-VQA, ModularBVQA, and Unified-VQA.
+- **fad**: added PANNs CNN14 and PaSST backbone support while preserving the legacy VGGish-compatible dataset metric aliases.
+
+### Fixed
+
+- **OpenAI CLIP modules**: fixed RGB/BGR frame conversion on LMM-VQA and PreResQ CLIP paths.
+- **metrics docs**: declared CLAP, ImageBind, legacy NIMA, FAD-backbone, audio ISC, and audio KL outputs so generated docs and dataset stats match module behavior.
+
 ## [0.1.36]
 
 ### Added

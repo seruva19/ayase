@@ -13,11 +13,16 @@ vqa2_score --- higher = better (0-1 range)
 import logging
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +94,38 @@ class VQA2Module(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            self._device = torch.device(
-                "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._model = CLIPModel.from_pretrained(self._clip_model_name)
-            self._processor = CLIPProcessor.from_pretrained(self._clip_model_name)
-            self._model.to(self._device).eval()
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self._clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
 
             # Pre-encode quality level prompts
             texts = [q[0] for q in _QUALITY_LEVELS]
@@ -139,6 +169,48 @@ class VQA2Module(PipelineModule):
             logger.warning("VQA^2 failed for %s: %s", sample.path, e)
         return sample
 
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+        if self._backend != "clip":
+            return super().process_batch(samples)
+
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                frames = self._extract_frames(sample)
+                if not frames:
+                    continue
+                prepared.append(sample)
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.subsample, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._model,
+                self._processor,
+                image_groups,
+                model_key=self._clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for sample, image_features in zip(prepared, feature_groups):
+                score = self._score_clip_features(image_features)
+                if score is None:
+                    continue
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.vqa2_score = score
+        except Exception as e:
+            logger.warning("VQA^2 batch failed: %s", e)
+
+        return samples
+
     def _process_qalign(self, sample: Sample) -> Optional[float]:
         """Score using Q-Align (LMM-based)."""
         import torch
@@ -158,58 +230,45 @@ class VQA2Module(PipelineModule):
 
     def _process_clip(self, sample: Sample) -> Optional[float]:
         """CLIP prompt-based VQA: softmax over quality-level prompts."""
-        import torch
-        from PIL import Image
 
         frames = self._extract_frames(sample)
         if not frames:
             return None
 
-        pil_frames = [
-            Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in frames
-        ]
+        pil_frames = arrays_to_pil(frames)
+        image_features = cached_clip_image_features(
+            self,
+            self._model,
+            self._processor,
+            pil_frames,
+            model_key=self._clip_model_name,
+            device=self._device,
+            cache_key=(self.subsample, media_state_key(sample.path)),
+        )
+        return self._score_clip_features(image_features)
+
+    def _score_clip_features(self, image_features) -> Optional[float]:
+        if image_features is None or image_features.size(0) == 0:
+            return None
 
         frame_scores = []
-        with torch.no_grad():
-            for pil_img in pil_frames:
-                inputs = self._processor(
-                    images=pil_img, return_tensors="pt"
-                ).to(self._device)
-                img_emb = self._model.get_image_features(**inputs)
-                img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
-
-                # Cosine similarity with each quality level
-                sims = (img_emb @ self._quality_embeds.T).squeeze(0).cpu().numpy()
-                # Softmax to get probability distribution
-                exp_sims = np.exp((sims - sims.max()) * 100.0)  # temperature scaling
-                probs = exp_sims / exp_sims.sum()
-                # Weighted score
-                score = float(np.dot(probs, self._quality_weights))
-                frame_scores.append(score)
+        for img_emb in image_features:
+            # Cosine similarity with each quality level
+            sims = (img_emb @ self._quality_embeds.T).cpu().numpy()
+            # Softmax to get probability distribution
+            exp_sims = np.exp((sims - sims.max()) * 100.0)  # temperature scaling
+            probs = exp_sims / exp_sims.sum()
+            # Weighted score
+            score = float(np.dot(probs, self._quality_weights))
+            frame_scores.append(score)
 
         if not frame_scores:
             return None
         return float(np.clip(np.mean(frame_scores), 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-            indices = np.linspace(
-                0, total - 1, min(self.subsample, total), dtype=int
-            )
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, f = cap.read()
-                if ret:
-                    frames.append(f)
-            cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        except Exception as e:
+            logger.debug("VQA^2 frame loading failed for %s: %s", sample.path, e)
+            return []

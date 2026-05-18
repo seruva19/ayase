@@ -49,6 +49,374 @@ def test_pipeline_start_mounts_modules_once():
     assert module.execute_calls == 2
 
 
+class _TimingProbeModule(PipelineModule):
+    name = "timing_probe"
+    description = "Pipeline timing probe"
+
+    def process(self, sample: Sample) -> Sample:
+        return sample
+
+
+def test_pipeline_records_module_timings(tmp_path: Path):
+    media = tmp_path / "sample.mp4"
+    media.write_bytes(b"video")
+    module = _TimingProbeModule()
+    pipeline = Pipeline([module])
+
+    pipeline.start()
+    pipeline.process_sample(Sample(path=media, is_video=True))
+
+    report = pipeline.get_timing_report()
+    assert report[module.name]["calls"] == 1.0
+    assert report[module.name]["seconds"] >= 0.0
+
+
+class _BatchAwareModule(PipelineModule):
+    name = "batch_aware_probe"
+    description = "Pipeline batch API probe"
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.batch_sizes = []
+        self.single_calls = 0
+
+    def process(self, sample: Sample) -> Sample:
+        self.single_calls += 1
+        return sample
+
+    def process_batch(self, samples: list[Sample]) -> list[Sample]:
+        self.batch_sizes.append(len(samples))
+        for sample in samples:
+            if sample.quality_metrics is None:
+                sample.quality_metrics = QualityMetrics()
+            sample.quality_metrics.technical_score = float(len(sample.path.name))
+        return samples
+
+
+def test_pipeline_process_samples_uses_module_batch_override(tmp_path: Path):
+    samples = []
+    for name in ("a.mp4", "bb.mp4", "ccc.mp4"):
+        path = tmp_path / name
+        path.write_bytes(b"video")
+        samples.append(Sample(path=path, is_video=True))
+
+    module = _BatchAwareModule()
+    pipeline = Pipeline([module])
+    pipeline.start()
+
+    results = pipeline.process_samples(samples, batch_size=2)
+
+    assert results == samples
+    assert module.batch_sizes == [2, 1]
+    assert module.single_calls == 0
+    assert pipeline.stats.total_samples == 3
+    assert pipeline.get_timing_report()[module.name]["calls"] == 3.0
+
+
+class _BatchHookModule(PipelineModule):
+    name = "batch_hook_probe"
+    description = "Pipeline batch hook probe"
+
+    def process(self, sample: Sample) -> Sample:
+        return sample
+
+    def process_batch(self, samples: list[Sample]) -> list[Sample]:
+        for sample in samples:
+            if sample.quality_metrics is None:
+                sample.quality_metrics = QualityMetrics()
+            sample.quality_metrics.technical_score = (
+                float(len(sample.caption.text)) if sample.caption else 0.0
+            )
+        return samples
+
+
+def test_pipeline_process_samples_applies_hooks(tmp_path: Path):
+    media = tmp_path / "sample.mp4"
+    media.write_bytes(b"video")
+    original_caption = CaptionMetadata(text="abcdef", length=6)
+    sample = Sample(path=media, is_video=True, caption=original_caption)
+
+    pipeline = Pipeline([_BatchHookModule()])
+    pipeline.add_hook(
+        _BatchHookModule.name,
+        before=lambda item: item.model_copy(
+            update={"caption": CaptionMetadata(text="x", length=1)}
+        ),
+        after=lambda item: item.model_copy(update={"caption": original_caption}),
+    )
+    pipeline.start()
+
+    result = pipeline.process_samples([sample], batch_size=2)[0]
+
+    assert result.caption == original_caption
+    assert result.quality_metrics is not None
+    assert result.quality_metrics.technical_score == 1.0
+
+
+class _FakeCLIPInputs(dict):
+    def to(self, device):
+        return self
+
+
+class _FakeCLIPProcessor:
+    def __init__(self):
+        self.image_batches = []
+        self.text_batches = []
+
+    def __call__(self, **kwargs):
+        images = kwargs.get("images")
+        text = kwargs.get("text")
+        if images is not None:
+            count = len(images) if isinstance(images, list) else 1
+            self.image_batches.append(count)
+            return _FakeCLIPInputs(count=count)
+        if text is not None:
+            count = len(text) if isinstance(text, list) else 1
+            self.text_batches.append(count)
+            return _FakeCLIPInputs(count=count)
+        return _FakeCLIPInputs(count=0)
+
+
+class _FakeCLIPModel:
+    def __init__(self, torch_module):
+        self.torch = torch_module
+
+    def get_image_features(self, count=0, **kwargs):
+        values = self.torch.arange(
+            max(count, 1) * 4,
+            dtype=self.torch.float32,
+        ).reshape(max(count, 1), 4)
+        return values[:count] + 1.0
+
+    def get_text_features(self, count=0, **kwargs):
+        return self.torch.ones((count, 4), dtype=self.torch.float32)
+
+
+class _OOMFallbackCLIPModel(_FakeCLIPModel):
+    def get_image_features(self, count=0, **kwargs):
+        if count > 2:
+            raise RuntimeError("CUDA out of memory")
+        return super().get_image_features(count=count, **kwargs)
+
+
+def test_cached_clip_image_features_chunks_forward_size():
+    torch = pytest.importorskip("torch")
+    from ayase.runtime import cached_clip_image_features
+
+    owner = type(
+        "Owner",
+        (),
+        {"config": {"max_clip_images_per_forward": 2, "amp_enabled": False, "dtype": "fp32"}},
+    )()
+    processor = _FakeCLIPProcessor()
+    features = cached_clip_image_features(
+        owner,
+        _FakeCLIPModel(torch),
+        processor,
+        [object(), object(), object(), object(), object()],
+        model_key="fake-clip",
+        device="cpu",
+        cache_key=("chunking",),
+    )
+
+    assert processor.image_batches == [2, 2, 1]
+    assert features.shape[0] == 5
+
+
+def test_cached_clip_image_features_retries_smaller_on_cuda_oom():
+    torch = pytest.importorskip("torch")
+    from ayase.runtime import cached_clip_image_features
+
+    owner = type(
+        "Owner",
+        (),
+        {"config": {"max_clip_images_per_forward": 4, "amp_enabled": False, "dtype": "fp32"}},
+    )()
+    processor = _FakeCLIPProcessor()
+    features = cached_clip_image_features(
+        owner,
+        _OOMFallbackCLIPModel(torch),
+        processor,
+        [object(), object(), object(), object()],
+        model_key="fake-clip",
+        device="cuda",
+        cache_key=("oom-retry",),
+    )
+
+    assert processor.image_batches == [4, 2, 2]
+    assert features.shape[0] == 4
+
+
+def test_semantic_alignment_process_batch_batches_clip_images(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    torch = pytest.importorskip("torch")
+    import ayase.image as image_utils
+    from ayase.modules.semantic_alignment import SemanticAlignmentModule
+
+    def fake_sample_frames(path, max_frames=8, color="rgb"):
+        return [
+            np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8)
+            for i in range(max_frames)
+        ]
+
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_sample_frames)
+
+    first_path = tmp_path / "first.mp4"
+    second_path = tmp_path / "second.mp4"
+    first_path.write_bytes(b"first")
+    second_path.write_bytes(b"second")
+
+    processor = _FakeCLIPProcessor()
+    module = SemanticAlignmentModule(config={"max_frames": 2})
+    module._mounted = True
+    module._ml_available = True
+    module._backend = "transformers"
+    module._device = "cpu"
+    module._processor = processor
+    module._model = _FakeCLIPModel(torch)
+
+    samples = [
+        Sample(
+            path=first_path,
+            is_video=True,
+            caption=CaptionMetadata(text="first caption", length=13),
+        ),
+        Sample(
+            path=second_path,
+            is_video=True,
+            caption=CaptionMetadata(text="second caption", length=14),
+        ),
+    ]
+    pipeline = Pipeline([module])
+    pipeline.start()
+
+    results = pipeline.process_samples(samples, batch_size=2)
+
+    assert results == samples
+    assert processor.image_batches == [4]
+    assert processor.text_batches == [2]
+    assert all(sample.quality_metrics is not None for sample in samples)
+    assert all(sample.quality_metrics.clip_score is not None for sample in samples)
+
+
+def test_clip_temporal_process_batch_batches_clip_images(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    torch = pytest.importorskip("torch")
+    import ayase.image as image_utils
+    from ayase.modules.clip_temporal import CLIPTemporalModule
+
+    def fake_sample_frames(path, max_frames=8, color="rgb"):
+        return [
+            np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8)
+            for i in range(max_frames)
+        ]
+
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_sample_frames)
+
+    first_path = tmp_path / "first.mp4"
+    second_path = tmp_path / "second.mp4"
+    first_path.write_bytes(b"first")
+    second_path.write_bytes(b"second")
+
+    processor = _FakeCLIPProcessor()
+    module = CLIPTemporalModule(config={"max_frames": 3})
+    module._mounted = True
+    module._ml_available = True
+    module._device = "cpu"
+    module._processor = processor
+    module._model = _FakeCLIPModel(torch)
+
+    samples = [
+        Sample(path=first_path, is_video=True),
+        Sample(path=second_path, is_video=True),
+    ]
+    pipeline = Pipeline([module])
+    pipeline.start()
+
+    results = pipeline.process_samples(samples, batch_size=2)
+
+    assert results == samples
+    assert processor.image_batches == [6]
+    assert all(sample.quality_metrics is not None for sample in samples)
+    assert all(sample.quality_metrics.clip_temp is not None for sample in samples)
+    assert all(sample.quality_metrics.face_consistency is not None for sample in samples)
+
+
+class _FrameCacheProbeModule(PipelineModule):
+    name = "frame_cache_probe"
+    description = "Frame cache probe"
+
+    def process(self, sample: Sample) -> Sample:
+        from ayase.image import sample_frames
+
+        first = sample_frames(sample.path, max_frames=3, color="rgb")
+        second = sample_frames(sample.path, max_frames=3, color="rgb")
+        assert len(first) == len(second) == 1
+        assert first[0] is not second[0]
+        return sample
+
+
+def test_pipeline_frame_cache_reuses_decoded_frames(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    import ayase.image as image_utils
+
+    media = tmp_path / "sample.mp4"
+    media.write_bytes(b"video")
+    calls = {"count": 0}
+
+    def fake_sample_frames(path, max_frames=8, color="rgb"):
+        calls["count"] += 1
+        return [np.zeros((2, 2, 3), dtype=np.uint8)]
+
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_sample_frames)
+
+    pipeline = Pipeline([_FrameCacheProbeModule()])
+    pipeline.start()
+    pipeline.process_sample(Sample(path=media, is_video=True))
+
+    assert calls["count"] == 1
+
+
+class _SharedResourceProbeModule(PipelineModule):
+    name = "shared_resource_probe"
+    description = "Shared resource probe"
+    load_count = 0
+
+    def on_mount(self) -> None:
+        self.setup()
+        self._mounted = True
+
+    def setup(self) -> None:
+        from ayase.runtime import shared_runtime_resource
+
+        def factory():
+            type(self).load_count += 1
+            return object()
+
+        self.resource = shared_runtime_resource(self, ("probe", "resource"), factory)
+
+    def process(self, sample: Sample) -> Sample:
+        return sample
+
+
+def test_pipeline_shares_runtime_resources_between_modules():
+    _SharedResourceProbeModule.load_count = 0
+    first = _SharedResourceProbeModule()
+    second = _SharedResourceProbeModule()
+    pipeline = Pipeline([first, second])
+
+    pipeline.start()
+
+    assert first.resource is second.resource
+    assert _SharedResourceProbeModule.load_count == 1
+
+
 class _MissingPkgModule(PipelineModule):
     """Module whose on_mount() reports missing packages and stays unmounted."""
     name = "missing_pkg_test"

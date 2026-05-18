@@ -27,9 +27,10 @@ from typing import Optional, List
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil, load_representative_frame
 from ayase.models import Sample
 from ayase.base_modules import BatchMetricModule
-from ayase.compat import extract_features
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class GenerativeDistributionModule(BatchMetricModule):
     default_config = {
         "k": 5,  # Neighbours for manifold estimation
         "device": "auto",
+        "clip_model": "openai/clip-vit-base-patch32",
     }
     metric_info = {
         "precision": "Generated-sample precision against the real manifold (0-1, higher=better)",
@@ -52,6 +54,7 @@ class GenerativeDistributionModule(BatchMetricModule):
         super().__init__(config)
         self.k = self.config.get("k", 5)
         self.device_config = self.config.get("device", "auto")
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.device = None
         self._ml_available = False
         self._clip_model = None
@@ -61,19 +64,39 @@ class GenerativeDistributionModule(BatchMetricModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
-
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32"
-            ).to(self.device)
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
-            self._clip_model.eval()
+
+            device = resolve_torch_device(self.device_config)
+            self.device = torch.device(device)
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(self.device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._ml_available = True
             logger.info(f"Generative distribution metrics initialised on {self.device}")
 
@@ -88,32 +111,19 @@ class GenerativeDistributionModule(BatchMetricModule):
             return None
 
         try:
-            import torch
-
-            # Load a representative frame
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, total // 2)
-                ret, frame = cap.read()
-                cap.release()
-                if not ret:
-                    return None
-            else:
-                frame = cv2.imread(str(sample.path))
-                if frame is None:
-                    return None
-
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            from PIL import Image
-            pil_img = Image.fromarray(rgb)
-
-            inputs = self._clip_processor(images=pil_img, return_tensors="pt").to(self.device)
-            with torch.no_grad():
-                emb = extract_features(self._clip_model.get_image_features(**inputs))
-                emb = emb / emb.norm(dim=-1, keepdim=True)
-
-            return emb.squeeze(0).cpu().numpy()
+            rgb = load_representative_frame(sample.path, color="rgb")
+            if rgb is None:
+                return None
+            emb = cached_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil([rgb]),
+                model_key=self.clip_model_name,
+                device=self.device,
+                cache_key=("generative_distribution", media_state_key(sample.path)),
+            )
+            return emb.squeeze(0).detach().float().cpu().numpy()
 
         except Exception as e:
             logger.debug(f"Feature extraction failed for {sample.path}: {e}")

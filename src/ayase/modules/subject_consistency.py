@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image
 from typing import Optional, List
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -38,14 +39,40 @@ class SubjectConsistencyModule(PipelineModule):
         try:
             import torch
             from transformers import AutoImageProcessor, AutoModel
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             model_name = self.config.get("model_name", "facebook/dinov2-base")
             models_dir = self.config.get("models_dir", "models")
             logger.info(f"Loading {model_name} on {self._device}...")
 
-            self._processor = AutoImageProcessor.from_pretrained(model_name, cache_dir=models_dir)
-            self._model = AutoModel.from_pretrained(model_name, cache_dir=models_dir, use_safetensors=True).to(self._device)
+            def load_dino():
+                processor = AutoImageProcessor.from_pretrained(model_name, cache_dir=models_dir)
+                model = from_pretrained_with_attention(
+                    AutoModel,
+                    model_name,
+                    self.config,
+                    device=self._device,
+                    cache_dir=models_dir,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                return model, processor
+
+            self._model, self._processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_vision",
+                    model_name,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_dino,
+            )
             self._ml_available = True
 
         except ImportError:
@@ -65,27 +92,23 @@ class SubjectConsistencyModule(PipelineModule):
             import torch
             import torch.nn.functional as F
 
-            embeddings = []
-
-            for frame in frames:
-                image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                pil_image = Image.fromarray(image_rgb)
-
-                inputs = self._processor(images=pil_image, return_tensors="pt").to(self._device)
-                with torch.no_grad():
-                    outputs = self._model(**inputs)
-                    emb = outputs.last_hidden_state[:, 0, :]
-                    emb = F.normalize(emb, p=2, dim=-1)
-                    embeddings.append(emb)
+            pil_images = [
+                Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) for frame in frames
+            ]
+            inputs = self._processor(images=pil_images, return_tensors="pt").to(self._device)
+            with torch.no_grad():
+                outputs = self._model(**inputs)
+                embeddings = F.normalize(outputs.last_hidden_state[:, 0, :], p=2, dim=-1)
 
             # All pairwise cosine similarities (VBench style)
-            similarities = []
-            for i in range(len(embeddings)):
-                for j in range(i + 1, len(embeddings)):
-                    sim = F.cosine_similarity(embeddings[i], embeddings[j]).item()
-                    similarities.append(sim)
-
-            avg_consistency = float(np.mean(similarities))
+            sim_matrix = embeddings @ embeddings.T
+            pair_indices = torch.triu_indices(
+                embeddings.size(0),
+                embeddings.size(0),
+                offset=1,
+                device=sim_matrix.device,
+            )
+            avg_consistency = float(sim_matrix[pair_indices[0], pair_indices[1]].mean().item())
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -106,26 +129,10 @@ class SubjectConsistencyModule(PipelineModule):
         return sample
 
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
         try:
-            cap = cv2.VideoCapture(str(sample.path))
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-            if total_frames < 2:
-                cap.release()
-                return []
-
-            n = min(self.max_frames, total_frames)
-            indices = np.linspace(0, total_frames - 1, n, dtype=int)
-
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-
-            cap.release()
+            frames = sample_frames(sample.path, max_frames=self.max_frames, color="bgr")
         except Exception as e:
             logger.debug(f"Failed to load frames for subject consistency: {e}")
+            frames = []
         return frames
 

@@ -21,8 +21,10 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from ayase.image import arrays_to_pil
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.runtime import cached_clip_image_features, cached_clip_text_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,7 @@ class HarmfulContentModule(PipelineModule):
     default_config = {
         "subsample": 10,
         "max_frames": 60,
+        "clip_model": "openai/clip-vit-base-patch32",
         "warning_threshold": 0.4,
     }
 
@@ -40,24 +43,50 @@ class HarmfulContentModule(PipelineModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 10)
         self.max_frames = self.config.get("max_frames", 60)
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.warning_threshold = self.config.get("warning_threshold", 0.4)
 
         self._clip_model = None
         self._clip_processor = None
+        self._clip_device = "cpu"
         self._clip_available = False
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import CLIPModel, CLIPProcessor
-
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32"
-            ).to(device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32"
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
             )
+
+            device = resolve_torch_device(self.config.get("device", "auto"))
+            models_dir = self.config.get("models_dir", "models")
+            resolved = resolve_model_path(self.clip_model_name, models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=device,
+                ).to(device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
+            self._clip_device = device
             self._clip_available = True
             logger.info(f"Harmful content: CLIP classifier on {device}")
         except ImportError:
@@ -115,16 +144,17 @@ class HarmfulContentModule(PipelineModule):
     # ------------------------------------------------------------------
 
     def _clip_harm_score(self, frame_bgr: np.ndarray) -> Optional[float]:
-        if not self._clip_available:
-            return None
+        scores = self._clip_harm_scores([frame_bgr])
+        return scores[0] if scores else None
 
+    def _clip_harm_scores(
+        self,
+        frames_bgr: list[np.ndarray],
+        cache_key: Optional[tuple] = None,
+    ) -> list[Optional[float]]:
+        if not self._clip_available or not frames_bgr:
+            return [None] * len(frames_bgr)
         try:
-            import torch
-            from PIL import Image
-
-            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(rgb)
-
             safe_texts = [
                 "a safe, normal photograph",
                 "a peaceful scene",
@@ -137,24 +167,39 @@ class HarmfulContentModule(PipelineModule):
             ]
 
             all_texts = safe_texts + harmful_texts
-            inputs = self._clip_processor(
-                text=all_texts, images=pil_img, return_tensors="pt", padding=True
+            rgb_frames = [cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) for frame in frames_bgr]
+            image_features = cached_clip_image_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                arrays_to_pil(rgb_frames),
+                model_key=self.clip_model_name,
+                device=self._clip_device,
+                cache_key=cache_key or ("harmful_content_frames", len(frames_bgr)),
             )
-            device = next(self._clip_model.parameters()).device
-            inputs = {k: v.to(device) for k, v in inputs.items()}
-
-            with torch.no_grad():
-                outputs = self._clip_model(**inputs)
-                probs = torch.softmax(outputs.logits_per_image[0], dim=0).cpu().numpy()
+            text_features = cached_clip_text_features(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                all_texts,
+                model_key=self.clip_model_name,
+                device=self._clip_device,
+                cache_key=("harmful_content_prompts",),
+            )
+            scale = getattr(self._clip_model, "logit_scale", None)
+            if scale is not None:
+                logits = (image_features @ text_features.T) * scale.exp()
+            else:
+                logits = image_features @ text_features.T
+            probs = logits.softmax(dim=-1).detach().float().cpu().numpy()
 
             # Sum of harmful probabilities
             n_safe = len(safe_texts)
-            harm_prob = float(probs[n_safe:].sum())
-            return harm_prob
+            return [float(row[n_safe:].sum()) for row in probs]
 
         except Exception as e:
             logger.debug(f"CLIP harm classification failed: {e}")
-            return None
+            return [None] * len(frames_bgr)
 
     # ------------------------------------------------------------------
     # Process
@@ -164,6 +209,7 @@ class HarmfulContentModule(PipelineModule):
         self,
         frame_bgr: np.ndarray,
         prev_gray: Optional[np.ndarray] = None,
+        clip_score: Optional[float] = None,
     ) -> float:
         blood = self._blood_gore_score(frame_bgr)
 
@@ -172,7 +218,8 @@ class HarmfulContentModule(PipelineModule):
             curr_gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
             motion = self._violence_motion_score(prev_gray, curr_gray)
 
-        clip_score = self._clip_harm_score(frame_bgr)
+        if clip_score is None:
+            clip_score = self._clip_harm_score(frame_bgr)
 
         if clip_score is not None:
             return 0.2 * blood + 0.1 * motion + 0.7 * clip_score
@@ -217,15 +264,15 @@ class HarmfulContentModule(PipelineModule):
         img = cv2.imread(str(path))
         if img is None:
             return None
-        return self._score_frame(img)
+        clip_scores = self._clip_harm_scores([img], cache_key=("harmful_image", media_state_key(path)))
+        return self._score_frame(img, clip_score=clip_scores[0] if clip_scores else None)
 
     def _process_video(self, path: Path) -> Optional[float]:
         cap = cv2.VideoCapture(str(path))
         if not cap.isOpened():
             return None
 
-        scores = []
-        prev_gray = None
+        frames = []
         idx = 0
 
         while idx < self.max_frames:
@@ -233,10 +280,19 @@ class HarmfulContentModule(PipelineModule):
             if not ret:
                 break
             if idx % self.subsample == 0:
-                s = self._score_frame(frame, prev_gray)
-                scores.append(s)
-                prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                frames.append(frame)
             idx += 1
 
         cap.release()
+        if not frames:
+            return None
+        clip_scores = self._clip_harm_scores(
+            frames,
+            cache_key=("harmful_video", self.subsample, self.max_frames, media_state_key(path)),
+        )
+        scores = []
+        prev_gray = None
+        for frame, clip_score in zip(frames, clip_scores):
+            scores.append(self._score_frame(frame, prev_gray, clip_score=clip_score))
+            prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         return float(np.mean(scores)) if scores else None

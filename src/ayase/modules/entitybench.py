@@ -25,8 +25,10 @@ import cv2
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
+from ayase.image import arrays_to_pil
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +38,14 @@ class EntityBenchModule(BatchMetricModule):
     description = "EntityBench cross-shot identity persistence (arXiv:2605.15199)"
     default_config = {
         "backend": "auto",  # "auto" | "dinov2_face" | "clip" | "histogram"
+        "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.backend_pref = self.config.get("backend", "auto")
+        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.models_dir = self.config.get("models_dir", "models")
         self._device = "cpu"
         self._dinov2 = None
@@ -90,11 +94,36 @@ class EntityBenchModule(BatchMetricModule):
     def _try_setup_clip(self) -> bool:
         try:
             from transformers import CLIPModel, CLIPProcessor
-            self._clip_model = CLIPModel.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
-            ).to(self._device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                "openai/clip-vit-base-patch32", cache_dir=self.models_dir,
+            from ayase.config import resolve_model_path
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            resolved = resolve_model_path(self.clip_model_name, self.models_dir)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
             )
             return True
         except Exception as e:
@@ -110,7 +139,7 @@ class EntityBenchModule(BatchMetricModule):
         if img is None:
             return None
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        visual = self._visual_embed(img_rgb)
+        visual = self._visual_embed(sample, img_rgb)
         face = self._face_embed(img_rgb) if self._face_model is not None else None
         group_key = _group_key(sample)
         self._groups[group_key].append((sample, visual, face))
@@ -178,7 +207,7 @@ class EntityBenchModule(BatchMetricModule):
                 sims.append((sim + 1.0) / 2.0)
         return float(np.mean(sims))
 
-    def _visual_embed(self, img_rgb: np.ndarray) -> Optional[np.ndarray]:
+    def _visual_embed(self, sample: Sample, img_rgb: np.ndarray) -> Optional[np.ndarray]:
         if self.active_backend == "dinov2_face" and self._dinov2 is not None:
             try:
                 import torch
@@ -190,14 +219,16 @@ class EntityBenchModule(BatchMetricModule):
                 logger.debug(f"DINOv2 embed failed: {e}")
         if self.active_backend == "clip" and self._clip_model is not None:
             try:
-                import torch
-                from PIL import Image as PILImage
-                inputs = self._clip_processor(
-                    images=PILImage.fromarray(img_rgb), return_tensors="pt",
-                ).to(self._device)
-                with torch.no_grad():
-                    feat = self._clip_model.get_image_features(**inputs)
-                return feat.cpu().numpy().flatten()
+                feat = cached_clip_image_features(
+                    self,
+                    self._clip_model,
+                    self._clip_processor,
+                    arrays_to_pil([img_rgb]),
+                    model_key=self.clip_model_name,
+                    device=self._device,
+                    cache_key=("entitybench", media_state_key(sample.path)),
+                )
+                return feat.squeeze(0).detach().float().cpu().numpy().flatten()
             except Exception as e:
                 logger.debug(f"CLIP embed failed: {e}")
         return None

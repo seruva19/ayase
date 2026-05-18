@@ -12,14 +12,19 @@ import hashlib
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
-import cv2
 import numpy as np
 
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
+from ayase.image import arrays_to_pil, sample_frames
+from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
+from ayase.runtime import (
+    cached_clip_image_feature_groups,
+    cached_clip_image_features,
+    cached_clip_text_features,
+    media_state_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -55,15 +60,40 @@ class SDReferenceModule(PipelineModule):
         try:
             import torch
             from transformers import CLIPModel, CLIPProcessor
+            from ayase.runtime import (
+                from_pretrained_with_attention,
+                resolve_torch_device,
+                shared_runtime_resource,
+            )
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             from ayase.config import resolve_model_path
 
             models_dir = self.config.get("models_dir", "models")
             resolved_clip = resolve_model_path(self.clip_model_name, models_dir)
             logger.info(f"Loading CLIP for SD Score on {self._device}...")
-            self._clip_model = CLIPModel.from_pretrained(resolved_clip).to(self._device).eval()
-            self._clip_processor = CLIPProcessor.from_pretrained(resolved_clip)
+
+            def load_clip():
+                model = from_pretrained_with_attention(
+                    CLIPModel,
+                    resolved_clip,
+                    self.config,
+                    device=self._device,
+                ).to(self._device).eval()
+                processor = CLIPProcessor.from_pretrained(resolved_clip)
+                return model, processor
+
+            self._clip_model, self._clip_processor = shared_runtime_resource(
+                self,
+                (
+                    "hf_clip",
+                    resolved_clip,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "default",
+                ),
+                load_clip,
+            )
             self._ml_available = True
         except Exception as e:
             logger.warning(f"Failed to load CLIP for SD Score: {e}")
@@ -98,7 +128,7 @@ class SDReferenceModule(PipelineModule):
                 return sample
 
             prompt = sample.caption.text
-            frame_embeds = self._embed_frames(frames)  # [T, D]
+            frame_embeds = self._embed_frames(sample, frames)  # [T, D]
 
             if self._sd_available:
                 sd_embeds = self._get_sd_embeds(prompt)  # [K, D]
@@ -107,7 +137,6 @@ class SDReferenceModule(PipelineModule):
                 # Fallback: CLIP text-image similarity as proxy
                 score = self._compute_text_proxy(frame_embeds, prompt)
 
-            from ayase.models import QualityMetrics
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.sd_score = float(score)
@@ -117,27 +146,65 @@ class SDReferenceModule(PipelineModule):
 
         return sample
 
-    def _embed_frames(self, frames):
-        import torch
-        from PIL import Image
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available:
+            return samples
+        if self._sd_available:
+            return super().process_batch(samples)
 
-        pil_frames = [Image.fromarray(f) for f in frames]
-        embeds = []
-        with torch.no_grad():
-            for img in pil_frames:
-                inputs = self._clip_processor(images=img, return_tensors="pt").to(self._device)
-                feat = extract_features(self._clip_model.get_image_features(**inputs))
-                embeds.append(feat)
-        embeds = torch.cat(embeds, dim=0)
-        return embeds / embeds.norm(p=2, dim=-1, keepdim=True)
+        try:
+            prepared = []
+            image_groups = []
+            cache_keys = []
+            for sample in samples:
+                if not sample.caption:
+                    continue
+                frames = self._load_frames(sample)
+                if not frames:
+                    continue
+                prepared.append((sample, sample.caption.text))
+                image_groups.append(arrays_to_pil(frames))
+                cache_keys.append((self.num_video_frames, media_state_key(sample.path)))
+
+            if not prepared:
+                return samples
+
+            feature_groups = cached_clip_image_feature_groups(
+                self,
+                self._clip_model,
+                self._clip_processor,
+                image_groups,
+                model_key=self.clip_model_name,
+                device=self._device,
+                cache_keys=cache_keys,
+            )
+            for (sample, prompt), frame_embeds in zip(prepared, feature_groups):
+                score = self._compute_text_proxy(frame_embeds, prompt)
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.sd_score = float(score)
+        except Exception as e:
+            logger.warning("SD Score batch failed: %s", e)
+        return samples
+
+    def _embed_frames(self, sample: Sample, frames):
+        return cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            arrays_to_pil(frames),
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(self.num_video_frames, media_state_key(sample.path)),
+        )
 
     def _get_sd_embeds(self, prompt: str):
-        import torch
         from PIL import Image
 
-        embeds = []
+        pil_images = []
+        prompt_hash = hashlib.md5(prompt.encode()).hexdigest()
         for i in range(self.num_sd_images):
-            cache_path = self.cache_dir / f"{hashlib.md5(prompt.encode()).hexdigest()}_{i}.png"
+            cache_path = self.cache_dir / f"{prompt_hash}_{i}.png"
             if cache_path.exists():
                 pil_img = Image.open(cache_path).convert("RGB")
             else:
@@ -147,14 +214,23 @@ class SDReferenceModule(PipelineModule):
                 )
                 pil_img = result.images[0]
                 pil_img.save(cache_path)
+            pil_images.append(pil_img)
 
-            with torch.no_grad():
-                inputs = self._clip_processor(images=pil_img, return_tensors="pt").to(self._device)
-                feat = extract_features(self._clip_model.get_image_features(**inputs))
-                embeds.append(feat)
-
-        embeds = torch.cat(embeds, dim=0)
-        return embeds / embeds.norm(p=2, dim=-1, keepdim=True)
+        return cached_clip_image_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            pil_images,
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=(
+                "sd_reference_images",
+                prompt_hash,
+                self.num_sd_images,
+                self.sd_steps,
+                self.sdxl_model_name,
+            ),
+        )
 
     def _compute_sd_score(self, frame_embeds, sd_embeds):
         # [T, D] @ [D, K] -> [T, K], average everything
@@ -162,36 +238,21 @@ class SDReferenceModule(PipelineModule):
         return float(sim_matrix.mean().item())
 
     def _compute_text_proxy(self, frame_embeds, prompt):
-        import torch
-
-        with torch.no_grad():
-            inputs = self._clip_processor(text=[prompt], return_tensors="pt", padding=True, truncation=True).to(self._device)
-            text_feat = extract_features(self._clip_model.get_text_features(**inputs))
-            text_feat = text_feat / text_feat.norm(p=2, dim=-1, keepdim=True)
+        text_feat = cached_clip_text_features(
+            self,
+            self._clip_model,
+            self._clip_processor,
+            [prompt],
+            model_key=self.clip_model_name,
+            device=self._device,
+            cache_key=("sd_reference_prompt", prompt),
+        )
         sims = frame_embeds @ text_feat.T  # [T, 1]
         return float(sims.mean().item())
 
     def _load_frames(self, sample: Sample):
-        frames = []
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return frames
-                n = min(self.num_video_frames, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames.append(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            return sample_frames(sample.path, max_frames=self.num_video_frames, color="rgb")
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
-        return frames
+        return []
