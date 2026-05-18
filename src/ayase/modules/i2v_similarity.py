@@ -122,7 +122,13 @@ class I2VSimilarityModule(PipelineModule):
             # (which defaults weights_only=True, incompatible with TorchScript)
             _orig_load_sd = open_clip.factory.load_state_dict
             def _patched_load_sd(checkpoint_path, device='cpu', weights_only=True):
-                return _orig_load_sd(checkpoint_path, device=device, weights_only=False)
+                state_dict = _orig_load_sd(checkpoint_path, device=device, weights_only=False)
+                # Strip OpenAI-CLIP metadata keys present in .pt/.safetensors checkpoints
+                # but not in the open_clip CLIP module — they cause strict-load failures.
+                if hasattr(state_dict, "pop"):
+                    for k in ("context_length", "input_resolution", "vocab_size"):
+                        state_dict.pop(k, None)
+                return state_dict
 
             logger.info(f"Loading CLIP ({self.clip_model_name}) for I2V on {self._device}...")
             open_clip.factory.load_state_dict = _patched_load_sd
