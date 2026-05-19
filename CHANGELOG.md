@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.38]
+
+### Fixed
+
+- **background_consistency**: fixed `F.cosine_similarity` 1D crash on the 2D embedding tensor returned by `cached_clip_image_features`; the metric reports values again instead of silently falling back to `None`.
+- **i2v_similarity**: stripped OpenAI-CLIP metadata keys (`context_length`, `input_resolution`, `vocab_size`) before `open_clip` `load_state_dict`, allowing the bundled `.safetensors` checkpoint to load.
+- **clip_temporal**: reverted `face_consistency` to consecutive-pair averaging (EvalCrafter rolling window) after the 0.1.37 switch to first-frame similarity caused unexpected drops on long clips with camera motion.
+
 ## [0.1.37]
 
 ### Added
