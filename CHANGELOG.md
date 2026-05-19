@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.40]
+
+### Changed
+
+- **text_detection**: `lang` is now read from module config (defaults to `"en"`); previously hard-coded to English.
+
 ## [0.1.39]
 
 ### Fixed
