@@ -193,10 +193,15 @@ class OCRFidelityModule(PipelineModule):
             if not frames:
                 return sample
 
-            # Run OCR on each frame, collect all recognized text
-            all_recognized: List[str] = []
+            # Run OCR per-frame and keep the best NED — EvalCrafter
+            # "text rendered correctly at least once" semantics.
             major = getattr(self, "_ocr_major", 3)
+            best_ned = 1.0
+            best_cer = 1.0
+            best_wer = 1.0
+            best_recognized = ""
             for frame in frames:
+                frame_texts: List[str] = []
                 if major >= 3:
                     # paddleocr 3.x: .predict(frame); result[0] is a dict
                     # carrying dt_polys / rec_texts / rec_scores.
@@ -204,20 +209,26 @@ class OCRFidelityModule(PipelineModule):
                     if result and result[0]:
                         for txt in (result[0].get("rec_texts") or []):
                             if txt:
-                                all_recognized.append(txt)
+                                frame_texts.append(txt)
                 else:
                     result = self._ocr.ocr(frame, cls=True)
                     if result and result[0]:
                         for line in result[0]:
                             txt = line[1][0]
                             if txt:
-                                all_recognized.append(txt)
+                                frame_texts.append(txt)
+                frame_recognized = " ".join(frame_texts).lower()
+                frame_ned = _normalized_edit_distance(expected, frame_recognized)
+                if frame_ned < best_ned:
+                    best_ned = frame_ned
+                    best_cer = _character_error_rate(expected, frame_recognized)
+                    best_wer = _word_error_rate(expected, frame_recognized)
+                    best_recognized = frame_recognized
 
-            recognized = " ".join(all_recognized).lower()
-
-            ned = _normalized_edit_distance(expected, recognized)
-            cer = _character_error_rate(expected, recognized)
-            wer = _word_error_rate(expected, recognized)
+            recognized = best_recognized
+            ned = best_ned
+            cer = best_cer
+            wer = best_wer
             score = max(0.0, (1.0 - ned)) * 100.0
 
             if sample.quality_metrics is None:
