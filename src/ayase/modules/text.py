@@ -43,11 +43,15 @@ class TextDetectionModule(PipelineModule):
                 import os
                 os.environ.setdefault("FLAGS_use_mkldnn", "0")
                 from paddleocr import PaddleOCR
+                import paddleocr
                 logger.info("Loading PaddleOCR...")
-                # paddleocr 3.x removed use_angle_cls / show_log; angle
-                # classification is now controlled by use_textline_orientation
-                # (default True).
-                self._model = PaddleOCR(lang=self.lang)
+                ocr_version = getattr(paddleocr, "__version__", "0.0.0")
+                major = int(ocr_version.split(".")[0]) if ocr_version[:1].isdigit() else 0
+                if major >= 3:
+                    self._model = PaddleOCR(lang=self.lang)
+                else:
+                    self._model = PaddleOCR(use_angle_cls=True, lang=self.lang, show_log=False)
+                self._paddle_major = major
                 self._engine = 'paddle'
                 self._ocr_available = True
                 return
@@ -87,22 +91,39 @@ class TextDetectionModule(PipelineModule):
                 total_area = image.shape[0] * image.shape[1]
 
                 if self._engine == 'paddle':
-                    # paddleocr 3.x: .ocr(...) is replaced by .predict(...);
-                    # result[0] is a dict with dt_polys / rec_texts / rec_scores.
-                    result = self._model.predict(image)
-                    if result and result[0]:
-                        r = result[0]
-                        polys = r.get("dt_polys") or []
-                        texts = r.get("rec_texts") or []
-                        scores = r.get("rec_scores") or []
-                        for poly, txt, conf in zip(polys, texts, scores):
-                            if conf < 0.5:
-                                continue
-                            pts = np.asarray(poly, dtype=np.float64)
-                            x_min, y_min = pts.min(axis=0)
-                            x_max, y_max = pts.max(axis=0)
-                            text_area += float((x_max - x_min) * (y_max - y_min))
-                            found_text_frame.append(txt)
+                    major = getattr(self, "_paddle_major", 3)
+                    if major >= 3:
+                        # paddleocr 3.x: result[0] is a dict with
+                        # dt_polys / rec_texts / rec_scores.
+                        result = self._model.predict(image)
+                        if result and result[0]:
+                            r = result[0]
+                            polys = r.get("dt_polys") or []
+                            texts = r.get("rec_texts") or []
+                            scores = r.get("rec_scores") or []
+                            for poly, txt, conf in zip(polys, texts, scores):
+                                if conf < 0.5:
+                                    continue
+                                pts = np.asarray(poly, dtype=np.float64)
+                                x_min, y_min = pts.min(axis=0)
+                                x_max, y_max = pts.max(axis=0)
+                                text_area += float((x_max - x_min) * (y_max - y_min))
+                                found_text_frame.append(txt)
+                    else:
+                        # paddleocr 2.x: result[0] is a list of
+                        # [poly, (text, conf)] entries.
+                        result = self._model.ocr(image, cls=True)
+                        if result and result[0]:
+                            for line in result[0]:
+                                poly = line[0]
+                                txt, conf = line[1]
+                                if conf < 0.5:
+                                    continue
+                                pts = np.asarray(poly, dtype=np.float64)
+                                x_min, y_min = pts.min(axis=0)
+                                x_max, y_max = pts.max(axis=0)
+                                text_area += float((x_max - x_min) * (y_max - y_min))
+                                found_text_frame.append(txt)
 
                 elif self._engine == 'tesseract':
                     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
