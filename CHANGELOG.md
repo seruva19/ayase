@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.41]
+
+### Fixed
+
+- **text_detection**: PaddleOCR 2.x is now supported alongside 3.x (the module previously called `.predict()` unconditionally and silently produced `None` on 2.x).
+
 ## [0.1.40]
 
 ### Changed
