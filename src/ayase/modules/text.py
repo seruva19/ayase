@@ -19,12 +19,14 @@ class TextDetectionModule(PipelineModule):
     default_config = {
         "use_paddle": True,
         "max_text_area": 0.05,
+        "lang": "en",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.use_paddle = self.config.get("use_paddle", True)
         self.max_text_area = self.config.get("max_text_area", 0.05)
+        self.lang = self.config.get("lang", "en")
         
         self._ocr_available = False
         self._engine = None # 'paddle' or 'tesseract'
@@ -45,7 +47,7 @@ class TextDetectionModule(PipelineModule):
                 # paddleocr 3.x removed use_angle_cls / show_log; angle
                 # classification is now controlled by use_textline_orientation
                 # (default True).
-                self._model = PaddleOCR(lang='en')
+                self._model = PaddleOCR(lang=self.lang)
                 self._engine = 'paddle'
                 self._ocr_available = True
                 return
