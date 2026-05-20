@@ -122,12 +122,14 @@ class OCRFidelityModule(PipelineModule):
     default_config = {
         "num_frames": 8,
         "lang": "en",
+        "text_recognition_model_name": None,
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.num_frames = self.config.get("num_frames", 8)
         self.lang = self.config.get("lang", "en")
+        self.text_recognition_model_name = self.config.get("text_recognition_model_name")
         self._ocr = None
         self._ocr_available = False
 
@@ -158,7 +160,12 @@ class OCRFidelityModule(PipelineModule):
             ocr_version = getattr(paddleocr, "__version__", "0.0.0")
             major = int(ocr_version.split(".")[0])
             if major >= 3:
-                self._ocr = PaddleOCR(lang=self.lang)
+                kw = {}
+                if self.text_recognition_model_name:
+                    kw["text_recognition_model_name"] = self.text_recognition_model_name
+                else:
+                    kw["lang"] = self.lang
+                self._ocr = PaddleOCR(**kw)
             else:
                 self._ocr = PaddleOCR(use_angle_cls=True, lang=self.lang, show_log=False)
             self._ocr_major = major

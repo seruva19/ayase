@@ -20,6 +20,7 @@ class TextDetectionModule(PipelineModule):
         "use_paddle": True,
         "max_text_area": 0.05,
         "lang": "en",
+        "text_recognition_model_name": None,
     }
 
     def __init__(self, config=None):
@@ -27,6 +28,7 @@ class TextDetectionModule(PipelineModule):
         self.use_paddle = self.config.get("use_paddle", True)
         self.max_text_area = self.config.get("max_text_area", 0.05)
         self.lang = self.config.get("lang", "en")
+        self.text_recognition_model_name = self.config.get("text_recognition_model_name")
         
         self._ocr_available = False
         self._engine = None # 'paddle' or 'tesseract'
@@ -48,7 +50,12 @@ class TextDetectionModule(PipelineModule):
                 ocr_version = getattr(paddleocr, "__version__", "0.0.0")
                 major = int(ocr_version.split(".")[0]) if ocr_version[:1].isdigit() else 0
                 if major >= 3:
-                    self._model = PaddleOCR(lang=self.lang)
+                    kw = {}
+                    if self.text_recognition_model_name:
+                        kw["text_recognition_model_name"] = self.text_recognition_model_name
+                    else:
+                        kw["lang"] = self.lang
+                    self._model = PaddleOCR(**kw)
                 else:
                     self._model = PaddleOCR(use_angle_cls=True, lang=self.lang, show_log=False)
                 self._paddle_major = major
