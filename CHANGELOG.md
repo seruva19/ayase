@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.43]
+
+### Changed
+
+- **deps**: GPU paddle wheel is now pinned via PEP 508 direct URL for Linux + Python 3.10 + x86_64 (CUDA 12.6 build of paddlepaddle-gpu 3.3.1). Other platforms fall back to plain `paddlepaddle>=3.0`. Removes the manual extra step required to get GPU OCR working.
+
+### Removed
+
+- **ayase-bootstrap** CLI (introduced in 0.1.42) — no longer needed now that paddle-gpu is resolved by pip directly.
+
 ## [0.1.42]
 
 ### Changed
