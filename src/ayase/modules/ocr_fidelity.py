@@ -135,40 +135,18 @@ class OCRFidelityModule(PipelineModule):
 
     def setup(self) -> None:
         try:
-            # PaddleOCR 2.x uses np.sctypes which was removed in NumPy 2.0
-            import numpy as _np
-            if not hasattr(_np, "sctypes"):
-                _np.sctypes = {
-                    "int": [_np.int8, _np.int16, _np.int32, _np.int64],
-                    "uint": [_np.uint8, _np.uint16, _np.uint32, _np.uint64],
-                    "float": [_np.float16, _np.float32, _np.float64],
-                    "complex": [_np.complex64, _np.complex128],
-                    "others": [bool, object, bytes, str, _np.void],
-                }
-
-            # Paddle 3.0 PIR runtime has an oneDNN bug on CPU init; disable
-            # MKL-DNN before importing paddle. Harmless on 2.x.
             import os
             os.environ.setdefault("FLAGS_use_mkldnn", "0")
 
             from paddleocr import PaddleOCR
-            import paddleocr
 
             logger.info("Loading PaddleOCR for OCR Fidelity...")
-            # PaddleOCR 3.x dropped show_log AND use_angle_cls (replaced by
-            # use_textline_orientation, default True).
-            ocr_version = getattr(paddleocr, "__version__", "0.0.0")
-            major = int(ocr_version.split(".")[0])
-            if major >= 3:
-                kw = {}
-                if self.text_recognition_model_name:
-                    kw["text_recognition_model_name"] = self.text_recognition_model_name
-                else:
-                    kw["lang"] = self.lang
-                self._ocr = PaddleOCR(**kw)
+            kw = {}
+            if self.text_recognition_model_name:
+                kw["text_recognition_model_name"] = self.text_recognition_model_name
             else:
-                self._ocr = PaddleOCR(use_angle_cls=True, lang=self.lang, show_log=False)
-            self._ocr_major = major
+                kw["lang"] = self.lang
+            self._ocr = PaddleOCR(**kw)
             self._ocr_available = True
         except ImportError:
             logger.warning("PaddleOCR not installed. OCR Fidelity disabled.")
@@ -202,28 +180,17 @@ class OCRFidelityModule(PipelineModule):
 
             # Run OCR per-frame and keep the best NED — EvalCrafter
             # "text rendered correctly at least once" semantics.
-            major = getattr(self, "_ocr_major", 3)
             best_ned = 1.0
             best_cer = 1.0
             best_wer = 1.0
             best_recognized = ""
             for frame in frames:
                 frame_texts: List[str] = []
-                if major >= 3:
-                    # paddleocr 3.x: .predict(frame); result[0] is a dict
-                    # carrying dt_polys / rec_texts / rec_scores.
-                    result = self._ocr.predict(frame)
-                    if result and result[0]:
-                        for txt in (result[0].get("rec_texts") or []):
-                            if txt:
-                                frame_texts.append(txt)
-                else:
-                    result = self._ocr.ocr(frame, cls=True)
-                    if result and result[0]:
-                        for line in result[0]:
-                            txt = line[1][0]
-                            if txt:
-                                frame_texts.append(txt)
+                result = self._ocr.predict(frame)
+                if result and result[0]:
+                    for txt in (result[0].get("rec_texts") or []):
+                        if txt:
+                            frame_texts.append(txt)
                 frame_recognized = " ".join(frame_texts).lower()
                 frame_ned = _normalized_edit_distance(expected, frame_recognized)
                 if frame_ned < best_ned:
