@@ -124,12 +124,19 @@ def ensure_paddle_gpu() -> None:
         return
     _PADDLE_GPU_ENSURED = True
 
+    # Probe via metadata only — do NOT `import paddle` here, otherwise the CPU
+    # build ends up cached in sys.modules and pip-install of the GPU build can't
+    # take effect within the same process.
+    import importlib.metadata as _md
     try:
-        import paddle  # type: ignore[import-not-found]
-        if paddle.is_compiled_with_cuda():
-            return
-    except Exception:
-        return
+        _md.distribution("paddlepaddle-gpu")
+        return  # GPU paddle already installed
+    except _md.PackageNotFoundError:
+        pass
+    try:
+        _md.distribution("paddlepaddle")
+    except _md.PackageNotFoundError:
+        return  # no paddle at all; nothing to swap
 
     cuda = None
     try:
