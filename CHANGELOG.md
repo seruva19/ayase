@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.42]
+
+### Changed
+
+- **deps**: require `paddleocr>=3.0` and `paddlepaddle>=3.0`; removed paddleocr 2.x compatibility branches in `ocr_fidelity` and `text_detection`.
+- **ocr_fidelity** / **text_detection**: accept `text_recognition_model_name` in module config to bypass `lang`-based auto-routing (e.g. force `cyrillic_PP-OCRv5_mobile_rec` instead of the default `eslav_PP-OCRv5_mobile_rec`, which hangs on init in PaddleOCR 3.5.0).
+
+### Added
+
+- **ayase-bootstrap** CLI: `ayase-bootstrap --gpu` auto-detects CUDA and installs the matching `paddlepaddle-gpu` wheel from paddle.org index (CUDA 11.8 / 12.0 / 12.3 / 12.6). Required for GPU OCR inference, which standard `pip install` cannot resolve from `pyproject.toml`.
+
 ## [0.1.41]
 
 ### Fixed
