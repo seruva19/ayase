@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.45]
+
+### Fixed
+
+- **_compat.ensure_paddle_gpu**: probe paddle presence via `importlib.metadata` instead of `import paddle` — the latter cached the CPU build in `sys.modules` and prevented the lazy GPU swap from taking effect in the same process.
+
 ## [0.1.44]
 
 ### Changed
