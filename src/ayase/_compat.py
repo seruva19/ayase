@@ -98,4 +98,71 @@ def apply_patches() -> None:
     setattr(sys, _PATCHED_FLAG, True)
 
 
+_PADDLE_GPU_INDEXES = {
+    "11.8": "https://www.paddlepaddle.org.cn/packages/stable/cu118/",
+    "12.0": "https://www.paddlepaddle.org.cn/packages/stable/cu120/",
+    "12.3": "https://www.paddlepaddle.org.cn/packages/stable/cu123/",
+    "12.6": "https://www.paddlepaddle.org.cn/packages/stable/cu126/",
+}
+_PADDLE_GPU_VERSION = "3.3.1"
+_PADDLE_GPU_ENSURED = False
+
+
+def ensure_paddle_gpu() -> None:
+    """Swap CPU paddlepaddle for paddlepaddle-gpu when CUDA is available.
+
+    PaddlePaddle 3.x publishes GPU wheels only on paddle.org's simple index,
+    not standard PyPI. ``pip install ayase`` therefore lands a CPU paddle.
+    On a CUDA host we install the matching GPU build at runtime so OCR modules
+    just work.
+
+    No-op on non-CUDA hosts, when paddle is already GPU-compiled, when CUDA
+    version is unsupported, or when pip is unavailable.
+    """
+    global _PADDLE_GPU_ENSURED
+    if _PADDLE_GPU_ENSURED:
+        return
+    _PADDLE_GPU_ENSURED = True
+
+    try:
+        import paddle  # type: ignore[import-not-found]
+        if paddle.is_compiled_with_cuda():
+            return
+    except Exception:
+        return
+
+    cuda = None
+    try:
+        import torch  # type: ignore[import-not-found]
+        cuda = getattr(torch.version, "cuda", None)
+    except Exception:
+        pass
+    if not cuda:
+        return
+
+    cuda_key = ".".join(cuda.split(".")[:2])
+    if cuda_key not in _PADDLE_GPU_INDEXES:
+        target_major = cuda.split(".")[0]
+        candidates = [k for k in _PADDLE_GPU_INDEXES if k.split(".")[0] == target_major]
+        if not candidates:
+            return
+        cuda_key = max(candidates, key=lambda v: tuple(int(x) for x in v.split(".")))
+
+    index = _PADDLE_GPU_INDEXES[cuda_key]
+    import subprocess
+    import logging
+    log = logging.getLogger("ayase._compat")
+    log.warning("Installing paddlepaddle-gpu==%s for CUDA %s (one-time, ~600MB)",
+                _PADDLE_GPU_VERSION, cuda_key)
+    cmd = [
+        sys.executable, "-m", "pip", "install",
+        f"paddlepaddle-gpu=={_PADDLE_GPU_VERSION}",
+        "--index-url", index,
+    ]
+    try:
+        subprocess.check_call(cmd)
+    except Exception as e:
+        log.warning("paddlepaddle-gpu auto-install failed: %s", e)
+
+
 apply_patches()

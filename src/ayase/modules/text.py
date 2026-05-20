@@ -44,6 +44,8 @@ class TextDetectionModule(PipelineModule):
                 # MKL-DNN before importing paddle sidesteps it.
                 import os
                 os.environ.setdefault("FLAGS_use_mkldnn", "0")
+                from ayase._compat import ensure_paddle_gpu
+                ensure_paddle_gpu()
                 from paddleocr import PaddleOCR
                 logger.info("Loading PaddleOCR...")
                 kw = {}

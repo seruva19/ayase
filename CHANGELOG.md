@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.44]
+
+### Changed
+
+- **deps**: only pin CPU `paddlepaddle>=3.0` (PyPI forbids direct URLs to GPU wheels). The OCR modules detect CUDA at first `setup()` and lazily install the matching `paddlepaddle-gpu==3.3.1` wheel from paddle.org index via subprocess — so `pip install ayase` followed by OCR usage just works on CUDA hosts without extra flags.
+
 ## [0.1.43]
 
 ### Changed
