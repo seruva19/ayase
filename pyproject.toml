@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.42"
+version = "0.1.43"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -70,8 +70,8 @@ dependencies = [
     "nltk>=3.8.0",
     "accelerate>=0.25.0",
     "diffusers>=0.25.0",
-    "paddlepaddle-gpu @ https://paddle-whl.bj.bcebos.com/stable/cu126/paddlepaddle-gpu/paddlepaddle_gpu-3.3.1-cp310-cp310-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.10' and platform_machine == 'x86_64'",
-    "paddlepaddle>=3.0 ; sys_platform != 'linux' or python_version != '3.10' or platform_machine != 'x86_64'",
+    "paddlepaddle-gpu==3.3.1 ; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "paddlepaddle>=3.0 ; sys_platform != 'linux' or platform_machine != 'x86_64'",
     "paddleocr>=3.0",
     "python-Levenshtein>=0.21.0",
     "mediapipe>=0.10.0,<1.0",
