@@ -112,6 +112,7 @@ Changelog = "https://github.com/seruva19/ayase/blob/main/CHANGELOG.md"
 
 [project.scripts]
 ayase = "ayase.cli:app"
+ayase-bootstrap = "ayase._bootstrap:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ayase"]
