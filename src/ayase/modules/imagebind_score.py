@@ -60,6 +60,40 @@ class ImageBindScoreModule(PipelineModule):
         self._data_module = None
         self._ml_available = False
 
+    _WEIGHTS_URLS = {
+        "imagebind_huge.pth": (
+            "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+            "imagebind/imagebind_huge.pth"
+        ),
+    }
+
+    def _ensure_weights(self) -> bool:
+        """Pre-position ``.checkpoints/imagebind_huge.pth`` from the Ayase HF
+        mirror. The vendored ``imagebind_model.imagebind_huge(pretrained=True)``
+        otherwise downloads from ``dl.fbaipublicfiles.com`` via
+        ``torch.hub.download_url_to_file``, which has no timeout and hangs
+        indefinitely on constrained networks. Returns True iff weights are
+        present (either pre-existing or freshly downloaded)."""
+        import os
+        target_dir = ".checkpoints"
+        target_path = os.path.join(target_dir, "imagebind_huge.pth")
+        if os.path.exists(target_path) and os.path.getsize(target_path) > 1_000_000:
+            return True
+        url = self._WEIGHTS_URLS.get("imagebind_huge.pth")
+        if not url:
+            return False
+        try:
+            from ayase.config import download_model_file
+            download_model_file(
+                "imagebind_huge.pth",
+                url,
+                target_dir,
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning("ImageBind weights download failed: %s", e)
+            return False
+        return os.path.exists(target_path) and os.path.getsize(target_path) > 1_000_000
+
     def setup(self) -> None:
         try:
             import torch
@@ -68,6 +102,14 @@ class ImageBindScoreModule(PipelineModule):
             from imagebind.models.imagebind_model import ModalityType
         except ImportError:
             logger.warning("ImageBind requires `pip install imagebind`")
+            self._ml_available = False
+            return
+
+        if not self._ensure_weights():
+            logger.warning(
+                "ImageBind weights unavailable (cannot download from "
+                "AkaneTendo25/ayase-models HF mirror); module disabled"
+            )
             self._ml_available = False
             return
 
