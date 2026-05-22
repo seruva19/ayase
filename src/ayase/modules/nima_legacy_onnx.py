@@ -34,14 +34,16 @@ class NIMALegacyONNXModule(PipelineModule):
         "Legacy NIMA aesthetic score (1-10) via a frozen ONNX MobileNet export"
     )
     default_config = {
-        "model_path": "models/nima_mobilenet_legacy.onnx",
+        "model_path": "nima/nima_mobilenet_aesthetic.onnx",
+        "models_dir": "models",
         "device": "auto",
         "image_size": 224,
+        "preprocess": "mobilenet",
     }
     models = [
         {
-            "id": "nima_mobilenet_legacy",
-            "type": "local",
+            "id": "cromsc/nima-mobilenet-aesthetic",
+            "type": "huggingface",
             "task": "Frozen ONNX export of the NIMA MobileNet aesthetic predictor",
         },
     ]
@@ -56,8 +58,16 @@ class NIMALegacyONNXModule(PipelineModule):
         self._ml_available = False
         self._session = None
         self._input_name: Optional[str] = None
+        self._input_layout = "nhwc"
         self._image_size = int(self.config.get("image_size", 224))
         self._device = "cpu"
+
+    _WEIGHTS_URLS = {
+        "nima_mobilenet_aesthetic.onnx": (
+            "https://huggingface.co/cromsc/nima-mobilenet-aesthetic/resolve/main/"
+            "nima_mobilenet_aesthetic.onnx"
+        ),
+    }
 
     def setup(self) -> None:
         try:
@@ -90,6 +100,7 @@ class NIMALegacyONNXModule(PipelineModule):
                 self._session = None
                 return
             self._input_name = inputs[0].name
+            self._input_layout = self._infer_input_layout(inputs[0].shape)
             active = self._session.get_providers()
             self._device = (
                 "cuda" if any("CUDA" in p for p in active) else "cpu"
@@ -111,7 +122,7 @@ class NIMALegacyONNXModule(PipelineModule):
         path = Path(raw)
         if path.is_absolute() or path.exists():
             return path
-        models_dir = self.config.get("models_dir")
+        models_dir = self.config.get("models_dir", "models")
         if models_dir:
             candidate = Path(models_dir) / path.name
             if candidate.exists():
@@ -120,7 +131,31 @@ class NIMALegacyONNXModule(PipelineModule):
             joined = Path(models_dir) / path
             if joined.exists():
                 return joined
-        return path
+            return self._ensure_model_file(path, models_dir)
+        return self._ensure_model_file(path, ".")
+
+    def _ensure_model_file(self, path: Path, models_dir) -> Path:
+        url = self._WEIGHTS_URLS.get(path.name)
+        if not url:
+            return path
+        try:
+            from ayase.config import download_model_file
+
+            return download_model_file(str(path), url, str(models_dir))
+        except Exception as e:
+            logger.warning("NIMA legacy ONNX download failed: %s", e)
+            return path
+
+    @staticmethod
+    def _infer_input_layout(shape) -> str:
+        dims = list(shape or [])
+        if len(dims) != 4:
+            return "nhwc"
+        if dims[1] == 3:
+            return "nchw"
+        if dims[-1] == 3:
+            return "nhwc"
+        return "nhwc"
 
     def _select_providers(self, ort) -> list:
         device_cfg = str(self.config.get("device", "auto")).lower()
@@ -165,13 +200,21 @@ class NIMALegacyONNXModule(PipelineModule):
                 rgb = img.convert("RGB").resize(
                     (self._image_size, self._image_size), Image.BILINEAR
                 )
-                arr = np.asarray(rgb, dtype=np.float32) / 255.0
+                arr = np.asarray(rgb, dtype=np.float32)
 
-            mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-            std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-            arr = (arr - mean) / std
-            # NCHW float32
-            tensor = np.transpose(arr, (2, 0, 1))[None, ...].astype(np.float32)
+            preprocess = str(self.config.get("preprocess", "mobilenet")).lower()
+            if preprocess == "mobilenet":
+                arr = (arr / 127.5) - 1.0
+            elif preprocess in {"none", "raw"}:
+                pass
+            else:
+                logger.warning("Unknown NIMA preprocess %r; using mobilenet", preprocess)
+                arr = (arr / 127.5) - 1.0
+
+            if self._input_layout == "nchw":
+                tensor = np.transpose(arr, (2, 0, 1))[None, ...].astype(np.float32)
+            else:
+                tensor = arr[None, ...].astype(np.float32)
 
             outputs = self._session.run(None, {self._input_name: tensor})
             if not outputs:

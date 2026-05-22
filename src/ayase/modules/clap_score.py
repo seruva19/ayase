@@ -18,20 +18,16 @@ embedding in a Contrastive Language-Audio Pretraining space, rescaled to
 ``metric_field_name`` hook so all CLAP variants can share the same processing
 implementation.
 
-TODO (MS-CLAP): Microsoft's official CLAP weights are distributed via the
-``msclap`` Python package and the ``microsoft/CLAP`` GitHub release artifacts
-rather than as a standard ``transformers``-compatible HF checkpoint. There is
-no canonical ``microsoft/msclap`` HF checkpoint loadable with
-``ClapModel.from_pretrained`` at the time of writing. We keep
-``microsoft/msclap`` as the placeholder identifier per spec; users who want a
-working Microsoft-style backbone should either install ``msclap`` and adapt
-the loader, or fall back to a community HF mirror (e.g. a
-``transformers``-compatible re-upload). Until then, instantiating
-``MSCLAPScoreModule`` with the default ``model_name`` will fail at
-``setup()`` and the module will gracefully no-op (see ``HumanCLAPModule.setup``).
+MS-CLAP backbone note: Microsoft's official ``microsoft/msclap`` HF repo ships
+the original ``.pth`` checkpoints, not a ``transformers`` ``ClapModel`` layout.
+``MSCLAPScoreModule`` therefore uses the official ``msclap`` Python wrapper,
+which downloads ``CLAP_weights_2023.pth`` from the official HF repo.
 """
 
 import logging
+import tempfile
+from pathlib import Path
+from typing import Optional
 
 from ayase.modules.human_clap import HumanCLAPModule
 
@@ -67,31 +63,74 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
 class MSCLAPScoreModule(HumanCLAPModule):
     """Microsoft CLAP audio-text alignment cosine similarity.
 
-    TODO: ``microsoft/msclap`` is not a standard ``transformers``-compatible HF
-    checkpoint. Microsoft's CLAP is distributed via the ``msclap`` PyPI package
-    and ``microsoft/CLAP`` GitHub release artifacts. The identifier here is a
-    placeholder; if a canonical HF mirror appears (e.g. a community
-    ``transformers``-compatible re-upload) override ``model_name`` via config.
-    Until then, ``setup()`` will fail to load and the module will no-op safely.
+    Uses the official ``msclap`` package and official ``microsoft/msclap``
+    HuggingFace weights. The module still writes a 0-1 cosine score to keep the
+    metric scale aligned with ``human_clap_score`` and ``laion_clap_score``.
     """
 
     name = "ms_clap_score"
     description = "Microsoft CLAP audio-text alignment cosine similarity"
     default_config = {
         **HumanCLAPModule.default_config,
-        "model_name": "microsoft/msclap",
+        "version": "2023",
     }
     models = [
         {
             "id": "microsoft/msclap",
             "type": "huggingface",
-            "task": "Microsoft CLAP audio-text encoder (placeholder HF id)",
+            "task": "Official MS-CLAP audio-text encoder weights",
         },
     ]
     metric_info = {
         "ms_clap_score": "Microsoft CLAP audio-text alignment (0-1, higher=better)",
     }
     metric_field_name = "ms_clap_score"
+
+    def setup(self) -> None:
+        try:
+            import torch
+            from msclap import CLAP
+
+            if self.device_config == "auto":
+                self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            else:
+                self._device = self.device_config
+
+            version = self.config.get("version", "2023")
+            self._model = CLAP(version=version, use_cuda=self._device == "cuda")
+            self._processor = None
+            self._ml_available = True
+            logger.info("MS-CLAP initialised with microsoft/msclap:%s on %s", version, self._device)
+        except ImportError:
+            logger.warning("MS-CLAP requires the optional `msclap` package")
+        except Exception as e:
+            logger.warning("MS-CLAP setup failed: %s", e)
+
+    def _score(self, audio, caption: str) -> Optional[float]:
+        """Score an in-memory waveform with the official MS-CLAP wrapper."""
+        tmp_path: Optional[Path] = None
+        try:
+            import soundfile as sf
+            import torch
+
+            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            tmp_path = Path(tmp.name)
+            tmp.close()
+            sf.write(str(tmp_path), audio, self.sample_rate)
+
+            with torch.no_grad():
+                audio_embeds = self._model.get_audio_embeddings([str(tmp_path)])
+                text_embeds = self._model.get_text_embeddings([caption])
+                audio_embeds = audio_embeds / audio_embeds.norm(dim=-1, keepdim=True)
+                text_embeds = text_embeds / text_embeds.norm(dim=-1, keepdim=True)
+                sim = (audio_embeds * text_embeds).sum(dim=-1).item()
+            return float(max(0.0, min(1.0, (sim + 1.0) / 2.0)))
+        except Exception as e:
+            logger.debug("MS-CLAP scoring failed: %s", e)
+            return None
+        finally:
+            if tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)
 
 
 class GenericCLAPScoreModule(HumanCLAPModule):
