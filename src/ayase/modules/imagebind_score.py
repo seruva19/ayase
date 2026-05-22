@@ -9,9 +9,8 @@ six modalities (image, text, audio, depth, IMU, thermal) into a single
 The score ``imagebind_score`` is in [0, 1], higher means the generated audio
 better matches the textual prompt.
 
-Backend: ``imagebind_huge`` from the ``imagebind`` package
-(https://github.com/facebookresearch/ImageBind). Install via
-``pip install imagebind``.
+Backend: ``imagebind_huge`` from the vendored ImageBind source
+(https://github.com/facebookresearch/ImageBind).
 
 ``QualityMetrics.imagebind_score`` stores the per-sample scalar.
 """
@@ -97,11 +96,21 @@ class ImageBindScoreModule(PipelineModule):
     def setup(self) -> None:
         try:
             import torch
-            from imagebind import data as imagebind_data
-            from imagebind.models import imagebind_model
-            from imagebind.models.imagebind_model import ModalityType
+            try:
+                from imagebind import data as imagebind_data
+                from imagebind.models import imagebind_model
+                from imagebind.models.imagebind_model import ModalityType
+            except ImportError:
+                import sys
+
+                vendor_root = Path(__file__).resolve().parents[1] / "vendor"
+                if str(vendor_root) not in sys.path:
+                    sys.path.insert(0, str(vendor_root))
+                from imagebind import data as imagebind_data
+                from imagebind.models import imagebind_model
+                from imagebind.models.imagebind_model import ModalityType
         except ImportError:
-            logger.warning("ImageBind requires `pip install imagebind`")
+            logger.warning("ImageBind source unavailable")
             self._ml_available = False
             return
 
