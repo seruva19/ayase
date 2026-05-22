@@ -20,6 +20,7 @@ class AQAScoreModule(PipelineModule):
     description = "AQAScore opt-in audio question-answering alignment"
     default_config = {
         "enabled": False,
+        "backend": "auto",  # auto | proxy
         "model_name": "Qwen/Qwen2.5-Omni-7B",
         "sample_rate": 16000,
         "device": "auto",
@@ -39,6 +40,7 @@ class AQAScoreModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.enabled = self.config.get("enabled", False)
+        self.backend = str(self.config.get("backend", "auto")).lower()
         self.model_name = self.config.get("model_name", "Qwen/Qwen2.5-Omni-7B")
         self.sample_rate = self.config.get("sample_rate", 16000)
         self.device_config = self.config.get("device", "auto")
@@ -49,6 +51,9 @@ class AQAScoreModule(PipelineModule):
 
     def setup(self) -> None:
         if not self.enabled:
+            return
+        if self.backend == "proxy":
+            logger.info("AQAScore: using deterministic audio/caption proxy backend")
             return
         try:
             import torch
