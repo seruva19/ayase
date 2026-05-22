@@ -1,13 +1,22 @@
-"""Audiobox Aesthetics — Meta Audio Aesthetics (2025).
+"""Audiobox Aesthetics — Meta Audio Aesthetics (Tjandra et al., 2025).
 
-Predicts aesthetic quality scores for audio: production quality and
-enjoyment/engagement. Based on Meta's Audiobox Aesthetics model.
+Predicts four aesthetic axes for audio:
+  * PQ (Production Quality)
+  * CE (Content Enjoyment)
+  * PC (Production Complexity)
+  * CU (Content Usefulness)
 
 pip install audiobox_aesthetics
 
-Outputs:
-  audiobox_production — production quality score
-  audiobox_enjoyment  — enjoyment/engagement score
+Outputs (in ``QualityMetrics``):
+  audiobox_production — PQ
+  audiobox_enjoyment  — CE
+  audiobox_pc         — PC
+  audiobox_cu         — CU
+
+Falls back to a spectral heuristic that only fills PQ + CE if the
+``audiobox_aesthetics`` package is unavailable; PC and CU remain ``None``
+in that mode.
 """
 
 import logging
@@ -39,10 +48,11 @@ class AudioboxAestheticsModule(PipelineModule):
         self.sample_rate = self.config.get("sample_rate", 16000)
 
     def setup(self) -> None:
-        # Tier 1: audiobox_aesthetics package
+        # Tier 1: audiobox_aesthetics package (real model, all 4 axes)
         try:
-            from audiobox_aesthetics import AudioBoxAesthetics
-            self._model = AudioBoxAesthetics()
+            from audiobox_aesthetics.infer import initialize_predictor
+            ckpt = self.config.get("ckpt")  # None → package default
+            self._model = initialize_predictor(ckpt=ckpt)
             self._ml_available = True
             self._backend = "audiobox"
             logger.info("Audiobox Aesthetics initialised (audiobox_aesthetics package)")
@@ -52,7 +62,7 @@ class AudioboxAestheticsModule(PipelineModule):
         except Exception as e:
             logger.debug(f"audiobox_aesthetics init failed: {e}")
 
-        # Tier 2: heuristic (spectral features)
+        # Tier 2: heuristic (spectral features, PQ+CE only)
         logger.info("Audiobox Aesthetics initialised (heuristic fallback)")
 
     def _load_audio(self, path: Path) -> Optional[np.ndarray]:
@@ -92,15 +102,20 @@ class AudioboxAestheticsModule(PipelineModule):
         return None
 
     def _score_audiobox(self, path: Path) -> Optional[dict]:
-        """Score using audiobox_aesthetics package."""
+        """Score using audiobox_aesthetics package, returning all 4 axes."""
         try:
-            result = self._model.predict(str(path))
-            if isinstance(result, dict):
-                return {
-                    "production": float(result.get("production_quality", result.get("production", 0))),
-                    "enjoyment": float(result.get("enjoyment", result.get("engagement", 0))),
-                }
-            return None
+            # AesPredictor.forward expects a list of dicts keyed by data_col
+            # ("path" by default).
+            rows = self._model.forward([{self._model.data_col: str(path)}])
+            if not rows:
+                return None
+            row = rows[0]
+            return {
+                "production": float(row.get("PQ")) if row.get("PQ") is not None else None,
+                "enjoyment": float(row.get("CE")) if row.get("CE") is not None else None,
+                "pc": float(row.get("PC")) if row.get("PC") is not None else None,
+                "cu": float(row.get("CU")) if row.get("CU") is not None else None,
+            }
         except Exception as e:
             logger.debug(f"Audiobox package scoring failed: {e}")
             return None
@@ -194,11 +209,8 @@ class AudioboxAestheticsModule(PipelineModule):
 
             sample.quality_metrics.audiobox_production = scores.get("production")
             sample.quality_metrics.audiobox_enjoyment = scores.get("enjoyment")
-
-            logger.debug(
-                f"Audiobox for {sample.path.name}: "
-                f"prod={scores.get('production', 0.0):.3f} enjoy={scores.get('enjoyment', 0.0):.3f}"
-            )
+            sample.quality_metrics.audiobox_pc = scores.get("pc")
+            sample.quality_metrics.audiobox_cu = scores.get("cu")
         except Exception as e:
             logger.error(f"Audiobox Aesthetics failed: {e}")
         return sample
