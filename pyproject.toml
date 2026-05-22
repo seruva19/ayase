@@ -50,9 +50,12 @@ dependencies = [
     "safetensors>=0.4.0",
     "timm>=0.9.12",
     "einops>=0.7.0",
+    "ftfy>=6.0",
+    "regex>=2024.0.0",
+    "iopath>=0.1.10,<0.2",
+    "pytorchvideo>=0.1.5,<0.2",
     "lpips>=0.1.4",
     "open-clip-torch>=2.24.0",
-    "imagebind @ https://github.com/facebookresearch/ImageBind/archive/53680b02d7e37b19b124fa37bae4b6c98c38f5be.zip",
     "pyiqa>=0.1.13,<1.0",
     "scipy>=1.11.0",
     "scikit-image>=0.19.0",
@@ -127,9 +130,6 @@ include = [
     "/README.md",
     "/LICENSE",
 ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.black]
 line-length = 100
