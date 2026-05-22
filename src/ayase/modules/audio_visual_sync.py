@@ -61,6 +61,38 @@ class AudioVisualSyncModule(PipelineModule):
         self._backend = "energy"
         self._syncformer = None
 
+    _WEIGHTS_URLS = {
+        "24-01-04T16-39-21.pt": (
+            "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+            "synchformer/24-01-04T16-39-21.pt"
+        ),
+    }
+
+    def _ensure_synchformer_weights(self, model_path: Path) -> bool:
+        """Pre-position ``<model_path>/24-01-04T16-39-21.pt`` from the Ayase
+        HF mirror. The vendored ``SyncformerInferencer`` does NOT auto-download
+        — it expects the file to be in place. The original CSC Finland URL
+        (a3s.fi) is unreliable on some networks; the HF mirror is preferred.
+        Returns True iff weights are present."""
+        import os
+        target = Path(model_path) / "24-01-04T16-39-21.pt"
+        if target.exists() and target.stat().st_size > 1_000_000:
+            return True
+        url = self._WEIGHTS_URLS.get("24-01-04T16-39-21.pt")
+        if not url:
+            return False
+        try:
+            from ayase.config import download_model_file
+            download_model_file(
+                "24-01-04T16-39-21.pt",
+                url,
+                str(model_path),
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning("Synchformer weights download failed: %s", e)
+            return False
+        return target.exists() and target.stat().st_size > 1_000_000
+
     def setup(self) -> None:
         if self.backend != "syncformer":
             return
@@ -71,6 +103,14 @@ class AudioVisualSyncModule(PipelineModule):
 
             models_dir = Path(self.config.get("models_dir", "models"))
             model_path = Path(self.config.get("syncformer_model_path", models_dir / "syncformer"))
+            model_path.mkdir(parents=True, exist_ok=True)
+            if not self._ensure_synchformer_weights(model_path):
+                logger.warning(
+                    "Synchformer weights unavailable (cannot download from "
+                    "AkaneTendo25/ayase-models HF mirror); using energy backend"
+                )
+                self._backend = "energy"
+                return
             self._syncformer = SyncformerInferencer(str(model_path))
             self._backend = "syncformer"
             logger.info("AudioVisualSync initialised with Synchformer backend")
