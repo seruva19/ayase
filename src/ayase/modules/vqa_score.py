@@ -145,7 +145,16 @@ class VQAScoreModule(PipelineModule):
         return samples
 
     def _compute_vqascore(self, sample: Sample) -> Optional[float]:
-        """Compute VQAScore using t2v_metrics."""
+        """Compute VQAScore using t2v_metrics.
+
+        The underlying ``t2v_metrics`` API expects ``images`` to be a list of
+        path strings (it calls ``.startswith()`` on each entry to detect
+        URLs). Passing PIL.Image objects raises
+        ``'Image' object has no attribute 'startswith'``. So: for images we
+        pass ``sample.path`` directly; for videos we dump each sampled frame
+        to a temporary JPEG and pass the path.
+        """
+        import tempfile
         from PIL import Image
 
         text = sample.caption.text
@@ -159,19 +168,32 @@ class VQAScoreModule(PipelineModule):
             indices = list(range(0, total, max(1, total // subsample)))[:subsample]
 
             scores = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
+            tmp_paths: List[str] = []
+            try:
+                for idx in indices:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                    ret, frame = cap.read()
+                    if not ret:
+                        continue
                     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     pil_img = Image.fromarray(rgb)
-                    score = self._model(images=[pil_img], texts=[text]).item()
+                    tf = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+                    tf.close()
+                    pil_img.save(tf.name, "JPEG", quality=95)
+                    tmp_paths.append(tf.name)
+                    score = self._model(images=[tf.name], texts=[text]).item()
                     scores.append(score)
-            cap.release()
+            finally:
+                cap.release()
+                import os
+                for p in tmp_paths:
+                    try:
+                        os.unlink(p)
+                    except OSError:
+                        pass
             return float(np.mean(scores)) if scores else None
-        else:
-            img = Image.open(str(sample.path)).convert("RGB")
-            return self._model(images=[img], texts=[text]).item()
+
+        return self._model(images=[str(sample.path)], texts=[text]).item()
 
     def _compute_clip_fallback(self, sample: Sample) -> Optional[float]:
         """Fallback: compute CLIP similarity."""

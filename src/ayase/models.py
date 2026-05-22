@@ -1130,8 +1130,10 @@ class QualityMetrics(BaseModel):
     peaq_di: Optional[float] = None  # Distortion Index (higher=better)
 
     # Audio aesthetics
-    audiobox_production: Optional[float] = None  # Audiobox production quality
-    audiobox_enjoyment: Optional[float] = None  # Audiobox content enjoyment
+    audiobox_production: Optional[float] = None  # Audiobox production quality (PQ)
+    audiobox_enjoyment: Optional[float] = None  # Audiobox content enjoyment (CE)
+    audiobox_pc: Optional[float] = None  # Audiobox production complexity (PC)
+    audiobox_cu: Optional[float] = None  # Audiobox content usefulness (CU)
     song_eval_coherence: Optional[float] = None  # SongEval overall coherence (1-5, higher=better)
     song_eval_musicality: Optional[float] = None  # SongEval overall musicality (1-5, higher=better)
     song_eval_memorability: Optional[float] = None  # SongEval memorability (1-5, higher=better)
