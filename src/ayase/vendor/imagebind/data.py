@@ -8,15 +8,65 @@
 import logging
 import math
 import pkg_resources
+import sys
+import types
 
 import torch
 import torch.nn as nn
 import torchaudio
 from PIL import Image
-from pytorchvideo import transforms as pv_transforms
 from pytorchvideo.data.clip_sampling import ConstantClipsPerVideoSampler
 from pytorchvideo.data.encoded_video import EncodedVideo
 from torchvision import transforms
+
+try:
+    import torchvision.transforms.functional_tensor as F_t
+except ImportError:
+    from torchvision.transforms import functional as F
+
+    F_t = types.ModuleType("torchvision.transforms.functional_tensor")
+
+    def _affine(image, matrix, fill=None, interpolation="nearest", center=None):
+        """Compatibility shim for older pytorchvideo expectations.
+
+        pytorchvideo still imports ``torchvision.transforms.functional_tensor``
+        and calls ``affine`` on 4D video tensors. Torchvision 0.22 removed that
+        module, so we emulate the small subset we need by applying torchvision's
+        2D affine transform frame-by-frame.
+        """
+
+        if image.dim() == 4:
+            return torch.stack(
+                [
+                    F.affine(
+                        frame,
+                        angle=0.0,
+                        translate=[int(matrix[2]), int(matrix[5])],
+                        scale=1.0,
+                        shear=[float(matrix[1]), float(matrix[3])],
+                        interpolation=interpolation,
+                        fill=fill,
+                        center=center,
+                    )
+                    for frame in image
+                ],
+                dim=0,
+            )
+        return F.affine(
+            image,
+            angle=0.0,
+            translate=[int(matrix[2]), int(matrix[5])],
+            scale=1.0,
+            shear=[float(matrix[1]), float(matrix[3])],
+            interpolation=interpolation,
+            fill=fill,
+            center=center,
+        )
+
+    F_t.affine = _affine
+    sys.modules["torchvision.transforms.functional_tensor"] = F_t
+
+from pytorchvideo import transforms as pv_transforms
 
 from imagebind.models.multimodal_preprocessors import SimpleTokenizer
 
