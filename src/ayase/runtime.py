@@ -597,17 +597,56 @@ def cached_openai_clip_image_feature_groups(
     return results
 
 
-def media_state_key(path: Any) -> tuple[str, Optional[int], Optional[int]]:
-    """Return a stable cache key fragment for a media file's current state."""
+def content_digest(path: Any, max_bytes: int = 8_388_608) -> Optional[str]:
+    """Return a short content hash for a media file.
+
+    For files up to ``max_bytes`` the whole content is hashed; larger files
+    are hashed by head and tail chunks plus size to bound the cost on big
+    media. Returns ``None`` if the file is unreadable.
+    """
+
+    import hashlib
+    from pathlib import Path
+
+    try:
+        size = Path(path).stat().st_size
+        digest = hashlib.blake2b(digest_size=16)
+        with open(path, "rb") as handle:
+            if size <= max_bytes:
+                digest.update(handle.read())
+            else:
+                half = max_bytes // 2
+                digest.update(handle.read(half))
+                handle.seek(-half, 2)
+                digest.update(handle.read())
+        digest.update(str(size).encode())
+        return digest.hexdigest()
+    except OSError:
+        return None
+
+
+def media_state_key(path: Any) -> tuple[Any, ...]:
+    """Return a stable cache key fragment for a media file's current state.
+
+    By default the key is ``(resolved_path, size, mtime_ns)``. If the active
+    pipeline has content-hash keys enabled, a content digest is appended so
+    the key stays correct even if a file is overwritten in place without a
+    detectable change of size or modification time.
+    """
 
     from pathlib import Path
 
     resolved = str(Path(path).resolve())
     try:
         stat = Path(path).stat()
-        return resolved, stat.st_size, stat.st_mtime_ns
+        base: tuple[Any, ...] = (resolved, stat.st_size, stat.st_mtime_ns)
     except OSError:
-        return resolved, None, None
+        base = (resolved, None, None)
+
+    pipeline = current_pipeline()
+    if pipeline is not None and getattr(pipeline, "_content_hash_keys", False):
+        return base + (content_digest(path),)
+    return base
 
 
 def resolve_torch_device(device_config: str = "auto") -> str:
