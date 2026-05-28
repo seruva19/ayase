@@ -143,17 +143,29 @@ class HPSv3Module(PipelineModule):
                 [caption] * len(temp_paths),
                 image_paths=[str(path) for path in temp_paths],
             )
-            scores = []
-            for reward in rewards:
-                value = reward[0] if isinstance(reward, (list, tuple)) else reward
-                if hasattr(value, "item"):
-                    value = value.item()
-                elif isinstance(value, list):
-                    value = value[0]
-                scores.append(float(value))
+            # ``reward`` returns a tensor of shape ``(B, output_dim)`` with
+            # ``output_dim=2`` (mean preference + uncertainty channel);
+            # take the first column as the reward score.
+            scores: List[float] = []
+            if hasattr(rewards, "ndim"):
+                if rewards.ndim == 2:
+                    flat = rewards[:, 0].detach().cpu().tolist()
+                elif rewards.ndim == 1:
+                    flat = rewards.detach().cpu().tolist()
+                else:
+                    flat = [float(rewards.detach().cpu().item())]
+                scores.extend(float(v) for v in flat)
+            else:
+                for reward in rewards:
+                    value = reward[0] if isinstance(reward, (list, tuple)) else reward
+                    if hasattr(value, "item"):
+                        value = value.item()
+                    elif isinstance(value, list):
+                        value = value[0]
+                    scores.append(float(value))
             return float(np.mean(scores)) if scores else None
         except Exception as e:
-            logger.debug("HPSv3 native scoring failed: %s", e)
+            logger.warning("HPSv3 native scoring failed: %s", e)
             return None
         finally:
             for path in temp_paths:
