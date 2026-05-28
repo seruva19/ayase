@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.37** · Generated 2026-05-18 11:28 · **203 models** across **10 sources**
+> **Version 0.1.52** · Generated 2026-05-28 19:07 · **207 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**203** models · **62** HuggingFace · **61** pyiqa · **10** sources
+**207** models · **67** HuggingFace · **61** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (44)](#huggingface-models) · [Weight Files (18)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (46)](#huggingface-models) · [Weight Files (21)](#weight-file-repos) · [pyiqa (61)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -74,6 +74,10 @@
 
 - **Used by**: `song_eval`
 
+### <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">`Qwen/Qwen-Image-Bench`</a> [↑](#categories)
+
+- **Used by**: `qwen_image_bench`
+
 ### <a href="https://huggingface.co/Qwen/Qwen2-VL-7B-Instruct" target="_blank">`Qwen/Qwen2-VL-7B-Instruct`</a> [↑](#categories)
 
 - **Used by**: `hpsv3`
@@ -108,7 +112,11 @@
 
 ### <a href="https://huggingface.co/application/json" target="_blank">`application/json`</a> [↑](#categories)
 
-- **Used by**: `tc_bench`
+- **Used by**: `qwen_image_bench`, `tc_bench`
+
+### <a href="https://huggingface.co/cromsc/nima-mobilenet-aesthetic" target="_blank">`cromsc/nima-mobilenet-aesthetic`</a> [↑](#categories)
+
+- **Used by**: `nima_legacy_onnx`
 
 ### <a href="https://huggingface.co/dandelin/vilt-b32-finetuned-vqa" target="_blank">`dandelin/vilt-b32-finetuned-vqa`</a> [↑](#categories)
 
@@ -146,7 +154,7 @@
 
 ### <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">`laion/clap-htsat-fused`</a> [↑](#categories)
 
-- **Used by**: `audio_text_alignment`, `clap_score`, `human_clap`, `laion_clap_score`, `pam`
+- **Used by**: `audio_text_alignment`, `clap_score`, `human_clap`, `laion_clap_score`, `ms_clap_score`, `pam`
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 
 ### <a href="https://huggingface.co/lero233/KVQ" target="_blank">`lero233/KVQ`</a> [↑](#categories)
@@ -190,7 +198,7 @@
 
 ### <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">`openai/clip-vit-base-patch32`</a> [↑](#categories)
 
-- **Used by**: `action_recognition`, `aigcvqa`, `aigv_assessor`, `aigvqa`, `background_consistency`, `chronomagic`, `clifvqa`, `clip_temporal`, `clipvqa`, `concept_presence`, `crave`, `creativity`, `dataset_analytics`, `deepfake_detection`, `entitybench`, `generative_distribution`, `geneval`, `harmful_content`, `maxvqa`, `ptmvqa`, `qclip`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `t2v_compbench`, `t2v_score`, `t2veval`, `tc_bench`, `tifa`, `ugvq`, `umap_projection`, `umtscore`, `video_memorability`, `video_text_matching`, `video_type_classifier`, `videoreward`, `vqa2`, `vqathinker`, `vqinsight`, `world_consistency`
+- **Used by**: `action_recognition`, `aigcvqa`, `aigv_assessor`, `aigvqa`, `background_consistency`, `chronomagic`, `clifvqa`, `clip_image_similarity`, `clip_temporal`, `clipvqa`, `concept_presence`, `crave`, `creativity`, `dataset_analytics`, `deepfake_detection`, `entitybench`, `generative_distribution`, `geneval`, `harmful_content`, `maxvqa`, `ptmvqa`, `qclip`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `t2v_compbench`, `t2v_score`, `t2veval`, `tc_bench`, `tifa`, `ugvq`, `umap_projection`, `umtscore`, `video_memorability`, `video_text_matching`, `video_type_classifier`, `videoreward`, `vqa2`, `vqathinker`, `vqinsight`, `world_consistency`
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 
 ### <a href="https://huggingface.co/openai/clip-vit-large-patch14" target="_blank">`openai/clip-vit-large-patch14`</a> [↑](#categories)
@@ -231,6 +239,7 @@
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-models" target="_blank">`AkaneTendo25/ayase-models`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
+- `24-01-04T16-39-21.pt` — used by `audio_visual_sync`, `av_sync`
 - `CLIPIQA+_ViTL14_512-e66488f2.pth` — used by `brightrate`
 - `CONTRIQUE_checkpoint25.tar` — used by `brightrate`
 - `DOVER.pth` — used by `dover`
@@ -246,9 +255,15 @@
 - `dinov2_vitb14_pretrain.pth` — used by `i2v_similarity`
 - `flownet.pkl` — used by `motion_smoothness`
 - `frames_modelparameters.mat` — used by `brightrate`
+- `imagebind_huge.pth` — used by `imagebind_score`
 - `nisqa.tar` — used by `audio_nisqa`
 - `onnx_dover.onnx` — used by `dover`
 - `sac+logos+ava1-l14-linearMSE.pth` — used by `aesthetic_scoring`
+
+### <a href="https://huggingface.co/cromsc/nima-mobilenet-aesthetic" target="_blank">`cromsc/nima-mobilenet-aesthetic`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- `nima_mobilenet_aesthetic.onnx` — used by `nima_legacy_onnx`
 
 ## pyiqa Metrics (61)
 
