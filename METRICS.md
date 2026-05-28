@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.37** · Generated 2026-05-18 11:28 · **354 modules** · **404 metrics**
+> **Version 0.1.52** · Generated 2026-05-28 19:01 · **356 modules** · **413 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **354/354 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **355/356 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**354** modules · **448** output fields · **404** metrics · **98** tiered · **172** GPU · **21** categories
+**356** modules · **457** output fields · **413** metrics · **99** tiered · **175** GPU · **22** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -30,11 +30,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-98-metrics) (98) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-43-metrics) (43) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-24-metrics) (24) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-10-metrics) (10) · [Audio Quality](#audio-quality-39-metrics) (39) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-16-metrics) (16) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-47-fields) (47) · [Utility & Validation](#utility--validation-33-modules) (33)
+[No-Reference Quality](#no-reference-quality-100-metrics) (100) · [Full-Reference Quality](#full-reference-quality-58-metrics) (58) · [Text-Video Alignment](#text-video-alignment-44-metrics) (44) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-24-metrics) (24) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-12-metrics) (12) · [Audio Quality](#audio-quality-39-metrics) (39) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-47-fields) (47) · [Utility & Validation](#utility--validation-33-modules) (33)
 
 ---
 
-## No-Reference Quality (98 metrics)
+## No-Reference Quality (100 metrics)
 
 ### `adadqa_score` [↑](#categories)
 > Ada-DQA adaptive diverse (higher=better) · ↑ higher=better
@@ -735,6 +735,30 @@
 - **Packages**: opencv-python, pyiqa, torch
 - **Tests**: covered by [`test_qualiclip.py`](tests/modules/per_module/test_qualiclip.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `subsample=8`
+
+### `qwen_image_bench_overall` [↑](#categories)
+> Mean of Qwen-Image-Bench L1 scores · 0-100
+
+**[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Backend**: openai → transformers
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">HF</a>
+- **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
+- **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
+
+### `qwen_image_bench_quality` [↑](#categories)
+> Quality L1 score · ↑ higher=better · 0-100
+
+**[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Backend**: openai → transformers
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">HF</a>
+- **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
+- **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
 
 ### `rapique_score` [↑](#categories)
 > RAPIQUE bandpass+CNN NR-VQA (higher=better) · ↑ higher=better
@@ -1716,7 +1740,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py)
 
 
-## Text-Video Alignment (43 metrics)
+## Text-Video Alignment (44 metrics)
 
 ### `aigcvqa_alignment` [↑](#categories)
 > AIGC-VQA text-video alignment
@@ -1997,6 +2021,18 @@
 - **Source**: <a href="https://huggingface.co/yuvalkirstain/PickScore_v1" target="_blank">HF</a>
 - **Tests**: covered by [`test_pickscore.py`](tests/modules/per_module/test_pickscore.py)
 - **Config**: `model_name=yuvalkirstain/PickScore_v1`, `processor_name=laion/CLIP-ViT-H-14-laion2B-s32B-b79K`, `num_frames=5`, `device=auto`
+
+### `qwen_image_bench_alignment` [↑](#categories)
+> Prompt-image alignment L1 score · 0-100
+
+**[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Backend**: openai → transformers
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">HF</a>
+- **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
+- **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
 
 ### `sd_score` [↑](#categories)
 > SD-reference similarity (0-1) · ↑ higher=better · 0-1
@@ -2919,7 +2955,7 @@ Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
 - **Config**: `low_percentile=1`, `high_percentile=99`, `subsample=8`
 
 
-## Aesthetics (10 metrics)
+## Aesthetics (12 metrics)
 
 ### `aesthetic_mlp_score` [↑](#categories)
 > LAION Aesthetics MLP (1-10) · ↑ higher=better · 1-10
@@ -2951,9 +2987,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: Pillow, onnxruntime, torch
-- **Source**: <a href="https://huggingface.co/models/nima_mobilenet_legacy.onnx" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/nima/nima_mobilenet_aesthetic.onnx" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
-- **Config**: `model_path=models/nima_mobilenet_legacy.onnx`, `device=auto`, `image_size=224`
+- **Config**: `model_path=nima/nima_mobilenet_aesthetic.onnx`, `device=auto`, `image_size=224`, `preprocess=mobilenet`
 
 ### `cover_aesthetic` [↑](#categories)
 > COVER aesthetic branch
@@ -3037,6 +3073,30 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
+### `qwen_image_bench_aesthetics` [↑](#categories)
+> Aesthetics L1 score · 0-100
+
+**[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Backend**: openai → transformers
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">HF</a>
+- **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
+- **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
+
+### `qwen_image_bench_creative_generation` [↑](#categories)
+> Creative generation L1 · 0-100
+
+**[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Backend**: openai → transformers
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">HF</a>
+- **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
+- **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
+
 
 ## Audio Quality (39 metrics)
 
@@ -3050,7 +3110,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: torch, transformers
 - **Source**: <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-7B" target="_blank">HF</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **Config**: `enabled=False`, `model_name=Qwen/Qwen2.5-Omni-7B`, `sample_rate=16000`, `device=auto`
+- **Config**: `enabled=False`, `backend=auto`, `model_name=Qwen/Qwen2.5-Omni-7B`, `sample_rate=16000`, `device=auto`
 
 ### `asr_cer` [↑](#categories)
 > ASR character error rate vs reference text (0-1, lower=better) · ↓ lower=better · 0-1
@@ -3071,7 +3131,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=large-v3`, `device=auto`
 
 ### `audiobox_enjoyment` [↑](#categories)
-> Audiobox content enjoyment
+> Audiobox content enjoyment (CE)
 
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
@@ -3082,7 +3142,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `sample_rate=16000`
 
 ### `audiobox_production` [↑](#categories)
-> Audiobox production quality
+> Audiobox production quality (PQ)
 
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
@@ -3100,6 +3160,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⚡ fast
 - **Backend**: energy → syncformer
 - **Packages**: soundfile, syncformer
+- **Source**: <a href="https://huggingface.co/synchformer/24-01-04T16-39-21.pt" target="_blank">HF</a>
 - **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `backend=energy`, `max_frames=600`, `warning_threshold_ms=80.0`
 
@@ -3108,7 +3169,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`clap_score`](src/ayase/modules/clap_score.py)** — Generic CLAP audio-text alignment cosine similarity (configurable backbone)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: audio · **Speed**: ⚡ fast
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 - **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
@@ -3171,6 +3232,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Packages**: imagebind, soundfile, torch
+- **Source**: <a href="https://huggingface.co/imagebind/imagebind_huge.pth" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 - **Config**: `model_name=imagebind_huge`, `sample_rate=16000`, `device=auto`, `warning_threshold=0.2`
 
@@ -3179,7 +3241,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: audio · **Speed**: ⚡ fast
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 - **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
@@ -3209,10 +3271,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Packages**: msclap, soundfile, torch
 - **Source**: <a href="https://huggingface.co/microsoft/msclap" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
-- **Config**: `model_name=microsoft/msclap`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`, `version=2023`
 
 ### `nisqa_coloration` [↑](#categories)
 > Coloration sub-score
@@ -3663,7 +3726,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`, `face_model=buffalo_l`, `n_forward_passes=10`, `noise_std=5.0`, `det_size=640`, `dropout_rate=0.1`
 
 
-## Scene & Content (16 metrics)
+## Scene & Content (17 metrics)
 
 ### `action_confidence` [↑](#categories)
 > Top-1 action confidence (0-100) · 0-100
@@ -3792,6 +3855,18 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: dwpose → mediapipe
 - **Packages**: dwpose, mediapipe
 - **Tests**: covered by [`test_human_fidelity.py`](tests/modules/per_module/test_human_fidelity.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
+
+### `qwen_image_bench_real_world_fidelity` [↑](#categories)
+> Real-world fidelity L1 · ↑ higher=better · 0-100
+
+**[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Backend**: openai → transformers
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/Qwen/Qwen-Image-Bench" target="_blank">HF</a>
+- **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
+- **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
 
 ### `ram_tags` [↑](#categories)
 > Comma-separated RAM auto-tags · type: str
@@ -4162,7 +4237,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Packages**: paddleocr, pytesseract
 - **Tests**: covered by [`test_text_detection.py`](tests/modules/per_module/test_text_detection.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
-- **Config**: `use_paddle=True`, `max_text_area=0.05`
+- **Config**: `use_paddle=True`, `max_text_area=0.05`, `lang=en`
 
 ### `ocr_cer` [↑](#categories)
 > Character Error Rate (0-1, lower=better) · ↓ lower=better · 0-1
@@ -4413,6 +4488,43 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **VRAM**: ~800 MB
 - **Tests**: covered by [`test_vtss.py`](tests/modules/per_module/test_vtss.py), [`test_curation_metrics.py`](tests/modules/test_curation_metrics.py)
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
+
+
+## Other (3 metrics)
+
+### `audiobox_cu` [↑](#categories)
+> Audiobox content usefulness (CU)
+
+**[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: audiobox
+- **Packages**: audiobox_aesthetics, soundfile
+- **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py)
+- **Config**: `sample_rate=16000`
+
+### `audiobox_pc` [↑](#categories)
+> Audiobox production complexity (PC)
+
+**[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: audiobox
+- **Packages**: audiobox_aesthetics, soundfile
+- **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py)
+- **Config**: `sample_rate=16000`
+
+### `clip_image_similarity` [↑](#categories)
+> CLIP image-to-image cosine similarity vs reference (0-1, higher=better) · ↑ higher=better · 0-1, higher = closer match
+
+**[`clip_image_similarity`](src/ayase/modules/clip_image_similarity.py)** — CLIP image-to-image cosine similarity vs reference image (CLIP-I)
+
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Packages**: open-clip-torch, torch, transformers
+- **VRAM**: ~600 MB
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
+- **Tests**: no dedicated test reference found
+- **Config**: `backend=auto`, `model_name=open_clip:ViT-B-32`, `pretrained=laion2b_s34b_b79k`, `device=auto`, `warning_threshold=0.5`
 
 
 ## Dataset-Level Metrics (47 fields)
