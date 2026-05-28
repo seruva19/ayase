@@ -378,6 +378,8 @@ class Pipeline:
         "attention_backend",
         "frame_cache_enabled",
         "timing_enabled",
+        "cache_enabled",
+        "content_hash_keys",
         "sample_batch_size",
         "max_clip_images_per_forward",
     }
@@ -395,9 +397,20 @@ class Pipeline:
         self._frame_cache: Dict[tuple[Any, ...], List[Any]] = {}
         self._runtime_resource_cache: Dict[tuple[Any, ...], Any] = {}
         self._runtime_value_cache: Dict[tuple[Any, ...], Any] = {}
-        self._frame_cache_enabled = any(
-            bool(module.config.get("frame_cache_enabled", True)) for module in self.modules
+        # Result/frame/runtime caches are on by default. A module can opt out
+        # by setting ``cache_enabled: false`` (e.g. for reproducible timing
+        # benchmarks). ``content_hash_keys: true`` (off by default) makes media
+        # cache keys depend on a content digest rather than size+mtime.
+        self._cache_enabled = all(
+            bool(module.config.get("cache_enabled", True)) for module in self.modules
         ) if self.modules else True
+        self._content_hash_keys = any(
+            bool(module.config.get("content_hash_keys", False)) for module in self.modules
+        ) if self.modules else False
+        self._frame_cache_enabled = (
+            any(bool(module.config.get("frame_cache_enabled", True)) for module in self.modules)
+            if self.modules else True
+        ) and self._cache_enabled
         self._timing_enabled = any(
             bool(module.config.get("timing_enabled", True)) for module in self.modules
         ) if self.modules else True
@@ -414,15 +427,23 @@ class Pipeline:
         for module in self.modules:
             module.pipeline = self
 
-    @staticmethod
-    def _path_cache_state(path: Path) -> tuple[str, Optional[int], Optional[int]]:
-        """Return a file state tuple suitable for runtime cache keys."""
+    def _path_cache_state(self, path: Path) -> tuple[Any, ...]:
+        """Return a file state tuple suitable for runtime cache keys.
+
+        Base key is ``(resolved_path, size, mtime_ns)``; when content-hash
+        keys are enabled, a content digest is appended.
+        """
         resolved = str(Path(path).resolve())
         try:
             stat = Path(path).stat()
-            return resolved, stat.st_size, stat.st_mtime_ns
+            base: tuple[Any, ...] = (resolved, stat.st_size, stat.st_mtime_ns)
         except OSError:
-            return resolved, None, None
+            base = (resolved, None, None)
+        if self._content_hash_keys:
+            from .runtime import content_digest
+
+            return base + (content_digest(path),)
+        return base
 
     def _frame_cache_key(self, kind: str, path: Path, *parts: Any) -> tuple[Any, ...]:
         return (kind, *self._path_cache_state(path), *parts)
@@ -477,12 +498,16 @@ class Pipeline:
 
     def get_runtime_resource(self, key: tuple[Any, ...], factory: Callable[[], Any]) -> Any:
         """Return a shared resource for this pipeline run."""
+        if not self._cache_enabled:
+            return factory()
         if key not in self._runtime_resource_cache:
             self._runtime_resource_cache[key] = factory()
         return self._runtime_resource_cache[key]
 
     def get_runtime_value(self, key: tuple[Any, ...], factory: Callable[[], Any]) -> Any:
         """Return a shared value for the sample currently being processed."""
+        if not self._cache_enabled:
+            return factory()
         if key not in self._runtime_value_cache:
             self._runtime_value_cache[key] = factory()
         return self._runtime_value_cache[key]
@@ -834,7 +859,8 @@ class Pipeline:
         manifest = self._sample_state_manifest(sample)
         cached = self.results.get(str_path)
         if (
-            cached is not None
+            self._cache_enabled
+            and cached is not None
             and self._result_signatures.get(str_path) == signature
             and self._result_manifests.get(str_path) == manifest
         ):
@@ -1024,7 +1050,8 @@ class Pipeline:
             manifest = self._sample_state_manifest(sample)
             cached = self.results.get(str_path)
             if (
-                cached is not None
+                self._cache_enabled
+                and cached is not None
                 and self._result_signatures.get(str_path) == signature
                 and self._result_manifests.get(str_path) == manifest
             ):
