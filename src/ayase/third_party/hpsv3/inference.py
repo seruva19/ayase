@@ -176,18 +176,27 @@ class Qwen2VLRewardModel(Qwen2VLForConditionalGeneration):
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
+        # Resolve language model and vision tower across the two layouts
+        # of ``Qwen2VLForConditionalGeneration``: nested under ``self.model``
+        # in current transformers, or exposed directly on ``self`` in older
+        # variants.
+        language_model = getattr(self.model, "language_model", self.model)
+        visual = getattr(self.model, "visual", None) or getattr(self, "visual", None)
+        if visual is None:
+            raise AttributeError("HPSv3 forward: cannot locate visual tower attribute")
+
         if inputs_embeds is None:
-            inputs_embeds = self.model.embed_tokens(input_ids)
+            inputs_embeds = language_model.embed_tokens(input_ids)
             if pixel_values is not None:
-                pixel_values = pixel_values.type(self.visual.get_dtype())
-                image_embeds = self.visual(pixel_values, grid_thw=image_grid_thw)
+                pixel_values = pixel_values.type(visual.get_dtype())
+                image_embeds = visual(pixel_values, grid_thw=image_grid_thw)
                 image_mask = (input_ids == self.config.image_token_id).unsqueeze(-1).expand_as(inputs_embeds)
                 image_embeds = image_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
                 inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
             if pixel_values_videos is not None:
-                pixel_values_videos = pixel_values_videos.type(self.visual.get_dtype())
-                video_embeds = self.visual(pixel_values_videos, grid_thw=video_grid_thw)
+                pixel_values_videos = pixel_values_videos.type(visual.get_dtype())
+                video_embeds = visual(pixel_values_videos, grid_thw=video_grid_thw)
                 video_mask = (input_ids == self.config.video_token_id).unsqueeze(-1).expand_as(inputs_embeds)
                 video_embeds = video_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
                 inputs_embeds = inputs_embeds.masked_scatter(video_mask, video_embeds)
@@ -195,7 +204,7 @@ class Qwen2VLRewardModel(Qwen2VLForConditionalGeneration):
             if attention_mask is not None:
                 attention_mask = attention_mask.to(inputs_embeds.device)
 
-        outputs = self.model(
+        outputs = language_model(
             input_ids=None,
             position_ids=position_ids,
             attention_mask=attention_mask,
@@ -280,12 +289,59 @@ class HPSv3RewardInferencer:
         )
         model.resize_token_embeddings(len(processor.tokenizer))
 
+        import logging
+
         import safetensors.torch
 
         state_dict = safetensors.torch.load_file(str(checkpoint_path), device="cpu")
         if "model" in state_dict:
             state_dict = state_dict["model"]
-        model.load_state_dict(state_dict, strict=True)
+
+        # Re-prefix checkpoint keys so the LLM lands on
+        # ``model.language_model.*`` and the vision tower on
+        # ``model.visual.*`` — the layout expected by current
+        # ``Qwen2VLForConditionalGeneration``.
+        remapped: dict[str, Any] = {}
+        for key, value in state_dict.items():
+            if key.startswith("visual."):
+                new_key = "model." + key
+            elif key.startswith("model.layers."):
+                new_key = key.replace("model.layers.", "model.language_model.layers.", 1)
+            elif key.startswith("model.embed_tokens"):
+                new_key = key.replace(
+                    "model.embed_tokens", "model.language_model.embed_tokens", 1
+                )
+            elif key.startswith("model.norm"):
+                new_key = key.replace("model.norm", "model.language_model.norm", 1)
+            else:
+                new_key = key
+            remapped[new_key] = value
+
+        # ``strict=False`` because rm_head is a custom HPSv3 extension
+        # absent from any Qwen2-VL base state_dict.  Detect truly missing
+        # weights to keep silent loading regressions visible.
+        missing, unexpected = model.load_state_dict(remapped, strict=False)
+        logger = logging.getLogger(__name__)
+        truly_missing = [
+            k
+            for k in missing
+            if k.startswith("rm_head")
+            or k.startswith("model.language_model.")
+            or k.startswith("model.visual.")
+            or k.startswith("lm_head")
+        ]
+        if truly_missing:
+            raise RuntimeError(
+                f"HPSv3 checkpoint did not fully load: {len(truly_missing)} "
+                f"weights still missing after remap (sample: {truly_missing[:3]})."
+            )
+        if unexpected:
+            logger.debug("HPSv3 checkpoint unexpected keys: %d", len(unexpected))
+
+        # ``forward`` computes rm_head on float32 hidden states for
+        # numerical stability; ensure rm_head weights match that dtype.
+        model.rm_head.to(torch.float32)
+
         model.eval().to(device)
 
         self.model = model
