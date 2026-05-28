@@ -838,79 +838,83 @@ def modules_sync_readme(
     Counts only packaged modules (skips user plugin folders) so README
     matches METRICS.md / MODELS.md.
     """
-    import re as _re
-
-    ModuleRegistry.discover_modules()
-
-    all_modules = ModuleRegistry.list_modules(packaged_only=True)
-    total = len([n for n in all_modules if ModuleRegistry.get_module(n) is not None])
-
-    from .models import QualityMetrics
-    n_fields = len(QualityMetrics.model_fields)
-
-    # Compute category count consistently with metrics_doc.py: rendered metric
-    # categories (groups that have at least one written metric) + utility section
-    # if there are any modules without output fields.
-    from .metrics_doc import _get_quality_metrics_fields
-
-    qm_fields = _get_quality_metrics_fields()
-    field_writers: set[str] = set()
-    has_no_output_modules = False
-    for name in all_modules:
-        cls = ModuleRegistry.get_module(name)
-        if cls is None:
-            continue
-        meta = cls.get_metadata()
-        if not meta.get("output_fields") and not meta.get("dataset_output_fields"):
-            has_no_output_modules = True
-        for fn in meta.get("output_fields", {}):
-            field_writers.add(fn)
-    has_dataset_outputs = any(
-        ModuleRegistry.get_module(name) is not None
-        and ModuleRegistry.get_module(name).get_metadata().get("dataset_output_fields")
-        for name in all_modules
-    )
-    rendered_cats = {qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields}
-    n_categories = (
-        len(rendered_cats)
-        + (1 if has_dataset_outputs else 0)
-        + (1 if has_no_output_modules else 0)
-    )
-
     if not readme.exists():
         console.print(f"[red]{readme} not found[/red]")
         raise typer.Exit(code=1)
 
-    text = readme.read_text(encoding="utf-8")
-    patterns = [
-        # Legacy bold form: "**N modules**, **M quality metrics**"
-        (
-            r"\*\*\d+ modules\*\*,\s*\*\*\d+ quality metrics\*\*",
-            f"**{total} modules**, **{n_fields} quality metrics**",
-        ),
-        # Prose form: "327 modules produce 364 metrics across 19 categories"
-        (
-            r"\b\d+ modules produce \d+ metrics across \d+ categories\b",
-            f"{total} modules produce {n_fields} metrics across {n_categories} categories",
-        ),
-        # CLI snippet: "show all 327 modules"
-        (
-            r"show all \d+ modules",
-            f"show all {total} modules",
-        ),
-    ]
-    new_text = text
-    for pat, repl in patterns:
-        new_text = _re.sub(pat, repl, new_text)
-    if new_text != text:
-        readme.write_text(new_text, encoding="utf-8")
+    from .release import sync_readme_counts
+
+    result = sync_readme_counts(readme)
+    if result.changed:
         console.print(
-            f"[green]Updated README.md: {total} modules, {n_fields} metrics, {n_categories} categories[/green]"
+            f"[green]Updated README.md: {result.modules} modules, "
+            f"{result.metrics} metrics, {result.categories} categories[/green]"
         )
     else:
         console.print(
             f"[green]README.md already up to date "
-            f"({total} modules, {n_fields} metrics, {n_categories} categories)[/green]"
+            f"({result.modules} modules, {result.metrics} metrics, "
+            f"{result.categories} categories)[/green]"
+        )
+
+
+# Release subcommand
+release_app = typer.Typer(help="Prepare versioned releases")
+app.add_typer(release_app, name="release")
+
+
+@release_app.command("prepare")
+def release_prepare(
+    version: Annotated[str, typer.Argument(help="Release version, e.g. 0.1.53")],
+    release_date: Annotated[
+        Optional[str],
+        typer.Option("--date", help="Release date for CHANGELOG.md (YYYY-MM-DD)"),
+    ] = None,
+    regenerate_docs: Annotated[
+        bool,
+        typer.Option("--docs/--no-docs", help="Regenerate METRICS.md, MODELS.md, and README counts"),
+    ] = True,
+    run_doc_tests: Annotated[
+        bool,
+        typer.Option("--run-tests/--no-tests", help="Collect live test status in METRICS.md"),
+    ] = False,
+    fetch_licenses: Annotated[
+        bool,
+        typer.Option("--fetch-licenses/--no-fetch-licenses", help="Query HF metadata for MODELS.md"),
+    ] = False,
+) -> None:
+    """Bump version, promote CHANGELOG.md, and refresh generated release docs."""
+
+    from .release import prepare_release
+
+    try:
+        result = prepare_release(
+            version,
+            root=Path("."),
+            release_date=release_date,
+            regenerate_docs=regenerate_docs,
+            run_doc_tests=run_doc_tests,
+            fetch_licenses=fetch_licenses,
+        )
+    except Exception as e:
+        console.print(f"[red]Release preparation failed: {e}[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(f"[green]Prepared release {result.version}[/green]")
+    console.print(
+        "Updated: "
+        f"pyproject.toml={result.pyproject_changed}, "
+        f"src/ayase/__init__.py={result.init_changed}, "
+        f"CHANGELOG.md={result.changelog_changed}"
+    )
+    if result.metrics_written:
+        console.print("[green]Written METRICS.md[/green]")
+    if result.models_written:
+        console.print("[green]Written MODELS.md[/green]")
+    if result.readme:
+        console.print(
+            f"[green]README counts: {result.readme.modules} modules, "
+            f"{result.readme.metrics} metrics, {result.readme.categories} categories[/green]"
         )
 
 

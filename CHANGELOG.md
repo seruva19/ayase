@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **qwen_image_bench**: added Qwen-Image-Bench text-to-image judge metrics for Quality, Aesthetics, Alignment, Real-world Fidelity, Creative Generation, and overall scoring.
+- **release**: added `ayase release prepare VERSION` to bump both version files, promote `[Unreleased]` changelog entries, and regenerate release docs/counts in one command.
+
 ## [0.1.45]
 
 ### Fixed

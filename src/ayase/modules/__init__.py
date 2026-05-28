@@ -62,6 +62,7 @@ _IMPORTS = [
     ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),
     ("HPSv3Module", ".hpsv3"),
+    ("QwenImageBenchModule", ".qwen_image_bench"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("FastVQAModule", ".fast_vqa"),
