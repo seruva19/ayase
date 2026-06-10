@@ -266,6 +266,14 @@ class UnifiedRewardEditModule(PipelineModule):
         "unified_reward_edit_image_2_score": "Pairwise edit image 2 score",
         "unified_reward_edit_winner": "Pairwise edit winner code (0=tie, 1=image1, 2=image2)",
     }
+    metric_groups = {
+        "unified_reward_edit_score": "alignment",
+        "unified_reward_edit_success_score": "alignment",
+        "unified_reward_edit_overediting_score": "fr_quality",
+        "unified_reward_edit_image_1_score": "alignment",
+        "unified_reward_edit_image_2_score": "alignment",
+        "unified_reward_edit_winner": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

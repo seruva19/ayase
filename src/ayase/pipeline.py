@@ -43,6 +43,7 @@ class PipelineModule(ABC):
     required_files: Dict[str, str] = {}
     models: List[Dict[str, str]] = []
     metric_info: Dict[str, str] = {}
+    metric_groups: Dict[str, str] = {}
 
     _global_test_mode: bool = False
 
@@ -1422,6 +1423,17 @@ class ModuleRegistry:
             logger.warning(f"Could not import modules from {package_path}")
         if plugin_paths:
             cls.discover_external_modules(plugin_paths)
+        cls._register_metric_groups()
+
+    @classmethod
+    def _register_metric_groups(cls) -> None:
+        """Fold each module's ``metric_groups`` into QualityMetrics' registry."""
+        from .models import QualityMetrics
+
+        for module_cls in cls._modules.values():
+            groups = getattr(module_cls, "metric_groups", None)
+            if groups:
+                QualityMetrics.register_field_groups(groups)
 
     @classmethod
     def discover_external_modules(cls, plugin_paths: List[Path]) -> None:
