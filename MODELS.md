@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.53** · Generated 2026-06-10 17:04 · **208 models** across **10 sources**
+> **Version 0.1.54** · Generated 2026-06-10 20:54 · **208 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -96,7 +96,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Downloads**: 215
+- **Downloads**: 212
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">`OpenMuQ/MuQ-large-msd-iter`</a> [↑](#categories)
@@ -111,7 +111,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `qwen_image_bench`
-- **Parameters**: 27.4B · **Downloads**: 11K
+- **Parameters**: 27.4B · **Downloads**: 13K
 - **Disk**: ~101.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2605.28091" target="_blank">arXiv</a>
 
@@ -127,7 +127,7 @@
 > any-to-any · other
 
 - **Used by**: `aqascore`
-- **Parameters**: 10.7B · **Downloads**: 816K
+- **Parameters**: 10.7B · **Downloads**: 778K
 - **Disk**: ~40.0 GB
 - **Source**: <a href="https://arxiv.org/abs/2503.20215" target="_blank">arXiv</a>
 
@@ -150,7 +150,7 @@
 > visual-question-answering · apache-2.0
 
 - **Used by**: `videoscore`
-- **Parameters**: 8.3B · **Downloads**: 59
+- **Parameters**: 8.3B · **Downloads**: 50
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: <a href="https://arxiv.org/abs/2406.15252" target="_blank">arXiv</a>
 
@@ -165,7 +165,7 @@
 ### <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">`ai-forever/kandinsky-video-motion-predictor`</a> [↑](#categories)
 
 - **Used by**: `kandinsky_motion`
-- **Downloads**: 14
+- **Downloads**: 13
 
 ### <a href="https://huggingface.co/cromsc/nima-mobilenet-aesthetic" target="_blank">`cromsc/nima-mobilenet-aesthetic`</a> [↑](#categories)
 
@@ -191,7 +191,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `entitybench`, `fvd`, `subject_consistency`
-- **Parameters**: 87M · **Downloads**: 1.8M
+- **Parameters**: 87M · **Downloads**: 1.7M
 - **Disk**: ~330 MB
 - **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
 
@@ -207,7 +207,7 @@
 > video-classification · apache-2.0
 
 - **Used by**: `jedi`, `jedi_metric`
-- **Parameters**: 1.0B · **Downloads**: 376K
+- **Parameters**: 1.0B · **Downloads**: 372K
 - **Disk**: ~3.9 GB
 
 ### `fsmn-vad` [↑](#categories)
@@ -246,7 +246,7 @@
 > video-text-to-text · llama2
 
 - **Used by**: `videophy`
-- **Parameters**: 7.1B · **Downloads**: 144K
+- **Parameters**: 7.1B · **Downloads**: 142K
 - **Disk**: ~26.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2405.21075" target="_blank">arXiv</a>
 

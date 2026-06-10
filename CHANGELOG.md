@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.54] - 2026-06-10
+
 ### Added
 
 - **evoquality**: added ByteDance EvoQuality self-evolving VLM no-reference quality rating (1-5) with transformers and OpenAI-compatible endpoint backends.
