@@ -61,8 +61,11 @@ _IMPORTS = [
     ("DSGModule", ".dsg"),
     ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),
+    ("HPSv2Module", ".hpsv2"),
     ("HPSv3Module", ".hpsv3"),
+    ("UnifiedReward2Module", ".unified_reward_2"),
     ("QwenImageBenchModule", ".qwen_image_bench"),
+    ("UnifiedRewardEditModule", ".unified_reward_edit"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("FastVQAModule", ".fast_vqa"),
@@ -75,6 +78,7 @@ _IMPORTS = [
     ("CLIPIQAModule", ".clip_iqa"),
     ("ImagingQualityModule", ".imaging_quality"),
     ("ChipQAModule", ".chipqa"),
+    ("EvoQualityModule", ".evoquality"),
     # --- Full-reference quality ---
     ("VMAFModule", ".vmaf"),
     ("DISTSModule", ".dists"),

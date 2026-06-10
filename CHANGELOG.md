@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **evoquality**: added ByteDance EvoQuality self-evolving VLM no-reference quality rating (1-5) with transformers and OpenAI-compatible endpoint backends.
 - **qwen_image_bench**: added Qwen-Image-Bench text-to-image judge metrics for Quality, Aesthetics, Alignment, Real-world Fidelity, Creative Generation, and overall scoring.
+- **hpsv2** / **unified_reward_2** / **unified_reward_edit**: added DiffSynth image-quality metric parity for standalone HPSv2, UnifiedReward 2.0, and UnifiedReward Edit scoring.
 - **release**: added `ayase release prepare VERSION` to bump both version files, promote `[Unreleased]` changelog entries, and regenerate release docs/counts in one command.
 
 ## [0.1.45]

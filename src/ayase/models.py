@@ -128,8 +128,10 @@ class QualityMetrics(BaseModel):
         "tifa_score": "alignment",
         "image_reward_score": "alignment",
         "pickscore_score": "alignment",
+        "hpsv2_score": "alignment",
         "hpsv3_score": "alignment",
         "chipqa_score": "nr_quality",
+        "evoquality_score": "nr_quality",
         # Motion & dynamics
         "motion_score": "motion",
         "camera_motion_score": "motion",
@@ -526,6 +528,11 @@ class QualityMetrics(BaseModel):
         "geneval_position": "alignment",
         "geneval_color_attribution": "alignment",
         "geneval_overall": "alignment",
+        # UnifiedReward 2.0 (T2I reward)
+        "unified_reward_2_score": "nr_quality",
+        "unified_reward_2_alignment_score": "alignment",
+        "unified_reward_2_coherence_score": "nr_quality",
+        "unified_reward_2_style_score": "aesthetic",
         # Qwen-Image-Bench (T2I judge)
         "qwen_image_bench_quality": "nr_quality",
         "qwen_image_bench_aesthetics": "aesthetic",
@@ -533,6 +540,13 @@ class QualityMetrics(BaseModel):
         "qwen_image_bench_real_world_fidelity": "scene",
         "qwen_image_bench_creative_generation": "aesthetic",
         "qwen_image_bench_overall": "nr_quality",
+        # UnifiedReward Edit
+        "unified_reward_edit_score": "alignment",
+        "unified_reward_edit_success_score": "alignment",
+        "unified_reward_edit_overediting_score": "fr_quality",
+        "unified_reward_edit_image_1_score": "alignment",
+        "unified_reward_edit_image_2_score": "alignment",
+        "unified_reward_edit_winner": "alignment",
         # TC-Bench (temporal compositionality)
         "tcbench_attribute_score": "alignment",
         "tcbench_object_score": "alignment",
@@ -874,8 +888,10 @@ class QualityMetrics(BaseModel):
     # ImageReward (human preference for text-to-image)
     image_reward_score: Optional[float] = None  # Human preference reward (-2..+2, higher=better)
     pickscore_score: Optional[float] = None  # PickScore prompt-image preference score (higher=better)
+    hpsv2_score: Optional[float] = None  # HPSv2 prompt-image preference score (higher=better)
     hpsv3_score: Optional[float] = None  # HPSv3 human preference reward mu (higher=better)
     chipqa_score: Optional[float] = None  # ChipQA space-time-chip NR-VQA (higher=better)
+    evoquality_score: Optional[float] = None  # EvoQuality self-evolving VLM NR-IQA (1-5, higher=better)
 
     # Text overlay (NVIDIA Curator)
     text_overlay_score: Optional[float] = None  # Text overlay severity (0-1)
@@ -995,6 +1011,12 @@ class QualityMetrics(BaseModel):
     geneval_color_attribution: Optional[float] = None  # Color↔object binding
     geneval_overall: Optional[float] = None  # Mean of activated sub-scores
 
+    # UnifiedReward 2.0 T2I reward (1-5, higher=better)
+    unified_reward_2_score: Optional[float] = None  # Mean alignment/coherence/style score
+    unified_reward_2_alignment_score: Optional[float] = None  # Prompt-image alignment
+    unified_reward_2_coherence_score: Optional[float] = None  # Logical/visual coherence
+    unified_reward_2_style_score: Optional[float] = None  # Aesthetic style quality
+
     # Qwen-Image-Bench T2I judge (0-100, higher=better)
     qwen_image_bench_quality: Optional[float] = None  # Quality L1 score
     qwen_image_bench_aesthetics: Optional[float] = None  # Aesthetics L1 score
@@ -1002,6 +1024,14 @@ class QualityMetrics(BaseModel):
     qwen_image_bench_real_world_fidelity: Optional[float] = None  # Real-world fidelity L1
     qwen_image_bench_creative_generation: Optional[float] = None  # Creative generation L1
     qwen_image_bench_overall: Optional[float] = None  # Mean of Qwen-Image-Bench L1 scores
+
+    # UnifiedReward Edit (instruction-guided image editing)
+    unified_reward_edit_score: Optional[float] = None  # Primary edit quality score
+    unified_reward_edit_success_score: Optional[float] = None  # Instruction success (0-25)
+    unified_reward_edit_overediting_score: Optional[float] = None  # Edit preservation (0-25)
+    unified_reward_edit_image_1_score: Optional[float] = None  # Pairwise edit image 1 score
+    unified_reward_edit_image_2_score: Optional[float] = None  # Pairwise edit image 2 score
+    unified_reward_edit_winner: Optional[float] = None  # 0=tie, 1=image1, 2=image2
 
     # TC-Bench temporal compositionality (T2V, 0-1, higher=better)
     tcbench_attribute_score: Optional[float] = None  # Time-ordered attribute changes
