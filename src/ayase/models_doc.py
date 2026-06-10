@@ -420,35 +420,89 @@ def _get_module_source(cls) -> str:
     return _get_source(cls)
 
 
+_NON_HF_ID_OWNERS = {
+    "application",
+    "audio",
+    "clip",
+    "ffmpeg",
+    "image",
+    "models",
+    "multipart",
+    "open_clip",
+    "pyiqa",
+    "song_eval",
+    "text",
+    "torchvision",
+    "video",
+}
+
+_NON_HF_REPO_SUFFIXES = {
+    ".bin",
+    ".json",
+    ".onnx",
+    ".pt",
+    ".pth",
+    ".safetensors",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+
+
+def _is_likely_hf_model_id(candidate: str) -> bool:
+    """Return True for real HF repo IDs, False for MIME types/local asset paths."""
+    if (
+        not candidate
+        or "/" not in candidate
+        or candidate.count("/") != 1
+        or ":" in candidate
+        or candidate.startswith(("http", "/", "\\"))
+    ):
+        return False
+
+    owner, repo = candidate.split("/", 1)
+    if owner.lower() in _NON_HF_ID_OWNERS:
+        return False
+    if Path(repo).suffix.lower() in _NON_HF_REPO_SUFFIXES:
+        return False
+    return True
+
+
 def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
     """Extract HuggingFace model IDs from from_pretrained() calls and config defaults."""
     models = set()
     # Direct from_pretrained calls with string literals
     for m in re.finditer(r'from_pretrained\s*\(\s*["\']([a-zA-Z0-9_/-]+)["\']', source):
         candidate = m.group(1)
-        if "/" in candidate and not any(x in candidate for x in ("http", "path", ".py")):
+        if _is_likely_hf_model_id(candidate):
             models.add(candidate)
     # Variable-based: model_name = "org/model" followed by from_pretrained(model_name)
     for m in re.finditer(r'model_name\s*=\s*["\']([a-zA-Z0-9_/-]+)["\']', source):
         candidate = m.group(1)
-        if "/" in candidate and "from_pretrained" in source:
+        if _is_likely_hf_model_id(candidate) and "from_pretrained" in source:
             models.add(candidate)
     # Quoted org/model strings near from_pretrained (catches indirect references)
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
-        if ("from_pretrained" in source or "AutoModel" in source) and \
-           not any(x in candidate for x in ("http", "path", ".py", ".pth", ".onnx",
-                                            "ayase-models", "resolve/main",
-                                            "models/", "subfolder",
-                                            "facebookresearch/", "intel-isl/",
-                                            "tarepan/")):
+        if (
+            _is_likely_hf_model_id(candidate)
+            and ("from_pretrained" in source or "AutoModel" in source)
+            and not any(x in candidate for x in (
+                "ayase-models",
+                "facebookresearch/",
+                "intel-isl/",
+                "resolve/main",
+                "subfolder",
+                "tarepan/",
+            ))
+        ):
             models.add(candidate)
     # Model names from default_config
     if default_config:
         for key in ("model_name", "vlm_model", "vlm_model_name",
                      "sdxl_model", "vqa_model", "xclip_model_name"):
             val = default_config.get(key, "")
-            if isinstance(val, str) and "/" in val and not val.startswith(("http", "/")):
+            if isinstance(val, str) and _is_likely_hf_model_id(val):
                 models.add(val)
     return sorted(models)
 
