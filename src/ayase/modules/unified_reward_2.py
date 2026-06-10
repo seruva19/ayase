@@ -151,6 +151,12 @@ class UnifiedReward2Module(PipelineModule):
         "unified_reward_2_coherence_score": "UnifiedReward 2.0 coherence score (1-5)",
         "unified_reward_2_style_score": "UnifiedReward 2.0 style score (1-5)",
     }
+    metric_groups = {
+        "unified_reward_2_score": "nr_quality",
+        "unified_reward_2_alignment_score": "alignment",
+        "unified_reward_2_coherence_score": "nr_quality",
+        "unified_reward_2_style_score": "aesthetic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

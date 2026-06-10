@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+logger = logging.getLogger(__name__)
 
 
 class ValidationSeverity(str, Enum):
@@ -81,7 +84,9 @@ class QualityMetrics(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # -- Field grouping registry (field name → category) ------------------
-    _FIELD_GROUPS: dict = {
+    # Built-in defaults; self-describing modules extend this at discovery time
+    # via their ``metric_groups`` attribute (see ``register_field_groups``).
+    _FIELD_GROUPS: ClassVar[Dict[str, str]] = {
         # Basic visual quality
         "blur_score": "basic",
         "brightness": "basic",
@@ -128,10 +133,8 @@ class QualityMetrics(BaseModel):
         "tifa_score": "alignment",
         "image_reward_score": "alignment",
         "pickscore_score": "alignment",
-        "hpsv2_score": "alignment",
         "hpsv3_score": "alignment",
         "chipqa_score": "nr_quality",
-        "evoquality_score": "nr_quality",
         # Motion & dynamics
         "motion_score": "motion",
         "camera_motion_score": "motion",
@@ -528,25 +531,13 @@ class QualityMetrics(BaseModel):
         "geneval_position": "alignment",
         "geneval_color_attribution": "alignment",
         "geneval_overall": "alignment",
-        # UnifiedReward 2.0 (T2I reward)
-        "unified_reward_2_score": "nr_quality",
-        "unified_reward_2_alignment_score": "alignment",
-        "unified_reward_2_coherence_score": "nr_quality",
-        "unified_reward_2_style_score": "aesthetic",
-        # Qwen-Image-Bench (T2I judge)
-        "qwen_image_bench_quality": "nr_quality",
-        "qwen_image_bench_aesthetics": "aesthetic",
-        "qwen_image_bench_alignment": "alignment",
-        "qwen_image_bench_real_world_fidelity": "scene",
-        "qwen_image_bench_creative_generation": "aesthetic",
-        "qwen_image_bench_overall": "nr_quality",
-        # UnifiedReward Edit
-        "unified_reward_edit_score": "alignment",
-        "unified_reward_edit_success_score": "alignment",
-        "unified_reward_edit_overediting_score": "fr_quality",
-        "unified_reward_edit_image_1_score": "alignment",
-        "unified_reward_edit_image_2_score": "alignment",
-        "unified_reward_edit_winner": "alignment",
+        # Previously ungrouped (these had no entry and silently fell into "other")
+        "audiobox_pc": "audio",
+        "audiobox_cu": "audio",
+        "clip_image_similarity": "alignment",
+        # NOTE: hpsv2, evoquality, unified_reward_2, unified_reward_edit and
+        # qwen_image_bench declare their own groups via module `metric_groups`,
+        # registered at discovery time — no entries needed here.
         # TC-Bench (temporal compositionality)
         "tcbench_attribute_score": "alignment",
         "tcbench_object_score": "alignment",
@@ -596,6 +587,24 @@ class QualityMetrics(BaseModel):
         parts = [f"{grp}={len(fields)}" for grp, fields in sorted(grouped.items())]
         total = self.non_null_count()
         return f"{total} metrics ({', '.join(parts)})" if parts else "0 metrics"
+
+    @classmethod
+    def register_field_groups(cls, mapping: Dict[str, str]) -> None:
+        """Merge module-declared metric→group mappings into the registry.
+
+        Modules own the grouping of the metrics they produce by declaring a
+        ``metric_groups`` class attribute; ``ModuleRegistry.discover_modules``
+        calls this for each one so the built-in ``_FIELD_GROUPS`` table need
+        not be touched when a self-describing module is added. Module
+        declarations win over the defaults, and a conflicting re-map is logged.
+        """
+        for field, group in mapping.items():
+            existing = cls._FIELD_GROUPS.get(field)
+            if existing is not None and existing != group:
+                logger.warning(
+                    "metric group for %r overridden: %r -> %r", field, existing, group
+                )
+            cls._FIELD_GROUPS[field] = group
 
     # -- Fields -----------------------------------------------------------
 

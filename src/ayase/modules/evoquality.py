@@ -81,6 +81,9 @@ class EvoQualityModule(PipelineModule):
     metric_info = {
         "evoquality_score": "EvoQuality VLM quality rating (1-5, higher=better)",
     }
+    metric_groups = {
+        "evoquality_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)
