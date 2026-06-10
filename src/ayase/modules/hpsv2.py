@@ -52,6 +52,9 @@ class HPSv2Module(PipelineModule):
     metric_info = {
         "hpsv2_score": "HPSv2 prompt-image preference score (higher=better)",
     }
+    metric_groups = {
+        "hpsv2_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

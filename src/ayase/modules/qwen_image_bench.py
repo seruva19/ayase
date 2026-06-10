@@ -332,6 +332,14 @@ class QwenImageBenchModule(PipelineModule):
         ),
         "qwen_image_bench_overall": "Mean Qwen-Image-Bench L1 score (0-100)",
     }
+    metric_groups = {
+        "qwen_image_bench_quality": "nr_quality",
+        "qwen_image_bench_aesthetics": "aesthetic",
+        "qwen_image_bench_alignment": "alignment",
+        "qwen_image_bench_real_world_fidelity": "scene",
+        "qwen_image_bench_creative_generation": "aesthetic",
+        "qwen_image_bench_overall": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

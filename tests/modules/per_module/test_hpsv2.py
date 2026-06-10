@@ -23,12 +23,15 @@ def test_hpsv2_skip_no_backend(image_sample):
 
 def test_hpsv2_field_exists_and_grouped():
     from ayase.models import QualityMetrics
+    from ayase.pipeline import ModuleRegistry
 
     qm = QualityMetrics()
     assert qm.hpsv2_score is None
     qm.hpsv2_score = 30.5
     assert qm.hpsv2_score == 30.5
-    assert qm._FIELD_GROUPS.get("hpsv2_score") == "alignment"
+    # hpsv2 owns its grouping via metric_groups, folded in at discovery time
+    ModuleRegistry.discover_modules()
+    assert QualityMetrics._FIELD_GROUPS.get("hpsv2_score") == "alignment"
 
 
 def test_hpsv2_as_floats():

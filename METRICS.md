@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.53** · Generated 2026-06-10 15:02 · **360 modules** · **425 metrics**
+> **Version 0.1.53** · Generated 2026-06-10 15:53 · **360 modules** · **425 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -8,7 +8,7 @@
 
 ## Summary
 
-**360** modules · **469** output fields · **425** metrics · **103** tiered · **175** GPU · **22** categories
+**360** modules · **469** output fields · **425** metrics · **103** tiered · **175** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -27,7 +27,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-103-metrics) (103) · [Full-Reference Quality](#full-reference-quality-59-metrics) (59) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-24-metrics) (24) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-39-metrics) (39) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-47-fields) (47) · [Utility & Validation](#utility--validation-33-modules) (33)
+[No-Reference Quality](#no-reference-quality-103-metrics) (103) · [Full-Reference Quality](#full-reference-quality-59-metrics) (59) · [Text-Video Alignment](#text-video-alignment-52-metrics) (52) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-24-metrics) (24) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-41-metrics) (41) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-4-metrics) (4) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-47-fields) (47) · [Utility & Validation](#utility--validation-33-modules) (33)
 
 ---
 
@@ -1780,7 +1780,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py) · live: ✅⏳
 
 
-## Text-Video Alignment (51 metrics)
+## Text-Video Alignment (52 metrics)
 
 ### `aigcvqa_alignment` [↑](#categories)
 > AIGC-VQA text-video alignment
@@ -1827,6 +1827,18 @@
 - **Source**: <a href="https://huggingface.co/Salesforce/blip-itm-large-coco" target="_blank">HF</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `model_name=Salesforce/blip-itm-large-coco`, `max_frames=8`, `warning_threshold=0.4`, `device=auto`
+
+### `clip_image_similarity` [↑](#categories)
+> CLIP image-to-image cosine similarity vs reference (0-1, higher=better) · ↑ higher=better · 0-1, higher = closer match
+
+**[`clip_image_similarity`](src/ayase/modules/clip_image_similarity.py)** — CLIP image-to-image cosine similarity vs reference image (CLIP-I)
+
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Packages**: open-clip-torch, torch, transformers
+- **VRAM**: ~600 MB
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
+- **Tests**: no dedicated test reference found
+- **Config**: `backend=auto`, `model_name=open_clip:ViT-B-32`, `pretrained=laion2b_s34b_b79k`, `device=auto`, `warning_threshold=0.5`
 
 ### `clip_score` [↑](#categories)
 > Caption-image alignment · ↑ higher=better
@@ -2363,7 +2375,7 @@
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: aesthetic_predictor_v2_5, torch
-- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py) · live: ✅⏳
+- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py) · live: ✅⏳
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
 ### `vqa_score_alignment` [↑](#categories)
@@ -3094,7 +3106,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: aesthetic_predictor_v2_5, torch
-- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py) · live: ✅⏳
+- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py) · live: ✅⏳
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
 ### `aesthetic_score_legacy` [↑](#categories)
@@ -3226,7 +3238,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (39 metrics)
+## Audio Quality (41 metrics)
 
 ### `aqascore_score` [↑](#categories)
 > AQAScore audio question-answering alignment (0-1) · ↑ higher=better · 0-1
@@ -3258,8 +3270,30 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `model_name=large-v3`, `device=auto`
 
+### `audiobox_cu` [↑](#categories)
+> Audiobox content usefulness (CU)
+
+**[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: audiobox
+- **Packages**: audiobox_aesthetics, soundfile
+- **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py) · live: ✅⏳
+- **Config**: `sample_rate=16000`
+
 ### `audiobox_enjoyment` [↑](#categories)
 > Audiobox content enjoyment (CE)
+
+**[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: audiobox
+- **Packages**: audiobox_aesthetics, soundfile
+- **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py) · live: ✅⏳
+- **Config**: `sample_rate=16000`
+
+### `audiobox_pc` [↑](#categories)
+> Audiobox production complexity (PC)
 
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
@@ -4614,43 +4648,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **VRAM**: ~800 MB
 - **Tests**: covered by [`test_vtss.py`](tests/modules/per_module/test_vtss.py), [`test_curation_metrics.py`](tests/modules/test_curation_metrics.py) · live: ✅⏳
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
-
-
-## Other (3 metrics)
-
-### `audiobox_cu` [↑](#categories)
-> Audiobox content usefulness (CU)
-
-**[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
-
-- **Input**: audio · **Speed**: ⚡ fast
-- **Backend**: audiobox
-- **Packages**: audiobox_aesthetics, soundfile
-- **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py) · live: ✅⏳
-- **Config**: `sample_rate=16000`
-
-### `audiobox_pc` [↑](#categories)
-> Audiobox production complexity (PC)
-
-**[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
-
-- **Input**: audio · **Speed**: ⚡ fast
-- **Backend**: audiobox
-- **Packages**: audiobox_aesthetics, soundfile
-- **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py) · live: ✅⏳
-- **Config**: `sample_rate=16000`
-
-### `clip_image_similarity` [↑](#categories)
-> CLIP image-to-image cosine similarity vs reference (0-1, higher=better) · ↑ higher=better · 0-1, higher = closer match
-
-**[`clip_image_similarity`](src/ayase/modules/clip_image_similarity.py)** — CLIP image-to-image cosine similarity vs reference image (CLIP-I)
-
-- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium · GPU
-- **Packages**: open-clip-torch, torch, transformers
-- **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: no dedicated test reference found
-- **Config**: `backend=auto`, `model_name=open_clip:ViT-B-32`, `pretrained=laion2b_s34b_b79k`, `device=auto`, `warning_threshold=0.5`
 
 
 ## Dataset-Level Metrics (47 fields)

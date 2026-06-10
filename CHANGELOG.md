@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **hpsv2** / **unified_reward_2** / **unified_reward_edit**: added DiffSynth image-quality metric parity for standalone HPSv2, UnifiedReward 2.0, and UnifiedReward Edit scoring.
 - **release**: added `ayase release prepare VERSION` to bump both version files, promote `[Unreleased]` changelog entries, and regenerate release docs/counts in one command.
 
+### Changed
+
+- **metrics**: modules can now declare the category of the metrics they produce via a `metric_groups` class attribute, folded into `QualityMetrics._FIELD_GROUPS` at discovery time, so self-describing modules no longer require a central grouping edit. Added consistency tests that fail loudly if a metric field is ungrouped or a module declares a metric/group for a non-existent field.
+
 ## [0.1.45]
 
 ### Fixed
