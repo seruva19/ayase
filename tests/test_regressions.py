@@ -776,6 +776,64 @@ def test_load_state_skips_incompatible_pipeline_fingerprint(tmp_path: Path):
     assert second_pipeline.stats.total_samples == 1
 
 
+def test_sanitize_cached_sample_drops_unknown_metric_keys(caplog):
+    import logging
+
+    data = {
+        "path": "clip.mp4",
+        "is_video": True,
+        "quality_metrics": {
+            "technical_score": 3.0,
+            "perceptual_hash": None,        # since-removed legacy field
+            "some_future_metric": 1.5,      # unknown field
+        },
+    }
+    with caplog.at_level(logging.WARNING):
+        cleaned = Pipeline._sanitize_cached_sample("clip.mp4", data)
+
+    assert cleaned["quality_metrics"] == {"technical_score": 3.0}
+    assert "unknown metric field" in caplog.text
+    assert "perceptual_hash" in caplog.text
+    assert "some_future_metric" in caplog.text
+    # the original input dict must not be mutated
+    assert "perceptual_hash" in data["quality_metrics"]
+
+
+def test_sanitize_cached_sample_noop_when_all_known():
+    data = {"quality_metrics": {"technical_score": 3.0}}
+    assert Pipeline._sanitize_cached_sample("k", data) is data
+
+
+def test_load_state_restores_sample_with_legacy_metric_key(tmp_path: Path, caplog):
+    import logging
+
+    media_path = tmp_path / "clip.mp4"
+    media_path.write_bytes(b"video-bytes")
+    state_path = tmp_path / "pipeline_state.json"
+
+    pipeline = Pipeline([_FileSizeScoreModule()])
+    pipeline.start()
+    pipeline.process_sample(Sample(path=media_path, is_video=True))
+    pipeline.save_state(state_path)
+
+    # Simulate a state file written by an older version that still carried a
+    # since-removed metric field on the cached sample.
+    raw = json.loads(state_path.read_text(encoding="utf-8"))
+    for sample_dict in raw["results"].values():
+        sample_dict["quality_metrics"]["perceptual_hash"] = None
+    state_path.write_text(json.dumps(raw), encoding="utf-8")
+
+    restored = Pipeline([_FileSizeScoreModule()])
+    with caplog.at_level(logging.WARNING):
+        restored.load_state(state_path)
+
+    # The sample is restored (not discarded) and the legacy key is dropped.
+    assert len(restored.results) == 1
+    sample = next(iter(restored.results.values()))
+    assert sample.quality_metrics.technical_score == float(media_path.stat().st_size)
+    assert "perceptual_hash" in caplog.text
+
+
 def test_load_state_skips_legacy_files_without_pipeline_fingerprint(tmp_path: Path):
     media_path = tmp_path / "clip.mp4"
     media_path.write_bytes(b"video")

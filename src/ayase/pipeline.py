@@ -1209,6 +1209,35 @@ class Pipeline:
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
+    @staticmethod
+    def _sanitize_cached_sample(key: str, data: Any) -> Any:
+        """Drop metric keys unknown to the current QualityMetrics schema.
+
+        Older state files may reference metric fields that have since been
+        removed. QualityMetrics forbids extra keys, so strip them (with a
+        warning) rather than failing to restore the whole cached sample.
+        """
+        if not isinstance(data, dict):
+            return data
+        qm = data.get("quality_metrics")
+        if not isinstance(qm, dict):
+            return data
+
+        from .models import QualityMetrics
+
+        unknown = [k for k in qm if k not in QualityMetrics.model_fields]
+        if not unknown:
+            return data
+        logger.warning(
+            "Cached sample %s has %d unknown metric field(s) from an older "
+            "version; dropping: %s",
+            key,
+            len(unknown),
+            ", ".join(sorted(unknown)),
+        )
+        cleaned = {k: val for k, val in qm.items() if k not in unknown}
+        return {**data, "quality_metrics": cleaned}
+
     def load_state(self, path: Path) -> None:
         """Load pipeline state from disk."""
         if not path.exists():
@@ -1254,7 +1283,7 @@ class Pipeline:
             if "results" in data:
                 for k, v in results_data.items():
                     try:
-                        sample = Sample.model_validate(v)
+                        sample = Sample.model_validate(self._sanitize_cached_sample(k, v))
                         manifest = manifests.get(k) if isinstance(manifests, dict) else None
                         if isinstance(manifest, dict):
                             if not self._sample_matches_manifest(manifest):
