@@ -52,6 +52,9 @@ class NIMALegacyONNXModule(PipelineModule):
             "NIMA legacy aesthetic score (1-10), frozen ONNX MobileNet backend"
         ),
     }
+    metric_groups = {
+        "aesthetic_score_legacy": "aesthetic",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

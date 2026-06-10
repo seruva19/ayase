@@ -47,6 +47,9 @@ class ImageLPIPSModule(PipelineModule):
         "image_lpips": "Per-sample LPIPS distance to reference image (lower=better)",
         "lpips_diversity": "Dataset average pairwise LPIPS distance (higher=more diverse)",
     }
+    metric_groups = {
+        "image_lpips": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

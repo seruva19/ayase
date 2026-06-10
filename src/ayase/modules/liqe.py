@@ -29,6 +29,9 @@ class LIQEModule(PipelineModule):
         "subsample": 5,
         "warning_threshold": 2.5,  # MOS-scale: 1-5
     }
+    metric_groups = {
+        "liqe_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -31,6 +31,9 @@ class MUSIQModule(PipelineModule):
         "subsample": 5,
         "warning_threshold": 40.0,
     }
+    metric_groups = {
+        "musiq_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

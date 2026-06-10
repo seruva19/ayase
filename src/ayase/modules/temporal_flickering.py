@@ -23,6 +23,9 @@ class TemporalFlickeringModule(PipelineModule):
         "warning_threshold": 0.02,
         "max_frames": 300,
     }
+    metric_groups = {
+        "warping_error": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

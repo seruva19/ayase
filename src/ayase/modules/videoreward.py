@@ -46,6 +46,11 @@ class VideoRewardModule(PipelineModule):
         "subsample": 8,
         "clip_model": "openai/clip-vit-base-patch32",
     }
+    metric_groups = {
+        "videoreward_mq": "motion",
+        "videoreward_ta": "alignment",
+        "videoreward_vq": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

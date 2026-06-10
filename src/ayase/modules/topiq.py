@@ -33,6 +33,9 @@ class TOPIQModule(PipelineModule):
         "subsample": 5,  # Every Nth video frame
         "warning_threshold": 0.4,
     }
+    metric_groups = {
+        "topiq_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

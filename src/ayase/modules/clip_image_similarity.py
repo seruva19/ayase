@@ -62,6 +62,9 @@ class CLIPImageSimilarityModule(PipelineModule):
             "reference image (0-1, higher = closer match)"
         ),
     }
+    metric_groups = {
+        "clip_image_similarity": "alignment",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

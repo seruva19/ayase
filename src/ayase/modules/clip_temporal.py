@@ -32,6 +32,10 @@ class CLIPTemporalModule(PipelineModule):
         "temp_threshold": 0.90,
         "face_threshold": 0.85,
     }
+    metric_groups = {
+        "clip_temp": "temporal",
+        "face_consistency": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -34,6 +34,9 @@ class HumanCLAPModule(PipelineModule):
     metric_info = {
         "human_clap_score": "Audio-text relevance from a CLAP/Human-CLAP backend (0-1)",
     }
+    metric_groups = {
+        "human_clap_score": "audio",
+    }
     metric_field_name = "human_clap_score"
 
     def __init__(self, config=None):

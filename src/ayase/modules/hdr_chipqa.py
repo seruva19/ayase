@@ -98,6 +98,9 @@ class HDRChipQAModule(PipelineModule):
         "color_space": "BT2020",
         "warning_threshold": None,
     }
+    metric_groups = {
+        "hdr_chipqa_score": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

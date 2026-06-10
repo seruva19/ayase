@@ -28,6 +28,9 @@ class STRREDModule(ReferenceBasedModule):
     default_config = {
         "subsample": 3,
     }
+    metric_groups = {
+        "strred": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

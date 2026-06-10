@@ -19,6 +19,9 @@ class CameraJitterModule(PipelineModule):
     name = "camera_jitter"
     description = "Camera jitter/shake detection (0-1, 1=stable)"
     default_config = {"subsample": 16}
+    metric_groups = {
+        "camera_jitter_score": "motion",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

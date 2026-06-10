@@ -15,6 +15,9 @@ class NIMAModule(PipelineModule):
     name = "nima"
     description = "NIMA aesthetic and technical image quality (1-10 scale)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "nima_score": "aesthetic",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

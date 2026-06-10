@@ -28,6 +28,9 @@ class CommonsenseModule(PipelineModule):
         "model_name": "dandelin/vilt-b32-finetuned-vqa",
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
     }
+    metric_groups = {
+        "commonsense_score": "scene",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

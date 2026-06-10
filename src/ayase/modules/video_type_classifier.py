@@ -48,6 +48,10 @@ class VideoTypeClassifierModule(PipelineModule):
         "subsample": 4,
         "clip_model": "openai/clip-vit-base-patch32",
     }
+    metric_groups = {
+        "video_type": "scene",
+        "video_type_confidence": "scene",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

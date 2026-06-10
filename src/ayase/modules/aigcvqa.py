@@ -54,6 +54,11 @@ class AIGCVQAModule(PipelineModule):
         "subsample": 8,
         "clip_model": "openai/clip-vit-base-patch32",
     }
+    metric_groups = {
+        "aigcvqa_aesthetic": "nr_quality",
+        "aigcvqa_alignment": "alignment",
+        "aigcvqa_technical": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

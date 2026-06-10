@@ -81,6 +81,9 @@ class ChipQAModule(PipelineModule):
         "timeout_sec": 1800,
         "warning_threshold": None,
     }
+    metric_groups = {
+        "chipqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

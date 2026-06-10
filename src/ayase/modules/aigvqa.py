@@ -57,6 +57,9 @@ class AIGVQAModule(PipelineModule):
         "temporal_weight": 0.3,
         "aesthetic_weight": 0.3,
     }
+    metric_groups = {
+        "aigvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

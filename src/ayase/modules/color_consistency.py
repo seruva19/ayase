@@ -17,6 +17,9 @@ class ColorConsistencyModule(PipelineModule):
     name = "color_consistency"
     description = "Verifies color attributes in prompt vs video content"
     default_config = {}
+    metric_groups = {
+        "color_score": "scene",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

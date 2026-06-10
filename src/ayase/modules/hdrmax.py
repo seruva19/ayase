@@ -45,6 +45,9 @@ class HDRMAXModule(PipelineModule):
         "fps": None,
         "warning_threshold": None,
     }
+    metric_groups = {
+        "hdrmax_score": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -30,6 +30,9 @@ class PIModule(PipelineModule):
     default_config = {
         "subsample": 3,
     }
+    metric_groups = {
+        "pi_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

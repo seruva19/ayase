@@ -36,6 +36,9 @@ class AudioUTMOSModule(PipelineModule):
         "target_sr": 16000,
         "warning_threshold": 3.0,
     }
+    metric_groups = {
+        "utmos_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -35,6 +35,9 @@ class RQVQAModule(PipelineModule):
             "overall_impression": 0.15,
         },
     }
+    metric_groups = {
+        "rqvqa_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

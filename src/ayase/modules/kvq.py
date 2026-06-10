@@ -24,6 +24,9 @@ class KVQModule(PipelineModule):
     name = "kvq"
     description = "Saliency-guided video quality (KVQ model or TOPIQ+saliency)"
     default_config = {"subsample": 8, "trust_remote_code": True, "model_revision": None}
+    metric_groups = {
+        "kvq_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

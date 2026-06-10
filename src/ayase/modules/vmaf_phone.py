@@ -29,6 +29,9 @@ class VMAFPhoneModule(ReferenceBasedModule):
     name = "vmaf_phone"
     description = "VMAF phone model for mobile viewing (0-100, higher=better)"
     default_config = {}
+    metric_groups = {
+        "vmaf_phone": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

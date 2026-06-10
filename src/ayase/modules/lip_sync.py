@@ -31,6 +31,10 @@ class LipSyncModule(PipelineModule):
         "subsample": 16,
         "sample_rate": 16000,
     }
+    metric_groups = {
+        "lse_c": "temporal",
+        "lse_d": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

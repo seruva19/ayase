@@ -31,6 +31,9 @@ class CAMBIModule(PipelineModule):
     default_config = {
         "warning_threshold": 5.0,
     }
+    metric_groups = {
+        "cambi": "codec",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

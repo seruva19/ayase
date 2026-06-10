@@ -36,6 +36,9 @@ class AVQTModule(ReferenceBasedModule):
         "subsample": 8,
         "hysteresis_weight": 0.1,  # Weight for temporal hysteresis
     }
+    metric_groups = {
+        "avqt_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -26,6 +26,9 @@ class VMAF4KModule(ReferenceBasedModule):
     name = "vmaf_4k"
     description = "VMAF 4K model for UHD content (0-100, higher=better)"
     default_config = {}
+    metric_groups = {
+        "vmaf_4k": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

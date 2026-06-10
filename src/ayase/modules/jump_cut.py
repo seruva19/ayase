@@ -19,6 +19,9 @@ class JumpCutModule(PipelineModule):
     name = "jump_cut"
     description = "Jump cut / abrupt transition detection (0-1, 1=no cuts)"
     default_config = {"threshold": 40.0}
+    metric_groups = {
+        "jump_cut_score": "temporal",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

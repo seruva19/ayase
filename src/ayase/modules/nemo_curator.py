@@ -73,6 +73,10 @@ class NemoCuratorModule(PipelineModule):
         "min_length": 10,
         "max_length": 2000,
     }
+    metric_groups = {
+        "nemo_quality_label": "meta",
+        "nemo_quality_score": "meta",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

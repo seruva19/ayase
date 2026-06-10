@@ -35,6 +35,9 @@ class BLIPScoreModule(PipelineModule):
     metric_info = {
         "blip_score": "BLIP image-text matching probability (0-1, higher=better)",
     }
+    metric_groups = {
+        "blip_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

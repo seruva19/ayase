@@ -38,6 +38,10 @@ class IdentityLossModule(PipelineModule):
         "subsample": 8,
         "warning_threshold": 0.5,
     }
+    metric_groups = {
+        "face_recognition_score": "face",
+        "identity_loss": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

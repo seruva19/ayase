@@ -22,6 +22,12 @@ class COVERModule(PipelineModule):
         "subsample": 8,
         "quality_threshold": 30.0,
     }
+    metric_groups = {
+        "cover_aesthetic": "aesthetic",
+        "cover_score": "nr_quality",
+        "cover_semantic": "aesthetic",
+        "cover_technical": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

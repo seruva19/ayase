@@ -19,6 +19,9 @@ class AFINEModule(PipelineModule):
     name = "afine"
     description = "A-FINE adaptive fidelity-naturalness IQA (CVPR 2025)"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "afine_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

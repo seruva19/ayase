@@ -78,6 +78,11 @@ class DOVERModule(PipelineModule):
         "dover_technical": "DOVER technical quality sub-score (0-1 sigmoid)",
         "dover_aesthetic": "DOVER aesthetic quality sub-score (0-1 sigmoid)",
     }
+    metric_groups = {
+        "dover_aesthetic": "aesthetic",
+        "dover_score": "nr_quality",
+        "dover_technical": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

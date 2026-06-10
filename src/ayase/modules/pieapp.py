@@ -15,6 +15,9 @@ class PieAPPModule(PipelineModule):
     name = "pieapp"
     description = "PieAPP full-reference perceptual error via pairwise preference (lower=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "pieapp": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

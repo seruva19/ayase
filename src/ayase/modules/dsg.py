@@ -36,6 +36,9 @@ class DSGModule(PipelineModule):
     default_config = {
         "subsample": 4,     # frames to sample for video
     }
+    metric_groups = {
+        "dsg_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -57,6 +57,9 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
     metric_info = {
         "laion_clap_score": "LAION-CLAP audio-text alignment (0-1, higher=better)",
     }
+    metric_groups = {
+        "laion_clap_score": "audio",
+    }
     metric_field_name = "laion_clap_score"
 
 
@@ -83,6 +86,9 @@ class MSCLAPScoreModule(HumanCLAPModule):
     ]
     metric_info = {
         "ms_clap_score": "Microsoft CLAP audio-text alignment (0-1, higher=better)",
+    }
+    metric_groups = {
+        "ms_clap_score": "audio",
     }
     metric_field_name = "ms_clap_score"
 
@@ -156,5 +162,8 @@ class GenericCLAPScoreModule(HumanCLAPModule):
     ]
     metric_info = {
         "clap_score": "CLAP audio-text alignment (0-1, configurable backbone)",
+    }
+    metric_groups = {
+        "clap_score": "audio",
     }
     metric_field_name = "clap_score"

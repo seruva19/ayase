@@ -56,6 +56,9 @@ class ModularBVQAModule(PipelineModule):
         "frame_size": 224,
         "weights_path": "",  # path to ViTbCLIP_SpatialTemporal_modular_LSVQ.pth
     }
+    metric_groups = {
+        "modularbvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

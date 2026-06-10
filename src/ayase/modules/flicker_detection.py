@@ -38,6 +38,9 @@ class FlickerDetectionModule(PipelineModule):
         "max_frames": 600,
         "warning_threshold": 30.0,  # Warn if flicker_score > 30
     }
+    metric_groups = {
+        "flicker_score": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

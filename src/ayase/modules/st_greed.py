@@ -25,6 +25,9 @@ class STGREEDModule(PipelineModule):
     name = "st_greed"
     description = "Spatial-temporal entropic quality (FR entropic difference or NR heuristic fallback)"
     default_config = {"subsample": 16}
+    metric_groups = {
+        "st_greed_score": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

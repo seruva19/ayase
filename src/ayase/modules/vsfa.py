@@ -41,6 +41,9 @@ class VSFAModule(PipelineModule):
         "subsample": 8,
         "frame_size": 520,  # Resize shorter side before centre-crop
     }
+    metric_groups = {
+        "vsfa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

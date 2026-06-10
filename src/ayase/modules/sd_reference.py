@@ -40,6 +40,9 @@ class SDReferenceModule(PipelineModule):
         "sd_steps": 20,
         "cache_dir": ".ayase_sd_cache",
     }
+    metric_groups = {
+        "sd_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

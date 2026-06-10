@@ -26,6 +26,10 @@ class ActionRecognitionModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "top_k": 5,
     }
+    metric_groups = {
+        "action_confidence": "scene",
+        "action_score": "scene",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

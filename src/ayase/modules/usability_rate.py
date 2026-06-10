@@ -19,6 +19,9 @@ class UsabilityRateModule(PipelineModule):
     default_config = {
         "quality_threshold": 50.0,  # Minimum quality score to be "usable"
     }
+    metric_groups = {
+        "usability_rate": "meta",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

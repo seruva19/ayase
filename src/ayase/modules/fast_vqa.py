@@ -69,6 +69,9 @@ class FastVQAModule(PipelineModule):
     metric_info = {
         "fast_vqa_score": "FAST-VQA / FasterVQA score normalized to 0-100 (higher=better)",
     }
+    metric_groups = {
+        "fast_vqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

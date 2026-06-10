@@ -8,6 +8,9 @@ logger = logging.getLogger(__name__)
 
 class WSSSIMModule(ReferenceBasedModule):
     name = "ws_ssim"; description = "WS-SSIM weighted spherical SSIM"; metric_field = "ws_ssim"; default_config = {"subsample": 8}
+    metric_groups = {
+        "ws_ssim": "fr_quality",
+    }
 
     def _compute_frame_pair(self, img_gray: np.ndarray, ref_gray: np.ndarray) -> Optional[float]:
         """Compute WS-SSIM for a single grayscale frame pair."""

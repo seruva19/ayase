@@ -32,6 +32,11 @@ class FaceLandmarkQualityModule(PipelineModule):
         "max_frames": 300,
         "jitter_warning": 30.0,  # Warn if jitter > 30
     }
+    metric_groups = {
+        "face_expression_smoothness": "face",
+        "face_identity_consistency": "face",
+        "face_landmark_jitter": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

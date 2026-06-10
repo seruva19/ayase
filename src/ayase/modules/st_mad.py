@@ -20,6 +20,9 @@ class STMADModule(ReferenceBasedModule):
     description = "ST-MAD spatiotemporal MAD (TIP 2012)"
     metric_field = "st_mad"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "st_mad": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

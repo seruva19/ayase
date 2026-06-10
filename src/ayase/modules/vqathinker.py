@@ -55,6 +55,9 @@ class VQAThinkerModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "temperature": 0.07,
     }
+    metric_groups = {
+        "vqathinker_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

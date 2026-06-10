@@ -20,6 +20,9 @@ class LAIONAestheticModule(PipelineModule):
     name = "laion_aesthetic"
     description = "LAION Aesthetics V2 predictor (0-10, industry standard)"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "laion_aesthetic": "aesthetic",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -64,6 +64,10 @@ class FaceCrossSimilarityModule(PipelineModule):
         "avg_face_cross_similarity": "Dataset-wide average pairwise face similarity",
         "identity_cluster_count": "Estimated number of identity clusters in the dataset",
     }
+    metric_groups = {
+        "face_cross_similarity": "face",
+        "face_identity_count": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

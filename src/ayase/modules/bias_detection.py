@@ -40,6 +40,9 @@ class BiasDetectionModule(PipelineModule):
         "max_frames": 30,
         "warning_threshold": 0.7,  # Warn if bias_score > 0.7
     }
+    metric_groups = {
+        "bias_score": "safety",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -23,6 +23,10 @@ class AestheticModule(PipelineModule):
         "trust_remote_code": True,
         "model_revision": None,
     }
+    metric_groups = {
+        "aesthetic_score": "aesthetic",
+        "vqa_a_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

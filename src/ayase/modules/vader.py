@@ -54,6 +54,9 @@ class VADERModule(PipelineModule):
         "subsample": 8,
         "clip_model": "openai/clip-vit-large-patch14",
     }
+    metric_groups = {
+        "vader_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

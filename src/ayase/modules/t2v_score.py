@@ -42,6 +42,11 @@ class T2VScoreModule(PipelineModule):
         "device": "auto",
         "warning_threshold": 0.6,  # Warn if T2VScore < 0.6
     }
+    metric_groups = {
+        "t2v_alignment": "alignment",
+        "t2v_quality": "nr_quality",
+        "t2v_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

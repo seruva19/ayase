@@ -55,6 +55,10 @@ class QAlignModule(PipelineModule):
         "trust_remote_code": True,
         "model_revision": None,
     }
+    metric_groups = {
+        "qalign_aesthetic": "aesthetic",
+        "qalign_quality": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

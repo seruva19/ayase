@@ -32,6 +32,10 @@ class JudderStutterModule(PipelineModule):
         "duplicate_threshold": 1.0,  # Max mean-absolute-diff to call a frame "duplicate"
         "warning_threshold": 20.0,
     }
+    metric_groups = {
+        "judder_score": "temporal",
+        "stutter_score": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

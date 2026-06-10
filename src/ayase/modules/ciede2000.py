@@ -105,6 +105,9 @@ class CIEDE2000Module(ReferenceBasedModule):
     name = "ciede2000"
     description = "CIEDE2000 perceptual color difference (lower=better)"
     default_config = {"subsample": 5}
+    metric_groups = {
+        "ciede2000": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

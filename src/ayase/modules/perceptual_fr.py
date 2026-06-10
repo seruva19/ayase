@@ -35,6 +35,11 @@ class PerceptualFRModule(PipelineModule):
         "subsample": 5,  # Every Nth video frame
         "device": "auto",
     }
+    metric_groups = {
+        "fsim": "fr_quality",
+        "gmsd": "fr_quality",
+        "vsi_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

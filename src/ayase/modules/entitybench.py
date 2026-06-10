@@ -41,6 +41,10 @@ class EntityBenchModule(BatchMetricModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
+    metric_groups = {
+        "entitybench_appearance_consistency": "temporal",
+        "entitybench_identity_consistency": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

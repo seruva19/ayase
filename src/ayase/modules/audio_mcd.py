@@ -37,6 +37,9 @@ class AudioMCDModule(PipelineModule):
         "n_mfcc": 13,
         "warning_threshold": 8.0,  # dB
     }
+    metric_groups = {
+        "mcd_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

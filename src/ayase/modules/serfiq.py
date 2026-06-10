@@ -55,6 +55,9 @@ class SERFIQModule(PipelineModule):
         "det_size": 640,
         "dropout_rate": 0.1,
     }
+    metric_groups = {
+        "serfiq_score": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

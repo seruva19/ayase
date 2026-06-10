@@ -15,6 +15,9 @@ class CWSSIMModule(PipelineModule):
     name = "cw_ssim"
     description = "Complex Wavelet SSIM full-reference metric (0-1, higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "cw_ssim": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -25,6 +25,9 @@ class NIQEModule(NoReferenceModule):
         "subsample": 2,  # Process every Nth frame for videos
         "warning_threshold": 7.0,  # Warn if NIQE > 7.0 (lower is better)
     }
+    metric_groups = {
+        "niqe": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

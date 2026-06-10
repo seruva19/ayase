@@ -28,6 +28,9 @@ class LLMDescriptiveQAModule(PipelineModule):
         "num_frames": 4,  # Frames to analyze
         "device": "auto",
     }
+    metric_groups = {
+        "llm_qa_score": "meta",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

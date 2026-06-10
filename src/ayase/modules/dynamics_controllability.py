@@ -42,6 +42,9 @@ class DynamicsControllabilityModule(PipelineModule):
     default_config = {
         "subsample": 16,
     }
+    metric_groups = {
+        "dynamics_controllability": "motion",
+    }
 
     # Motion keywords and their expected motion levels (0-1)
     MOTION_KEYWORDS = {

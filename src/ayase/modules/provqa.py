@@ -34,6 +34,9 @@ class ProVQAModule(PipelineModule):
         "subsample": 8,
         "n_fine_crops": 6,
     }
+    metric_groups = {
+        "provqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -1087,8 +1087,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         for field, writers in sorted(real_collisions.items()):
             print(f"  {field}: {', '.join(writers)}", file=sys.stderr)
     real_orphans = {f for f in orphaned
-                    if qm_fields.get(f, {}).get("type") == "float"
-                    and f not in ("engagement_score", "human_preference_score")}
+                    if qm_fields.get(f, {}).get("type") == "float"}
     if real_orphans:
         print(f"WARNING: {len(real_orphans)} orphaned QualityMetrics field(s):", file=sys.stderr)
         for f in sorted(real_orphans):

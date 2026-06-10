@@ -46,6 +46,10 @@ class PUMetricsModule(ReferenceBasedModule):
         "subsample": 5,
         "assume_nits_range": 10000.0,
     }
+    metric_groups = {
+        "pu_psnr": "hdr",
+        "pu_ssim": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

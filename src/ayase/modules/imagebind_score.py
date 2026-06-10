@@ -46,6 +46,9 @@ class ImageBindScoreModule(PipelineModule):
     metric_info = {
         "imagebind_score": "ImageBind audio-text alignment cosine similarity (0-1, higher=better)",
     }
+    metric_groups = {
+        "imagebind_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

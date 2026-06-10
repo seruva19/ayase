@@ -40,6 +40,9 @@ class WorldConsistencyModule(PipelineModule):
         "stability_weight": 0.30,
         "causal_weight": 0.30,
     }
+    metric_groups = {
+        "world_consistency_score": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

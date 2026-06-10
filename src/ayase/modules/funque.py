@@ -25,6 +25,9 @@ class FUNQUEModule(PipelineModule):
     name = "funque"
     description = "Fused quality evaluator (FUNQUE package, handcrafted FR, or NR fallback)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "funque_score": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

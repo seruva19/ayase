@@ -32,6 +32,9 @@ class TTSDS2Module(PipelineModule):
     metric_info = {
         "ttsds2_score": "TTSDS2 aggregate speech quality score (0-1, higher=better)",
     }
+    metric_groups = {
+        "ttsds2_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

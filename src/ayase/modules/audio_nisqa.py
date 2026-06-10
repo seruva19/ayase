@@ -55,6 +55,13 @@ class AudioNISQAModule(PipelineModule):
             "notes": "~1 MB; vendored source at ayase/third_party/nisqa/",
         },
     ]
+    metric_groups = {
+        "nisqa_coloration": "audio",
+        "nisqa_discontinuity": "audio",
+        "nisqa_loudness": "audio",
+        "nisqa_mos": "audio",
+        "nisqa_noisiness": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

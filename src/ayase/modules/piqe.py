@@ -31,6 +31,9 @@ class PIQEModule(PipelineModule):
         "subsample": 3,
         "warning_threshold": 50.0,
     }
+    metric_groups = {
+        "piqe": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

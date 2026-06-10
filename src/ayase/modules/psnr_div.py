@@ -24,6 +24,9 @@ class PSNRDIVModule(ReferenceBasedModule):
     description = "PSNR_DIV motion-weighted PSNR for frame interpolation (ICIP 2025, FR)"
     metric_field = "psnr_div"
     default_config = {"subsample": 8, "block_size": 16}
+    metric_groups = {
+        "psnr_div": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -28,6 +28,10 @@ class PSNRHVSModule(ReferenceBasedModule):
     default_config = {
         "subsample": 5,
     }
+    metric_groups = {
+        "psnr_hvs": "fr_quality",
+        "psnr_hvs_m": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

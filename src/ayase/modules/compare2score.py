@@ -15,6 +15,9 @@ class Compare2ScoreModule(PipelineModule):
     name = "compare2score"
     description = "Compare2Score comparison-based NR image quality"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "compare2score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

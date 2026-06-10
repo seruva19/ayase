@@ -31,6 +31,9 @@ class DISTSModule(PipelineModule):
         "warning_threshold": 0.3,  # Warn if DISTS > 0.3 (lower is better)
         "device": "auto",
     }
+    metric_groups = {
+        "dists": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

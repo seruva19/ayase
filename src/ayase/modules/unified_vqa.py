@@ -55,6 +55,10 @@ class UnifiedVQAModule(PipelineModule):
         "unified_vqa_score": "Unified-VQA FR/NR quality score (0-1, higher=better)",
         "dover_score": "Backward-compatible alias when dover_score is otherwise unset",
     }
+    metric_groups = {
+        "dover_score": "nr_quality",
+        "unified_vqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

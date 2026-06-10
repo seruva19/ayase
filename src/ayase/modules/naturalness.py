@@ -26,6 +26,9 @@ class NaturalnessModule(NoReferenceModule):
         "subsample": 2,  # Process every Nth frame
         "warning_threshold": 0.4,  # Warn if naturalness < 0.4
     }
+    metric_groups = {
+        "naturalness_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

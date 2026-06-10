@@ -19,6 +19,9 @@ class RAFTMotionModule(PipelineModule):
     name = "raft_motion"
     description = "RAFT optical flow motion scoring (torchvision)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "raft_motion_score": "motion",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -25,6 +25,9 @@ class XPSNRModule(ReferenceBasedModule):
     name = "xpsnr"
     description = "XPSNR perceptually weighted PSNR (Fraunhofer, dB, higher=better)"
     default_config = {}
+    metric_groups = {
+        "xpsnr": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

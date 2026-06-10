@@ -45,6 +45,9 @@ class DisCoVQAModule(PipelineModule):
         "subsample": 8,
         "frame_size": 224,
     }
+    metric_groups = {
+        "discovqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

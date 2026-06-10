@@ -15,6 +15,9 @@ class MADModule(PipelineModule):
     name = "mad"
     description = "Most Apparent Distortion full-reference metric (lower=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "mad": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -23,6 +23,9 @@ class QCNModule(PipelineModule):
     name = "qcn"
     description = "Blind IQA (QCN via pyiqa, or HyperIQA fallback)"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "qcn_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

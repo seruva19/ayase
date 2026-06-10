@@ -33,6 +33,9 @@ class AudioUTMOSv2Module(PipelineModule):
     metric_info = {
         "utmos_v2_score": "UTMOSv2 predicted speech MOS (1-5, higher=better)",
     }
+    metric_groups = {
+        "utmos_v2_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

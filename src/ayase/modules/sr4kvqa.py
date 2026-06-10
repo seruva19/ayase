@@ -29,6 +29,9 @@ class SR4KVQAModule(PipelineModule):
         "patch_size": 224,
         "max_patches": 9,
     }
+    metric_groups = {
+        "sr4kvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

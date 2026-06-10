@@ -23,6 +23,9 @@ class DynamicsRangeModule(PipelineModule):
         # Pure OpenCV
         "scene_change_threshold": 30.0,  # Threshold for detecting scene changes
     }
+    metric_groups = {
+        "dynamics_range": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -51,6 +51,11 @@ class ConceptPresenceModule(PipelineModule):
         "concepts": [],  # Concepts to check (empty = derive from caption)
         "num_frames": 5,  # Frames to sample from video
     }
+    metric_groups = {
+        "concept_count": "scene",
+        "concept_face_count": "face",
+        "concept_presence": "scene",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

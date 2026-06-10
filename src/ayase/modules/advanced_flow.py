@@ -22,6 +22,9 @@ class AdvancedFlowModule(PipelineModule):
         "use_large_model": True,
         "max_frames": 150,
     }
+    metric_groups = {
+        "flow_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

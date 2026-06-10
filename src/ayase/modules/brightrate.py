@@ -69,6 +69,9 @@ class BrightRateModule(PipelineModule):
         "read_yuv": False,
         "warning_threshold": None,
     }
+    metric_groups = {
+        "brightrate_score": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)
