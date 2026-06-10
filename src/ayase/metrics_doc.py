@@ -227,13 +227,59 @@ def _detect_hf_models(source: str) -> List[str]:
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
         # Filter likely HF repos (org/model format)
-        if (
-            not _looks_like_clip_variant(candidate)
-            and not any(x in candidate for x in ("http", "path", "file", "dir"))
-        ):
+        if _is_likely_hf_model_id(candidate):
             if candidate not in models:
                 models.append(candidate)
     return models[:3]  # Cap at 3
+
+
+_NON_HF_ID_OWNERS = {
+    "application",
+    "audio",
+    "clip",
+    "ffmpeg",
+    "image",
+    "models",
+    "multipart",
+    "open_clip",
+    "pyiqa",
+    "song_eval",
+    "text",
+    "torchvision",
+    "video",
+}
+
+_NON_HF_REPO_SUFFIXES = {
+    ".bin",
+    ".json",
+    ".onnx",
+    ".pt",
+    ".pth",
+    ".safetensors",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+
+
+def _is_likely_hf_model_id(candidate: str) -> bool:
+    if (
+        not candidate
+        or "/" not in candidate
+        or candidate.count("/") != 1
+        or ":" in candidate
+        or candidate.startswith(("http", "/", "\\"))
+        or _looks_like_clip_variant(candidate)
+        or any(x in candidate for x in ("path", "file", "dir", "main/"))
+    ):
+        return False
+
+    owner, repo = candidate.split("/", 1)
+    if owner.lower() in _NON_HF_ID_OWNERS:
+        return False
+    if Path(repo).suffix.lower() in _NON_HF_REPO_SUFFIXES:
+        return False
+    return True
 
 
 def _estimate_vram(source: str) -> Optional[str]:
@@ -346,10 +392,7 @@ def _detect_source_links(source: str, cls: type) -> str:
     # HuggingFace
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
-        if (
-            not _looks_like_clip_variant(candidate)
-            and not any(x in candidate for x in ("http", "path", "file", "dir", "main/"))
-        ):
+        if _is_likely_hf_model_id(candidate):
             links.append(f'<a href="https://huggingface.co/{candidate}" target="_blank">HF</a>')
             break
     # Paper citation from docstring
