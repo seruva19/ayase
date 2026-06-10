@@ -15,6 +15,9 @@ class MANIQAModule(PipelineModule):
     name = "maniqa"
     description = "MANIQA multi-dimension attention no-reference IQA"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "maniqa_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

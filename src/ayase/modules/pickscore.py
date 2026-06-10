@@ -29,6 +29,9 @@ class PickScoreModule(PipelineModule):
         "device": "auto",
         "warning_threshold": None,
     }
+    metric_groups = {
+        "pickscore_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

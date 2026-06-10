@@ -82,6 +82,9 @@ class DeltaICtCpModule(ReferenceBasedModule):
     default_config = {
         "subsample": 5,
     }
+    metric_groups = {
+        "delta_ictcp": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

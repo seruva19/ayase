@@ -38,6 +38,9 @@ class SemanticSegmentationConsistencyModule(PipelineModule):
         "num_clusters": 8,  # For K-means fallback
         "warning_threshold": 0.6,
     }
+    metric_groups = {
+        "semantic_consistency": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

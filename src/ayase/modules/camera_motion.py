@@ -17,6 +17,9 @@ class CameraMotionModule(PipelineModule):
     name = "camera_motion"
     description = "Analyzes camera motion stability (VMBench) using Homography"
     default_config = {}
+    metric_groups = {
+        "camera_motion_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

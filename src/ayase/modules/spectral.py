@@ -23,6 +23,10 @@ class SpectralComplexityModule(PipelineModule):
         "min_rank_ratio": 0.05, # Minimum ratio of rank/frames (avoid static)
         "max_entropy_threshold": 6.0, # Arbitrary complexity ceiling
     }
+    metric_groups = {
+        "spectral_entropy": "nr_quality",
+        "spectral_rank": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -30,6 +30,9 @@ class CLIPIQAModule(PipelineModule):
         "subsample": 5,
         "warning_threshold": 0.4,
     }
+    metric_groups = {
+        "clip_iqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

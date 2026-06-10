@@ -44,6 +44,9 @@ class CRFIQAModule(PipelineModule):
         "norm_min": 10.0,
         "norm_max": 30.0,
     }
+    metric_groups = {
+        "crfiqa_score": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

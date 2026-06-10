@@ -15,6 +15,9 @@ class WaDIQaMModule(PipelineModule):
     name = "wadiqam"
     description = "WaDIQaM-NR weighted averaging deep image quality mapper"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "wadiqam_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

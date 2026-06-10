@@ -7,6 +7,9 @@ from ayase.base_modules import ReferenceBasedModule
 logger = logging.getLogger(__name__)
 class GraphSIMModule(ReferenceBasedModule):
     name = "graphsim"; description = "GraphSIM graph gradient point cloud quality (2020)"; metric_field = "graphsim_score"; default_config = {}
+    metric_groups = {
+        "graphsim_score": "fr_quality",
+    }
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         ext = sample_path.suffix.lower()
         if ext not in (".ply", ".pcd"): return None

@@ -28,6 +28,9 @@ class TonalDynamicRangeModule(PipelineModule):
         "high_percentile": 99,
         "subsample": 8,
     }
+    metric_groups = {
+        "tonal_dynamic_range": "basic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

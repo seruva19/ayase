@@ -32,6 +32,9 @@ class WatermarkRobustnessModule(PipelineModule):
         "subsample": 15,
         "max_frames": 30,
     }
+    metric_groups = {
+        "watermark_strength": "safety",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

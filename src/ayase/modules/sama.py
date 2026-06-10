@@ -29,6 +29,9 @@ class SAMAModule(PipelineModule):
         "subsample": 8,
         "mask_ratio": 0.5,
     }
+    metric_groups = {
+        "sama_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

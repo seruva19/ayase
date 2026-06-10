@@ -15,6 +15,9 @@ class FaceIQAModule(PipelineModule):
     name = "face_iqa"
     description = "Face-specific IQA via TOPIQ-face (GFIQA-trained, higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "face_iqa_score": "face",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

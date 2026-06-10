@@ -32,6 +32,9 @@ class SiamVQAModule(PipelineModule):
         "num_crops": 5,
         "crop_size": 224,
     }
+    metric_groups = {
+        "siamvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

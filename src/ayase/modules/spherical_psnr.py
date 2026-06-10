@@ -16,6 +16,11 @@ class SphericalPSNRModule(ReferenceBasedModule):
     description = "S-PSNR/WS-PSNR/CPP-PSNR spherical PSNR (MPEG/JVET)"
     metric_field = None  # We set multiple fields manually
     default_config = {"subsample": 8}
+    metric_groups = {
+        "cpp_psnr": "fr_quality",
+        "s_psnr": "fr_quality",
+        "ws_psnr": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

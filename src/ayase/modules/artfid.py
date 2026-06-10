@@ -25,6 +25,9 @@ class ArtFIDModule(ReferenceBasedModule):
     description = "ArtFID style transfer quality (FR, 2022, lower=better)"
     metric_field = "artfid_score"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "artfid_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -18,6 +18,9 @@ class CKDNModule(PipelineModule):
     name = "ckdn"
     description = "CKDN knowledge distillation FR image quality"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "ckdn_score": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

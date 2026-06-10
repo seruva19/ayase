@@ -56,6 +56,9 @@ class T2VEvalModule(PipelineModule):
         "realness_weight": 0.35,
         "quality_weight": 0.30,
     }
+    metric_groups = {
+        "t2veval_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -33,6 +33,9 @@ class MemoryVQAModule(PipelineModule):
         "subsample": 12,
         "memory_size": 8,
     }
+    metric_groups = {
+        "memoryvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

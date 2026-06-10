@@ -55,6 +55,10 @@ class VideoPhyModule(PipelineModule):
         "max_new_tokens": 8,
         "models_dir": "models",
     }
+    metric_groups = {
+        "videophy_pc_score": "motion",
+        "videophy_sa_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

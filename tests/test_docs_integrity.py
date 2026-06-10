@@ -276,8 +276,7 @@ class TestFieldCoverage:
             if "float" in str(info.annotation)
         }
         # Known intentionally-unwritten fields
-        exempt = {"engagement_score", "human_preference_score"}
-        orphaned = float_fields - written - exempt
+        orphaned = float_fields - written
 
         # This is a soft check — warn rather than fail for small numbers
         if len(orphaned) > 20:
@@ -537,11 +536,21 @@ class TestNoHeuristicBackends:
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _GENERATED_TIMESTAMP_RE = re.compile(r"Generated \d{4}-\d{2}-\d{2} \d{2}:\d{2}")
+_HF_DOWNLOADS_RE = re.compile(r"\*\*Downloads\*\*: [^\n·]+")
 
 
 def _normalize_doc(text: str) -> str:
     """Strip volatile fields (generation timestamp) from a doc for diffing."""
     return _GENERATED_TIMESTAMP_RE.sub("Generated <timestamp>", text)
+
+
+def _normalize_models_doc(text: str) -> str:
+    """Like _normalize_doc, but also mask HF download counts.
+
+    MODELS.md is committed with HF-fetched enrichment; download counts change
+    daily, so they are masked to keep the freshness check from churning.
+    """
+    return _HF_DOWNLOADS_RE.sub("**Downloads**: <n>", _normalize_doc(text))
 
 
 def _diff(expected: str, actual: str, path: Path) -> str:
@@ -591,9 +600,16 @@ class TestGeneratedDocsAreFresh:
         if not committed_path.exists():
             pytest.skip("MODELS.md is not present in the working tree")
 
-        # Disable HF API calls so the test is deterministic and offline-safe.
-        regenerated = _normalize_doc(generate_models_doc(fetch_licenses=False))
-        committed = _normalize_doc(committed_path.read_text(encoding="utf-8"))
+        # MODELS.md is committed with HF-fetched enrichment (licenses, params,
+        # download counts). Regenerate the same way and mask the volatile
+        # download counts so the check doesn't churn day-to-day.
+        regenerated = _normalize_models_doc(generate_models_doc(fetch_licenses=True))
+        committed = _normalize_models_doc(committed_path.read_text(encoding="utf-8"))
+
+        # If the HF API was unreachable, the regenerated doc lacks the fetched
+        # enrichment — skip rather than report spurious staleness.
+        if "**Downloads**" in committed and "**Downloads**" not in regenerated:
+            pytest.skip("HuggingFace API unreachable; skipping MODELS.md freshness check")
 
         if committed != regenerated:
             pytest.fail(

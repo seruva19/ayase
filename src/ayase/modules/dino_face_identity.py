@@ -40,6 +40,10 @@ class DINOFaceIdentityModule(PipelineModule):
         "face_margin": 0.3,
         "warning_threshold": 0.3,
     }
+    metric_groups = {
+        "dino_face_identity": "face",
+        "dino_face_identity_max": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

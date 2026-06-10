@@ -300,6 +300,9 @@ class VIDEVALModule(PipelineModule):
         "subsample": 8,
         "frame_size": 520,
     }
+    metric_groups = {
+        "videval_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

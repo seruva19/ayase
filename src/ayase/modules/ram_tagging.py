@@ -32,6 +32,9 @@ class RAMTaggingModule(PipelineModule):
         "vit": "swin_l",
         "subsample": 4,
     }
+    metric_groups = {
+        "ram_tags": "scene",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

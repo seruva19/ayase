@@ -23,6 +23,9 @@ class VFIPSModule(ReferenceBasedModule):
     description = "VFIPS frame interpolation perceptual similarity (ECCV 2022, FR)"
     metric_field = "vfips_score"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "vfips_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

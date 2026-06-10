@@ -32,6 +32,9 @@ class SCOREQModule(PipelineModule):
     metric_info = {
         "scoreq_score": "SCOREQ speech naturalness score (0-1, higher=better)",
     }
+    metric_groups = {
+        "scoreq_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

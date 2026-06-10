@@ -124,6 +124,12 @@ class OCRFidelityModule(PipelineModule):
         "lang": "en",
         "text_recognition_model_name": None,
     }
+    metric_groups = {
+        "ocr_cer": "text",
+        "ocr_fidelity": "text",
+        "ocr_score": "text",
+        "ocr_wer": "text",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

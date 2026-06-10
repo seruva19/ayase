@@ -23,6 +23,9 @@ class WaDIQaMFRModule(PipelineModule):
     name = "wadiqam_fr"
     description = "WaDIQaM full-reference deep quality metric (higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "wadiqam_fr": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

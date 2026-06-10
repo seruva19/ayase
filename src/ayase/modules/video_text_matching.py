@@ -24,6 +24,10 @@ class VideoTextMatchingModule(PipelineModule):
         "min_score_threshold": 0.20,
         "consistency_std_threshold": 0.1,
     }
+    metric_groups = {
+        "video_text_score": "alignment",
+        "video_text_temporal": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

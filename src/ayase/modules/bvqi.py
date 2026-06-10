@@ -30,6 +30,9 @@ class BVQIModule(PipelineModule):
     default_config = {
         "subsample": 8,
     }
+    metric_groups = {
+        "bvqi_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

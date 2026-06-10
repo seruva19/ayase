@@ -36,6 +36,9 @@ class ObjectPermanenceModule(PipelineModule):
         "match_distance": 80.0,  # Max pixel distance for centroid matching
         "warning_threshold": 50.0,
     }
+    metric_groups = {
+        "object_permanence_score": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

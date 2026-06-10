@@ -19,6 +19,9 @@ class PaQ2PiQModule(PipelineModule):
     name = "paq2piq"
     description = "PaQ-2-PiQ patch-to-picture NR quality (CVPR 2020)"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "paq2piq_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

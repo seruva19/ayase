@@ -23,6 +23,10 @@ class StabilizedMotionModule(PipelineModule):
         "high_camera_motion_threshold": 5.0,
         "static_threshold": 0.1,
     }
+    metric_groups = {
+        "stabilized_camera_score": "motion",
+        "stabilized_motion_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

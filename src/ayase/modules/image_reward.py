@@ -28,6 +28,9 @@ class ImageRewardModule(PipelineModule):
         "num_frames": 5,  # For video: number of frames to evaluate
         "warning_threshold": 0.0,  # Threshold for warning (0 = neutral)
     }
+    metric_groups = {
+        "image_reward_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

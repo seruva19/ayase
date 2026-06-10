@@ -34,6 +34,10 @@ class AudioPEAQModule(PipelineModule):
         "backend": "auto",  # "auto" | "peaqb" | "bark" | "lsd"
         "mode": "basic",  # peaqb-fast implements the BASIC model only
     }
+    metric_groups = {
+        "peaq_di": "audio",
+        "peaq_odg": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

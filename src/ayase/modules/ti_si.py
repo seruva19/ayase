@@ -36,6 +36,10 @@ class TISIModule(PipelineModule):
     default_config = {
         "max_frames": 300,  # Cap to avoid very long videos
     }
+    metric_groups = {
+        "spatial_information": "basic",
+        "temporal_information": "basic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

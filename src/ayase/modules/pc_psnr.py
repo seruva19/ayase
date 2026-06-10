@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 class PCPSNRModule(ReferenceBasedModule):
     name = "pc_psnr"; description = "D1/D2 MPEG point cloud PSNR"; metric_field = None; default_config = {}
+    metric_groups = {
+        "pc_d1_psnr": "fr_quality",
+        "pc_d2_psnr": "fr_quality",
+    }
     def process(self, sample):
         ref = getattr(sample, "reference_path", None)
         if ref is None: return sample

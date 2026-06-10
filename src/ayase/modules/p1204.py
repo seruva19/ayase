@@ -45,6 +45,9 @@ class P1204Module(PipelineModule):
     default_config = {
         "subsample": 4,
     }
+    metric_groups = {
+        "p1204_mos": "codec",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

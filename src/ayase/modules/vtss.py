@@ -31,6 +31,9 @@ class VTSSModule(PipelineModule):
             "resolution": 0.15,
         }
     }
+    metric_groups = {
+        "vtss": "meta",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

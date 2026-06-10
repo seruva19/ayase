@@ -24,6 +24,9 @@ class HumanFidelityModule(PipelineModule):
     name = "human_fidelity"
     description = "Human body/hand/face fidelity (DWPose / MediaPipe)"
     default_config = {}
+    metric_groups = {
+        "human_fidelity_score": "scene",
+    }
 
     # MediaPipe landmark indices for anatomy checks
     _LIMB_PAIRS = [

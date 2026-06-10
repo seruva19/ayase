@@ -49,6 +49,9 @@ class MC360IQAModule(PipelineModule):
         "n_viewports": 10,
         "viewport_size": 224,
     }
+    metric_groups = {
+        "mc360iqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

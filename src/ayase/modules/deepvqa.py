@@ -37,6 +37,9 @@ class DeepVQAModule(ReferenceBasedModule):
         "subsample": 8,
         "minkowski_p": 4.0,  # Paper uses p=4 for worst-frame emphasis
     }
+    metric_groups = {
+        "deepvqa_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

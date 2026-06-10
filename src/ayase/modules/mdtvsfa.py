@@ -29,6 +29,9 @@ class MDTVSFAModule(PipelineModule):
     default_config = {
         "subsample": 5,
     }
+    metric_groups = {
+        "mdtvsfa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

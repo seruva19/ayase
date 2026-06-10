@@ -36,6 +36,9 @@ class AQAScoreModule(PipelineModule):
     metric_info = {
         "aqascore_score": "Audio question-answering alignment score (0-1, higher=better)",
     }
+    metric_groups = {
+        "aqascore_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

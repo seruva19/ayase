@@ -18,6 +18,9 @@ class TReSModule(PipelineModule):
     name = "tres"
     description = "TReS transformer-based NR image quality (WACV 2022)"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "tres_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -26,6 +26,9 @@ class P1203Module(PipelineModule):
     default_config = {
         "display_size": "phone",  # "phone", "tablet", "pc", "tv"
     }
+    metric_groups = {
+        "p1203_mos": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

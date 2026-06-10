@@ -26,6 +26,9 @@ class PromptIQAModule(PipelineModule):
     default_config = {
         "subsample": 4,
     }
+    metric_groups = {
+        "promptiqa_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

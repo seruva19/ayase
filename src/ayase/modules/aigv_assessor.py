@@ -31,6 +31,12 @@ class AIGVAssessorModule(PipelineModule):
         "trust_remote_code": True,
         "model_revision": None,
     }
+    metric_groups = {
+        "aigv_alignment": "alignment",
+        "aigv_dynamic": "motion",
+        "aigv_static": "nr_quality",
+        "aigv_temporal": "temporal",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

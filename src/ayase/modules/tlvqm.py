@@ -25,6 +25,9 @@ class TLVQMModule(PipelineModule):
     name = "tlvqm"
     description = "Two-level video quality model (CNN-TLVQM or handcrafted fallback)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "tlvqm_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

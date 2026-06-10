@@ -22,6 +22,11 @@ class ObjectDetectionModule(PipelineModule):
         "use_yolo_world": False,  # Enable for open-vocabulary detection
         "use_grit": False, # Enable GRiT (Grounding Representation in Transformers)
     }
+    metric_groups = {
+        "count_score": "scene",
+        "detection_diversity": "scene",
+        "detection_score": "scene",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

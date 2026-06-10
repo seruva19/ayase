@@ -15,6 +15,9 @@ class TOPIQFRModule(PipelineModule):
     name = "topiq_fr"
     description = "TOPIQ full-reference top-down semantics-to-distortion IQA (higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "topiq_fr": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -24,6 +24,9 @@ class VideoRewardModule(PipelineModule):
         "trust_remote_code": True,
         "model_revision": None,
     }
+    metric_groups = {
+        "video_reward_score": "alignment",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

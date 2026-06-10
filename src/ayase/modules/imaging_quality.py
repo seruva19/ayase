@@ -20,6 +20,10 @@ class ImagingQualityModule(PipelineModule):
     default_config = {
         "noise_threshold": 20.0,
     }
+    metric_groups = {
+        "imaging_artifacts_score": "basic",
+        "imaging_noise_score": "basic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

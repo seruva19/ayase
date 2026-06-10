@@ -27,6 +27,9 @@ class FloLPIPSModule(PipelineModule):
     default_config = {
         "subsample": 8,
     }
+    metric_groups = {
+        "flolpips": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

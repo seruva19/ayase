@@ -25,6 +25,11 @@ class DNSMOSModule(PipelineModule):
     name = "dnsmos"
     description = "DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)"
     default_config = {}
+    metric_groups = {
+        "dnsmos_bak": "audio",
+        "dnsmos_overall": "audio",
+        "dnsmos_sig": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

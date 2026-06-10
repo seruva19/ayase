@@ -23,6 +23,17 @@ class BasicQualityModule(PipelineModule):
         "blur_threshold": 100.0,
         "noise_threshold": 50.0,
     }
+    metric_groups = {
+        "artifacts_score": "basic",
+        "blur_score": "basic",
+        "brightness": "basic",
+        "contrast": "basic",
+        "gradient_detail": "scene",
+        "noise_score": "basic",
+        "saturation": "basic",
+        "technical_score": "basic",
+        "vqa_t_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

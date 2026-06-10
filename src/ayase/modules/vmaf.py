@@ -32,6 +32,9 @@ class VMAFModule(ReferenceBasedModule):
         "use_ffmpeg": True,  # Use FFmpeg libvmaf if available, else fallback to frame-by-frame
         "warning_threshold": 70.0,  # Warn if VMAF < 70
     }
+    metric_groups = {
+        "vmaf": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

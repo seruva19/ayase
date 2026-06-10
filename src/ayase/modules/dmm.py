@@ -23,6 +23,9 @@ class DMMModule(PipelineModule):
     name = "dmm"
     description = "DMM detail model metric full-reference (higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "dmm": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

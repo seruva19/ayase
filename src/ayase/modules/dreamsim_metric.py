@@ -15,6 +15,9 @@ class DreamSimModule(PipelineModule):
     name = "dreamsim"
     description = "DreamSim foundation model perceptual similarity (CLIP+DINO ensemble)"
     default_config = {"subsample": 8, "model_type": "ensemble"}
+    metric_groups = {
+        "dreamsim": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

@@ -18,6 +18,9 @@ class UNIQUEModule(PipelineModule):
     name = "unique"
     description = "UNIQUE unified NR image quality (TIP 2021)"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "unique_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

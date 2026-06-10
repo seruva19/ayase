@@ -36,6 +36,11 @@ class MDVQAModule(PipelineModule):
         "subsample": 8,
         "frame_size": 224,
     }
+    metric_groups = {
+        "mdvqa_distortion": "nr_quality",
+        "mdvqa_motion": "nr_quality",
+        "mdvqa_semantic": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -35,6 +35,9 @@ class AudioLPDistModule(PipelineModule):
         "n_mels": 80,
         "warning_threshold": 4.0,
     }
+    metric_groups = {
+        "lpdist_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

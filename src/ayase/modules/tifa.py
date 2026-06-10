@@ -128,6 +128,9 @@ class TIFAModule(PipelineModule):
         "num_questions": 8,
         "subsample": 4,
     }
+    metric_groups = {
+        "tifa_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

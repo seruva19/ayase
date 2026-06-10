@@ -25,6 +25,9 @@ class RankDVQAModule(ReferenceBasedModule):
     description = "RankDVQA ranking-based FR VQA (WACV 2024)"
     metric_field = "rankdvqa_score"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "rankdvqa_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

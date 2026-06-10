@@ -52,6 +52,12 @@ class I2VSimilarityModule(PipelineModule):
         "enable_dino": True,
         "enable_lpips": True,
     }
+    metric_groups = {
+        "i2v_clip": "i2v",
+        "i2v_dino": "i2v",
+        "i2v_lpips": "i2v",
+        "i2v_quality": "i2v",
+    }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__(config)

@@ -49,6 +49,9 @@ class SemanticAlignmentModule(PipelineModule):
     metric_info = {
         "clip_score": "CLIP/OpenCLIP text-image cosine similarity (higher=better)",
     }
+    metric_groups = {
+        "clip_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

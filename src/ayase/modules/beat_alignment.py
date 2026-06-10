@@ -198,6 +198,9 @@ class BeatAlignmentModule(PipelineModule):
         "tolerance": 0.1,   # seconds — alignment window
         "subsample": 2,     # frame subsample rate for flow
     }
+    metric_groups = {
+        "bas_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

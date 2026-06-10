@@ -39,6 +39,12 @@ class AudioboxAestheticsModule(PipelineModule):
     default_config = {
         "sample_rate": 16000,
     }
+    metric_groups = {
+        "audiobox_cu": "audio",
+        "audiobox_enjoyment": "audio",
+        "audiobox_pc": "audio",
+        "audiobox_production": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

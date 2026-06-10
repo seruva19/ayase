@@ -55,6 +55,12 @@ class TCBenchModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
+    metric_groups = {
+        "tcbench_attribute_score": "alignment",
+        "tcbench_background_score": "alignment",
+        "tcbench_object_score": "alignment",
+        "tcbench_overall": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -36,6 +36,9 @@ class DepthMapQualityModule(PipelineModule):
         "subsample": 10,
         "max_frames": 30,
     }
+    metric_groups = {
+        "depth_quality": "spatial",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

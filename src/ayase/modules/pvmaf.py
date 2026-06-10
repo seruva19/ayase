@@ -31,6 +31,9 @@ class PVMAFModule(ReferenceBasedModule):
     default_config = {
         "subsample": 8,
     }
+    metric_groups = {
+        "pvmaf_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

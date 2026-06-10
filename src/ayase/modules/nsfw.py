@@ -21,6 +21,9 @@ class NSFWModule(PipelineModule):
         "threshold": 0.5,
         "num_frames": 8,
     }
+    metric_groups = {
+        "nsfw_score": "safety",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

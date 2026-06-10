@@ -43,6 +43,9 @@ class MotionAmplitudeModule(PipelineModule):
         "max_frames": 150,
         "scoring_mode": "binary",  # "binary" (0/100 match) or "continuous" (smooth 0-100)
     }
+    metric_groups = {
+        "motion_ac_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

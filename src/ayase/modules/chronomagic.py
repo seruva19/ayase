@@ -31,6 +31,10 @@ class ChronoMagicModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "hallucination_threshold": 2.0,
     }
+    metric_groups = {
+        "chronomagic_ch_score": "temporal",
+        "chronomagic_mt_score": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

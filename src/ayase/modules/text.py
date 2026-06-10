@@ -22,6 +22,9 @@ class TextDetectionModule(PipelineModule):
         "lang": "en",
         "text_recognition_model_name": None,
     }
+    metric_groups = {
+        "ocr_area_ratio": "text",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

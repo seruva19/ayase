@@ -39,6 +39,10 @@ class FaceFidelityModule(PipelineModule):
         "blur_threshold": 50.0,  # Laplacian variance below this = blurry
         "warning_threshold": 40.0,  # Warn if face_quality_score < this
     }
+    metric_groups = {
+        "face_count": "face",
+        "face_quality_score": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

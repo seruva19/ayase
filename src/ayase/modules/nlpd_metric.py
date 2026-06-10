@@ -15,6 +15,9 @@ class NLPDModule(PipelineModule):
     name = "nlpd"
     description = "Normalized Laplacian Pyramid Distance full-reference (lower=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "nlpd": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

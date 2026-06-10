@@ -26,6 +26,9 @@ class CDCModule(PipelineModule):
         "subsample": 16,
         "hist_bins": 32,
     }
+    metric_groups = {
+        "cdc_score": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

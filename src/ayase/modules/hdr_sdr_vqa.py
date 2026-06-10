@@ -22,6 +22,10 @@ class HDRSDRVQAModule(PipelineModule):
         # OpenCV-based
         "subsample": 5,  # Process every Nth frame
     }
+    metric_groups = {
+        "hdr_quality": "hdr",
+        "sdr_quality": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -201,6 +205,9 @@ class FourKVQAModule(PipelineModule):
     default_config = {
         "tile_size": 512,  # Process in tiles to save memory
         "subsample": 10,  # Process fewer frames
+    }
+    metric_groups = {
+        "hdr_technical_score": "hdr",
     }
 
     def __init__(self, config=None):

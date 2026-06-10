@@ -33,6 +33,9 @@ class VMAFNEGModule(ReferenceBasedModule):
         "subsample": 1,
         "warning_threshold": 70.0,
     }
+    metric_groups = {
+        "vmaf_neg": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

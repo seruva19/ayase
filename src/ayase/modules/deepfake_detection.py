@@ -37,6 +37,9 @@ class DeepfakeDetectionModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "warning_threshold": 0.6,
     }
+    metric_groups = {
+        "deepfake_probability": "safety",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

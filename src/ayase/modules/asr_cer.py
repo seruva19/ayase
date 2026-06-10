@@ -27,6 +27,9 @@ class ASRCERModule(PipelineModule):
     metric_info = {
         "asr_cer": "ASR character error rate versus expected text (0-1, lower=better)",
     }
+    metric_groups = {
+        "asr_cer": "audio",
+    }
 
     def process(self, sample: Sample) -> Sample:
         expected = _expected_text(sample, self.config)

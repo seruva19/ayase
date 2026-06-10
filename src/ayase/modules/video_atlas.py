@@ -12,6 +12,9 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 class VideoATLASModule(PipelineModule):
     name = "video_atlas"; description = "Video ATLAS temporal artifacts+stalls assessment (2018)"; default_config = {"subsample": 16}
+    metric_groups = {
+        "video_atlas_score": "nr_quality",
+    }
     def __init__(self, config=None):
         super().__init__(config); self.subsample = self.config.get("subsample", 16); self._ml_available = True; self._backend = "native"
     def setup(self):
