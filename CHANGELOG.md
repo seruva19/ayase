@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- **models**: dropped three placeholder `QualityMetrics` fields that no module produced (`human_preference_score`, `engagement_score`, `perceptual_hash`).
+- **models**: dropped three placeholder `QualityMetrics` fields that no module produced (`human_preference_score`, `engagement_score`, `perceptual_hash`). Resume/state caches written by older versions still load — unknown metric keys are dropped with a warning instead of discarding the cached sample.
 
 ## [0.1.45]
 
