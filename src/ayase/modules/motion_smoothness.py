@@ -40,6 +40,9 @@ class MotionSmoothnessModule(PipelineModule):
     metric_info = {
         "motion_smoothness": "VFI or optical-flow reconstruction smoothness (0-1, higher=better)",
     }
+    metric_groups = {
+        "motion_smoothness": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

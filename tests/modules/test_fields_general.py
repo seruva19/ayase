@@ -20,9 +20,6 @@ def test_quality_metrics_fields():
     for field in basic_fields:
         assert hasattr(qm, field)
 
-    for field in ["human_preference_score", "engagement_score"]:
-        assert hasattr(qm, field)
-
 
 def test_quality_metrics_default_values():
     qm = QualityMetrics()

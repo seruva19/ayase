@@ -48,6 +48,9 @@ class VQAScoreModule(PipelineModule):
     metric_info = {
         "vqa_score_alignment": "VQAScore text-visual alignment probability (0-1, higher=better)",
     }
+    metric_groups = {
+        "vqa_score_alignment": "alignment",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

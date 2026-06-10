@@ -28,6 +28,9 @@ class AestheticScoringModule(PipelineModule):
     name = "aesthetic_scoring"
     description = "Calculates aesthetic score (1-10) using LAION-Aesthetics MLP"
     default_config = {"models_dir": "models"}
+    metric_groups = {
+        "aesthetic_mlp_score": "aesthetic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

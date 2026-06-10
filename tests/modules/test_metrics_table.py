@@ -35,9 +35,8 @@ def test_metrics_table_matches_quality_metrics():
     assert not unknown, f"METRICS.md references unknown fields: {unknown}"
 
     documented_qm_fields = fields_in_doc & model_fields
-    allowed_missing = {"engagement_score", "human_preference_score", "perceptual_hash"}
     missing = model_fields - documented_qm_fields
-    assert missing <= allowed_missing, f"METRICS.md omits QualityMetrics fields: {missing}"
+    assert not missing, f"METRICS.md omits QualityMetrics fields: {missing}"
 
     # QualityMetrics field count must be correct
-    assert len(model_fields) == 425, f"Expected 425 fields, got {len(model_fields)}"
+    assert len(model_fields) == 422, f"Expected 422 fields, got {len(model_fields)}"

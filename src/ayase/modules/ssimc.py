@@ -23,6 +23,9 @@ class SSIMCModule(PipelineModule):
     name = "ssimc"
     description = "SSIM-C complex wavelet structural similarity FR (higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "ssimc": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

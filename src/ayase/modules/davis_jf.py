@@ -28,6 +28,10 @@ class DAVISJFModule(ReferenceBasedModule):
     description = "DAVIS J&F video segmentation quality (FR, 2016)"
     metric_field = None  # We override process() to set both davis_j and davis_f
     default_config = {"subsample": 8, "boundary_threshold": 2}
+    metric_groups = {
+        "davis_f": "temporal",
+        "davis_j": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

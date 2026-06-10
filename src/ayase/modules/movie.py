@@ -29,6 +29,9 @@ class MOVIEModule(PipelineModule):
     name = "movie"
     description = "Video quality via spatiotemporal Gabor decomposition (FR or NR fallback)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "movie_score": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

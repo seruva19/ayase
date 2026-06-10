@@ -40,6 +40,9 @@ class MMPCQAModule(PipelineModule):
         "n_views": 6,
         "render_size": 224,
     }
+    metric_groups = {
+        "mm_pcqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

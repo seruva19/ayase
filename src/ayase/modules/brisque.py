@@ -31,6 +31,9 @@ class BRISQUEModule(PipelineModule):
         "subsample": 3,  # Every Nth video frame
         "warning_threshold": 50.0,  # Warn if BRISQUE > 50
     }
+    metric_groups = {
+        "brisque": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

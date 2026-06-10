@@ -38,6 +38,9 @@ class SimpleVQAModule(PipelineModule):
         "frame_size": 224,
         "fast_frame_size": 112,
     }
+    metric_groups = {
+        "simplevqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

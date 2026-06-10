@@ -187,6 +187,9 @@ class RAPIQUEModule(PipelineModule):
         "subsample": 8,
         "frame_size": 520,
     }
+    metric_groups = {
+        "rapique_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

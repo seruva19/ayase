@@ -28,6 +28,9 @@ class BackgroundConsistencyModule(PipelineModule):
         "max_frames": 16,
         "warning_threshold": 0.5,
     }
+    metric_groups = {
+        "background_consistency": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -21,6 +21,10 @@ class SceneDetectionModule(PipelineModule):
     name = "scene_detection"
     description = "Scene stability metric — penalises rapid cuts (0-1, higher=more stable)"
     default_config = {"threshold": 0.5}
+    metric_groups = {
+        "avg_scene_duration": "scene",
+        "scene_stability": "temporal",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

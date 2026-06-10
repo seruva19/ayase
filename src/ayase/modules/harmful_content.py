@@ -38,6 +38,9 @@ class HarmfulContentModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "warning_threshold": 0.4,
     }
+    metric_groups = {
+        "harmful_content_score": "safety",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

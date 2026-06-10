@@ -20,6 +20,9 @@ class PlaybackSpeedModule(PipelineModule):
     name = "playback_speed"
     description = "Playback speed normality detection (1.0=normal)"
     default_config = {"subsample": 16}
+    metric_groups = {
+        "playback_speed_score": "motion",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

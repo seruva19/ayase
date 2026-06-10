@@ -23,6 +23,10 @@ class DepthAnythingModule(PipelineModule):
         "model_name": "depth-anything/Depth-Anything-V2-Small-hf",
         "subsample": 8,
     }
+    metric_groups = {
+        "depth_anything_consistency": "spatial",
+        "depth_anything_score": "spatial",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

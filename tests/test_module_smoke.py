@@ -34,7 +34,13 @@ def synthetic_video(tmp_path: Path) -> Path:
 
 def _discover_module_names() -> list[str]:
     modules_pkg = importlib.import_module("ayase.modules")
-    return [name for _, name, _ in pkgutil.iter_modules(modules_pkg.__path__)]
+    # Skip underscore-prefixed helper files (e.g. _reward_utils) — these are
+    # shared utilities, not registered PipelineModules.
+    return [
+        name
+        for _, name, _ in pkgutil.iter_modules(modules_pkg.__path__)
+        if not name.startswith("_")
+    ]
 
 
 MODULE_NAMES = sorted(_discover_module_names())

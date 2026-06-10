@@ -34,6 +34,9 @@ class FAVERModule(PipelineModule):
     default_config = {
         "subsample": 16,
     }
+    metric_groups = {
+        "faver_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

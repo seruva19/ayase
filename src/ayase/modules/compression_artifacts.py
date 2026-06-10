@@ -25,6 +25,9 @@ class CompressionArtifactsModule(PipelineModule):
         "subsample": 3,  # Process every Nth frame
         "warning_threshold": 40.0,  # Warn if artifact score > 40
     }
+    metric_groups = {
+        "compression_artifacts": "basic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

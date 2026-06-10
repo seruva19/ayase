@@ -7,6 +7,9 @@ from ayase.base_modules import ReferenceBasedModule
 logger = logging.getLogger(__name__)
 class PCQMModule(ReferenceBasedModule):
     name = "pcqm"; description = "PCQM geometry+color point cloud quality (2020)"; metric_field = "pcqm_score"; default_config = {}
+    metric_groups = {
+        "pcqm_score": "fr_quality",
+    }
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         ext = sample_path.suffix.lower()
         if ext not in (".ply", ".pcd"): return None

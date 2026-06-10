@@ -36,6 +36,9 @@ class FineVQModule(PipelineModule):
             "content_richness": 0.20,
         },
     }
+    metric_groups = {
+        "finevq_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

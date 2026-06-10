@@ -24,6 +24,9 @@ class PSNR99Module(ReferenceBasedModule):
     description = "PSNR99 worst-case region quality for super-resolution (FR, 2025)"
     metric_field = "psnr99"
     default_config = {"subsample": 8, "block_size": 32}
+    metric_groups = {
+        "psnr99": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

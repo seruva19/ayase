@@ -15,6 +15,9 @@ class CNNIQAModule(PipelineModule):
     name = "cnniqa"
     description = "CNNIQA blind CNN-based image quality assessment"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "cnniqa_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

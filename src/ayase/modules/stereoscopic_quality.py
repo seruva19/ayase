@@ -37,6 +37,9 @@ class StereoscopicQualityModule(PipelineModule):
         "max_disparity_percent": 3.0,  # Max % of width for comfortable viewing
         "warning_threshold": 50.0,
     }
+    metric_groups = {
+        "stereo_comfort_score": "spatial",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

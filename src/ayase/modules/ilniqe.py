@@ -29,6 +29,9 @@ class ILNIQEModule(PipelineModule):
         "subsample": 3,
         "warning_threshold": 50.0,
     }
+    metric_groups = {
+        "ilniqe": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

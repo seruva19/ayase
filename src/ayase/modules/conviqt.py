@@ -30,6 +30,9 @@ class CONVIQTModule(PipelineModule):
     default_config = {
         "subsample": 8,
     }
+    metric_groups = {
+        "conviqt_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

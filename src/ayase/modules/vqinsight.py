@@ -80,6 +80,9 @@ class VQInsightModule(PipelineModule):
         "subsample": 8,
         "clip_model": "openai/clip-vit-base-patch32",
     }
+    metric_groups = {
+        "vqinsight_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

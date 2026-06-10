@@ -35,6 +35,11 @@ class VideoScore2Module(PipelineModule):
         "videoscore2_alignment": "Text-to-video alignment subscore (0-10, higher=better)",
         "videoscore2_physical": "Physical/common-sense consistency subscore (0-10, higher=better)",
     }
+    metric_groups = {
+        "videoscore2_alignment": "alignment",
+        "videoscore2_physical": "alignment",
+        "videoscore2_visual": "nr_quality",
+    }
 
     _QUERY_TEMPLATE = Template(
         "You are an expert for evaluating AI-generated videos from three dimensions: "

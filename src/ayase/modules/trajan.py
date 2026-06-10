@@ -27,6 +27,9 @@ class TRAJANModule(PipelineModule):
         "num_frames": 16,
         "num_points": 256,
     }
+    metric_groups = {
+        "trajan_score": "motion",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

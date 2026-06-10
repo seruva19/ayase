@@ -21,6 +21,9 @@ class CPBDModule(PipelineModule):
         "threshold_cpbd": 0.65,
         "threshold_heuristic": 0.3,
     }
+    metric_groups = {
+        "cpbd_score": "basic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

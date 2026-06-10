@@ -7,6 +7,9 @@ from ayase.base_modules import ReferenceBasedModule
 logger = logging.getLogger(__name__)
 class PointSSIMModule(ReferenceBasedModule):
     name = "pointssim"; description = "PointSSIM structural similarity for point clouds (2020)"; metric_field = "pointssim_score"; default_config = {}
+    metric_groups = {
+        "pointssim_score": "fr_quality",
+    }
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         ext = sample_path.suffix.lower()
         if ext not in (".ply", ".pcd"): return None

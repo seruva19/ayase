@@ -15,6 +15,9 @@ class AHIQModule(PipelineModule):
     name = "ahiq"
     description = "Attention-based Hybrid IQA full-reference (higher=better)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "ahiq": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

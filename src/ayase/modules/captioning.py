@@ -24,6 +24,10 @@ class CaptioningModule(PipelineModule):
         "model_name": "Salesforce/blip-image-captioning-base",
         "num_frames": 5,  # EvalCrafter samples 5 frames
     }
+    metric_groups = {
+        "auto_caption": "text",
+        "blip_bleu": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

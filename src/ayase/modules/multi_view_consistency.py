@@ -38,6 +38,9 @@ class MultiViewConsistencyModule(PipelineModule):
         "max_pairs": 30,
         "min_matches": 20,
     }
+    metric_groups = {
+        "multiview_consistency": "spatial",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

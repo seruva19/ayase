@@ -43,6 +43,9 @@ class GraFIQsModule(PipelineModule):
         "det_size": 640,
         "gradient_scale": 1e4,  # Scaling for gradient -> quality mapping
     }
+    metric_groups = {
+        "grafiqs_score": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

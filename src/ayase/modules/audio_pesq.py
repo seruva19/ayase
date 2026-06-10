@@ -38,6 +38,9 @@ class AudioPESQModule(PipelineModule):
         "target_sr": 16000,  # Resample to 16 kHz (wide-band PESQ)
         "warning_threshold": 3.0,  # Warn if PESQ < 3.0
     }
+    metric_groups = {
+        "pesq_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

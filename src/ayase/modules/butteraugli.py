@@ -37,6 +37,9 @@ class ButteraugliModule(ReferenceBasedModule):
         "subsample": 5,
         "warning_threshold": 2.0,
     }
+    metric_groups = {
+        "butteraugli": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -15,6 +15,9 @@ class DBCNNModule(PipelineModule):
     name = "dbcnn"
     description = "DBCNN deep bilinear CNN for no-reference IQA"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "dbcnn_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

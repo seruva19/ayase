@@ -27,6 +27,9 @@ class C3DVQAModule(PipelineModule):
         "clip_length": 16,
         "subsample": 4,
     }
+    metric_groups = {
+        "c3dvqa_score": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

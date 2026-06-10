@@ -54,6 +54,10 @@ class HDRMetadataModule(PipelineModule):
         "subsample": 3,
         "peak_nits": 10000.0,  # Assumed peak luminance for 10-bit PQ
     }
+    metric_groups = {
+        "max_cll": "hdr",
+        "max_fall": "hdr",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

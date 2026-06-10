@@ -16,7 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **metrics**: modules can now declare the category of the metrics they produce via a `metric_groups` class attribute, folded into `QualityMetrics._FIELD_GROUPS` at discovery time, so self-describing modules no longer require a central grouping edit. Added consistency tests that fail loudly if a metric field is ungrouped or a module declares a metric/group for a non-existent field.
+- **metrics**: every module now declares the category of the metrics it produces via a `metric_groups` class attribute, folded into `QualityMetrics._FIELD_GROUPS` at discovery time. The central grouping table is now empty — adding a self-describing module needs no edit to `models.py`. Added consistency tests that fail loudly if a metric field is ungrouped or a module declares a metric/group for a non-existent field.
+
+### Removed
+
+- **models**: dropped three placeholder `QualityMetrics` fields that no module produced (`human_preference_score`, `engagement_score`, `perceptual_hash`).
 
 ## [0.1.45]
 

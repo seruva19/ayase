@@ -59,6 +59,9 @@ class ZoomVQAModule(PipelineModule):
         "iqa_weights_path": "",  # path to iqa_best_29epoch_checkpoint.pth.tar
         "vqa_weights_path": "",  # path to vqa_best_29e_val-vqpve_s.pth
     }
+    metric_groups = {
+        "zoomvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

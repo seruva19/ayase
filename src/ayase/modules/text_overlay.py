@@ -20,6 +20,9 @@ class TextOverlayModule(PipelineModule):
     name = "text_overlay"
     description = "Text overlay / subtitle detection in video frames"
     default_config = {"subsample": 4, "edge_threshold": 0.15}
+    metric_groups = {
+        "text_overlay_score": "text",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

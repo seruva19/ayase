@@ -27,6 +27,11 @@ class KandinskyMotionModule(PipelineModule):
         "kandinsky_object_motion_score": "Object motion prediction score (higher=more object motion)",
         "kandinsky_dynamics_score": "Overall dynamics prediction score (higher=more dynamic)",
     }
+    metric_groups = {
+        "kandinsky_camera_motion_score": "motion",
+        "kandinsky_dynamics_score": "motion",
+        "kandinsky_object_motion_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

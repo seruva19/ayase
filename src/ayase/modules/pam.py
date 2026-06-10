@@ -43,6 +43,9 @@ class PAMModule(PipelineModule):
     metric_info = {
         "pam_score": "PAM anti-prompt perceptual audio quality (0-1, higher=better)",
     }
+    metric_groups = {
+        "pam_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -47,6 +47,9 @@ class LMMVQAModule(PipelineModule):
         "subsample": 8,
         "clip_model": "ViT-B/32",
     }
+    metric_groups = {
+        "lmmvqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

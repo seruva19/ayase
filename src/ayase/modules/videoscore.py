@@ -23,6 +23,13 @@ class VideoScoreModule(PipelineModule):
         "trust_remote_code": True,
         "model_revision": None,
     }
+    metric_groups = {
+        "videoscore_alignment": "alignment",
+        "videoscore_dynamic": "motion",
+        "videoscore_factual": "alignment",
+        "videoscore_temporal": "temporal",
+        "videoscore_visual": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

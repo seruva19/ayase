@@ -30,6 +30,13 @@ class ProductionQualityModule(PipelineModule):
     default_config = {
         "max_frames": 150,
     }
+    metric_groups = {
+        "banding_severity": "production",
+        "color_grading_score": "production",
+        "exposure_consistency": "production",
+        "focus_quality": "production",
+        "white_balance_score": "production",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

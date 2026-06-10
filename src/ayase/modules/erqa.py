@@ -25,6 +25,9 @@ class ERQAModule(ReferenceBasedModule):
     description = "ERQA edge restoration quality assessment (FR, 2022)"
     metric_field = "erqa_score"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "erqa_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

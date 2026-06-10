@@ -20,6 +20,9 @@ class LetterboxModule(PipelineModule):
     name = "letterbox"
     description = "Border/letterbox detection (0-1, 0=no borders)"
     default_config = {"threshold": 16, "subsample": 4}
+    metric_groups = {
+        "letterbox_ratio": "basic",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

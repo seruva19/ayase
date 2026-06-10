@@ -51,6 +51,9 @@ class AudioVisualSyncModule(PipelineModule):
     metric_info = {
         "av_sync_offset": "Estimated audio-video offset in milliseconds",
     }
+    metric_groups = {
+        "av_sync_offset": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -5,6 +5,9 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 class SQIModule(PipelineModule):
     name = "sqi"; description = "SQI streaming quality index (2016)"; default_config = {}
+    metric_groups = {
+        "sqi_score": "nr_quality",
+    }
     def process(self, sample):
         """Heuristic: base_quality * stalling_factor. Without network data, proxy from metadata."""
         if not sample.is_video: return sample

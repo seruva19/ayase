@@ -21,6 +21,9 @@ class MotionModule(PipelineModule):
         "low_motion_threshold": 0.5,
         "high_motion_threshold": 20.0,
     }
+    metric_groups = {
+        "motion_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

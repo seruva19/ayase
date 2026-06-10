@@ -46,6 +46,11 @@ class CodecSpecificQualityModule(PipelineModule):
         "warning_efficiency": 30.0,
         "warning_artifacts": 40.0,
     }
+    metric_groups = {
+        "codec_artifacts": "codec",
+        "codec_efficiency": "codec",
+        "gop_quality": "codec",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -22,6 +22,10 @@ class WatermarkClassificationModule(PipelineModule):
         "hf_model": "umm-maybe/AI-image-detector",  # HuggingFace fallback: AI-generated image detector
         "threshold": 0.5,
     }
+    metric_groups = {
+        "ai_generated_probability": "safety",
+        "watermark_probability": "safety",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

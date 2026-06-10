@@ -27,6 +27,9 @@ class VIFModule(ReferenceBasedModule):
         "warning_threshold": 0.3,  # Warn if VIF < 0.3
         "device": "auto",
     }
+    metric_groups = {
+        "vif": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -31,6 +31,9 @@ class UNQAModule(PipelineModule):
     default_config = {
         "subsample": 8,
     }
+    metric_groups = {
+        "confidence_score": "meta",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

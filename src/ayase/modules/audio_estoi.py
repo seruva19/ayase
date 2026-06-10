@@ -40,6 +40,9 @@ class AudioESTOIModule(PipelineModule):
         "target_sr": 10000,  # ESTOI standard sample rate
         "warning_threshold": 0.5,
     }
+    metric_groups = {
+        "estoi_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -20,6 +20,9 @@ class FlowCoherenceModule(PipelineModule):
     name = "flow_coherence"
     description = "Bidirectional optical flow consistency (0-1, higher=coherent)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "flow_coherence": "temporal",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

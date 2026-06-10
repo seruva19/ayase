@@ -19,6 +19,9 @@ class DeepWSDModule(PipelineModule):
     name = "deepwsd"
     description = "DeepWSD Wasserstein distance FR image quality"
     default_config = {"subsample": 4}
+    metric_groups = {
+        "deepwsd_score": "fr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

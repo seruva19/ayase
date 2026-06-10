@@ -60,6 +60,15 @@ class GenEvalModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
+    metric_groups = {
+        "geneval_color_attribution": "alignment",
+        "geneval_colors": "alignment",
+        "geneval_counting": "alignment",
+        "geneval_overall": "alignment",
+        "geneval_position": "alignment",
+        "geneval_single_object": "alignment",
+        "geneval_two_object": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

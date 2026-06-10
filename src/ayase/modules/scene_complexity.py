@@ -27,6 +27,9 @@ class SceneComplexityModule(PipelineModule):
         "spatial_weight": 0.5,  # Weight for spatial complexity
         "temporal_weight": 0.5,  # Weight for temporal complexity
     }
+    metric_groups = {
+        "scene_complexity": "scene",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

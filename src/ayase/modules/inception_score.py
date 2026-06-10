@@ -24,6 +24,9 @@ class InceptionScoreModule(PipelineModule):
         "num_frames": 16,
         "splits": 1,  # Per-sample we use 1 split; dataset-level uses 10
     }
+    metric_groups = {
+        "is_score": "distribution",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

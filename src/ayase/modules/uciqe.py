@@ -63,6 +63,9 @@ class UCIQEModule(PipelineModule):
         "c3": 0.2576,
         "subsample": 8,
     }
+    metric_groups = {
+        "uciqe_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -38,6 +38,9 @@ class AudioSISDRModule(PipelineModule):
         "target_sr": 16000,
         "warning_threshold": 0.0,  # dB
     }
+    metric_groups = {
+        "si_sdr_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

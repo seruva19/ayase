@@ -33,6 +33,9 @@ class HDRVQMModule(PipelineModule):
     name = "hdr_vqm"
     description = "HDR-aware video quality (PU21+wavelet FR or gamma heuristic fallback)"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "hdr_vqm": "hdr",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

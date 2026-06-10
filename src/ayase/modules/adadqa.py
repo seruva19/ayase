@@ -32,6 +32,9 @@ class AdaDQAModule(PipelineModule):
         "subsample": 8,
         "scales": [1.0, 0.5, 0.25],
     }
+    metric_groups = {
+        "adadqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

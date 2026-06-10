@@ -102,6 +102,9 @@ class UIQMModule(PipelineModule):
         "c3": 3.5753,
         "subsample": 8,
     }
+    metric_groups = {
+        "uiqm_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

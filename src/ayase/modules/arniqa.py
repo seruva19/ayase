@@ -15,6 +15,9 @@ class ARNIQAModule(PipelineModule):
     name = "arniqa"
     description = "ARNIQA no-reference image quality assessment"
     default_config = {"subsample": 8}
+    metric_groups = {
+        "arniqa_score": "nr_quality",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

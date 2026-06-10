@@ -36,6 +36,9 @@ class DepthConsistencyModule(PipelineModule):
         "max_frames": 200,
         "warning_threshold": 0.7,
     }
+    metric_groups = {
+        "depth_temporal_consistency": "temporal",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

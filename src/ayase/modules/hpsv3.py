@@ -44,6 +44,9 @@ class HPSv3Module(PipelineModule):
     metric_info = {
         "hpsv3_score": "HPSv3 human preference reward mean over sampled frames (higher=better)",
     }
+    metric_groups = {
+        "hpsv3_score": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

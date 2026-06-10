@@ -23,6 +23,9 @@ class PtlflowMotionModule(PipelineModule):
         "ckpt_path": "things",
         "subsample": 8,
     }
+    metric_groups = {
+        "ptlflow_motion_score": "motion",
+    }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)

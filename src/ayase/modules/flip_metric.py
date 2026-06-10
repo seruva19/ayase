@@ -34,6 +34,9 @@ class FLIPModule(ReferenceBasedModule):
         "subsample": 5,
         "warning_threshold": 0.3,
     }
+    metric_groups = {
+        "flip_score": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

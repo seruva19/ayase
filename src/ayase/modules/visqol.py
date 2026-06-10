@@ -27,6 +27,9 @@ class ViSQOLModule(PipelineModule):
     default_config = {
         "mode": "audio",  # "audio" or "speech"
     }
+    metric_groups = {
+        "visqol": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

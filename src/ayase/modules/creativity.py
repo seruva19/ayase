@@ -41,6 +41,9 @@ class CreativityModule(PipelineModule):
     default_config = {
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
     }
+    metric_groups = {
+        "creativity_score": "aesthetic",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

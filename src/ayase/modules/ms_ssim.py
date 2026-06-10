@@ -30,6 +30,9 @@ class MSSSIMModule(ReferenceBasedModule):
         "warning_threshold": 0.85,  # Warn if MS-SSIM < 0.85
         "device": "auto",  # "cuda", "cpu", or "auto"
     }
+    metric_groups = {
+        "ms_ssim": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

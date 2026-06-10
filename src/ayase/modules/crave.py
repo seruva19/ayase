@@ -50,6 +50,9 @@ class CRAVEModule(PipelineModule):
         "richness_weight": 0.35,
         "coherence_weight": 0.30,
     }
+    metric_groups = {
+        "crave_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

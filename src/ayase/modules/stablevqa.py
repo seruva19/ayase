@@ -41,6 +41,9 @@ class StableVQAModule(PipelineModule):
         "max_frames": 120,
         "frame_size": 224,
     }
+    metric_groups = {
+        "stablevqa_score": "nr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

@@ -77,6 +77,15 @@ class T2VCompBenchModule(PipelineModule):
         "clip_model": "openai/clip-vit-base-patch32",
         "weights": [1, 1, 1, 1, 1, 1],
     }
+    metric_groups = {
+        "compbench_action": "alignment",
+        "compbench_attribute": "alignment",
+        "compbench_numeracy": "alignment",
+        "compbench_object_rel": "alignment",
+        "compbench_overall": "alignment",
+        "compbench_scene": "alignment",
+        "compbench_spatial": "alignment",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

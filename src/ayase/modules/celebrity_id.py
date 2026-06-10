@@ -29,6 +29,9 @@ class CelebrityIDModule(PipelineModule):
         "consistency_threshold": 0.4,  # cosine distance threshold for identity drift
         "model_name": "VGG-Face",
     }
+    metric_groups = {
+        "celebrity_id_score": "face",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

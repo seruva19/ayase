@@ -104,6 +104,13 @@ class SongEvalModule(PipelineModule):
         "song_eval_clarity": "Clarity of song structure (1-5, higher=better)",
         "song_eval_naturalness": "Naturalness of vocal breathing/phrasing (1-5, higher=better)",
     }
+    metric_groups = {
+        "song_eval_clarity": "audio",
+        "song_eval_coherence": "audio",
+        "song_eval_memorability": "audio",
+        "song_eval_musicality": "audio",
+        "song_eval_naturalness": "audio",
+    }
 
     _CHECKPOINT_URL = "https://github.com/ASLP-lab/SongEval/raw/main/ckpt/model.safetensors"
 

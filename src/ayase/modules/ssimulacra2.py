@@ -36,6 +36,9 @@ class SSIMULACRA2Module(ReferenceBasedModule):
         "subsample": 5,
         "warning_threshold": 50.0,
     }
+    metric_groups = {
+        "ssimulacra2": "fr_quality",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

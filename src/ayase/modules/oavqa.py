@@ -32,6 +32,9 @@ class OAVQAModule(PipelineModule):
         "n_mels": 64,
         "audio_sr": 16000,
     }
+    metric_groups = {
+        "oavqa_score": "audio",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

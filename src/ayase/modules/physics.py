@@ -28,6 +28,9 @@ class PhysicsModule(PipelineModule):
         "subsample": 16,
         "accel_threshold": 50.0,
     }
+    metric_groups = {
+        "physics_score": "motion",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)
