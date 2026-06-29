@@ -14,6 +14,26 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
+def _cap_frame_resolution(frame: np.ndarray, max_side: int) -> np.ndarray:
+    """Downscale a frame so its longer side <= max_side, keeping dims divisible by 8.
+
+    RAFT's correlation volume grows ~O((H*W)^2); on HD frames this exhausts GPU
+    memory (observed: a single 1080p pair tried to allocate 62 GiB). Only oversized
+    frames are downscaled; smaller frames pass through unchanged. RAFT requires the
+    spatial dims to be multiples of 8, so the resized dimensions are floored to /8.
+    """
+    if max_side <= 0:
+        return frame
+    h, w = frame.shape[:2]
+    longer = max(h, w)
+    if longer <= max_side:
+        return frame
+    scale = max_side / longer
+    new_w = max(8, (int(round(w * scale)) // 8) * 8)
+    new_h = max(8, (int(round(h * scale)) // 8) * 8)
+    return cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+
 class AdvancedFlowModule(PipelineModule):
     name = "advanced_flow"
     description = "RAFT optical flow: flow_score (all consecutive pairs)"
@@ -21,6 +41,7 @@ class AdvancedFlowModule(PipelineModule):
     default_config = {
         "use_large_model": True,
         "max_frames": 150,
+        "max_resolution": 512,
     }
     metric_groups = {
         "flow_score": "motion",
@@ -30,6 +51,7 @@ class AdvancedFlowModule(PipelineModule):
         super().__init__(config)
         self.use_large_model = self.config.get("use_large_model", True)
         self.max_frames = self.config.get("max_frames", 150)
+        self.max_resolution = self.config.get("max_resolution", 512)
         self._model = None
         self._device = "cpu"
         self._ml_available = False
@@ -137,7 +159,7 @@ class AdvancedFlowModule(PipelineModule):
                         break
                     if frame_idx in indices:
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        frames.append(frame)
+                        frames.append(_cap_frame_resolution(frame, self.max_resolution))
                     frame_idx += 1
             else:
                 while cap.isOpened():
@@ -145,7 +167,7 @@ class AdvancedFlowModule(PipelineModule):
                     if not ret:
                         break
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(frame)
+                    frames.append(_cap_frame_resolution(frame, self.max_resolution))
                     if len(frames) >= self.max_frames:
                         break
             cap.release()
