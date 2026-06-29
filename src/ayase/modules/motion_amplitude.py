@@ -18,6 +18,27 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+
+def _cap_frame_resolution(frame: np.ndarray, max_side: int) -> np.ndarray:
+    """Downscale a frame so its longer side <= max_side, keeping dims divisible by 8.
+
+    RAFT's correlation volume grows ~O((H*W)^2); on HD frames this exhausts GPU
+    memory. Only oversized frames are downscaled; smaller frames pass through
+    unchanged. RAFT requires spatial dims to be multiples of 8, so the resized
+    dimensions are floored to /8.
+    """
+    if max_side <= 0:
+        return frame
+    h, w = frame.shape[:2]
+    longer = max(h, w)
+    if longer <= max_side:
+        return frame
+    scale = max_side / longer
+    new_w = max(8, (int(round(w * scale)) // 8) * 8)
+    new_h = max(8, (int(round(h * scale)) // 8) * 8)
+    return cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+
 # Keywords that indicate fast/large motion in captions
 FAST_KEYWORDS = {
     "fast", "quick", "rapid", "running", "sprinting", "rushing",
@@ -41,6 +62,7 @@ class MotionAmplitudeModule(PipelineModule):
     default_config = {
         "amplitude_threshold": 5.0,
         "max_frames": 150,
+        "max_resolution": 512,
         "scoring_mode": "binary",  # "binary" (0/100 match) or "continuous" (smooth 0-100)
     }
     metric_groups = {
@@ -51,6 +73,7 @@ class MotionAmplitudeModule(PipelineModule):
         super().__init__(config)
         self.amplitude_threshold = self.config.get("amplitude_threshold", 5.0)
         self.max_frames = self.config.get("max_frames", 150)
+        self.max_resolution = self.config.get("max_resolution", 512)
         self._model = None
         self._device = "cpu"
         self._ml_available = False
@@ -242,7 +265,7 @@ class MotionAmplitudeModule(PipelineModule):
                         break
                     if frame_idx in indices:
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        frames.append(frame)
+                        frames.append(_cap_frame_resolution(frame, self.max_resolution))
                     frame_idx += 1
             else:
                 while cap.isOpened():
@@ -250,7 +273,7 @@ class MotionAmplitudeModule(PipelineModule):
                     if not ret:
                         break
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(frame)
+                    frames.append(_cap_frame_resolution(frame, self.max_resolution))
             cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames: {e}")
