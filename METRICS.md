@@ -3720,7 +3720,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `dino_face_identity` [↑](#categories)
 > DINOv2 face identity cosine similarity (0-1, higher=better) · ↑ higher=better · 0-1
 
-**[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity using DINOv2 on face crops (better than ArcFace for AI-generated)
+**[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Packages**: gc, insightface, torch, torchvision
@@ -3732,7 +3732,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `dino_face_identity_max` [↑](#categories)
 > Max DINOv2 face identity across frames (0-1, higher=better) · ↑ higher=better · 0-1
 
-**[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity using DINOv2 on face crops (better than ArcFace for AI-generated)
+**[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Packages**: gc, insightface, torch, torchvision
