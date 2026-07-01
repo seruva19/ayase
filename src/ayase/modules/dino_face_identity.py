@@ -1,9 +1,13 @@
-"""DINO Face Identity — reference-based identity metric using DINOv2 face crops.
+"""DINO Face Identity — reference-based identity indicator using DINOv2 face crops.
 
-Better than ArcFace for AI-generated faces: ArcFace systematically underestimates
-identity in generated content, while DINOv2 on face crops correlates with human
-judgment significantly better. Applicable to all identity-preserving generation
-(LoRA, DreamBooth, IP-Adapter, InstantID).
+DINOv2 on face crops captures overall facial appearance and complements
+face-recognition embeddings. Note: it is a weaker identity *discriminator* than
+ArcFace — face-recognition embeddings separate genuine from impostor identities
+more reliably (higher true-accept rate at a fixed false-accept budget), so prefer
+ArcFace (see the ``identity_loss`` / ``face_recognition_score`` module) as the
+identity gate and use this metric as a complementary appearance indicator.
+Applicable to identity-preserving generation (LoRA, DreamBooth, IP-Adapter,
+InstantID).
 
 Outputs:
     dino_face_identity     — cosine similarity 0-1 (higher = better match)
@@ -32,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class DINOFaceIdentityModule(PipelineModule):
     name = "dino_face_identity"
-    description = "Face identity similarity using DINOv2 on face crops (better than ArcFace for AI-generated)"
+    description = "Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)"
     default_config = {
         "model_name": "dinov2_vitb14",
         "face_model": "buffalo_l",
