@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.56] - 2026-07-03
+
+### Changed
+
+- **deps**: raised the torch stack ceiling to `<2.11` (`torch>=2.1.0,<2.11`, `torchvision>=0.16.0,<0.26`, `torchaudio>=2.1.0,<2.11`; previously `torch<2.8`). torch 2.10 is the newest release whose default PyPI wheels still ship CUDA 12.x builds, so a plain `pip install ayase` keeps a GPU-working torch on CUDA 12.x drivers while allowing modern torch. torch 2.11+ default to CUDA 13 wheels, which silently fall back to CPU on 12.x drivers, so they stay excluded until the target hosts move to CUDA 13.
+
 ## [0.1.54] - 2026-06-10
 
 ### Added
