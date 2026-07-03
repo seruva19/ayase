@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.57] - 2026-07-04
+
+### Changed
+
+- **dino_face_identity**: the DINOv2 backbone weights are now fetched from the `AkaneTendo25/ayase-models` HF mirror instead of the torch.hub entrypoint's fbaipublicfiles original. The architecture still comes from the torch.hub repo code, but the checkpoint download (previously `dl.fbaipublicfiles.com`, which stalls on some networks and bypasses the mirror every other module already uses) now goes through the same reliable, cacheable HF mirror. Metric values are unchanged — identical architecture and identical weights. Adds a `models_dir` config key (default `"models"`) so the weights land in the standard Ayase model cache.
+
 ## [0.1.56] - 2026-07-03
 
 ### Changed
