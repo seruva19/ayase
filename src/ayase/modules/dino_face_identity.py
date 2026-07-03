@@ -18,7 +18,8 @@ Gracefully skips when no reference is provided.
 
 Backends:
     - Face detection: InsightFace (buffalo_l)
-    - Embedding: DINOv2 ViT-B/14 (facebookresearch/dinov2)
+    - Embedding: DINOv2 ViT-B/14 (facebookresearch/dinov2 architecture; weights from
+      the ayase-models HF mirror)
 """
 
 import logging
@@ -33,6 +34,17 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+# DINOv2 backbone weights are fetched from the ayase-models HF mirror rather than
+# the torch.hub entrypoint's fbaipublicfiles original, which is unreliable on some
+# networks (and bypasses the mirror the rest of the pipeline already relies on).
+# The architecture still comes from the (reliable, cacheable) torch.hub repo code.
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+# Only sizes actually rehosted on the mirror; any other ``model_name`` falls back to
+# the torch.hub pretrained path (upstream fbaipublicfiles).
+_DINOV2_WEIGHTS = {
+    "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
+}
+
 
 class DINOFaceIdentityModule(PipelineModule):
     name = "dino_face_identity"
@@ -43,6 +55,7 @@ class DINOFaceIdentityModule(PipelineModule):
         "subsample": 8,
         "face_margin": 0.3,
         "warning_threshold": 0.3,
+        "models_dir": "models",
     }
     metric_groups = {
         "dino_face_identity": "face",
@@ -56,6 +69,7 @@ class DINOFaceIdentityModule(PipelineModule):
         self.subsample = self.config.get("subsample", 8)
         self.face_margin = self.config.get("face_margin", 0.3)
         self.warning_threshold = self.config.get("warning_threshold", 0.3)
+        self.models_dir = self.config.get("models_dir", "models")
         self._dino = None
         self._transform = None
         self._face_app = None
@@ -66,9 +80,21 @@ class DINOFaceIdentityModule(PipelineModule):
 
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # Load DINOv2
+        # Load DINOv2. The architecture comes from the torch.hub repo code; the
+        # weights come from the ayase-models HF mirror (reliable, and consistent with
+        # the rest of the pipeline) instead of the torch.hub fbaipublicfiles original.
         try:
-            self._dino = torch.hub.load("facebookresearch/dinov2", self.model_name)
+            rel = _DINOV2_WEIGHTS.get(self.model_name)
+            if rel:
+                from ayase.config import download_model_file
+
+                self._dino = torch.hub.load(
+                    "facebookresearch/dinov2", self.model_name, pretrained=False
+                )
+                ckpt = download_model_file(rel, _DINOV2_MIRROR_BASE + rel, self.models_dir)
+                self._dino.load_state_dict(torch.load(str(ckpt), map_location="cpu"))
+            else:
+                self._dino = torch.hub.load("facebookresearch/dinov2", self.model_name)
             self._dino.eval().to(self._device)
             logger.info(f"DINOFaceIdentity: loaded {self.model_name} on {self._device}")
         except Exception as e:
