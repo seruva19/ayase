@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.55"
+version = "0.1.56"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -41,9 +41,9 @@ dependencies = [
     "imageio>=2.33.0,<3.0",
     "imageio-ffmpeg>=0.4.9,<1.0",
     "textual>=0.52.0",
-    "torch>=2.1.0,<2.8",
-    "torchvision>=0.16.0,<1.0",
-    "torchaudio>=2.1.0,<2.8",
+    "torch>=2.1.0,<2.11",
+    "torchvision>=0.16.0,<0.26",
+    "torchaudio>=2.1.0,<2.11",
     "transformers>=4.45.0,<5.0",
     "qwen-vl-utils>=0.0.8",
     "huggingface-hub>=0.20.0,<2.0",
