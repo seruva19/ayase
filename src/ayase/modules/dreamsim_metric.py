@@ -1,6 +1,7 @@
 """DreamSim foundation model perceptual similarity module."""
 
 import logging
+import os
 from typing import Optional
 
 import numpy as np
@@ -27,6 +28,7 @@ class DreamSimModule(PipelineModule):
 
     def setup(self) -> None:
         try:
+            self._ensure_dino_cached()
             from dreamsim import dreamsim
 
             model, preprocess = dreamsim(pretrained=True)
@@ -60,6 +62,7 @@ class DreamSimModule(PipelineModule):
             dist_t = self._preprocess(dist_img).unsqueeze(0)
 
             import torch
+
             with torch.no_grad():
                 distance = self._model(ref_t, dist_t).item()
 
@@ -103,6 +106,38 @@ class DreamSimModule(PipelineModule):
         except Exception as e:
             logger.warning("DreamSim video processing failed: %s", e)
         return sample
+
+    # DreamSim's DINO ViT-B/16 backbone is fetched by ``dreamsim(pretrained=True)`` via
+    # ``torch.hub`` from dl.fbaipublicfiles.com, which has no timeout and hangs on some
+    # networks (and bypasses the mirror the rest of the pipeline relies on). Pre-place it
+    # from the ayase-models HF mirror into torch.hub's checkpoints dir so DreamSim loads
+    # it offline. Original: https://dl.fbaipublicfiles.com/dino/dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth
+    _DINO_MIRROR_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dreamsim/dino_vitbase16_pretrain.pth"
+    _DINO_FILENAME = "dino_vitbase16_pretrain.pth"
+
+    def _ensure_dino_cached(self) -> None:
+        """Pre-place DreamSim's base DINO backbone in the torch hub cache if absent."""
+        import torch
+
+        hub_dir = torch.hub.get_dir()
+        cache_dir = os.path.join(hub_dir, "checkpoints")
+        cached = os.path.join(cache_dir, self._DINO_FILENAME)
+        if os.path.exists(cached):
+            return
+        os.makedirs(cache_dir, exist_ok=True)
+        logger.info("Pre-caching base DINO backbone for DreamSim from the ayase mirror...")
+        from ayase.config import download_model_file
+
+        tmp = download_model_file(
+            os.path.join("hub", "checkpoints", self._DINO_FILENAME),
+            self._DINO_MIRROR_URL,
+            os.path.dirname(hub_dir),  # parent of hub dir
+        )
+        # Move to torch cache if downloaded elsewhere
+        if str(tmp) != cached and os.path.exists(str(tmp)):
+            import shutil
+
+            shutil.copy2(str(tmp), cached)
 
 
 class DreamSimCompatModule(DreamSimModule):
