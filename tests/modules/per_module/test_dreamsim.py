@@ -25,10 +25,10 @@ def test_dreamsim_image(image_sample):
 def test_dreamsim_video(video_sample):
     from ayase.modules.dreamsim_metric import DreamSimModule
     video_sample.quality_metrics = QualityMetrics()
+    video_sample.reference_path = video_sample.path  # video sample + video reference
     m = DreamSimModule()
     m.on_mount()
     result = m.process(video_sample)
     assert result is video_sample
-    # Same guard for the inter-frame (video-self) path.
     if m._ml_available:
         assert video_sample.quality_metrics.dreamsim is not None

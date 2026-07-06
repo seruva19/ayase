@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.60] - 2026-07-06
+
+### Fixed
+
+- **dreamsim**: the reference path (`image` + `reference_path`) now accepts video inputs. It opened both paths as still images, so a video reference or a video sample raised `cannot identify image file`; it now samples frames from videos (single frame for images), pairs them by position, and averages — matching how `dino_face_identity` handles video.
+
 ## [0.1.59] - 2026-07-06
 
 ### Fixed

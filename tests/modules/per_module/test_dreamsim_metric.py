@@ -22,6 +22,7 @@ def test_dreamsim_metric_image(image_sample):
 def test_dreamsim_metric_video(video_sample):
     from ayase.modules.dreamsim_metric import DreamSimCompatModule
     video_sample.quality_metrics = QualityMetrics()
+    video_sample.reference_path = video_sample.path  # video sample + video reference
     m = DreamSimCompatModule()
     m.on_mount()
     result = m.process(video_sample)
