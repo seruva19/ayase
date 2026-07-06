@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.58] - 2026-07-04
+
+### Changed
+
+- **dreamsim**: the base DINO ViT-B/16 backbone pulled by `dreamsim(pretrained=True)` via `torch.hub` is now pre-cached from the `AkaneTendo25/ayase-models` HF mirror into the torch hub checkpoints directory before the model loads, matching the mirror path `dover` uses for its ConvNeXt backbone. The checkpoint (originally `dl.fbaipublicfiles.com/dino/dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth`) then loads offline. Metric values are unchanged — identical checkpoint.
+
 ## [0.1.57] - 2026-07-04
 
 ### Changed
 
-- **dino_face_identity**: the DINOv2 backbone weights are now fetched from the `AkaneTendo25/ayase-models` HF mirror instead of the torch.hub entrypoint's fbaipublicfiles original. The architecture still comes from the torch.hub repo code, but the checkpoint download (previously `dl.fbaipublicfiles.com`, which stalls on some networks and bypasses the mirror every other module already uses) now goes through the same reliable, cacheable HF mirror. Metric values are unchanged — identical architecture and identical weights. Adds a `models_dir` config key (default `"models"`) so the weights land in the standard Ayase model cache.
+- **dino_face_identity**: the DINOv2 backbone weights are now fetched from the `AkaneTendo25/ayase-models` HF mirror instead of the torch.hub entrypoint's fbaipublicfiles original; the architecture still comes from the torch.hub repo code. This aligns the checkpoint download with the mirror the other modules already use. Metric values are unchanged — identical architecture and identical weights. Adds a `models_dir` config key (default `"models"`) so the weights land in the standard Ayase model cache.
 
 ## [0.1.56] - 2026-07-03
 
