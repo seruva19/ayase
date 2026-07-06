@@ -132,20 +132,19 @@ class DatasetScanner:
         Args:
             media_file: Path to media file
             caption_map: Map of dataset-relative stems to caption paths
-            caption_stem_map: Fallback map of filename stem to caption candidates
+            caption_stem_map: Unused; retained for signature compatibility
 
         Returns:
             Path to caption file if found, None otherwise
+
+        Caption matching is restricted to a same-directory sidecar (same
+        relative path, differing only in extension). The previous cross-tree
+        fallback -- which adopted a same-stem caption from anywhere in the tree
+        when exactly one candidate existed -- silently attached wrong captions
+        and skewed every text-alignment metric, so it has been removed.
         """
         rel_stem = media_file.relative_to(self.dataset_path).with_suffix("").as_posix()
-        if rel_stem in caption_map:
-            return caption_map[rel_stem]
-
-        stem = media_file.stem
-        candidates = caption_stem_map.get(stem, [])
-        if len(candidates) == 1:
-            return candidates[0]
-        return None
+        return caption_map.get(rel_stem)
 
     def _load_caption(self, caption_path: Path) -> Optional[CaptionMetadata]:
         """Load caption metadata from text/caption/json sidecar."""

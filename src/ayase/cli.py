@@ -31,6 +31,47 @@ app = typer.Typer(
 )
 console = Console()
 
+# Metrics where a LOWER value means BETTER quality (distances / error / severity).
+# Used to warn when someone filters these with --min-score (which would keep the
+# worst samples) and hint them toward --max-score instead.
+LOWER_IS_BETTER_METRICS = frozenset(
+    {
+        "niqe",
+        "brisque",
+        "lpips",
+        "image_lpips",
+        "i2v_lpips",
+        "dists",
+        "gmsd",
+        "deepwsd",
+        "piqe",
+        "ilniqe",
+        "pi_score",
+        "pieapp",
+        "nlpd",
+        "mad",
+        "butteraugli",
+        "ssimulacra2",
+        "flip_score",
+        "dreamsim",
+        "ciede2000",
+        "delta_ictcp",
+        "strred",
+        "cambi",
+        "banding_severity",
+        "codec_artifacts",
+        "flicker_score",
+        "judder_score",
+        "stutter_score",
+        "face_landmark_jitter",
+        "identity_loss",
+        "ocr_cer",
+        "ocr_wer",
+        "mcd_score",
+        "lpdist_score",
+    }
+)
+
 
 def _discover_all_modules(config: AyaseConfig) -> None:
     plugin_paths = []
@@ -149,6 +190,31 @@ def _process_samples(
     checkpoint_fn=None,
 ) -> int:
     processed_count = 0
+    checkpoint_enabled = checkpoint_every > 0 and checkpoint_fn is not None
+    # Threshold-crossing checkpoints: with a dataset sample_batch_size B > 1,
+    # ``processed_count`` advances in steps of B and can skip exact multiples of
+    # ``checkpoint_every`` entirely (e.g. B=7, every=100 would first hit an exact
+    # multiple only at 700). Fire whenever we cross the next threshold instead.
+    next_checkpoint = checkpoint_every
+    last_written = 0
+
+    def _maybe_checkpoint(force: bool = False) -> None:
+        nonlocal next_checkpoint, last_written
+        if not checkpoint_enabled:
+            return
+        if not force and processed_count < next_checkpoint:
+            return
+        if processed_count == last_written:
+            return
+        try:
+            checkpoint_fn(pipeline, processed_count)
+            last_written = processed_count
+        except Exception as e:
+            console.print(
+                f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
+            )
+        next_checkpoint = ((processed_count // checkpoint_every) + 1) * checkpoint_every
+
     batch_size = _pipeline_sample_batch_size(pipeline)
     if batch_size > 1:
         batch = []
@@ -159,43 +225,20 @@ def _process_samples(
             processed = pipeline.process_samples(batch, batch_size=batch_size)
             processed_count += len(processed)
             batch = []
-            if (
-                checkpoint_every > 0
-                and checkpoint_fn is not None
-                and processed_count % checkpoint_every == 0
-            ):
-                try:
-                    checkpoint_fn(pipeline, processed_count)
-                except Exception as e:
-                    console.print(
-                        f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
-                    )
+            _maybe_checkpoint()
         if batch:
             processed = pipeline.process_samples(batch, batch_size=batch_size)
             processed_count += len(processed)
-            if checkpoint_every > 0 and checkpoint_fn is not None:
-                try:
-                    checkpoint_fn(pipeline, processed_count)
-                except Exception as e:
-                    console.print(
-                        f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
-                    )
+        # Persist the final tail (leftover batch or any samples since the last
+        # threshold crossing) so a crash after the last periodic write is safe.
+        _maybe_checkpoint(force=True)
         return processed_count
 
     for sample in samples:
         pipeline.process_sample(sample)
         processed_count += 1
-        if (
-            checkpoint_every > 0
-            and checkpoint_fn is not None
-            and processed_count % checkpoint_every == 0
-        ):
-            try:
-                checkpoint_fn(pipeline, processed_count)
-            except Exception as e:
-                console.print(
-                    f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
-                )
+        _maybe_checkpoint()
+    _maybe_checkpoint(force=True)
     return processed_count
 
 
@@ -431,8 +474,9 @@ def scan(
                 recs_str = "; ".join(
                     [i.recommendation for i in s.validation_issues if i.recommendation]
                 )
-                score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
-                writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, f"{score:.2f}"])
+                score = s.quality_metrics.technical_score if s.quality_metrics else None
+                score_str = f"{score:.2f}" if score is not None else "NA"
+                writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, score_str])
         elif format == "html":
             import tempfile
             with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as tmp:
@@ -526,11 +570,16 @@ def run(
             writer.writerow(["Path", "Valid", "Issues", "Technical Score"])
             for s in p.results.values():
                 issues = "; ".join([i.message for i in s.validation_issues])
-                score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
-                writer.writerow([str(s.path), s.is_valid, issues, f"{score:.2f}"])
+                score = s.quality_metrics.technical_score if s.quality_metrics else None
+                score_str = f"{score:.2f}" if score is not None else "NA"
+                writer.writerow([str(s.path), s.is_valid, issues, score_str])
     else:
         console.print(f"[red]Unknown format: {format}[/red]")
         raise typer.Exit(code=1)
+
+    # Persist a standalone artifact report to output.artifacts_dir, mirroring the
+    # TUI run path. Honors config.output.artifacts_dir / artifacts_format.
+    _export_artifacts(p, config, "run")
 
 
 @app.command()
@@ -538,8 +587,12 @@ def filter(
     dataset_path: Annotated[Path, typer.Argument(help="Path to dataset directory")],
     output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output directory")] = None,
     min_score: Annotated[
-        Optional[int],
-        typer.Option("--min-score", help="Minimum metric score [0-100]"),
+        Optional[float],
+        typer.Option("--min-score", help="Keep samples with metric >= this (higher-is-better metrics)"),
+    ] = None,
+    max_score: Annotated[
+        Optional[float],
+        typer.Option("--max-score", help="Keep samples with metric <= this (lower-is-better metrics, e.g. niqe/brisque/lpips)"),
     ] = None,
     metric: Annotated[
         str,
@@ -559,6 +612,15 @@ def filter(
     ] = None,
 ) -> None:
     """Filter dataset based on quality metrics."""
+    # Validate --mode up front, before running the (expensive) pipeline or
+    # creating any output directories.
+    valid_modes = {"list", "copy", "symlink"}
+    if mode not in valid_modes:
+        console.print(
+            f"[red]Unknown mode: {mode}. Expected one of: {', '.join(sorted(valid_modes))}.[/red]"
+        )
+        raise typer.Exit(code=1)
+
     console.print(f"[bold magenta]Filtering dataset:[/bold magenta] {dataset_path}")
     if output is not None:
         console.print(f"[bold]Output:[/bold] {output}")
@@ -566,10 +628,18 @@ def filter(
 
     if min_score is not None:
         console.print(f"[bold]Minimum {metric}:[/bold] {min_score}")
+    if max_score is not None:
+        console.print(f"[bold]Maximum {metric}:[/bold] {max_score}")
     if aspect_ratio:
         console.print(f"[bold]Aspect ratio:[/bold] {aspect_ratio}")
     if resolution:
         console.print(f"[bold]Resolution:[/bold] {resolution}")
+
+    if min_score is not None and metric in LOWER_IS_BETTER_METRICS:
+        console.print(
+            f"[yellow]Note: '{metric}' is a lower-is-better metric; --min-score keeps the "
+            f"worst samples. Did you mean --max-score?[/yellow]"
+        )
 
     config = AyaseConfig.load()
     module_names = _select_modules(quick=False, deep=False, config=config)
@@ -597,19 +667,49 @@ def filter(
             console.print("[red]Invalid resolution format; expected WxH[/red]")
             raise typer.Exit(code=1)
 
+    score_filter = min_score is not None or max_score is not None
+    skipped_missing = 0
+    skipped_ar = 0
+    skipped_res = 0
     candidates = []
     for sample in pipeline.results.values():
-        if min_score is not None:
-            score = 0.0
-            if sample.quality_metrics:
-                score = getattr(sample.quality_metrics, metric, None) or 0.0
-            if score < min_score:
+        if score_filter:
+            # A missing metric is excluded (not treated as 0.0) and reported,
+            # so it never silently passes or fails a score threshold.
+            score = (
+                getattr(sample.quality_metrics, metric, None)
+                if sample.quality_metrics
+                else None
+            )
+            if score is None:
+                skipped_missing += 1
                 continue
-        if target_ar and sample.aspect_ratio and abs(sample.aspect_ratio - target_ar) > 0.01:
-            continue
-        if target_res and (sample.width is None or sample.height is None or (sample.width, sample.height) != target_res):
-            continue
+            if min_score is not None and score < min_score:
+                continue
+            if max_score is not None and score > max_score:
+                continue
+        if target_ar is not None:
+            if sample.aspect_ratio is None:
+                skipped_ar += 1
+                continue
+            if abs(sample.aspect_ratio - target_ar) > 0.01:
+                continue
+        if target_res is not None:
+            if sample.width is None or sample.height is None:
+                skipped_res += 1
+                continue
+            if (sample.width, sample.height) != target_res:
+                continue
         candidates.append(sample)
+
+    if skipped_missing:
+        console.print(
+            f"[yellow]{skipped_missing} samples skipped: metric '{metric}' missing[/yellow]"
+        )
+    if skipped_ar:
+        console.print(f"[yellow]{skipped_ar} samples skipped: aspect ratio unknown[/yellow]")
+    if skipped_res:
+        console.print(f"[yellow]{skipped_res} samples skipped: resolution unknown[/yellow]")
 
     if mode == "list":
         for sample in candidates:
@@ -621,18 +721,23 @@ def filter(
         raise typer.Exit(code=1)
 
     output.mkdir(parents=True, exist_ok=True)
+    dataset_root = dataset_path.resolve()
     for sample in candidates:
-        dest = output / sample.path.name
+        # Mirror the dataset-relative directory structure so duplicate basenames
+        # living in different subdirectories don't overwrite one another.
+        try:
+            rel = sample.path.resolve().relative_to(dataset_root)
+        except ValueError:
+            rel = Path(sample.path.name)
+        dest = output / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
         if mode == "copy":
             shutil.copy2(sample.path, dest)
-        elif mode == "symlink":
+        else:  # symlink (mode already validated above)
             try:
                 os.symlink(sample.path, dest)
             except OSError:
                 shutil.copy2(sample.path, dest)
-        else:
-            console.print(f"[red]Unknown mode: {mode}[/red]")
-            raise typer.Exit(code=1)
 
 
 @app.command()

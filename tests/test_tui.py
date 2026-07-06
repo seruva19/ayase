@@ -1,6 +1,7 @@
 """Tests for the Ayase TUI (Textual app)."""
 
 import asyncio
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional
 from unittest.mock import MagicMock, patch, AsyncMock
@@ -678,6 +679,10 @@ class TestExecutionScreen:
                 self.app.module_configs = {}
                 self.app.ayase_config = None
                 self.app.pipeline = None
+                # run_pipeline now runs on a worker thread and marshals UI
+                # updates via call_from_thread; execute them inline (and let
+                # UI exceptions propagate, mirroring Textual's future.result()).
+                self.app.call_from_thread = lambda fn, *a, **k: fn(*a, **k)
                 self._widgets = {
                     "RichLog": DummyLog(),
                     "ProgressBar": DummyProgress(),
@@ -701,7 +706,7 @@ class TestExecutionScreen:
         )
 
         screen = FakeScreen()
-        await ExecutionScreen.run_pipeline(screen)
+        ExecutionScreen.run_pipeline(screen)
 
         assert DummyPipeline.last is not None
         assert DummyPipeline.last.started is True
@@ -709,6 +714,135 @@ class TestExecutionScreen:
         assert screen._widgets["#status_title"].value == "ANALYSIS FAILED"
         assert screen._widgets["#btn_results"].disabled is False
         assert screen._widgets["#btn_abort"].disabled is True
+
+    @pytest.mark.asyncio
+    async def test_pipeline_runs_off_the_event_loop_thread(self, tmp_path):
+        """The pipeline must run on a worker thread, not the UI/event-loop
+        thread, so the TUI stays responsive during long runs."""
+        (tmp_path / "test.mp4").write_bytes(b"\x00" * 100)
+
+        captured: Dict[str, int] = {}
+        orig = tui_module.ExecutionScreen.run_pipeline
+
+        def wrapper(screen_self):
+            captured["ident"] = threading.get_ident()
+            return orig(screen_self)
+
+        app = AyaseApp()
+        patches = _patch_registry_and_config()
+        for p in patches:
+            p.start()
+        try:
+            with patch.object(tui_module.ExecutionScreen, "run_pipeline", wrapper):
+                async with app.run_test() as pilot:
+                    ui_thread_ident = threading.get_ident()
+                    app.selected_path = tmp_path
+                    app.selected_modules = ["metadata"]
+                    app.switch_mode("execution")
+                    await pilot.pause(delay=1.0)
+                    title = app.screen.query_one("#status_title")
+                    assert "COMPLETE" in str(title.render())
+                    assert "ident" in captured
+                    assert captured["ident"] != ui_thread_ident
+        finally:
+            for p in patches:
+                p.stop()
+
+    def test_abort_stops_processing_between_samples(self, monkeypatch):
+        """Setting _abort mid-run stops before the next sample begins
+        (one-sample abort latency)."""
+
+        class DummyLog:
+            def __init__(self):
+                self.lines: List[str] = []
+
+            def write(self, markup, *a, **k):
+                self.lines.append(str(markup))
+
+        class DummyProgress:
+            def update(self, *a, **k):
+                return None
+
+            def advance(self, *a, **k):
+                return None
+
+        class DummyLabel:
+            def __init__(self):
+                self.disabled = False
+                self.value = None
+
+            def update(self, value):
+                self.value = value
+
+        processed_calls = {"n": 0}
+        screen_ref: Dict[str, object] = {}
+
+        class DummyPipeline:
+            def __init__(self, modules):
+                self.results = {"x": _make_sample("x.mp4")}
+
+            def start(self):
+                return None
+
+            def process_sample(self, sample):
+                processed_calls["n"] += 1
+                # Request abort while the first sample is being processed; the
+                # worker loop must break before starting the second sample.
+                screen_ref["screen"]._abort = True
+                return sample
+
+            def stop(self):
+                return None
+
+            def export_report(self, *a, **k):
+                return None
+
+        class FakeScreen:
+            def __init__(self):
+                self._abort = False
+                self.app = MagicMock()
+                self.app.selected_path = Path("/tmp/fake")
+                self.app.selected_modules = []
+                self.app.module_configs = {}
+                self.app.ayase_config = None
+                self.app.pipeline = None
+                self.app.call_from_thread = lambda fn, *a, **k: fn(*a, **k)
+                self._widgets = {
+                    "RichLog": DummyLog(),
+                    "ProgressBar": DummyProgress(),
+                    "#stat_total": DummyLabel(),
+                    "#stat_processed": DummyLabel(),
+                    "#stat_failed": DummyLabel(),
+                    "#status_title": DummyLabel(),
+                    "#btn_results": DummyLabel(),
+                    "#btn_abort": DummyLabel(),
+                }
+
+            def query_one(self, selector, *args):
+                key = selector if isinstance(selector, str) else selector.__name__
+                return self._widgets[key]
+
+        monkeypatch.setattr(tui_module, "Pipeline", DummyPipeline)
+        monkeypatch.setattr(
+            tui_module,
+            "_discover_selected_samples",
+            lambda path: [
+                Sample(path=Path(f"clip{i}.mp4"), is_video=True) for i in range(4)
+            ],
+        )
+
+        screen = FakeScreen()
+        screen_ref["screen"] = screen
+        ExecutionScreen.run_pipeline(screen)
+
+        # Only the first sample was processed before abort broke the loop.
+        assert processed_calls["n"] == 1
+        assert screen._widgets["#status_title"].value == "ANALYSIS ABORTED"
+        assert screen._widgets["#btn_results"].disabled is False
+        assert screen._widgets["#btn_abort"].disabled is True
+        assert any(
+            "ABORTED BY USER" in line for line in screen._widgets["RichLog"].lines
+        )
 
 
 # ---------------------------------------------------------------------------
