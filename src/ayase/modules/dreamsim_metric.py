@@ -53,6 +53,29 @@ class DreamSimModule(PipelineModule):
             tensor = tensor.unsqueeze(0)
         return tensor.to(next(self._model.parameters()).device)
 
+    def _load_frames(self, path):
+        """Load RGB frames from an image (one frame) or a video (subsampled frames)."""
+        from PIL import Image
+
+        video_exts = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".gif")
+        if not str(path).lower().endswith(video_exts):
+            return [Image.open(str(path)).convert("RGB")]
+
+        import cv2
+
+        subsample = self.config.get("subsample", 8)
+        cap = cv2.VideoCapture(str(path))
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        indices = list(range(0, total, max(1, total // subsample)))[:subsample]
+        frames = []
+        for idx in indices:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            ret, frame = cap.read()
+            if ret:
+                frames.append(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
+        cap.release()
+        return frames
+
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
@@ -67,54 +90,40 @@ class DreamSimModule(PipelineModule):
             return sample
 
         try:
-            from PIL import Image
-
-            ref_img = Image.open(str(reference_path)).convert("RGB")
-            dist_img = Image.open(str(sample.path)).convert("RGB")
-
-            ref_t = self._prep(ref_img)
-            dist_t = self._prep(dist_img)
-
             import torch
 
-            with torch.no_grad():
-                distance = self._model(ref_t, dist_t).item()
+            ref_frames = self._load_frames(reference_path)
+            dist_frames = self._load_frames(sample.path)
+            if not ref_frames or not dist_frames:
+                return sample
 
-            sample.quality_metrics.dreamsim = float(distance)
+            # Pair frames by position (a single image broadcasts to every video frame)
+            # and average, so image and video inputs are handled uniformly.
+            distances = []
+            with torch.no_grad():
+                for i in range(max(len(ref_frames), len(dist_frames))):
+                    ref_t = self._prep(ref_frames[i % len(ref_frames)])
+                    dist_t = self._prep(dist_frames[i % len(dist_frames)])
+                    distances.append(self._model(ref_t, dist_t).item())
+
+            sample.quality_metrics.dreamsim = float(np.mean(distances))
         except Exception as e:
             logger.warning("DreamSim processing failed: %s", e)
         return sample
 
     def _process_video_self(self, sample: Sample) -> Sample:
-        """For videos: compute average DreamSim distance between consecutive frames."""
+        """For videos without a reference: average DreamSim between consecutive frames."""
         try:
-            import cv2
-            from PIL import Image
             import torch
 
-            subsample = self.config.get("subsample", 8)
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    pil_img = Image.fromarray(rgb)
-                    frames.append(self._prep(pil_img))
-            cap.release()
-
-            if len(frames) < 2:
+            tensors = [self._prep(f) for f in self._load_frames(sample.path)]
+            if len(tensors) < 2:
                 return sample
 
             distances = []
             with torch.no_grad():
-                for i in range(len(frames) - 1):
-                    dist = self._model(frames[i], frames[i + 1]).item()
-                    distances.append(dist)
+                for i in range(len(tensors) - 1):
+                    distances.append(self._model(tensors[i], tensors[i + 1]).item())
 
             sample.quality_metrics.dreamsim = float(np.mean(distances))
         except Exception as e:
