@@ -23,7 +23,11 @@ def _load_metrics_md_fields():
 def test_metrics_table_matches_quality_metrics():
     """Verify METRICS.md references are consistent with QualityMetrics model."""
     fields_in_doc = _load_metrics_md_fields()
-    model_fields = set(QualityMetrics.model_fields.keys())
+    # Provenance fields (metric_backends) are not metrics and are not listed in
+    # METRICS.md, so exclude them from the doc-consistency checks below.
+    model_fields = set(QualityMetrics.model_fields.keys()) - set(
+        QualityMetrics._NON_METRIC_FIELDS
+    )
     dataset_fields = set(DatasetStats.model_fields.keys())
 
     # Every field mentioned in METRICS.md must exist in QualityMetrics

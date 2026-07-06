@@ -629,7 +629,11 @@ class TestGeneratedDocsAreFresh:
         all_modules = ModuleRegistry.list_modules(packaged_only=True)
         total = len([n for n in all_modules
                      if ModuleRegistry.get_module(n) is not None])
-        n_fields = len(QualityMetrics.model_fields)
+        # Exclude provenance/bookkeeping fields (e.g. ``metric_backends``) that
+        # are not metrics — the README prose counts computed metrics only.
+        n_fields = len(QualityMetrics.model_fields) - len(
+            QualityMetrics._NON_METRIC_FIELDS
+        )
         qm_fields = _get_quality_metrics_fields()
 
         field_writers: Set[str] = set()

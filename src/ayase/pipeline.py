@@ -1,3 +1,4 @@
+import hashlib
 import importlib
 import importlib.util
 import inspect
@@ -14,8 +15,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional, Set, Type, Any, Union
 
-from .models import Sample, DatasetStats
-from .runtime import clone_frames, pipeline_context, runtime_module_config
+from .models import Sample, DatasetStats, QualityMetrics, ValidationIssue, ValidationSeverity
+from .runtime import clone_frames, pipeline_context, readonly_view, runtime_module_config
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +49,34 @@ class PipelineModule(ABC):
     _global_test_mode: bool = False
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        self.config = {**self.default_config, **(config or {})}
+        self.config = self._merge_config(self.default_config, config)
         self.pipeline: Optional["Pipeline"] = None
         self._mounted = False
+
+    @classmethod
+    def _merge_config(
+        cls,
+        base: Optional[Dict[str, Any]],
+        override: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Deep-merge *override* onto a deep copy of *base*.
+
+        The class-level ``default_config`` must never be shared by reference:
+        several modules keep nested dicts (e.g. ``"weights"``/``"dimensions"``)
+        and an in-place mutation on one instance would otherwise poison every
+        future instance and its config fingerprint. Nested dict overrides merge
+        key-wise rather than replacing the whole sub-dict.
+        """
+        merged: Dict[str, Any] = deepcopy(base) if isinstance(base, dict) else {}
+        if not override:
+            return merged
+        for key, value in override.items():
+            existing = merged.get(key)
+            if isinstance(existing, dict) and isinstance(value, dict):
+                merged[key] = cls._merge_config(existing, value)
+            else:
+                merged[key] = deepcopy(value)
+        return merged
 
     @property
     def test_mode(self) -> bool:
@@ -101,6 +127,9 @@ class PipelineModule(ABC):
                 processed = self.process(sample)
             except Exception as e:
                 logger.error(f"Error in module {self.name} for {sample.path}: {e}")
+                Pipeline._register_module_failure(
+                    sample, self.name, f"{type(e).__name__}: {e}"
+                )
                 processed_samples.append(sample)
                 continue
             if not isinstance(processed, Sample):
@@ -109,6 +138,11 @@ class PipelineModule(ABC):
                     self.name,
                     type(processed).__name__,
                     sample.path,
+                )
+                Pipeline._register_module_failure(
+                    sample,
+                    self.name,
+                    f"returned {type(processed).__name__}, expected Sample",
                 )
                 processed_samples.append(sample)
                 continue
@@ -395,14 +429,23 @@ class Pipeline:
         self._hooks: Dict[str, Dict[str, Callable[[Sample], Sample]]] = {}
         self.module_timings: Dict[str, float] = {}
         self.module_call_counts: Dict[str, int] = {}
-        self._frame_cache: Dict[tuple[Any, ...], List[Any]] = {}
+        # Per-sample frame store, keyed by file identity only. Each entry holds
+        # one native-BGR decode plus lazily converted per-color variants; see
+        # sample_frames() / load_representative_frame().
+        self._frame_cache: Dict[tuple[Any, ...], Dict[str, Any]] = {}
         self._runtime_resource_cache: Dict[tuple[Any, ...], Any] = {}
         self._runtime_value_cache: Dict[tuple[Any, ...], Any] = {}
-        # Result/frame/runtime caches are on by default. A module can opt out
-        # by setting ``cache_enabled: false`` (e.g. for reproducible timing
-        # benchmarks). ``content_hash_keys: true`` (off by default) makes media
-        # cache keys depend on a content digest rather than size+mtime.
-        self._cache_enabled = all(
+        # Result/frame/runtime caching is a GLOBAL feature gated by config
+        # (``[general] cache_enabled``), which runtime_module_config() injects
+        # identically onto every module. Semantics: the global config gates the
+        # feature; a single module opting out (``cache_enabled: false``) no
+        # longer disables caching for the whole run. Both result- and
+        # frame-cache flags therefore aggregate with any() and are only off when
+        # caching is disabled for every module (e.g. global config false, or a
+        # benchmark profile that turned it off everywhere).
+        # ``content_hash_keys: true`` (off by default) makes media cache keys
+        # depend on a content digest rather than size+mtime.
+        self._cache_enabled = any(
             bool(module.config.get("cache_enabled", True)) for module in self.modules
         ) if self.modules else True
         self._content_hash_keys = any(
@@ -446,38 +489,98 @@ class Pipeline:
             return base + (content_digest(path),)
         return base
 
-    def _frame_cache_key(self, kind: str, path: Path, *parts: Any) -> tuple[Any, ...]:
-        return (kind, *self._path_cache_state(path), *parts)
+    def _frame_cache_key(self, kind: str, path: Path) -> tuple[Any, ...]:
+        """Key the per-sample frame store by file identity only.
+
+        Deliberately excludes ``max_frames`` and ``color`` so every module that
+        touches the same file shares one decode. Different (max_frames, color)
+        requests are served as subsampled views / lazily converted colors of
+        that single decode.
+        """
+        return (kind, *self._path_cache_state(path))
 
     def sample_frames(self, path: Path, max_frames: int = 8, color: str = "rgb") -> List[Any]:
-        """Load uniformly spaced frames, reusing a per-sample runtime cache."""
-        from .image import _sample_frames_uncached
+        """Load uniformly spaced frames, reusing a per-sample runtime cache.
 
-        if not self._frame_cache_enabled:
-            return _sample_frames_uncached(path, max_frames=max_frames, color=color)
+        Returns a fresh list of zero-copy READ-ONLY numpy views each call. The
+        file is decoded once (in native BGR, at the highest ``max_frames`` seen
+        for it); lower ``max_frames`` requests are served as a uniform subsample
+        of that decode, and each ``color`` is converted-and-cached on first use.
+        Callers must not mutate the returned arrays in place (copy first).
+        """
+        from .image import _sample_frames_uncached, _convert_frame_color
 
-        key = self._frame_cache_key("frames", Path(path), int(max_frames), str(color))
-        cached = self._frame_cache.get(key)
-        if cached is None:
-            cached = _sample_frames_uncached(path, max_frames=max_frames, color=color)
-            self._frame_cache[key] = clone_frames(cached)
-        return clone_frames(cached)
+        max_frames = max(0, int(max_frames))
+        color = str(color)
+
+        if not self._frame_cache_enabled or max_frames <= 0:
+            frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
+            return clone_frames(frames)
+
+        key = self._frame_cache_key("frames", Path(path))
+        entry = self._frame_cache.get(key)
+        if entry is None or (
+            entry["decoded_max"] < max_frames and not entry["exhausted"]
+        ):
+            decoded = _sample_frames_uncached(path, max_frames=max_frames, color="bgr")
+            base = [readonly_view(frame) for frame in decoded]
+            entry = {
+                "bgr": base,
+                "decoded_max": max_frames,
+                # If fewer frames came back than requested, the source is
+                # exhausted; never re-decode for a larger max_frames.
+                "exhausted": len(base) < max_frames,
+                "colors": {"bgr": base},
+            }
+            self._frame_cache[key] = entry
+
+        full = entry["colors"].get(color)
+        if full is None:
+            full = [
+                readonly_view(_convert_frame_color(frame, color))
+                for frame in entry["bgr"]
+            ]
+            entry["colors"][color] = full
+
+        n = len(full)
+        if n == 0:
+            return []
+        import numpy as np
+
+        take = min(max_frames, n)
+        indices = np.linspace(0, n - 1, take, dtype=int)
+        return [readonly_view(full[int(i)]) for i in indices]
 
     def load_representative_frame(self, path: Path, color: str = "rgb") -> Optional[Any]:
-        """Load one representative frame, reusing a per-sample runtime cache."""
-        from .image import _load_representative_frame_uncached
+        """Load one representative frame, reusing a per-sample runtime cache.
 
+        Returns a fresh zero-copy READ-ONLY numpy view (or ``None``). The middle
+        frame is decoded once in native BGR and cached per file; each ``color``
+        is converted-and-cached on first use. Do not mutate the result in place.
+        """
+        from .image import _load_representative_frame_uncached, _convert_frame_color
+
+        color = str(color)
         if not self._frame_cache_enabled:
-            return _load_representative_frame_uncached(path, color=color)
-
-        key = self._frame_cache_key("representative", Path(path), str(color))
-        cached = self._frame_cache.get(key)
-        if cached is None:
             frame = _load_representative_frame_uncached(path, color=color)
-            cached = [] if frame is None else [frame]
-            self._frame_cache[key] = clone_frames(cached)
-        frames = clone_frames(cached)
-        return frames[0] if frames else None
+            return readonly_view(frame) if frame is not None else None
+
+        key = self._frame_cache_key("representative", Path(path))
+        entry = self._frame_cache.get(key)
+        if entry is None:
+            decoded = _load_representative_frame_uncached(path, color="bgr")
+            base = readonly_view(decoded) if decoded is not None else None
+            entry = {"bgr": base, "colors": ({} if base is None else {"bgr": base})}
+            self._frame_cache[key] = entry
+
+        base = entry["bgr"]
+        if base is None:
+            return None
+        frame = entry["colors"].get(color)
+        if frame is None:
+            frame = readonly_view(_convert_frame_color(base, color))
+            entry["colors"][color] = frame
+        return readonly_view(frame)
 
     def _record_module_timing(self, module_name: str, elapsed: float, calls: int = 1) -> None:
         if not self._timing_enabled:
@@ -672,6 +775,32 @@ class Pipeline:
         else:
             counter.pop(key, None)
 
+    @staticmethod
+    def _issue_type_key(issue: "ValidationIssue") -> str:
+        """Return a stable category key for ``issues_by_type`` aggregation.
+
+        Prefers the structured ``issue_type`` field. Only when it is absent does
+        it fall back to a message prefix, and even then it guards against
+        splitting on colons inside Windows paths / long messages (which used to
+        produce garbage keys like ``"C"`` from ``"C:\\clip.mp4: too dark"``).
+        """
+        issue_type = getattr(issue, "issue_type", None)
+        if issue_type:
+            return str(issue_type)
+        message = issue.message or ""
+        head, sep, rest = message.partition(":")
+        if (
+            sep
+            and head
+            and len(head) <= 40
+            and "\\" not in head
+            and "/" not in head
+            # Reject Windows drive letters, e.g. "C:\\..." / "D:/...".
+            and not (len(head) == 1 and head.isalpha() and rest[:1] in ("\\", "/"))
+        ):
+            return head
+        return message[:40] or "issue"
+
     def _apply_sample_stats(self, sample: Sample, delta: int) -> None:
         """Apply or remove a sample's contribution from aggregate stats."""
         self.stats.total_samples += delta
@@ -690,7 +819,7 @@ class Pipeline:
         for issue in sample.validation_issues:
             sev = issue.severity.value
             self._update_issue_counter(self.stats.severity_distribution, sev, delta)
-            key = issue.message.split(":")[0] if ":" in issue.message else issue.message[:20]
+            key = self._issue_type_key(issue)
             self._update_issue_counter(self.stats.issues_by_type, key, delta)
 
     def _store_result(
@@ -825,6 +954,30 @@ class Pipeline:
             except Exception as e:
                 logger.error(f"Error in on_execute for module {module.name}: {e}")
 
+    def _rebuild_sample_stats(self) -> None:
+        """Recompute sample-derived aggregate stats from the stored results.
+
+        Sample-derived fields (counts, averages, issue distributions) are kept
+        in sync incrementally at ``_store_result`` time, but modules'
+        ``post_process()`` may append issues (e.g. diversity/semantic selection)
+        or flip validity *after* results were stored. Rebuilding here folds
+        those late mutations into the final stats — and makes a resumed run
+        (which rebuilds from restored samples) report the same numbers.
+        Dataset-level and distribution fields not derived from samples are
+        preserved.
+        """
+        previous = self.stats
+        self.stats = DatasetStats(
+            total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
+        )
+        self._metric_counts = {k: 0 for k in self._AVG_METRIC_MAP}
+        for field in DatasetStats.model_fields:
+            if field in self._REBUILT_STATS_FIELDS:
+                continue
+            setattr(self.stats, field, getattr(previous, field))
+        for sample in self.results.values():
+            self._apply_sample_stats(sample, 1)
+
     def stop(self) -> None:
         """Finalize and cleanup all modules."""
         all_samples = list(self.results.values())
@@ -835,6 +988,10 @@ class Pipeline:
                 module.post_process(all_samples)
             except Exception as e:
                 logger.error(f"Error in post_process for module {module.name}: {e}")
+
+        # post_process() can append issues / change validity after results were
+        # stored; refold those into the sample-derived aggregate stats.
+        self._rebuild_sample_stats()
 
         # Call on_dispose (this triggers batch metric computation)
         for module in self.modules:
@@ -851,6 +1008,61 @@ class Pipeline:
         self._runtime_resource_cache = {}
         self._start_needs_reset = True
 
+    @staticmethod
+    def _sample_is_complete(sample: Sample) -> bool:
+        """A sample is complete only if no module failed while processing it.
+
+        Incomplete samples are never served from cache and are reprocessed on
+        the next run / resume, so a transient tooling failure does not get
+        permanently baked in as a "successful" (but empty) result.
+        """
+        return not getattr(sample, "failed_modules", None)
+
+    @staticmethod
+    def _register_module_failure(sample: Sample, module_name: str, detail: str) -> None:
+        """Mark a module failure on *sample* (visible + marks it incomplete).
+
+        Records the module in ``sample.failed_modules`` (so the sample is
+        reprocessed rather than cached) and appends a clearly-visible but
+        NON-fatal ``WARNING`` issue: a tooling failure is not the same as bad
+        data, so it must not flip ``is_valid`` to False.
+        """
+        if module_name not in sample.failed_modules:
+            sample.failed_modules.append(module_name)
+        sample.validation_issues.append(
+            ValidationIssue(
+                severity=ValidationSeverity.WARNING,
+                issue_type="module_error",
+                message=f"Module '{module_name}' failed: {detail}",
+                details={"module": module_name, "detail": detail},
+                recommendation=(
+                    "Module raised or returned invalid output; this sample will "
+                    "be reprocessed on the next run instead of served from cache."
+                ),
+            )
+        )
+
+    @staticmethod
+    def _persist_backend(sample: Sample, module: "PipelineModule") -> None:
+        """Persist a module's active backend/tier onto the sample's metrics.
+
+        Zero per-module code required: any module that tracks ``self._backend``
+        (a tier string such as "pyiqa"/"proxy"/"heuristic") has it recorded at
+        ``quality_metrics.metric_backends[module.name]`` after a successful
+        ``process()``. Modules with a falsy/absent ``_backend`` are skipped.
+        """
+        backend = getattr(module, "_backend", None)
+        if not backend:
+            return
+        # A module that failed for this sample (e.g. default process_batch
+        # caught its exception and returned the original sample) must not
+        # advertise a backend as if it had produced metrics.
+        if module.name in getattr(sample, "failed_modules", ()):
+            return
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.metric_backends[module.name] = str(backend)
+
     def process_sample(self, sample: Sample) -> Sample:
         """Run all active modules on a sample."""
 
@@ -864,6 +1076,7 @@ class Pipeline:
             and cached is not None
             and self._result_signatures.get(str_path) == signature
             and self._result_manifests.get(str_path) == manifest
+            and self._sample_is_complete(cached)
         ):
             return cached
 
@@ -875,35 +1088,80 @@ class Pipeline:
                     if not getattr(module, "_mounted", False):
                         continue
                     started_at = perf_counter()
+                    hooks = self._hooks.get(module.name)
+                    entered = True
+                    succeeded = False
                     try:
-                        hooks = self._hooks.get(module.name)
                         if hooks and "before" in hooks:
-                            hooked = hooks["before"](sample)
-                            if not isinstance(hooked, Sample):
+                            try:
+                                hooked = hooks["before"](sample)
+                            except Exception as e:
                                 logger.error(
-                                    "Before-hook for module %s returned %s for %s; "
+                                    "Before-hook for module %s raised for %s: %s; "
                                     "skipping module",
                                     module.name,
-                                    type(hooked).__name__,
                                     str_path,
+                                    e,
                                 )
+                                hooked = None
+                            if not isinstance(hooked, Sample):
+                                if hooked is not None:
+                                    logger.error(
+                                        "Before-hook for module %s returned %s for %s; "
+                                        "skipping module",
+                                        module.name,
+                                        type(hooked).__name__,
+                                        str_path,
+                                    )
+                                entered = False
                                 continue
                             sample = hooked
 
-                        processed = module.process(sample)
-                        if not isinstance(processed, Sample):
+                        try:
+                            processed = module.process(sample)
+                        except Exception as e:
                             logger.error(
-                                "Module %s returned %s for %s; keeping previous sample",
-                                module.name,
-                                type(processed).__name__,
-                                str_path,
+                                f"Error in module {module.name} for "
+                                f"{getattr(sample, 'path', str_path)}: {e}"
                             )
-                            continue
-                        sample = processed
-
-                        if hooks and "after" in hooks:
-                            restored = hooks["after"](sample)
-                            if not isinstance(restored, Sample):
+                            self._register_module_failure(
+                                sample, module.name, f"{type(e).__name__}: {e}"
+                            )
+                        else:
+                            if isinstance(processed, Sample):
+                                sample = processed
+                                succeeded = True
+                            else:
+                                logger.error(
+                                    "Module %s returned %s for %s; keeping previous sample",
+                                    module.name,
+                                    type(processed).__name__,
+                                    str_path,
+                                )
+                                self._register_module_failure(
+                                    sample,
+                                    module.name,
+                                    f"returned {type(processed).__name__}, expected Sample",
+                                )
+                    finally:
+                        # Always revert hook state (finding: a raising process()
+                        # used to leak the before-hook's mutation to later
+                        # modules and the stored result).
+                        if entered and hooks and "after" in hooks:
+                            try:
+                                restored = hooks["after"](sample)
+                            except Exception as e:
+                                logger.error(
+                                    "After-hook for module %s raised for %s: %s; "
+                                    "keeping module output",
+                                    module.name,
+                                    str_path,
+                                    e,
+                                )
+                                restored = None
+                            if isinstance(restored, Sample):
+                                sample = restored
+                            elif restored is not None:
                                 logger.error(
                                     "After-hook for module %s returned %s for %s; "
                                     "keeping module output",
@@ -911,12 +1169,8 @@ class Pipeline:
                                     type(restored).__name__,
                                     str_path,
                                 )
-                                continue
-                            sample = restored
-                    except Exception as e:
-                        sample_path = getattr(sample, "path", str_path)
-                        logger.error(f"Error in module {module.name} for {sample_path}: {e}")
-                    finally:
+                        if succeeded:
+                            self._persist_backend(sample, module)
                         self._record_module_timing(module.name, perf_counter() - started_at)
         finally:
             self._frame_cache = {}
@@ -946,23 +1200,34 @@ class Pipeline:
 
         started_at = perf_counter()
         working = list(samples)
+        hooks = self._hooks.get(module.name)
+        eligible_samples: List[Sample] = []
+        eligible_positions: List[int] = []
+        succeeded_positions: List[int] = []
         try:
-            hooks = self._hooks.get(module.name)
-            eligible_samples: List[Sample] = []
-            eligible_positions: List[int] = []
-
             for idx, sample in enumerate(working):
                 str_path = str(sample.path)
                 if hooks and "before" in hooks:
-                    hooked = hooks["before"](sample)
-                    if not isinstance(hooked, Sample):
+                    try:
+                        hooked = hooks["before"](sample)
+                    except Exception as e:
                         logger.error(
-                            "Before-hook for module %s returned %s for %s; "
+                            "Before-hook for module %s raised for %s: %s; "
                             "skipping module",
                             module.name,
-                            type(hooked).__name__,
                             str_path,
+                            e,
                         )
+                        hooked = None
+                    if not isinstance(hooked, Sample):
+                        if hooked is not None:
+                            logger.error(
+                                "Before-hook for module %s returned %s for %s; "
+                                "skipping module",
+                                module.name,
+                                type(hooked).__name__,
+                                str_path,
+                            )
                         continue
                     working[idx] = hooked
                     sample = hooked
@@ -970,48 +1235,89 @@ class Pipeline:
                 eligible_samples.append(sample)
                 eligible_positions.append(idx)
 
-            if not eligible_samples:
-                return working
-
-            processed_batch = module.process_batch(eligible_samples)
-            if not isinstance(processed_batch, list):
-                logger.error(
-                    "Module %s returned %s for a batch; keeping previous samples",
-                    module.name,
-                    type(processed_batch).__name__,
-                )
-                return working
-            if len(processed_batch) != len(eligible_samples):
-                logger.error(
-                    "Module %s returned %d samples for a batch of %d; "
-                    "keeping previous samples",
-                    module.name,
-                    len(processed_batch),
-                    len(eligible_samples),
-                )
-                return working
-
-            after_positions: List[int] = []
-            for pos, previous, processed in zip(
-                eligible_positions,
-                eligible_samples,
-                processed_batch,
-            ):
-                if not isinstance(processed, Sample):
+            if eligible_samples:
+                try:
+                    processed_batch = module.process_batch(eligible_samples)
+                except Exception as e:
+                    sample_path = getattr(eligible_samples[0], "path", "<batch>")
                     logger.error(
-                        "Module %s returned %s for %s; keeping previous sample",
-                        module.name,
-                        type(processed).__name__,
-                        previous.path,
+                        f"Error in module {module.name} for batch starting at "
+                        f"{sample_path}: {e}"
                     )
-                    continue
-                working[pos] = processed
-                after_positions.append(pos)
-
+                    for pos in eligible_positions:
+                        self._register_module_failure(
+                            working[pos], module.name, f"{type(e).__name__}: {e}"
+                        )
+                else:
+                    if not isinstance(processed_batch, list):
+                        logger.error(
+                            "Module %s returned %s for a batch; keeping previous samples",
+                            module.name,
+                            type(processed_batch).__name__,
+                        )
+                        for pos in eligible_positions:
+                            self._register_module_failure(
+                                working[pos],
+                                module.name,
+                                f"process_batch returned {type(processed_batch).__name__}, "
+                                "expected list",
+                            )
+                    elif len(processed_batch) != len(eligible_samples):
+                        logger.error(
+                            "Module %s returned %d samples for a batch of %d; "
+                            "keeping previous samples",
+                            module.name,
+                            len(processed_batch),
+                            len(eligible_samples),
+                        )
+                        for pos in eligible_positions:
+                            self._register_module_failure(
+                                working[pos],
+                                module.name,
+                                f"process_batch returned {len(processed_batch)} samples "
+                                f"for a batch of {len(eligible_samples)}",
+                            )
+                    else:
+                        for pos, previous, processed in zip(
+                            eligible_positions,
+                            eligible_samples,
+                            processed_batch,
+                        ):
+                            if not isinstance(processed, Sample):
+                                logger.error(
+                                    "Module %s returned %s for %s; keeping previous sample",
+                                    module.name,
+                                    type(processed).__name__,
+                                    previous.path,
+                                )
+                                self._register_module_failure(
+                                    working[pos],
+                                    module.name,
+                                    f"returned {type(processed).__name__}, expected Sample",
+                                )
+                                continue
+                            working[pos] = processed
+                            succeeded_positions.append(pos)
+        finally:
+            # Always revert hook state for entered positions (consistent with
+            # the single-sample path), then persist backends for the positions
+            # that produced valid output, then record timing.
             if hooks and "after" in hooks:
-                for pos in after_positions:
-                    restored = hooks["after"](working[pos])
-                    if not isinstance(restored, Sample):
+                for pos in eligible_positions:
+                    try:
+                        restored = hooks["after"](working[pos])
+                    except Exception as e:
+                        logger.error(
+                            "After-hook for module %s raised for %s: %s; "
+                            "keeping module output",
+                            module.name,
+                            working[pos].path,
+                            e,
+                        )
+                        restored = None
+                    if isinstance(restored, Sample):
+                        working[pos] = restored
+                    elif restored is not None:
                         logger.error(
                             "After-hook for module %s returned %s for %s; "
                             "keeping module output",
@@ -1019,14 +1325,8 @@ class Pipeline:
                             type(restored).__name__,
                             working[pos].path,
                         )
-                        continue
-                    working[pos] = restored
-
-        except Exception as e:
-            sample_path = getattr(samples[0], "path", "<batch>")
-            logger.error(f"Error in module {module.name} for batch starting at {sample_path}: {e}")
-            return list(samples)
-        finally:
+            for pos in succeeded_positions:
+                self._persist_backend(working[pos], module)
             self._record_module_timing(
                 module.name,
                 perf_counter() - started_at,
@@ -1055,6 +1355,7 @@ class Pipeline:
                 and cached is not None
                 and self._result_signatures.get(str_path) == signature
                 and self._result_manifests.get(str_path) == manifest
+                and self._sample_is_complete(cached)
             ):
                 outputs[idx] = cached
                 continue
@@ -1487,7 +1788,12 @@ class ModuleRegistry:
                     if previous_module_name is not None:
                         sys.modules.pop(previous_module_name, None)
                         cls._remove_registered_classes_for_module(previous_module_name)
-                    module_name = f"ayase_ext_{file_path.stem}_{abs(hash(file_key))}"
+                    # Stable digest of the normalized path: builtin hash() is
+                    # per-process randomized, so it would make the plugin's
+                    # module name (and thus the pipeline fingerprint) differ
+                    # every run, silently invalidating resume/state matching.
+                    file_digest = hashlib.sha1(file_key.encode("utf-8")).hexdigest()[:10]
+                    module_name = f"ayase_ext_{file_path.stem}_{file_digest}"
                     cls._external_plugin_modules[file_key] = module_name
                     spec = importlib.util.spec_from_file_location(module_name, file_path)
                     if not spec or not spec.loader:

@@ -71,7 +71,14 @@ def image_from_bytes(data: bytes, mode: str = "RGB") -> Optional[Image.Image]:
 
 
 def load_representative_frame(path: Path, color: str = "rgb") -> Optional[np.ndarray]:
-    """Load a still image or the middle frame of a video into a numpy array."""
+    """Load a still image or the middle frame of a video into a numpy array.
+
+    ``color`` is ``"rgb"`` (default), ``"bgr"``, or ``"gray"``. When called
+    inside a running pipeline the returned array is a zero-copy READ-ONLY view
+    over the shared per-sample frame cache — do not mutate it in place; call
+    ``frame.copy()`` first if you need a writable array. Returns ``None`` when
+    the frame cannot be decoded.
+    """
     try:
         from .runtime import current_pipeline
 
@@ -114,7 +121,16 @@ def _load_representative_frame_uncached(path: Path, color: str = "rgb") -> Optio
 
 
 def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
-    """Load uniformly spaced frames from a video, or one frame for an image."""
+    """Load uniformly spaced frames from a video, or one frame for an image.
+
+    ``max_frames`` caps the number of frames; ``color`` is ``"rgb"`` (default),
+    ``"bgr"``, or ``"gray"``. When called inside a running pipeline, frames are
+    decoded once per file (at the highest ``max_frames`` requested) and served
+    as zero-copy READ-ONLY views: the returned list is fresh each call, but the
+    pixel buffers are shared with the per-sample cache. Do NOT mutate returned
+    frames in place — copy first (``frame.copy()``) if you need to write.
+    Returns an empty list when no frames can be decoded.
+    """
     try:
         from .runtime import current_pipeline
 
@@ -124,6 +140,47 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
     except Exception:
         pass
     return _sample_frames_uncached(path, max_frames=max_frames, color=color)
+
+
+def _convert_frame_color(frame: np.ndarray, color: str) -> np.ndarray:
+    """Convert a decoded BGR frame to the requested color space."""
+    if color == "gray":
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if color == "rgb":
+        return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    return frame  # "bgr" (native) or any passthrough
+
+
+# When CAP_PROP_FRAME_COUNT is unreliable, scan at most this many frames per
+# kept frame so a broken container still yields spread-out samples with bounded
+# work/memory.
+_SEQUENTIAL_FALLBACK_STRIDE = 4
+
+
+def _sample_frames_sequential(
+    cap: "cv2.VideoCapture", max_frames: int, color: str
+) -> List[np.ndarray]:
+    """Fallback sampler for videos whose frame count is unknown (<=0).
+
+    Some webm / pipe-muxed files report ``CAP_PROP_FRAME_COUNT <= 0`` so
+    seek-based sampling returns nothing. Read sequentially instead, keeping
+    every ``stride``-th frame up to ``max_frames`` and scanning at most
+    ``max_frames * stride`` frames so both memory and time stay bounded.
+    """
+    frames: List[np.ndarray] = []
+    if max_frames <= 0:
+        return frames
+    stride = _SEQUENTIAL_FALLBACK_STRIDE
+    scan_cap = max_frames * stride
+    read_idx = 0
+    while len(frames) < max_frames and read_idx < scan_cap:
+        ok, frame = cap.read()
+        if not ok or frame is None:
+            break
+        if read_idx % stride == 0:
+            frames.append(_convert_frame_color(frame, color))
+        read_idx += 1
+    return frames
 
 
 def _sample_frames_uncached(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
@@ -140,18 +197,16 @@ def _sample_frames_uncached(path: Path, max_frames: int = 8, color: str = "rgb")
             return frames
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         if total <= 0:
-            return frames
+            # Frame count unreliable: fall back to a bounded sequential read so
+            # frame metrics still get samples instead of silently skipping.
+            return _sample_frames_sequential(cap, max_frames, color)
         n = min(max_frames, total)
         for idx in np.linspace(0, total - 1, n, dtype=int):
             cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
             ok, frame = cap.read()
             if not ok or frame is None:
                 continue
-            if color == "gray":
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            elif color == "rgb":
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frames.append(frame)
+            frames.append(_convert_frame_color(frame, color))
         return frames
     except Exception as e:
         logger.debug("Failed to sample frames from %s: %s", path, e)
