@@ -39,6 +39,20 @@ class DreamSimModule(PipelineModule):
         except (ImportError, Exception) as e:
             logger.warning("DreamSim unavailable: %s", e)
 
+    def _prep(self, pil_img):
+        """Preprocess a PIL image into a batched tensor on the model's device.
+
+        DreamSim's ``preprocess`` already returns a batched ``(1, 3, H, W)`` tensor,
+        so only add a batch dim when one is missing (guarding against a preprocess
+        that returns ``(3, H, W)``), and move it onto the same device as the model
+        (``dreamsim(pretrained=True)`` loads on CUDA when available, while the input
+        tensors come off CPU).
+        """
+        tensor = self._preprocess(pil_img)
+        if tensor.dim() == 3:
+            tensor = tensor.unsqueeze(0)
+        return tensor.to(next(self._model.parameters()).device)
+
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
@@ -58,8 +72,8 @@ class DreamSimModule(PipelineModule):
             ref_img = Image.open(str(reference_path)).convert("RGB")
             dist_img = Image.open(str(sample.path)).convert("RGB")
 
-            ref_t = self._preprocess(ref_img).unsqueeze(0)
-            dist_t = self._preprocess(dist_img).unsqueeze(0)
+            ref_t = self._prep(ref_img)
+            dist_t = self._prep(dist_img)
 
             import torch
 
@@ -90,7 +104,7 @@ class DreamSimModule(PipelineModule):
                 if ret:
                     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     pil_img = Image.fromarray(rgb)
-                    frames.append(self._preprocess(pil_img).unsqueeze(0))
+                    frames.append(self._prep(pil_img))
             cap.release()
 
             if len(frames) < 2:
