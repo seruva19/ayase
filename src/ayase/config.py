@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional, List, cast
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -65,8 +65,15 @@ def resolve_model_path(model_name: str, models_dir: str = "models") -> str:
     return model_name
 
 
-class GeneralConfig(BaseSettings):
-    """General configuration settings."""
+class GeneralConfig(BaseModel):
+    """General configuration settings.
+
+    Plain :class:`BaseModel` (not ``BaseSettings``) so that building this
+    section via ``default_factory`` never reads bare, unprefixed environment
+    variables (e.g. ``DEVICE``, ``PARALLEL_JOBS``). The only environment
+    channel is the ``AYASE_*`` allowlist handled by
+    :meth:`AyaseConfig._load_env_overrides`.
+    """
 
     parallel_jobs: int = 8
     cache_enabled: bool = True
@@ -82,7 +89,7 @@ class GeneralConfig(BaseSettings):
     max_clip_images_per_forward: int = 64
 
 
-class QualityConfig(BaseSettings):
+class QualityConfig(BaseModel):
     """Quality assessment configuration."""
 
     enable_blur_detection: bool = True
@@ -92,7 +99,7 @@ class QualityConfig(BaseSettings):
     max_caption_length: int = 1000
 
 
-class OutputConfig(BaseSettings):
+class OutputConfig(BaseModel):
     """Output configuration."""
 
     default_format: str = "markdown"
@@ -102,7 +109,7 @@ class OutputConfig(BaseSettings):
     artifacts_format: str = "json"
 
 
-class PipelineConfig(BaseSettings):
+class PipelineConfig(BaseModel):
     """Pipeline configuration."""
 
     dataset_path: Optional[Path] = None
@@ -110,7 +117,7 @@ class PipelineConfig(BaseSettings):
     plugin_folders: List[Path] = Field(default_factory=lambda: [Path("plugins")])
 
 
-class FilterConfig(BaseSettings):
+class FilterConfig(BaseModel):
     """Filter configuration."""
 
     default_mode: str = "list"
@@ -192,9 +199,19 @@ class AyaseConfig(BaseSettings):
 
     @classmethod
     def load(cls, config_path: Optional[Path] = None) -> "AyaseConfig":
-        """Load configuration from file or defaults."""
+        """Load configuration from file or defaults.
+
+        An explicitly supplied ``config_path`` that does not exist is a hard
+        error: silently falling back to defaults would run the whole pipeline
+        misconfigured after a typo'd ``--config``. The implicit ``./ayase.toml``
+        default location may still be absent and fall back to built-in defaults.
+        """
         file_data: Dict[str, Any] = {}
-        if config_path and config_path.exists():
+        if config_path is not None:
+            if not config_path.exists():
+                raise FileNotFoundError(
+                    f"Config file not found: {config_path}"
+                )
             file_data = cls._load_toml(config_path)
         else:
             # Try default locations
@@ -213,10 +230,33 @@ class AyaseConfig(BaseSettings):
         # Validate explicit data only; defaults are filled by the model itself.
         return cast("AyaseConfig", cls.model_validate(merged))
 
+    @staticmethod
+    def _toml_safe(value: Any) -> Any:
+        """Recursively convert a value into something ``tomli_w`` can serialize.
+
+        ``tomli_w`` cannot serialize ``Path`` objects or ``None`` (TOML has no
+        null type). Paths are stringified and ``None`` values are dropped —
+        omitted keys simply fall back to their model defaults on reload, so a
+        round-trip of the default config is stable.
+        """
+        if isinstance(value, dict):
+            result: Dict[str, Any] = {}
+            for key, val in value.items():
+                if val is None:
+                    continue
+                result[key] = AyaseConfig._toml_safe(val)
+            return result
+        if isinstance(value, (list, tuple)):
+            return [AyaseConfig._toml_safe(item) for item in value if item is not None]
+        if isinstance(value, Path):
+            return str(value)
+        return value
+
     def save(self, config_path: Path) -> None:
         """Save configuration to TOML file."""
         import tomli_w
 
         config_path.parent.mkdir(parents=True, exist_ok=True)
+        data = self._toml_safe(self.model_dump())
         with open(config_path, "wb") as f:
-            tomli_w.dump(self.model_dump(), f)
+            tomli_w.dump(data, f)
