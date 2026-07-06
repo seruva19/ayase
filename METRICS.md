@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.54** · Generated 2026-06-10 20:53 · **360 modules** · **422 metrics**
+> **Version 0.1.58** · Generated 2026-07-06 17:41 · **360 modules** · **422 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -12,21 +12,6 @@
 ## Summary
 
 **360** modules · **469** output fields · **422** metrics · **103** tiered · **175** GPU · **21** categories
-
-<table width="100%"><tr>
-<td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
-<td width="50%" valign="top"><h4>Input Types</h4><img src="docs/chart_input_types.png" width="100%"/></td>
-</tr></table>
-
-<table width="100%"><tr>
-<td width="50%" valign="top"><h4>Speed Tiers</h4><img src="docs/chart_speed.png" width="100%"/></td>
-<td width="50%" valign="top"><h4>Backend Usage</h4><img src="docs/chart_backends.png" width="100%"/></td>
-</tr></table>
-
-<table width="100%"><tr>
-<td width="50%" valign="top"><h4>Top Packages</h4><img src="docs/chart_packages.png" width="100%"/></td>
-<td width="50%" valign="top"><h4>Metrics per Category</h4><img src="docs/chart_metrics_per_cat.png" width="100%"/></td>
-</tr></table>
 
 <a id="categories"></a>
 
@@ -1361,6 +1346,7 @@
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
 - **Packages**: Pillow, dreamsim, opencv-python, torch
+- **VRAM**: ~600 MB
 - **Tests**: covered by [`test_dreamsim.py`](tests/modules/per_module/test_dreamsim.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `subsample=8`, `model_type=ensemble`
 
@@ -2758,8 +2744,8 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: torch, torchvision
-- **Tests**: covered by [`test_advanced_flow.py`](tests/modules/per_module/test_advanced_flow.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
-- **Config**: `use_large_model=True`, `max_frames=150`
+- **Tests**: covered by [`test_advanced_flow.py`](tests/modules/per_module/test_advanced_flow.py), [`test_flow_resolution_cap.py`](tests/modules/test_flow_resolution_cap.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Config**: `use_large_model=True`, `max_frames=150`, `max_resolution=512`
 
 ### `kandinsky_camera_motion_score` [↑](#categories)
 > Kandinsky camera motion prediction · ↑ higher=better · higher=more camera motion
@@ -2798,8 +2784,8 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: torch, torchvision
-- **Tests**: covered by [`test_motion_amplitude.py`](tests/modules/per_module/test_motion_amplitude.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
-- **Config**: `amplitude_threshold=5.0`, `max_frames=150`, `scoring_mode=binary`
+- **Tests**: covered by [`test_motion_amplitude.py`](tests/modules/per_module/test_motion_amplitude.py), [`test_flow_resolution_cap.py`](tests/modules/test_flow_resolution_cap.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Config**: `amplitude_threshold=5.0`, `max_frames=150`, `max_resolution=512`, `scoring_mode=binary`
 
 ### `motion_score` [↑](#categories)
 > Scene motion intensity · ↑ higher=better
