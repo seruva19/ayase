@@ -11,10 +11,13 @@ def test_dreamsim_metric_basics():
 def test_dreamsim_metric_image(image_sample):
     from ayase.modules.dreamsim_metric import DreamSimCompatModule
     image_sample.quality_metrics = QualityMetrics()
+    image_sample.reference_path = image_sample.path  # exercise the image-vs-reference path
     m = DreamSimCompatModule()
     m.on_mount()
     result = m.process(image_sample)
     assert result is image_sample
+    if m._ml_available:
+        assert image_sample.quality_metrics.dreamsim is not None
 
 def test_dreamsim_metric_video(video_sample):
     from ayase.modules.dreamsim_metric import DreamSimCompatModule
@@ -23,3 +26,5 @@ def test_dreamsim_metric_video(video_sample):
     m.on_mount()
     result = m.process(video_sample)
     assert result is video_sample
+    if m._ml_available:
+        assert video_sample.quality_metrics.dreamsim is not None

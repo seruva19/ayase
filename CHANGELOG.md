@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.59] - 2026-07-06
+
+### Fixed
+
+- **dreamsim**: the perceptual-similarity metric never populated for real inputs. `dreamsim(pretrained=True)`'s `preprocess` already returns a batched `(1, 3, H, W)` tensor, so the extra `unsqueeze(0)` made it 5-D and the model's forward raised; the CPU input tensors were also never moved onto the model's (CUDA) device. Both the reference (`image` + `reference_path`) and inter-frame (video) paths now compute a value. The failure was silent because `process()` swallows the exception and the module tests only checked that the sample was returned — those tests now assert the metric is populated when the backend is available.
+
 ## [0.1.58] - 2026-07-04
 
 ### Changed
