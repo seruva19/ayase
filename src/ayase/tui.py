@@ -673,15 +673,73 @@ class ExecutionScreen(Screen):
             classes="exec-box",
         )
 
-    async def on_mount(self) -> None:
+    def on_mount(self) -> None:
         self._abort = False
-        await self.run_pipeline()
+        # Run the (potentially hours-long) pipeline in a background thread so the
+        # Textual event loop stays responsive: per-sample progress labels repaint
+        # and the ABORT button handler can execute mid-run. All widget mutations
+        # from the worker are marshalled back to the UI thread via
+        # ``self.app.call_from_thread(...)``.
+        self.run_worker(
+            self._pipeline_worker,
+            name="pipeline",
+            thread=True,
+            exclusive=True,
+            exit_on_error=False,
+        )
 
-    async def run_pipeline(self):
-        log = self.query_one(RichLog)
-        progress = self.query_one(ProgressBar)
+    def _pipeline_worker(self) -> None:
+        """Thread-worker entry point. Wraps the run so a catastrophic failure
+        still leaves the UI usable instead of freezing the app."""
+        try:
+            self.run_pipeline()
+        except Exception as exc:  # pragma: no cover - defensive backstop
+            def _crash() -> None:
+                self.query_one(RichLog).write(
+                    f"[bold red]UNEXPECTED ERROR:[/bold red] {exc}"
+                )
+                self.query_one("#status_title").update("ANALYSIS FAILED")
+                self.query_one("#btn_results").disabled = False
+                self.query_one("#btn_abort").disabled = True
 
-        log.write(f"[bold cyan]TARGET:[/bold cyan] {self.app.selected_path}")
+            try:
+                self.app.call_from_thread(_crash)
+            except Exception:
+                pass
+
+    def run_pipeline(self):
+        """Execute the analysis pipeline.
+
+        This runs on a background thread (see :meth:`on_mount`). It must never
+        touch Textual widgets directly; every UI mutation is routed through
+        ``ui(...)`` which hops onto the app's event-loop thread via
+        ``call_from_thread`` (and re-raises any UI error back here).
+        """
+
+        def ui(fn, *args):
+            # call_from_thread schedules fn on the UI thread and blocks this
+            # worker thread until it completes, re-raising UI exceptions here.
+            self.app.call_from_thread(fn, *args)
+
+        def log(markup):
+            self.query_one(RichLog).write(markup)
+
+        def set_label(selector, text):
+            self.query_one(selector, Label).update(text)
+
+        def init_progress(total):
+            self.query_one("#stat_total", Label).update(str(total))
+            self.query_one(ProgressBar).update(total=total)
+
+        def advance_progress():
+            self.query_one(ProgressBar).advance(1)
+
+        def finish(status):
+            self.query_one("#status_title").update(status)
+            self.query_one("#btn_results").disabled = False
+            self.query_one("#btn_abort").disabled = True
+
+        ui(log, f"[bold cyan]TARGET:[/bold cyan] {self.app.selected_path}")
 
         processed = 0
         failed = 0
@@ -696,13 +754,13 @@ class ExecutionScreen(Screen):
                     for key, value in runtime_module_config(self.app.ayase_config).items():
                         config.setdefault(key, value)
 
-                log.write(f"  Init [bold]{name}[/bold]")
+                ui(log, f"  Init [bold]{name}[/bold]")
                 module = cls(config)
                 module.on_mount()
                 # on_mount() sets _mounted = True internally when setup succeeds.
                 modules.append(module)
             except Exception as e:
-                log.write(f"[bold red]FAILED[/bold red] {name}: {e}")
+                ui(log, f"[bold red]FAILED[/bold red] {name}: {e}")
 
         pipeline = Pipeline(modules)
         self.app.pipeline = pipeline
@@ -711,17 +769,16 @@ class ExecutionScreen(Screen):
         samples = _discover_selected_samples(path)
 
         if not samples:
-            log.write(f"[bold red]NO MEDIA FILES FOUND IN:[/bold red] {path}")
-            log.write(
-                "Please select a different folder or check file extensions."
+            ui(log, f"[bold red]NO MEDIA FILES FOUND IN:[/bold red] {path}")
+            ui(
+                log,
+                "Please select a different folder or check file extensions.",
             )
-            self.query_one("#btn_results").disabled = False
-            self.query_one("#status_title").update("ANALYSIS FAILED")
+            ui(finish, "ANALYSIS FAILED")
             return
 
         total = len(samples)
-        self.query_one("#stat_total", Label).update(str(total))
-        progress.update(total=total)
+        ui(init_progress, total)
 
         started = False
         run_error: Optional[Exception] = None
@@ -732,40 +789,40 @@ class ExecutionScreen(Screen):
             started = True
 
             for i, sample in enumerate(samples):
+                # Abort is checked between samples: pressing ABORT takes effect
+                # before the next sample begins (the in-flight sample finishes).
                 if self._abort:
-                    log.write("[bold yellow]ABORTED BY USER[/bold yellow]")
+                    ui(log, "[bold yellow]ABORTED BY USER[/bold yellow]")
                     break
 
-                log.write(f"[{i + 1}/{total}] {sample.path.name}")
+                ui(log, f"[{i + 1}/{total}] {sample.path.name}")
 
                 try:
                     result = pipeline.process_sample(sample)
                     processed += 1
                     issues = len(result.validation_issues)
                     if issues > 0:
-                        log.write(f"  -> [yellow]{issues} issues[/yellow]")
+                        ui(log, f"  -> [yellow]{issues} issues[/yellow]")
                 except Exception as e:
                     failed += 1
-                    log.write(f"  -> [bold red]ERROR: {e}[/bold red]")
+                    ui(log, f"  -> [bold red]ERROR: {e}[/bold red]")
 
-                self.query_one("#stat_processed", Label).update(str(processed))
-                self.query_one("#stat_failed", Label).update(str(failed))
-                progress.advance(1)
+                ui(set_label, "#stat_processed", str(processed))
+                ui(set_label, "#stat_failed", str(failed))
+                ui(advance_progress)
         except Exception as e:
             run_error = e
-            log.write(f"[bold red]UNEXPECTED ERROR:[/bold red] {e}")
+            ui(log, f"[bold red]UNEXPECTED ERROR:[/bold red] {e}")
         finally:
             if started:
                 try:
                     pipeline.stop()
                 except Exception as e:
                     stop_error = e
-                    log.write(f"[bold red]STOP FAILED:[/bold red] {e}")
+                    ui(log, f"[bold red]STOP FAILED:[/bold red] {e}")
 
         if run_error or stop_error:
-            self.query_one("#status_title").update("ANALYSIS FAILED")
-            self.query_one("#btn_results").disabled = False
-            self.query_one("#btn_abort").disabled = True
+            ui(finish, "ANALYSIS FAILED")
             return
 
         try:
@@ -786,18 +843,16 @@ class ExecutionScreen(Screen):
                         output_dir / f"ayase_tui_{timestamp}.{format}"
                     )
                     pipeline.export_report(output_path, format=format)
-                    log.write(f"[green]Report saved:[/green] {output_path}")
+                    ui(log, f"[green]Report saved:[/green] {output_path}")
         except Exception as e:
-            log.write(f"[yellow]Artifact export failed: {e}[/yellow]")
+            ui(log, f"[yellow]Artifact export failed: {e}[/yellow]")
 
         if self._abort:
-            log.write("[bold yellow]ANALYSIS ABORTED[/bold yellow]")
-            self.query_one("#status_title").update("ANALYSIS ABORTED")
+            ui(log, "[bold yellow]ANALYSIS ABORTED[/bold yellow]")
+            ui(finish, "ANALYSIS ABORTED")
         else:
-            log.write("[bold green]COMPLETE[/bold green]")
-            self.query_one("#status_title").update("ANALYSIS COMPLETE")
-        self.query_one("#btn_results").disabled = False
-        self.query_one("#btn_abort").disabled = True
+            ui(log, "[bold green]COMPLETE[/bold green]")
+            ui(finish, "ANALYSIS COMPLETE")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn_results":
@@ -806,6 +861,8 @@ class ExecutionScreen(Screen):
             else:
                 self.app.switch_mode("results")
         elif event.button.id == "btn_abort":
+            # Runs on the UI thread while the pipeline runs on the worker thread.
+            # The worker reads this flag between samples and stops promptly.
             self._abort = True
             self.query_one("#btn_abort").disabled = True
 
