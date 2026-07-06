@@ -38,10 +38,34 @@ def current_pipeline() -> Optional[Any]:
     return _CURRENT_PIPELINE.get()
 
 
-def clone_frames(frames: Sequence[np.ndarray]) -> List[np.ndarray]:
-    """Return defensive copies so cached frames cannot be mutated by callers."""
+def readonly_view(frame: np.ndarray) -> np.ndarray:
+    """Return a fresh, read-only view over *frame* without copying pixels.
 
-    return [frame.copy() if hasattr(frame, "copy") else frame for frame in frames]
+    Each call yields a distinct ndarray object (so callers can hold several)
+    while sharing the underlying buffer with the frame cache. The WRITEABLE
+    flag is cleared, so an accidental in-place mutation raises instead of
+    silently poisoning every module that shares the cached frame.
+    """
+
+    if not hasattr(frame, "view"):
+        return frame
+    view = frame.view()
+    try:
+        view.flags.writeable = False
+    except (ValueError, AttributeError):
+        pass
+    return view
+
+
+def clone_frames(frames: Sequence[np.ndarray]) -> List[np.ndarray]:
+    """Return fresh read-only views of *frames* (no pixel copy).
+
+    Historically this made defensive copies; it now returns zero-copy
+    read-only views. Callers that need a writable array must copy explicitly
+    (``frame.copy()``). This keeps the shared per-sample frame cache immutable.
+    """
+
+    return [readonly_view(frame) if hasattr(frame, "view") else frame for frame in frames]
 
 
 def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
@@ -58,6 +82,7 @@ def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
         "dtype": general.dtype,
         "amp_enabled": general.amp_enabled,
         "attention_backend": general.attention_backend,
+        "cache_enabled": general.cache_enabled,
         "frame_cache_enabled": general.frame_cache_enabled,
         "timing_enabled": general.timing_enabled,
         "sample_batch_size": general.sample_batch_size,

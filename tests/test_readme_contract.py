@@ -106,12 +106,18 @@ class TestMetricCount:
     """Verify the metric count claimed in the README."""
 
     def test_quality_metrics_field_count(self):
-        field_count = len(QualityMetrics.model_fields)
+        # Count computed-metric fields only; provenance fields (metric_backends)
+        # are excluded from the README's "N metrics" claim.
+        field_count = len(QualityMetrics.model_fields) - len(
+            QualityMetrics._NON_METRIC_FIELDS
+        )
         assert field_count == 422, f"Expected 422, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
-        """README metric count must match QualityMetrics fields."""
-        field_count = len(QualityMetrics.model_fields)
+        """README metric count must match QualityMetrics metric fields."""
+        field_count = len(QualityMetrics.model_fields) - len(
+            QualityMetrics._NON_METRIC_FIELDS
+        )
         readme = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
         assert f"{field_count} metrics" in readme, (
             f"README says different metric count, code has {field_count}"
@@ -120,6 +126,9 @@ class TestMetricCount:
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
         for name in QualityMetrics.model_fields:
+            # Provenance fields have non-None container defaults by design.
+            if name in QualityMetrics._NON_METRIC_FIELDS:
+                continue
             assert getattr(qm, name) is None, f"{name} should default to None"
 
 
@@ -143,8 +152,13 @@ class TestQualityMetricsValidation:
 # =====================================================================
 
 
-# All QualityMetrics field names (sorted), kept in sync with the model.
-README_METRICS = sorted(QualityMetrics.model_fields.keys())
+# All QualityMetrics *metric* field names (sorted), kept in sync with the model.
+# Provenance/bookkeeping fields (e.g. metric_backends) are not metrics.
+README_METRICS = sorted(
+    f
+    for f in QualityMetrics.model_fields.keys()
+    if f not in QualityMetrics._NON_METRIC_FIELDS
+)
 
 
 class TestMetricsTable:

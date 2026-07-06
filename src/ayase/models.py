@@ -25,6 +25,10 @@ class ValidationIssue(BaseModel):
 
     severity: ValidationSeverity
     message: str
+    # Structured, machine-stable category for aggregation (e.g. "module_error",
+    # "too_dark"). Preferred over parsing ``message`` for ``issues_by_type``.
+    # Optional for backward compatibility; falls back to a safe message prefix.
+    issue_type: Optional[str] = None
     details: Optional[Dict[str, Any]] = None
     recommendation: Optional[str] = None  # Suggestion for fixing the issue
 
@@ -90,13 +94,26 @@ class QualityMetrics(BaseModel):
     # module needs no edit to this file.
     _FIELD_GROUPS: ClassVar[Dict[str, str]] = {}
 
+    # Fields that carry provenance/bookkeeping rather than a computed metric.
+    # They are excluded from the metric-view helpers (counts, grouping, summary)
+    # so adding them does not inflate metric statistics.
+    _NON_METRIC_FIELDS: ClassVar[frozenset] = frozenset({"metric_backends"})
+
     def non_null_metrics(self) -> dict[str, object]:
         """Return only the metrics that were actually computed (non-None)."""
-        return {k: v for k, v in self.model_dump().items() if v is not None}
+        return {
+            k: v
+            for k, v in self.model_dump().items()
+            if v is not None and k not in self._NON_METRIC_FIELDS
+        }
 
     def non_null_count(self) -> int:
         """Count how many metrics were actually computed."""
-        return sum(1 for v in self.model_dump().values() if v is not None)
+        return sum(
+            1
+            for k, v in self.model_dump().items()
+            if v is not None and k not in self._NON_METRIC_FIELDS
+        )
 
     def to_grouped_dict(self) -> dict[str, dict[str, object]]:
         """Return non-null metrics organized by category.
@@ -114,7 +131,7 @@ class QualityMetrics(BaseModel):
         """
         result: dict[str, dict[str, object]] = {}
         for field_name, value in self.model_dump().items():
-            if value is None:
+            if value is None or field_name in self._NON_METRIC_FIELDS:
                 continue
             group = self._FIELD_GROUPS.get(field_name, "other")
             result.setdefault(group, {})[field_name] = value
@@ -756,6 +773,13 @@ class QualityMetrics(BaseModel):
     concept_count: Optional[int] = None  # Number of detected instances of target concept
     concept_face_count: Optional[int] = None  # Number of faces detected
 
+    # -- Provenance (not a metric) ----------------------------------------
+    # Maps ``module.name`` -> the backend/tier that produced its metrics for
+    # this sample (e.g. "pyiqa", "proxy", "heuristic"). Populated automatically
+    # by the pipeline from each module's ``_backend`` attribute; modules need
+    # not touch it. Excluded from metric counts/grouping via _NON_METRIC_FIELDS.
+    metric_backends: Dict[str, str] = Field(default_factory=dict)
+
 
 class Sample(BaseModel):
     """A single sample (video/image) in the dataset."""
@@ -773,6 +797,12 @@ class Sample(BaseModel):
         default_factory=list
     )  # [{'label': 'person', 'box': [x,y,w,h], 'conf': 0.9}, ...]
     embedding: Optional[List[float]] = None  # X-CLIP embedding
+    # Names of modules that raised (or returned invalid output) while processing
+    # this sample. A non-empty list marks the sample as INCOMPLETE so the
+    # pipeline reprocesses it on the next run / resume instead of serving a
+    # partial result from cache. Populated by the pipeline; empty by default so
+    # legacy state files load cleanly.
+    failed_modules: List[str] = Field(default_factory=list)
 
     @property
     def is_valid(self) -> bool:

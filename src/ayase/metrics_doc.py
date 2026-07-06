@@ -741,7 +741,10 @@ def _get_quality_metrics_fields() -> Dict[str, Dict]:
     except (TypeError, OSError):
         pass
 
+    non_metric = getattr(QualityMetrics, "_NON_METRIC_FIELDS", frozenset())
     for name, field_info in QualityMetrics.model_fields.items():
+        if name in non_metric:
+            continue
         annotation = field_info.annotation
         type_str = "float"
         if annotation is not None:

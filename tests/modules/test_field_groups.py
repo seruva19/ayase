@@ -53,7 +53,11 @@ def test_every_quality_metric_is_grouped():
     lists the ungrouped fields so the developer knows exactly what to fix.
     """
     _ensure_discovered()
-    all_fields = set(QualityMetrics.model_fields.keys())
+    # Provenance/bookkeeping fields (e.g. metric_backends) are not metrics and
+    # intentionally have no group — exclude them from the coverage requirement.
+    all_fields = set(QualityMetrics.model_fields.keys()) - set(
+        QualityMetrics._NON_METRIC_FIELDS
+    )
     grouped = set(QualityMetrics._FIELD_GROUPS.keys())
     ungrouped = all_fields - grouped
     assert not ungrouped, (
