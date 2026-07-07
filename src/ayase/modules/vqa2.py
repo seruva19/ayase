@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class VQA2Module(PipelineModule):
     name = "vqa2"
+    provisional = True  # no turnkey real backend in a standard install
     description = "VQA^2 LMM video quality assessment (MM 2025)"
     default_config = {
         "subsample": 8,

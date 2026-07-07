@@ -51,6 +51,7 @@ _PARAMS_NAME = "insightface-0000.params"
 
 class SERFIQModule(PipelineModule):
     name = "serfiq"
+    provisional = True  # no turnkey real backend in a standard install
     description = "SER-FIQ face quality via dropout embedding robustness (CVPR 2020)"
     default_config = {
         "subsample": 4,

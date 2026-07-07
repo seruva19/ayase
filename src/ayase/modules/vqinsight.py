@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class VQInsightModule(PipelineModule):
     name = "vqinsight"
+    provisional = True  # no turnkey real backend in a standard install
     description = "VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)"
     default_config = {
         "subsample": 8,

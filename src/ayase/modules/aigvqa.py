@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class AIGVQAModule(PipelineModule):
     name = "aigvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)"
     default_config = {
         "subsample": 8,

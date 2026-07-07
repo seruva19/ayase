@@ -193,6 +193,7 @@ _RF_COLUMNS = sorted(
 
 class P1204Module(PipelineModule):
     name = "p1204"
+    provisional = True  # no turnkey real backend in a standard install
     description = "ITU-T P.1204.3 bitstream NR quality (2020)"
     default_config = {
         "device_type": "pc",  # pc | tv | tablet | mobile

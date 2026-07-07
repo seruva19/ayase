@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class C3DVQAModule(PipelineModule):
     name = "c3dvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020)"
     default_config = {
         "clip_length": 16,

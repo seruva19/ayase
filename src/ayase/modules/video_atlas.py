@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class VideoATLASModule(PipelineModule):
     name = "video_atlas"
+    provisional = True  # no turnkey real backend in a standard install
     description = "Video ATLAS temporal artifacts+stalls assessment (2018)"
     default_config = {"subsample": 16}
     metric_groups = {

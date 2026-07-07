@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class UnifiedVQAModule(PipelineModule):
     name = "unified_vqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "Unified-VQA FR+NR multi-task quality assessment (2025)"
     default_config = {
         "subsample": 8,

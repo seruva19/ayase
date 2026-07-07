@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class WorldScoreModule(BatchMetricModule):
     name = "worldscore"
+    provisional = True  # no turnkey real backend in a standard install
     description = "WorldScore world generation evaluation (ICCV 2025)"
     default_config = {"subsample": 8}
 

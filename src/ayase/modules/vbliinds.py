@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class VBLIINDSModule(PipelineModule):
     name = "vbliinds"
+    provisional = True  # no turnkey real backend in a standard install
     description = "V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014)"
     default_config = {
         "subsample": 8,

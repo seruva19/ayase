@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 15:14 · **369 modules** · **436 metrics**
+> **Version 0.1.60** · Generated 2026-07-07 15:46 · **333 modules** · **397 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **368/369 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **332/333 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**369** modules · **486** output fields · **436** metrics · **265** tiered · **149** GPU · **21** categories
+**333** modules · **447** output fields · **397** metrics · **232** tiered · **148** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -29,28 +29,17 @@
 </tr></table>
 
 > [!WARNING]
-> **20 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
+> **2 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
 >
-> `confidence_score`, `discovqa_score`, `faver_score`, `internvqa_score`, `lmmvqa_score`, `memoryvqa_score`, `mm_pcqa_score`, `nr_gvqm_score`, `oavqa_score`, `siamvqa_score`, `sqi_score`, `sr4kvqa_score`, `ugvq_score`, `unified_vqa_score`, `vbliinds_score`, `video_memorability`, `videoreward_mq`, `videoreward_ta`, `videoreward_vq`, `vqa_t_score`
+> `video_memorability`, `vqa_t_score`
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-101-metrics) (101) · [Full-Reference Quality](#full-reference-quality-65-metrics) (65) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-28-metrics) (28) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-43-metrics) (43) · [Face & Identity](#face--identity-20-metrics) (20) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-31-modules) (31)
+[No-Reference Quality](#no-reference-quality-74-metrics) (74) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-27-metrics) (27) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
-## No-Reference Quality (101 metrics)
-
-### `adadqa_score` [↑](#categories)
-> Ada-DQA adaptive diverse (higher=better) · ↑ higher=better
-
-**[`adadqa`](src/ayase/modules/adadqa.py)** — Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: adadqa → unavailable
-- **Packages**: adadqa
-- **Tests**: covered by [`test_adadqa.py`](tests/modules/per_module/test_adadqa.py)
-- **Config**: `subsample=8`
+## No-Reference Quality (74 metrics)
 
 ### `afine_score` [↑](#categories)
 > A-FINE fidelity-naturalness (CVPR 2025) · ↑ higher=better
@@ -63,28 +52,6 @@
 - **Tests**: covered by [`test_afine.py`](tests/modules/per_module/test_afine.py), [`test_image_iqa_metrics.py`](tests/modules/test_image_iqa_metrics.py)
 - **Config**: `subsample=4`
 
-### `aigcvqa_aesthetic` [↑](#categories)
-> AIGC-VQA aesthetic branch
-
-**[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: aigcvqa → unavailable
-- **Packages**: aigcvqa
-- **Tests**: covered by [`test_aigcvqa.py`](tests/modules/per_module/test_aigcvqa.py)
-- **Config**: `subsample=8`
-
-### `aigcvqa_technical` [↑](#categories)
-> AIGC-VQA technical branch
-
-**[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: aigcvqa → unavailable
-- **Packages**: aigcvqa
-- **Tests**: covered by [`test_aigcvqa.py`](tests/modules/per_module/test_aigcvqa.py)
-- **Config**: `subsample=8`
-
 ### `aigv_static` [↑](#categories)
 > AI video static quality
 
@@ -96,17 +63,6 @@
 - **Source**: <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigv_assessor.py`](tests/modules/per_module/test_aigv_assessor.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 - **Config**: `subsample=8`, `trust_remote_code=True`
-
-### `aigvqa_score` [↑](#categories)
-> AIGVQA multi-dimensional (higher=better) · ↑ higher=better
-
-**[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: aigvqa → unavailable
-- **Packages**: aigvqa
-- **Tests**: covered by [`test_aigvqa.py`](tests/modules/per_module/test_aigvqa.py)
-- **Config**: `subsample=8`
 
 ### `arniqa_score` [↑](#categories)
 > ARNIQA (higher=better) · ↑ higher=better
@@ -286,16 +242,6 @@
 - **Tests**: covered by [`test_deepdc.py`](tests/modules/per_module/test_deepdc.py)
 - **Config**: `subsample=8`
 
-### `discovqa_score` [↑](#categories)
-> DisCoVQA distortion-content (higher=better) · ↑ higher=better
-
-**[`discovqa`](src/ayase/modules/discovqa.py)** — DisCoVQA temporal distortion-content VQA (2023)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_discovqa.py`](tests/modules/per_module/test_discovqa.py)
-- **Config**: `subsample=8`, `frame_size=224`
-
 ### `dover_score` [↑](#categories)
 > DOVER overall (higher=better) · ↑ higher=better · 0-1 sigmoid
 
@@ -345,16 +291,6 @@
 - **Tests**: covered by [`test_fast_vqa.py`](tests/modules/per_module/test_fast_vqa.py)
 - **Config**: `model_type=FasterVQA`
 
-### `faver_score` [↑](#categories)
-> FAVER variable frame rate (higher=better) · ↑ higher=better
-
-**[`faver`](src/ayase/modules/faver.py)** — FAVER blind VQA for variable frame rate videos (2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_faver.py`](tests/modules/per_module/test_faver.py)
-- **Config**: `subsample=16`
-
 ### `finevq_score` [↑](#categories)
 > FineVQ fine-grained UGC VQA (CVPR 2025) · ↑ higher=better
 
@@ -366,17 +302,6 @@
 - **Source**: <a href="https://huggingface.co/IntMeGroup/FineVQ_score" target="_blank">HF</a>
 - **Tests**: covered by [`test_finevq.py`](tests/modules/per_module/test_finevq.py), [`test_video_native_metrics.py`](tests/modules/test_video_native_metrics.py)
 - **Config**: `subsample=8`, `trust_remote_code=True`, `weights={'sharpness': 0.2, 'colorfulness': 0.15, 'noise': 0.2, 'temporal_stability': 0.25, 'content_richness': 0.2}`
-
-### `gamival_score` [↑](#categories)
-> GAMIVAL cloud gaming NR-VQA (higher=better) · ↑ higher=better
-
-**[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Packages**: gc, opencv-python, tensorflow
-- **Tests**: covered by [`test_gamival.py`](tests/modules/per_module/test_gamival.py)
-- **Config**: `subsample=8`
 
 ### `hyperiqa_score` [↑](#categories)
 > HyperIQA adaptive NR-IQA · ↑ higher=better
@@ -400,16 +325,6 @@
 - **Tests**: covered by [`test_ilniqe.py`](tests/modules/per_module/test_ilniqe.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py)
 - **Config**: `subsample=3`, `warning_threshold=50.0`
 
-### `internvqa_score` [↑](#categories)
-> InternVQA video quality (higher=better) · ↑ higher=better
-
-**[`internvqa`](src/ayase/modules/internvqa.py)** — InternVQA compressed-video quality (real model only; disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_internvqa.py`](tests/modules/per_module/test_internvqa.py)
-- **Config**: `subsample=8`
-
 ### `kvq_score` [↑](#categories)
 > KVQ saliency-guided VQA (CVPR 2025) · ↑ higher=better
 
@@ -432,16 +347,6 @@
 - **Packages**: pyiqa, torch
 - **Tests**: covered by [`test_liqe.py`](tests/modules/per_module/test_liqe.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `subsample=5`, `warning_threshold=2.5`
-
-### `lmmvqa_score` [↑](#categories)
-> LMM-VQA spatiotemporal (higher=better) · ↑ higher=better
-
-**[`lmmvqa`](src/ayase/modules/lmmvqa.py)** — LMM-VQA spatiotemporal quality (real model only; disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_lmmvqa.py`](tests/modules/per_module/test_lmmvqa.py)
-- **Config**: `subsample=8`
 
 ### `maclip_score` [↑](#categories)
 > MACLIP multi-attribute CLIP NR-IQA (higher=better) · ↑ higher=better
@@ -510,28 +415,6 @@
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
 - **Config**: `clip_len=16`, `max_clips=8`, `device=auto`
 
-### `memoryvqa_score` [↑](#categories)
-> Memory-VQA human memory (higher=better) · ↑ higher=better
-
-**[`memoryvqa`](src/ayase/modules/memoryvqa.py)** — Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~200 MB
-- **Tests**: covered by [`test_memoryvqa.py`](tests/modules/per_module/test_memoryvqa.py)
-- **Config**: `subsample=12`, `memory_size=8`
-
-### `mm_pcqa_score` [↑](#categories)
-> MM-PCQA multi-modal (higher=better) · ↑ higher=better
-
-**[`mm_pcqa`](src/ayase/modules/mm_pcqa.py)** — MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~200 MB
-- **Tests**: covered by [`test_mm_pcqa.py`](tests/modules/per_module/test_mm_pcqa.py)
-- **Config**: `n_views=6`, `render_size=224`
-
 ### `modularbvqa_score` [↑](#categories)
 > ModularBVQA resolution-aware (higher=better) · ↑ higher=better
 
@@ -576,16 +459,6 @@
 - **Packages**: pyiqa, torch
 - **Tests**: covered by [`test_niqe.py`](tests/modules/per_module/test_niqe.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py), +1 more
 - **Config**: `subsample=2`, `warning_threshold=7.0`
-
-### `nr_gvqm_score` [↑](#categories)
-> NR-GVQM cloud gaming VQA (higher=better) · ↑ higher=better
-
-**[`nr_gvqm`](src/ayase/modules/nr_gvqm.py)** — NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_nr_gvqm.py`](tests/modules/per_module/test_nr_gvqm.py)
-- **Config**: `subsample=8`
 
 ### `nrqm` [↑](#categories)
 > NRQM No-Reference Quality Metric (higher=better) · ↑ higher=better
@@ -644,17 +517,6 @@
 - **Tests**: covered by [`test_piqe.py`](tests/modules/per_module/test_piqe.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py)
 - **Config**: `subsample=3`, `warning_threshold=50.0`
 
-### `presresq_score` [↑](#categories)
-> PreResQ-R1 rank+score (higher=better) · ↑ higher=better
-
-**[`presresq`](src/ayase/modules/presresq.py)** — PreResQ-R1 rank+score VQA (2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: presresq → unavailable
-- **Packages**: presresq
-- **Tests**: covered by [`test_presresq.py`](tests/modules/per_module/test_presresq.py)
-- **Config**: `subsample=8`
-
 ### `promptiqa_score` [↑](#categories)
 > Few-shot NR-IQA score · ↑ higher=better
 
@@ -677,18 +539,6 @@
 - **Tests**: covered by [`test_provqa.py`](tests/modules/per_module/test_provqa.py)
 - **Config**: `device=auto`
 
-### `ptmvqa_score` [↑](#categories)
-> PTM-VQA multi-PTM fusion (higher=better) · ↑ higher=better
-
-**[`ptmvqa`](src/ayase/modules/ptmvqa.py)** — PTM-VQA multi-PTM fusion VQA (CVPR 2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_ptmvqa.py`](tests/modules/per_module/test_ptmvqa.py)
-- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
-
 ### `qalign_quality` [↑](#categories)
 > Q-Align technical quality (1-5, higher=better) · ↑ higher=better · 1-5
 
@@ -701,17 +551,6 @@
 - **Source**: <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
 - **Tests**: covered by [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
-
-### `qclip_score` [↑](#categories)
-> Q-CLIP VLM-based (higher=better) · ↑ higher=better
-
-**[`qclip`](src/ayase/modules/qclip.py)** — Q-CLIP VLM-based VQA (2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: qclip → unavailable
-- **Packages**: qclip
-- **Tests**: covered by [`test_qclip.py`](tests/modules/per_module/test_qclip.py)
-- **Config**: `subsample=8`
 
 ### `qcn_score` [↑](#categories)
 > Geometric order blind IQA · ↑ higher=better
@@ -759,17 +598,6 @@
 - **Tests**: covered by [`test_qwen_image_bench.py`](tests/modules/per_module/test_qwen_image_bench.py)
 - **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
 
-### `rapique_score` [↑](#categories)
-> RAPIQUE bandpass+CNN NR-VQA (higher=better) · ↑ higher=better
-
-**[`rapique`](src/ayase/modules/rapique.py)** — RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only)
-
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Backend**: rapique → unavailable
-- **Packages**: pyiqa, torch
-- **Tests**: covered by [`test_rapique.py`](tests/modules/per_module/test_rapique.py)
-- **Config**: `subsample=8`
-
 ### `rqvqa_score` [↑](#categories)
 > RQ-VQA rich quality-aware (CVPR 2024 winner) · ↑ higher=better
 
@@ -792,16 +620,6 @@
 - **Packages**: decord, huggingface_hub, torch
 - **Tests**: covered by [`test_sama.py`](tests/modules/per_module/test_sama.py)
 - **Config**: `fragments_h=7`, `fragments_w=7`, `fsize_h=32`, `fsize_w=32`, `aligned=32`, `clip_len=32`, `num_clips=4`, `frame_interval=2`, `device=auto`
-
-### `siamvqa_score` [↑](#categories)
-> SiamVQA Siamese high-res (higher=better) · ↑ higher=better
-
-**[`siamvqa`](src/ayase/modules/siamvqa.py)** — SiamVQA Siamese high-resolution VQA (real model only)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_siamvqa.py`](tests/modules/per_module/test_siamvqa.py)
-- **Config**: `subsample=8`, `num_crops=5`, `crop_size=224`
 
 ### `simplevqa_score` [↑](#categories)
 > SimpleVQA Swin+SlowFast (higher=better) · ↑ higher=better
@@ -839,25 +657,6 @@
 - **Source**: <a href="https://huggingface.co/facebookresearch/dinov2" target="_blank">HF</a>
 - **Tests**: covered by [`test_spectral_complexity.py`](tests/modules/per_module/test_spectral_complexity.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `model_type=dinov2_vits14`, `sample_rate=8`, `min_rank_ratio=0.05`, `max_entropy_threshold=6.0`
-
-### `sqi_score` [↑](#categories)
-> SQI streaming quality index · ↑ higher=better
-
-**[`sqi`](src/ayase/modules/sqi.py)** — SQI streaming quality index (2016)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_sqi.py`](tests/modules/per_module/test_sqi.py)
-
-### `sr4kvqa_score` [↑](#categories)
-> SR4KVQA super-resolution 4K (higher=better) · ↑ higher=better
-
-**[`sr4kvqa`](src/ayase/modules/sr4kvqa.py)** — SR4KVQA super-resolution 4K quality (2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_sr4kvqa.py`](tests/modules/per_module/test_sr4kvqa.py)
-- **Config**: `subsample=8`, `patch_size=224`, `max_patches=9`
 
 ### `stablevqa_score` [↑](#categories)
 > StableVQA video stability (higher=better) · ↑ higher=better
@@ -936,18 +735,6 @@
 - **Tests**: covered by [`test_uciqe.py`](tests/modules/per_module/test_uciqe.py)
 - **Config**: `c1=0.468`, `c2=0.2745`, `c3=0.2576`, `subsample=8`
 
-### `ugvq_score` [↑](#categories)
-> UGVQ unified generated VQ (higher=better) · ↑ higher=better
-
-**[`ugvq`](src/ayase/modules/ugvq.py)** — UGVQ unified generated video quality (TOMM 2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_ugvq.py`](tests/modules/per_module/test_ugvq.py)
-- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
-
 ### `uiqm_score` [↑](#categories)
 > UIQM underwater quality (higher=better) · ↑ higher=better
 
@@ -980,17 +767,6 @@
 - **Tests**: covered by [`test_unified_reward_2.py`](tests/modules/per_module/test_unified_reward_2.py)
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
-### `unified_vqa_score` [↑](#categories)
-> Unified-VQA FR/NR quality (0-1, higher=better) · ↑ higher=better · 0-1
-
-**[`unified_vqa`](src/ayase/modules/unified_vqa.py)** — Unified-VQA FR+NR multi-task quality assessment (2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~600 MB
-- **Tests**: covered by [`test_unified_vqa.py`](tests/modules/per_module/test_unified_vqa.py)
-- **Config**: `subsample=8`, `clip_model=ViT-B/32`
-
 ### `unique_score` [↑](#categories)
 > UNIQUE unified NR-IQA (TIP 2021) · ↑ higher=better
 
@@ -1015,27 +791,6 @@
 - **Tests**: covered by [`test_vader.py`](tests/modules/per_module/test_vader.py)
 - **Config**: `subsample=8`, `clip_model=openai/clip-vit-large-patch14`
 
-### `vbliinds_score` [↑](#categories)
-> V-BLIINDS DCT-domain NSS (higher=better) · ↑ higher=better
-
-**[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_vbliinds.py`](tests/modules/per_module/test_vbliinds.py)
-- **Config**: `subsample=8`
-
-### `video_atlas_score` [↑](#categories)
-> Video ATLAS temporal artifacts · ↑ higher=better
-
-**[`video_atlas`](src/ayase/modules/video_atlas.py)** — Video ATLAS temporal artifacts+stalls assessment (2018)
-
-- **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: video_atlas_pkg → unavailable
-- **Packages**: video_atlas
-- **Tests**: covered by [`test_video_atlas.py`](tests/modules/per_module/test_video_atlas.py)
-- **Config**: `subsample=16`
-
 ### `video_memorability` [↑](#categories)
 > Memorability prediction
 
@@ -1046,18 +801,6 @@
 - **VRAM**: ~400 MB
 - **Tests**: covered by [`test_video_memorability.py`](tests/modules/per_module/test_video_memorability.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py), +1 more
 - **Config**: `subsample=5`
-
-### `videoreward_vq` [↑](#categories)
-> VideoReward visual quality
-
-**[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_videoreward.py`](tests/modules/per_module/test_videoreward.py)
-- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `videoscore2_visual` [↑](#categories)
 > VideoScore2 visual quality · ↑ higher=better · 1-5
@@ -1106,39 +849,6 @@
 - **Tests**: covered by [`test_viideo.py`](tests/modules/per_module/test_viideo.py)
 - **Config**: `subsample=8`
 
-### `vqa2_score` [↑](#categories)
-> VQA² LMM quality (higher=better) · ↑ higher=better
-
-**[`vqa2`](src/ayase/modules/vqa2.py)** — VQA^2 LMM video quality assessment (MM 2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: vqa2 → unavailable
-- **Packages**: vqa2
-- **Tests**: covered by [`test_vqa2.py`](tests/modules/per_module/test_vqa2.py)
-- **Config**: `subsample=8`
-
-### `vqathinker_score` [↑](#categories)
-> VQAThinker GRPO (higher=better) · ↑ higher=better
-
-**[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: vqathinker → unavailable
-- **Packages**: vqathinker
-- **Tests**: covered by [`test_vqathinker.py`](tests/modules/per_module/test_vqathinker.py)
-- **Config**: `subsample=8`
-
-### `vqinsight_score` [↑](#categories)
-> VQ-Insight ByteDance (higher=better) · ↑ higher=better
-
-**[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: vqinsight → unavailable
-- **Packages**: vqinsight
-- **Tests**: covered by [`test_vqinsight.py`](tests/modules/per_module/test_vqinsight.py)
-- **Config**: `subsample=8`
-
 ### `vsfa_score` [↑](#categories)
 > VSFA quality-aware feature aggregation (higher=better) · ↑ higher=better
 
@@ -1174,7 +884,7 @@
 - **Config**: `subsample=16`, `iqa_rsize=512`, `iqa_csize=320`, `vqa_rsize=480`, `vqa_patch_size=6`, `vqa_clip_len=32`, `vqa_num_clips=4`, `vqa_frame_interval=2`, `fusion_iqa_weight=0.5`, `device=auto`
 
 
-## Full-Reference Quality (65 metrics)
+## Full-Reference Quality (60 metrics)
 
 ### `ahiq` [↑](#categories)
 > Attention Hybrid IQA (higher=better) · ↑ higher=better
@@ -1198,16 +908,6 @@
 - **Tests**: covered by [`test_artfid.py`](tests/modules/per_module/test_artfid.py)
 - **Config**: `subsample=8`
 
-### `avqt_score` [↑](#categories)
-> Apple AVQT perceptual (higher=better) · ↑ higher=better
-
-**[`avqt`](src/ayase/modules/avqt.py)** — Apple AVQT perceptual video quality (full-reference)
-
-- **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: avqt_cli → unavailable
-- **Tests**: covered by [`test_avqt.py`](tests/modules/per_module/test_avqt.py)
-- **Config**: `subsample=8`, `hysteresis_weight=0.1`
-
 ### `butteraugli` [↑](#categories)
 > Butteraugli perceptual distance (lower=better) · ↓ lower=better
 
@@ -1218,17 +918,6 @@
 - **Packages**: butteraugli, jxlpy
 - **Tests**: covered by [`test_butteraugli.py`](tests/modules/per_module/test_butteraugli.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py)
 - **Config**: `subsample=5`, `warning_threshold=2.0`
-
-### `c3dvqa_score` [↑](#categories)
-> C3DVQA 3D CNN spatiotemporal FR · ↑ higher=better
-
-**[`c3dvqa`](src/ayase/modules/c3dvqa.py)** — C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020)
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: c3dvqa → unavailable
-- **Packages**: c3dvqa
-- **Tests**: covered by [`test_c3dvqa.py`](tests/modules/per_module/test_c3dvqa.py), [`test_video_native_metrics.py`](tests/modules/test_video_native_metrics.py)
-- **Config**: `clip_length=16`, `subsample=4`
 
 ### `cgvqm` [↑](#categories)
 > CGVQM gaming quality (higher=better) · ↑ higher=better
@@ -1292,16 +981,6 @@
 - **Backend**: unavailable → pyiqa
 - **Packages**: opencv-python, pyiqa, torch
 - **Tests**: covered by [`test_cw_ssim.py`](tests/modules/per_module/test_cw_ssim.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
-- **Config**: `subsample=8`
-
-### `deepvqa_score` [↑](#categories)
-> DeepVQA spatiotemporal FR (higher=better) · ↑ higher=better
-
-**[`deepvqa`](src/ayase/modules/deepvqa.py)** — DeepVQA spatiotemporal masking FR-VQA (ECCV 2018)
-
-- **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_deepvqa.py`](tests/modules/per_module/test_deepvqa.py)
 - **Config**: `subsample=8`
 
 ### `deepwsd_score` [↑](#categories)
@@ -1621,26 +1300,6 @@
 - **Tests**: covered by [`test_psnr_hvs.py`](tests/modules/per_module/test_psnr_hvs.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py)
 - **Config**: `subsample=5`
 
-### `pvmaf_score` [↑](#categories)
-> pVMAF predictive VMAF (0-100) · ↑ higher=better · 0-100
-
-**[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100)
-
-- **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_pvmaf.py`](tests/modules/per_module/test_pvmaf.py)
-- **Config**: `subsample=8`
-
-### `rankdvqa_score` [↑](#categories)
-> RankDVQA ranking-based FR (higher=better) · ↑ higher=better
-
-**[`rankdvqa`](src/ayase/modules/rankdvqa.py)** — RankDVQA ranking-based FR VQA (real model only)
-
-- **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_rankdvqa.py`](tests/modules/per_module/test_rankdvqa.py)
-- **Config**: `subsample=8`
-
 ### `s_psnr` [↑](#categories)
 > Spherical PSNR (dB, higher=better) · ↑ higher=better · dB
 
@@ -1863,18 +1522,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py)
 
 
-## Text-Video Alignment (53 metrics)
-
-### `aigcvqa_alignment` [↑](#categories)
-> AIGC-VQA text-video alignment
-
-**[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: aigcvqa → unavailable
-- **Packages**: aigcvqa
-- **Tests**: covered by [`test_aigcvqa.py`](tests/modules/per_module/test_aigcvqa.py)
-- **Config**: `subsample=8`
+## Text-Video Alignment (51 metrics)
 
 ### `aigv_alignment` [↑](#categories)
 > AI video text-video alignment
@@ -2390,18 +2038,6 @@
 - **Tests**: covered by [`test_video_text_matching.py`](tests/modules/per_module/test_video_text_matching.py)
 - **Config**: `use_xclip=False`, `model_name=openai/clip-vit-base-patch32`, `xclip_model_name=microsoft/xclip-base-patch32`, `min_score_threshold=0.2`, `consistency_std_threshold=0.1`
 
-### `videoreward_ta` [↑](#categories)
-> VideoReward text alignment
-
-**[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_videoreward.py`](tests/modules/per_module/test_videoreward.py)
-- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
-
 ### `videoscore2_alignment` [↑](#categories)
 > VideoScore2 text-video alignment · ↑ higher=better · 1-5
 
@@ -2802,7 +2438,7 @@
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (28 metrics)
+## Motion & Dynamics (27 metrics)
 
 ### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
@@ -3091,18 +2727,6 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Source**: <a href="https://huggingface.co/llava-hf/LLaVA-NeXT-Video-7B-hf" target="_blank">HF</a>
 - **Tests**: covered by [`test_videophy.py`](tests/modules/per_module/test_videophy.py)
 - **Config**: `model_name=llava-hf/LLaVA-NeXT-Video-7B-hf`, `num_frames=8`, `backend=auto`, `max_new_tokens=8`
-
-### `videoreward_mq` [↑](#categories)
-> VideoReward motion quality
-
-**[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~600 MB
-- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_videoreward.py`](tests/modules/per_module/test_videoreward.py)
-- **Config**: `subsample=8`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `videoscore_dynamic` [↑](#categories)
 > VideoScore dynamic degree · ↑ higher=better
@@ -3442,7 +3066,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (43 metrics)
+## Audio Quality (42 metrics)
 
 ### `aqascore_score` [↑](#categories)
 > AQAScore audio question-answering alignment (0-1) · ↑ higher=better · 0-1
@@ -3724,17 +3348,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py)
 - **Config**: `target_sr=48000`
 
-### `oavqa_score` [↑](#categories)
-> OAVQA omnidirectional AV (higher=better) · ↑ higher=better
-
-**[`oavqa`](src/ayase/modules/oavqa.py)** — OAVQA omnidirectional audio-visual QA (2024; real model only, disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **VRAM**: ~200 MB
-- **Tests**: covered by [`test_oavqa.py`](tests/modules/per_module/test_oavqa.py)
-- **Config**: `subsample=8`, `n_mels=64`, `audio_sr=16000`
-
 ### `p1203_mos` [↑](#categories)
 > ITU-T P.1203 streaming QoE MOS (1-5) · 1-5
 
@@ -3921,7 +3534,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `mode=audio`
 
 
-## Face & Identity (20 metrics)
+## Face & Identity (19 metrics)
 
 ### `anatomy_score` [↑](#categories)
 > Keypoint-based limb-count/anatomy plausibility (0-1, higher=better) · ↑ higher=better · 0-1
@@ -4139,17 +3752,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: gc, insightface
 - **Tests**: covered by [`test_magface.py`](tests/modules/per_module/test_magface.py)
 - **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`, `norm_min=10.0`, `norm_max=30.0`
-
-### `serfiq_score` [↑](#categories)
-> SER-FIQ embedding robustness (higher=better) · ↑ higher=better
-
-**[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via dropout embedding robustness (CVPR 2020)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable → real
-- **Packages**: gc, huggingface_hub, insightface, mxnet, scikit-learn
-- **Tests**: covered by [`test_serfiq.py`](tests/modules/per_module/test_serfiq.py)
-- **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`, `n_forward_passes=100`, `alpha=130.0`, `r=0.88`
 
 
 ## Scene & Content (17 metrics)
@@ -4507,7 +4109,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=5`
 
 
-## Codec & Technical (5 metrics)
+## Codec & Technical (4 metrics)
 
 ### `cambi` [↑](#categories)
 > CAMBI banding index (0-24, lower=better) · ↓ lower=better · 0-24
@@ -4548,17 +4150,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: algorithmic
 - **Tests**: covered by [`test_codec_specific_quality.py`](tests/modules/per_module/test_codec_specific_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
 - **Config**: `max_frames=100`, `subsample=10`, `warning_efficiency=30.0`, `warning_artifacts=40.0`
-
-### `p1204_mos` [↑](#categories)
-> ITU-T P.1204.3 bitstream MOS (1-5) · 1-5
-
-**[`p1204`](src/ayase/modules/p1204.py)** — ITU-T P.1204.3 bitstream NR quality (2020)
-
-- **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: unavailable → real
-- **Packages**: huggingface_hub, scipy
-- **Tests**: covered by [`test_p1204.py`](tests/modules/per_module/test_p1204.py)
-- **Config**: `device_type=pc`, `device_resolution=3840x2160`
 
 
 ## Depth & Spatial (5 metrics)
@@ -4910,17 +4501,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `max_frames=16`, `detector_model=IDEA-Research/grounding-dino-tiny`, `box_threshold=0.3`, `text_threshold=0.25`, `keep_box_conf=0.3`, `keep_text_sim=0.2`, `encoder=clip`, `clip_model=openai/clip-vit-base-patch32`, `dino_model=dinov2_vitb14`, `vlm_model=llava-hf/llava-1.5-7b-hf`, `vlm_max_frames=4`, `vlm_max_new_tokens=8`, `warning_threshold=0.0`
 
 
-## Meta & Curation (6 metrics)
-
-### `confidence_score` [↑](#categories)
-> Prediction confidence · ↑ higher=better
-
-**[`unqa`](src/ayase/modules/unqa.py)** — UNQA unified no-reference quality for audio/image/video (2024)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_unqa.py`](tests/modules/per_module/test_unqa.py)
-- **Config**: `subsample=8`
+## Meta & Curation (5 metrics)
 
 ### `llm_qa_score` [↑](#categories)
 > LMM descriptive quality rating (0-1) · ↑ higher=better · 0-1
@@ -5407,7 +4988,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
 
-## Utility & Validation (31 modules)
+## Utility & Validation (30 modules)
 
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
@@ -5441,4 +5022,46 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 - **[`temporal_style`](src/ayase/modules/temporal_style.py)** — Analyzes temporal style (Slow Motion, Timelapse, Speed) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_temporal_style.py`](tests/modules/per_module/test_temporal_style.py)
 - **[`vfr_detection`](src/ayase/modules/vfr_detection.py)** — Variable Frame Rate (VFR) and jitter detection · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_vfr_detection.py`](tests/modules/per_module/test_vfr_detection.py)
 - **[`vlm_judge`](src/ayase/modules/vlm_judge.py)** — Advanced semantic verification using VLM (e.g. LLaVA) · Input: img/vid · Speed: 🐌 slow · GPU · Tests: covered by [`test_vlm_judge.py`](tests/modules/per_module/test_vlm_judge.py), [`test_vlm_presets.py`](tests/modules/test_vlm_presets.py)
-- **[`worldscore`](src/ayase/modules/worldscore.py)** — WorldScore world generation evaluation (ICCV 2025) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_worldscore.py`](tests/modules/per_module/test_worldscore.py)
+
+---
+
+## Experimental — pending real backend (36 modules)
+
+These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **39** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
+
+- **[`adadqa`](src/ayase/modules/adadqa.py)** — Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023) · Metrics: `adadqa_score` · Needs: adadqa
+- **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024) · Metrics: `aigcvqa_aesthetic`, `aigcvqa_alignment`, `aigcvqa_technical` · Needs: aigcvqa
+- **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025) · Metrics: `aigvqa_score` · Needs: aigvqa
+- **[`avqt`](src/ayase/modules/avqt.py)** — Apple AVQT perceptual video quality (full-reference) · Metrics: `avqt_score`
+- **[`c3dvqa`](src/ayase/modules/c3dvqa.py)** — C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020) · Metrics: `c3dvqa_score` · Needs: c3dvqa
+- **[`deepvqa`](src/ayase/modules/deepvqa.py)** — DeepVQA spatiotemporal masking FR-VQA (ECCV 2018) · Metrics: `deepvqa_score`
+- **[`discovqa`](src/ayase/modules/discovqa.py)** — DisCoVQA temporal distortion-content VQA (2023) · Metrics: `discovqa_score`
+- **[`faver`](src/ayase/modules/faver.py)** — FAVER blind VQA for variable frame rate videos (2024) · Metrics: `faver_score`
+- **[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023) · Metrics: `gamival_score` · Needs: gc, opencv-python, tensorflow
+- **[`internvqa`](src/ayase/modules/internvqa.py)** — InternVQA compressed-video quality (real model only; disabled if unavailable) · Metrics: `internvqa_score`
+- **[`lmmvqa`](src/ayase/modules/lmmvqa.py)** — LMM-VQA spatiotemporal quality (real model only; disabled if unavailable) · Metrics: `lmmvqa_score`
+- **[`memoryvqa`](src/ayase/modules/memoryvqa.py)** — Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable) · Metrics: `memoryvqa_score`
+- **[`mm_pcqa`](src/ayase/modules/mm_pcqa.py)** — MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable) · Metrics: `mm_pcqa_score`
+- **[`nr_gvqm`](src/ayase/modules/nr_gvqm.py)** — NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable) · Metrics: `nr_gvqm_score`
+- **[`oavqa`](src/ayase/modules/oavqa.py)** — OAVQA omnidirectional audio-visual QA (2024; real model only, disabled if unavailable) · Metrics: `oavqa_score`
+- **[`p1204`](src/ayase/modules/p1204.py)** — ITU-T P.1204.3 bitstream NR quality (2020) · Metrics: `p1204_mos` · Needs: huggingface_hub, scipy
+- **[`presresq`](src/ayase/modules/presresq.py)** — PreResQ-R1 rank+score VQA (2025) · Metrics: `presresq_score` · Needs: presresq
+- **[`ptmvqa`](src/ayase/modules/ptmvqa.py)** — PTM-VQA multi-PTM fusion VQA (CVPR 2024) · Metrics: `ptmvqa_score`
+- **[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100) · Metrics: `pvmaf_score`
+- **[`qclip`](src/ayase/modules/qclip.py)** — Q-CLIP VLM-based VQA (2025) · Metrics: `qclip_score` · Needs: qclip
+- **[`rankdvqa`](src/ayase/modules/rankdvqa.py)** — RankDVQA ranking-based FR VQA (real model only) · Metrics: `rankdvqa_score`
+- **[`rapique`](src/ayase/modules/rapique.py)** — RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only) · Metrics: `rapique_score` · Needs: pyiqa, torch
+- **[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via dropout embedding robustness (CVPR 2020) · Metrics: `serfiq_score` · Needs: gc, huggingface_hub, insightface, mxnet, scikit-learn
+- **[`siamvqa`](src/ayase/modules/siamvqa.py)** — SiamVQA Siamese high-resolution VQA (real model only) · Metrics: `siamvqa_score`
+- **[`sqi`](src/ayase/modules/sqi.py)** — SQI streaming quality index (2016) · Metrics: `sqi_score`
+- **[`sr4kvqa`](src/ayase/modules/sr4kvqa.py)** — SR4KVQA super-resolution 4K quality (2024) · Metrics: `sr4kvqa_score`
+- **[`ugvq`](src/ayase/modules/ugvq.py)** — UGVQ unified generated video quality (TOMM 2024) · Metrics: `ugvq_score`
+- **[`unified_vqa`](src/ayase/modules/unified_vqa.py)** — Unified-VQA FR+NR multi-task quality assessment (2025) · Metrics: `unified_vqa_score`
+- **[`unqa`](src/ayase/modules/unqa.py)** — UNQA unified no-reference quality for audio/image/video (2024) · Metrics: `confidence_score`
+- **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014) · Metrics: `vbliinds_score`
+- **[`video_atlas`](src/ayase/modules/video_atlas.py)** — Video ATLAS temporal artifacts+stalls assessment (2018) · Metrics: `video_atlas_score` · Needs: video_atlas
+- **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025) · Metrics: `videoreward_mq`, `videoreward_ta`, `videoreward_vq`
+- **[`vqa2`](src/ayase/modules/vqa2.py)** — VQA^2 LMM video quality assessment (MM 2025) · Metrics: `vqa2_score` · Needs: vqa2
+- **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025) · Metrics: `vqathinker_score` · Needs: vqathinker
+- **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026) · Metrics: `vqinsight_score` · Needs: vqinsight
+- **[`worldscore`](src/ayase/modules/worldscore.py)** — WorldScore world generation evaluation (ICCV 2025) · Metrics: — (dataset-level / none) · Needs: worldscore

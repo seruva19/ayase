@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class SQIModule(PipelineModule):
     name = "sqi"
+    provisional = True  # no turnkey real backend in a standard install
     description = "SQI streaming quality index (2016)"
     default_config = {}
     metric_groups = {
