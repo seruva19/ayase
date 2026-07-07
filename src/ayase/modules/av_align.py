@@ -161,27 +161,46 @@ def _calc_intersection_over_union(
     return intersection_length / denominator
 
 
-def _extract_frames(video_path: str, max_frames: Optional[int] = None) -> Tuple[List[np.ndarray], float]:
-    """Consecutively decode frames (needed for optical flow) with cleanup.
+def _flow_trajectory_streaming(
+    video_path: str, max_frames: Optional[int] = None
+) -> Tuple[List[float], float, int]:
+    """Stream-decode a video into the AV-Align flow-magnitude trajectory.
 
-    Optical flow requires *consecutive* frames, so this reads them in order
-    rather than uniformly sampling. ``max_frames`` bounds memory for pathological
-    inputs; AV-Align targets short generated clips, so the default is generous.
+    Optical flow requires *consecutive* frames, but only the scalar per-frame
+    mean flow magnitude is needed downstream — not the frames themselves. This
+    keeps just the previous frame plus the (float) trajectory in memory, so a
+    pathologically long clip cannot exhaust RAM regardless of ``max_frames``.
+
+    The trajectory reproduces ``_detect_video_peaks`` exactly, including the
+    duplicated first element ``compute_of(frames[0], frames[1])`` and the same
+    length as the input frame sequence. Returns ``(flow_trajectory, fps,
+    n_frames)``.
     """
-    frames: List[np.ndarray] = []
     cap = cv2.VideoCapture(video_path)
+    trajectory: List[float] = []
+    prev: Optional[np.ndarray] = None
+    n_frames = 0
+    fps = 0.0
     try:
         fps = cap.get(cv2.CAP_PROP_FPS)
         while True:
             ret, frame = cap.read()
             if not ret:
                 break
-            frames.append(frame)
-            if max_frames is not None and len(frames) >= max_frames:
+            n_frames += 1
+            if prev is not None:
+                mag = _compute_of(prev, frame)
+                if not trajectory:
+                    # Duplicate the first magnitude (frames[0]->frames[1]) to
+                    # match the reference trajectory's length and indexing.
+                    trajectory.append(mag)
+                trajectory.append(mag)
+            prev = frame
+            if max_frames is not None and n_frames >= max_frames:
                 break
     finally:
         cap.release()
-    return frames, fps
+    return trajectory, fps, n_frames
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -195,7 +214,11 @@ class AVAlignModule(PipelineModule):
         "(TempoTokens / Yariv et al. 2024; higher=better)"
     )
     default_config = {
-        "max_frames": 3000,  # memory bound for consecutive-frame decode
+        # Frame cap for the streaming optical-flow decode. AV-Align targets
+        # short generated clips (a few seconds); this bounds pathological inputs
+        # without truncating any realistic clip. Only the scalar flow trajectory
+        # is retained in memory, so this is a safety cap rather than a RAM bound.
+        "max_frames": 1000,
     }
     metric_info = {
         "av_align_score": "AV-Align onset/flow-peak IoU within ±1/fps (0-1, higher=better)",
@@ -248,7 +271,7 @@ class AVAlignModule(PipelineModule):
         return sample
 
     def _compute_av_align(self, video_path: Path) -> Optional[float]:
-        max_frames = self.config.get("max_frames", 3000)
+        max_frames = self.config.get("max_frames", 1000)
 
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             wav_path = tmp.name
@@ -258,11 +281,13 @@ class AVAlignModule(PipelineModule):
 
             audio_peaks = _detect_audio_peaks(wav_path)
 
-            frames, fps = _extract_frames(str(video_path), max_frames=max_frames)
-            if len(frames) < 2 or fps is None or fps <= 0:
+            flow_trajectory, fps, n_frames = _flow_trajectory_streaming(
+                str(video_path), max_frames=max_frames
+            )
+            if n_frames < 2 or fps is None or fps <= 0:
                 return None
 
-            _, video_peaks = _detect_video_peaks(frames, fps)
+            video_peaks = _find_local_max_indexes(flow_trajectory, fps)
             return _calc_intersection_over_union(list(audio_peaks), video_peaks, fps)
         finally:
             try:

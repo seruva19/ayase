@@ -303,9 +303,26 @@ class CameraTrajectoryModule(PipelineModule):
             if target is None or len(target) < 2:
                 return sample
 
-            estimated = self._estimate_poses(sample, len(target))
+            # ``num_frames`` caps how many frames are compared. Estimated and
+            # target poses are aligned by uniform sampling to the SAME count at
+            # matched fractional positions, so estimated[i] <-> target[i] refer
+            # to the same fraction of each sequence.
+            cap = int(self.config.get("num_frames", 16))
+            n_compare = len(target) if cap <= 1 else min(len(target), cap)
+            if n_compare < len(target):
+                idx = np.linspace(0, len(target) - 1, n_compare).round().astype(int)
+                target = target[idx]
+
+            estimated = self._estimate_poses(sample, n_compare)
             if estimated is None or len(estimated) < 2:
                 return sample
+
+            # Guard a count mismatch (e.g. SfM dropped un-registered frames):
+            # keep positional correspondence by truncating both to the common
+            # prefix length before scoring.
+            common = min(len(estimated), len(target))
+            estimated = estimated[:common]
+            target = target[:common]
 
             errs = compute_trajectory_errors(estimated, target)
             if errs is None:

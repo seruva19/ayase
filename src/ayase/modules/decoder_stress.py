@@ -33,12 +33,12 @@ class DecoderStressModule(PipelineModule):
         if not sample.is_video:
             return sample
 
+        cap = None
         try:
             cap = cv2.VideoCapture(str(sample.path))
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            
+
             if total_frames <= 0:
-                cap.release()
                 return sample
 
             # Define probe points: Start, Middle, End, and some deterministic random ones
@@ -47,7 +47,7 @@ class DecoderStressModule(PipelineModule):
                 rng = random.Random(hash(str(sample.path)))
                 for _ in range(self.num_probes - 3):
                     probes.append(rng.randint(0, total_frames - 1))
-            
+
             # Sort to minimize seeking (though not strictly necessary)
             probes = sorted(list(set(probes)))
 
@@ -55,7 +55,7 @@ class DecoderStressModule(PipelineModule):
             for p in probes:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, p)
                 ret, frame = cap.read()
-                
+
                 if not ret or frame is None:
                     failed_probes.append(p)
                 elif frame.mean() < 1e-3 and p not in (0, total_frames - 1):
@@ -67,8 +67,6 @@ class DecoderStressModule(PipelineModule):
                             details={"frame_index": p, "mean_value": float(frame.mean())},
                         )
                     )
-
-            cap.release()
 
             if failed_probes:
                 sample.validation_issues.append(
@@ -84,5 +82,8 @@ class DecoderStressModule(PipelineModule):
 
         except Exception as e:
             logger.warning(f"Decoder stress test failed for {sample.path}: {e}")
+        finally:
+            if cap is not None:
+                cap.release()
 
         return sample
