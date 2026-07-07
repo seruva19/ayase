@@ -562,7 +562,7 @@ class QualityMetrics(BaseModel):
 
     # ChronoMagic-Bench (NeurIPS 2024, arXiv:2406.18522)
     chronomagic_mt_score: Optional[float] = None  # Metamorphic temporal (0-1, higher=better)
-    chronomagic_ch_score: Optional[float] = None  # Chrono-hallucination (0-1, lower=fewer)
+    chronomagic_ch_score: Optional[float] = None  # CHScore = 1/TSI_sum (unbounded, higher=more coherent)
 
     # GenEval T2I compositional (NeurIPS 2024, arXiv:2310.11513) — image-only, 0-1, higher=better
     geneval_single_object: Optional[float] = None  # Single-object presence
