@@ -73,9 +73,10 @@ def image_from_bytes(data: bytes, mode: str = "RGB") -> Optional[Image.Image]:
 def load_representative_frame(path: Path, color: str = "rgb") -> Optional[np.ndarray]:
     """Load a still image or the middle frame of a video into a numpy array.
 
-    ``color`` is ``"rgb"`` (default), ``"bgr"``, or ``"gray"``. When called
-    inside a running pipeline the returned array is a zero-copy READ-ONLY view
-    over the shared per-sample frame cache — do not mutate it in place; call
+    ``color`` is ``"rgb"`` (default), ``"bgr"``, or ``"gray"``. The returned
+    array is ALWAYS a READ-ONLY numpy array (``writeable=False``) — both when a
+    pipeline is active (a zero-copy view over the shared per-sample frame cache)
+    and on the uncached fallback path. Do not mutate it in place; call
     ``frame.copy()`` first if you need a writable array. Returns ``None`` when
     the frame cannot be decoded.
     """
@@ -87,7 +88,13 @@ def load_representative_frame(path: Path, color: str = "rgb") -> Optional[np.nda
             return pipeline.load_representative_frame(path, color=color)
     except Exception:
         pass
-    return _load_representative_frame_uncached(path, color=color)
+    # Uncached fallback: mark read-only so the contract is identical to the
+    # cached path — a module mutating a returned frame fails in tests too,
+    # rather than only in production under a live pipeline.
+    from .runtime import readonly_view
+
+    frame = _load_representative_frame_uncached(path, color=color)
+    return readonly_view(frame) if frame is not None else None
 
 
 def _load_representative_frame_uncached(path: Path, color: str = "rgb") -> Optional[np.ndarray]:
@@ -124,12 +131,13 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
     """Load uniformly spaced frames from a video, or one frame for an image.
 
     ``max_frames`` caps the number of frames; ``color`` is ``"rgb"`` (default),
-    ``"bgr"``, or ``"gray"``. When called inside a running pipeline, frames are
-    decoded once per file (at the highest ``max_frames`` requested) and served
-    as zero-copy READ-ONLY views: the returned list is fresh each call, but the
-    pixel buffers are shared with the per-sample cache. Do NOT mutate returned
-    frames in place — copy first (``frame.copy()``) if you need to write.
-    Returns an empty list when no frames can be decoded.
+    ``"bgr"``, or ``"gray"``. The returned arrays are ALWAYS READ-ONLY
+    (``writeable=False``) — both when a pipeline is active (zero-copy views over
+    the shared per-sample cache, decoded once per file at the highest
+    ``max_frames`` requested) and on the uncached fallback path. The returned
+    list is fresh each call, but the pixel buffers may be shared. Do NOT mutate
+    returned frames in place — copy first (``frame.copy()``) if you need to
+    write. Returns an empty list when no frames can be decoded.
     """
     try:
         from .runtime import current_pipeline
@@ -139,7 +147,12 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
             return pipeline.sample_frames(path, max_frames=max_frames, color=color)
     except Exception:
         pass
-    return _sample_frames_uncached(path, max_frames=max_frames, color=color)
+    # Uncached fallback: return read-only views so the contract matches the
+    # cached path (a violating in-place mutation fails in tests, not only in
+    # production under a live pipeline).
+    from .runtime import clone_frames
+
+    return clone_frames(_sample_frames_uncached(path, max_frames=max_frames, color=color))
 
 
 def _convert_frame_color(frame: np.ndarray, color: str) -> np.ndarray:
@@ -183,23 +196,42 @@ def _sample_frames_sequential(
     return frames
 
 
-def _sample_frames_uncached(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
-    """Uncached implementation for uniformly spaced frame sampling."""
+def _sample_frames_uncached_detailed(
+    path: Path, max_frames: int = 8, color: str = "rgb"
+) -> tuple[List[np.ndarray], Optional[int]]:
+    """Uncached frame sampling that also reports the decoder's frame count.
+
+    Returns ``(frames, reliable_total)`` where ``reliable_total`` is the
+    decoder-reported total frame count (``CAP_PROP_FRAME_COUNT``) when it is
+    trustworthy (``> 0``), or ``None`` when it is unreliable/unknown (frame
+    count ``<= 0``, an unopenable file, or a decode error).
+
+    Callers use ``reliable_total`` to tell a source that is *truly exhausted*
+    (the decoder says the video has no more frames than were requested) apart
+    from a *short read caused by failed seeks* (the video is long, but some
+    seek/read attempts were skipped). The number of frames actually returned
+    can be smaller than ``min(max_frames, reliable_total)`` when seeks fail, so
+    it must NOT be used to infer exhaustion.
+    """
     path = Path(path)
     if not is_video_path(path):
         frame = _load_representative_frame_uncached(path, color=color)
-        return [frame] if frame is not None else []
+        frames = [frame] if frame is not None else []
+        # A still image / non-video is a single-frame source: its total is
+        # known exactly (the number of frames we could decode).
+        return frames, len(frames)
 
     cap = cv2.VideoCapture(str(path))
     frames: List[np.ndarray] = []
     try:
         if not cap.isOpened():
-            return frames
+            return frames, None
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         if total <= 0:
             # Frame count unreliable: fall back to a bounded sequential read so
             # frame metrics still get samples instead of silently skipping.
-            return _sample_frames_sequential(cap, max_frames, color)
+            # Report None so callers never cache an authoritative "exhausted".
+            return _sample_frames_sequential(cap, max_frames, color), None
         n = min(max_frames, total)
         for idx in np.linspace(0, total - 1, n, dtype=int):
             cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
@@ -207,12 +239,17 @@ def _sample_frames_uncached(path: Path, max_frames: int = 8, color: str = "rgb")
             if not ok or frame is None:
                 continue
             frames.append(_convert_frame_color(frame, color))
-        return frames
+        return frames, total
     except Exception as e:
         logger.debug("Failed to sample frames from %s: %s", path, e)
-        return frames
+        return frames, None
     finally:
         cap.release()
+
+
+def _sample_frames_uncached(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
+    """Uncached implementation for uniformly spaced frame sampling."""
+    return _sample_frames_uncached_detailed(path, max_frames=max_frames, color=color)[0]
 
 
 def arrays_to_pil(frames: Sequence[np.ndarray]) -> List[Image.Image]:

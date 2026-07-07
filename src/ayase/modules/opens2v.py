@@ -328,9 +328,15 @@ class OpenS2VModule(PipelineModule):
     def _load_vlm(self) -> None:
         try:
             import torch
+            # The default checkpoint (llava-hf/llava-1.5-7b-hf) is a LLaVA-1.5
+            # model, NOT LLaVA-NeXT — loading it with the LlavaNext* classes
+            # raises and disables NaturalScore. Use the version-robust
+            # AutoModelForImageTextToText + AutoProcessor, which resolve to the
+            # correct Llava*/LlavaNext* implementation from the checkpoint config
+            # (verified against the llava-1.5-7b-hf model card).
             from transformers import (
-                LlavaNextForConditionalGeneration,
-                LlavaNextProcessor,
+                AutoModelForImageTextToText,
+                AutoProcessor,
             )
             from ayase.runtime import (
                 from_pretrained_with_attention,
@@ -345,7 +351,7 @@ class OpenS2VModule(PipelineModule):
             def load() -> Tuple[Any, Any]:
                 model = (
                     from_pretrained_with_attention(
-                        LlavaNextForConditionalGeneration,
+                        AutoModelForImageTextToText,
                         name,
                         self.config,
                         device=device,
@@ -356,7 +362,7 @@ class OpenS2VModule(PipelineModule):
                     .to(device)
                     .eval()
                 )
-                processor = LlavaNextProcessor.from_pretrained(name, cache_dir=models_dir)
+                processor = AutoProcessor.from_pretrained(name, cache_dir=models_dir)
                 return model, processor
 
             self._vlm_model, self._vlm_processor = shared_runtime_resource(
@@ -561,6 +567,11 @@ class OpenS2VModule(PipelineModule):
             kwargs["box_threshold"] = box_thr
         if "text_threshold" in params:
             kwargs["text_threshold"] = float(self.config.get("text_threshold", 0.25))
+        # ``input_ids`` is a named parameter across transformers releases; pass it
+        # by keyword when present so this is robust to argument reordering.
+        if "input_ids" in params:
+            kwargs["input_ids"] = inputs["input_ids"]
+            return fn(outputs, **kwargs)[0]
         return fn(outputs, inputs["input_ids"], **kwargs)[0]
 
     # ------------------------------------------------------------------ #
@@ -585,8 +596,10 @@ class OpenS2VModule(PipelineModule):
             import torch
 
             prompt = f"USER: <image>\n{_NATURAL_RUBRIC}\nASSISTANT:"
+            # LlavaProcessor.__call__ takes ``images`` as its first positional
+            # argument, so pass text/images by keyword (matching the model card).
             inputs = self._vlm_processor(
-                prompt, images=pil_frame, return_tensors="pt"
+                text=prompt, images=pil_frame, return_tensors="pt"
             ).to(self._device)
             with torch.inference_mode():
                 out = self._vlm_model.generate(
