@@ -264,20 +264,8 @@ class GridLayoutModule(PipelineModule):
 
     @staticmethod
     def _store_layout(sample: Sample, layout: str) -> None:
-        """Attach the detected layout to sample.metadata['grid_layout'] defensively.
-
-        Sample is a Pydantic model with no declared ``metadata`` field, so the
-        dict is attached via object.__setattr__ (bypassing extra="forbid"). If a
-        future Sample gains a real metadata dict this reuses it instead.
-        """
-        meta = getattr(sample, "metadata", None)
-        if not isinstance(meta, dict):
-            meta = {}
-            try:
-                object.__setattr__(sample, "metadata", meta)
-            except Exception:
-                return
-        meta["grid_layout"] = layout
+        """Attach the detected layout to ``sample.metadata['grid_layout']``."""
+        sample.metadata["grid_layout"] = layout
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:

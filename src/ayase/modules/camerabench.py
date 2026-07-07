@@ -59,21 +59,8 @@ CAMERA_MOTION_LABELS = {
 
 
 def _store_camera_motion_class(sample: Sample, label: str) -> None:
-    """Attach the predicted class to ``sample.metadata["camera_motion_class"]``.
-
-    ``Sample`` is a pydantic model without a declared ``metadata`` field, so the
-    dict is attached via ``object.__setattr__`` (bypassing pydantic validation).
-    Readers can then use ``getattr(sample, "metadata", {})``; the value is
-    process-local and not serialised by ``model_dump``.
-    """
-    try:
-        meta = getattr(sample, "metadata", None)
-        if not isinstance(meta, dict):
-            meta = {}
-            object.__setattr__(sample, "metadata", meta)
-        meta["camera_motion_class"] = label
-    except Exception:  # pragma: no cover - defensive
-        logger.debug("camerabench: could not attach camera_motion_class metadata")
+    """Attach the predicted class to ``sample.metadata["camera_motion_class"]``."""
+    sample.metadata["camera_motion_class"] = label
 
 
 class CameraBenchModule(PipelineModule):
