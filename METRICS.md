@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 12:40 · **369 modules** · **438 metrics**
+> **Version 0.1.60** · Generated 2026-07-07 13:46 · **369 modules** · **436 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**369** modules · **488** output fields · **438** metrics · **265** tiered · **146** GPU · **21** categories
+**369** modules · **486** output fields · **436** metrics · **265** tiered · **149** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -29,17 +29,17 @@
 </tr></table>
 
 > [!WARNING]
-> **25 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
+> **20 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
 >
-> `confidence_score`, `discovqa_score`, `faver_score`, `internvqa_score`, `lmmvqa_score`, `mc360iqa_score`, `mdvqa_distortion`, `mdvqa_motion`, `mdvqa_semantic`, `memoryvqa_score`, `mm_pcqa_score`, `nr_gvqm_score`, `oavqa_score`, `serfiq_score`, `siamvqa_score`, `sqi_score`, `sr4kvqa_score`, `ugvq_score`, `unified_vqa_score`, `vbliinds_score`, `video_memorability`, `videoreward_mq`, `videoreward_ta`, `videoreward_vq`, `vqa_t_score`
+> `confidence_score`, `discovqa_score`, `faver_score`, `internvqa_score`, `lmmvqa_score`, `memoryvqa_score`, `mm_pcqa_score`, `nr_gvqm_score`, `oavqa_score`, `siamvqa_score`, `sqi_score`, `sr4kvqa_score`, `ugvq_score`, `unified_vqa_score`, `vbliinds_score`, `video_memorability`, `videoreward_mq`, `videoreward_ta`, `videoreward_vq`, `vqa_t_score`
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-104-metrics) (104) · [Full-Reference Quality](#full-reference-quality-64-metrics) (64) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-28-metrics) (28) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-43-metrics) (43) · [Face & Identity](#face--identity-20-metrics) (20) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-31-modules) (31)
+[No-Reference Quality](#no-reference-quality-102-metrics) (102) · [Full-Reference Quality](#full-reference-quality-64-metrics) (64) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-28-metrics) (28) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-43-metrics) (43) · [Face & Identity](#face--identity-20-metrics) (20) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-31-modules) (31)
 
 ---
 
-## No-Reference Quality (104 metrics)
+## No-Reference Quality (102 metrics)
 
 ### `adadqa_score` [↑](#categories)
 > Ada-DQA adaptive diverse (higher=better) · ↑ higher=better
@@ -370,12 +370,11 @@
 ### `gamival_score` [↑](#categories)
 > GAMIVAL cloud gaming NR-VQA (higher=better) · ↑ higher=better
 
-**[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 3D-CNN features (2023)
+**[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Backend**: unavailable → gamival
-- **Packages**: gc, joblib, torch, torchvision
-- **VRAM**: ~200 MB
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Packages**: gc, opencv-python, tensorflow
 - **Tests**: covered by [`test_gamival.py`](tests/modules/per_module/test_gamival.py)
 - **Config**: `subsample=8`
 
@@ -482,11 +481,12 @@
 
 **[`mc360iqa`](src/ayase/modules/mc360iqa.py)** — MC360IQA blind 360 IQA (2019; real model only, disabled if unavailable)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → real
+- **Packages**: Pillow, huggingface_hub, opencv-python, scipy, torch, torchvision
 - **VRAM**: ~200 MB
 - **Tests**: covered by [`test_mc360iqa.py`](tests/modules/per_module/test_mc360iqa.py)
-- **Config**: `subsample=8`, `n_viewports=10`, `viewport_size=224`
+- **Config**: `weights_variant=OIQA`, `projection_size=480`, `input_size=224`, `device=auto`
 
 ### `mdtvsfa_score` [↑](#categories)
 > MDTVSFA fragment-based VQA (higher=better) · ↑ higher=better
@@ -499,35 +499,16 @@
 - **Tests**: covered by [`test_mdtvsfa.py`](tests/modules/per_module/test_mdtvsfa.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `subsample=5`
 
-### `mdvqa_distortion` [↑](#categories)
-> MD-VQA distortion quality (higher=better) · ↑ higher=better
+### `mdvqa_score` [↑](#categories)
+> MD-VQA fused quality (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023; real model only, disabled if unavailable)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: real → unavailable
+- **Packages**: huggingface_hub, opencv-python, torch, torchvision
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
-- **Config**: `subsample=8`, `frame_size=224`
-
-### `mdvqa_motion` [↑](#categories)
-> MD-VQA motion quality (higher=better) · ↑ higher=better
-
-**[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023; real model only, disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
-- **Config**: `subsample=8`, `frame_size=224`
-
-### `mdvqa_semantic` [↑](#categories)
-> MD-VQA semantic quality (higher=better) · ↑ higher=better
-
-**[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023; real model only, disabled if unavailable)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
-- **Config**: `subsample=8`, `frame_size=224`
+- **Config**: `clip_len=16`, `max_clips=8`, `device=auto`
 
 ### `memoryvqa_score` [↑](#categories)
 > Memory-VQA human memory (higher=better) · ↑ higher=better
@@ -688,12 +669,13 @@
 ### `provqa_score` [↑](#categories)
 > ProVQA progressive 360 (higher=better) · ↑ higher=better
 
-**[`provqa`](src/ayase/modules/provqa.py)** — ProVQA progressive blind 360 VQA (2022)
+**[`provqa`](src/ayase/modules/provqa.py)** — ProVQA progressive blind 360° VQA (real model only)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: real → unavailable
+- **Packages**: opencv-python, torch
 - **Tests**: covered by [`test_provqa.py`](tests/modules/per_module/test_provqa.py)
-- **Config**: `subsample=8`, `n_fine_crops=6`
+- **Config**: `device=auto`
 
 ### `ptmvqa_score` [↑](#categories)
 > PTM-VQA multi-PTM fusion (higher=better) · ↑ higher=better
@@ -1772,10 +1754,11 @@
 
 **[`vfips`](src/ayase/modules/vfips.py)** — VFIPS frame interpolation perceptual similarity (ECCV 2022, FR)
 
-- **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → real
+- **Packages**: huggingface_hub, opencv-python, torch
 - **Tests**: covered by [`test_vfips.py`](tests/modules/per_module/test_vfips.py)
-- **Config**: `subsample=8`
+- **Config**: `max_clips=8`, `device=auto`
 
 ### `vif` [↑](#categories)
 > Visual Information Fidelity
@@ -4159,12 +4142,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `serfiq_score` [↑](#categories)
 > SER-FIQ embedding robustness (higher=better) · ↑ higher=better
 
-**[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via embedding robustness (real model only)
+**[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via dropout embedding robustness (CVPR 2020)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Backend**: unavailable → real
+- **Packages**: gc, huggingface_hub, insightface, mxnet, scikit-learn
 - **Tests**: covered by [`test_serfiq.py`](tests/modules/per_module/test_serfiq.py)
-- **Config**: `subsample=4`, `face_model=buffalo_l`, `n_forward_passes=10`, `det_size=640`, `dropout_rate=0.1`
+- **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`, `n_forward_passes=100`, `alpha=130.0`, `r=0.88`
 
 
 ## Scene & Content (17 metrics)

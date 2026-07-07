@@ -636,9 +636,7 @@ class QualityMetrics(BaseModel):
     clifvqa_score: Optional[float] = None  # CLiF-VQA human feelings (higher=better)
     simplevqa_score: Optional[float] = None  # SimpleVQA Swin+SlowFast (higher=better)
     adadqa_score: Optional[float] = None  # Ada-DQA adaptive diverse (higher=better)
-    mdvqa_semantic: Optional[float] = None  # MD-VQA semantic quality (higher=better)
-    mdvqa_distortion: Optional[float] = None  # MD-VQA distortion quality (higher=better)
-    mdvqa_motion: Optional[float] = None  # MD-VQA motion quality (higher=better)
+    mdvqa_score: Optional[float] = None  # MD-VQA fused quality (0-1, higher=better)
 
     # FR-VQA (new models)
     rankdvqa_score: Optional[float] = None  # RankDVQA ranking-based FR (higher=better)

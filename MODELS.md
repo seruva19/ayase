@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 13:01 · **211 models** across **10 sources**
+> **Version 0.1.60** · Generated 2026-07-07 13:46 · **210 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**211** models · **73** HuggingFace · **55** pyiqa · **10** sources
+**210** models · **73** HuggingFace · **55** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (50)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (50)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -511,7 +511,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `torchvision/r3d_18` [↑](#categories)
 > torchvision · BSD-3-Clause
 
-- **Used by**: `fvd`, `gamival`
+- **Used by**: `fvd`
 - **VRAM**: ~200 MB · **Disk**: ~130 MB
 
 ### `torchvision/raft_large` [↑](#categories)
@@ -551,11 +551,6 @@ Bundled with `pip install torchvision`. Weights download on first use.
 > torchvision
 
 - **Used by**: `camera_trajectory`
-
-### `torchvision/video` [↑](#categories)
-> torchvision · BSD-3-Clause
-
-- **Used by**: `gamival`
 
 ## CLIP / OpenCLIP
 
@@ -676,13 +671,13 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `insightface` [↑](#categories)
 > InsightFace (face recognition)
 
-- **Used by**: `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`
+- **Used by**: `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`, `serfiq`
 - **Install**: `pip install insightface`
 
 ### `joblib` [↑](#categories)
 > Joblib (serialized model storage)
 
-- **Used by**: `brightrate`, `chipqa`, `gamival`, `hdr_chipqa`, `hdrmax`, `tlvqm`, `videval`
+- **Used by**: `brightrate`, `chipqa`, `hdr_chipqa`, `hdrmax`, `tlvqm`, `videval`
 - **Install**: `pip install joblib`
 
 ### `jxlpy` [↑](#categories)
