@@ -773,6 +773,38 @@ class QualityMetrics(BaseModel):
     concept_count: Optional[int] = None  # Number of detected instances of target concept
     concept_face_count: Optional[int] = None  # Number of faces detected
 
+    # Fine-grained preference reward (VisionReward, AAAI 2026)
+    vision_reward_score: Optional[float] = None  # VisionReward weighted judgment score (higher=better)
+
+    # Physics-IQ reference-based physical understanding (ICCV 2025)
+    physics_iq_score: Optional[float] = None  # Combined Physics-IQ score (0-100, higher=better)
+    physics_iq_spatial_iou: Optional[float] = None  # Spatial IoU vs real continuation (0-1)
+    physics_iq_spatiotemporal_iou: Optional[float] = None  # Spatiotemporal IoU vs real continuation (0-1)
+    physics_iq_weighted_spatial_iou: Optional[float] = None  # Weighted spatial IoU vs real continuation (0-1)
+    physics_iq_mse: Optional[float] = None  # MSE vs real continuation (lower=better)
+
+    # Camera trajectory adherence (CamI2V-style pose errors)
+    camera_rot_error: Optional[float] = None  # RotErr: rotation error vs target trajectory (deg, lower=better)
+    camera_trans_error: Optional[float] = None  # TransErr: translation error vs target trajectory (lower=better)
+    camera_traj_consistency: Optional[float] = None  # CamMC: camera motion consistency (lower=better)
+
+    # Camera motion taxonomy (CameraBench)
+    camera_motion_class_confidence: Optional[float] = None  # Confidence of predicted camera-motion class (0-1)
+
+    # Audio-visual generation sync
+    desync_score: Optional[float] = None  # Synchformer predicted AV offset (seconds, lower=better)
+    av_align_score: Optional[float] = None  # AV-Align onset/flow-peak IoU (0-1, higher=better)
+
+    # Subject-driven generation consistency (OpenS2V-Eval)
+    opens2v_nexus_score: Optional[float] = None  # NexusScore detected-subject-crop consistency (higher=better)
+    opens2v_natural_score: Optional[float] = None  # NaturalScore VLM naturalness (higher=better)
+
+    # Human anatomy plausibility
+    anatomy_score: Optional[float] = None  # Keypoint-based limb-count/anatomy plausibility (0-1, higher=better)
+
+    # Layout artifacts
+    grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
+
     # -- Provenance (not a metric) ----------------------------------------
     # Maps ``module.name`` -> the backend/tier that produced its metrics for
     # this sample (e.g. "pyiqa", "proxy", "heuristic"). Populated automatically
