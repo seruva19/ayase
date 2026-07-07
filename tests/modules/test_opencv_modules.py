@@ -189,7 +189,8 @@ def test_dynamics_controllability_keywords():
     m = DynamicsControllabilityModule()
     assert m._extract_expected_motion("a fast car racing") > 0.5
     assert m._extract_expected_motion("a still lake with calm water") < 0.3
-    assert m._extract_expected_motion("a landscape") == 0.5
+    # No motion cue → undefined, not a fabricated neutral 0.5
+    assert m._extract_expected_motion("a landscape") is None
 
 
 def test_dynamics_controllability_no_caption(video_sample):

@@ -112,13 +112,15 @@ def test_tlvqm_basics():
 
 
 def test_tlvqm_video(video_sample):
+    """The handcrafted-feature tier was removed: without the CNN-TLVQM
+    backend loaded (setup not run), the score must stay unset."""
     from ayase.modules.tlvqm import TLVQMModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = TLVQMModule()
     result = m.process(video_sample)
-    assert result.quality_metrics.tlvqm_score is not None
-    assert 0.0 <= result.quality_metrics.tlvqm_score <= 1.0
+    assert m._ml_available is False
+    assert result.quality_metrics.tlvqm_score is None
 
 
 def test_funque_basics():
@@ -129,13 +131,20 @@ def test_funque_basics():
 
 
 def test_funque_video(video_sample):
+    """Real funque package or nothing (SSIM-proxy tier removed)."""
     from ayase.modules.funque import FUNQUEModule
 
     video_sample.quality_metrics = QualityMetrics()
+    video_sample.reference_path = video_sample.path  # FR metric
     m = FUNQUEModule()
+    m.setup()
     result = m.process(video_sample)
-    assert result.quality_metrics.funque_score is not None
-    assert 0.0 <= result.quality_metrics.funque_score <= 1.0
+    if m._backend == "funque":
+        assert result.quality_metrics.funque_score is not None
+        assert 0.0 <= result.quality_metrics.funque_score <= 1.0
+    else:
+        assert m._backend == "unavailable"
+        assert result.quality_metrics.funque_score is None
 
 
 def test_movie_basics():
@@ -145,10 +154,23 @@ def test_movie_basics():
     _test_module_basics(MOVIEModule, "movie")
 
 
-def test_movie_video(video_sample):
+def test_movie_video_no_reference_is_unset(video_sample):
+    """MOVIE is full-reference: without a reference nothing is fabricated."""
     from ayase.modules.movie import MOVIEModule
 
     video_sample.quality_metrics = QualityMetrics()
+    m = MOVIEModule()
+    result = m.process(video_sample)
+    assert m._backend == "unavailable"
+    assert result.quality_metrics.movie_score is None
+
+
+def test_movie_video_with_reference(video_sample):
+    """With a reference the real Gabor FR computation produces a score."""
+    from ayase.modules.movie import MOVIEModule
+
+    video_sample.quality_metrics = QualityMetrics()
+    video_sample.reference_path = video_sample.path
     m = MOVIEModule()
     result = m.process(video_sample)
     assert result.quality_metrics.movie_score is not None
@@ -162,10 +184,22 @@ def test_st_greed_basics():
     _test_module_basics(STGREEDModule, "st_greed")
 
 
-def test_st_greed_video(video_sample):
+def test_st_greed_video_no_reference_is_unset(video_sample):
+    """ST-GREED is full-reference: without a reference nothing is fabricated."""
     from ayase.modules.st_greed import STGREEDModule
 
     video_sample.quality_metrics = QualityMetrics()
+    m = STGREEDModule()
+    result = m.process(video_sample)
+    assert result.quality_metrics.st_greed_score is None
+
+
+def test_st_greed_video_with_reference(video_sample):
+    """With a reference the real entropic-difference FR computation runs."""
+    from ayase.modules.st_greed import STGREEDModule
+
+    video_sample.quality_metrics = QualityMetrics()
+    video_sample.reference_path = video_sample.path
     m = STGREEDModule()
     result = m.process(video_sample)
     assert result.quality_metrics.st_greed_score is not None
@@ -189,13 +223,18 @@ def test_c3dvqa_basics():
 
 
 def test_c3dvqa_video(video_sample):
+    """Real trained C3DVQA backend or nothing (3D-gradient proxy removed)."""
     from ayase.modules.c3dvqa import C3DVQAModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = C3DVQAModule()
+    m.setup()
     result = m.process(video_sample)
-    assert result.quality_metrics.c3dvqa_score is not None
-    assert 0.0 <= result.quality_metrics.c3dvqa_score <= 1.0
+    if m._backend == "c3dvqa":
+        assert result.quality_metrics.c3dvqa_score is not None
+    else:
+        assert m._backend == "unavailable"
+        assert result.quality_metrics.c3dvqa_score is None
 
 
 def test_flolpips_basics():
@@ -206,13 +245,16 @@ def test_flolpips_basics():
 
 
 def test_flolpips_video(video_sample):
+    """FloLPIPS is full-reference and needs the RAFT+LPIPS backend; without
+    setup the backend stays unavailable and no score is fabricated."""
     from ayase.modules.flolpips import FloLPIPSModule
 
     video_sample.quality_metrics = QualityMetrics()
-    m = FloLPIPSModule()
+    m = FloLPIPSModule({"subsample": 2, "size": 64})
+    # setup() not called → backend must remain honest-unavailable
     result = m.process(video_sample)
-    assert result.quality_metrics.flolpips is not None
-    assert 0.0 <= result.quality_metrics.flolpips <= 1.0
+    assert m._backend == "unavailable"
+    assert result.quality_metrics.flolpips is None
 
 
 def test_flolpips_image(image_sample):
@@ -232,22 +274,41 @@ def test_hdr_vqm_basics():
 
 
 def test_hdr_vqm_video(video_sample):
+    """HDR-VQM is full-reference (PU21 + wavelets): scores only with a
+    reference and the pywt backend, no NR proxy."""
     from ayase.modules.hdr_vqm import HDRVQMModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = HDRVQMModule()
+    m.setup()
+
+    # No reference → no score, ever
     result = m.process(video_sample)
-    assert result.quality_metrics.hdr_vqm is not None
-    assert 0.0 <= result.quality_metrics.hdr_vqm <= 1.0
+    assert result.quality_metrics.hdr_vqm is None
+
+    video_sample.reference_path = video_sample.path
+    result = m.process(video_sample)
+    if m._backend == "pu21_wavelet":
+        assert result.quality_metrics.hdr_vqm is not None
+        assert 0.0 <= result.quality_metrics.hdr_vqm <= 1.0
+    else:
+        assert m._backend == "unavailable"
+        assert result.quality_metrics.hdr_vqm is None
 
 
 def test_hdr_vqm_image(image_sample):
     from ayase.modules.hdr_vqm import HDRVQMModule
 
     image_sample.quality_metrics = QualityMetrics()
+    image_sample.reference_path = image_sample.path
     m = HDRVQMModule()
+    m.setup()
     result = m.process(image_sample)
-    assert result.quality_metrics.hdr_vqm is not None
+    if m._backend == "pu21_wavelet":
+        assert result.quality_metrics.hdr_vqm is not None
+    else:
+        assert m._backend == "unavailable"
+        assert result.quality_metrics.hdr_vqm is None
 
 
 def test_st_lpips_basics():

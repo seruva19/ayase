@@ -23,7 +23,8 @@ def test_audio_peaq_basics():
     _test_module_basics(AudioPEAQModule, "audio_peaq")
 
 
-def test_audio_peaq_lsd_fallback_identical_signal(tmp_dir):
+def test_audio_peaq_real_backend_or_none_identical_signal(tmp_dir):
+    """No LSD proxy tier: real peaqb backend scores, else fields stay unset."""
     from ayase.modules.audio_peaq import AudioPEAQModule
 
     sr = 48000
@@ -34,19 +35,25 @@ def test_audio_peaq_lsd_fallback_identical_signal(tmp_dir):
     _write_wav(ref_path, sr, sig)
     _write_wav(dist_path, sr, sig)
 
-    m = AudioPEAQModule(config={"backend": "lsd"})
+    m = AudioPEAQModule()
     m.on_mount()
     sample = Sample(path=dist_path, is_video=False, reference_path=ref_path)
     out = m.process(sample)
 
-    assert out.quality_metrics is not None
-    assert out.quality_metrics.peaq_odg is not None
-    assert out.quality_metrics.peaq_di is not None
-    # Identical signals → near-zero distortion → ODG close to 0
-    assert out.quality_metrics.peaq_odg >= -0.5, f"identical signals should score near 0, got {out.quality_metrics.peaq_odg}"
+    if m.active_backend == "peaqb":
+        assert out.quality_metrics is not None
+        assert out.quality_metrics.peaq_odg is not None
+        assert out.quality_metrics.peaq_di is not None
+        # Identical signals → near-zero distortion → ODG close to 0
+        assert out.quality_metrics.peaq_odg >= -0.5
+    else:
+        # Honest state: no real PEAQ binary → nothing fabricated
+        assert m.active_backend == "unavailable"
+        assert out.quality_metrics is None or out.quality_metrics.peaq_odg is None
+        assert out.quality_metrics is None or out.quality_metrics.peaq_di is None
 
 
-def test_audio_peaq_lsd_fallback_degraded_signal(tmp_dir):
+def test_audio_peaq_real_backend_or_none_degraded_signal(tmp_dir):
     from ayase.modules.audio_peaq import AudioPEAQModule
 
     sr = 48000
@@ -59,13 +66,17 @@ def test_audio_peaq_lsd_fallback_degraded_signal(tmp_dir):
     _write_wav(ref_path, sr, sig)
     _write_wav(dist_path, sr, noisy)
 
-    m = AudioPEAQModule(config={"backend": "lsd"})
+    m = AudioPEAQModule()
     m.on_mount()
     sample = Sample(path=dist_path, is_video=False, reference_path=ref_path)
     out = m.process(sample)
 
-    assert out.quality_metrics.peaq_odg < -0.1, "noisy signal should score worse than identical"
-    assert -4.0 <= out.quality_metrics.peaq_odg <= 0.0
+    if m.active_backend == "peaqb":
+        assert out.quality_metrics.peaq_odg < -0.1, "noisy signal should score worse than identical"
+        assert -4.0 <= out.quality_metrics.peaq_odg <= 0.0
+    else:
+        assert m.active_backend == "unavailable"
+        assert out.quality_metrics is None or out.quality_metrics.peaq_odg is None
 
 
 def test_audio_peaq_no_reference_is_noop(tmp_dir):

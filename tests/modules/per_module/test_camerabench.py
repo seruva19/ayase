@@ -97,4 +97,5 @@ def test_graceful_unavailable(video_sample):
     result = m.process(video_sample)
     assert result is video_sample
     assert video_sample.quality_metrics.camera_motion_class_confidence is None
-    assert getattr(video_sample, "metadata", None) is None
+    # Sample.metadata now defaults to {} — the module must not write into it
+    assert "camera_motion_class" not in video_sample.metadata

@@ -73,7 +73,8 @@ class TestDynamicsControllabilityModule:
         mod = DynamicsControllabilityModule()
         assert mod._extract_expected_motion("a person running fast") > 0.5
         assert mod._extract_expected_motion("a calm still lake") < 0.3
-        assert mod._extract_expected_motion("a beautiful sunset") == 0.5  # no keywords
+        # No keywords → undefined, not a fabricated neutral 0.5
+        assert mod._extract_expected_motion("a beautiful sunset") is None
 
     def test_camera_keyword_extraction(self):
         from ayase.modules.dynamics_controllability import DynamicsControllabilityModule

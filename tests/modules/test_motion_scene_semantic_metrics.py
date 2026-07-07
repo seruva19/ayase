@@ -20,10 +20,16 @@ def test_scene_detection_video(video_sample):
     result = m.process(video_sample)
     qm = result.quality_metrics
     assert qm is not None
-    assert qm.scene_stability is not None
-    assert 0 <= qm.scene_stability <= 1
-    assert qm.avg_scene_duration is not None
-    assert qm.avg_scene_duration > 0
+    if m._backend == "transnetv2":
+        assert qm.scene_stability is not None
+        assert 0 <= qm.scene_stability <= 1
+        assert qm.avg_scene_duration is not None
+        assert qm.avg_scene_duration > 0
+    else:
+        # Honest state: TransNetV2 not installed → scene fields left unset
+        assert m._backend == "unavailable"
+        assert qm.scene_stability is None
+        assert qm.avg_scene_duration is None
 
 
 def test_raft_motion_basics():
@@ -117,8 +123,14 @@ def test_trajan_video(video_sample):
     result = m.process(video_sample)
     qm = result.quality_metrics
     assert qm is not None
-    assert qm.trajan_score is not None
-    assert 0 <= qm.trajan_score <= 1
+    if m._backend == "trajan":
+        assert qm.trajan_score is not None
+        assert 0 <= qm.trajan_score <= 1
+    else:
+        # Honest state: real TRAJAN autoencoder not wired (or setup skipped
+        # in test_mode) → score left unset
+        assert m._backend in (None, "unavailable")
+        assert qm.trajan_score is None
 
 
 def test_trajan_image(image_sample):
@@ -296,8 +308,12 @@ def test_jedi_dataset_stats_field():
     assert stats.jedi is None
 
 
-def test_temporal_flickering_load_all_frames_respects_max(tmp_path):
-    """_load_all_frames subsamples when frame count exceeds max_frames."""
+def test_temporal_flickering_pair_batches_respect_max_frames(tmp_path):
+    """The bounded streaming loader keeps at most max_frames frames, so it
+    yields at most max_frames - 1 consecutive frame pairs."""
+    import pytest
+    torch = pytest.importorskip("torch")
+
     from ayase.modules.temporal_flickering import TemporalFlickeringModule
 
     # Create a video with 30 frames
@@ -308,8 +324,14 @@ def test_temporal_flickering_load_all_frames_respects_max(tmp_path):
         writer.write(np.full((32, 32, 3), 100, dtype=np.uint8))
     writer.release()
 
-    module = TemporalFlickeringModule(config={"max_frames": 10})
+    module = TemporalFlickeringModule(config={"max_frames": 10, "pair_chunk": 4})
     sample = Sample(path=vid, is_video=True)
-    frames = module._load_all_frames(sample)
 
-    assert len(frames) <= 10
+    total_pairs = 0
+    for img1, img2 in module._iter_pair_batches(sample):
+        assert img1.shape[0] == img2.shape[0]
+        # No batch may exceed the configured chunk size (memory bound)
+        assert img1.shape[0] <= 4
+        total_pairs += int(img1.shape[0])
+
+    assert 0 < total_pairs <= 10 - 1
