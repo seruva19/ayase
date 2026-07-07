@@ -125,7 +125,11 @@ class IdentityLossModule(PipelineModule):
     # -- Backend implementations ------------------------------------------------
 
     def _compute_insightface(self, ref_rgb, frames):
-        ref_faces = self._app.get(np.ascontiguousarray(ref_rgb))
+        # ref_rgb / frames are RGB, but InsightFace .get() expects BGR (cv2
+        # convention); convert so detection + ArcFace embeddings are correct.
+        ref_faces = self._app.get(
+            cv2.cvtColor(np.ascontiguousarray(ref_rgb), cv2.COLOR_RGB2BGR)
+        )
         if not ref_faces:
             return None
         ref_emb = ref_faces[0].embedding
@@ -133,7 +137,9 @@ class IdentityLossModule(PipelineModule):
 
         distances = []
         for frame in frames:
-            faces = self._app.get(np.ascontiguousarray(frame))
+            faces = self._app.get(
+                cv2.cvtColor(np.ascontiguousarray(frame), cv2.COLOR_RGB2BGR)
+            )
             if not faces:
                 continue
             emb = faces[0].embedding

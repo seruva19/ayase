@@ -835,6 +835,12 @@ class Sample(BaseModel):
     # partial result from cache. Populated by the pipeline; empty by default so
     # legacy state files load cleanly.
     failed_modules: List[str] = Field(default_factory=list)
+    # Free-form, structured annotations a module attaches to a sample when the
+    # information is not a numeric metric field — e.g. grid_layout stores the
+    # detected layout string ("2x2") and camerabench the predicted camera-motion
+    # class. Serialised with the sample state; empty by default so legacy state
+    # files load cleanly.
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @property
     def is_valid(self) -> bool:

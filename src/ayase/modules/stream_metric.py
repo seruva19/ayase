@@ -1,14 +1,22 @@
 """STREAM — Spatio-Temporal Evaluation and Analysis Metric (ICLR 2024).
 
 GitHub: https://github.com/pro2nit/STREAM
-Distribution-level: stream_spatial, stream_temporal
+Paper:  arXiv:2403.09669
+
+The published STREAM operates on deep per-frame features (SwAV / DINOv2), scores
+temporal naturalness (STREAM-T) from the skewness of the temporal power spectrum
+and spatial fidelity/diversity (STREAM-S) from the real-vs-generated feature
+signals. A grayscale-pixel + FFT-of-frame-difference-variance approximation is
+not that computation, so it is not emitted under the STREAM name. This module
+reports itself unavailable until the real STREAM backend is wired in.
+
+Dataset-level fields (populated only with a real backend):
+    stream_spatial, stream_temporal
 """
 import logging
-import cv2
-import numpy as np
 from typing import List, Optional
 
-from ayase.models import Sample, QualityMetrics
+from ayase.models import Sample, QualityMetrics  # noqa: F401 (kept for API parity)
 from ayase.base_modules import BatchMetricModule
 
 logger = logging.getLogger(__name__)
@@ -22,76 +30,61 @@ class STREAMModule(BatchMetricModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
-        self._temporal_features: List = []
+        self._backend = None
+        self._stream = None
+
+    def setup(self) -> None:
+        if getattr(self, "test_mode", False):
+            return
+        try:
+            import stream  # type: ignore  # official STREAM backend
+
+            self._stream = stream
+            self._backend = "stream"
+            logger.info("STREAM initialised (stream backend)")
+            return
+        except ImportError:
+            pass
+
+        self._backend = "unavailable"
+        self._stream = None
+        logger.info(
+            "STREAM unavailable: the official STREAM (SwAV/DINOv2) backend is not "
+            "installed; stream_spatial/stream_temporal will not be populated."
+        )
 
     def extract_features(self, sample: Sample) -> Optional[object]:
-        """Extract spatial + temporal features from a sample."""
+        """Extract STREAM deep features via the real backend, else nothing."""
+        if self._stream is None:
+            return None
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                try:
-                    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    if total <= 1:
-                        return None
-                    indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                    grays = []
-                    for idx in indices:
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                        ret, f = cap.read()
-                        if ret:
-                            grays.append(cv2.resize(
-                                cv2.cvtColor(f, cv2.COLOR_BGR2GRAY).astype(float), (64, 64)
-                            ))
-                finally:
-                    cap.release()
-
-                if len(grays) < 2:
-                    return None
-
-                # Spatial feature: flattened mean frame
-                spatial = np.mean([g.flatten() for g in grays], axis=0)
-
-                # Temporal feature: FFT of frame diffs
-                diffs = [np.mean(np.abs(grays[i] - grays[i + 1])) for i in range(len(grays) - 1)]
-                fft_mag = np.abs(np.fft.fft(diffs))
-                self._temporal_features.append(fft_mag[: len(fft_mag) // 2 + 1])
-
-                return spatial
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    gray = cv2.resize(
-                        cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(float), (64, 64)
-                    )
-                    return gray.flatten()
+            extractor = getattr(self._stream, "extract_features", None)
+            if extractor is None:
                 return None
+            return extractor(str(sample.path))
         except Exception as e:
-            logger.warning(f"STREAM feature extraction failed: {e}")
+            logger.warning("STREAM feature extraction failed: %s", e)
             return None
 
     def compute_distribution_metric(
         self, features: List, reference_features: Optional[List] = None
-    ) -> float:
-        """Compute STREAM spatial and temporal scores."""
-        spatial_score = 0.0
-        temporal_score = 0.0
-
-        if len(features) >= 2:
-            feats = np.array(features)
-            mean_feat = feats.mean(axis=0)
-            diversity = np.mean(np.std(feats, axis=0))
-            fidelity = np.mean(np.linalg.norm(feats - mean_feat, axis=1))
-            spatial_score = float(diversity / (fidelity + 1e-8))
-
-        if len(self._temporal_features) >= 2:
-            max_len = max(len(t) for t in self._temporal_features)
-            padded = [np.pad(t, (0, max_len - len(t))) for t in self._temporal_features]
-            t_feats = np.array(padded)
-            temporal_score = float(1.0 / (1.0 + np.var(t_feats.mean(axis=1))))
-
-        # Store in pipeline stats if available
-        if hasattr(self, "pipeline") and self.pipeline and hasattr(self.pipeline, "stats"):
-            self.pipeline.stats["stream_spatial"] = spatial_score
-            self.pipeline.stats["stream_temporal"] = temporal_score
-
-        return spatial_score  # Return primary metric
+    ) -> Optional[float]:
+        """Compute STREAM-S / STREAM-T via the real backend and store them."""
+        if self._stream is None:
+            return None
+        try:
+            spatial = getattr(self._stream, "stream_S", None)
+            temporal = getattr(self._stream, "stream_T", None)
+            if spatial is None or temporal is None:
+                return None
+            spatial_score = float(spatial(features, reference_features))
+            temporal_score = float(temporal(features, reference_features))
+            if hasattr(self, "pipeline") and self.pipeline and hasattr(
+                self.pipeline, "add_dataset_metric"
+            ):
+                self.pipeline.add_dataset_metric("stream_spatial", spatial_score)
+                self.pipeline.add_dataset_metric("stream_temporal", temporal_score)
+            return spatial_score
+        except Exception as e:
+            logger.warning("STREAM computation failed: %s", e)
+            return None

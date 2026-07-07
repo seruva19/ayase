@@ -276,7 +276,10 @@ class ConceptPresenceModule(PipelineModule):
 
     def _detect_faces_insightface(self, frame: np.ndarray) -> int:
         try:
-            faces = self._face_app.get(frame)
+            # Frames are RGB here; InsightFace .get() expects BGR (it uses cv2
+            # internally), so convert to avoid degraded detection.
+            bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            faces = self._face_app.get(bgr)
             return len(faces)
         except Exception:
             return 0
