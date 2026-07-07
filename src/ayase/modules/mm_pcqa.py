@@ -13,6 +13,15 @@ did). Until a genuine MM-PCQA checkpoint is wired in, ``mm_pcqa_score`` is left
 unset.
 
 mm_pcqa_score -- higher = better quality (0-1); real model only
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: MM-PCQA (IJCAI 2023).
+Category: EXTERNAL.
+Why provisional: Code is complete but needs an external weight AND point-cloud (.ply) input, which
+  ayase (video/image validator) does not feed.
+To revive: Mirror WPC.pth (Baidu pan.baidu.com/s/1SuDsQxSRGJ5jePjhTPatHQ, code `pcqa`; or OneDrive
+  1drv.ms/f/s!AjaDoj_-yWggygWzjplEICwa2G9k) AND add .ply input plumbing. Low fit for this project.
+Source: MM-PCQA, IJCAI 2023.
 """
 
 import logging

@@ -12,6 +12,14 @@ until the official DisCoVQA weights are wired in.
 GitHub: https://github.com/VQAssessment/DisCoVQA
 
 discovqa_score — higher = better quality (0-1); left None when unavailable.
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: DisCoVQA (2023).
+Category: TRAINING-ONLY.
+Why provisional: Repo is an explicit "code released later" stub; no weights.
+To revive: Reimplement the distortion-content Swin-T transformer; train on LSVQ + standard VQA
+  benchmarks; validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort M.
+Source: https://github.com/VQAssessment/DisCoVQA
 """
 
 import logging

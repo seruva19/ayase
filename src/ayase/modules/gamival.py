@@ -41,6 +41,16 @@ name):
     from grid-search ``best_pamtr/*.mat`` files that are not distributed.
 
 gamival_score -- higher = better quality (0-1).
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: GAMIVAL (IEEE SPL 2023).
+Category: TRAINING-ONLY.
+Why provisional: Three missing pieces -- MATLAB-only NSS branch, no TensorFlow/Keras for the
+  NDNetGaming DenseNet, and no shipped SVR (grid-searched per split from absent best_pamtr .mat).
+To revive: (1) install TensorFlow/Keras to run the NDNetGaming DenseNet; (2) port the MATLAB NSS
+  feature branch (GAMIVAL_spatial_features.m + WPT filter banks) to Python; (3) train a GAMIVAL
+  SVR on the public LIVE-Meta gaming DB. Effort L.
+Source: https://github.com/utlive/GAMIVAL
 """
 
 import logging

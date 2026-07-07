@@ -11,6 +11,15 @@ number, this module reports itself unavailable until a real UNQA backend
 is wired in.
 
 Output field: ``confidence_score`` (populated only with a real backend).
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: UNQA (2024).
+Category: TRAINING-ONLY.
+Why provisional: No installable weights; the unified rank-based joint head must be trained.
+To revive: Reimplement the unified audio/image/video/AV NR-QA rank-based joint training; train on the
+  joint public A/I/V/AV QA DBs; validate you reproduce the paper's SRCC/PLCC before flipping
+  provisional=False. Redundant with ayase's per-modality metrics.
+Source: UNQA, 2024 (no released weights).
 """
 
 import logging

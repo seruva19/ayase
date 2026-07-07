@@ -11,6 +11,16 @@ left ``None``.
 GitHub: https://chenfeng-bristol.github.io/RankDVQA/
 
 rankdvqa_score — higher = better quality
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: RankDVQA (WACV 2024).
+Category: TRAINING-ONLY.
+Why provisional: Repo is training-code-only, no .pth; but labels are VMAF-generated (NO human MOS
+  needed → fully reproducible).
+To revive: Reimplement the ranking-based hybrid FR transformer; build the self-labelled DB with
+  VMAF-generated labels; train and validate you reproduce the paper's SRCC/PLCC before flipping
+  provisional=False. Effort L; ~ a better-VMAF.
+Source: https://chenfeng-bristol.github.io/RankDVQA/
 """
 
 import logging

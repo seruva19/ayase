@@ -7,6 +7,14 @@ under the PreResQ-R1 name. This module reports itself unavailable until a real
 PreResQ-R1 backend is wired in.
 
 Output field: ``presresq_score`` (populated only with a real backend).
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: PreResQ-R1 (Nov 2025).
+Category: TRAINING-ONLY.
+Why provisional: Very recent, paper only; no code/weights and needs a VLM + GRPO RL pipeline.
+To revive: Reimplement the VLM + GRPO RL rank+score training; train on LSVQ / LSVQ-KonIQ / VQA2 subsets;
+  validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort L (RL pipeline).
+Source: PreResQ-R1, Nov 2025 (paper only).
 """
 
 import logging

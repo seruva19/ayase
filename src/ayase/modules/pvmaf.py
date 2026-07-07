@@ -9,6 +9,15 @@ emit a score: predicting VMAF through an untrained (randomly initialised)
 head would be fabrication. Wire trained pVMAF weights to enable it.
 
 pvmaf_score — 0-100 scale (higher = better)
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: pVMAF (Synamedia 2024).
+Category: REDUNDANT.
+Why provisional: Predicts VMAF from in-loop x264 encoder bitstream features (not a standalone FR
+  metric, and predicts VMAF which ayase already has).
+To revive: Not worth reviving -- redundant with ayase's real VMAF, and architecturally inapplicable to
+  a decoded file (needs in-loop encoder bitstream features). Remove or keep provisional.
+Source: pVMAF, Synamedia 2024.
 """
 
 import logging

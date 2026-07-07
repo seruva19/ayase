@@ -11,6 +11,14 @@ reports itself unavailable. It also no longer writes ``dover_score`` — that
 field belongs solely to the DOVER module.
 
 Output field: ``unified_vqa_score`` (populated only with a real backend).
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: "Unified-VQA" (not a real published metric -- invented name).
+Category: DUPE.
+Why provisional: The prior code was CLIP-embedding statistics under a made-up label; there is no such
+  published model.
+To revive: Nothing to revive -- not a real metric. Delete candidate.
+Source: N/A (invented name; no paper).
 """
 
 import logging
