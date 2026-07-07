@@ -461,6 +461,10 @@ def _is_likely_hf_model_id(candidate: str) -> bool:
         return False
 
     owner, repo = candidate.split("/", 1)
+    # Real HF org/repo names are at least two chars each; single-char segments
+    # are false positives from prose like "n/a" or "either/or".
+    if len(owner) < 2 or len(repo) < 2:
+        return False
     if owner.lower() in _NON_HF_ID_OWNERS:
         return False
     if Path(repo).suffix.lower() in _NON_HF_REPO_SUFFIXES:

@@ -275,6 +275,10 @@ def _is_likely_hf_model_id(candidate: str) -> bool:
         return False
 
     owner, repo = candidate.split("/", 1)
+    # Real HF org/repo names are at least two chars each; single-char segments
+    # are false positives from prose like "n/a" or "either/or".
+    if len(owner) < 2 or len(repo) < 2:
+        return False
     if owner.lower() in _NON_HF_ID_OWNERS:
         return False
     if Path(repo).suffix.lower() in _NON_HF_REPO_SUFFIXES:
@@ -444,7 +448,20 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
         or re.search(r'metric_field(?:_name)?\s*=\s*["\']', full_source)
         or re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", full_source)
     )
-    if meta["output_fields"] and not writes_metrics:
+    # A module may intentionally declare ownership of a metric (via
+    # metric_groups/metric_info) while writing nothing because its real backend
+    # is unavailable — the no-heuristic policy. Only warn when the module has
+    # neither a write nor an honest unavailability marker (a likely mistake).
+    declares_ownership = bool(
+        getattr(cls, "metric_groups", None) or getattr(cls, "metric_info", None)
+    )
+    honestly_unavailable = (
+        '_backend = "unavailable"' in full_source
+        or "_ml_available = False" in full_source
+    )
+    if meta["output_fields"] and not writes_metrics and not (
+        declares_ownership and honestly_unavailable
+    ):
         warnings.append("declares output fields but never assigns quality_metrics")
     return warnings
 
@@ -890,6 +907,26 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                     dataset_enriched[fname] = desc
             meta["dataset_output_fields"] = dataset_enriched
 
+        # A module's ``metric_groups`` is an ownership declaration: it claims a
+        # metric even when (being unavailable under the no-heuristic policy) it
+        # currently writes no value. Document those fields too, describing them
+        # from the model's own field comment, so METRICS.md stays complete and
+        # revivable modules keep their schema slot.
+        declared_groups = getattr(cls, "metric_groups", None) or {}
+        if declared_groups:
+            of = dict(meta.get("output_fields", {}))
+            for fname in declared_groups:
+                if fname in qm_fields and fname not in of:
+                    info = qm_fields[fname]
+                    of[fname] = info.get("comment") or info.get("description") or ""
+            meta["output_fields"] = of
+            dof = dict(meta.get("dataset_output_fields", {}))
+            for fname in declared_groups:
+                if fname in ds_fields and fname not in dof:
+                    info = ds_fields[fname]
+                    dof[fname] = info.get("comment") or info.get("description") or ""
+            meta["dataset_output_fields"] = dof
+
         for b in meta["backends"]:
             all_backends[b] += 1
         for pkg in meta["packages"]:
@@ -1134,12 +1171,20 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         if consumer not in field_reader_names[field]:
             field_reader_names[field].append(consumer)
 
+    # Fields any module claims via declaration (metric_groups/metric_info),
+    # even without a runtime write — documented as owned-but-currently-None
+    # under the no-heuristic policy so METRICS.md stays complete.
+    field_declarers: Dict[str, list] = defaultdict(list)
+    for r in results:
+        for fname in r["output_fields"]:
+            if fname in qm_fields and r["name"] not in field_declarers[fname]:
+                field_declarers[fname].append(r["name"])
+
     # Group metrics by category
     metrics_by_cat: Dict[str, list] = defaultdict(list)
     for field_name in sorted(qm_fields.keys()):
         group = qm_fields[field_name]["group"]
-        writers = field_writers.get(field_name, [])
-        if writers:
+        if field_writers.get(field_name) or field_declarers.get(field_name):
             metrics_by_cat[group].append(field_name)
 
     # ── Category navigation ─────────────────────────────────────────────
@@ -1183,7 +1228,9 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         a("")
 
         for field_name in fields:
-            writers = field_writers.get(field_name, [])
+            # Fall back to declaring modules when no module writes the field at
+            # runtime (real backend unavailable), so it still attributes an owner.
+            writers = field_writers.get(field_name) or field_declarers.get(field_name, [])
             qm = qm_fields[field_name]
             field_comment = qm.get("comment", "")
             field_type = qm.get("type", "float")
