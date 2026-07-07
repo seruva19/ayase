@@ -14,6 +14,14 @@ rather than emit CLIP-prompt proxy values under the VideoReward fields.
 
 videoreward_vq / videoreward_mq / videoreward_ta — populated only with a real
 backend.
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: VideoReward (Kling / VideoAlign, NeurIPS 2025).
+Category: DUPE.
+Why provisional: The real Kling/VideoAlign reward (KwaiVGI/VideoReward, VQ/MQ/TA) is already wired in
+  the working ``video_reward`` module; this stub is redundant.
+To revive: Nothing to revive -- use the sibling ``video_reward`` module. Delete candidate.
+Source: https://huggingface.co/KlingTeam/VideoReward (see the working ``video_reward`` module).
 """
 
 import logging

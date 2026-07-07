@@ -13,6 +13,14 @@ implementation did). Until a genuine OAVQA checkpoint is wired in,
 ``oavqa_score`` is left unset.
 
 oavqa_score -- higher = better quality (0-1); real model only
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: OAVQA (CICAI 2023).
+Category: TRAINING-ONLY.
+Why provisional: Repo ships the OAVQA DB (public) only -- no fused audio-visual model / weights.
+To revive: Reimplement the omnidirectional audio-visual FR fusion; train on the OAVQA DB; validate you
+  reproduce the paper's SRCC/PLCC before flipping provisional=False. Niche (360° A/V).
+Source: OAVQA, CICAI 2023 (dataset-only repo on GitHub).
 """
 
 import logging

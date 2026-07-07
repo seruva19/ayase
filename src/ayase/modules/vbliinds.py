@@ -11,6 +11,16 @@ Neither scikit-video nor any pip package ships the trained SVR weights, so
 this module reports itself unavailable rather than emit a heuristic proxy.
 
 vbliinds_score — higher = better quality, populated only with a real backend.
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: V-BLIINDS (TIP 2014).
+Category: CLASSICAL-PORT.
+Why provisional: Deterministic DCT-domain NSS features exist in Python, but no pip package ships the
+  trained SVR (DMOS regressor).
+To revive: Port the DCT-domain NSS + motion-coherency feature pipeline (LIVE MATLAB reference; Python
+  ports exist); retrain the small SVR on public LIVE-VQC; validate before flipping provisional=False.
+  Effort M.
+Source: V-BLIINDS, Saad & Bovik, TIP 2014 (LIVE MATLAB reference).
 """
 
 import logging

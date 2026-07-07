@@ -7,6 +7,15 @@ the Q-CLIP name. This module reports itself unavailable until a real Q-CLIP
 backend is wired in.
 
 Output field: ``qclip_score`` (populated only with a real backend).
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: Q-CLIP (2025).
+Category: TRAINING-ONLY.
+Why provisional: No released adapter weights; only the Shared Cross-Modal Adapter trains (VLM frozen).
+To revive: Reimplement the Shared Cross-Modal Adapter on a frozen VLM; train on LSVQ
+  (cross-test KoNViD / LIVE-VQC); validate you reproduce the paper's SRCC/PLCC before flipping
+  provisional=False. Effort S — cheapest revival of the whole set.
+Source: Q-CLIP, 2025 (no released adapter weights).
 """
 
 import logging

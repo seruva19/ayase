@@ -11,6 +11,14 @@ approximation without the trained regressor would not reproduce FAVER's scores,
 so the metric is left unavailable until the official model is wired in.
 
 faver_score -- higher = better quality (0-1); left None when unavailable.
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: FAVER (Signal Processing 2024).
+Category: CLASSICAL-PORT.
+Why provisional: The ensemble SVR regressor is not shipped; heaviest classical port.
+To revive: Port the wavelet temporal NSS + deep motion feature pipeline; retrain the ensemble SVR on
+  public LIVE-YT-HFR; validate before flipping provisional=False. Effort L.
+Source: Zheng et al., FAVER, Signal Processing 2024.
 """
 
 import logging

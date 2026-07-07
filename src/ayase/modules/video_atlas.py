@@ -10,6 +10,15 @@ than emit a heuristic under the ATLAS name, this module reports itself
 unavailable until a real backend is wired in.
 
 video_atlas_score — higher = better, populated only with a real backend.
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: Video ATLAS (Bampis et al., TIP 2018).
+Category: IMPOSSIBLE.
+Why provisional: Predicts QoE from REBUFFERING-EVENT features (stall count/duration, time-since-stall)
+  of a streaming session; code is released but that session telemetry is inapplicable to a plain file.
+To revive: Not revivable here -- the required rebuffering-event session telemetry cannot be derived
+  from a media file on disk. Permanent; keep provisional or delete.
+Source: https://github.com/christosbampis/ATLAS_release
 """
 
 import logging

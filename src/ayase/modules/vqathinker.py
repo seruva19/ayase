@@ -6,6 +6,14 @@ is left ``None`` — no CLIP zero-shot proxy or handcrafted approximation is
 substituted for the published metric.
 
 vqathinker_score — higher = better (0-1)
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: VQAThinker (AAAI 2025).
+Category: TRAINING-ONLY.
+Why provisional: Paper only, no code/weights; needs an InternVL3-8B + GRPO RL pipeline.
+To revive: Reimplement InternVL3-8B + GRPO RL (explainable); train on LSVQ (38,811 vids); validate you
+  reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort L, heavy.
+Source: VQAThinker, AAAI 2025 (paper only).
 """
 
 import logging

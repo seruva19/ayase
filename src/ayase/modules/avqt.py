@@ -9,6 +9,15 @@ Implementation:
     not installed the metric is left ``None`` (no proxy is substituted).
 
 avqt_score -- higher = better quality (0-1)
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: AVQT (Apple Advanced Video Quality Tool).
+Category: IMPOSSIBLE.
+Why provisional: Closed-source macOS/Metal CLI binary; no published architecture or weights,
+  Windows-unsupported.
+To revive: Not reproducible -- no public architecture/weights to reimplement. The only real path is the
+  official Apple AVQT CLI on macOS. Permanent.
+Source: Apple AVQT (closed-source, macOS only).
 """
 
 import logging

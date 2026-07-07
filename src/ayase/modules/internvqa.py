@@ -10,6 +10,15 @@ ImageNet backbone with randomly-initialised, untrained quality heads. Until a
 real InternVQA backend is wired in, ``internvqa_score`` is left unset.
 
 internvqa_score -- higher = better quality (0-1); real model only.
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: InternVQA (ISCAS 2025).
+Category: TRAINING-ONLY.
+Why provisional: No released weights; homologous distillation needs the large InternVideo2 teacher.
+To revive: Reimplement the distillation from InternVideo2 (the large teacher); train on BVI-HD /
+  Waterloo IVC 4K; validate you reproduce the paper's SRCC/PLCC before flipping provisional=False.
+  Effort L; compressed-video niche.
+Source: InternVQA, ISCAS 2025 (no released weights).
 """
 
 import logging

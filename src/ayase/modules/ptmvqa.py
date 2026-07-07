@@ -11,6 +11,15 @@ score. Wire trained PTM-VQA weights to enable it.
 Paper: https://arxiv.org/abs/2405.17765
 
 ptmvqa_score — higher = better quality (0-1)
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: PTM-VQA (CVPR 2024).
+Category: TRAINING-ONLY.
+Why provisional: No weights repo; the fusion head ("minimal learnable weights") + ICID loss must be trained.
+To revive: Reimplement the frozen pretrained-model fusion + ICID loss; train on 3 public NR-VQA sets;
+  validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort S — cheapest
+  full-train path.
+Source: https://arxiv.org/abs/2405.17765
 """
 
 import logging

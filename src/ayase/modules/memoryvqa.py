@@ -13,6 +13,14 @@ implementation did). Until a genuine Memory-VQA checkpoint is wired in,
 ``memoryvqa_score`` is left unset.
 
 memoryvqa_score -- higher = better quality (0-1); real model only
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: Memory-VQA (Neurocomputing 2025).
+Category: TRAINING-ONLY.
+Why provisional: Code on GitHub but README says "weights after acceptance"; no loadable checkpoint.
+To revive: Reimplement the human-memory HVS model; train on the 5 public UGC-VQA sets; validate you
+  reproduce the paper's SRCC/PLCC before flipping provisional=False. Incremental gains.
+Source: Memory-VQA, Neurocomputing 2025 (weights pending acceptance).
 """
 
 import logging

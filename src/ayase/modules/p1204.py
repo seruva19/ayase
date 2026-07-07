@@ -32,6 +32,12 @@ pixels under the P.1204.3 name. Point the env var
 ``AYASE_P1204_VIDEOPARSER`` at the built ``parser.sh`` to enable the real path.
 
 p1204_mos -- 1-5, higher = better
+
+REVIVAL NOTES (provisional -- EXTERNAL): RF model + parametric baseline are already code-complete
+(verified bit-for-bit vs sklearn). To revive: build the bitstream feature parser
+``bitstream_mode3_videoparser`` (patched ffmpeg; run its build.sh) and set env var
+AYASE_P1204_VIDEOPARSER=/path/to/parser.sh (+ ffprobe on PATH). No code change needed.
+Source: https://github.com/Telecommunication-Telemedia-Assessment/bitstream_mode3_videoparser
 """
 
 import bz2

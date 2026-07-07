@@ -8,6 +8,14 @@ dynamics via dedicated backbones). This module requires that released
 WorldScore backend; when it is not installed the metric is left ``None`` —
 Laplacian/frame-difference heuristics are not substituted for the published
 evaluation.
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: WorldScore (ICCV 2025).
+Category: EXTERNAL.
+Why provisional: Code-complete suite, but needs a heavy external model zoo installed.
+To revive: `pip install -e` the repo (pulls GroundingDINO / SAM2 / VFIMamba / DROID-SLAM), then wire
+  the aggregate score. Heavy; batch/dataset-level, owns no per-sample QualityMetrics field.
+Source: https://github.com/haoyi-duan/WorldScore
 """
 import logging
 from typing import List, Optional

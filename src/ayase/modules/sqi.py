@@ -10,6 +10,15 @@ A previous revision fabricated ``sqi_score`` from a weighted sum of
 resolution/bitrate/fps metadata with ``stalling_factor = 1.0`` assumed. That is
 a static-metadata heuristic, not SQI, so it has been removed. Without streaming
 session telemetry the metric is reported as unavailable.
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: SQI streaming QoE index (Duanmu et al., JSTSP 2016).
+Category: IMPOSSIBLE.
+Why provisional: Combines FR-VQA with live STALL / REBUFFERING telemetry from a streaming session;
+  those inputs do not exist for a stored file.
+To revive: Not revivable here -- the required streaming session telemetry cannot be derived from a
+  media file on disk. Permanent; keep provisional or delete.
+Source: SQI, Duanmu et al., JSTSP 2016.
 """
 import logging
 
