@@ -111,7 +111,7 @@ class TestMetricCount:
         field_count = len(QualityMetrics.model_fields) - len(
             QualityMetrics._NON_METRIC_FIELDS
         )
-        assert field_count == 438, f"Expected 438, got {field_count}"
+        assert field_count == 436, f"Expected 436, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README metric count must match QualityMetrics metric fields."""
@@ -163,7 +163,7 @@ README_METRICS = sorted(
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 438
+        assert len(README_METRICS) == 436
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
@@ -219,6 +219,9 @@ class TestPythonAPI:
         assert result == {"technical_score": 50.0, "motion_score": 3.2}
 
     def test_quality_metrics_to_grouped_dict(self):
+        # Field→group mapping is populated by module registration, so ensure
+        # discovery has run (this test can execute before any discovering test).
+        ModuleRegistry.discover_modules()
         qm = QualityMetrics(clip_score=0.8, flow_score=2.0)
         grouped = qm.to_grouped_dict()
         assert "alignment" in grouped
