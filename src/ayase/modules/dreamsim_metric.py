@@ -25,6 +25,7 @@ class DreamSimModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._preprocess = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
@@ -35,46 +36,36 @@ class DreamSimModule(PipelineModule):
             self._model = model
             self._preprocess = preprocess
             self._ml_available = True
+            self._backend = "dreamsim"
             logger.info("DreamSim model loaded")
         except (ImportError, Exception) as e:
             logger.warning("DreamSim unavailable: %s", e)
 
-    def _prep(self, pil_img):
-        """Preprocess a PIL image into a batched tensor on the model's device.
+    def _prep_batch(self, pil_images):
+        """Preprocess a list of PIL images into one ``(N, 3, H, W)`` device tensor.
 
-        DreamSim's ``preprocess`` already returns a batched ``(1, 3, H, W)`` tensor,
-        so only add a batch dim when one is missing (guarding against a preprocess
-        that returns ``(3, H, W)``), and move it onto the same device as the model
-        (``dreamsim(pretrained=True)`` loads on CUDA when available, while the input
-        tensors come off CPU).
+        DreamSim's ``preprocess`` returns a batched ``(1, 3, H, W)`` tensor per
+        image (all resized to the same size), so they concatenate cleanly into a
+        single batch that DreamSim scores in one forward pass.
         """
-        tensor = self._preprocess(pil_img)
-        if tensor.dim() == 3:
-            tensor = tensor.unsqueeze(0)
-        return tensor.to(next(self._model.parameters()).device)
+        import torch
+
+        tensors = []
+        for pil in pil_images:
+            t = self._preprocess(pil)
+            if t.dim() == 3:
+                t = t.unsqueeze(0)
+            tensors.append(t)
+        batch = torch.cat(tensors, dim=0)
+        return batch.to(next(self._model.parameters()).device)
 
     def _load_frames(self, path):
-        """Load RGB frames from an image (one frame) or a video (subsampled frames)."""
-        from PIL import Image
-
-        video_exts = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".gif")
-        if not str(path).lower().endswith(video_exts):
-            return [Image.open(str(path)).convert("RGB")]
-
-        import cv2
+        """Uniformly sampled RGB PIL frames (image → one) from the shared cache."""
+        from ayase.image import arrays_to_pil, sample_frames
 
         subsample = self.config.get("subsample", 8)
-        cap = cv2.VideoCapture(str(path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                frames.append(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
-        cap.release()
-        return frames
+        arrays = sample_frames(path, max_frames=subsample, color="rgb")
+        return arrays_to_pil(arrays)
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -97,16 +88,17 @@ class DreamSimModule(PipelineModule):
             if not ref_frames or not dist_frames:
                 return sample
 
-            # Pair frames by position (a single image broadcasts to every video frame)
-            # and average, so image and video inputs are handled uniformly.
-            distances = []
+            # Pair frames by position (a single image broadcasts to every video
+            # frame), then score every pair in ONE batched forward pass.
+            n = max(len(ref_frames), len(dist_frames))
+            ref_pil = [ref_frames[i % len(ref_frames)] for i in range(n)]
+            dist_pil = [dist_frames[i % len(dist_frames)] for i in range(n)]
             with torch.no_grad():
-                for i in range(max(len(ref_frames), len(dist_frames))):
-                    ref_t = self._prep(ref_frames[i % len(ref_frames)])
-                    dist_t = self._prep(dist_frames[i % len(dist_frames)])
-                    distances.append(self._model(ref_t, dist_t).item())
+                distances = self._model(
+                    self._prep_batch(ref_pil), self._prep_batch(dist_pil)
+                )
 
-            sample.quality_metrics.dreamsim = float(np.mean(distances))
+            sample.quality_metrics.dreamsim = float(distances.mean().item())
         except Exception as e:
             logger.warning("DreamSim processing failed: %s", e)
         return sample
@@ -116,16 +108,17 @@ class DreamSimModule(PipelineModule):
         try:
             import torch
 
-            tensors = [self._prep(f) for f in self._load_frames(sample.path)]
-            if len(tensors) < 2:
+            frames = self._load_frames(sample.path)
+            if len(frames) < 2:
                 return sample
 
-            distances = []
+            # Consecutive sampled-frame pairs, scored in one batched forward.
             with torch.no_grad():
-                for i in range(len(tensors) - 1):
-                    distances.append(self._model(tensors[i], tensors[i + 1]).item())
+                distances = self._model(
+                    self._prep_batch(frames[:-1]), self._prep_batch(frames[1:])
+                )
 
-            sample.quality_metrics.dreamsim = float(np.mean(distances))
+            sample.quality_metrics.dreamsim = float(distances.mean().item())
         except Exception as e:
             logger.warning("DreamSim video processing failed: %s", e)
         return sample

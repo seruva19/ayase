@@ -6,17 +6,17 @@ image quality without a reference image.  Unlike the existing
 metric evaluates visual quality itself using quality-related prompts.
 
 Score range: 0-1 (higher = better perceived quality).
-Uses ``pyiqa`` which ships a trained CLIP-IQA model.
+Uses ``pyiqa`` which ships a trained CLIP-IQA+ model. When ``pyiqa`` is
+not installed the metric is left unset (no heuristic fallback).
 """
 
 import logging
-import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import load_representative_frame, sample_frames
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -40,26 +40,44 @@ class CLIPIQAModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 0.4)
         self._ml_available = False
         self._metric = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
+            from ayase.runtime import resolve_torch_device
 
-            self._metric = pyiqa.create_metric("clipiqa+", device="cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric("clipiqa+", device=self._device)
             self._ml_available = True
-            logger.info("CLIP-IQA+ initialised")
+            self._backend = "pyiqa"
+            logger.info("CLIP-IQA+ initialised on %s", self._device)
 
         except ImportError:
-            logger.warning("pyiqa not installed. Install with: pip install pyiqa")
+            logger.warning("pyiqa not installed; CLIP-IQA metric skipped. Install with: pip install pyiqa")
         except Exception as e:
             logger.warning(f"Failed to setup CLIP-IQA: {e}")
 
-    def _score_path(self, path: str) -> Optional[float]:
-        try:
-            return float(self._metric(path).item())
-        except Exception as e:
-            logger.debug(f"CLIP-IQA scoring failed: {e}")
+    def _score_frames(self, frames: List[np.ndarray]) -> Optional[float]:
+        """Score RGB frames directly as a tensor batch (no temp files)."""
+        import torch
+
+        tensors = []
+        for frame in frames:
+            if frame is None:
+                continue
+            arr = np.ascontiguousarray(frame)
+            if arr.ndim == 2:
+                arr = np.stack([arr, arr, arr], axis=-1)
+            t = torch.from_numpy(arr).permute(2, 0, 1).float().div(255.0)
+            tensors.append(t)
+        if not tensors:
             return None
+        batch = torch.stack(tensors).to(self._device)
+        with torch.no_grad():
+            scores = self._metric(batch)
+        return float(scores.mean().item())
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -67,10 +85,12 @@ class CLIPIQAModule(PipelineModule):
 
         try:
             if sample.is_video:
-                score = self._process_video(sample.path)
+                frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
             else:
-                score = self._score_path(str(sample.path))
+                frame = load_representative_frame(sample.path, color="rgb")
+                frames = [frame] if frame is not None else []
 
+            score = self._score_frames(frames)
             if score is None:
                 return sample
 
@@ -95,29 +115,3 @@ class CLIPIQAModule(PipelineModule):
             logger.error(f"CLIP-IQA failed for {sample.path}: {e}")
 
         return sample
-
-    def _process_video(self, video_path: Path) -> Optional[float]:
-        cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            return None
-
-        scores = []
-        idx = 0
-
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
-        finally:
-            cap.release()
-
-        return float(np.mean(scores)) if scores else None

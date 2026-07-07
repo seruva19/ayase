@@ -34,6 +34,9 @@ class ImageLPIPSModule(PipelineModule):
         "net": "alex",  # "alex", "vgg", "squeeze"
         "resize": 256,  # Resize images before computing LPIPS
         "diversity_max_pairs": 500,  # Max pairs for diversity computation
+        "diversity_batch_size": 64,  # Pairs stacked per LPIPS forward pass
+        # Seed for reproducible pair subsampling in the diversity metric.
+        "seed": 42,
     }
     models = [
         {
@@ -56,26 +59,41 @@ class ImageLPIPSModule(PipelineModule):
         self._ml_available = False
         self._lpips_model = None
         self._device = "cpu"
-        # Cache tensors for diversity computation
-        self._tensor_cache: List[Tuple[str, object]] = []
+        self._backend = None
+        # Cache resized RGB images for diversity computation
+        self._tensor_cache: List[Tuple[str, np.ndarray]] = []
 
     def setup(self) -> None:
-        """Load LPIPS model."""
+        """Load (or reuse a pipeline-shared) LPIPS model."""
         if self.test_mode:
             return
         try:
-            import torch
             import lpips
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
             net = self.config.get("net", "alex")
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._lpips_model = lpips.LPIPS(net=net).to(device)
-            self._lpips_model.eval()
-            self._device = device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+
+            def load_lpips():
+                model = lpips.LPIPS(net=net).to(self._device)
+                model.eval()
+                return model
+
+            # Share the LPIPS backbone across modules/samples in a pipeline.
+            self._lpips_model = shared_runtime_resource(
+                self,
+                ("lpips", net, str(self._device)),
+                load_lpips,
+            )
             self._ml_available = True
-            logger.info("ImageLPIPS: loaded LPIPS-%s on %s", net, device)
-        except (ImportError, Exception) as e:
-            logger.warning("ImageLPIPS: lpips library unavailable: %s", e)
+            self._backend = "lpips"
+            logger.info("ImageLPIPS: loaded LPIPS-%s on %s", net, self._device)
+        except ImportError:
+            self._backend = "unavailable"
+            logger.warning("ImageLPIPS: lpips library not installed (pip install lpips)")
+        except Exception as e:
+            self._backend = "unavailable"
+            logger.warning("ImageLPIPS: lpips setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -113,7 +131,7 @@ class ImageLPIPSModule(PipelineModule):
         return sample
 
     def post_process(self, all_samples: List[Sample]) -> None:
-        """Compute dataset-level LPIPS diversity from cached tensors."""
+        """Compute dataset-level LPIPS diversity from cached images."""
         if len(self._tensor_cache) < 2:
             self._tensor_cache = []
             return
@@ -125,19 +143,17 @@ class ImageLPIPSModule(PipelineModule):
             # Generate all possible pair indices
             all_pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
 
-            # Subsample if too many pairs
+            # Subsample if too many pairs, with a locally-seeded RNG so the
+            # diversity metric is reproducible across runs (does not touch the
+            # global random state).
             if len(all_pairs) > max_pairs:
-                pairs = random.sample(all_pairs, max_pairs)
+                seed = int(self.config.get("seed", 42))
+                rng = random.Random(seed)
+                pairs = rng.sample(all_pairs, max_pairs)
             else:
                 pairs = all_pairs
 
-            distances = []
-            for i, j in pairs:
-                _, img_a = self._tensor_cache[i]
-                _, img_b = self._tensor_cache[j]
-                dist = self._compute_distance(img_a, img_b)
-                if dist is not None:
-                    distances.append(dist)
+            distances = self._compute_distances_batched(pairs)
 
             if distances:
                 diversity = float(np.mean(distances))
@@ -173,15 +189,20 @@ class ImageLPIPSModule(PipelineModule):
         """Cache an image for diversity computation."""
         self._tensor_cache.append((path, img))
 
+    def _to_tensor(self, img_rgb: np.ndarray):
+        """RGB uint8 HWC -> LPIPS tensor (1,3,H,W) in [-1, 1]."""
+        import torch
+
+        arr = np.ascontiguousarray(img_rgb, dtype=np.float32)
+        return torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0) / 127.5 - 1.0
+
     def _compute_distance(self, img_a: np.ndarray, img_b: np.ndarray) -> Optional[float]:
         """Compute perceptual distance between two RGB images using LPIPS."""
         try:
             import torch
 
-            # Convert to tensors: [1, 3, H, W] in [-1, 1]
-            t_a = torch.from_numpy(img_a).permute(2, 0, 1).unsqueeze(0).float() / 127.5 - 1.0
-            t_b = torch.from_numpy(img_b).permute(2, 0, 1).unsqueeze(0).float() / 127.5 - 1.0
-            t_a, t_b = t_a.to(self._device), t_b.to(self._device)
+            t_a = self._to_tensor(img_a).to(self._device)
+            t_b = self._to_tensor(img_b).to(self._device)
 
             with torch.no_grad():
                 dist = self._lpips_model(t_a, t_b).item()
@@ -189,3 +210,31 @@ class ImageLPIPSModule(PipelineModule):
         except Exception as e:
             logger.debug("LPIPS computation failed: %s", e)
             return None
+
+    def _compute_distances_batched(self, pairs: List[Tuple[int, int]]) -> List[float]:
+        """Compute LPIPS over many pairs, stacking them into batched forwards."""
+        try:
+            import torch
+        except Exception as e:
+            logger.debug("LPIPS batched computation missing torch: %s", e)
+            return []
+
+        chunk = max(1, int(self.config.get("diversity_batch_size", 64)))
+        distances: List[float] = []
+        for start in range(0, len(pairs), chunk):
+            chunk_pairs = pairs[start:start + chunk]
+            a_list = []
+            b_list = []
+            for i, j in chunk_pairs:
+                a_list.append(self._to_tensor(self._tensor_cache[i][1]))
+                b_list.append(self._to_tensor(self._tensor_cache[j][1]))
+            try:
+                t_a = torch.cat(a_list, dim=0).to(self._device)
+                t_b = torch.cat(b_list, dim=0).to(self._device)
+                with torch.no_grad():
+                    out = self._lpips_model(t_a, t_b)
+                for val in out.view(-1).cpu().numpy().tolist():
+                    distances.append(float(val))
+            except Exception as e:
+                logger.debug("LPIPS batched forward failed: %s", e)
+        return distances

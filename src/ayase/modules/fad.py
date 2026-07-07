@@ -21,8 +21,9 @@ Dependency hints::
     pip install panns_inference          # for backbone = "panns_cnn14"
     pip install hear21passt              # for backbone = "passt"
 
-If a backbone's package is unavailable the module falls back to a dependency-free
-spectral proxy (the original behaviour) so the pipeline keeps running.
+All three backbones extract *real* neural audio embeddings. If the selected
+backbone's package is unavailable the metric is left unset — there is no
+heuristic spectral fallback, so a reported FAD always reflects a real backbone.
 
 fad_* — lower is better (closer audio distributions).
 """
@@ -92,9 +93,9 @@ class FADModule(BatchMetricModule):
         super().__init__(config)
         self._model = None
         self._ml_available = False
-        self._backend = None
-        # Resolved backbone identity: "vggish" | "panns_cnn14" | "passt" | "spectral_proxy".
-        self._backend_kind = "spectral_proxy"
+        self._backend = "unavailable"
+        # Resolved backbone identity: "vggish" | "panns_cnn14" | "passt" | "unavailable".
+        self._backend_kind = "unavailable"
         # Optional torch handle and inference device, bound at setup() when applicable.
         self._torch = None
         self._device = "cpu"
@@ -134,13 +135,17 @@ class FADModule(BatchMetricModule):
         elif self.backbone == "passt":
             self._setup_passt()
 
-        # Final safety net: spectral-feature proxy. _backend_kind stays as
-        # "spectral_proxy" if no neural backbone bound successfully.
-        if self._backend_kind == "spectral_proxy":
-            logger.info("FAD module initialised (heuristic spectral fallback)")
+        # No heuristic fallback: if no real backbone bound, the metric is unset.
+        if self._backend_kind == "unavailable":
+            self._backend = "unavailable"
+            logger.warning(
+                "FAD unavailable: install a real backbone package "
+                "(frechet_audio_distance / panns_inference / hear21passt). "
+                "fad_* left unset."
+            )
 
     def _setup_vggish(self) -> None:
-        # Tier 1: frechet_audio_distance package (preserves legacy behaviour).
+        # Real backend: frechet_audio_distance package (VGGish embeddings).
         try:
             from frechet_audio_distance import FrechetAudioDistance
             self._model = FrechetAudioDistance()
@@ -150,11 +155,9 @@ class FADModule(BatchMetricModule):
             logger.info("FAD module initialised (frechet_audio_distance / VGGish)")
             return
         except ImportError:
-            pass
+            logger.warning("FAD backbone vggish requires `pip install frechet_audio_distance`")
         except Exception as e:
-            logger.debug(f"FAD VGGish package init failed: {e}")
-
-        # Tier 2: spectral proxy — _backend_kind remains "spectral_proxy".
+            logger.warning("FAD VGGish package init failed: %s", e)
 
     def _resolve_torch_device(self):
         try:
@@ -288,6 +291,9 @@ class FADModule(BatchMetricModule):
         if self.subsample_videos is not None and self._processed_count >= self.subsample_videos:
             return None
 
+        if self._backend_kind == "unavailable":
+            return None
+
         try:
             audio = self._load_audio(sample.path)
             if audio is None:
@@ -297,13 +303,10 @@ class FADModule(BatchMetricModule):
                 features = self._embed_panns(audio)
             elif self._backend_kind == "passt":
                 features = self._embed_passt(audio)
+            elif self._backend_kind == "vggish":
+                features = self._embed_vggish(audio)
             else:
-                # VGGish path (via frechet_audio_distance package) currently
-                # shares the spectral-proxy feature extractor; the package's
-                # native pairwise API is invoked through compute_distribution_metric
-                # for the legacy behaviour. Spectral features remain the safe
-                # default for both "vggish" and "spectral_proxy" backends.
-                features = self._compute_spectral_features(audio)
+                return None
 
             if features is not None:
                 self._processed_count += 1
@@ -311,6 +314,37 @@ class FADModule(BatchMetricModule):
         except Exception as e:
             logger.debug(f"FAD feature extraction failed for {sample.path}: {e}")
             return None
+
+    def _embed_vggish(self, audio: np.ndarray) -> Optional[np.ndarray]:
+        """Real VGGish embedding for one clip via the frechet_audio_distance model.
+
+        The package's VGGish model yields frame-level 128-d embeddings; we mean-
+        pool them into a single per-sample vector so the batch Frechet distance
+        is computed over real VGGish features (no spectral proxy).
+        """
+        if self._model is None:
+            return None
+        try:
+            embd = self._model.get_embeddings([np.asarray(audio, dtype=np.float32)], sr=self.sample_rate)
+        except TypeError:
+            # Older signature: get_embeddings(x) without a sr kwarg.
+            try:
+                embd = self._model.get_embeddings([np.asarray(audio, dtype=np.float32)])
+            except Exception as e:
+                logger.debug("FAD vggish embedding failed: %s", e)
+                return None
+        except Exception as e:
+            logger.debug("FAD vggish embedding failed: %s", e)
+            return None
+
+        arr = np.asarray(embd, dtype=np.float64)
+        if arr.size == 0:
+            return None
+        if arr.ndim == 1:
+            return arr
+        # Collapse all leading dims, then mean-pool frame embeddings → (D,).
+        arr = arr.reshape(-1, arr.shape[-1])
+        return arr.mean(axis=0)
 
     def _embed_panns(self, audio: np.ndarray) -> Optional[np.ndarray]:
         if self._model is None:
@@ -464,48 +498,6 @@ class FADModule(BatchMetricModule):
 
         return None
 
-    def _compute_spectral_features(self, audio: np.ndarray) -> Optional[np.ndarray]:
-        """Compute spectral features (MFCCs + spectral statistics)."""
-        if len(audio) < 1024:
-            return None
-
-        # Compute spectrogram
-        n_fft = 1024
-        hop = 512
-        n_frames = (len(audio) - n_fft) // hop + 1
-        if n_frames < 1:
-            return None
-
-        frames = np.stack([
-            audio[i * hop:i * hop + n_fft] * np.hanning(n_fft)
-            for i in range(n_frames)
-        ])
-        spectrogram = np.abs(np.fft.rfft(frames, axis=1))
-
-        # Mel-like features: group FFT bins into ~20 bands
-        n_bands = 20
-        n_bins = spectrogram.shape[1]
-        band_size = max(n_bins // n_bands, 1)
-        mel_features = []
-        for b in range(n_bands):
-            start = b * band_size
-            end = min(start + band_size, n_bins)
-            if start >= n_bins:
-                mel_features.append(0.0)
-            else:
-                mel_features.append(float(spectrogram[:, start:end].mean()))
-
-        # Spectral statistics
-        spectral_centroid = float(np.mean(
-            np.sum(spectrogram * np.arange(spectrogram.shape[1]), axis=1) /
-            (np.sum(spectrogram, axis=1) + 1e-8)
-        ))
-        spectral_rolloff = float(np.mean(np.percentile(spectrogram, 85, axis=1)))
-        spectral_flux = float(np.mean(np.diff(spectrogram, axis=0) ** 2)) if n_frames > 1 else 0.0
-
-        features = np.array(mel_features + [spectral_centroid, spectral_rolloff, spectral_flux])
-        return features.astype(np.float64)
-
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
     ) -> float:
@@ -615,7 +607,6 @@ class FADModule(BatchMetricModule):
                         "vggish": "vggish",
                         "panns_cnn14": "panns",
                         "passt": "passt",
-                        "spectral_proxy": "vggish",
                     }.get(self._backend_kind, "vggish")
                     inf_suffix = "_infinity" if self.infinity else ""
                     canonical_name = f"fad_{backbone_suffix}{inf_suffix}"

@@ -4,11 +4,11 @@ Scores images/video frames on a 0-100 normalized scale. Higher scores indicate
 better perceptual aesthetic quality. Processes up to 5 uniformly sampled frames."""
 
 import logging
-import cv2
 import numpy as np
 from PIL import Image
 from typing import Optional
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -68,9 +68,8 @@ class AestheticModule(PipelineModule):
             import torch
             scores = []
             for frame in frames:
-                # Frame is BGR from cv2
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                pil_image = Image.fromarray(frame_rgb)
+                # sample_frames returns RGB read-only views; copy for PIL.
+                pil_image = Image.fromarray(np.ascontiguousarray(frame))
 
                 pixel_values = self._preprocessor(
                     images=pil_image, return_tensors="pt"
@@ -110,25 +109,9 @@ class AestheticModule(PipelineModule):
         return sample
 
     def _load_frames(self, sample: Sample) -> list:
-        frames = []
+        num_frames = self.config.get("num_frames", 5)
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total_frames > 0:
-                    # Sample frames
-                    num_frames = self.config.get("num_frames", 5)
-                    indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-                    for idx in indices:
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                        ret, frame = cap.read()
-                        if ret:
-                            frames.append(frame)
-                cap.release()
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames.append(img)
+            return sample_frames(sample.path, max_frames=num_frames, color="rgb")
         except Exception as e:
             logger.debug(f"Failed to load frames for aesthetic check: {e}")
-        return frames
+            return []

@@ -49,6 +49,7 @@ class BLIPScoreModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -68,10 +69,13 @@ class BLIPScoreModule(PipelineModule):
             self._model = BlipForImageTextRetrieval.from_pretrained(resolved).to(self._device)
             self._model.eval()
             self._ml_available = True
+            self._backend = "blip_itm"
             logger.info("BLIP score initialised with %s on %s", self.model_name, self._device)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("BLIP score requires torch and transformers")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning("Failed to setup BLIP score: %s", e)
 
     def process(self, sample: Sample) -> Sample:

@@ -9,7 +9,6 @@ import logging
 from pathlib import Path
 from typing import Optional, List
 
-import cv2
 import numpy as np
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
@@ -43,6 +42,7 @@ class LLMDescriptiveQAModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._processor = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -50,64 +50,49 @@ class LLMDescriptiveQAModule(PipelineModule):
                 # OpenAI API setup
                 if self.openai_api_key:
                     self._ml_available = True
+                    self._backend = "openai"
                     logger.info("LLM Descriptive QA initialized with OpenAI API")
                 else:
+                    self._backend = "unavailable"
                     logger.warning("OpenAI API key not provided")
             else:
                 # Local LLaVA model setup
                 from transformers import AutoProcessor, LlavaForConditionalGeneration
                 import torch
+                from ayase.runtime import resolve_torch_device
 
-                # Set device
-                if self.device_config == "auto":
-                    self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                else:
-                    self.device = torch.device(self.device_config)
+                self.device = resolve_torch_device(self.device_config)
+                use_fp16 = str(self.device).startswith("cuda")
 
                 logger.info(f"Loading LLaVA model: {self.model_name}")
 
                 self._processor = AutoProcessor.from_pretrained(self.model_name)
                 self._model = LlavaForConditionalGeneration.from_pretrained(
                     self.model_name,
-                    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+                    torch_dtype=torch.float16 if use_fp16 else torch.float32,
                     low_cpu_mem_usage=True,
                 ).to(self.device)
 
                 self._ml_available = True
+                self._backend = "llava"
                 logger.info(f"LLM Descriptive QA initialized with LLaVA on {self.device}")
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "transformers or torch not installed. "
                 "Install with: pip install transformers torch"
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup LLM Descriptive QA: {e}")
 
     def _load_key_frames(self, video_path: Path) -> Optional[List[np.ndarray]]:
         """Load key frames from video for analysis."""
         try:
-            cap = cv2.VideoCapture(str(video_path))
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            from ayase.image import sample_frames
 
-            if total_frames == 0:
-                cap.release()
-                return None
-
-            # Sample frames uniformly
-            num_frames = min(self.num_frames, total_frames)
-            frame_indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-            frames = []
-
-            for idx in frame_indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    # Convert BGR to RGB
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(frame_rgb)
-
-            cap.release()
+            frames = list(sample_frames(video_path, max_frames=self.num_frames, color="rgb"))
             return frames if frames else None
 
         except Exception as e:
@@ -122,7 +107,7 @@ class LLMDescriptiveQAModule(PipelineModule):
 
             # Use middle frame for analysis
             frame = frames[len(frames) // 2]
-            image = Image.fromarray(frame)
+            image = Image.fromarray(np.ascontiguousarray(frame))
 
             # Quality assessment prompt
             prompt = (
@@ -157,9 +142,11 @@ class LLMDescriptiveQAModule(PipelineModule):
             if score_match:
                 quality_score = float(score_match.group(1))
             else:
-                # Fall back to last number found
+                # Fall back to last number found in the model's own answer.
+                # If the VLM produced no parseable score, leave it None rather
+                # than fabricating a neutral value.
                 all_numbers = re.findall(r'(\d+)', explanation)
-                quality_score = float(all_numbers[-1]) if all_numbers else 50.0
+                quality_score = float(all_numbers[-1]) if all_numbers else None
 
             return {
                 "quality_score": quality_score,
@@ -183,7 +170,7 @@ class LLMDescriptiveQAModule(PipelineModule):
 
             # Use middle frame
             frame = frames[len(frames) // 2]
-            image = Image.fromarray(frame)
+            image = Image.fromarray(np.ascontiguousarray(frame))
 
             # Convert to base64
             buffered = BytesIO()
@@ -215,10 +202,11 @@ class LLMDescriptiveQAModule(PipelineModule):
 
             explanation = response.choices[0].message.content
 
-            # Extract quality score
+            # Extract quality score from the model's own answer; leave None if
+            # nothing parseable rather than fabricating a neutral value.
             import re
             score_match = re.search(r'(\d+)\s*(?:/\s*100)?', explanation)
-            quality_score = float(score_match.group(1)) if score_match else 50.0
+            quality_score = float(score_match.group(1)) if score_match else None
 
             return {
                 "quality_score": quality_score,
@@ -248,16 +236,15 @@ class LLMDescriptiveQAModule(PipelineModule):
             return sample
 
         try:
+            from ayase.image import load_representative_frame
+
             # Load frames
             if sample.is_video:
                 frames = self._load_key_frames(sample.path)
             else:
                 # Load single image
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB)]
-                else:
-                    frames = None
+                rgb = load_representative_frame(sample.path, color="rgb")
+                frames = [rgb] if rgb is not None else None
 
             if frames is None:
                 return sample
@@ -271,11 +258,13 @@ class LLMDescriptiveQAModule(PipelineModule):
             if result is None:
                 return sample
 
-            # Store confidence score (LMM's quality rating)
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
 
-            sample.quality_metrics.llm_qa_score = result["quality_score"] / 100.0
+            # Store the LMM's quality rating only when it actually produced one.
+            qscore = result.get("quality_score")
+            if qscore is not None:
+                sample.quality_metrics.llm_qa_score = float(qscore) / 100.0
 
             # Add explanation as validation issue
             sample.validation_issues.append(
@@ -285,14 +274,16 @@ class LLMDescriptiveQAModule(PipelineModule):
                     details={
                         "explanation": result["explanation"],
                         "detected_issues": result["issues"],
-                        "quality_score": result["quality_score"],
+                        "quality_score": qscore,
                     },
                     recommendation=result["explanation"],
                 )
             )
 
             logger.debug(
-                f"LMM analysis for {sample.path.name}: {result['quality_score']:.1f}/100"
+                "LMM analysis for %s: %s/100",
+                sample.path.name,
+                f"{qscore:.1f}" if qscore is not None else "unscored",
             )
 
         except Exception as e:

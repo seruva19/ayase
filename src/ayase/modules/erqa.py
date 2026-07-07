@@ -33,25 +33,26 @@ class ERQAModule(ReferenceBasedModule):
         super().__init__(config)
         self._model = None
         self._ml_available = False
+        self._backend = "unavailable"
         self.subsample = self.config.get("subsample", 8)
 
     def setup(self) -> None:
-        # Tier 1: erqa package
+        # Real backend: the ``erqa`` package (the reference ERQA implementation).
         try:
             import erqa as erqa_lib
             self._model = erqa_lib.ERQA()
             self._ml_available = True
+            self._backend = "erqa"
             logger.info("ERQA module initialised (erqa package)")
             return
         except ImportError:
-            pass
+            logger.warning("ERQA unavailable: `pip install erqa`. erqa_score left unset.")
         except Exception as e:
-            logger.debug(f"ERQA package init failed: {e}")
-
-        # Tier 2: heuristic (edge detection difference)
-        logger.info("ERQA module initialised (heuristic fallback)")
+            logger.warning("ERQA unavailable: %s. erqa_score left unset.", e)
 
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
+        if not self._ml_available or self._model is None:
+            return None
         try:
             if str(sample_path).lower().endswith((".mp4", ".avi", ".mov", ".mkv", ".webm")):
                 return self._score_video(str(sample_path), str(reference_path))
@@ -66,10 +67,7 @@ class ERQAModule(ReferenceBasedModule):
         ref = cv2.imread(ref_p)
         if img is None or ref is None:
             return None
-
-        if self._ml_available and self._model is not None:
-            return self._score_erqa_package(img, ref)
-        return self._score_heuristic(img, ref)
+        return self._score_erqa_package(img, ref)
 
     def _score_video(self, sample_p: str, ref_p: str) -> Optional[float]:
         cap_s = cv2.VideoCapture(sample_p)
@@ -89,10 +87,7 @@ class ERQAModule(ReferenceBasedModule):
                 ret_s, frame_s = cap_s.read()
                 ret_r, frame_r = cap_r.read()
                 if ret_s and ret_r:
-                    if self._ml_available and self._model is not None:
-                        s = self._score_erqa_package(frame_s, frame_r)
-                    else:
-                        s = self._score_heuristic(frame_s, frame_r)
+                    s = self._score_erqa_package(frame_s, frame_r)
                     if s is not None:
                         scores.append(s)
             return float(np.mean(scores)) if scores else None
@@ -108,35 +103,4 @@ class ERQAModule(ReferenceBasedModule):
             return float(score)
         except Exception as e:
             logger.debug(f"ERQA package scoring failed: {e}")
-            return self._score_heuristic(img, ref)
-
-    def _score_heuristic(self, img: np.ndarray, ref: np.ndarray) -> float:
-        """Heuristic: compare Canny edge maps via F1-like agreement."""
-        h, w = ref.shape[:2]
-        img = cv2.resize(img, (w, h))
-
-        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        gray_ref = cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY)
-
-        edges_img = cv2.Canny(gray_img, 100, 200).astype(np.float64)
-        edges_ref = cv2.Canny(gray_ref, 100, 200).astype(np.float64)
-
-        # Dilate edges slightly for tolerance
-        kernel = np.ones((3, 3), np.uint8)
-        edges_img_d = cv2.dilate(edges_img, kernel, iterations=1)
-        edges_ref_d = cv2.dilate(edges_ref, kernel, iterations=1)
-
-        # Precision: how many predicted edges match reference
-        pred_count = max(edges_img.sum(), 1.0)
-        tp_precision = (edges_img * edges_ref_d).sum()
-        precision = tp_precision / pred_count
-
-        # Recall: how many reference edges are recovered
-        ref_count = max(edges_ref.sum(), 1.0)
-        tp_recall = (edges_ref * edges_img_d).sum()
-        recall = tp_recall / ref_count
-
-        if precision + recall < 1e-8:
-            return 0.0
-        f1 = 2 * precision * recall / (precision + recall)
-        return float(np.clip(f1, 0.0, 1.0))
+            return None

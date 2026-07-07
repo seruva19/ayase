@@ -90,6 +90,9 @@ class DeltaICtCpModule(ReferenceBasedModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 5)
         self._ml_available = True  # Pure numpy
+        # Delta ICtCp is an exact BT.2100 color-space formula; the direct numpy
+        # implementation IS the real backend (no model/weights involved).
+        self._backend = "numpy"
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path

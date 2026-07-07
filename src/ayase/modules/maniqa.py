@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -23,21 +24,24 @@ class MANIQAModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._model = pyiqa.create_metric("maniqa", device=device)
-            try:
-                self._device = next(self._model.parameters()).device
-            except StopIteration:
-                self._device = torch.device("cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = pyiqa.create_metric("maniqa", device=self._device)
             self._ml_available = True
-            logger.info("MANIQA model loaded on %s", device)
-        except (ImportError, Exception) as e:
+            self._backend = "pyiqa"
+            logger.info("MANIQA model loaded on %s", self._device)
+        except ImportError:
+            self._backend = "unavailable"
+            logger.warning("pyiqa not installed. Install with: pip install pyiqa")
+        except Exception as e:
+            self._backend = "unavailable"
             logger.warning("MANIQA unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -46,7 +50,6 @@ class MANIQAModule(PipelineModule):
         if not self._ml_available:
             return sample
         try:
-            import cv2
             import torch
 
             frames = self._load_frames(sample)
@@ -55,37 +58,19 @@ class MANIQAModule(PipelineModule):
 
             scores = []
             for frame in frames:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                tensor = (
-                    torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                )
+                arr = np.ascontiguousarray(frame, dtype=np.float32)
+                tensor = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0) / 255.0
                 tensor = tensor.to(self._device)
                 with torch.no_grad():
                     score = self._model(tensor).item()
                 scores.append(score)
 
-            sample.quality_metrics.maniqa_score = float(np.mean(scores))
+            if scores:
+                sample.quality_metrics.maniqa_score = float(np.mean(scores))
         except Exception as e:
             logger.warning("MANIQA processing failed: %s", e)
         return sample
 
     def _load_frames(self, sample: Sample) -> list:
-        import cv2
-
         subsample = self.config.get("subsample", 8)
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        return list(sample_frames(sample.path, max_frames=subsample, color="rgb"))

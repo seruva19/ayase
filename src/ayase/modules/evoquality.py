@@ -98,7 +98,7 @@ class EvoQualityModule(PipelineModule):
         self.max_image_size = int(self.config.get("max_image_size", 1024))
         self.resize_to_square = bool(self.config.get("resize_to_square", False))
         self.warning_threshold = self.config.get("warning_threshold")
-        self._backend = None
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._ml_available = False

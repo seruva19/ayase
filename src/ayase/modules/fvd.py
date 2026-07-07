@@ -78,20 +78,24 @@ class FVDModule(BatchMetricModule):
         self._dinov2_model = None
         self._dinov2_processor = None
         self._processed_count = 0
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             if self.backbone in ("r3d18", "content_debiased"):
                 self._setup_r3d18()
             elif self.backbone == "dinov2":
                 self._setup_dinov2()
+
+            if self._ml_available:
+                # Records which real backbone produced the score (content_debiased
+                # applies the Ge et al. CVPR 2024 correction on r3d18 features).
+                self._backend = self.backbone
 
         except ImportError as e:
             logger.warning(f"Missing dependencies for FVD (torch required): {e}")
@@ -101,12 +105,19 @@ class FVDModule(BatchMetricModule):
     def _setup_r3d18(self) -> None:
         import torch.nn as nn
         from torchvision.models.video import r3d_18, R3D_18_Weights
+        from ayase.runtime import shared_runtime_resource
 
-        weights = R3D_18_Weights.KINETICS400_V1
-        self._r3d_model = r3d_18(weights=weights)
-        self._r3d_model.fc = nn.Identity()
-        self._r3d_model = self._r3d_model.to(self.device)
-        self._r3d_model.eval()
+        def load_r3d18():
+            weights = R3D_18_Weights.KINETICS400_V1
+            model = r3d_18(weights=weights)
+            model.fc = nn.Identity()
+            return model.to(self.device).eval()
+
+        self._r3d_model = shared_runtime_resource(
+            self,
+            ("fvd_r3d18_kinetics400", str(self.device)),
+            load_r3d18,
+        )
         self._ml_available = True
         logger.info(
             f"FVD module initialized with R3D-18 on {self.device} (backbone={self.backbone})"
@@ -114,11 +125,20 @@ class FVDModule(BatchMetricModule):
 
     def _setup_dinov2(self) -> None:
         from transformers import AutoModel, AutoImageProcessor
+        from ayase.runtime import shared_runtime_resource
 
         model_id = "facebook/dinov2-base"
-        self._dinov2_processor = AutoImageProcessor.from_pretrained(model_id)
-        self._dinov2_model = AutoModel.from_pretrained(model_id).to(self.device)
-        self._dinov2_model.eval()
+
+        def load_dinov2():
+            processor = AutoImageProcessor.from_pretrained(model_id)
+            model = AutoModel.from_pretrained(model_id).to(self.device).eval()
+            return model, processor
+
+        self._dinov2_model, self._dinov2_processor = shared_runtime_resource(
+            self,
+            ("fvd_dinov2", model_id, str(self.device)),
+            load_dinov2,
+        )
         self._ml_available = True
         logger.info(f"FVD module initialized with DINOv2 on {self.device}")
 

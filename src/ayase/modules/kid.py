@@ -34,6 +34,7 @@ class KIDModule(BatchMetricModule):
         "device": "auto",
         "batch_size": 32,
         "resize": 299,  # Input size for InceptionV3
+        "seed": 42,  # Seed for reproducible KID subset sampling
     }
     models = [
         {
@@ -101,22 +102,25 @@ class KIDModule(BatchMetricModule):
             import torch
             from torchvision import models, transforms
             from torchvision.models import Inception_V3_Weights
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = resolve_torch_device(self.device_config)
 
-            # Load InceptionV3 for feature extraction
-            model = models.inception_v3(
-                weights=Inception_V3_Weights.IMAGENET1K_V1,
-                transform_input=False,
+            def load_inception():
+                # InceptionV3 truncated to 2048-d pooled features (fc removed).
+                m = models.inception_v3(
+                    weights=Inception_V3_Weights.IMAGENET1K_V1,
+                    transform_input=False,
+                )
+                m.fc = torch.nn.Identity()
+                return m.to(self.device).eval()
+
+            # Share the InceptionV3 feature backbone across modules/samples.
+            self._inception_model = shared_runtime_resource(
+                self,
+                ("inception_v3_features_2048", str(self.device)),
+                load_inception,
             )
-            # Remove final classification layer to get 2048-d features
-            model.fc = torch.nn.Identity()
-            model = model.to(self.device)
-            model.eval()
-            self._inception_model = model
 
             self._transform = transforms.Compose([
                 transforms.ToPILImage(),
@@ -131,11 +135,14 @@ class KIDModule(BatchMetricModule):
             self._backend = "native"
             self._ml_available = True
             logger.info(f"KID module initialized with native InceptionV3 on {self.device}")
+            return
 
         except ImportError as e:
             logger.warning(f"Missing dependencies for KID (torch/torchvision required): {e}")
         except Exception as e:
             logger.warning(f"Failed to setup KID: {e}")
+
+        self._backend = "unavailable"
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract InceptionV3 features from a sample image or video frame.
@@ -179,29 +186,15 @@ class KIDModule(BatchMetricModule):
             return None
 
     def _load_frame(self, sample: Sample) -> Optional[np.ndarray]:
-        """Load a representative frame from an image or video.
+        """Load a representative frame (image, or middle frame of a video).
 
-        For images: loads the image directly.
-        For videos: extracts the middle frame.
-
-        Returns:
-            BGR frame as numpy array, or None if loading failed
+        Returns a BGR frame (read-only shared-cache view) or None. The caller
+        only reads it (cvtColor), so no copy is required here.
         """
+        from ayase.image import load_representative_frame
+
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total_frames <= 0:
-                    cap.release()
-                    return None
-                # Sample middle frame
-                cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                frame = cv2.imread(str(sample.path))
-                return frame
+            return load_representative_frame(sample.path, color="bgr")
         except Exception as e:
             logger.debug(f"Failed to load frame: {e}")
             return None
@@ -236,11 +229,15 @@ class KIDModule(BatchMetricModule):
         if n < 2:
             return float("inf"), 0.0
 
+        # Locally-seeded RNG so KID subsets are reproducible without disturbing
+        # the global numpy RNG state.
+        rng = np.random.default_rng(int(self.config.get("seed", 42)))
+
         kid_values = []
         for _ in range(self.num_subsets):
             # Random subsets
-            idx_x = np.random.choice(len(features), size=n, replace=False)
-            idx_y = np.random.choice(len(ref_features), size=n, replace=False)
+            idx_x = rng.choice(len(features), size=n, replace=False)
+            idx_y = rng.choice(len(ref_features), size=n, replace=False)
 
             x = features[idx_x]
             y = ref_features[idx_y]

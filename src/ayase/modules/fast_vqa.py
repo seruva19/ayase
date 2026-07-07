@@ -82,6 +82,7 @@ class FastVQAModule(PipelineModule):
         self._model = None
         self._opt = None
         self._ml_available = False
+        self._backend = "unavailable"
 
         self.fastvqa_mean_std = {
             "FasterVQA": (0.14759505, 0.03613452),
@@ -97,8 +98,9 @@ class FastVQAModule(PipelineModule):
             import decord
             from ayase.third_party.fastvqa.models import DiViDeAddEvaluator
             from ayase.third_party.fastvqa.datasets import get_spatial_fragments
+            from ayase.runtime import resolve_torch_device
 
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up FastVQA ({self.model_type}) on {self.device}...")
 
             # Load options
@@ -159,6 +161,7 @@ class FastVQAModule(PipelineModule):
 
             self._model.eval()
             self._ml_available = True
+            self._backend = "fastvqa"
 
         except ImportError:
             logger.warning("Missing dependencies (decord, timm, or yaml). FastVQA disabled.")

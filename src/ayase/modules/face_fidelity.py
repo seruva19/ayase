@@ -56,6 +56,7 @@ class FaceFidelityModule(PipelineModule):
         self._face_cascade = None
         self._mp_face_detection = None
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         if self.backend == "mediapipe":
@@ -66,6 +67,7 @@ class FaceFidelityModule(PipelineModule):
                     min_detection_confidence=0.5,
                 )
                 self._ml_available = True
+                self._backend = "mediapipe"
                 logger.info("Face fidelity: MediaPipe backend initialised")
                 return
             except ImportError:
@@ -80,6 +82,7 @@ class FaceFidelityModule(PipelineModule):
             logger.warning("Failed to load Haar cascade")
             return
         self._ml_available = True
+        self._backend = "haar"
         logger.info("Face fidelity: Haar cascade backend initialised")
 
     # ------------------------------------------------------------------
@@ -207,28 +210,29 @@ class FaceFidelityModule(PipelineModule):
         blurry_faces = 0
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                faces = self._detect_faces(frame)
-                all_counts.append(len(faces))
-                for x, y, w, h in faces:
-                    score = self._face_quality(frame, x, y, w, h)
-                    all_scores.append(score)
-                    if w < self.min_face_size or h < self.min_face_size:
-                        small_faces += 1
-                    gray_roi = cv2.cvtColor(
-                        frame[y:y + h, x:x + w], cv2.COLOR_BGR2GRAY
-                    )
-                    if gray_roi.size > 0:
-                        lap = float(cv2.Laplacian(gray_roi, cv2.CV_64F).var())
-                        if lap < self.blur_threshold:
-                            blurry_faces += 1
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    faces = self._detect_faces(frame)
+                    all_counts.append(len(faces))
+                    for x, y, w, h in faces:
+                        score = self._face_quality(frame, x, y, w, h)
+                        all_scores.append(score)
+                        if w < self.min_face_size or h < self.min_face_size:
+                            small_faces += 1
+                        gray_roi = cv2.cvtColor(
+                            frame[y:y + h, x:x + w], cv2.COLOR_BGR2GRAY
+                        )
+                        if gray_roi.size > 0:
+                            lap = float(cv2.Laplacian(gray_roi, cv2.CV_64F).var())
+                            if lap < self.blur_threshold:
+                                blurry_faces += 1
+                idx += 1
+        finally:
+            cap.release()
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()

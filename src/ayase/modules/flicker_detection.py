@@ -46,6 +46,8 @@ class FlickerDetectionModule(PipelineModule):
         super().__init__(config)
         self.max_frames = self.config.get("max_frames", 600)
         self.warning_threshold = self.config.get("warning_threshold", 30.0)
+        # Pure signal-analysis metric (no ML model); records provenance.
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:

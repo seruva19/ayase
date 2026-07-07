@@ -88,6 +88,7 @@ class BDRateModule(BatchMetricModule):
         super().__init__(config)
         self.quality_metric = self.config.get("quality_metric", "psnr")
         self._rate_quality_pairs: List[tuple] = []
+        self._backend = "algorithmic"
 
     def extract_features(self, sample: Sample) -> Optional[object]:
         """Extract (bitrate, quality) pair from sample."""
@@ -109,14 +110,17 @@ class BDRateModule(BatchMetricModule):
 
     def compute_distribution_metric(
         self, features: List, reference_features: Optional[List] = None
-    ) -> float:
+    ) -> Optional[float]:
         """Compute BD-Rate between feature sets.
 
         features: [(bitrate, quality), ...] from test codec
         reference_features: [(bitrate, quality), ...] from reference codec
+
+        Returns ``None`` when there is no reference codec curve (or too few
+        rate-quality points), because BD-Rate is undefined in that case.
         """
         if reference_features is None or len(features) < 2 or len(reference_features) < 2:
-            return 0.0
+            return None
 
         rates = [f[0] for f in features]
         qualities = [f[1] for f in features]

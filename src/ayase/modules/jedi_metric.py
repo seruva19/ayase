@@ -42,26 +42,28 @@ class JEDiModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._device = "cpu"
+        self._backend = None
         self._feature_cache: List[np.ndarray] = []
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import AutoModel
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             # V-JEPA model for video feature extraction
             model_name = "facebook/vjepa2-vitg-fpc64-256"
             trc = self.config.get("trust_remote_code", True)
             rev = self.config.get("model_revision", None)
             self._model = AutoModel.from_pretrained(
                 model_name, trust_remote_code=trc, revision=rev
-            ).to(device)
+            ).to(self._device)
             self._model.eval()
-            self._device = device
             self._ml_available = True
-            logger.info("V-JEPA model loaded for JEDi on %s", device)
+            self._backend = "vjepa2"
+            logger.info("V-JEPA model loaded for JEDi on %s", self._device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("JEDi unavailable (V-JEPA not loaded): %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -84,20 +86,14 @@ class JEDiModule(PipelineModule):
         import cv2
         import torch
 
+        from ayase.image import sample_frames
+
         num_frames = self.config.get("num_frames", 16)
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        indices = list(range(0, total, max(1, total // num_frames)))[:num_frames]
+        rgb_frames = sample_frames(sample.path, max_frames=num_frames, color="rgb")
 
         frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                rgb = cv2.resize(rgb, (224, 224))
-                frames.append(rgb)
-        cap.release()
+        for rgb in rgb_frames:
+            frames.append(cv2.resize(np.ascontiguousarray(rgb), (224, 224)))
 
         if len(frames) < 2:
             return None

@@ -1,9 +1,9 @@
 """FID image distribution metric.
 
-Computes Fréchet distance between generated and reference image feature
-distributions. Uses InceptionV3 features when torchvision weights are available,
-and falls back to deterministic image-statistics features for lightweight runs.
-Lower FID is better.
+Computes the Fréchet Inception Distance between generated and reference image
+feature distributions using real InceptionV3 (torchvision) features. When
+torch/torchvision are unavailable the metric is left unset (no heuristic
+stand-in). Lower FID is better.
 """
 
 import logging
@@ -12,7 +12,7 @@ from typing import List, Optional
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
-from ayase.image import image_stats_features, load_representative_frame
+from ayase.image import load_representative_frame
 from ayase.models import Sample
 
 logger = logging.getLogger(__name__)
@@ -42,30 +42,38 @@ class FIDModule(BatchMetricModule):
         self.device_config = self.config.get("device", "auto")
         self.resize = self.config.get("resize", 299)
         self.use_torchvision_backend = self.config.get("use_torchvision_backend", True)
-        self._backend = "image_stats"
+        self._backend = "unavailable"
         self._model = None
         self._transform = None
         self._device = "cpu"
 
     def setup(self) -> None:
         if not self.use_torchvision_backend:
+            logger.warning("FID disabled: use_torchvision_backend=False and no heuristic fallback.")
             return
         try:
             import torch
             from torchvision import models, transforms
             from torchvision.models import Inception_V3_Weights
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            self._device = resolve_torch_device(self.device_config)
 
-            model = models.inception_v3(
-                weights=Inception_V3_Weights.IMAGENET1K_V1,
-                transform_input=False,
+            def load_inception():
+                model = models.inception_v3(
+                    weights=Inception_V3_Weights.IMAGENET1K_V1,
+                    transform_input=False,
+                )
+                model.fc = torch.nn.Identity()
+                return model.to(self._device).eval()
+
+            from ayase.runtime import shared_runtime_resource
+
+            self._model = shared_runtime_resource(
+                self,
+                ("fid_inception_v3_imagenet", str(self._device)),
+                load_inception,
             )
-            model.fc = torch.nn.Identity()
-            self._model = model.to(self._device).eval()
             self._transform = transforms.Compose([
                 transforms.ToPILImage(),
                 transforms.Resize((self.resize, self.resize)),
@@ -78,17 +86,17 @@ class FIDModule(BatchMetricModule):
             self._backend = "inception_v3"
             logger.info("FID initialised with torchvision InceptionV3 on %s", self._device)
         except ImportError:
-            logger.warning("FID Inception backend requires torch and torchvision; using image-stat proxy")
+            logger.warning("FID unavailable: requires torch and torchvision.")
         except Exception as e:
-            logger.warning("FID Inception setup failed (%s); using image-stat proxy", e)
+            logger.warning("FID Inception setup failed (%s); metric disabled", e)
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
+        if self._backend != "inception_v3" or self._model is None:
+            return None
         frame = load_representative_frame(sample.path, color="rgb")
         if frame is None:
             return None
-        if self._backend == "inception_v3" and self._model is not None:
-            return self._extract_inception(frame)
-        return image_stats_features(frame)
+        return self._extract_inception(frame)
 
     def compute_distribution_metric(
         self,

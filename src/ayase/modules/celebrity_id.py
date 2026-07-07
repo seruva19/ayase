@@ -41,16 +41,20 @@ class CelebrityIDModule(PipelineModule):
         self.model_name = self.config.get("model_name", "VGG-Face")
         self._deepface = None
         self._ml_available = False
+        self._backend = None
 
     def setup(self):
         try:
             from deepface import DeepFace
             self._deepface = DeepFace
             self._ml_available = True
+            self._backend = "deepface"
             logger.info("DeepFace loaded for celebrity/identity verification.")
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("DeepFace not installed. Celebrity ID module disabled.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup DeepFace: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -174,18 +178,19 @@ class CelebrityIDModule(PipelineModule):
         try:
             if sample.is_video:
                 cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
+                try:
+                    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    if total <= 0:
+                        return frames
+                    n = min(self.num_frames, total)
+                    indices = np.linspace(0, total - 1, n, dtype=int)
+                    for idx in indices:
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                        ret, frame = cap.read()
+                        if ret:
+                            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                finally:
                     cap.release()
-                    return frames
-                n = min(self.num_frames, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
             else:
                 img = cv2.imread(str(sample.path))
                 if img is not None:

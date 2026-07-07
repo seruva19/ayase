@@ -38,18 +38,20 @@ class KandinskyMotionModule(PipelineModule):
         self._model = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up Kandinsky Motion Predictor on {self._device}...")
             
             # Import vendored module
             try:
                 from ayase.third_party.kandinsky.video_motion_predictor.model import VideoMotionPredictor
             except ImportError as e:
+                self._backend = "unavailable"
                 logger.warning(f"Failed to import Kandinsky Video Tools: {e}")
                 return
 
@@ -71,9 +73,11 @@ class KandinskyMotionModule(PipelineModule):
                 ).to(self._device).eval()
 
             self._ml_available = True
+            self._backend = "kandinsky_videomae"
             logger.info("Kandinsky Motion Predictor loaded successfully.")
 
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup Kandinsky Motion Module: {e}")
 
     def process(self, sample: Sample) -> Sample:

@@ -1,14 +1,10 @@
 """HDR-VQM (HDR Video Quality Metric) module.
 
-HDR-aware video quality metric using perceptually uniform encoding
-and subband decomposition.
-
-Backend tiers:
-  1. **PU21 + PyWavelets** — proper PU21 perceptual encoding with
-     wavelet subband decomposition (ported from
-     ``github.com/mperreir/HDR-VQM``)
-  2. **Gamma-based heuristic** — simplified gamma PU approximation
-     with spatial features
+Full-reference HDR-aware video quality metric using PU21 perceptually uniform
+encoding and wavelet subband decomposition (ported from
+``github.com/mperreir/HDR-VQM``). Requires PyWavelets and a reference video;
+otherwise the metric is left unset — there is no no-reference or gamma-heuristic
+stand-in.
 """
 
 import logging
@@ -31,7 +27,7 @@ def _bt709_luminance(img: np.ndarray) -> np.ndarray:
 
 class HDRVQMModule(PipelineModule):
     name = "hdr_vqm"
-    description = "HDR-aware video quality (PU21+wavelet FR or gamma heuristic fallback)"
+    description = "HDR-aware full-reference video quality (PU21 + wavelet)"
     default_config = {"subsample": 8}
     metric_groups = {
         "hdr_vqm": "hdr",
@@ -40,40 +36,38 @@ class HDRVQMModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._pywt_available = False
-        self._backend = "gamma_heuristic"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
-        # Tier 1: PyWavelets for subband decomposition
+        # PU21 + wavelet subband decomposition (full-reference).
         try:
-            import pywt
+            import pywt  # noqa: F401
             self._pywt_available = True
             self._backend = "pu21_wavelet"
-            logger.info("HDR-VQM loaded with PU21 + PyWavelets")
-            return
+            logger.info("HDR-VQM loaded with PU21 + PyWavelets (full-reference)")
         except ImportError:
-            logger.info("PyWavelets unavailable, using gamma heuristic")
-
-        self._backend = "gamma_heuristic"
+            self._pywt_available = False
+            self._backend = "unavailable"
+            logger.warning("HDR-VQM unavailable: PyWavelets (pywt) is required.")
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        try:
-            import cv2
+        if self._backend != "pu21_wavelet":
+            return sample
 
+        # HDR-VQM is full-reference; without a reference there is no metric.
+        reference_path = getattr(sample, "reference_path", None)
+        if reference_path is None or not Path(str(reference_path)).exists():
+            return sample
+
+        try:
             frames = self._load_frames(sample)
             if not frames:
                 return sample
 
             is_hdr = self._detect_hdr(frames[0])
-
-            reference_path = getattr(sample, "reference_path", None)
-            has_reference = reference_path is not None and Path(str(reference_path)).exists()
-
-            if has_reference and self._backend == "pu21_wavelet":
-                score = self._compute_fr(sample, Path(str(reference_path)), frames, is_hdr)
-            else:
-                score = self._compute_nr(frames, sample, is_hdr)
+            score = self._compute_fr(sample, Path(str(reference_path)), frames, is_hdr)
 
             if score is not None:
                 sample.quality_metrics.hdr_vqm = float(np.clip(score, 0.0, 1.0))
@@ -88,7 +82,7 @@ class HDRVQMModule(PipelineModule):
 
         ref_frames = self._load_frames_from_path(reference_path)
         if not ref_frames:
-            return self._compute_nr(dist_frames, sample, is_hdr)
+            return None
 
         n_pairs = min(len(dist_frames), len(ref_frames))
         frame_scores = []
@@ -109,12 +103,9 @@ class HDRVQMModule(PipelineModule):
             ref_pu = self._pu21_encode(ref_gray, is_hdr)
             dist_pu = self._pu21_encode(dist_gray, is_hdr)
 
-            if self._pywt_available:
-                score = self._wavelet_quality(ref_pu, dist_pu)
-            else:
-                score = self._spatial_quality(ref_pu, dist_pu)
-
-            frame_scores.append(score)
+            score = self._wavelet_quality(ref_pu, dist_pu)
+            if score is not None:
+                frame_scores.append(score)
 
         if not frame_scores:
             return None
@@ -154,42 +145,7 @@ class HDRVQMModule(PipelineModule):
                 subband_quality = max(0.0, 1.0 - diff_energy / ref_energy)
                 subband_scores.append(subband_quality)
 
-        return float(np.mean(subband_scores)) if subband_scores else 0.5
-
-    def _spatial_quality(self, ref_pu: np.ndarray, dist_pu: np.ndarray) -> float:
-        """Spatial quality comparison without wavelets."""
-        import cv2
-
-        # SSIM-like comparison in PU domain
-        C1 = 0.01 ** 2
-        C2 = 0.03 ** 2
-
-        mu_ref = cv2.GaussianBlur(ref_pu, (11, 11), 1.5)
-        mu_dist = cv2.GaussianBlur(dist_pu, (11, 11), 1.5)
-        sigma_ref_sq = cv2.GaussianBlur(ref_pu ** 2, (11, 11), 1.5) - mu_ref ** 2
-        sigma_dist_sq = cv2.GaussianBlur(dist_pu ** 2, (11, 11), 1.5) - mu_dist ** 2
-        sigma_ref_dist = cv2.GaussianBlur(ref_pu * dist_pu, (11, 11), 1.5) - mu_ref * mu_dist
-
-        ssim_map = ((2 * mu_ref * mu_dist + C1) * (2 * sigma_ref_dist + C2)) / \
-                   ((mu_ref ** 2 + mu_dist ** 2 + C1) * (sigma_ref_sq + sigma_dist_sq + C2))
-
-        return float(np.mean(np.maximum(ssim_map, 0)))
-
-    def _compute_nr(self, frames: list, sample: Sample, is_hdr: bool) -> Optional[float]:
-        """No-reference quality assessment."""
-        import cv2
-
-        frame_scores = []
-        for frame in frames:
-            score = self._assess_frame(frame, is_hdr)
-            frame_scores.append(score)
-
-        temporal_score = 1.0
-        if len(frames) >= 2 and sample.is_video:
-            temporal_score = self._temporal_quality(frames, is_hdr)
-
-        spatial_mean = float(np.mean(frame_scores))
-        return float(0.6 * spatial_mean + 0.4 * temporal_score)
+        return float(np.mean(subband_scores)) if subband_scores else None
 
     def _detect_hdr(self, frame) -> bool:
         """Detect if frame is HDR based on pixel value distribution."""
@@ -203,46 +159,6 @@ class HDRVQMModule(PipelineModule):
         hist = hist / (hist.sum() + 1e-8)
         used_bins = np.sum(hist > 0.001)
         return used_bins > 200
-
-    def _assess_frame(self, frame, is_hdr: bool) -> float:
-        """Assess single frame quality with HDR awareness."""
-        import cv2
-
-        if is_hdr:
-            pu = self._pu21_encode_frame(frame)
-        else:
-            pu = frame.astype(np.float64) / 255.0
-
-        gray_pu = _bt709_luminance(pu) if len(pu.shape) == 3 else pu
-
-        # Sharpness in PU space
-        lap = cv2.Laplacian(gray_pu.astype(np.float64), cv2.CV_64F)
-        sharpness = min(1.0, np.var(lap) * 100.0)
-
-        # Contrast in PU space
-        mu = cv2.GaussianBlur(gray_pu, (11, 11), 1.5)
-        local_contrast = np.mean(np.abs(gray_pu - mu))
-        contrast_score = min(1.0, local_contrast * 5.0)
-
-        # Dynamic range utilization
-        dr_range = gray_pu.max() - gray_pu.min()
-        dr_score = min(1.0, dr_range)
-
-        # Tone mapping quality
-        hist, _ = np.histogram(gray_pu.flatten(), bins=64, range=(0, 1))
-        hist = hist / (hist.sum() + 1e-8)
-        entropy = -np.sum(hist[hist > 0] * np.log2(hist[hist > 0]))
-        tone_score = min(1.0, entropy / 6.0)
-
-        # Color fidelity
-        if len(pu.shape) == 3:
-            color_var = np.mean([np.std(pu[:, :, c]) for c in range(3)])
-            color_score = min(1.0, color_var * 3.0)
-        else:
-            color_score = 0.5
-
-        return (0.25 * sharpness + 0.20 * contrast_score + 0.20 * dr_score +
-                0.15 * tone_score + 0.20 * color_score)
 
     def _temporal_quality(self, frames, is_hdr: bool) -> float:
         """Assess temporal quality."""

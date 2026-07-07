@@ -46,12 +46,15 @@ class AudioUTMOSModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 3.0)
         self._model = None
         self._ml_available = False
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading UTMOS model on {self._device}...")
             self._model = torch.hub.load(
                 "tarepan/SpeechMOS:v1.2.0", "utmos22_strong",
@@ -60,6 +63,7 @@ class AudioUTMOSModule(PipelineModule):
             self._model = self._model.to(self._device)
             self._model.eval()
             self._ml_available = True
+            self._backend = "torchhub:SpeechMOS/utmos22_strong"
             logger.info("UTMOS module initialised")
 
         except ImportError:

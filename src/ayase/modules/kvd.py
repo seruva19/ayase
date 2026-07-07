@@ -47,18 +47,16 @@ class KVDModule(BatchMetricModule):
         self.device = None
         self._ml_available = False
         self._feature_model = None
+        self._fvd_delegate = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            # Set device
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = resolve_torch_device(self.device_config)
 
-            # Load feature extractor (reuse FVD's I3D)
+            # Load feature extractor (reuse FVD's Kinetics-400 R3D-18 backbone).
             from ayase.modules.fvd import FVDModule
 
             fvd_module = FVDModule(self.config)
@@ -67,23 +65,23 @@ class KVDModule(BatchMetricModule):
             self._ml_available = fvd_module._ml_available
 
             if self._ml_available:
+                # Reuse a single FVD delegate for feature extraction rather than
+                # constructing a fresh module per sample.
+                self._fvd_delegate = fvd_module
+                self._backend = "r3d18"
                 logger.info(f"KVD module initialized on {self.device}")
+            else:
+                self._backend = "unavailable"
 
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup KVD: {e}")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract features using same method as FVD."""
-        if not sample.is_video or self._feature_model is None:
+        """Extract features using the shared FVD R3D-18 delegate."""
+        if not sample.is_video or self._fvd_delegate is None:
             return None
-
-        # Reuse FVD's feature extraction
-        from ayase.modules.fvd import FVDModule
-
-        fvd_temp = FVDModule(self.config)
-        fvd_temp._r3d_model = self._feature_model
-        fvd_temp._ml_available = True
-        return fvd_temp.extract_features(sample)
+        return self._fvd_delegate.extract_features(sample)
 
     def _rbf_kernel(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Compute RBF (Gaussian) kernel matrix.

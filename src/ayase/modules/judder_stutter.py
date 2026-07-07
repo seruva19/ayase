@@ -42,6 +42,8 @@ class JudderStutterModule(PipelineModule):
         self.max_frames = self.config.get("max_frames", 600)
         self.dup_thresh = self.config.get("duplicate_threshold", 1.0)
         self.warning_threshold = self.config.get("warning_threshold", 20.0)
+        # Pure OpenCV/NumPy signal analysis of native-fps consecutive frames.
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:

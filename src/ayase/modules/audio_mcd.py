@@ -47,12 +47,14 @@ class AudioMCDModule(PipelineModule):
         self.n_mfcc = self.config.get("n_mfcc", 13)
         self.warning_threshold = self.config.get("warning_threshold", 8.0)
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import librosa  # noqa: F401
 
             self._ml_available = True
+            self._backend = "algorithmic"
             logger.info("MCD module initialised (librosa)")
         except ImportError:
             logger.warning("librosa not installed. Install with: pip install librosa")

@@ -26,6 +26,7 @@ class CKDNModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -39,8 +40,10 @@ class CKDNModule(PipelineModule):
             except StopIteration:
                 self._device = torch.device("cpu")
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("CKDN model loaded on %s", device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("CKDN unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

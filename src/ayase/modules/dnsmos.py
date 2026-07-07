@@ -34,7 +34,7 @@ class DNSMOSModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._ml_available = False
-        self._backend = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         # Try torchmetrics DNSMOS

@@ -113,6 +113,8 @@ class CIEDE2000Module(ReferenceBasedModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 5)
         self._ml_available = True  # Pure numpy
+        # CIEDE2000 is an exact published formula implemented directly.
+        self._backend = "algorithmic"
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
@@ -170,20 +172,22 @@ class CIEDE2000Module(ReferenceBasedModule):
         dist_cap = cv2.VideoCapture(str(path))
         scores = []
         idx = 0
-        while True:
-            r1, rf = ref_cap.read()
-            r2, df = dist_cap.read()
-            if not r1 or not r2:
-                break
-            if idx % self.subsample == 0:
-                h = min(rf.shape[0], df.shape[0])
-                w = min(rf.shape[1], df.shape[1])
-                rf = cv2.resize(rf, (w, h))
-                df = cv2.resize(df, (w, h))
-                ref_lab = _rescale_lab(cv2.cvtColor(rf, cv2.COLOR_BGR2LAB).astype(np.float32))
-                dist_lab = _rescale_lab(cv2.cvtColor(df, cv2.COLOR_BGR2LAB).astype(np.float32))
-                scores.append(float(np.mean(_ciede2000_pixel(ref_lab, dist_lab))))
-            idx += 1
-        ref_cap.release()
-        dist_cap.release()
+        try:
+            while True:
+                r1, rf = ref_cap.read()
+                r2, df = dist_cap.read()
+                if not r1 or not r2:
+                    break
+                if idx % self.subsample == 0:
+                    h = min(rf.shape[0], df.shape[0])
+                    w = min(rf.shape[1], df.shape[1])
+                    rf = cv2.resize(rf, (w, h))
+                    df = cv2.resize(df, (w, h))
+                    ref_lab = _rescale_lab(cv2.cvtColor(rf, cv2.COLOR_BGR2LAB).astype(np.float32))
+                    dist_lab = _rescale_lab(cv2.cvtColor(df, cv2.COLOR_BGR2LAB).astype(np.float32))
+                    scores.append(float(np.mean(_ciede2000_pixel(ref_lab, dist_lab))))
+                idx += 1
+        finally:
+            ref_cap.release()
+            dist_cap.release()
         return float(np.mean(scores)) if scores else None

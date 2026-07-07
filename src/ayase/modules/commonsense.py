@@ -101,6 +101,7 @@ class CommonsenseModule(PipelineModule):
         except Exception as e:
             logger.info("ViLT unavailable for commonsense: %s", e)
 
+        self._backend = "unavailable"
         logger.warning("Commonsense unavailable: install transformers")
 
     def process(self, sample: Sample) -> Sample:
@@ -176,11 +177,8 @@ class CommonsenseModule(PipelineModule):
         except (json.JSONDecodeError, ValueError):
             pass
 
-        # Fallback: parse yes/no or numeric from response
-        response_lower = response_clean.lower()
-        if "no" in response_lower or "poor" in response_lower or "bad" in response_lower:
-            return 0.3, issues
-        return 0.7, issues
+        # Unparseable model response — do not fabricate a score.
+        return None, issues
 
     # ------------------------------------------------------------------ #
     # Tier 2: ViLT VQA                                                     #

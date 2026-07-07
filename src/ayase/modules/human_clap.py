@@ -49,21 +49,20 @@ class HumanCLAPModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import ClapModel, ClapProcessor
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            self._device = resolve_torch_device(self.device_config)
             models_dir = self.config.get("models_dir", "models")
             self._model = ClapModel.from_pretrained(self.model_name, cache_dir=models_dir).to(self._device)
             self._processor = ClapProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
             self._model.eval()
             self._ml_available = True
+            self._backend = "clap"
             logger.info("Human-CLAP initialised with %s on %s", self.model_name, self._device)
         except ImportError:
             logger.warning("Human-CLAP requires torch and transformers")

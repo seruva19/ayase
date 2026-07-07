@@ -51,15 +51,14 @@ class DepthMapQualityModule(PipelineModule):
         self._model = None
         self._transform = None
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             self._model = torch.hub.load(
                 "intel-isl/MiDaS", self.model_type, trust_repo=True
@@ -75,6 +74,7 @@ class DepthMapQualityModule(PipelineModule):
                 self._transform = midas_transforms.dpt_transform
 
             self._ml_available = True
+            self._backend = f"midas:{self.model_type}"
             logger.info(f"Depth map quality: {self.model_type} on {self.device}")
 
         except Exception as e:
@@ -170,15 +170,16 @@ class DepthMapQualityModule(PipelineModule):
         scores = []
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                depth = self._estimate_depth(frame)
-                if depth is not None:
-                    scores.append(self._evaluate_depth(frame, depth))
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    depth = self._estimate_depth(frame)
+                    if depth is not None:
+                        scores.append(self._evaluate_depth(frame, depth))
+                idx += 1
+        finally:
+            cap.release()
         return float(np.mean(scores)) if scores else None

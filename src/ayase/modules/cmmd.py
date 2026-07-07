@@ -1,8 +1,8 @@
 """CMMD distributional image quality using CLIP-space MMD.
 
 Computes a dataset-level Maximum Mean Discrepancy between generated and
-reference image distributions. The preferred backend is CLIP ViT-L/14@336; a
-deterministic image-statistics proxy is used when model weights are unavailable.
+reference image distributions using CLIP ViT-L/14@336 embeddings. When the
+CLIP backend cannot be loaded the metric is left unset (no proxy features).
 Lower scores indicate closer distributions.
 """
 
@@ -12,7 +12,7 @@ from typing import List, Optional
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
-from ayase.image import arrays_to_pil, image_stats_features, load_representative_frame
+from ayase.image import arrays_to_pil, load_representative_frame
 from ayase.models import Sample
 from ayase.runtime import cached_clip_image_features, media_state_key
 
@@ -45,7 +45,7 @@ class CMMDModule(BatchMetricModule):
         self.device_config = self.config.get("device", "auto")
         self.kernel = self.config.get("kernel", "rbf")
         self.sigma = self.config.get("sigma", None)
-        self._backend = "image_stats"
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._device = "cpu"
@@ -91,17 +91,17 @@ class CMMDModule(BatchMetricModule):
             self._backend = "clip"
             logger.info("CMMD initialised with %s on %s", self.model_name, self._device)
         except ImportError:
-            logger.warning("CMMD CLIP backend requires torch and transformers; using image-stat proxy")
+            logger.warning("CMMD unavailable: requires torch and transformers (CLIP); metric skipped")
         except Exception as e:
-            logger.warning("CMMD CLIP setup failed (%s); using image-stat proxy", e)
+            logger.warning("CMMD CLIP setup failed (%s); metric skipped", e)
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
+        if self._backend != "clip" or self._model is None:
+            return None
         frame = load_representative_frame(sample.path, color="rgb")
         if frame is None:
             return None
-        if self._backend == "clip" and self._model is not None:
-            return self._extract_clip(frame, cache_key=("cmmd", media_state_key(sample.path)))
-        return image_stats_features(frame)
+        return self._extract_clip(frame, cache_key=("cmmd", media_state_key(sample.path)))
 
     def compute_distribution_metric(
         self,

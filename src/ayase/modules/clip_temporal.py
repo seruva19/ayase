@@ -47,6 +47,7 @@ class CLIPTemporalModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self):
         try:
@@ -87,6 +88,7 @@ class CLIPTemporalModule(PipelineModule):
                 load_clip,
             )
             self._ml_available = True
+            self._backend = "clip"
         except Exception as e:
             logger.warning(f"Failed to load CLIP for temporal: {e}")
 

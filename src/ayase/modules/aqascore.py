@@ -1,14 +1,14 @@
 """AQAScore audio question-answering alignment.
 
-Heavy Qwen2.5-Omni based audio QA is opt-in by default. When enabled without a
-local Omni backend, the module reports a conservative audio/caption proxy so the
-pipeline remains deterministic and non-failing.
+Heavy Qwen2.5-Omni based audio QA is opt-in by default. AQAScore is computed
+with the real Qwen2.5-Omni backend; when it is unavailable the score is left
+unset (no proxy/heuristic stand-in).
 """
 
 import logging
 from typing import Optional
 
-from ayase.audio import load_audio, speech_quality_proxy
+from ayase.audio import load_audio
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -20,7 +20,6 @@ class AQAScoreModule(PipelineModule):
     description = "AQAScore opt-in audio question-answering alignment"
     default_config = {
         "enabled": False,
-        "backend": "auto",  # auto | proxy
         "model_name": "Qwen/Qwen2.5-Omni-7B",
         "sample_rate": 16000,
         "device": "auto",
@@ -43,20 +42,16 @@ class AQAScoreModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.enabled = self.config.get("enabled", False)
-        self.backend = str(self.config.get("backend", "auto")).lower()
         self.model_name = self.config.get("model_name", "Qwen/Qwen2.5-Omni-7B")
         self.sample_rate = self.config.get("sample_rate", 16000)
         self.device_config = self.config.get("device", "auto")
-        self._backend = "caption_proxy"
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._device = "cpu"
 
     def setup(self) -> None:
         if not self.enabled:
-            return
-        if self.backend == "proxy":
-            logger.info("AQAScore: using deterministic audio/caption proxy backend")
             return
         try:
             import torch
@@ -82,12 +77,15 @@ class AQAScoreModule(PipelineModule):
             self._backend = "qwen_omni"
             logger.info("AQAScore initialised with %s", self.model_name)
         except ImportError:
-            logger.info("AQAScore Omni backend unavailable; using caption proxy")
+            logger.warning(
+                "AQAScore unavailable: Qwen2.5-Omni backend not installed; "
+                "aqascore_score will be left unset."
+            )
         except Exception as e:
-            logger.warning("AQAScore setup failed (%s); using caption proxy", e)
+            logger.warning("AQAScore unavailable: setup failed (%s)", e)
 
     def process(self, sample: Sample) -> Sample:
-        if not self.enabled:
+        if not self.enabled or self._backend != "qwen_omni":
             return sample
         caption = _caption_text(sample)
         if not caption:
@@ -97,9 +95,9 @@ class AQAScoreModule(PipelineModule):
             if audio is None or len(audio) == 0:
                 return sample
 
-            score = self._score_qwen(sample.path, caption) if self._backend == "qwen_omni" else None
+            score = self._score_qwen(sample.path, caption)
             if score is None:
-                score = self._score_proxy(audio, caption)
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -131,14 +129,6 @@ class AQAScoreModule(PipelineModule):
         except Exception as e:
             logger.debug("AQAScore Omni scoring failed: %s", e)
             return None
-
-    def _score_proxy(self, audio, caption: str) -> float:
-        quality = speech_quality_proxy(audio, sr=self.sample_rate)
-        caption_has_audio_terms = any(
-            word in caption.lower()
-            for word in ("speech", "voice", "music", "sound", "audio", "sing", "noise", "talk")
-        )
-        return float(min(1.0, quality * (1.0 if caption_has_audio_terms else 0.75)))
 
 
 def _caption_text(sample: Sample) -> Optional[str]:

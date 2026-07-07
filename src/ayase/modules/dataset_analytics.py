@@ -54,6 +54,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
         self._clip_model = None
         self._clip_processor = None
         self._clip_available = False
+        self._backend = "histogram"
 
         # Accumulation buffers (beyond _feature_cache in base class)
         self._hashes: List[Tuple[str, int]] = []  # (sample_name, hash_value)
@@ -98,6 +99,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
             self._clip_device = device
             self._clip_model_name = model_name
             self._clip_available = True
+            self._backend = "clip"
             logger.info(f"Dataset analytics: CLIP embeddings on {device}")
         except ImportError:
             logger.info("CLIP unavailable, using histogram-based analytics")
@@ -218,19 +220,23 @@ class DatasetAnalyticsModule(BatchMetricModule):
         # 5. Class balance (based on k-means clustering)
         balance = self._compute_class_balance(matrix)
 
-        # Store in pipeline stats
+        # Store in pipeline stats (skip metrics that could not be computed)
         if hasattr(self, "pipeline") and self.pipeline:
             if hasattr(self.pipeline, "add_dataset_metric"):
                 self.pipeline.add_dataset_metric("diversity_score", diversity)
-                self.pipeline.add_dataset_metric("semantic_coverage", coverage)
+                if coverage is not None:
+                    self.pipeline.add_dataset_metric("semantic_coverage", coverage)
                 self.pipeline.add_dataset_metric("outlier_count", outlier_count)
                 self.pipeline.add_dataset_metric("duplicate_pairs", duplicate_pairs)
-                self.pipeline.add_dataset_metric("class_balance_score", balance)
+                if balance is not None:
+                    self.pipeline.add_dataset_metric("class_balance_score", balance)
 
+        coverage_str = f"{coverage:.3f}" if coverage is not None else "n/a"
+        balance_str = f"{balance:.3f}" if balance is not None else "n/a"
         logger.info(
             f"Dataset analytics: diversity={diversity:.3f} "
-            f"coverage={coverage:.3f} outliers={outlier_count} "
-            f"duplicates={duplicate_pairs} balance={balance:.3f}"
+            f"coverage={coverage_str} outliers={outlier_count} "
+            f"duplicates={duplicate_pairs} balance={balance_str}"
         )
 
         return diversity
@@ -267,7 +273,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
         return float(np.clip(mean_dist / max(expected_max, 1e-6), 0, 1))
 
     @staticmethod
-    def _compute_coverage(matrix: np.ndarray) -> float:
+    def _compute_coverage(matrix: np.ndarray) -> Optional[float]:
         """Estimate embedding space coverage via convex hull volume proxy."""
         n, d = matrix.shape
         if n < d + 1:
@@ -296,7 +302,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
             coverage = float(np.mean(stds > 0.01))
             return float(np.clip(coverage, 0, 1))
         except Exception:
-            return 0.5
+            return None
 
     @staticmethod
     def _detect_outliers(matrix: np.ndarray) -> int:
@@ -329,7 +335,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
         return count
 
     @staticmethod
-    def _compute_class_balance(matrix: np.ndarray, n_clusters: int = 10) -> float:
+    def _compute_class_balance(matrix: np.ndarray, n_clusters: int = 10) -> Optional[float]:
         """Estimate class balance via k-means cluster sizes."""
         n = len(matrix)
         k = min(n_clusters, n // 2)
@@ -341,8 +347,8 @@ class DatasetAnalyticsModule(BatchMetricModule):
             kmeans = MiniBatchKMeans(n_clusters=k, random_state=42, n_init=3)
             labels = kmeans.fit_predict(matrix)
         except ImportError:
-            # Without sklearn, use random assignment proxy
-            return 0.5
+            # Without sklearn, class balance cannot be estimated.
+            return None
 
         # Cluster sizes
         counts = np.bincount(labels, minlength=k).astype(float)

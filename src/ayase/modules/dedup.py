@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image
 from typing import Set, Dict, List, Optional
 
+from ayase.image import load_representative_frame
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -65,16 +66,8 @@ class DeduplicationModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                # Use middle frame for hash
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            # Middle frame for video, the image itself otherwise (shared cache).
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None
 

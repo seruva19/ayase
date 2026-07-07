@@ -103,6 +103,7 @@ class BrightRateModule(PipelineModule):
             import torch  # noqa: F401
             import torchvision  # noqa: F401
         except ImportError as exc:
+            self._backend = "unavailable"
             logger.warning("BrightRate unavailable: missing dependency: %s", exc)
             return
 
@@ -116,12 +117,14 @@ class BrightRateModule(PipelineModule):
             "HDR/hdr_feat.py",
         ]
         if not _has_required_paths(repo_dir, required):
+            self._backend = "unavailable"
             logger.warning("BrightRate unavailable: required source files are missing.")
             return
 
         asset_paths = self._resolve_asset_paths()
         model_file = asset_paths.get("regressor")
         if model_file is None:
+            self._backend = "unavailable"
             logger.warning("BrightRate unavailable: regressor weights are missing.")
             return
 

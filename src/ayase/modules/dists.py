@@ -43,19 +43,19 @@ class DISTSModule(PipelineModule):
         self.device = None
         self._ml_available = False
         self._dists_fn = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import torch
             from piq import DISTS as PIQ_DISTS
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             self._dists_fn = PIQ_DISTS().to(self.device)
             self._ml_available = True
+            self._backend = "piq"
             logger.info(f"DISTS module initialised on {self.device}")
 
         except ImportError:

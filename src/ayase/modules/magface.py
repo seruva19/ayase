@@ -17,7 +17,6 @@ magface_score -- higher = better quality (0-1)
 import logging
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
 from ayase.models import QualityMetrics, Sample
@@ -50,6 +49,7 @@ class MagFaceModule(PipelineModule):
         self.norm_max = self.config.get("norm_max", 30.0)
         self._face_app = None
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         if self.test_mode:
@@ -64,12 +64,15 @@ class MagFaceModule(PipelineModule):
             )
             self._face_app.prepare(ctx_id=0, det_size=(self.det_size, self.det_size))
             self._ml_available = True
+            self._backend = "insightface"
             logger.info("MagFace initialised with InsightFace (%s)", self.face_model)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "insightface not installed. Install with: pip install insightface onnxruntime"
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning("MagFace setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -120,27 +123,10 @@ class MagFaceModule(PipelineModule):
         return float(np.clip(quality, 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        """Extract frames from video or load image."""
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        """Extract frames (BGR) from a video or image via the shared cache."""
+        from ayase.image import sample_frames
+
+        return list(sample_frames(sample.path, max_frames=self.subsample, color="bgr"))
 
     def on_dispose(self) -> None:
         self._face_app = None

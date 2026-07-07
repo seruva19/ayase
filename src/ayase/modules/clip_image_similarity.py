@@ -77,6 +77,7 @@ class CLIPImageSimilarityModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._active_backend: Optional[str] = None
+        self._backend = "unavailable"
         self._model = None
         self._preprocess = None
         self._processor = None
@@ -117,6 +118,7 @@ class CLIPImageSimilarityModule(PipelineModule):
             self._model.eval()
             self._ml_available = True
             self._active_backend = "open_clip"
+            self._backend = "open_clip"
             logger.info(
                 "CLIPImageSimilarity initialised with OpenCLIP %s/%s on %s",
                 model_name,
@@ -149,6 +151,7 @@ class CLIPImageSimilarityModule(PipelineModule):
             self._processor = CLIPProcessor.from_pretrained(model_id)
             self._ml_available = True
             self._active_backend = "transformers"
+            self._backend = "transformers"
             logger.info(
                 "CLIPImageSimilarity initialised with transformers %s on %s",
                 model_id,

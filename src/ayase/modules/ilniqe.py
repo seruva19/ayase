@@ -9,13 +9,12 @@ Uses the ``pyiqa`` package.
 """
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -39,17 +38,24 @@ class ILNIQEModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 50.0)
         self._ml_available = False
         self._metric = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
+            from ayase.runtime import resolve_torch_device
 
-            self._metric = pyiqa.create_metric("ilniqe", device="cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric("ilniqe", device=self._device)
             self._ml_available = True
-            logger.info("IL-NIQE module initialised")
+            self._backend = "pyiqa"
+            logger.info("IL-NIQE module initialised on %s", self._device)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup IL-NIQE: {e}")
 
     def _score_image_path(self, path: str) -> Optional[float]:
@@ -57,6 +63,19 @@ class ILNIQEModule(PipelineModule):
             return float(self._metric(path).item())
         except Exception as e:
             logger.debug(f"IL-NIQE scoring failed: {e}")
+            return None
+
+    def _score_frame(self, frame_rgb: np.ndarray) -> Optional[float]:
+        try:
+            import torch
+
+            arr = np.ascontiguousarray(frame_rgb, dtype=np.float32)
+            tensor = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0) / 255.0
+            tensor = tensor.to(self._device)
+            with torch.no_grad():
+                return float(self._metric(tensor).item())
+        except Exception as e:
+            logger.debug(f"IL-NIQE frame scoring failed: {e}")
             return None
 
     def process(self, sample: Sample) -> Sample:
@@ -91,24 +110,10 @@ class ILNIQEModule(PipelineModule):
         return sample
 
     def _process_video(self, video_path: Path) -> Optional[float]:
-        cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            return None
+        frames = sample_frames(video_path, max_frames=self.subsample, color="rgb")
         scores = []
-        idx = 0
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_image_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
-        finally:
-            cap.release()
+        for frame in frames:
+            s = self._score_frame(frame)
+            if s is not None:
+                scores.append(s)
         return float(np.mean(scores)) if scores else None

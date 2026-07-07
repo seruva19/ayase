@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -23,21 +24,25 @@ class HyperIQAModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._model = pyiqa.create_metric("hyperiqa", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
-                self._device = torch.device("cpu")
+                self._device = torch.device(device)
             self._ml_available = True
+            self._backend = "pyiqa_hyperiqa"
             logger.info("HyperIQA model loaded on %s", device)
-        except (ImportError, Exception) as e:
+        except Exception as e:
             logger.warning("HyperIQA unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -46,7 +51,6 @@ class HyperIQAModule(PipelineModule):
         if not self._ml_available:
             return sample
         try:
-            import cv2
             import torch
 
             frames = self._load_frames(sample)
@@ -55,7 +59,8 @@ class HyperIQAModule(PipelineModule):
 
             scores = []
             for frame in frames:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # sample_frames returns read-only RGB views; copy before torch.
+                rgb = np.ascontiguousarray(frame)
                 tensor = (
                     torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
                 )
@@ -64,28 +69,16 @@ class HyperIQAModule(PipelineModule):
                     score = self._model(tensor).item()
                 scores.append(score)
 
-            sample.quality_metrics.hyperiqa_score = float(np.mean(scores))
+            if scores:
+                sample.quality_metrics.hyperiqa_score = float(np.mean(scores))
         except Exception as e:
             logger.warning("HyperIQA processing failed: %s", e)
         return sample
 
     def _load_frames(self, sample: Sample) -> list:
-        import cv2
-
         subsample = self.config.get("subsample", 4)
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        try:
+            return list(sample_frames(sample.path, max_frames=subsample, color="rgb"))
+        except Exception as e:
+            logger.debug("HyperIQA frame loading failed: %s", e)
+            return []

@@ -80,6 +80,7 @@ class I2VSimilarityModule(PipelineModule):
         self._clip_available = False
         self._dino_available = False
         self._lpips_available = False
+        self._backend = "unavailable"
 
     # ------------------------------------------------------------------ #
     #  Lifecycle                                                          #
@@ -87,9 +88,10 @@ class I2VSimilarityModule(PipelineModule):
 
     def setup(self) -> None:
         try:
-            import torch
+            import torch  # noqa: F401
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
             logger.warning("PyTorch not installed. I2V Similarity disabled.")
             return
@@ -101,8 +103,20 @@ class I2VSimilarityModule(PipelineModule):
         if self.enable_lpips:
             self._init_lpips()
 
-        if not (self._clip_available or self._dino_available or self._lpips_available):
+        available = [
+            name
+            for name, ok in (
+                ("clip", self._clip_available),
+                ("dino", self._dino_available),
+                ("lpips", self._lpips_available),
+            )
+            if ok
+        ]
+        if not available:
             logger.warning("No I2V sub-metrics available. Module effectively disabled.")
+            self._backend = "unavailable"
+        else:
+            self._backend = "+".join(available)
 
     _CLIP_URLS = {
         "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/ViT-B-32.safetensors",
@@ -314,7 +328,7 @@ class I2VSimilarityModule(PipelineModule):
     #  CLIP sub-metric                                                    #
     # ------------------------------------------------------------------ #
 
-    def _compute_clip(self, image_path: str, frames: List[np.ndarray]) -> float:
+    def _compute_clip(self, image_path: str, frames: List[np.ndarray]) -> Optional[float]:
         import torch
         from PIL import Image
 
@@ -337,13 +351,13 @@ class I2VSimilarityModule(PipelineModule):
                 sim = torch.nn.functional.cosine_similarity(image_feat, avg_feat).item()
                 similarities.append(sim)
 
-        return float(np.median(similarities)) if similarities else 0.0
+        return float(np.median(similarities)) if similarities else None
 
     # ------------------------------------------------------------------ #
     #  DINO sub-metric                                                    #
     # ------------------------------------------------------------------ #
 
-    def _compute_dino(self, image_path: str, frames: List[np.ndarray]) -> float:
+    def _compute_dino(self, image_path: str, frames: List[np.ndarray]) -> Optional[float]:
         import torch
         from PIL import Image
 
@@ -372,13 +386,13 @@ class I2VSimilarityModule(PipelineModule):
                 ).item()
                 similarities.append(sim)
 
-        return float(np.median(similarities)) if similarities else 0.0
+        return float(np.median(similarities)) if similarities else None
 
     # ------------------------------------------------------------------ #
     #  LPIPS sub-metric                                                   #
     # ------------------------------------------------------------------ #
 
-    def _compute_lpips(self, image_path: str, frames: List[np.ndarray]) -> float:
+    def _compute_lpips(self, image_path: str, frames: List[np.ndarray]) -> Optional[float]:
         import torch
         from PIL import Image
         from torchvision import transforms
@@ -403,7 +417,7 @@ class I2VSimilarityModule(PipelineModule):
                 dist = self._lpips_model(image_tensor, avg_tensor)
                 distances.append(dist.item())
 
-        return float(np.median(distances)) if distances else 0.0
+        return float(np.median(distances)) if distances else None
 
     # ------------------------------------------------------------------ #
     #  Aggregation                                                        #

@@ -37,6 +37,7 @@ class CaptioningModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -75,8 +76,10 @@ class CaptioningModule(PipelineModule):
                 ).to(self._device)
 
             self._ml_available = True
+            self._backend = "blip2" if is_blip2 else "blip"
 
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup Captioning: {e}")
 
     def process(self, sample: Sample) -> Sample:
