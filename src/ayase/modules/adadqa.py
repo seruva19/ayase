@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class AdaDQAModule(PipelineModule):
     name = "adadqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023)"
     default_config = {
         "subsample": 8,

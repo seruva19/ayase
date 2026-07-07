@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class NRGVQMModule(PipelineModule):
     name = "nr_gvqm"
+    provisional = True  # no turnkey real backend in a standard install
     description = "NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable)"
     default_config = {
         "subsample": 8,

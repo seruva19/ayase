@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class AVQTModule(ReferenceBasedModule):
     name = "avqt"
+    provisional = True  # no turnkey real backend in a standard install
     description = "Apple AVQT perceptual video quality (full-reference)"
     metric_field = "avqt_score"
     default_config = {

@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class DisCoVQAModule(PipelineModule):
     name = "discovqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "DisCoVQA temporal distortion-content VQA (2023)"
     default_config = {
         "subsample": 8,

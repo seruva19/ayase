@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class QCLIPModule(PipelineModule):
     name = "qclip"
+    provisional = True  # no turnkey real backend in a standard install
     description = "Q-CLIP VLM-based VQA (2025)"
     default_config = {
         "subsample": 8,

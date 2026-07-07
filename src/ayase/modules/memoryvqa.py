@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class MemoryVQAModule(PipelineModule):
     name = "memoryvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable)"
     default_config = {
         "subsample": 12,

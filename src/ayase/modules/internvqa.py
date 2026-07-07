@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class InternVQAModule(PipelineModule):
     name = "internvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "InternVQA compressed-video quality (real model only; disabled if unavailable)"
     default_config = {
         "subsample": 8,

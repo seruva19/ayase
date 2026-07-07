@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class DeepVQAModule(ReferenceBasedModule):
     name = "deepvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "DeepVQA spatiotemporal masking FR-VQA (ECCV 2018)"
     metric_field = "deepvqa_score"
     default_config = {

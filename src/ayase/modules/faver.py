@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class FAVERModule(PipelineModule):
     name = "faver"
+    provisional = True  # no turnkey real backend in a standard install
     description = "FAVER blind VQA for variable frame rate videos (2024)"
     default_config = {
         "subsample": 16,

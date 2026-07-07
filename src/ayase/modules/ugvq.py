@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class UGVQModule(PipelineModule):
     name = "ugvq"
+    provisional = True  # no turnkey real backend in a standard install
     description = "UGVQ unified generated video quality (TOMM 2024)"
     default_config = {
         "subsample": 8,

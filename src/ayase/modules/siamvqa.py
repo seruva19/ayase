@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class SiamVQAModule(PipelineModule):
     name = "siamvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "SiamVQA Siamese high-resolution VQA (real model only)"
     default_config = {
         "subsample": 8,
