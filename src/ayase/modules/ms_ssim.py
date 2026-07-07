@@ -46,28 +46,30 @@ class MSSSIMModule(ReferenceBasedModule):
         self.device = None
         self._ml_available = False
         self._ms_ssim_fn = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import torch
             from pytorch_msssim import ms_ssim
 
+            from ayase.runtime import resolve_torch_device
+
             self._ms_ssim_fn = ms_ssim
 
-            # Set device
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             self._ml_available = True
+            self._backend = "pytorch_msssim"
             logger.info(f"MS-SSIM module initialized on {self.device}")
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "pytorch-msssim not installed. Install with: pip install pytorch-msssim"
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup MS-SSIM: {e}")
 
     def compute_reference_score(

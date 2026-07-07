@@ -72,17 +72,24 @@ class TCBenchModule(PipelineModule):
         self._clip_processor = None
         self._llm_endpoint = None
         self._device = "cpu"
+        self._backend = None
         self.active_decomposer = "comma"
 
     def setup(self) -> None:
         if getattr(self, "test_mode", False):
             return
         try:
-            import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            import torch  # noqa: F401
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
+            self._backend = "unavailable"
             return
-        self._try_load_clip()
+        if self._try_load_clip():
+            self._backend = "clip"
+        else:
+            self._backend = "unavailable"
         if self.decomposer_pref in ("auto", "llm") and self._try_setup_llm():
             self.active_decomposer = "llm"
         elif self.decomposer_pref in ("auto", "regex"):
@@ -154,11 +161,16 @@ class TCBenchModule(PipelineModule):
             self._write(sample, 1.0, 1.0, 1.0, 1.0)
             return sample
 
+        if self._clip_model is None:
+            # Temporal ordering cannot be assessed without CLIP grounding -> skip
+            # rather than fabricate mid-scale scores.
+            return sample
+
         frames = self._sample_frames(sample.path, self.num_frames)
         if frames is None:
             return sample
 
-        sims = self._clip_sim_matrix(sample, frames, events) if self._clip_model is not None else None
+        sims = self._clip_sim_matrix(sample, frames, events)
         attribute_score = self._score_dimension(sims, events, kind="attribute")
         object_score = self._score_dimension(sims, events, kind="object")
         background_score = self._score_dimension(sims, events, kind="background")
@@ -262,10 +274,7 @@ class TCBenchModule(PipelineModule):
             return None
         return np.stack(frames, axis=0)
 
-    def _score_dimension(self, sims: Optional[np.ndarray], events: List[str], kind: str) -> float:
-        if sims is None:
-            # Without CLIP we can only say "the caption has temporal structure"
-            return 0.5
+    def _score_dimension(self, sims: np.ndarray, events: List[str], kind: str) -> float:
         # An event is correctly localized when its peak frame index is
         # monotonically increasing in event order. We score by Kendall-tau-
         # like rank concordance on per-event peak indices.

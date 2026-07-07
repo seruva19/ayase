@@ -10,11 +10,12 @@ Algorithm (from the paper):
   4. Per-frame quality: q_n = Linear(h_n).
   5. Quality-aware temporal pooling: Q = sum(softmax(q) * q).
 
-Tiers:
-  - **Tier 1 (full model)**: Download VSFA checkpoint from HuggingFace
-    (GRU + linear head trained on KoNViD-1k) and run the full pipeline.
-  - **Tier 2 (feature-only fallback)**: If weights are unavailable, use
-    pretrained ResNet-50 features with simple temporal mean as a proxy score.
+Backend:
+  Download the VSFA checkpoint from HuggingFace (GRU + linear head trained
+  on KoNViD-1k) and run the full pipeline. When the trained GRU/FC weights
+  are unavailable the metric is left ``None`` — the ImageNet ResNet-50
+  backbone alone (with an untrained GRU/head) does not reproduce VSFA, so no
+  proxy score is substituted for the published predictor.
 
 vsfa_score — higher = better quality
 """
@@ -56,6 +57,7 @@ class VSFAModule(PipelineModule):
         self._fc = None
         self._device = "cpu"
         self._transform = None
+        self._backend = None
 
     # ------------------------------------------------------------------
     # Setup
@@ -71,7 +73,9 @@ class VSFAModule(PipelineModule):
             import torchvision.models as models
             import torchvision.transforms as transforms
 
-            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             # --- ResNet-50 backbone (feature extractor) ---
             resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
@@ -109,25 +113,29 @@ class VSFAModule(PipelineModule):
             # --- Try to load trained VSFA weights (GRU + FC) ---
             self._has_trained_weights = self._try_load_weights(torch)
 
-            self._ml_available = True
             if self._has_trained_weights:
+                self._ml_available = True
+                self._backend = "vsfa"
                 logger.info(
                     "VSFA initialised on %s (ResNet-50 + trained GRU head)",
                     self._device,
                 )
             else:
-                logger.info(
-                    "VSFA initialised on %s (ResNet-50 features, fallback temporal mean — "
-                    "trained VSFA weights not available)",
-                    self._device,
+                self._ml_available = False
+                self._backend = "unavailable"
+                logger.warning(
+                    "VSFA unavailable: trained GRU/FC weights not available from %s",
+                    _HF_REPO,
                 )
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "VSFA requires torch and torchvision. "
                 "Install with: pip install torch torchvision"
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning("VSFA setup failed: %s", e)
 
     def _try_load_weights(self, torch) -> bool:
@@ -225,10 +233,9 @@ class VSFAModule(PipelineModule):
         # (T, 2048)
         features = torch.cat(frame_features, dim=0)
 
-        if self._has_trained_weights:
-            return self._quality_aware_pooling(features)
-        else:
-            return self._fallback_temporal_mean(features)
+        if not self._has_trained_weights:
+            return None
+        return self._quality_aware_pooling(features)
 
     def _quality_aware_pooling(self, features) -> float:
         """Full VSFA algorithm: content-aware features → GRU → quality-aware
@@ -260,32 +267,6 @@ class VSFAModule(PipelineModule):
             # Q = sum(softmax(q) * q)
             weights = F.softmax(q, dim=0)                        # (T,)
             score = (weights * q).sum().item()
-
-        return float(score)
-
-    def _fallback_temporal_mean(self, features) -> float:
-        """Fallback when trained GRU/FC weights are not available.
-
-        Uses the L2-norm of the mean ResNet-50 feature as a proxy quality
-        signal, rescaled to roughly [0, 1] via sigmoid.
-        """
-        import torch
-
-        with torch.no_grad():
-            # Content-aware features (same as paper)
-            mean_feat = features.mean(dim=0, keepdim=True)
-            diff = features - mean_feat
-            content_aware = torch.cat([features, diff], dim=1)  # (T, 4096)
-
-            # Run through GRU with random (untrained) weights
-            content_aware = content_aware.unsqueeze(0)          # (1, T, 4096)
-            gru_out, _ = self._gru(content_aware)               # (1, T, 32)
-            q = self._fc(gru_out)                                # (1, T, 1)
-            q = q.squeeze(0).squeeze(-1)                         # (T,)
-
-            # Simple mean as fallback aggregation (softmax pooling would
-            # still work but with untrained weights is less meaningful).
-            score = torch.sigmoid(q.mean()).item()
 
         return float(score)
 

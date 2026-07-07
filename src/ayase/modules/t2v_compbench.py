@@ -104,8 +104,8 @@ class T2VCompBenchModule(PipelineModule):
 
         # Tier 1: YOLO-World + Depth Anything + CLIP
         try:
-            import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import resolve_torch_device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
             self._device = "cpu"
 
@@ -430,7 +430,8 @@ class T2VCompBenchModule(PipelineModule):
                         if crop.size > 0:
                             sim = self._clip_sim(crop, f"a {adj} {noun}")
                             attr_scores.append(sim)
-            scores["attribute"] = float(np.mean(attr_scores)) if attr_scores else 0.5
+            if attr_scores:
+                scores["attribute"] = float(np.mean(attr_scores))
 
         # Object relationship
         rels = self._parse_relations(caption)
@@ -448,7 +449,8 @@ class T2VCompBenchModule(PipelineModule):
                         rel_scores.append(0.3)
                     else:
                         rel_scores.append(0.0)
-            scores["object_rel"] = float(np.mean(rel_scores)) if rel_scores else 0.5
+            if rel_scores:
+                scores["object_rel"] = float(np.mean(rel_scores))
 
         # Action binding
         actions = self._parse_actions(caption)
@@ -467,7 +469,8 @@ class T2VCompBenchModule(PipelineModule):
                             frame_scores.append(sim)
                 if frame_scores:
                     action_scores.append(float(np.mean(frame_scores)))
-            scores["action"] = float(np.mean(action_scores)) if action_scores else 0.5
+            if action_scores:
+                scores["action"] = float(np.mean(action_scores))
 
         # Spatial relationship
         spatials = self._parse_spatial(caption)
@@ -484,7 +487,8 @@ class T2VCompBenchModule(PipelineModule):
                         spatial_scores.append(1.0 if spatial_ok else 0.0)
                     else:
                         spatial_scores.append(0.0)
-            scores["spatial"] = float(np.mean(spatial_scores)) if spatial_scores else 0.5
+            if spatial_scores:
+                scores["spatial"] = float(np.mean(spatial_scores))
 
         # Numeracy
         counts = self._parse_count(caption)
@@ -500,20 +504,19 @@ class T2VCompBenchModule(PipelineModule):
                     count_scores.append(1.0 if avg_count == 0 else 0.0)
                 else:
                     count_scores.append(max(0.0, 1.0 - abs(avg_count - expected_num) / expected_num))
-            scores["numeracy"] = float(np.mean(count_scores)) if count_scores else 0.5
+            if count_scores:
+                scores["numeracy"] = float(np.mean(count_scores))
 
         # Scene composition
         scene_scores = []
         for frame in frames[::max(1, len(frames) // 4)]:
             sim = self._clip_sim(frame, caption)
             scene_scores.append(sim)
-        scores["scene"] = float(np.mean(scene_scores)) if scene_scores else 0.5
+        if scene_scores:
+            scores["scene"] = float(np.mean(scene_scores))
 
-        # Fill defaults for unparsed dimensions
-        for key in ["attribute", "object_rel", "action", "spatial", "numeracy", "scene"]:
-            if key not in scores:
-                scores[key] = 0.5
-
+        # Dimensions not present in the caption (or with no detections) are left
+        # unset rather than filled with a fabricated 0.5.
         return scores
 
     def _verify_spatial(self, s_box: list, o_box: list, prep: str, frame: np.ndarray) -> bool:
@@ -572,7 +575,8 @@ class T2VCompBenchModule(PipelineModule):
                     neg_text = f"a {noun}"
                     sims = self._clip_sim_batch_text(frame, [pos_text, neg_text])
                     attr_scores.append(sims[0])
-            scores["attribute"] = float(np.mean(attr_scores)) if attr_scores else 0.5
+            if attr_scores:
+                scores["attribute"] = float(np.mean(attr_scores))
 
         # Object relationship via CLIP
         rels = self._parse_relations(caption)
@@ -582,7 +586,8 @@ class T2VCompBenchModule(PipelineModule):
                 for frame in frames[::max(1, len(frames) // 4)]:
                     sim = self._clip_sim(frame, f"{subj} {rel} {obj}")
                     rel_scores.append(sim)
-            scores["object_rel"] = float(np.mean(rel_scores)) if rel_scores else 0.5
+            if rel_scores:
+                scores["object_rel"] = float(np.mean(rel_scores))
 
         # Action binding via CLIP temporal
         actions = self._parse_actions(caption)
@@ -592,19 +597,18 @@ class T2VCompBenchModule(PipelineModule):
                 for frame in frames:
                     sim = self._clip_sim(frame, f"a {noun} {verb}")
                     action_scores.append(sim)
-            scores["action"] = float(np.mean(action_scores)) if action_scores else 0.5
+            if action_scores:
+                scores["action"] = float(np.mean(action_scores))
 
         # Scene via CLIP
         scene_scores = []
         for frame in frames[::max(1, len(frames) // 4)]:
             sim = self._clip_sim(frame, caption)
             scene_scores.append(sim)
-        scores["scene"] = float(np.mean(scene_scores)) if scene_scores else 0.5
+        if scene_scores:
+            scores["scene"] = float(np.mean(scene_scores))
 
-        # Spatial/numeracy not reliable with CLIP only — skip
-        for key in ["attribute", "object_rel", "action", "scene"]:
-            if key not in scores:
-                scores[key] = 0.5
-
+        # Spatial/numeracy are not reliably measurable with CLIP only, and any
+        # dimension absent from the caption is left unset (no fabricated 0.5).
         return scores
 

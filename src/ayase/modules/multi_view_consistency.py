@@ -49,10 +49,12 @@ class MultiViewConsistencyModule(PipelineModule):
         self.min_matches = self.config.get("min_matches", 20)
 
         self._orb = None
+        self._backend = "algorithmic"  # ORB feature matching + RANSAC fundamental matrix
 
     def setup(self) -> None:
         self._orb = cv2.ORB_create(nfeatures=500)
         self._bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        self._backend = "algorithmic"
         logger.info("Multi-view consistency: ORB + RANSAC initialised")
 
     def _compute_pair_consistency(

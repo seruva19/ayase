@@ -73,6 +73,8 @@ class UCIQEModule(PipelineModule):
         self.c2 = self.config.get("c2", 0.2745)
         self.c3 = self.config.get("c3", 0.2576)
         self.subsample = self.config.get("subsample", 8)
+        # Faithful CIELab port of the Yang & Sowmya (2015) UCIQE formula.
+        self._backend = "port"
 
     def process(self, sample: Sample) -> Sample:
         try:

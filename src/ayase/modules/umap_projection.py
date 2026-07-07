@@ -60,6 +60,9 @@ class UMAPProjectionModule(BatchMetricModule):
         self._clip_processor = None
         self._clip_device = "cpu"
         self._clip_available = False
+        # Projection/coverage are computed by real dimensionality-reduction
+        # algorithms (UMAP/t-SNE/PCA); this is an honest algorithmic metric.
+        self._backend = "algorithmic"
 
         self._sample_refs: List[Sample] = []
 

@@ -46,6 +46,7 @@ class SSIMULACRA2Module(ReferenceBasedModule):
         self.warning_threshold = self.config.get("warning_threshold", 50.0)
         self._ml_available = False
         self._compute_fn = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -53,12 +54,15 @@ class SSIMULACRA2Module(ReferenceBasedModule):
 
             self._compute_fn = ssimulacra2.compute_ssimulacra2
             self._ml_available = True
+            self._backend = "ssimulacra2"
             logger.info("SSIMULACRA 2 module initialised")
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "ssimulacra2 not installed. Install with: pip install ssimulacra2"
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup SSIMULACRA 2: {e}")
 
     def compute_reference_score(

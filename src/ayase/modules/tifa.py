@@ -8,27 +8,22 @@ Measures how faithfully a generated image matches its text prompt by:
 Requires ``sample.caption.text`` — skips if no caption is available.
 Also checks for a sidecar ``.txt`` file next to the sample.
 
-Tiered backends:
-    1. Rule-based question generation + ViLT VQA (dandelin/vilt-b32-finetuned-vqa)
-    2. CLIP text-image cosine similarity proxy
+Backend: ViLT VQA (``dandelin/vilt-b32-finetuned-vqa``). A previous revision
+fell back to a CLIP text-image cosine-similarity proxy written into the same
+``tifa_score`` field; CLIP similarity is a fundamentally different mechanism
+(not VQA faithfulness), so that proxy has been removed. Without a VQA backend
+the metric is reported as unavailable.
 """
 
 import logging
 import re
-from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
 
-from ayase.image import arrays_to_pil, sample_frames
-from ayase.models import CaptionMetadata, QualityMetrics, Sample
+from ayase.image import sample_frames
+from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
-from ayase.runtime import (
-    cached_clip_image_feature_groups,
-    cached_clip_image_features,
-    cached_clip_text_features,
-    media_state_key,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +57,6 @@ def _generate_questions(caption: str, max_questions: int = 8) -> List[Tuple[str,
         questions.append((f"Is there something {color} in the image?", "yes"))
 
     # --- Noun/object questions ---
-    # Simple POS-free heuristic: take nouns as words after determiners/adjectives
-    # or standalone content words that are likely nouns.
     _NON_NOUNS = {
         "is", "are", "was", "were", "has", "have", "had", "be",
         "with", "from", "into", "onto", "upon", "over", "under",
@@ -92,11 +85,9 @@ def _generate_questions(caption: str, max_questions: int = 8) -> List[Tuple[str,
             continue
         if w in _COLORS:
             continue
-        # Words following a/an/the are likely nouns
         if i > 0 and words[i - 1] in ("a", "an", "the"):
             if _is_likely_noun(w):
                 candidate_nouns.append(w)
-        # Standalone content words that pass the noun filter
         elif _is_likely_noun(w):
             candidate_nouns.append(w)
 
@@ -124,7 +115,6 @@ class TIFAModule(PipelineModule):
     description = "TIFA text-to-image faithfulness via VQA question answering (ICCV 2023)"
     default_config = {
         "vqa_model": "dandelin/vilt-b32-finetuned-vqa",
-        "clip_model": "openai/clip-vit-base-patch32",
         "num_questions": 8,
         "subsample": 4,
     }
@@ -135,83 +125,39 @@ class TIFAModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.vqa_model = self.config.get("vqa_model", "dandelin/vilt-b32-finetuned-vqa")
-        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.num_questions = self.config.get("num_questions", 8)
         self.subsample = self.config.get("subsample", 4)
-        self._backend = None  # "vilt" | "clip"
+        self._backend = None  # "vilt" | "unavailable"
         self._ml_available = False
         self._model = None
         self._processor = None
-        self._clip_model = None
-        self._clip_processor = None
         self._device = "cpu"
 
     def setup(self):
         if self.test_mode:
             return
 
-        # Tier 1: ViLT VQA
         try:
-            import torch
             from transformers import ViltForQuestionAnswering, ViltProcessor
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             models_dir = self.config.get("models_dir", "models")
             self._processor = ViltProcessor.from_pretrained(self.vqa_model, cache_dir=models_dir)
-            self._model = ViltForQuestionAnswering.from_pretrained(
-                self.vqa_model, cache_dir=models_dir
-            ).to(self._device)
+            self._model = (
+                ViltForQuestionAnswering.from_pretrained(self.vqa_model, cache_dir=models_dir)
+                .to(self._device)
+                .eval()
+            )
             self._backend = "vilt"
             self._ml_available = True
             logger.info(f"TIFA: using ViLT VQA backend on {self._device}.")
-            return
-        except Exception:
-            pass
-
-        # Tier 2: CLIP proxy
-        try:
-            import torch
-            from transformers import CLIPModel, CLIPProcessor
-            from ayase.config import resolve_model_path
-            from ayase.runtime import (
-                from_pretrained_with_attention,
-                resolve_torch_device,
-                shared_runtime_resource,
-            )
-
-            models_dir = self.config.get("models_dir", "models")
-            self._device = resolve_torch_device(self.config.get("device", "auto"))
-            resolved = resolve_model_path(self.clip_model_name, models_dir)
-
-            def load_clip():
-                model = from_pretrained_with_attention(
-                    CLIPModel,
-                    resolved,
-                    self.config,
-                    device=self._device,
-                ).to(self._device).eval()
-                processor = CLIPProcessor.from_pretrained(resolved)
-                return model, processor
-
-            self._clip_model, self._clip_processor = shared_runtime_resource(
-                self,
-                (
-                    "hf_clip",
-                    resolved,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "default",
-                ),
-                load_clip,
-            )
-            self._backend = "clip"
-            self._ml_available = True
-            logger.info("TIFA: using CLIP similarity proxy.")
-            return
-        except Exception:
-            pass
-
-        logger.warning("TIFA: no ML backend available.")
+        except ImportError:
+            self._backend = "unavailable"
+            logger.info("TIFA: transformers not installed; metric unavailable.")
+        except Exception as e:
+            self._backend = "unavailable"
+            logger.warning("TIFA: ViLT VQA backend unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -222,68 +168,18 @@ class TIFAModule(PipelineModule):
             return sample
 
         try:
-            if self._backend == "vilt":
-                score = self._compute_vilt(sample, caption_text)
-            else:
-                score = self._compute_clip(sample, caption_text)
-
+            score = self._compute_vilt(sample, caption_text)
             if score is None:
                 return sample
 
             score = float(np.clip(score, 0.0, 1.0))
-
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.tifa_score = score
-
         except Exception as e:
             logger.warning(f"TIFA failed for {sample.path}: {e}")
 
         return sample
-
-    def process_batch(self, samples: List[Sample]) -> List[Sample]:
-        if not self._ml_available:
-            return samples
-        if self._backend != "clip":
-            return super().process_batch(samples)
-
-        try:
-            prepared = []
-            image_groups = []
-            cache_keys = []
-            for sample in samples:
-                caption_text = self._get_caption(sample)
-                if not caption_text:
-                    continue
-                frames = self._load_frames(sample)
-                if not frames:
-                    continue
-                prepared.append((sample, caption_text))
-                image_groups.append(arrays_to_pil(frames))
-                cache_keys.append((self.subsample, media_state_key(sample.path)))
-
-            if not prepared:
-                return samples
-
-            feature_groups = cached_clip_image_feature_groups(
-                self,
-                self._clip_model,
-                self._clip_processor,
-                image_groups,
-                model_key=self.clip_model_name,
-                device=self._device,
-                cache_keys=cache_keys,
-            )
-            for (sample, caption_text), image_features in zip(prepared, feature_groups):
-                score = self._score_clip_features(caption_text, image_features)
-                if score is None:
-                    continue
-                if sample.quality_metrics is None:
-                    sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.tifa_score = float(np.clip(score, 0.0, 1.0))
-        except Exception as e:
-            logger.warning("TIFA batch failed: %s", e)
-        return samples
 
     # -- Caption extraction -----------------------------------------------------
 
@@ -291,7 +187,6 @@ class TIFAModule(PipelineModule):
         if sample.caption and sample.caption.text:
             return sample.caption.text
 
-        # Check sidecar .txt file
         txt_path = sample.path.with_suffix(".txt")
         if txt_path.exists():
             text = txt_path.read_text(encoding="utf-8").strip()
@@ -300,9 +195,10 @@ class TIFAModule(PipelineModule):
 
         return None
 
-    # -- Backend implementations ------------------------------------------------
+    # -- Backend implementation -------------------------------------------------
 
     def _compute_vilt(self, sample: Sample, caption: str) -> Optional[float]:
+        import torch
         from PIL import Image
 
         frames = self._load_frames(sample)
@@ -317,13 +213,14 @@ class TIFAModule(PipelineModule):
         count_total = 0
 
         for frame in frames:
-            pil_img = Image.fromarray(frame)
+            pil_img = Image.fromarray(np.ascontiguousarray(frame))
             for question, expected in questions:
                 try:
                     encoding = self._processor(pil_img, question, return_tensors="pt").to(
                         self._device
                     )
-                    outputs = self._model(**encoding)
+                    with torch.no_grad():
+                        outputs = self._model(**encoding)
                     idx = outputs.logits.argmax(-1).item()
                     answer = self._model.config.id2label[idx].lower()
                     if answer == expected:
@@ -335,44 +232,6 @@ class TIFAModule(PipelineModule):
         if count_total == 0:
             return None
         return correct_total / count_total
-
-    def _compute_clip(self, sample: Sample, caption: str) -> Optional[float]:
-        frames = self._load_frames(sample)
-        if not frames:
-            return None
-
-        image_features = cached_clip_image_features(
-            self,
-            self._clip_model,
-            self._clip_processor,
-            arrays_to_pil(frames),
-            model_key=self.clip_model_name,
-            device=self._device,
-            cache_key=(self.subsample, media_state_key(sample.path)),
-        )
-        return self._score_clip_features(caption, image_features)
-
-    def _score_clip_features(self, caption: str, image_features) -> Optional[float]:
-        if image_features is None or image_features.size(0) == 0:
-            return None
-
-        text_features = cached_clip_text_features(
-            self,
-            self._clip_model,
-            self._clip_processor,
-            [caption],
-            model_key=self.clip_model_name,
-            device=self._device,
-            cache_key=("tifa_caption", caption),
-        )
-        scale = getattr(self._clip_model, "logit_scale", None)
-        if scale is not None:
-            logits = (image_features @ text_features.T) * scale.exp()
-        else:
-            logits = image_features @ text_features.T
-        similarities = (logits.squeeze(-1) / 100.0).detach().float().cpu().numpy()
-        similarities = np.clip(similarities, 0.0, 1.0)
-        return float(np.mean(similarities)) if len(similarities) else None
 
     # -- Frame loading ----------------------------------------------------------
 

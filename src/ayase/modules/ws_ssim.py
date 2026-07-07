@@ -12,6 +12,11 @@ class WSSSIMModule(ReferenceBasedModule):
         "ws_ssim": "fr_quality",
     }
 
+    def __init__(self, config=None):
+        super().__init__(config)
+        # Closed-form spherical-weighted SSIM (no learned components).
+        self._backend = "algorithmic"
+
     def _compute_frame_pair(self, img_gray: np.ndarray, ref_gray: np.ndarray) -> Optional[float]:
         """Compute WS-SSIM for a single grayscale frame pair."""
         try:

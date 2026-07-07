@@ -32,6 +32,7 @@ class XPSNRModule(ReferenceBasedModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -40,12 +41,16 @@ class XPSNRModule(ReferenceBasedModule):
             )
             if "xpsnr" in result.stdout:
                 self._ml_available = True
+                self._backend = "ffmpeg_xpsnr"
                 logger.info("XPSNR module initialised (FFmpeg xpsnr filter)")
             else:
+                self._backend = "unavailable"
                 logger.warning("FFmpeg xpsnr filter not available")
         except FileNotFoundError:
+            self._backend = "unavailable"
             logger.warning("FFmpeg not found")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup XPSNR: {e}")
 
     def compute_reference_score(

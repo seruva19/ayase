@@ -211,25 +211,27 @@ class PSNRHVSModule(ReferenceBasedModule):
         hvs_scores = []
         hvs_m_scores = []
         idx = 0
-        while True:
-            r1, rf = ref_cap.read()
-            r2, df = dist_cap.read()
-            if not r1 or not r2:
-                break
-            if idx % self.subsample == 0:
-                h = min(rf.shape[0], df.shape[0])
-                w = min(rf.shape[1], df.shape[1])
-                rf_r = cv2.resize(rf, (w, h))
-                df_r = cv2.resize(df, (w, h))
-                s = self._compute_psnr_hvs(rf_r, df_r)
-                if s is not None:
-                    hvs_scores.append(s)
-                s_m = self._compute_psnr_hvs_m(rf_r, df_r)
-                if s_m is not None:
-                    hvs_m_scores.append(s_m)
-            idx += 1
-        ref_cap.release()
-        dist_cap.release()
+        try:
+            while True:
+                r1, rf = ref_cap.read()
+                r2, df = dist_cap.read()
+                if not r1 or not r2:
+                    break
+                if idx % self.subsample == 0:
+                    h = min(rf.shape[0], df.shape[0])
+                    w = min(rf.shape[1], df.shape[1])
+                    rf_r = cv2.resize(rf, (w, h))
+                    df_r = cv2.resize(df, (w, h))
+                    s = self._compute_psnr_hvs(rf_r, df_r)
+                    if s is not None:
+                        hvs_scores.append(s)
+                    s_m = self._compute_psnr_hvs_m(rf_r, df_r)
+                    if s_m is not None:
+                        hvs_m_scores.append(s_m)
+                idx += 1
+        finally:
+            ref_cap.release()
+            dist_cap.release()
         hvs = float(np.mean(hvs_scores)) if hvs_scores else None
         hvs_m = float(np.mean(hvs_m_scores)) if hvs_m_scores else None
         return hvs, hvs_m

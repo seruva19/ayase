@@ -35,24 +35,28 @@ class NSFWModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import AutoModelForImageClassification, ViTImageProcessor
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading NSFW model ({self.model_name}) on {self._device}...")
-            
+
             models_dir = self.config.get("models_dir", "models")
-            
+
             self._processor = ViTImageProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
             self._model = AutoModelForImageClassification.from_pretrained(
                 self.model_name, cache_dir=models_dir
             ).to(self._device).eval()
-            
+
             self._ml_available = True
+            self._backend = "transformers"
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup NSFW module: {e}")
 
     def process(self, sample: Sample) -> Sample:

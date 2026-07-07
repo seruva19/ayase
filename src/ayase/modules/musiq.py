@@ -10,7 +10,6 @@ Uses ``pyiqa`` for pretrained MUSIQ weights.
 """
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -19,6 +18,7 @@ import numpy as np
 
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.runtime import resolve_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -42,23 +42,52 @@ class MUSIQModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 40.0)
         self._metric = None
         self._ml_available = False
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
-            self._metric = pyiqa.create_metric(self.variant, device="cpu")
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric(self.variant, device=self._device)
             self._ml_available = True
-            logger.info(f"MUSIQ ({self.variant}) initialised")
+            self._backend = "pyiqa"
+            logger.info("MUSIQ (%s) initialised on %s", self.variant, self._device)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup MUSIQ: {e}")
 
     def _score_path(self, path: str) -> Optional[float]:
         try:
-            return float(self._metric(path).item())
+            import torch
+
+            with torch.no_grad():
+                return float(self._metric(path).item())
         except Exception as e:
             logger.debug(f"MUSIQ scoring failed: {e}")
+            return None
+
+    def _score_frame(self, frame_bgr: np.ndarray) -> Optional[float]:
+        """Score a decoded BGR video frame via a direct RGB tensor call."""
+        try:
+            import torch
+
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            tensor = (
+                torch.from_numpy(np.ascontiguousarray(rgb))
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                / 255.0
+            ).to(self._device)
+            with torch.no_grad():
+                return float(self._metric(tensor).item())
+        except Exception as e:
+            logger.debug(f"MUSIQ frame scoring failed: {e}")
             return None
 
     def process(self, sample: Sample) -> Sample:
@@ -97,26 +126,23 @@ class MUSIQModule(PipelineModule):
         return sample
 
     def _process_video(self, video_path: Path) -> Optional[float]:
+        """Average MUSIQ across sampled video frames using direct tensors."""
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
             return None
 
         scores = []
         idx = 0
-
         try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    s = self._score_frame(frame)
+                    if s is not None:
+                        scores.append(s)
+                idx += 1
         finally:
             cap.release()
 

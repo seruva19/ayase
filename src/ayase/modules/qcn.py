@@ -1,11 +1,12 @@
 """QCN (Quality-aware Contrastive Network) blind IQA module.
 
-Attempts to load the QCN metric from pyiqa first, then falls back
-to HyperIQA as a proxy.
+Loads the real QCN metric from pyiqa (geometric order learning). Earlier
+revisions fell back to HyperIQA as a proxy; HyperIQA is a different model, so
+that stand-in has been removed. When pyiqa cannot provide QCN the score is
+left ``None``.
 
-Backend tiers:
-  1. **pyiqa qcn** — real QCN model (geometric order learning)
-  2. **pyiqa hyperiqa** — HyperIQA proxy
+Backend:
+  **pyiqa qcn** — real QCN model
 """
 
 import logging
@@ -13,6 +14,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class QCNModule(PipelineModule):
     name = "qcn"
-    description = "Blind IQA (QCN via pyiqa, or HyperIQA fallback)"
+    description = "Blind IQA (QCN via pyiqa)"
     default_config = {"subsample": 4}
     metric_groups = {
         "qcn_score": "nr_quality",
@@ -31,77 +33,46 @@ class QCNModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._metric = None
-        self._backend = "none"
+        self._backend = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Tier 1: Real QCN from pyiqa
         try:
             import pyiqa
-            self._metric = pyiqa.create_metric("qcn", device="cpu")
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric("qcn", device=self._device)
             self._ml_available = True
             self._backend = "qcn"
-            logger.info("QCN metric loaded via pyiqa")
-            return
-        except Exception as e:
-            logger.info("pyiqa qcn unavailable: %s", e)
-
-        # Tier 2: HyperIQA proxy
-        try:
-            import pyiqa
-            self._metric = pyiqa.create_metric("hyperiqa", device="cpu")
-            self._ml_available = True
-            self._backend = "hyperiqa"
-            logger.info("QCN using HyperIQA as proxy metric")
-            return
+            logger.info("QCN metric loaded via pyiqa on %s", self._device)
         except (ImportError, Exception) as e:
-            logger.warning("QCN unavailable (no pyiqa backend): %s", e)
+            self._backend = "unavailable"
+            logger.warning("QCN unavailable (no real pyiqa qcn backend): %s", e)
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        if not self._ml_available:
+        if not self._ml_available or self._metric is None:
             return sample
 
         try:
-            import cv2
             import torch
-            from PIL import Image
 
             subsample = self.config.get("subsample", 4)
-            frames = []
-
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        frames.append(Image.fromarray(rgb))
-                cap.release()
-            else:
-                frames.append(Image.open(str(sample.path)).convert("RGB"))
-
+            frames = sample_frames(sample.path, max_frames=subsample, color="rgb")
             if not frames:
                 return sample
 
             scores = []
-            for img in frames:
-                tensor = (
-                    torch.from_numpy(np.array(img))
-                    .permute(2, 0, 1)
-                    .unsqueeze(0)
-                    .float()
-                    / 255.0
-                )
+            for frame in frames:
+                arr = np.ascontiguousarray(frame, dtype=np.float32) / 255.0
+                tensor = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0).to(self._device)
                 with torch.no_grad():
-                    score = self._metric(tensor).item()
-                scores.append(score)
+                    scores.append(float(self._metric(tensor).item()))
 
             if scores:
                 sample.quality_metrics.qcn_score = float(np.mean(scores))

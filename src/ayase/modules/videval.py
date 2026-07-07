@@ -15,9 +15,11 @@ The 60 features come from PCA-reduced subsets of:
 
 All features are hand-crafted; no CNN backbone is used.
 
-Backend tiers:
-  1. **Pre-trained SVR** — if a serialised SVR model is available on disk
-  2. **Hand-crafted features + linear** — 60 features with learned linear head
+Backend:
+  **Pre-trained SVR** — the released VIDEVAL RBF-SVR regressor (with its
+  feature scaler) loaded from disk maps the 60 features to a MOS. When the
+  trained regressor is not available the metric is left ``None`` — no
+  untrained/synthetic head is substituted for the published predictor.
 
 GitHub: https://github.com/vztu/VIDEVAL
 
@@ -308,57 +310,28 @@ class VIDEVALModule(PipelineModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
         self.frame_size = self.config.get("frame_size", 520)
-        # SVR backend
+        # SVR backend (the only real VIDEVAL predictor)
         self._svr_model = None
         self._scaler = None
-        # Fallback linear head (torch)
-        self._quality_head = None
-        self._device = "cpu"
         self._ml_available = False
-        self._backend = "none"
+        self._backend = None
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Tier 1: pre-trained SVR
+        # The trained VIDEVAL RBF-SVR regressor is the published predictor.
         if self._try_load_svr():
             self._backend = "svr"
             self._ml_available = True
             return
 
-        # Tier 2: linear quality head via torch (features are still hand-crafted)
-        try:
-            import torch
-            import torch.nn as nn
-
-            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-            # 60 hand-crafted features -> quality
-            total_dim = 60
-            self._quality_head = nn.Sequential(
-                nn.Linear(total_dim, 128),
-                nn.ReLU(inplace=True),
-                nn.Dropout(0.2),
-                nn.Linear(128, 32),
-                nn.ReLU(inplace=True),
-                nn.Linear(32, 1),
-                nn.Sigmoid(),
-            ).to(self._device)
-            self._quality_head.eval()
-
-            self._backend = "linear"
-            self._ml_available = True
-            logger.info("VIDEVAL initialised (60 hand-crafted features, linear head)")
-
-        except ImportError:
-            # Tier 3: pure numpy linear mapping (real features, simple regression)
-            self._backend = "linear"
-            self._ml_available = True
-            logger.info("VIDEVAL initialised (60 hand-crafted features, linear mapping)")
-
-        except Exception as e:
-            logger.warning("VIDEVAL setup failed: %s", e)
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.warning(
+            "VIDEVAL unavailable: trained SVR regressor not found "
+            "(expected models/videval/videval_svr.pkl + videval_scaler.pkl)"
+        )
 
     def _try_load_svr(self) -> bool:
         """Try loading pre-trained SVR model from disk."""
@@ -463,59 +436,18 @@ class VIDEVALModule(PipelineModule):
 
         assert combined.shape[0] == 60, f"Expected 60 features, got {combined.shape[0]}"
 
-        # Map features to quality score
-        if self._backend == "svr":
-            feat_2d = combined.reshape(1, -1)
-            if self._scaler is not None:
-                feat_2d = self._scaler.transform(feat_2d)
-            mos = self._svr_model.predict(feat_2d)[0]
-            mos_min = self.config.get("mos_min", 1.0)
-            mos_max = self.config.get("mos_max", 5.0)
-            score = float((mos - mos_min) / (mos_max - mos_min))
-
-        elif self._backend == "linear":
-            import torch
-            combined_tensor = (
-                torch.from_numpy(combined).float().unsqueeze(0).to(self._device)
-            )
-            with torch.no_grad():
-                score = self._quality_head(combined_tensor).item()
-
-        else:
-            # Linear mapping from features
-            score = self._linear_score(combined)
+        # Map features to quality via the trained VIDEVAL SVR regressor.
+        if self._backend != "svr" or self._svr_model is None:
+            return None
+        feat_2d = combined.reshape(1, -1)
+        if self._scaler is not None:
+            feat_2d = self._scaler.transform(feat_2d)
+        mos = self._svr_model.predict(feat_2d)[0]
+        mos_min = self.config.get("mos_min", 1.0)
+        mos_max = self.config.get("mos_max", 5.0)
+        score = float((mos - mos_min) / (mos_max - mos_min))
 
         return float(score)
-
-    def _linear_score(self, features: np.ndarray) -> float:
-        """Linear quality mapping from 60 VIDEVAL features."""
-        # BRISQUE-like: MSCN variance near 1.0 = natural (index 1)
-        nss_quality = 1.0 / (1.0 + abs(features[1] - 1.0))
-
-        # GMLOG: gradient energy (index 18)
-        grad_energy = float(np.clip(features[18] / 5.0, 0.0, 1.0))
-
-        # FRIQUEE: entropy (index 28)
-        entropy_norm = float(np.clip(features[28] / 8.0, 0.0, 1.0))
-
-        # HOSA: kurtosis regularity (index 30)
-        kurtosis_quality = 1.0 / (1.0 + abs(features[30]))
-
-        # Temporal: low frame-diff variance = stable (index 37)
-        temporal_stability = 1.0 / (1.0 + features[37] * 0.01)
-
-        # Flow smoothness (index 43)
-        flow_smooth = 1.0 / (1.0 + features[43] * 0.1)
-
-        score = (
-            0.20 * nss_quality
-            + 0.15 * grad_energy
-            + 0.15 * entropy_norm
-            + 0.15 * kurtosis_quality
-            + 0.20 * temporal_stability
-            + 0.15 * flow_smooth
-        )
-        return float(np.clip(score, 0.0, 1.0))
 
     def _load_frames(self, sample: Sample) -> list:
         """Load frames as BGR numpy arrays."""

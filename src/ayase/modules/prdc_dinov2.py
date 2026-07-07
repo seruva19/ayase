@@ -52,15 +52,12 @@ class PRDCDINOv2Module(BatchMetricModule):
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import AutoImageProcessor, AutoModel
 
             from ayase.config import resolve_model_path
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            self._device = resolve_torch_device(self.device_config)
 
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(self.model_name, models_dir)

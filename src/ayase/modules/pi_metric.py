@@ -11,7 +11,6 @@ Uses the ``pyiqa`` package which computes PI directly.
 """
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -39,24 +38,54 @@ class PIModule(PipelineModule):
         self.subsample = self.config.get("subsample", 3)
         self._ml_available = False
         self._metric = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
 
-            self._metric = pyiqa.create_metric("pi", device="cpu")
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric("pi", device=self._device)
             self._ml_available = True
-            logger.info("Perceptual Index (PI) module initialised")
+            self._backend = "pyiqa"
+            logger.info("Perceptual Index (PI) module initialised on %s", self._device)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup PI: {e}")
 
     def _score_image_path(self, path: str) -> Optional[float]:
         try:
-            return float(self._metric(path).item())
+            import torch
+
+            with torch.no_grad():
+                return float(self._metric(path).item())
         except Exception as e:
             logger.debug(f"PI scoring failed: {e}")
+            return None
+
+    def _score_frame(self, frame_bgr: np.ndarray) -> Optional[float]:
+        """Score a decoded BGR video frame via a direct RGB tensor call."""
+        try:
+            import torch
+
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            tensor = (
+                torch.from_numpy(np.ascontiguousarray(rgb))
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                / 255.0
+            ).to(self._device)
+            with torch.no_grad():
+                return float(self._metric(tensor).item())
+        except Exception as e:
+            logger.debug(f"PI frame scoring failed: {e}")
             return None
 
     def process(self, sample: Sample) -> Sample:
@@ -87,18 +116,15 @@ class PIModule(PipelineModule):
         scores = []
         idx = 0
         try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_image_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    s = self._score_frame(frame)
+                    if s is not None:
+                        scores.append(s)
+                idx += 1
         finally:
             cap.release()
         return float(np.mean(scores)) if scores else None

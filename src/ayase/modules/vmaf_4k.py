@@ -33,6 +33,7 @@ class VMAF4KModule(ReferenceBasedModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -41,8 +42,13 @@ class VMAF4KModule(ReferenceBasedModule):
             )
             if "libvmaf" in result.stdout:
                 self._ml_available = True
+                self._backend = "ffmpeg_libvmaf"
                 logger.info("VMAF 4K module initialised")
+            else:
+                self._backend = "unavailable"
+                logger.warning("FFmpeg libvmaf not available for VMAF 4K")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"VMAF 4K setup failed: {e}")
 
     def compute_reference_score(

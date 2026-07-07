@@ -15,8 +15,10 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
+from ayase.runtime import resolve_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ class PhysicsModule(PipelineModule):
         try:
             import torch
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._cotracker = torch.hub.load(
                 "facebookresearch/co-tracker", "cotracker2"
             ).to(device).eval()
@@ -66,6 +68,7 @@ class PhysicsModule(PipelineModule):
             self._ml_available = True
             logger.info("Physics using Lucas-Kanade optical flow")
         except AttributeError:
+            self._backend = "unavailable"
             logger.warning("No physics backend available (install torch for CoTracker)")
 
     def process(self, sample: Sample) -> Sample:
@@ -87,7 +90,7 @@ class PhysicsModule(PipelineModule):
                         ValidationIssue(
                             severity=ValidationSeverity.WARNING,
                             message=f"Physically implausible motion (physics_score={score:.2f})",
-                            details={"physics_score": score, "backend": self._backend},
+                            details={"physics_score": score},
                         )
                     )
         except Exception as e:
@@ -118,20 +121,7 @@ class PhysicsModule(PipelineModule):
         import torch
 
         num_frames = self.config.get("subsample", 16)
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total < 10:
-            cap.release()
-            return None
-
-        indices = list(range(0, total, max(1, total // num_frames)))[:num_frames]
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        cap.release()
+        frames = sample_frames(sample.path, max_frames=num_frames, color="rgb")
 
         if len(frames) < 5:
             return None
@@ -169,20 +159,7 @@ class PhysicsModule(PipelineModule):
         num_frames = self.config.get("subsample", 16)
         accel_threshold = self.config.get("accel_threshold", 50.0)
 
-        cap = cv2.VideoCapture(str(sample.path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total < 10:
-            cap.release()
-            return None
-
-        indices = list(range(0, total, max(1, total // num_frames)))[:num_frames]
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
-        cap.release()
+        frames = sample_frames(sample.path, max_frames=num_frames, color="gray")
 
         if len(frames) < 5:
             return None

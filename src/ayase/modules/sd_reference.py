@@ -4,25 +4,22 @@ Generates reference images from the caption using Stable Diffusion XL, then
 measures CLIP cosine similarity between video frames and the generated images.
 Higher score = video aligns better with what SDXL would produce from the prompt.
 
-If SDXL is not available (no GPU / not installed), falls back to CLIP
-text-image similarity as a lightweight proxy.
+Only the real SDXL + CLIP pipeline produces ``sd_score``. Earlier revisions fell
+back to a plain CLIP text-image similarity (i.e. CLIPScore) when SDXL was
+unavailable; that is a different quantity, not SD Score, so the proxy has been
+removed. When SDXL cannot be loaded the score is left ``None``.
 """
 
 import hashlib
 import logging
-import os
 from pathlib import Path
-from typing import List, Optional
-
-import numpy as np
+from typing import Optional
 
 from ayase.image import arrays_to_pil, sample_frames
-from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
+from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 from ayase.runtime import (
-    cached_clip_image_feature_groups,
     cached_clip_image_features,
-    cached_clip_text_features,
     media_state_key,
 )
 
@@ -58,6 +55,7 @@ class SDReferenceModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._sd_available = False
+        self._backend = None
 
     def setup(self):
         try:
@@ -100,9 +98,11 @@ class SDReferenceModule(PipelineModule):
             self._ml_available = True
         except Exception as e:
             logger.warning(f"Failed to load CLIP for SD Score: {e}")
+            self._backend = "unavailable"
             return
 
-        # Try loading SDXL (optional, heavy)
+        # SDXL is required for the real SD Score. It needs a CUDA GPU for the
+        # fp16 variant; without it the metric is left unset (no proxy).
         if self._device == "cuda":
             try:
                 from diffusers import DiffusionPipeline
@@ -115,14 +115,21 @@ class SDReferenceModule(PipelineModule):
                     use_safetensors=True,
                     variant="fp16",
                 )
-                self._sd_pipe.to("cuda")
+                self._sd_pipe.to(self._device)
                 self._sd_available = True
+                self._backend = "sdxl_clip"
                 self.cache_dir.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                logger.info(f"SDXL not available ({e}). SD Score will use CLIP text-image proxy.")
+                logger.warning(f"SDXL not available ({e}); SD Score left unset.")
+
+        if not self._sd_available:
+            self._backend = "unavailable"
+            logger.warning("SD Score: SDXL unavailable (requires diffusers + CUDA); sd_score left unset.")
 
     def process(self, sample: Sample) -> Sample:
-        if not self._ml_available or not sample.caption:
+        if not self._ml_available or not self._sd_available:
+            return sample
+        if not sample.caption:
             return sample
 
         try:
@@ -132,13 +139,8 @@ class SDReferenceModule(PipelineModule):
 
             prompt = sample.caption.text
             frame_embeds = self._embed_frames(sample, frames)  # [T, D]
-
-            if self._sd_available:
-                sd_embeds = self._get_sd_embeds(prompt)  # [K, D]
-                score = self._compute_sd_score(frame_embeds, sd_embeds)
-            else:
-                # Fallback: CLIP text-image similarity as proxy
-                score = self._compute_text_proxy(frame_embeds, prompt)
+            sd_embeds = self._get_sd_embeds(prompt)  # [K, D]
+            score = self._compute_sd_score(frame_embeds, sd_embeds)
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -148,47 +150,6 @@ class SDReferenceModule(PipelineModule):
             logger.warning(f"SD Score failed for {sample.path}: {e}")
 
         return sample
-
-    def process_batch(self, samples: List[Sample]) -> List[Sample]:
-        if not self._ml_available:
-            return samples
-        if self._sd_available:
-            return super().process_batch(samples)
-
-        try:
-            prepared = []
-            image_groups = []
-            cache_keys = []
-            for sample in samples:
-                if not sample.caption:
-                    continue
-                frames = self._load_frames(sample)
-                if not frames:
-                    continue
-                prepared.append((sample, sample.caption.text))
-                image_groups.append(arrays_to_pil(frames))
-                cache_keys.append((self.num_video_frames, media_state_key(sample.path)))
-
-            if not prepared:
-                return samples
-
-            feature_groups = cached_clip_image_feature_groups(
-                self,
-                self._clip_model,
-                self._clip_processor,
-                image_groups,
-                model_key=self.clip_model_name,
-                device=self._device,
-                cache_keys=cache_keys,
-            )
-            for (sample, prompt), frame_embeds in zip(prepared, feature_groups):
-                score = self._compute_text_proxy(frame_embeds, prompt)
-                if sample.quality_metrics is None:
-                    sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.sd_score = float(score)
-        except Exception as e:
-            logger.warning("SD Score batch failed: %s", e)
-        return samples
 
     def _embed_frames(self, sample: Sample, frames):
         return cached_clip_image_features(
@@ -239,19 +200,6 @@ class SDReferenceModule(PipelineModule):
         # [T, D] @ [D, K] -> [T, K], average everything
         sim_matrix = frame_embeds @ sd_embeds.T
         return float(sim_matrix.mean().item())
-
-    def _compute_text_proxy(self, frame_embeds, prompt):
-        text_feat = cached_clip_text_features(
-            self,
-            self._clip_model,
-            self._clip_processor,
-            [prompt],
-            model_key=self.clip_model_name,
-            device=self._device,
-            cache_key=("sd_reference_prompt", prompt),
-        )
-        sims = frame_embeds @ text_feat.T  # [T, 1]
-        return float(sims.mean().item())
 
     def _load_frames(self, sample: Sample):
         try:

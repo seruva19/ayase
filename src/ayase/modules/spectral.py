@@ -40,11 +40,13 @@ class SpectralComplexityModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._transform = None
+        self._backend = "algorithmic"
 
     def setup(self):
         try:
-            import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            import torch  # noqa: F401
+            from ayase.runtime import resolve_torch_device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up Spectral Complexity (DINOv2) on {self._device}...")
             
             # Use Torch Hub for DINOv2
@@ -164,8 +166,8 @@ class SpectralComplexityModule(PipelineModule):
     def _load_frames(self, sample: Sample, step: int = 8) -> list:
         max_frames = self.config.get("max_frames", 300)
         frames = []
+        cap = cv2.VideoCapture(str(sample.path))
         try:
-            cap = cv2.VideoCapture(str(sample.path))
             total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
             # Simple uniform sampling
@@ -176,9 +178,10 @@ class SpectralComplexityModule(PipelineModule):
                     frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 if len(frames) >= max_frames:
                     break
-            cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames for spectral analysis: {e}")
+        finally:
+            cap.release()
         return frames
 
 

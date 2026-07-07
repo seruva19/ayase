@@ -64,6 +64,7 @@ class NIMALegacyONNXModule(PipelineModule):
         self._input_layout = "nhwc"
         self._image_size = int(self.config.get("image_size", 224))
         self._device = "cpu"
+        self._backend = None
 
     _WEIGHTS_URLS = {
         "nima_mobilenet_aesthetic.onnx": (
@@ -76,6 +77,7 @@ class NIMALegacyONNXModule(PipelineModule):
         try:
             import onnxruntime as ort
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "NIMA legacy ONNX unavailable: onnxruntime is not installed"
             )
@@ -83,6 +85,7 @@ class NIMALegacyONNXModule(PipelineModule):
 
         model_path = self._resolve_model_path()
         if model_path is None or not model_path.exists():
+            self._backend = "unavailable"
             logger.warning(
                 "NIMA legacy ONNX unavailable: model file not found at %s",
                 model_path,
@@ -96,6 +99,7 @@ class NIMALegacyONNXModule(PipelineModule):
             )
             inputs = self._session.get_inputs()
             if not inputs:
+                self._backend = "unavailable"
                 logger.warning(
                     "NIMA legacy ONNX unavailable: model %s has no inputs",
                     model_path,
@@ -109,12 +113,14 @@ class NIMALegacyONNXModule(PipelineModule):
                 "cuda" if any("CUDA" in p for p in active) else "cpu"
             )
             self._ml_available = True
+            self._backend = "onnxruntime"
             logger.info(
                 "NIMA legacy ONNX loaded from %s (providers=%s)",
                 model_path,
                 active,
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning("NIMA legacy ONNX setup failed: %s", e)
             self._session = None
 

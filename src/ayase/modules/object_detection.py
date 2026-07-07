@@ -37,6 +37,7 @@ class ObjectDetectionModule(PipelineModule):
         self._model = None
         self._ml_available = False
         self._mode = "yolo" # yolo or grit
+        self._backend = None
 
     def setup(self) -> None:
         # 1. Try GRiT if requested
@@ -55,6 +56,7 @@ class ObjectDetectionModule(PipelineModule):
                     )
                     self._mode = "grit"
                     self._ml_available = True
+                    self._backend = "grit"
                     return
                 logger.warning("GRiT requested but grit_config/grit_weights not set; falling back to YOLO.")
             except ImportError:
@@ -84,9 +86,12 @@ class ObjectDetectionModule(PipelineModule):
 
             self._ml_available = True
             self._mode = "yolo"
+            self._backend = "ultralytics"
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("ultralytics not installed. Object detection disabled.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to load YOLO: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -152,7 +157,12 @@ class ObjectDetectionModule(PipelineModule):
         return sample
 
     def _process_yolo_frame(self, sample: Sample, image: np.ndarray, all_detected_classes: set, frame_idx: int):
-        results = self._model(image, verbose=False)
+        import torch
+
+        # Ultralytics already runs under inference_mode internally; this guard is
+        # belt-and-suspenders so no autograd graph is ever retained.
+        with torch.no_grad():
+            results = self._model(image, verbose=False)
 
         for r in results:
             boxes = r.boxes

@@ -45,6 +45,7 @@ class VendiModule(BatchMetricModule):
         super().__init__(config)
         self._model = None
         self._ml_available = False
+        self._backend = None
         self.feature_dim = self.config.get("feature_dim", 512)
         self.max_samples = self.config.get("max_samples", 1000)
         self.resize = self.config.get("resize", 224)
@@ -56,6 +57,7 @@ class VendiModule(BatchMetricModule):
             import vendi_score
             self._model = vendi_score
             self._ml_available = True
+            self._backend = "vendi_score"
             logger.info("Vendi Score module initialised (vendi_score package)")
             return
         except ImportError:
@@ -63,8 +65,11 @@ class VendiModule(BatchMetricModule):
         except Exception as e:
             logger.debug(f"vendi_score init failed: {e}")
 
-        # Tier 2: heuristic (eigenvalue entropy of cosine similarity)
-        logger.info("Vendi Score module initialised (heuristic fallback)")
+        # Tier 2: exact Vendi Score formula in numpy (matrix entropy of the
+        # normalised cosine-similarity kernel). This is a faithful port of the
+        # published definition, not a heuristic approximation.
+        self._backend = "numpy"
+        logger.info("Vendi Score module initialised (numpy matrix-entropy port)")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract a feature vector from a sample (histogram-based)."""
@@ -138,7 +143,7 @@ class VendiModule(BatchMetricModule):
 
             if self._ml_available and self._model is not None:
                 return self._compute_vendi_package(feat_matrix)
-            return self._compute_heuristic(feat_matrix)
+            return self._compute_vendi_numpy(feat_matrix)
         except Exception as e:
             logger.error(f"Vendi Score computation failed: {e}")
             return 0.0
@@ -151,10 +156,11 @@ class VendiModule(BatchMetricModule):
             return float(score)
         except Exception as e:
             logger.debug(f"vendi_score package failed: {e}")
-            return self._compute_heuristic(features)
+            return self._compute_vendi_numpy(features)
 
-    def _compute_heuristic(self, features: np.ndarray) -> float:
-        """Eigenvalue entropy of cosine similarity matrix."""
+    def _compute_vendi_numpy(self, features: np.ndarray) -> float:
+        """Exact Vendi Score: exp(Shannon entropy of the eigenvalues of the
+        normalised cosine-similarity kernel)."""
         # Cosine similarity matrix
         norms = np.linalg.norm(features, axis=1, keepdims=True) + 1e-8
         normed = features / norms

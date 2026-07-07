@@ -23,21 +23,30 @@ class PieAPPModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            from ayase.runtime import resolve_torch_device
+
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._model = pyiqa.create_metric("pieapp", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
-                self._device = torch.device("cpu")
+                self._device = torch.device(device)
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("PieAPP model loaded on %s", device)
-        except (ImportError, Exception) as e:
+        except ImportError:
+            self._backend = "unavailable"
+            logger.warning("PieAPP unavailable: pyiqa not installed")
+        except Exception as e:
+            self._backend = "unavailable"
             logger.warning("PieAPP unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -79,22 +88,7 @@ class PieAPPModule(PipelineModule):
         return sample
 
     def _load_frames_from(self, path: str, is_video: bool) -> list:
-        import cv2
+        from ayase.image import sample_frames
 
         subsample = self.config.get("subsample", 8)
-        frames = []
-        if is_video:
-            cap = cv2.VideoCapture(path)
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(path)
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        return sample_frames(path, max_frames=subsample, color="bgr")
