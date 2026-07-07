@@ -102,8 +102,11 @@ def test_fvmd_is_batch_metric():
     assert issubclass(FVMDModule, BatchMetricModule)
 
 
-def test_fvmd_always_available():
+def test_fvmd_honest_unavailable():
+    """FVMD has no real keypoint-tracking backend wired: it must report
+    itself unavailable and produce no features (farneback proxy removed)."""
     from ayase.modules.fvmd import FVMDModule
 
     m = FVMDModule()
-    assert m._ml_available is True
+    assert m._ml_available is False
+    assert m._backend == "unavailable"

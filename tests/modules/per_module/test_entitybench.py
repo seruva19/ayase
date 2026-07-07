@@ -29,23 +29,32 @@ def test_entitybench_group_key_uses_parent(tmp_dir):
 
 
 def test_entitybench_single_shot_group_returns_one(tmp_dir):
+    """Single-shot group → trivial consistency = 1.0 with a real backend;
+    without one (histogram proxy removed) the fields must stay unset."""
     from ayase.modules.entitybench import EntityBenchModule
-    m = EntityBenchModule(config={"backend": "histogram"})
+    m = EntityBenchModule()
     m.on_mount()
     sub = tmp_dir / "shot_alone"
     sub.mkdir()
     s = _write_image(sub, "frame0.png", (200, 100, 50))
     m.extract_features(s)
     m.on_dispose()
-    # Single-shot group → trivial consistency = 1.0
-    assert s.quality_metrics is not None
-    assert s.quality_metrics.entitybench_identity_consistency == 1.0
-    assert s.quality_metrics.entitybench_appearance_consistency == 1.0
+    if m.active_backend in ("dinov2_face", "clip"):
+        assert s.quality_metrics is not None
+        assert s.quality_metrics.entitybench_identity_consistency == 1.0
+        assert s.quality_metrics.entitybench_appearance_consistency == 1.0
+    else:
+        # Honest state: no real embedding backend → no fabricated consistency
+        assert m.active_backend == "unavailable"
+        assert (s.quality_metrics is None
+                or s.quality_metrics.entitybench_identity_consistency is None)
 
 
-def test_entitybench_histogram_consistency_high_for_same_color(tmp_dir):
+def test_entitybench_consistency_high_for_same_color(tmp_dir):
+    """Identical images score high with a real backend; unset otherwise
+    (the color-histogram proxy tier was removed)."""
     from ayase.modules.entitybench import EntityBenchModule
-    m = EntityBenchModule(config={"backend": "histogram"})
+    m = EntityBenchModule()
     m.on_mount()
     sub = tmp_dir / "shot_same"
     sub.mkdir()
@@ -54,19 +63,26 @@ def test_entitybench_histogram_consistency_high_for_same_color(tmp_dir):
     m.extract_features(a)
     m.extract_features(b)
     m.on_dispose()
-    assert a.quality_metrics.entitybench_appearance_consistency >= 0.9
+    if m.active_backend in ("dinov2_face", "clip"):
+        assert a.quality_metrics.entitybench_appearance_consistency >= 0.9
+    else:
+        assert m.active_backend == "unavailable"
+        assert (a.quality_metrics is None
+                or a.quality_metrics.entitybench_appearance_consistency is None)
 
 
-def test_entitybench_histogram_consistency_low_for_different_colors(tmp_dir):
+def test_entitybench_unavailable_backend_writes_nothing(tmp_dir):
+    """With the proxy tier removed, an unavailable backend must not emit
+    any entitybench fields at all."""
     from ayase.modules.entitybench import EntityBenchModule
-    m = EntityBenchModule(config={"backend": "histogram"})
-    m.on_mount()
+    m = EntityBenchModule()
+    m.active_backend = "unavailable"  # force honest-unavailable state
     sub = tmp_dir / "shot_diff"
     sub.mkdir()
     a = _write_image(sub, "a.png", (255, 0, 0))
     b = _write_image(sub, "b.png", (0, 0, 255))
-    m.extract_features(a)
-    m.extract_features(b)
+    assert m.extract_features(a) is None
+    assert m.extract_features(b) is None
     m.on_dispose()
-    # Different colors → lower consistency than identical case
-    assert a.quality_metrics.entitybench_appearance_consistency < 0.9
+    assert a.quality_metrics is None
+    assert b.quality_metrics is None

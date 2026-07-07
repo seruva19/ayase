@@ -174,16 +174,21 @@ def test_butteraugli_no_reference(image_sample):
     assert result.quality_metrics is None or result.quality_metrics.butteraugli is None
 
 
-def test_butteraugli_approx_setup():
+def test_butteraugli_setup_real_or_unavailable():
+    """The Laplacian 'approx' tier was removed: real jxlpy/butteraugli
+    backend or honest unavailable."""
     from ayase.modules.butteraugli import ButteraugliModule
 
     m = ButteraugliModule()
     m.setup()
-    assert m._ml_available is True
-    assert m._backend == "approx"
+    if m._backend in ("jxlpy", "butteraugli"):
+        assert m._ml_available is True
+    else:
+        assert m._backend == "unavailable"
+        assert m._ml_available is False
 
 
-def test_butteraugli_approx_reference(tmp_dir):
+def test_butteraugli_reference_real_or_none(tmp_dir):
     from ayase.modules.butteraugli import ButteraugliModule
 
     m = ButteraugliModule()
@@ -198,8 +203,12 @@ def test_butteraugli_approx_reference(tmp_dir):
     cv2.imwrite(str(ref_path), ref_img)
     cv2.imwrite(str(dist_path), dist_img)
     score = m.compute_reference_score(dist_path, ref_path)
-    assert score is not None
-    assert score >= 0.0
+    if m._backend in ("jxlpy", "butteraugli"):
+        assert score is not None
+        assert score >= 0.0
+    else:
+        assert m._backend == "unavailable"
+        assert score is None
 
 
 def test_flip_basics():
@@ -217,16 +226,21 @@ def test_flip_no_reference(image_sample):
     assert result.quality_metrics is None or result.quality_metrics.flip_score is None
 
 
-def test_flip_approx_setup():
+def test_flip_setup_real_or_unavailable():
+    """The color-difference 'approx' tier was removed: real flip-evaluator /
+    flip-torch backend or honest unavailable."""
     from ayase.modules.flip_metric import FLIPModule
 
     m = FLIPModule()
     m.setup()
-    assert m._ml_available is True
-    assert m._backend == "approx"
+    if m._backend in ("flip_evaluator", "flip_torch"):
+        assert m._ml_available is True
+    else:
+        assert m._backend == "unavailable"
+        assert m._ml_available is False
 
 
-def test_flip_approx_reference(tmp_dir):
+def test_flip_reference_real_or_none(tmp_dir):
     from ayase.modules.flip_metric import FLIPModule
 
     m = FLIPModule()
@@ -241,8 +255,12 @@ def test_flip_approx_reference(tmp_dir):
     cv2.imwrite(str(ref_path), ref_img)
     cv2.imwrite(str(dist_path), dist_img)
     score = m.compute_reference_score(dist_path, ref_path)
-    assert score is not None
-    assert 0.0 <= score <= 1.0
+    if m._backend in ("flip_evaluator", "flip_torch"):
+        assert score is not None
+        assert 0.0 <= score <= 1.0
+    else:
+        assert m._backend == "unavailable"
+        assert score is None
 
 
 def test_flip_identical_images(tmp_dir):
@@ -258,8 +276,12 @@ def test_flip_identical_images(tmp_dir):
     cv2.imwrite(str(p1), img)
     cv2.imwrite(str(p2), img)
     score = m.compute_reference_score(p1, p2)
-    assert score is not None
-    assert score < 0.01
+    if m._backend in ("flip_evaluator", "flip_torch"):
+        assert score is not None
+        assert score < 0.01
+    else:
+        assert m._backend == "unavailable"
+        assert score is None
 
 
 def test_vmaf_neg_basics():
