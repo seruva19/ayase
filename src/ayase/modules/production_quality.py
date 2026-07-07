@@ -41,6 +41,7 @@ class ProductionQualityModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.max_frames = self.config.get("max_frames", 150)
+        self._backend = "algorithmic"
 
     # ------------------------------------------------------------------
     # Individual metrics
@@ -181,24 +182,25 @@ class ProductionQualityModule(PipelineModule):
         frame_idx = 0
         kept_count = 0
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
 
-            if keep_indices is None or frame_idx in keep_indices:
-                # Keep every sampled frame for temporal metrics (colour/exposure)
-                frames.append(frame)
-                # Subsample spatial metrics (every 5th kept frame)
-                if kept_count % 5 == 0:
-                    wb_scores.append(self._white_balance_score(frame))
-                    focus_scores.append(self._focus_quality(frame))
-                    banding_scores.append(self._banding_severity(frame))
-                kept_count += 1
+                if keep_indices is None or frame_idx in keep_indices:
+                    # Keep every sampled frame for temporal metrics (colour/exposure)
+                    frames.append(frame)
+                    # Subsample spatial metrics (every 5th kept frame)
+                    if kept_count % 5 == 0:
+                        wb_scores.append(self._white_balance_score(frame))
+                        focus_scores.append(self._focus_quality(frame))
+                        banding_scores.append(self._banding_severity(frame))
+                    kept_count += 1
 
-            frame_idx += 1
-
-        cap.release()
+                frame_idx += 1
+        finally:
+            cap.release()
 
         if not frames:
             return sample

@@ -136,7 +136,9 @@ class SongEvalModule(PipelineModule):
             logger.warning("SongEval requires the 'muq' package (pip install muq). Skipping.")
             return
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        from ayase.runtime import resolve_torch_device
+
+        device = resolve_torch_device(self.config.get("device", "auto"))
 
         try:
             checkpoint_path = self._resolve_checkpoint()

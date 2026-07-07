@@ -2,13 +2,17 @@
 
 GitHub: https://github.com/haoyi-duan/WorldScore
 Distribution-level: worldscore
+
+WorldScore is a multi-model evaluation suite (controllability / quality /
+dynamics via dedicated backbones). This module requires that released
+WorldScore backend; when it is not installed the metric is left ``None`` —
+Laplacian/frame-difference heuristics are not substituted for the published
+evaluation.
 """
 import logging
-import cv2
-import numpy as np
 from typing import List, Optional
 
-from ayase.models import Sample, QualityMetrics
+from ayase.models import Sample
 from ayase.base_modules import BatchMetricModule
 
 logger = logging.getLogger(__name__)
@@ -22,72 +26,60 @@ class WorldScoreModule(BatchMetricModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
+        self._ml_available = False
+        self._backend = None
+        self._model = None
+
+    def setup(self) -> None:
+        if self.test_mode:
+            return
+
+        try:
+            import worldscore  # type: ignore  # official WorldScore backend
+
+            self._model = worldscore
+            self._ml_available = True
+            self._backend = "worldscore"
+            logger.info("WorldScore initialised (worldscore backend)")
+            return
+        except ImportError:
+            pass
+
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.warning(
+            "WorldScore unavailable: the released WorldScore evaluation backend "
+            "is not installed"
+        )
 
     def extract_features(self, sample: Sample) -> Optional[object]:
-        """Extract quality + dynamics + controllability features per sample."""
+        """Delegate to the real WorldScore backend when available."""
+        if not self._ml_available or self._backend != "worldscore":
+            return None
         try:
-            if not sample.is_video:
+            extract = getattr(self._model, "extract_features", None)
+            if extract is None:
                 return None
-
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 1:
-                    return None
-                indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                frames = []
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, f = cap.read()
-                    if ret:
-                        frames.append(f)
-            finally:
-                cap.release()
-
-            if len(frames) < 2:
-                return None
-
-            # Quality
-            q = float(np.mean([
-                min(cv2.Laplacian(
-                    cv2.cvtColor(f, cv2.COLOR_BGR2GRAY).astype(np.float64), cv2.CV_64F
-                ).var() / 500, 1)
-                for f in frames
-            ]))
-
-            # Dynamics
-            diffs = [
-                np.mean(np.abs(
-                    cv2.resize(cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY).astype(float), (80, 60))
-                    - cv2.resize(cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY).astype(float), (80, 60))
-                ))
-                for i in range(len(frames) - 1)
-            ]
-            dynamics = min(np.mean(diffs) / 10, 1)
-
-            # Controllability proxy: temporal consistency
-            ctrl = 1.0 / (1.0 + np.var(diffs) * 0.01)
-
-            return np.array([q, dynamics, ctrl])
+            return extract(str(sample.path))
         except Exception as e:
-            logger.warning(f"WorldScore feature extraction failed: {e}")
+            logger.warning("WorldScore feature extraction failed: %s", e)
             return None
 
     def compute_distribution_metric(
         self, features: List, reference_features: Optional[List] = None
-    ) -> float:
-        """Compute WorldScore from accumulated features."""
-        if not features:
-            return 0.0
-
-        feats = np.array(features)
-        # Average across all samples: quality, dynamics, controllability
-        q = float(feats[:, 0].mean())
-        d = float(feats[:, 1].mean())
-        c = float(feats[:, 2].mean())
-        score = 0.4 * q + 0.3 * d + 0.3 * c
+    ) -> Optional[float]:
+        """Compute WorldScore from accumulated features via the real backend."""
+        if not self._ml_available or self._backend != "worldscore" or not features:
+            return None
+        try:
+            compute = getattr(self._model, "compute_score", None)
+            if compute is None:
+                return None
+            score = float(compute(features))
+        except Exception as e:
+            logger.warning("WorldScore computation failed: %s", e)
+            return None
 
         if hasattr(self, "pipeline") and self.pipeline and hasattr(self.pipeline, "stats"):
             self.pipeline.stats["worldscore"] = score
-
         return score

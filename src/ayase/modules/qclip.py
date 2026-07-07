@@ -1,8 +1,11 @@
 """Q-CLIP --- VLM-Based VQA via Cross-Modal Quality Adaptation (2025).
 
-Uses CLIP model with quality-aware prompts.  Score = CLIP similarity
-between video frames and quality text embeddings (similar to CLIP-IQA
-but extended for video with temporal quality aggregation).
+This module implements a CLIP-IQA-style zero-shot quality signal: it scores
+frames with a real, pretrained CLIP backbone (config-selectable via
+``clip_model``) against quality-level text prompts and aggregates temporally.
+It does NOT load the trained Q-CLIP cross-modal adaptation weights, so treat
+``qclip_score`` as a CLIP-IQA-family proxy rather than the published model's
+output.
 
 qclip_score --- higher = better (0-1 range)
 """
@@ -52,6 +55,7 @@ class QCLIPModule(PipelineModule):
             "clip_model", "openai/clip-vit-base-patch32"
         )
         self._ml_available = False
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._device = "cpu"
@@ -111,8 +115,10 @@ class QCLIPModule(PipelineModule):
                 )
 
             self._ml_available = True
+            self._backend = "clip"
             logger.info("Q-CLIP (CLIP quality) initialised on %s", self._device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("Q-CLIP setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:

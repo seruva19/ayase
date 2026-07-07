@@ -138,6 +138,7 @@ class OCRFidelityModule(PipelineModule):
         self.text_recognition_model_name = self.config.get("text_recognition_model_name")
         self._ocr = None
         self._ocr_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -157,9 +158,12 @@ class OCRFidelityModule(PipelineModule):
                 kw["lang"] = self.lang
             self._ocr = PaddleOCR(**kw)
             self._ocr_available = True
+            self._backend = "paddleocr"
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("PaddleOCR not installed. OCR Fidelity disabled.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.error(f"Failed to init PaddleOCR: {e}")
 
     def process(self, sample: Sample) -> Sample:

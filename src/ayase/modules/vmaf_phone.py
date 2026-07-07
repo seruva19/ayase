@@ -36,6 +36,7 @@ class VMAFPhoneModule(ReferenceBasedModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -44,8 +45,13 @@ class VMAFPhoneModule(ReferenceBasedModule):
             )
             if "libvmaf" in result.stdout:
                 self._ml_available = True
+                self._backend = "ffmpeg_libvmaf"
                 logger.info("VMAF Phone module initialised")
+            else:
+                self._backend = "unavailable"
+                logger.warning("FFmpeg libvmaf not available for VMAF Phone")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"VMAF Phone setup failed: {e}")
 
     def compute_reference_score(

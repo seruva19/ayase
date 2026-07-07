@@ -56,17 +56,16 @@ class SemanticSegmentationConsistencyModule(PipelineModule):
         self._segformer_processor = None
         self._use_segformer = False
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         if self.backend in ("segformer", "auto"):
             try:
-                import torch
+                import torch  # noqa: F401
                 from transformers import SegformerForSemanticSegmentation, SegformerImageProcessor
+                from ayase.runtime import resolve_torch_device
 
-                if self.device_config == "auto":
-                    self.device = "cuda" if torch.cuda.is_available() else "cpu"
-                else:
-                    self.device = self.device_config
+                self.device = resolve_torch_device(self.device_config)
 
                 self._segformer_processor = SegformerImageProcessor.from_pretrained(
                     "nvidia/segformer-b0-finetuned-ade-512-512"
@@ -77,6 +76,7 @@ class SemanticSegmentationConsistencyModule(PipelineModule):
 
                 self._use_segformer = True
                 self._ml_available = True
+                self._backend = "segformer"
                 logger.info(f"Semantic consistency: SegFormer initialised on {self.device}")
                 return
 
@@ -84,14 +84,15 @@ class SemanticSegmentationConsistencyModule(PipelineModule):
                 if self.backend == "segformer":
                     logger.warning("transformers not installed for SegFormer")
                     return
-                logger.info("SegFormer unavailable, falling back to K-means")
+                logger.info("SegFormer unavailable, falling back to K-means clustering")
             except Exception as e:
                 logger.warning(f"SegFormer init failed: {e}")
                 if self.backend == "segformer":
                     return
 
-        # K-means fallback (always available)
+        # K-means colour-clustering backend (deterministic, always available).
         self._ml_available = True
+        self._backend = "kmeans"
         logger.info("Semantic consistency: K-means colour clustering backend")
 
     # ------------------------------------------------------------------
@@ -188,22 +189,24 @@ class SemanticSegmentationConsistencyModule(PipelineModule):
     def _process_video(self, sample: Sample) -> Sample:
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
+            cap.release()
             return sample
 
         label_maps: List[np.ndarray] = []
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                labels = self._segment(frame)
-                if labels is not None:
-                    label_maps.append(labels)
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    labels = self._segment(frame)
+                    if labels is not None:
+                        label_maps.append(labels)
+                idx += 1
+        finally:
+            cap.release()
 
         if len(label_maps) < 2:
             return sample

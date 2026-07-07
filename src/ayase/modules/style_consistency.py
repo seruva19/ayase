@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class StyleConsistencyModule(PipelineModule):
     name = "style_consistency"
-    description = "Appearance Style verification (Gram Matrix Consistency)"
+    description = "Appearance/color style consistency (HSV histogram correlation over time)"
     default_config = {}
 
     def __init__(self, config=None):

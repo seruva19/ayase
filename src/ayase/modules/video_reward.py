@@ -31,17 +31,18 @@ class VideoRewardModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
         self._model = None
         self._processor = None
         self._device = "cpu"
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import AutoModelForSequenceClassification, AutoProcessor
+            from ayase.runtime import resolve_torch_device
 
             model_name = self.config.get("model_name", "KlingTeam/VideoReward")
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
 
             trc = self.config.get("trust_remote_code", True)
             rev = self.config.get("model_revision", None)
@@ -54,8 +55,10 @@ class VideoRewardModule(PipelineModule):
             self._model.eval()
             self._device = device
             self._ml_available = True
+            self._backend = "videoreward_hf"
             logger.info("VideoAlign reward model loaded on %s", device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("VideoAlign unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

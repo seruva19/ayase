@@ -30,6 +30,8 @@ class VFRDetectionModule(PipelineModule):
         super().__init__(config)
         self.jitter_threshold_ms = self.config.get("jitter_threshold_ms", 2.0)
         self._ffprobe_available = False
+        # Honest algorithmic analysis of frame timestamps via ffprobe.
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         self._ffprobe_available = shutil.which("ffprobe") is not None

@@ -78,34 +78,45 @@ class MotionAmplitudeModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._transforms = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import os
-            import torch
-            from torchvision.models.optical_flow import raft_small, Raft_Small_Weights
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
             # Redirect torch hub cache to models_dir so RAFT weights respect config
             models_dir = self.config.get("models_dir")
             if models_dir:
                 os.environ["TORCH_HOME"] = str(models_dir)
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up RAFT-Small for motion amplitude on {self._device}...")
 
-            weights = Raft_Small_Weights.DEFAULT
-            self._model = raft_small(weights=weights, progress=False).to(self._device)
-            self._model.eval()
-            self._transforms = weights.transforms()
+            def load_raft():
+                from torchvision.models.optical_flow import raft_small, Raft_Small_Weights
+
+                weights = Raft_Small_Weights.DEFAULT
+                model = raft_small(weights=weights, progress=False).to(self._device)
+                model.eval()
+                return model, weights.transforms()
+
+            # Share the RAFT-Small model with other RAFT-based modules.
+            self._model, self._transforms = shared_runtime_resource(
+                self, ("raft", "raft_small", str(self._device)), load_raft
+            )
             self._ml_available = True
+            self._backend = "raft_small"
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("torchvision >= 0.13 required for RAFT.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup RAFT: {e}")
 
     def process(self, sample: Sample) -> Sample:
-        if not sample.is_video:
+        if not sample.is_video or not self._ml_available:
             return sample
 
         caption_text = None
@@ -176,10 +187,14 @@ class MotionAmplitudeModule(PipelineModule):
         return sample
 
     def _compute_mean_flow(self, sample: Sample) -> Optional[float]:
-        """Compute mean optical flow magnitude across all consecutive pairs."""
-        if self._ml_available:
-            return self._compute_mean_flow_raft(sample)
-        return self._compute_mean_flow_farneback(sample)
+        """Compute mean RAFT optical flow magnitude across all consecutive pairs.
+
+        motion_ac_score follows EvalCrafter, whose amplitude threshold is
+        calibrated to RAFT flow magnitudes; there is no Farneback fallback
+        because its differently-scaled flow would misclassify against that
+        threshold.
+        """
+        return self._compute_mean_flow_raft(sample)
 
     def _compute_mean_flow_raft(self, sample: Sample) -> Optional[float]:
         import torch
@@ -204,38 +219,6 @@ class MotionAmplitudeModule(PipelineModule):
         if not optical_flows:
             return None
         return float(np.mean(optical_flows))
-
-    def _compute_mean_flow_farneback(self, sample: Sample) -> Optional[float]:
-        """Fallback when RAFT is unavailable."""
-        cap = cv2.VideoCapture(str(sample.path))
-        if not cap.isOpened():
-            return None
-
-        flow_magnitudes = []
-        prev_gray = None
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if prev_gray is not None:
-                flow = cv2.calcOpticalFlowFarneback(
-                    prev_gray, gray, None,
-                    pyr_scale=0.5, levels=3, winsize=15,
-                    iterations=3, poly_n=5, poly_sigma=1.2, flags=0,
-                )
-                mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-                flow_magnitudes.append(float(np.mean(mag)))
-
-            prev_gray = gray
-
-        cap.release()
-
-        if not flow_magnitudes:
-            return None
-        return float(np.mean(flow_magnitudes))
 
     @staticmethod
     def _classify_caption_motion(caption: str) -> Optional[str]:

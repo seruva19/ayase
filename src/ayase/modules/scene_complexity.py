@@ -36,12 +36,13 @@ class SceneComplexityModule(PipelineModule):
         self.subsample = self.config.get("subsample", 2)
         self.spatial_weight = self.config.get("spatial_weight", 0.5)
         self.temporal_weight = self.config.get("temporal_weight", 0.5)
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         # No setup needed, pure OpenCV
         pass
 
-    def _compute_spatial_complexity(self, frame: np.ndarray) -> float:
+    def _compute_spatial_complexity(self, frame: np.ndarray) -> Optional[float]:
         """Compute spatial complexity of a frame.
 
         Measures edge density and color diversity.
@@ -50,7 +51,7 @@ class SceneComplexityModule(PipelineModule):
             frame: Input frame (H, W, C) in BGR
 
         Returns:
-            Spatial complexity score (0-1)
+            Spatial complexity score (0-1), or None if computation failed.
         """
         try:
             # Convert to grayscale
@@ -81,9 +82,9 @@ class SceneComplexityModule(PipelineModule):
 
         except Exception as e:
             logger.debug(f"Spatial complexity computation failed: {e}")
-            return 0.5
+            return None
 
-    def _compute_temporal_complexity(self, frames: list) -> float:
+    def _compute_temporal_complexity(self, frames: list) -> Optional[float]:
         """Compute temporal complexity from frame sequence.
 
         Measures frame differences and motion.
@@ -128,7 +129,7 @@ class SceneComplexityModule(PipelineModule):
 
         except Exception as e:
             logger.debug(f"Temporal complexity computation failed: {e}")
-            return 0.5
+            return None
 
     def process(self, sample: Sample) -> Sample:
         """Process sample to compute scene complexity."""
@@ -138,6 +139,8 @@ class SceneComplexityModule(PipelineModule):
                 img = cv2.imread(str(sample.path))
                 if img is not None:
                     spatial = self._compute_spatial_complexity(img)
+                    if spatial is None:
+                        return sample
                     complexity = spatial * 100.0  # Scale to 0-100
 
                     if sample.quality_metrics is None:
@@ -166,7 +169,8 @@ class SceneComplexityModule(PipelineModule):
                 if frame_idx % self.subsample == 0:
                     # Compute spatial complexity
                     spatial = self._compute_spatial_complexity(frame)
-                    spatial_scores.append(spatial)
+                    if spatial is not None:
+                        spatial_scores.append(spatial)
 
                     # Keep frames for temporal analysis
                     frames.append(frame)
@@ -185,6 +189,9 @@ class SceneComplexityModule(PipelineModule):
 
             # Compute temporal complexity
             temporal = self._compute_temporal_complexity(frames)
+            if temporal is None:
+                # Cannot compute the weighted spatial+temporal score faithfully.
+                return sample
 
             # Combined complexity score
             complexity = (

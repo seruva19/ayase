@@ -22,22 +22,26 @@ class TOPIQFRModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
         self._model = None
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._model = pyiqa.create_metric("topiq_fr", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
                 self._device = torch.device("cpu")
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("TOPIQ-FR model loaded on %s", device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("TOPIQ-FR unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

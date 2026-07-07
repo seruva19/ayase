@@ -32,22 +32,29 @@ class PtlflowMotionModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
-            import torch
             import ptlflow
+
+            from ayase.runtime import resolve_torch_device
 
             model_name = self.config.get("model_name", "dpflow")
             ckpt_path = self.config.get("ckpt_path", "things")
 
             self._model = ptlflow.get_model(model_name, pretrained_ckpt=ckpt_path)
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._model = self._model.to(device).eval()
             self._device = device
             self._ml_available = True
+            self._backend = "ptlflow"
             logger.info("ptlflow model (%s) loaded on %s", model_name, device)
-        except (ImportError, Exception) as e:
+        except ImportError:
+            self._backend = "unavailable"
+            logger.warning("ptlflow unavailable: ptlflow not installed")
+        except Exception as e:
+            self._backend = "unavailable"
             logger.warning("ptlflow unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -57,22 +64,13 @@ class PtlflowMotionModule(PipelineModule):
             return sample
 
         try:
-            import cv2
             import torch
             from ptlflow.utils.io_adapter import IOAdapter
 
-            subsample = self.config.get("subsample", 8)
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
+            from ayase.image import sample_frames
 
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
+            subsample = self.config.get("subsample", 8)
+            frames = sample_frames(sample.path, max_frames=subsample, color="bgr")
 
             if len(frames) < 2:
                 return sample
@@ -81,8 +79,10 @@ class PtlflowMotionModule(PipelineModule):
             adapter = IOAdapter()
 
             for i in range(len(frames) - 1):
+                # sample_frames returns read-only views; copy so ptlflow's
+                # tensor conversion / normalisation can write freely.
                 inputs = adapter.prepare_inputs(
-                    [frames[i], frames[i + 1]]
+                    [np.ascontiguousarray(frames[i]), np.ascontiguousarray(frames[i + 1])]
                 )
                 inputs = {k: v.to(self._device) if hasattr(v, 'to') else v
                           for k, v in inputs.items()}

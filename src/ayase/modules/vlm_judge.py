@@ -1,7 +1,8 @@
 """Advanced semantic verification and classification using Vision-Language Models (LLaVA).
 
 Three modes: verify (caption hallucination check), traits (style extraction),
-and presets (shot scale, mood, time-of-day classification). Falls back to heuristics without ML."""
+and presets (shot scale, mood, time-of-day classification). Requires a real VLM;
+when the model is unavailable the module produces no output (no heuristic fallback)."""
 
 import logging
 import numpy as np
@@ -67,6 +68,7 @@ class VLMJudgeModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -79,7 +81,7 @@ class VLMJudgeModule(PipelineModule):
 
             models_dir = self.config.get("models_dir", "models")
 
-            dtype = torch.float16 if self._device == "cuda" else torch.float32
+            dtype = torch.float16 if str(self._device).startswith("cuda") else torch.float32
             self._model = from_pretrained_with_attention(
                 LlavaNextForConditionalGeneration,
                 self.model_name,
@@ -93,10 +95,13 @@ class VLMJudgeModule(PipelineModule):
             self._processor = LlavaNextProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
 
             self._ml_available = True
+            self._backend = "transformers"
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("Transformers / LLaVA dependencies not met. VLM Judge disabled.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup VLM Judge: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -187,6 +192,10 @@ class VLMJudgeModule(PipelineModule):
     # ------------------------------------------------------------------
 
     def _process_presets(self, sample: Sample) -> Sample:
+        # Presets require the real VLM; without it, produce no output.
+        if not self._ml_available:
+            return sample
+
         preset_names = self.config.get("presets", [])
         if not preset_names:
             preset_names = list(VLM_PRESETS.keys())
@@ -200,19 +209,11 @@ class VLMJudgeModule(PipelineModule):
         if image is None:
             return sample
 
-        if self._ml_available:
-            pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-            failed_presets = []
-            for preset_name in preset_names:
-                labels = VLM_PRESETS[preset_name]
-                ok = self._classify_preset(sample, pil_image, preset_name, labels)
-                if not ok:
-                    failed_presets.append(preset_name)
-            # Heuristic fallback for any that failed, reuse already-loaded image
-            if failed_presets:
-                self._heuristic_presets(sample, image, failed_presets)
-        else:
-            self._heuristic_presets(sample, image, preset_names)
+        pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        for preset_name in preset_names:
+            labels = VLM_PRESETS[preset_name]
+            # A failed VLM classification is skipped (no heuristic substitute).
+            self._classify_preset(sample, pil_image, preset_name, labels)
 
         return sample
 
@@ -287,73 +288,6 @@ class VLMJudgeModule(PipelineModule):
                 best_label = label
 
         return best_label
-
-    def _heuristic_presets(
-        self,
-        sample: Sample,
-        frame_bgr: Optional[np.ndarray],
-        preset_names: List[str],
-    ) -> None:
-        # Load frame if not provided
-        if frame_bgr is None:
-            frame_bgr = self._load_image(sample)
-        if frame_bgr is None:
-            return
-
-        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-        mean_brightness = float(gray.mean())
-
-        for preset_name in preset_names:
-            if preset_name not in VLM_PRESETS:
-                continue
-
-            labels = VLM_PRESETS[preset_name]
-
-            if preset_name == "time_of_day":
-                label = self._heuristic_time_of_day(mean_brightness, labels)
-            elif preset_name == "shot_scale":
-                label = self._heuristic_shot_scale(gray, labels)
-            else:
-                # Default to neutral / last label for presets without heuristics
-                neutral_candidates = {"neutral", "none_visible", "no_face", "calm"}
-                label = next(
-                    (lb for lb in labels if lb in neutral_candidates), labels[-1]
-                )
-
-            sample.detections.append(
-                {
-                    "type": "vlm_preset",
-                    "preset": preset_name,
-                    "label": label,
-                    "method": "heuristic",
-                }
-            )
-
-    @staticmethod
-    def _heuristic_time_of_day(mean_brightness: float, labels: List[str]) -> str:
-        if mean_brightness < 40:
-            return "night" if "night" in labels else labels[-1]
-        if mean_brightness < 80:
-            return "dusk" if "dusk" in labels else labels[-1]
-        if mean_brightness < 140:
-            return "morning" if "morning" in labels else labels[0]
-        if mean_brightness < 200:
-            return "midday" if "midday" in labels else labels[0]
-        return "afternoon" if "afternoon" in labels else labels[0]
-
-    @staticmethod
-    def _heuristic_shot_scale(gray: np.ndarray, labels: List[str]) -> str:
-        edges = cv2.Canny(gray, 50, 150)
-        edge_density = float(np.sum(edges > 0)) / edges.size
-        if edge_density > 0.15:
-            return "extreme_close_up" if "extreme_close_up" in labels else labels[0]
-        if edge_density > 0.08:
-            return "close_up" if "close_up" in labels else labels[0]
-        if edge_density > 0.04:
-            return "medium" if "medium" in labels else labels[2]
-        if edge_density > 0.02:
-            return "full" if "full" in labels else labels[3]
-        return "wide" if "wide" in labels else labels[-2]
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:

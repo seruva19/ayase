@@ -12,6 +12,9 @@ class PCPSNRModule(ReferenceBasedModule):
         "pc_d1_psnr": "fr_quality",
         "pc_d2_psnr": "fr_quality",
     }
+    def __init__(self, config=None):
+        super().__init__(config)
+        self._backend = "numpy"
     def process(self, sample):
         ref = getattr(sample, "reference_path", None)
         if ref is None: return sample

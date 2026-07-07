@@ -8,8 +8,6 @@ and averaging frame scores.
 import logging
 from typing import List, Optional
 
-import cv2
-import numpy as np
 from PIL import Image
 
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
@@ -104,9 +102,9 @@ class PickScoreModule(PipelineModule):
         return sample
 
     def _resolve_device(self, torch_module) -> str:
-        if self.device_config == "auto":
-            return "cuda" if torch_module.cuda.is_available() else "cpu"
-        return str(self.device_config)
+        from ayase.runtime import resolve_torch_device
+
+        return resolve_torch_device(self.device_config)
 
     def _get_caption_text(self, sample: Sample) -> Optional[str]:
         if sample.caption:
@@ -171,29 +169,9 @@ class PickScoreModule(PipelineModule):
 
     def _load_frames(self, sample: Sample) -> List[Image.Image]:
         try:
-            if not sample.is_video:
-                bgr = cv2.imread(str(sample.path))
-                if bgr is None:
-                    return []
-                rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-                return [Image.fromarray(rgb)]
+            from ayase.image import arrays_to_pil, sample_frames
 
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-
-            frame_count = min(self.num_frames, total)
-            indices = np.linspace(0, total - 1, frame_count, dtype=int)
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ok, frame = cap.read()
-                if ok:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(Image.fromarray(rgb))
-            cap.release()
-            return frames
+            frames = sample_frames(sample.path, max_frames=self.num_frames, color="rgb")
+            return arrays_to_pil(frames)
         except Exception:
             return []

@@ -1,7 +1,10 @@
 """Motion smoothness via RIFE video frame interpolation reconstruction error (VBench).
 
-Interpolates middle frames from neighbors and measures L1 error. Falls back to
-Farneback flow-based warping proxy when RIFE is unavailable. Returns motion_smoothness (0-1)."""
+Interpolates middle frames from neighbours (RIFE HD v3 VFI) and measures L1
+error; ``motion_smoothness = 1 - mean_error`` (0-1, higher = smoother). This is
+the VBench definition, which is specifically tied to RIFE VFI, so when RIFE is
+unavailable the metric is left unset rather than approximated with a
+differently-scaled optical-flow warping proxy."""
 
 import logging
 import os
@@ -52,11 +55,12 @@ class MotionSmoothnessModule(PipelineModule):
         self._rife_model = None
         self._device = "cpu"
         self._rife_available = False
+        self._backend = None
 
     def setup(self):
         try:
-            import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import resolve_torch_device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             # Try bundled RIFE HD v3 (ayase.third_party.rife)
             try:
@@ -78,6 +82,7 @@ class MotionSmoothnessModule(PipelineModule):
                 self._rife_model.load_model(rife_dir, rank=-1)
                 self._rife_model.eval()
                 self._rife_available = True
+                self._backend = "rife"
                 logger.info("RIFE HD v3 loaded on %s", self._device)
                 return
             except ImportError:
@@ -90,6 +95,7 @@ class MotionSmoothnessModule(PipelineModule):
                 from rife_model import load_rife_model
                 self._rife_model = load_rife_model(device=self._device)
                 self._rife_available = True
+                self._backend = "rife"
                 logger.info("RIFE model loaded on %s", self._device)
                 return
             except ImportError:
@@ -97,31 +103,30 @@ class MotionSmoothnessModule(PipelineModule):
             except Exception as exc:
                 logger.debug("rife_model import failed: %s", exc)
 
-            # Neither import path worked -- fall back gracefully
+            # Neither import path worked -- disable (VBench motion_smoothness is
+            # defined via RIFE VFI; do not approximate with a flow proxy).
+            self._backend = "unavailable"
             logger.warning(
-                "RIFE VFI model not available (neither 'rife_model' nor "
-                "'model.RIFE' packages found). Falling back to Farneback "
-                "optical-flow warping proxy for motion smoothness."
+                "RIFE VFI model not available (neither bundled 'ayase.third_party.rife' "
+                "nor 'rife_model' found); motion_smoothness left unset."
             )
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "PyTorch is not installed; RIFE model cannot be loaded. "
-                "Falling back to Farneback optical-flow warping proxy."
+                "motion_smoothness left unset."
             )
         except Exception as e:
-            logger.warning("Motion smoothness setup failed: %s. "
-                           "Falling back to flow-based proxy.", e)
+            self._backend = "unavailable"
+            logger.warning("Motion smoothness setup failed: %s; motion_smoothness left unset.", e)
 
     def process(self, sample: Sample) -> Sample:
-        if not sample.is_video:
+        if not sample.is_video or not self._rife_available:
             return sample
 
         try:
-            if self._rife_available:
-                self._analyze_rife(sample)
-            else:
-                self._analyze_flow_proxy(sample)
+            self._analyze_rife(sample)
         except Exception as e:
             logger.warning(f"Motion smoothness analysis failed: {e}")
 
@@ -177,59 +182,6 @@ class MotionSmoothnessModule(PipelineModule):
                 ValidationIssue(
                     severity=ValidationSeverity.WARNING,
                     message=f"Low motion smoothness (RIFE error): {avg_error:.3f}",
-                    details={"vfi_error": avg_error},
-                )
-            )
-
-    def _analyze_flow_proxy(self, sample: Sample) -> None:
-        """Farneback flow-based warping proxy when RIFE is unavailable.
-
-        For triplets (I0, I1, I2): warp I0 forward and I2 backward by 0.5*flow,
-        blend, and compare to I1.
-        """
-        frames = self._load_frames(sample)
-        if len(frames) < 3:
-            return
-
-        errors = []
-
-        for i in range(1, len(frames) - 1):
-            I0 = frames[i - 1]
-            I1 = frames[i]
-            I2 = frames[i + 1]
-
-            prev_gray = cv2.cvtColor(I0, cv2.COLOR_RGB2GRAY)
-            next_gray = cv2.cvtColor(I2, cv2.COLOR_RGB2GRAY)
-
-            flow = cv2.calcOpticalFlowFarneback(prev_gray, next_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-            h, w = prev_gray.shape
-            x, y = np.meshgrid(np.arange(w), np.arange(h))
-
-            map0_x = (x + flow[..., 0] * 0.5).astype(np.float32)
-            map0_y = (y + flow[..., 1] * 0.5).astype(np.float32)
-            I0_warped = cv2.remap(I0, map0_x, map0_y, cv2.INTER_LINEAR)
-
-            map2_x = (x - flow[..., 0] * 0.5).astype(np.float32)
-            map2_y = (y - flow[..., 1] * 0.5).astype(np.float32)
-            I2_warped = cv2.remap(I2, map2_x, map2_y, cv2.INTER_LINEAR)
-
-            I1_pred = cv2.addWeighted(I0_warped, 0.5, I2_warped, 0.5, 0)
-
-            diff = np.mean(np.abs(I1.astype(np.float32) - I1_pred.astype(np.float32))) / 255.0
-            errors.append(diff)
-
-        avg_error = float(np.mean(errors))
-        smoothness = max(0.0, 1.0 - avg_error)
-
-        if sample.quality_metrics is None:
-            sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.motion_smoothness = smoothness
-
-        if avg_error > self.vfi_error_threshold:
-            sample.validation_issues.append(
-                ValidationIssue(
-                    severity=ValidationSeverity.WARNING,
-                    message=f"Low motion smoothness (flow proxy error): {avg_error:.3f}",
                     details={"vfi_error": avg_error},
                 )
             )

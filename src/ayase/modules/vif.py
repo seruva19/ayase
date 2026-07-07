@@ -39,26 +39,26 @@ class VIFModule(ReferenceBasedModule):
         self.device = None
         self._ml_available = False
         self._vif_fn = None
+        self._backend = None
 
     def setup(self) -> None:
         try:
-            import torch
             import piq
 
-            self._vif_fn = piq.vif_p  # Pixel-domain VIF
+            from ayase.runtime import resolve_torch_device
 
-            # Set device
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self._vif_fn = piq.vif_p  # Pixel-domain VIF
+            self.device = resolve_torch_device(self.device_config)
 
             self._ml_available = True
+            self._backend = "piq"
             logger.info(f"VIF module initialized on {self.device}")
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("piq package not installed. Install with: pip install piq")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup VIF: {e}")
 
     def compute_reference_score(

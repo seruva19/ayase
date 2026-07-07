@@ -62,6 +62,7 @@ class T2VScoreModule(PipelineModule):
         self.device = None
         self._device_str = "cpu"
         self._ml_available = False
+        self._backend = None
         self._t2v_model = None
         self._clip_model = None
         self._clip_processor = None
@@ -85,6 +86,7 @@ class T2VScoreModule(PipelineModule):
                 ).to(self.device).eval()
                 self._use_fallback = False
                 self._ml_available = True
+                self._backend = "t2vscore"
                 logger.info("T2VScore loaded real model from %s", self.model_name)
                 return
             else:
@@ -97,8 +99,10 @@ class T2VScoreModule(PipelineModule):
             self._setup_clip_fallback()
 
         except ImportError as e:
+            self._backend = "unavailable"
             logger.warning(f"Missing dependencies for T2VScore (torch required): {e}")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup T2VScore: {e}")
 
     def _setup_clip_fallback(self):
@@ -136,6 +140,7 @@ class T2VScoreModule(PipelineModule):
             )
             self._use_fallback = True
             self._ml_available = True
+            self._backend = "clip"
             logger.info("CLIP T2V alignment loaded successfully")
 
         except Exception as e:
@@ -165,7 +170,7 @@ class T2VScoreModule(PipelineModule):
         sample: Sample,
         frames: List[np.ndarray],
         caption: str,
-    ) -> float:
+    ) -> Optional[float]:
         """Compute text-video alignment using CLIP.
 
         Args:
@@ -189,7 +194,7 @@ class T2VScoreModule(PipelineModule):
 
         except Exception as e:
             logger.warning(f"CLIP alignment computation failed: {e}")
-            return 0.5
+            return None
 
     def _alignment_from_features(self, image_features, caption: str) -> float:
         text_features = cached_clip_text_features(
@@ -241,22 +246,22 @@ class T2VScoreModule(PipelineModule):
 
         except Exception as e:
             logger.warning(f"Quality computation failed: {e}")
-            return 0.5
+            return None
 
     def _compute_t2v_score_real(
         self, sample: Sample, caption: str
-    ) -> Tuple[float, float, float]:
+    ) -> Optional[Tuple[float, float, float]]:
         """Compute T2VScore using the real model."""
         import torch
 
         try:
             frames = self._load_video_frames(sample.path, self.num_frames)
             if frames is None:
-                return 0.5, 0.5, 0.5
+                return None
 
             tensors = []
             for f in frames:
-                t = torch.from_numpy(f).permute(2, 0, 1).float() / 255.0
+                t = torch.from_numpy(np.ascontiguousarray(f)).permute(2, 0, 1).float() / 255.0
                 tensors.append(t)
             clip = torch.stack(tensors).unsqueeze(0).to(self.device)
 
@@ -280,25 +285,27 @@ class T2VScoreModule(PipelineModule):
 
     def _compute_t2v_score_clip(
         self, sample: Sample, caption: str
-    ) -> Tuple[float, float, float]:
+    ) -> Optional[Tuple[float, float, float]]:
         """Compute T2VScore using CLIP fallback."""
         try:
             frames = self._load_video_frames(sample.path, self.num_frames)
             if frames is None:
-                return 0.5, 0.5, 0.5
+                return None
 
             alignment = self._compute_t2v_alignment_clip(sample, frames, caption)
             quality = self._compute_video_quality_simple(frames)
+            if alignment is None or quality is None:
+                return None
             overall = alignment * self.alignment_weight + quality * self.quality_weight
 
             return float(overall), float(alignment), float(quality)
         except Exception as e:
             logger.warning(f"T2VScore CLIP computation failed: {e}")
-            return 0.5, 0.5, 0.5
+            return None
 
     def _compute_t2v_score(
         self, sample: Sample, caption: str
-    ) -> Tuple[float, float, float]:
+    ) -> Optional[Tuple[float, float, float]]:
         """Compute T2VScore using the best available backend.
 
         Args:
@@ -347,6 +354,8 @@ class T2VScoreModule(PipelineModule):
             for (sample, caption_text, frames), image_features in zip(prepared, feature_groups):
                 alignment = self._alignment_from_features(image_features, caption_text)
                 quality = self._compute_video_quality_simple(frames)
+                if alignment is None or quality is None:
+                    continue
                 t2v_score = alignment * self.alignment_weight + quality * self.quality_weight
 
                 if sample.quality_metrics is None:
@@ -390,10 +399,12 @@ class T2VScoreModule(PipelineModule):
         try:
             caption_text = sample.caption.text
 
-            # Compute T2VScore using CLIP alignment + quality heuristics
-            t2v_score, alignment, quality = self._compute_t2v_score(
-                sample, caption_text
-            )
+            # Compute T2VScore using CLIP alignment + quality
+            result = self._compute_t2v_score(sample, caption_text)
+            if result is None:
+                # Could not compute -> leave metrics unset rather than fabricate.
+                return sample
+            t2v_score, alignment, quality = result
 
             # Store in quality metrics
             if sample.quality_metrics is None:

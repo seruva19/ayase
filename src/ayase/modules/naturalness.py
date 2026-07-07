@@ -1,8 +1,13 @@
 """Naturalness Score module.
 
-Measures how "natural" vs "synthetic" video/image content appears.
-Uses natural scene statistics (NSS) or learning-based approaches.
-Range: 0-1 (higher = more natural).
+Measures how "natural" (vs distorted / synthetic) content appears using
+BRISQUE, a natural-scene-statistics (NSS) no-reference quality metric. The raw
+BRISQUE score (0-100, lower = better) is mapped to a naturalness score in
+[0, 1] (higher = more natural): ``naturalness = 1 - min(brisque / 100, 1)``.
+
+Backend: **pyiqa** ``brisque`` (shared with other BRISQUE-based modules via the
+pipeline runtime resource cache). When pyiqa is unavailable the metric is left
+unset rather than approximated with a hand-rolled statistic.
 """
 
 import logging
@@ -14,15 +19,15 @@ import numpy as np
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.base_modules import NoReferenceModule
+from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
 logger = logging.getLogger(__name__)
 
 
 class NaturalnessModule(NoReferenceModule):
     name = "naturalness"
-    description = "Measures naturalness of content (natural vs synthetic)"
+    description = "Naturalness via BRISQUE natural-scene-statistics (higher=more natural)"
     default_config = {
-        "use_pyiqa": True,  # Use pyiqa's NIQE/BRISQUE as proxy
         "subsample": 2,  # Process every Nth frame
         "warning_threshold": 0.4,  # Warn if naturalness < 0.4
     }
@@ -32,187 +37,109 @@ class NaturalnessModule(NoReferenceModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.use_pyiqa = self.config.get("use_pyiqa", True)
         self.subsample = self.config.get("subsample", 2)
         self.warning_threshold = self.config.get("warning_threshold", 0.4)
         self._ml_available = False
         self._metric = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
-            if self.use_pyiqa:
+            import pyiqa  # noqa: F401
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+
+            def _make_brisque():
                 import pyiqa
 
-                # BRISQUE is a good NSS-based metric for naturalness
-                self._metric = pyiqa.create_metric('brisque', device='cpu')
-                self._ml_available = True
-                logger.info("Naturalness module initialized with BRISQUE")
-            else:
-                # Fallback to manual NSS computation
-                self._ml_available = True
-                logger.info("Naturalness module initialized with manual NSS")
+                return pyiqa.create_metric("brisque", device=self._device)
 
+            # Share the BRISQUE instance with other BRISQUE-based modules.
+            self._metric = shared_runtime_resource(
+                self, ("pyiqa", "brisque", str(self._device)), _make_brisque
+            )
+            self._ml_available = True
+            self._backend = "pyiqa_brisque"
+            logger.info("Naturalness module initialized with BRISQUE on %s", self._device)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
-                "pyiqa not installed. Using fallback manual NSS. "
+                "pyiqa not installed; naturalness_score left unset. "
                 "Install with: pip install pyiqa"
             )
-            self._ml_available = True  # Can still use fallback
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup Naturalness: {e}")
 
-    def _compute_mscn_features(self, gray: np.ndarray) -> np.ndarray:
-        """Compute Mean Subtracted Contrast Normalized (MSCN) features.
-
-        These are the basis of natural scene statistics.
-
-        Args:
-            gray: Grayscale image
-
-        Returns:
-            MSCN coefficients
-        """
-        # Gaussian kernel
-        kernel = cv2.getGaussianKernel(7, 7/6)
-        kernel = kernel @ kernel.T
-
-        # Local mean
-        mu = cv2.filter2D(gray.astype(np.float64), -1, kernel)
-
-        # Local variance
-        sigma = cv2.filter2D((gray.astype(np.float64) ** 2), -1, kernel)
-        sigma = np.sqrt(np.abs(sigma - mu ** 2))
-
-        # MSCN coefficients (ensure float64 for numeric stability)
-        mscn = (gray.astype(np.float64) - mu) / (sigma + 1)
-
-        return mscn
-
-    def _compute_nss_naturalness(self, frame: np.ndarray) -> float:
-        """Compute naturalness using NSS (manual implementation).
-
-        Args:
-            frame: Input frame (H, W, C) in BGR
-
-        Returns:
-            Naturalness score (0-1, higher = more natural)
-        """
-        try:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-
-            # Compute MSCN
-            mscn = self._compute_mscn_features(gray)
-
-            # Natural images have MSCN coefficients following Gaussian distribution
-            # Compute shape parameter of Generalized Gaussian Distribution
-            variance = np.var(mscn)
-            mean_abs = np.mean(np.abs(mscn))
-
-            if mean_abs > 0:
-                # Shape parameter (beta) for GGD
-                # Natural images typically have beta ~ 0.9-1.1
-                beta = variance / (mean_abs ** 2)
-
-                # Distance from ideal natural distribution
-                # Ideal beta ≈ 1.0 for natural images
-                naturalness = 1.0 - min(abs(beta - 1.0), 1.0)
-            else:
-                naturalness = 0.5
-
-            return float(np.clip(naturalness, 0, 1))
-
-        except Exception as e:
-            logger.debug(f"NSS naturalness computation failed: {e}")
-            return 0.5
+    @staticmethod
+    def _brisque_to_naturalness(brisque_score: float) -> float:
+        return float(1.0 - min(max(brisque_score, 0.0) / 100.0, 1.0))
 
     def compute_nr_score(self, sample_path: Path) -> Optional[float]:
-        """Compute naturalness score.
-
-        Args:
-            sample_path: Path to video/image
-
-        Returns:
-            Naturalness score (0-1), or None if computation failed
-        """
+        """Compute naturalness score (0-1, higher = more natural)."""
         try:
-            # Check if video or image
             sample_str = str(sample_path)
             if sample_str.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
                 return self._compute_naturalness_video(sample_path)
-            else:
-                return self._compute_naturalness_image(sample_path)
-
+            return self._compute_naturalness_image(sample_path)
         except Exception as e:
             logger.warning(f"Naturalness computation failed: {e}")
             return None
 
     def _compute_naturalness_image(self, sample_path: Path) -> Optional[float]:
-        """Compute naturalness for single image."""
+        """Score a single image directly (pyiqa reads the real file)."""
         try:
-            if self._metric is not None:
-                # Use pyiqa BRISQUE
-                # BRISQUE returns 0-100 (lower is better)
-                # Convert to naturalness score (higher is better)
-                from PIL import Image
-                img = Image.open(str(sample_path)).convert("RGB")
-                brisque_score = self._metric(img).item()
-                # Normalize: BRISQUE ~0 is natural, ~100 is unnatural
-                naturalness = 1.0 - min(brisque_score / 100.0, 1.0)
-                return float(naturalness)
-            else:
-                # Fallback to manual NSS
-                img = cv2.imread(str(sample_path))
-                if img is None:
-                    return None
-                return self._compute_nss_naturalness(img)
+            import torch
 
+            with torch.no_grad():
+                brisque_score = float(self._metric(str(sample_path)).item())
+            return self._brisque_to_naturalness(brisque_score)
         except Exception as e:
             logger.debug(f"Naturalness image computation failed: {e}")
             return None
 
-    def _compute_naturalness_video(self, sample_path: Path) -> Optional[float]:
-        """Compute naturalness for video (average across frames)."""
+    def _score_frame(self, frame_bgr: np.ndarray) -> Optional[float]:
+        """Score a decoded BGR video frame via a direct RGB tensor call."""
         try:
-            cap = cv2.VideoCapture(str(sample_path))
-            naturalness_scores = []
-            frame_idx = 0
+            import torch
 
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            tensor = (
+                torch.from_numpy(np.ascontiguousarray(rgb))
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                / 255.0
+            ).to(self._device)
+            with torch.no_grad():
+                return self._brisque_to_naturalness(float(self._metric(tensor).item()))
+        except Exception as e:
+            logger.debug(f"Naturalness frame scoring failed: {e}")
+            return None
+
+    def _compute_naturalness_video(self, sample_path: Path) -> Optional[float]:
+        """Compute naturalness for video (average across sampled frames)."""
+        cap = cv2.VideoCapture(str(sample_path))
+        if not cap.isOpened():
+            return None
+
+        scores = []
+        idx = 0
+        try:
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
-
-                if frame_idx % self.subsample == 0:
-                    if self._metric is not None:
-                        # Save frame temporarily for pyiqa
-                        import tempfile
-                        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                            tmp_path = tmp.name
-                        cv2.imwrite(tmp_path, frame)
-
-                        try:
-                            brisque_score = self._metric(tmp_path).item()
-                            naturalness = 1.0 - min(brisque_score / 100.0, 1.0)
-                            naturalness_scores.append(naturalness)
-                        finally:
-                            Path(tmp_path).unlink(missing_ok=True)
-                    else:
-                        # Manual NSS
-                        score = self._compute_nss_naturalness(frame)
-                        naturalness_scores.append(score)
-
-                frame_idx += 1
-
+                if idx % self.subsample == 0:
+                    s = self._score_frame(frame)
+                    if s is not None:
+                        scores.append(s)
+                idx += 1
+        finally:
             cap.release()
 
-            if not naturalness_scores:
-                return None
-
-            return float(np.mean(naturalness_scores))
-
-        except Exception as e:
-            logger.debug(f"Naturalness video computation failed: {e}")
-            return None
+        return float(np.mean(scores)) if scores else None
 
     def process(self, sample: Sample) -> Sample:
         """Process sample with naturalness metric."""
@@ -220,19 +147,16 @@ class NaturalnessModule(NoReferenceModule):
             return sample
 
         try:
-            # Compute naturalness score
             naturalness_score = self.compute_nr_score(sample.path)
 
             if naturalness_score is None:
                 return sample
 
-            # Store in quality metrics
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
 
             sample.quality_metrics.naturalness_score = naturalness_score
 
-            # Add validation issue if score is low
             if naturalness_score < self.warning_threshold:
                 sample.validation_issues.append(
                     ValidationIssue(
@@ -242,8 +166,8 @@ class NaturalnessModule(NoReferenceModule):
                             "naturalness": naturalness_score,
                             "threshold": self.warning_threshold,
                         },
-                        recommendation="Content appears synthetic or unnatural. "
-                        "May indicate generated/artificial content.",
+                        recommendation="Content appears distorted or unnatural per "
+                        "natural-scene statistics (BRISQUE).",
                     )
                 )
 

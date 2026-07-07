@@ -1,29 +1,47 @@
-"""SQI — Streaming Quality Index (2016). sqi_score — higher = better"""
+"""SQI — Streaming Quality Index (Duanmu et al., 2016).
+
+SQI predicts continuous streaming Quality-of-Experience by combining
+presentation quality with the effect of rebuffering/stalling events observed
+during a playback session. Those stalling events are a property of a streaming
+*session*, not of a stored media file, so SQI cannot be computed from a file on
+disk.
+
+A previous revision fabricated ``sqi_score`` from a weighted sum of
+resolution/bitrate/fps metadata with ``stalling_factor = 1.0`` assumed. That is
+a static-metadata heuristic, not SQI, so it has been removed. Without streaming
+session telemetry the metric is reported as unavailable.
+"""
 import logging
-from ayase.models import Sample, QualityMetrics
+
+from ayase.models import Sample
 from ayase.pipeline import PipelineModule
+
 logger = logging.getLogger(__name__)
+
+
 class SQIModule(PipelineModule):
-    name = "sqi"; description = "SQI streaming quality index (2016)"; default_config = {}
+    name = "sqi"
+    description = "SQI streaming quality index (2016)"
+    default_config = {}
     metric_groups = {
         "sqi_score": "nr_quality",
     }
-    def process(self, sample):
-        """Heuristic: base_quality * stalling_factor. Without network data, proxy from metadata."""
-        if not sample.is_video: return sample
-        try:
-            vm = sample.video_metadata
-            if vm is None: return sample
-            # Base quality from resolution + bitrate
-            pixels = vm.width * vm.height
-            res_q = min(pixels / (1920*1080), 1.0)
-            br_q = min((vm.bitrate or 5_000_000) / 10_000_000, 1.0)
-            fps_q = min(vm.fps / 30.0, 1.0) if vm.fps > 0 else 0.5
-            base = 0.4*res_q + 0.4*br_q + 0.2*fps_q
-            # No stalling data available from file, assume no stalls
-            stalling_factor = 1.0
-            score = base * stalling_factor
-            if sample.quality_metrics is None: sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.sqi_score = float(min(max(score, 0), 1))
-        except Exception as e: logger.warning(f"SQI failed: {e}")
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self._backend = None
+
+    def setup(self) -> None:
+        if getattr(self, "test_mode", False):
+            return
+        self._backend = "unavailable"
+        logger.info(
+            "SQI: requires streaming-session telemetry (stalling/rebuffering "
+            "events) that is not derivable from a stored file; metric reported "
+            "as unavailable."
+        )
+
+    def process(self, sample: Sample) -> Sample:
+        # SQI needs playback stalling data absent from a static file -> skip
+        # instead of emitting a metadata-derived proxy.
         return sample

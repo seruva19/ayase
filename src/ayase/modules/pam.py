@@ -1,8 +1,9 @@
 """PAM anti-prompt audio quality score.
 
-Scores no-reference audio quality by contrasting CLAP similarity to positive
-quality prompts against anti-prompts such as noisy, distorted, or clipped audio.
-Falls back to a signal-quality proxy when CLAP is unavailable.
+Scores no-reference audio quality with the PAM method: contrasting CLAP
+similarity to positive quality prompts against anti-prompts such as noisy,
+distorted, or clipped audio. When the CLAP backend is unavailable the module
+reports no score rather than substituting a signal-statistics proxy.
 """
 
 import logging
@@ -10,7 +11,7 @@ from typing import Optional
 
 import numpy as np
 
-from ayase.audio import load_audio, speech_quality_proxy
+from ayase.audio import load_audio
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -54,20 +55,18 @@ class PAMModule(PipelineModule):
         self.device_config = self.config.get("device", "auto")
         self.positive_prompts = self.config.get("positive_prompts", self.default_config["positive_prompts"])
         self.negative_prompts = self.config.get("negative_prompts", self.default_config["negative_prompts"])
-        self._backend = "signal_proxy"
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._device = "cpu"
 
     def setup(self) -> None:
         try:
-            import torch
             from transformers import ClapModel, ClapProcessor
 
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.device_config)
             models_dir = self.config.get("models_dir", "models")
             self._model = ClapModel.from_pretrained(self.model_name, cache_dir=models_dir).to(self._device)
             self._processor = ClapProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
@@ -75,19 +74,23 @@ class PAMModule(PipelineModule):
             self._backend = "clap"
             logger.info("PAM initialised with %s on %s", self.model_name, self._device)
         except ImportError:
-            logger.info("PAM CLAP backend requires torch and transformers; using signal proxy")
+            self._backend = "unavailable"
+            logger.warning("PAM unavailable: CLAP backend requires torch and transformers")
         except Exception as e:
-            logger.warning("PAM setup failed (%s); using signal proxy", e)
+            self._backend = "unavailable"
+            logger.warning("PAM unavailable: setup failed (%s)", e)
 
     def process(self, sample: Sample) -> Sample:
+        if self._backend != "clap":
+            return sample
         try:
             audio = load_audio(sample.path, target_sr=self.sample_rate, duration=10.0)
             if audio is None or len(audio) == 0:
                 return sample
 
-            score = self._score_clap(audio) if self._backend == "clap" else None
+            score = self._score_clap(audio)
             if score is None:
-                score = speech_quality_proxy(audio, sr=self.sample_rate)
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()

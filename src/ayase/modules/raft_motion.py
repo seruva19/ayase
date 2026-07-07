@@ -32,16 +32,24 @@ class RAFTMotionModule(PipelineModule):
 
     def setup(self) -> None:
         try:
-            import torch
+            import torch  # noqa: F401
             from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             weights = Raft_Large_Weights.DEFAULT
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._model = raft_large(weights=weights).to(device).eval()
-            self._transforms = weights.transforms()
-            self._device = device
+
+            def load_raft():
+                model = raft_large(weights=weights).to(self._device).eval()
+                return model, weights.transforms()
+
+            self._model, self._transforms = shared_runtime_resource(
+                self,
+                ("raft", "raft_large", self._device),
+                load_raft,
+            )
             self._ml_available = True
-            logger.info("RAFT model loaded on %s", device)
+            logger.info("RAFT model loaded on %s", self._device)
         except (ImportError, Exception) as e:
             logger.warning("RAFT unavailable: %s", e)
 
@@ -54,30 +62,21 @@ class RAFTMotionModule(PipelineModule):
             return sample
 
         try:
-            import cv2
             import torch
+            from ayase.image import sample_frames
 
             subsample = self.config.get("subsample", 8)
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(rgb)
-            cap.release()
+            frames = sample_frames(sample.path, max_frames=subsample, color="rgb")
 
             if len(frames) < 2:
                 return sample
 
             motion_scores = []
             for i in range(len(frames) - 1):
-                frame1 = torch.from_numpy(frames[i]).permute(2, 0, 1).float().unsqueeze(0)
-                frame2 = torch.from_numpy(frames[i + 1]).permute(2, 0, 1).float().unsqueeze(0)
+                arr1 = np.ascontiguousarray(frames[i], dtype=np.float32)
+                arr2 = np.ascontiguousarray(frames[i + 1], dtype=np.float32)
+                frame1 = torch.from_numpy(arr1).permute(2, 0, 1).unsqueeze(0)
+                frame2 = torch.from_numpy(arr2).permute(2, 0, 1).unsqueeze(0)
 
                 img1, img2 = self._transforms(frame1, frame2)
                 img1 = img1.to(self._device)

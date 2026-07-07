@@ -30,6 +30,7 @@ class MotionModule(PipelineModule):
         self.sample_rate = self.config.get("sample_rate", 5) # Process every Nth frame
         self.low_motion_threshold = self.config.get("low_motion_threshold", 0.5)
         self.high_motion_threshold = self.config.get("high_motion_threshold", 20.0)
+        self._backend = "algorithmic"  # Farneback optical flow + duplicate-frame stats
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:
@@ -43,40 +44,77 @@ class MotionModule(PipelineModule):
         return sample
 
     def _analyze_motion(self, sample: Sample) -> None:
+        """Single-pass motion analysis.
+
+        One decode pass computes both the strided Farneback optical-flow motion
+        score and, over a contiguous middle window, the duplicate-frame
+        ("effective FPS") statistic — so the file is opened only once.
+        """
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
             return
 
-        try:
-            prev_gray = None
-            flows = []
-            diffs = []
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+        # Effective-FPS window: a contiguous block from the middle used to detect
+        # duplicate frames (e.g. upsampled 12fps -> 24fps anime/cartoons).
+        fps_window_start = -1
+        fps_window_len = 0
+        if fps > 0 and total_frames >= 2:
+            frames_to_check = int(min(fps, 30))
+            if frames_to_check >= 5:
+                fps_window_start = total_frames // 2
+                fps_window_len = frames_to_check
+
+        prev_sampled_gray = None
+        flows = []
+        diffs = []
+
+        prev_window_gray = None
+        window_unique = 0
+        window_read = 0
+
+        try:
             frame_idx = 0
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
 
-                if frame_idx % self.sample_rate != 0:
-                    frame_idx += 1
-                    continue
+                in_window = (
+                    fps_window_len > 0
+                    and fps_window_start <= frame_idx < fps_window_start + fps_window_len
+                )
+                is_sampled = (frame_idx % self.sample_rate == 0)
 
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                gray = None
+                if is_sampled or in_window:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-                if prev_gray is not None:
-                    # 1. Optical Flow (Farneback) - Dense
-                    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-                    mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-                    avg_flow = np.mean(mag)
-                    flows.append(avg_flow)
+                if is_sampled:
+                    if prev_sampled_gray is not None:
+                        # 1. Optical Flow (Farneback) - Dense, between sampled frames
+                        flow = cv2.calcOpticalFlowFarneback(
+                            prev_sampled_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+                        )
+                        mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+                        flows.append(np.mean(mag))
 
-                    # 2. Pixel Difference (Flickering/Static check)
-                    diff = cv2.absdiff(prev_gray, gray)
-                    avg_diff = np.mean(diff)
-                    diffs.append(avg_diff)
+                        # 2. Pixel Difference (Flickering/Static check)
+                        diffs.append(np.mean(cv2.absdiff(prev_sampled_gray, gray)))
+                    prev_sampled_gray = gray
 
-                prev_gray = gray
+                if in_window:
+                    # 3. Duplicate-frame detection over consecutive window frames
+                    window_read += 1
+                    if prev_window_gray is None:
+                        window_unique += 1  # First frame is always unique
+                    elif np.mean(cv2.absdiff(prev_window_gray, gray)) > 2.0:
+                        # 2.0 is a robust middle ground for "new content".
+                        window_unique += 1
+                    prev_window_gray = gray
+
                 frame_idx += 1
         finally:
             cap.release()
@@ -85,7 +123,6 @@ class MotionModule(PipelineModule):
             return
 
         avg_motion = float(np.mean(flows))
-        avg_diff = float(np.mean(diffs))
 
         # Store motion score in quality metrics
         if sample.quality_metrics is None:
@@ -102,7 +139,7 @@ class MotionModule(PipelineModule):
                     recommendation="Remove static clips or slideshows from the training set as they provide little temporal information."
                 )
             )
-            
+
         if avg_motion > self.high_motion_threshold:
              sample.validation_issues.append(
                 ValidationIssue(
@@ -113,84 +150,22 @@ class MotionModule(PipelineModule):
                 )
             )
 
-        # Flickering detection (high pixel diff but low flow might indicate flicker, 
-        # but simplistic flicker is just high variance in luminance without structural change.
-        # Here we just use high pixel diff as a proxy for "something changing")
-        
-        # 3. Effective FPS Check
-        self._check_effective_fps(sample)
-
-    def _check_effective_fps(self, sample: Sample):
-        """
-        Checks a short segment of video for duplicate frames to estimate 'Effective' FPS.
-        Useful for detecting upsampled anime/cartoons (e.g. 12fps in 24fps container).
-        """
-        try:
-            cap = cv2.VideoCapture(str(sample.path))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            
-            if fps <= 0 or total_frames < 2:
-                cap.release()
-                return
-
-            # Check 1 second or max 30 frames from middle
-            frames_to_check = int(min(fps, 30))
-            if frames_to_check < 5: 
-                cap.release()
-                return
-            
-            start_frame = total_frames // 2
-            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-            
-            prev_gray = None
-            unique_changes = 0
-            frames_read = 0
-            
-            for _ in range(frames_to_check):
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                
-                frames_read += 1
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                
-                if prev_gray is None:
-                    # First frame is always unique
-                    unique_changes += 1
-                else:
-                    # Check difference
-                    diff = cv2.absdiff(prev_gray, gray)
-                    mean_diff = np.mean(diff)
-                    
-                    # Threshold for determining if frame is "new" content
-                    # 1.0 is very sensitive, 5.0 is robust. 2.0 is a good middle ground.
-                    if mean_diff > 2.0:
-                        unique_changes += 1
-                        
-                prev_gray = gray
-                
-            cap.release()
-            
-            if frames_read > 0:
-                effective_ratio = unique_changes / frames_read
-                effective_fps = fps * effective_ratio
-                
-                # If Effective FPS is significantly lower than Container FPS (e.g. < 70%)
-                if effective_ratio < 0.7:
-                     sample.validation_issues.append(
-                        ValidationIssue(
-                            severity=ValidationSeverity.INFO,
-                            message=f"Low Effective FPS: ~{effective_fps:.1f} (Container: {fps:.1f})",
-                            details={
-                                "effective_fps": float(effective_fps), 
-                                "container_fps": float(fps),
-                                "fps_ratio": float(effective_ratio)
-                            },
-                            recommendation="Video contains Duplicate Frames (e.g., upsampled 12fps -> 24fps). Consider downsampling to save compute."
-                        )
+        # Effective FPS: flag videos whose effective FPS is well below container FPS.
+        if fps_window_len > 0 and window_read > 0:
+            effective_ratio = window_unique / window_read
+            effective_fps = fps * effective_ratio
+            if effective_ratio < 0.7:
+                sample.validation_issues.append(
+                    ValidationIssue(
+                        severity=ValidationSeverity.INFO,
+                        message=f"Low Effective FPS: ~{effective_fps:.1f} (Container: {fps:.1f})",
+                        details={
+                            "effective_fps": float(effective_fps),
+                            "container_fps": float(fps),
+                            "fps_ratio": float(effective_ratio),
+                        },
+                        recommendation="Video contains Duplicate Frames (e.g., upsampled 12fps -> 24fps). Consider downsampling to save compute."
                     )
-        except Exception as e:
-            logger.warning(f"Effective FPS check failed: {e}")
+                )
 
 

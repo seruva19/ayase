@@ -39,25 +39,36 @@ class MDTVSFAModule(PipelineModule):
         self._metric = None
         self._metric_name = None
         self._ml_available = False
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
 
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             # Only "mdtvsfa" is a valid pyiqa metric name
-            self._metric = pyiqa.create_metric("mdtvsfa", device="cpu")
+            self._metric = pyiqa.create_metric("mdtvsfa", device=self._device)
             self._metric_name = "mdtvsfa"
             self._ml_available = True
-            logger.info("MDTVSFA: using mdtvsfa backend via pyiqa")
+            self._backend = "pyiqa"
+            logger.info("MDTVSFA: using mdtvsfa backend via pyiqa on %s", self._device)
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup MDTVSFA: {e}")
 
     def _score_path(self, path: str) -> Optional[float]:
         try:
-            return float(self._metric(path).item())
+            import torch
+
+            with torch.no_grad():
+                return float(self._metric(path).item())
         except Exception as e:
             logger.debug(f"MDTVSFA scoring failed: {e}")
             return None

@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import logging
 import re
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
@@ -71,6 +70,7 @@ class QAlignModule(PipelineModule):
 
         self.device = None
         self._ml_available = False
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._quality_token_ids = {}  # type: Dict[int, float]
@@ -91,12 +91,9 @@ class QAlignModule(PipelineModule):
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoProcessor
-            from ayase.runtime import from_pretrained_with_attention
+            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             dtype = self._resolve_dtype()
 
@@ -158,14 +155,17 @@ class QAlignModule(PipelineModule):
                     self._quality_token_ids[ids[0]] = score
 
             self._ml_available = True
+            self._backend = "qalign"
             logger.info(f"Q-Align initialised ({len(self._quality_token_ids)} level tokens found)")
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning(
                 "transformers not installed or Q-Align model unavailable. "
                 "Install with: pip install transformers accelerate"
             )
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup Q-Align: {e}")
 
     # ------------------------------------------------------------------
@@ -210,13 +210,16 @@ class QAlignModule(PipelineModule):
 
         return None
 
-    def _assess(self, image_path: str, prompt: str) -> Optional[float]:
-        """Run the model with a quality prompt and return the score."""
+    def _assess(self, image, prompt: str) -> Optional[float]:
+        """Run the model with a quality prompt and return the score.
+
+        ``image`` is a PIL RGB image (the processor consumes PIL directly, so
+        no temporary file round-trip is needed).
+        """
         try:
             import torch
-            from PIL import Image
 
-            img = Image.open(image_path).convert("RGB")
+            img = image
 
             # Build input using processor
             inputs = self._processor(
@@ -263,23 +266,21 @@ class QAlignModule(PipelineModule):
         self, frame_bgr: np.ndarray
     ) -> Tuple[Optional[float], Optional[float]]:
         """Score a single BGR frame for quality and aesthetics."""
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
-            tmp_path = f.name
-            cv2.imwrite(tmp_path, frame_bgr)
+        from PIL import Image
 
-        try:
-            quality = self._assess(
-                tmp_path,
-                "USER: <image>\nRate the quality of this image.\nASSISTANT: The quality is",
-            )
-            aesthetic = self._assess(
-                tmp_path,
-                "USER: <image>\nRate the aesthetic quality of this image.\n"
-                "ASSISTANT: The aesthetic quality is",
-            )
-            return quality, aesthetic
-        finally:
-            Path(tmp_path).unlink(missing_ok=True)
+        rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(rgb)
+
+        quality = self._assess(
+            img,
+            "USER: <image>\nRate the quality of this image.\nASSISTANT: The quality is",
+        )
+        aesthetic = self._assess(
+            img,
+            "USER: <image>\nRate the aesthetic quality of this image.\n"
+            "ASSISTANT: The aesthetic quality is",
+        )
+        return quality, aesthetic
 
     # ------------------------------------------------------------------
     # Process
