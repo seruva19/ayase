@@ -1,14 +1,15 @@
 """UTMOSv2 no-reference speech MOS prediction.
 
-Predicts speech Mean Opinion Score on a 1-5 scale. Uses UTMOSv2 when available
-and a signal-quality MOS proxy otherwise, preserving graceful operation without
-large model downloads.
+Predicts speech Mean Opinion Score on a 1-5 scale using the UTMOSv2 model
+(``utmosv2`` package or the official torch.hub checkpoint). When neither real
+backend is available the metric is left ``None`` — no signal-quality proxy is
+substituted for the published UTMOSv2 score.
 """
 
 import logging
 from typing import Optional
 
-from ayase.audio import load_audio, speech_quality_proxy
+from ayase.audio import load_audio
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -42,7 +43,7 @@ class AudioUTMOSv2Module(PipelineModule):
         self.target_sr = self.config.get("target_sr", 16000)
         self.warning_threshold = self.config.get("warning_threshold", 3.0)
         self.use_torch_hub = self.config.get("use_torch_hub", False)
-        self._backend = "signal_proxy"
+        self._backend = None
         self._model = None
         self._device = "cpu"
 
@@ -59,21 +60,29 @@ class AudioUTMOSv2Module(PipelineModule):
         except Exception as e:
             logger.debug("UTMOSv2 package setup failed: %s", e)
 
-        if not self.use_torch_hub:
-            logger.info("UTMOSv2 torch.hub disabled; using signal proxy")
-            return
-        try:
-            import torch
+        if self.use_torch_hub:
+            try:
+                import torch
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._model = torch.hub.load("sarulab-speech/UTMOSv2", "utmosv2", trust_repo=True)
-            self._model = self._model.to(self._device).eval()
-            self._backend = "torch_hub"
-            logger.info("UTMOSv2 initialised from torch.hub on %s", self._device)
-        except Exception as e:
-            logger.warning("UTMOSv2 setup failed (%s); using signal proxy", e)
+                self._device = "cuda" if torch.cuda.is_available() else "cpu"
+                self._model = torch.hub.load(
+                    "sarulab-speech/UTMOSv2", "utmosv2", trust_repo=True
+                )
+                self._model = self._model.to(self._device).eval()
+                self._backend = "torch_hub"
+                logger.info("UTMOSv2 initialised from torch.hub on %s", self._device)
+                return
+            except Exception as e:
+                logger.warning("UTMOSv2 torch.hub setup failed: %s", e)
+
+        self._backend = "unavailable"
+        logger.warning(
+            "UTMOSv2 unavailable: install the `utmosv2` package or enable `use_torch_hub`"
+        )
 
     def process(self, sample: Sample) -> Sample:
+        if self._backend not in ("utmosv2_package", "torch_hub"):
+            return sample
         try:
             audio = load_audio(sample.path, target_sr=self.target_sr)
             if audio is None:
@@ -81,7 +90,7 @@ class AudioUTMOSv2Module(PipelineModule):
 
             score = self._score_model(audio)
             if score is None:
-                score = speech_quality_proxy(audio, sr=self.target_sr, mos=True)
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()

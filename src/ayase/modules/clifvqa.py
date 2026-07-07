@@ -69,6 +69,7 @@ class CLiFVQAModule(PipelineModule):
         self._device = "cpu"
         self._pos_embeds = None
         self._neg_embeds = None
+        self._backend = None
 
     def setup(self) -> None:
         if self.test_mode:
@@ -126,8 +127,10 @@ class CLiFVQAModule(PipelineModule):
             )
 
             self._ml_available = True
+            self._backend = "clip"
             logger.info("CLiF-VQA (CLIP feelings) initialised on %s", self._device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("CLiF-VQA setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:

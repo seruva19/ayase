@@ -40,6 +40,7 @@ class BackgroundConsistencyModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -80,10 +81,13 @@ class BackgroundConsistencyModule(PipelineModule):
                 load_clip,
             )
             self._ml_available = True
+            self._backend = "clip"
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("Transformers/Torch not installed. Background Consistency disabled.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.error(f"Failed to load CLIP: {e}")
 
     def process(self, sample: Sample) -> Sample:

@@ -48,6 +48,7 @@ class AudioPESQModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 3.0)
         self._ml_available = False
         self._pesq_fn = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
@@ -55,6 +56,7 @@ class AudioPESQModule(PipelineModule):
 
             self._pesq_fn = pesq_fn
             self._ml_available = True
+            self._backend = "package:pesq"
             logger.info("PESQ module initialised")
 
         except ImportError:

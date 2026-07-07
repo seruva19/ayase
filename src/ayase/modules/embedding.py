@@ -28,6 +28,7 @@ class EmbeddingModule(PipelineModule):
         self._processor = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
@@ -71,6 +72,7 @@ class EmbeddingModule(PipelineModule):
             )
 
             self._ml_available = True
+            self._backend = "xclip"
 
         except ImportError:
             logger.warning("Transformers/X-CLIP not installed. Embedding calculation disabled.")

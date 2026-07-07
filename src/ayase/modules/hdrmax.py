@@ -59,7 +59,7 @@ class HDRMAXModule(PipelineModule):
         self.njobs = int(self.config.get("njobs", 1))
         self.fps_override = self.config.get("fps")
         self.warning_threshold = self.config.get("warning_threshold")
-        self._backend = None
+        self._backend = "unavailable"
         self._repo_dir: Path | None = None
 
     def setup(self) -> None:

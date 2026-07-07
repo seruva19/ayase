@@ -45,12 +45,14 @@ class AudioLPDistModule(PipelineModule):
         self.n_mels = self.config.get("n_mels", 80)
         self.warning_threshold = self.config.get("warning_threshold", 4.0)
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import librosa  # noqa: F401
 
             self._ml_available = True
+            self._backend = "algorithmic"
             logger.info("LPDist module initialised (librosa)")
         except ImportError:
             logger.warning("librosa not installed. Install with: pip install librosa")

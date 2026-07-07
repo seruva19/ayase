@@ -1,10 +1,11 @@
 """AHIQ (Attention-based Hybrid Image Quality) module."""
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -23,21 +24,27 @@ class AHIQModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._model = pyiqa.create_metric("ahiq", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
-                self._device = torch.device("cpu")
+                self._device = torch.device(device)
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("AHIQ model loaded on %s", device)
-        except (ImportError, Exception) as e:
+        except ImportError:
+            logger.warning("AHIQ unavailable: pyiqa is not installed (pip install pyiqa)")
+        except Exception as e:
             logger.warning("AHIQ unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -52,8 +59,8 @@ class AHIQModule(PipelineModule):
             import cv2
             import torch
 
-            ref_frames = self._load_frames_from(str(reference_path), sample.is_video)
-            dist_frames = self._load_frames_from(str(sample.path), sample.is_video)
+            ref_frames = self._load_frames(reference_path)
+            dist_frames = self._load_frames(sample.path)
             if not ref_frames or not dist_frames:
                 return sample
 
@@ -61,40 +68,30 @@ class AHIQModule(PipelineModule):
             scores = []
             device = self._device
             for i in range(n):
-                ref_rgb = cv2.cvtColor(ref_frames[i], cv2.COLOR_BGR2RGB)
-                dist_rgb = cv2.cvtColor(dist_frames[i], cv2.COLOR_BGR2RGB)
+                # frames are RGB read-only views; cv2.resize returns a fresh
+                # writable array so torch.from_numpy is safe afterwards.
+                ref_rgb = ref_frames[i]
+                dist_rgb = dist_frames[i]
                 h = min(ref_rgb.shape[0], dist_rgb.shape[0])
                 w = min(ref_rgb.shape[1], dist_rgb.shape[1])
-                ref_rgb = cv2.resize(ref_rgb, (w, h))
-                dist_rgb = cv2.resize(dist_rgb, (w, h))
-                ref_t = torch.from_numpy(ref_rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                dist_t = torch.from_numpy(dist_rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+                ref_rgb = cv2.resize(np.ascontiguousarray(ref_rgb), (w, h))
+                dist_rgb = cv2.resize(np.ascontiguousarray(dist_rgb), (w, h))
+                ref_t = torch.from_numpy(np.ascontiguousarray(ref_rgb)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+                dist_t = torch.from_numpy(np.ascontiguousarray(dist_rgb)).permute(2, 0, 1).unsqueeze(0).float() / 255.0
                 with torch.no_grad():
                     score = self._model(dist_t.to(device), ref_t.to(device)).item()
                 scores.append(score)
 
-            sample.quality_metrics.ahiq = float(np.mean(scores))
+            if scores:
+                sample.quality_metrics.ahiq = float(np.mean(scores))
         except Exception as e:
             logger.warning("AHIQ processing failed: %s", e)
         return sample
 
-    def _load_frames_from(self, path: str, is_video: bool) -> list:
-        import cv2
-
+    def _load_frames(self, path) -> List[np.ndarray]:
         subsample = self.config.get("subsample", 8)
-        frames = []
-        if is_video:
-            cap = cv2.VideoCapture(path)
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(path)
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        try:
+            return sample_frames(path, max_frames=subsample, color="rgb")
+        except Exception as e:
+            logger.debug("AHIQ frame load failed for %s: %s", path, e)
+            return []

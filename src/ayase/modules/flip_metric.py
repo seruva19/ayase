@@ -48,7 +48,7 @@ class FLIPModule(ReferenceBasedModule):
     def setup(self) -> None:
         # Try flip-evaluator package
         try:
-            import flip_evaluator
+            import flip_evaluator  # noqa: F401
 
             self._backend = "flip_evaluator"
             self._ml_available = True
@@ -59,7 +59,7 @@ class FLIPModule(ReferenceBasedModule):
 
         # Try flip_torch
         try:
-            import flip_torch
+            import flip_torch  # noqa: F401
 
             self._backend = "flip_torch"
             self._ml_available = True
@@ -68,14 +68,16 @@ class FLIPModule(ReferenceBasedModule):
         except ImportError:
             pass
 
-        # Fallback: OpenCV approximation using multi-scale colour + edge
-        self._backend = "approx"
-        self._ml_available = True
-        logger.info("FLIP module initialised (OpenCV approximation fallback)")
+        # No real FLIP binding available — leave the metric unset (no heuristic).
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.warning("FLIP unavailable: install 'flip-evaluator' or 'flip-torch'.")
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        if self._backend not in ("flip_evaluator", "flip_torch"):
+            return None
         try:
             ref_img = cv2.imread(str(reference_path))
             dist_img = cv2.imread(str(sample_path))
@@ -89,10 +91,7 @@ class FLIPModule(ReferenceBasedModule):
 
             if self._backend == "flip_evaluator":
                 return self._compute_flip_evaluator(ref_img, dist_img)
-            elif self._backend == "flip_torch":
-                return self._compute_flip_torch(ref_img, dist_img)
-            else:
-                return self._compute_approx(ref_img, dist_img)
+            return self._compute_flip_torch(ref_img, dist_img)
         except Exception as e:
             logger.debug(f"FLIP scoring failed: {e}")
             return None
@@ -117,36 +116,6 @@ class FLIPModule(ReferenceBasedModule):
         dist_t = torch.from_numpy(dist_rgb).permute(2, 0, 1).unsqueeze(0)
         flip_map = flip_torch.compute_flip(ref_t, dist_t)
         return float(flip_map.mean().item())
-
-    def _compute_approx(self, ref_bgr: np.ndarray, dist_bgr: np.ndarray) -> float:
-        """Approximate FLIP using colour difference + edge detection.
-
-        FLIP's core idea: combine colour difference with feature difference.
-        This approximation uses CIE LAB colour distance + Sobel edge difference.
-        """
-        ref_lab = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
-        dist_lab = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
-
-        # Colour difference (Delta E approximation, normalised)
-        colour_diff = np.sqrt(np.sum((ref_lab - dist_lab) ** 2, axis=2))
-        colour_score = np.clip(colour_diff / 100.0, 0, 1)
-
-        # Edge/feature difference
-        ref_gray = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        dist_gray = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        ref_dx = cv2.Sobel(ref_gray, cv2.CV_32F, 1, 0, ksize=3)
-        ref_dy = cv2.Sobel(ref_gray, cv2.CV_32F, 0, 1, ksize=3)
-        ref_edges = np.sqrt(ref_dx**2 + ref_dy**2)
-        dist_dx = cv2.Sobel(dist_gray, cv2.CV_32F, 1, 0, ksize=3)
-        dist_dy = cv2.Sobel(dist_gray, cv2.CV_32F, 0, 1, ksize=3)
-        dist_edges = np.sqrt(dist_dx**2 + dist_dy**2)
-        edge_diff = np.abs(ref_edges - dist_edges)
-        edge_max = max(np.max(np.abs(ref_edges)), 1.0)
-        edge_score = np.clip(edge_diff / edge_max, 0, 1)
-
-        # FLIP-like combination: max of colour and feature
-        flip_map = np.maximum(colour_score, edge_score)
-        return float(np.mean(flip_map))
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -209,7 +178,7 @@ class FLIPModule(ReferenceBasedModule):
                     elif self._backend == "flip_torch":
                         s = self._compute_flip_torch(ref_r, dist_r)
                     else:
-                        s = self._compute_approx(ref_r, dist_r)
+                        continue
                     scores.append(s)
                 except Exception:
                     pass

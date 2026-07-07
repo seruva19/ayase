@@ -50,6 +50,7 @@ class AudioESTOIModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 0.5)
         self._ml_available = False
         self._stoi_fn = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
@@ -57,6 +58,7 @@ class AudioESTOIModule(PipelineModule):
 
             self._stoi_fn = stoi
             self._ml_available = True
+            self._backend = "package:pystoi"
             logger.info("ESTOI module initialised (pystoi)")
         except ImportError:
             logger.warning("pystoi not installed. Install with: pip install pystoi")
@@ -65,6 +67,7 @@ class AudioESTOIModule(PipelineModule):
 
     def _extract_audio(self, video_path: Path) -> Optional[Path]:
         """Extract audio from a video file to a temporary WAV."""
+        tmp = None
         try:
             tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             tmp.close()
@@ -78,7 +81,8 @@ class AudioESTOIModule(PipelineModule):
                 return None
             return Path(tmp.name)
         except Exception:
-            Path(tmp.name).unlink(missing_ok=True)
+            if tmp is not None:
+                Path(tmp.name).unlink(missing_ok=True)
             return None
 
     def process(self, sample: Sample) -> Sample:

@@ -46,6 +46,7 @@ class FaceLandmarkQualityModule(PipelineModule):
 
         self._face_mesh = None
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
@@ -58,6 +59,7 @@ class FaceLandmarkQualityModule(PipelineModule):
                 min_tracking_confidence=0.5,
             )
             self._ml_available = True
+            self._backend = "mediapipe"
             logger.info("Face landmark quality: MediaPipe Face Mesh initialised")
         except ImportError:
             logger.warning("mediapipe not installed. Install with: pip install mediapipe")
@@ -97,17 +99,18 @@ class FaceLandmarkQualityModule(PipelineModule):
         landmark_series: List[np.ndarray] = []
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                lm = self._extract_landmarks(frame)
-                if lm is not None:
-                    landmark_series.append(lm)
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    lm = self._extract_landmarks(frame)
+                    if lm is not None:
+                        landmark_series.append(lm)
+                idx += 1
+        finally:
+            cap.release()
 
         if len(landmark_series) < 3:
             return sample

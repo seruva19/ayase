@@ -77,8 +77,10 @@ class HPSv3Module(PipelineModule):
             logger.info("HPSv3 model initialized on %s", self._device)
         except ImportError:
             logger.warning("HPSv3 unavailable: missing dependency.")
+            self._backend = "unavailable"
         except Exception as e:
             logger.warning("Failed to load HPSv3 model: %s", e)
+            self._backend = "unavailable"
 
     def process(self, sample: Sample) -> Sample:
         if self._backend != "hpsv3":

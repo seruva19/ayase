@@ -30,6 +30,9 @@ class DynamicsRangeModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.scene_change_threshold = self.config.get("scene_change_threshold", 30.0)
+        # Native-fps consecutive-frame flow/scene statistics (DEVIL protocol);
+        # inherently algorithmic, no learned model involved.
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         pass  # No setup needed
@@ -54,40 +57,41 @@ class DynamicsRangeModule(PipelineModule):
             prev_gray = None
             frame_count = 0
 
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
+            try:
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
 
-                if frame_count >= max_frames:
-                    break
+                    if frame_count >= max_frames:
+                        break
 
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-                if prev_gray is not None:
-                    # Component 1: frame difference (every pair)
-                    diff = cv2.absdiff(prev_gray, gray).mean()
-                    diffs.append(diff)
+                    if prev_gray is not None:
+                        # Component 1: frame difference (every pair)
+                        diff = cv2.absdiff(prev_gray, gray).mean()
+                        diffs.append(diff)
 
-                    # Component 3: scene change detection (every pair)
-                    if diff > self.scene_change_threshold:
-                        scene_changes += 1
+                        # Component 3: scene change detection (every pair)
+                        if diff > self.scene_change_threshold:
+                            scene_changes += 1
 
-                    # Component 2: optical flow (every 5th frame)
-                    if frame_count % 5 == 0:
-                        try:
-                            flow = cv2.calcOpticalFlowFarneback(
-                                prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
-                            )
-                            magnitude, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-                            magnitudes.append(magnitude.mean())
-                        except Exception:
-                            pass
+                        # Component 2: optical flow (every 5th frame)
+                        if frame_count % 5 == 0:
+                            try:
+                                flow = cv2.calcOpticalFlowFarneback(
+                                    prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0
+                                )
+                                magnitude, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+                                magnitudes.append(magnitude.mean())
+                            except Exception:
+                                pass
 
-                prev_gray = gray
-                frame_count += 1
-
-            cap.release()
+                    prev_gray = gray
+                    frame_count += 1
+            finally:
+                cap.release()
 
             # Derive per-component results
             diff_variance = float(np.var(diffs)) if diffs else 0.0

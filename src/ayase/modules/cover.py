@@ -2,13 +2,18 @@
 
 3-branch architecture: semantic + aesthetic + technical.
 Winner of AIS 2024 VQA Challenge at CVPR 2024.
+
+The ``cover_*`` fields are produced only by the native COVER model. When
+the COVER package is not installed the metric is left unset (no proxy).
+GitHub: https://github.com/vztu/COVER
 """
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
+from ayase.image import load_representative_frame, sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -33,41 +38,31 @@ class COVERModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
-            # COVER uses a custom model; try loading via its package
-            # Fallback: use DOVER (which COVER extends) as approximation
             import torch
+            from ayase.runtime import resolve_torch_device
 
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             try:
                 from cover import COVER as COVERModel
-
-                self._model = COVERModel(pretrained=True)
-                self._model.eval()
-                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                self._model = self._model.to(device)
-                try:
-                    self._device = next(self._model.parameters()).device
-                except StopIteration:
-                    self._device = torch.device("cpu")
-                self._ml_available = True
-                self._backend = "cover"
-                logger.info("COVER model loaded on %s", device)
             except ImportError:
-                # Fallback to DOVER which has similar 3-branch design
-                import pyiqa
+                logger.warning(
+                    "COVER unavailable: the native COVER package is not installed "
+                    "(github.com/vztu/COVER); cover_* metrics skipped."
+                )
+                return
 
-                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                self._model = pyiqa.create_metric("dover", device=device)
-                try:
-                    self._device = next(self._model.parameters()).device
-                except StopIteration:
-                    self._device = torch.device("cpu")
-                self._ml_available = True
-                self._backend = "dover"
-                logger.info("COVER fallback: using DOVER on %s", device)
-        except (ImportError, Exception) as e:
+            self._model = COVERModel(pretrained=True)
+            self._model.eval()
+            self._model = self._model.to(self._device)
+            self._ml_available = True
+            self._backend = "cover"
+            logger.info("COVER model loaded on %s", self._device)
+        except Exception as e:
             logger.warning("COVER unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -77,10 +72,7 @@ class COVERModule(PipelineModule):
             return sample
 
         try:
-            if self._backend == "dover":
-                self._process_dover_fallback(sample)
-            else:
-                self._process_cover(sample)
+            self._process_cover(sample)
 
             threshold = self.config.get("quality_threshold", 30.0)
             if (
@@ -100,21 +92,19 @@ class COVERModule(PipelineModule):
 
     def _process_cover(self, sample: Sample) -> None:
         """Process with native COVER model."""
-        import cv2
         import torch
 
         frames = self._load_frames(sample)
         if not frames:
             return
 
-        device = self._device
         tensors = []
         for frame in frames:
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            t = torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
+            arr = np.ascontiguousarray(frame)
+            t = torch.from_numpy(arr).permute(2, 0, 1).float() / 255.0
             tensors.append(t)
 
-        video_tensor = torch.stack(tensors).unsqueeze(0).to(device)
+        video_tensor = torch.stack(tensors).unsqueeze(0).to(self._device)
 
         with torch.no_grad():
             result = self._model(video_tensor)
@@ -127,56 +117,9 @@ class COVERModule(PipelineModule):
         else:
             sample.quality_metrics.cover_score = float(result)
 
-    def _process_dover_fallback(self, sample: Sample) -> None:
-        """Process with DOVER as approximation for COVER.
-
-        NOTE: DOVER is applied per-frame as an image metric here, which is an
-        approximation — the real COVER model processes temporal features across
-        the full video. Scores should be treated as approximate.
-        """
-        import cv2
-        import torch
-
-        frames = self._load_frames(sample)
-        if not frames:
-            return
-
-        scores = []
-        for frame in frames:
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            tensor = (
-                torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-            )
-            device = self._device
-            tensor = tensor.to(device)
-            with torch.no_grad():
-                score = self._model(tensor).item()
-            scores.append(score)
-
-        overall = float(np.mean(scores))
-        logger.debug("COVER fallback: using DOVER per-frame (approximate)")
-        sample.quality_metrics.cover_score = overall
-        # DOVER doesn't separate branches, but we approximate
-        sample.quality_metrics.cover_technical = overall
-        sample.quality_metrics.cover_aesthetic = overall
-
-    def _load_frames(self, sample: Sample) -> list:
-        import cv2
-
+    def _load_frames(self, sample: Sample) -> List[np.ndarray]:
         subsample = self.config.get("subsample", 8)
-        frames = []
         if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+            return sample_frames(sample.path, max_frames=subsample, color="rgb")
+        frame = load_representative_frame(sample.path, color="rgb")
+        return [frame] if frame is not None else []

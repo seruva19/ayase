@@ -61,6 +61,7 @@ class ImageBindScoreModule(PipelineModule):
         self._modality_type = None
         self._data_module = None
         self._ml_available = False
+        self._backend = None
 
     _WEIGHTS_URLS = {
         "imagebind_huge.pth": (
@@ -115,6 +116,7 @@ class ImageBindScoreModule(PipelineModule):
         except ImportError:
             logger.warning("ImageBind source unavailable")
             self._ml_available = False
+            self._backend = "unavailable"
             return
 
         if not self._ensure_weights():
@@ -123,13 +125,13 @@ class ImageBindScoreModule(PipelineModule):
                 "AkaneTendo25/ayase-models HF mirror); module disabled"
             )
             self._ml_available = False
+            self._backend = "unavailable"
             return
 
         try:
-            if self.device_config == "auto":
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self._device = self.device_config
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.device_config)
 
             model = imagebind_model.imagebind_huge(pretrained=True)
             model.eval()
@@ -139,12 +141,14 @@ class ImageBindScoreModule(PipelineModule):
             self._modality_type = ModalityType
             self._data_module = imagebind_data
             self._ml_available = True
+            self._backend = "imagebind"
             logger.info(
                 "ImageBind initialised with %s on %s", self.model_name, self._device
             )
         except Exception as e:
             logger.warning("ImageBind setup failed: %s", e)
             self._ml_available = False
+            self._backend = "unavailable"
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:

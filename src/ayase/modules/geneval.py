@@ -286,14 +286,20 @@ class GenEvalModule(PipelineModule):
             scores["counting"] = self._score_counting_detection(image, parsed) if parsed["count"] else clip_score
             scores["position"] = self._score_position_detection(image, parsed) if parsed["positions"] else clip_score
         else:
-            # CLIP fallback for counting/position: just reuse the global match
-            scores["counting"] = clip_score if parsed["count"] else 0.0
-            scores["position"] = clip_score if parsed["positions"] else 0.0
+            # GenEval counting/position require an object detector to verify
+            # instance counts and spatial relations. CLIP alone cannot, so leave
+            # these sub-tasks unset rather than fabricate them from the global
+            # image-text match.
+            scores["counting"] = None
+            scores["position"] = None
 
-        # Overall = mean of activated sub-scores (skip the inactive ones).
-        active = [v for v in scores.values() if v > 0.0]
+        # Overall = mean of activated sub-scores (skip inactive/unavailable ones).
+        active = [v for v in scores.values() if v is not None and v > 0.0]
         scores["overall"] = float(np.mean(active)) if active else 0.0
-        return {k: round(float(v), 3) for k, v in scores.items()}
+        return {
+            k: (round(float(v), 3) if v is not None else None)
+            for k, v in scores.items()
+        }
 
     def _clip_image_features(self, sample: Sample, image: np.ndarray):
         return cached_clip_image_features(

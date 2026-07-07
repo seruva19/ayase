@@ -14,11 +14,9 @@ vendored at ``ayase/third_party/nisqa/`` (MIT-licensed, source-identical
 to https://github.com/gabrielmittag/NISQA) and the ~1 MB checkpoint is
 auto-fetched from ``AkaneTendo25/ayase-models``.
 
-Tiered backend:
-    1. Vendored NISQA + downloaded ``nisqa.tar`` checkpoint.
-    2. UTMOS-derived proxy mapping (torch.hub SpeechMOS).
-    3. Spectral-flatness / SNR signal-proxy fallback so the module is always
-       runnable in CPU-only test environments.
+Backend: the real vendored NISQA model + checkpoint. When it cannot be loaded
+(missing torch, or the checkpoint cannot be downloaded), the NISQA metrics are
+left unset — there is no proxy/heuristic stand-in.
 """
 
 import logging
@@ -42,7 +40,6 @@ class AudioNISQAModule(PipelineModule):
     description = "NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)"
     default_config = {
         "target_sr": 48000,  # NISQA expects 48 kHz internally
-        "backend": "auto",  # "auto" | "nisqa" | "utmos_proxy" | "spectral"
         "models_dir": "models",
         "weights_path": None,  # optional override; otherwise auto-download
     }
@@ -66,22 +63,21 @@ class AudioNISQAModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.target_sr = self.config.get("target_sr", 48000)
-        self.backend_pref = self.config.get("backend", "auto")
         self.models_dir = self.config.get("models_dir", "models")
         self.weights_path = self.config.get("weights_path", None)
         self._nisqa_model = None
-        self._utmos_model = None
         self._device = "cpu"
-        self.active_backend = "spectral"
+        self.active_backend = "unavailable"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
-        if self.backend_pref in ("auto", "nisqa"):
-            if self._try_setup_nisqa():
-                return
-        if self.backend_pref in ("auto", "utmos_proxy"):
-            if self._try_setup_utmos():
-                return
-        logger.info("NISQA module using spectral signal-proxy fallback (no real model loaded)")
+        if self._try_setup_nisqa():
+            return
+        logger.warning(
+            "NISQA unavailable: the vendored NISQA model/checkpoint could not be "
+            "loaded (requires torch and the nisqa.tar checkpoint); NISQA metrics "
+            "will be left unset."
+        )
 
     def _try_setup_nisqa(self) -> bool:
         # nisqaModel's __init__ requires ``deg`` to point at a real audio file
@@ -103,43 +99,26 @@ class AudioNISQAModule(PipelineModule):
             self._nisqa_weights = weights
             self._nisqa_output_dir = tempfile.mkdtemp(prefix="ayase_nisqa_")
             self.active_backend = "nisqa"
+            self._backend = "vendored:nisqa"
             logger.info("NISQA module initialized with vendored real model (weights=%s)", weights)
             return True
         except Exception as e:
             logger.debug(f"NISQA real model unavailable: {e}")
             return False
 
-    def _try_setup_utmos(self) -> bool:
-        try:
-            import torch
-
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._utmos_model = torch.hub.load(
-                "tarepan/SpeechMOS:v1.2.0", "utmos22_strong", trust_repo=True
-            ).to(self._device)
-            self._utmos_model.eval()
-            self.active_backend = "utmos_proxy"
-            logger.info("NISQA module using UTMOS proxy backend")
-            return True
-        except Exception as e:
-            logger.debug(f"UTMOS proxy unavailable: {e}")
-            return False
-
     def process(self, sample: Sample) -> Sample:
+        if self.active_backend != "nisqa":
+            return sample
+
         audio = self._load_or_extract_audio(sample)
         if audio is None or len(audio) < 100:
             return sample
 
         try:
-            if self.active_backend == "nisqa":
-                scores = self._score_with_nisqa(audio)
-            elif self.active_backend == "utmos_proxy":
-                scores = self._score_with_utmos_proxy(audio)
-            else:
-                scores = self._score_with_spectral(audio)
+            scores = self._score_with_nisqa(audio)
         except Exception as e:
-            logger.debug(f"NISQA scoring failed for {sample.path}: {e}")
-            scores = self._score_with_spectral(audio)
+            logger.warning("NISQA scoring failed for %s: %s", sample.path, e)
+            return sample
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
@@ -189,45 +168,6 @@ class AudioNISQAModule(PipelineModule):
         finally:
             Path(tmp_path).unlink(missing_ok=True)
 
-    def _score_with_utmos_proxy(self, audio: np.ndarray) -> Tuple[float, float, float, float, float]:
-        # UTMOS produces a single MOS; we project the heuristic sub-scores
-        # around it so the five output dimensions remain informative.
-        import torch
-
-        wav = torch.from_numpy(audio).unsqueeze(0).to(self._device)
-        with torch.no_grad():
-            mos = float(self._utmos_model(wav, self.target_sr).item())
-        _, noi, col, disc, loud = self._score_with_spectral(audio)
-        # Anchor sub-scores around the UTMOS overall MOS so they remain
-        # consistent rather than drifting from the heuristic.
-        shift = mos - 3.0
-        return (mos, _clip_mos(noi + shift), _clip_mos(col + shift),
-                _clip_mos(disc + shift), _clip_mos(loud + shift))
-
-    def _score_with_spectral(self, audio: np.ndarray) -> Tuple[float, float, float, float, float]:
-        # Cheap, deterministic, CPU-only signal-based proxies. Each returns
-        # a value on the 1-5 MOS scale.
-        audio = audio.astype(np.float32)
-        # Overall energy / RMS
-        rms = float(np.sqrt(np.mean(audio ** 2) + 1e-12))
-        # Spectral flatness — flat spectrum ≈ noisy, peaky ≈ tonal speech
-        spectrum = np.abs(np.fft.rfft(audio[: 1 << 14] if len(audio) > 1 << 14 else audio)) + 1e-9
-        geo_mean = np.exp(np.mean(np.log(spectrum)))
-        arith_mean = np.mean(spectrum)
-        flatness = float(geo_mean / arith_mean)
-        # Crude SNR estimate from peak vs. low percentile
-        p95 = float(np.percentile(np.abs(audio), 95))
-        p50 = float(np.percentile(np.abs(audio), 50)) + 1e-9
-        snr_like = p95 / p50
-
-        mos = _clip_mos(2.5 + 0.5 * np.log1p(snr_like) - 1.5 * flatness)
-        noi = _clip_mos(4.0 - 3.0 * flatness)
-        col = _clip_mos(3.0 + 0.5 * (1.0 - flatness))
-        disc = _clip_mos(3.5 - 0.5 * abs(np.log10(rms + 1e-3) + 1.5))
-        # Loudness preference: target around -20 dBFS RMS
-        loud = _clip_mos(4.0 - abs(20.0 * np.log10(rms + 1e-6) + 20.0) / 6.0)
-        return (mos, noi, col, disc, loud)
-
     def _load_or_extract_audio(self, sample: Sample) -> Optional[np.ndarray]:
         audio = self._load_audio(sample.path)
         if audio is None and sample.is_video:
@@ -276,7 +216,3 @@ class AudioNISQAModule(PipelineModule):
             return None
         except Exception:
             return None
-
-
-def _clip_mos(x: float) -> float:
-    return float(np.clip(x, 1.0, 5.0))

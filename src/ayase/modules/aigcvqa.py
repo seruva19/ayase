@@ -161,15 +161,18 @@ class AIGCVQAModule(PipelineModule):
                 return sample
 
             scores = self._compute_scores(frames, sample)
+            if scores is None:
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.aigcvqa_technical = scores["technical"]
             sample.quality_metrics.aigcvqa_aesthetic = scores["aesthetic"]
-            sample.quality_metrics.aigcvqa_alignment = scores["alignment"]
+            if scores["alignment"] is not None:
+                sample.quality_metrics.aigcvqa_alignment = scores["alignment"]
 
             logger.debug(
-                "AIGC-VQA for %s: tech=%.3f aes=%.3f align=%.3f",
+                "AIGC-VQA for %s: tech=%.3f aes=%.3f align=%s",
                 sample.path.name,
                 scores["technical"],
                 scores["aesthetic"],
@@ -209,11 +212,14 @@ class AIGCVQAModule(PipelineModule):
             )
             for sample, frame_stack in zip(prepared, feature_groups):
                 scores = self._score_features(frame_stack, sample)
+                if scores is None:
+                    continue
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
                 sample.quality_metrics.aigcvqa_technical = scores["technical"]
                 sample.quality_metrics.aigcvqa_aesthetic = scores["aesthetic"]
-                sample.quality_metrics.aigcvqa_alignment = scores["alignment"]
+                if scores["alignment"] is not None:
+                    sample.quality_metrics.aigcvqa_alignment = scores["alignment"]
         except Exception as e:
             logger.warning("AIGC-VQA batch failed: %s", e)
 
@@ -221,7 +227,7 @@ class AIGCVQAModule(PipelineModule):
 
     def _compute_scores(
         self, frames: List[np.ndarray], sample: Sample
-    ) -> Dict[str, float]:
+    ) -> Optional[Dict[str, Optional[float]]]:
         frame_stack = cached_clip_image_features(
             self,
             self._model,
@@ -233,10 +239,12 @@ class AIGCVQAModule(PipelineModule):
         )
         return self._score_features(frame_stack, sample)
 
-    def _score_features(self, frame_stack, sample: Sample) -> Dict[str, float]:
+    def _score_features(
+        self, frame_stack, sample: Sample
+    ) -> Optional[Dict[str, Optional[float]]]:
         import torch
         if frame_stack is None or frame_stack.size(0) == 0:
-            return {"technical": 0.5, "aesthetic": 0.5, "alignment": 0.5}
+            return None
 
         # --- Technical branch ---
         with torch.no_grad():
@@ -277,12 +285,12 @@ class AIGCVQAModule(PipelineModule):
                     torch.clamp((sims.mean() - 0.15) / 0.20, 0.0, 1.0).item()
                 )
         else:
-            alignment = 0.5  # No caption available
+            alignment = None  # No caption available: leave alignment unset
 
         return {
             "technical": float(np.clip(technical, 0.0, 1.0)),
             "aesthetic": float(np.clip(aesthetic, 0.0, 1.0)),
-            "alignment": float(np.clip(alignment, 0.0, 1.0)),
+            "alignment": alignment,
         }
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:

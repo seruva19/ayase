@@ -13,11 +13,14 @@ Dataset-level outputs (stored in DatasetStats via ``pipeline.add_dataset_metric`
     avg_face_cross_similarity  — dataset-wide average pairwise similarity
     identity_cluster_count     — number of distinct identity clusters
 
-Tiered backends (same as IdentityLossModule):
+Backends (real face-recognition embeddings only):
     1. InsightFace (buffalo_l ArcFace) — industry standard
     2. DeepFace (ArcFace) — fallback
-    3. MediaPipe FaceMesh (geometric landmarks) — lightweight fallback
-    4. Skip — no face models available
+    3. Skip — no face-recognition model available (metric left unset)
+
+Geometric landmark descriptors are intentionally NOT used as a stand-in for
+ArcFace identity: face_cross_similarity is an identity metric, so it either uses
+a real face-recognition embedding or reports nothing.
 """
 
 import logging
@@ -76,10 +79,9 @@ class FaceCrossSimilarityModule(PipelineModule):
         self.similarity_threshold = self.config.get("similarity_threshold", 0.3)
         self.subsample = self.config.get("subsample", 8)
         self.max_cache_size = self.config.get("max_cache_size", 10000)
-        self._backend: Optional[str] = None  # "insightface" | "deepface" | "mediapipe"
+        self._backend: Optional[str] = "unavailable"  # "insightface" | "deepface"
         self._app = None  # InsightFace FaceAnalysis
         self._deepface = None
-        self._mp_face_mesh = None
 
         # Cache: sample path -> list of normalized embedding arrays
         self._embeddings_cache: Dict[str, List[np.ndarray]] = {}
@@ -103,7 +105,7 @@ class FaceCrossSimilarityModule(PipelineModule):
         except Exception:
             pass
 
-        # Tier 2: DeepFace
+        # Tier 2: DeepFace (ArcFace)
         try:
             from deepface import DeepFace
 
@@ -114,23 +116,10 @@ class FaceCrossSimilarityModule(PipelineModule):
         except Exception:
             pass
 
-        # Tier 3: MediaPipe FaceMesh
-        try:
-            import mediapipe as mp
-
-            self._mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
-                static_image_mode=True,
-                max_num_faces=self.max_faces,
-                min_detection_confidence=0.5,
-            )
-            self._backend = "mediapipe"
-            logger.info("FaceCrossSimilarity: using MediaPipe landmark fallback.")
-            return
-        except Exception:
-            pass
-
+        self._backend = "unavailable"
         logger.warning(
-            "FaceCrossSimilarity: no face backend available — module disabled."
+            "FaceCrossSimilarity: no face-recognition backend available "
+            "(install insightface or deepface) — module disabled."
         )
 
     # ------------------------------------------------------------------
@@ -138,7 +127,7 @@ class FaceCrossSimilarityModule(PipelineModule):
     # ------------------------------------------------------------------
 
     def process(self, sample: Sample) -> Sample:
-        if self._backend is None:
+        if self._backend in (None, "unavailable"):
             return sample
 
         if len(self._embeddings_cache) >= self.max_cache_size:
@@ -297,8 +286,6 @@ class FaceCrossSimilarityModule(PipelineModule):
             return self._extract_insightface(rgb_image)
         elif self._backend == "deepface":
             return self._extract_deepface(rgb_image)
-        elif self._backend == "mediapipe":
-            return self._extract_mediapipe(rgb_image)
         return []
 
     def _extract_insightface(self, rgb_image: np.ndarray) -> List[np.ndarray]:
@@ -341,25 +328,6 @@ class FaceCrossSimilarityModule(PipelineModule):
             return []
         finally:
             os.unlink(tmp_path)
-
-    def _extract_mediapipe(self, rgb_image: np.ndarray) -> List[np.ndarray]:
-        """Extract geometric landmark 'embeddings' via MediaPipe FaceMesh."""
-        results = self._mp_face_mesh.process(rgb_image)
-        if not results.multi_face_landmarks:
-            return []
-
-        embeddings = []
-        for face_lm in results.multi_face_landmarks[: self.max_faces]:
-            pts = np.array([[p.x, p.y, p.z] for p in face_lm.landmark])
-            centroid = pts.mean(axis=0)
-            pts = pts - centroid
-            scale = np.linalg.norm(pts, axis=1).max() + 1e-10
-            pts = pts / scale
-            # Flatten to 1D embedding
-            emb = pts.flatten().astype(np.float32)
-            norm = np.linalg.norm(emb) + 1e-10
-            embeddings.append(emb / norm)
-        return embeddings
 
     # ------------------------------------------------------------------
     # Frame loading

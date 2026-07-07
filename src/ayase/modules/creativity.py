@@ -147,6 +147,7 @@ class CreativityModule(PipelineModule):
         except Exception as e:
             logger.info("CLIP unavailable for creativity: %s", e)
 
+        self._backend = "unavailable"
         logger.warning("Creativity unavailable: install transformers")
 
     def process(self, sample: Sample) -> Sample:
@@ -217,7 +218,8 @@ class CreativityModule(PipelineModule):
         except (json.JSONDecodeError, ValueError):
             pass
 
-        return 0.5
+        # Unparseable model response — do not fabricate a score.
+        return None
 
     # ------------------------------------------------------------------ #
     # Tier 2: CLIP novelty + aesthetic                                     #
@@ -241,20 +243,26 @@ class CreativityModule(PipelineModule):
             # High distance from common = high novelty
             novelty = 1.0 - max_sim  # CLIP sim is typically 0.1-0.4
 
-        # Try LAION aesthetic via cached pyiqa model
-        aesthetic_score = 0.5
+        # Try LAION aesthetic via cached pyiqa model. If unavailable, base the
+        # score on CLIP novelty alone rather than fabricating an aesthetic value.
+        aesthetic_score = None
         try:
             if self._aes_model is not None:
+                import torch
                 import torchvision.transforms.functional as TF
                 img_tensor = TF.to_tensor(pil_image).unsqueeze(0).to(self._device)
-                raw = float(self._aes_model(img_tensor).item())
+                with torch.no_grad():
+                    raw = float(self._aes_model(img_tensor).item())
                 aesthetic_score = min(raw / 10.0, 1.0)  # LAION is 0-10
         except Exception:
-            pass
+            aesthetic_score = None
 
         # Normalize novelty to reasonable range
         novelty_normalized = min(max(novelty * 2.0, 0.0), 1.0)
-        score = 0.6 * novelty_normalized + 0.4 * aesthetic_score
+        if aesthetic_score is not None:
+            score = 0.6 * novelty_normalized + 0.4 * aesthetic_score
+        else:
+            score = novelty_normalized
         return float(np.clip(score, 0.0, 1.0))
 
     # ------------------------------------------------------------------ #

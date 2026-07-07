@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ImagingQualityModule(PipelineModule):
     name = "imaging_quality"
-    description = "Assesses technical quality (Noise, Blockiness) - Proxy for MUSIQ/DOVER"
+    description = "Classical noise/edge/artifact estimation (Immerkaer sigma, edge density, FFT)"
     default_config = {
         "noise_threshold": 20.0,
     }
@@ -28,6 +28,8 @@ class ImagingQualityModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.noise_threshold = self.config.get("noise_threshold", 20.0)
+        # Classical signal-processing estimators (no learned model backs the score).
+        self._backend = "algorithmic"
         # Without heavy pre-trained models like DOVER, we use classical signal processing proxies
         # or simplified BRISQUE/NIQE if libraries available.
         self._brisque_available = False
@@ -165,15 +167,11 @@ class ImagingQualityModule(PipelineModule):
         return sample
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
+        from ayase.image import load_representative_frame
+
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            # Read-only shared cache view; every op below (cvtColor, filter2D,
+            # Canny, FFT) reads only and produces fresh arrays, so no copy needed.
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

@@ -4,8 +4,10 @@ Full-reference metric for evaluating video segmentation quality:
   J (Jaccard / IoU): region-based accuracy of predicted masks
   F (F-measure): contour-based accuracy of predicted masks
 
-Expects reference segmentation masks. Uses heuristic based on
-mask IoU and boundary F-measure computation.
+Expects reference segmentation masks. Computes the DAVIS J and F measures
+directly: J is the region Jaccard index (IoU) between predicted and
+reference masks; F is the boundary F-measure with distance-transform
+tolerance matching (the standard DAVIS toolkit formulation).
 
 davis_j — 0-1, higher = better (region IoU)
 davis_f — 0-1, higher = better (boundary F-measure)
@@ -38,9 +40,10 @@ class DAVISJFModule(ReferenceBasedModule):
         self._model = None
         self.subsample = self.config.get("subsample", 8)
         self.boundary_threshold = self.config.get("boundary_threshold", 2)
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
-        logger.info("DAVIS J&F module initialised (heuristic)")
+        logger.info("DAVIS J&F module initialised (algorithmic J & F)")
 
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         """Not used directly; process() is overridden instead."""

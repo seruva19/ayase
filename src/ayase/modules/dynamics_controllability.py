@@ -12,6 +12,7 @@ Backend tiers:
 
 import logging
 import re
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -88,14 +89,16 @@ class DynamicsControllabilityModule(PipelineModule):
         except AttributeError:
             logger.info("DynamicsControllability using keyword-only mode")
 
-    def _extract_expected_motion(self, caption: str) -> float:
+    def _extract_expected_motion(self, caption: str) -> Optional[float]:
         caption_lower = caption.lower()
         matched_levels = []
         for keyword, level in self.MOTION_KEYWORDS.items():
             if re.search(r'\b' + keyword + r'\b', caption_lower):
                 matched_levels.append(level)
         if not matched_levels:
-            return 0.5
+            # No motion-level cue in the caption → the expected motion is
+            # undefined; do not fabricate a neutral 0.5 prior.
+            return None
         return float(np.mean(matched_levels))
 
     def _extract_camera_keywords(self, caption: str) -> list:
@@ -260,6 +263,10 @@ class DynamicsControllabilityModule(PipelineModule):
         try:
             caption = sample.caption.text
             expected_motion = self._extract_expected_motion(caption)
+            if expected_motion is None:
+                # No motion cue in the caption → cannot assess text-motion
+                # alignment; skip rather than storing a meaningless score.
+                return sample
             camera_keywords = self._extract_camera_keywords(caption)
 
             actual_motion = None

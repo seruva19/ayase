@@ -51,7 +51,7 @@ class ButteraugliModule(ReferenceBasedModule):
     def setup(self) -> None:
         # Try jxlpy first (JPEG XL bindings with butteraugli)
         try:
-            import jxlpy
+            import jxlpy  # noqa: F401
 
             self._backend = "jxlpy"
             self._ml_available = True
@@ -62,7 +62,7 @@ class ButteraugliModule(ReferenceBasedModule):
 
         # Try standalone butteraugli package
         try:
-            import butteraugli as ba
+            import butteraugli as ba  # noqa: F401
 
             self._backend = "butteraugli"
             self._ml_available = True
@@ -71,14 +71,18 @@ class ButteraugliModule(ReferenceBasedModule):
         except ImportError:
             pass
 
-        # Fallback: OpenCV-based approximation using Laplacian + edge comparison
-        self._backend = "approx"
-        self._ml_available = True
-        logger.info("Butteraugli module initialised (OpenCV approximation fallback)")
+        # No real Butteraugli binding available -> metric stays None.
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.warning(
+            "Butteraugli unavailable: install `jxlpy` or the `butteraugli` package"
+        )
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        if self._backend not in ("jxlpy", "butteraugli"):
+            return None
         try:
             ref_img = cv2.imread(str(reference_path))
             dist_img = cv2.imread(str(sample_path))
@@ -93,10 +97,7 @@ class ButteraugliModule(ReferenceBasedModule):
 
             if self._backend == "jxlpy":
                 return self._compute_jxlpy(ref_img, dist_img)
-            elif self._backend == "butteraugli":
-                return self._compute_butteraugli(ref_img, dist_img)
-            else:
-                return self._compute_approx(ref_img, dist_img)
+            return self._compute_butteraugli(ref_img, dist_img)
         except Exception as e:
             logger.debug(f"Butteraugli scoring failed: {e}")
             return None
@@ -114,31 +115,6 @@ class ButteraugliModule(ReferenceBasedModule):
         ref_rgb = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2RGB)
         dist_rgb = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2RGB)
         return float(ba.compute(ref_rgb, dist_rgb))
-
-    def _compute_approx(self, ref_bgr: np.ndarray, dist_bgr: np.ndarray) -> float:
-        """Approximate butteraugli using frequency-domain perceptual difference.
-
-        This is a rough proxy, not the actual butteraugli algorithm.
-        Uses multi-scale edge + colour difference analysis.
-        """
-        ref_lab = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
-        dist_lab = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
-
-        # Per-channel difference
-        diff = np.abs(ref_lab - dist_lab)
-
-        # Weight: L channel matters more than a/b
-        weighted = diff[:, :, 0] * 0.6 + diff[:, :, 1] * 0.2 + diff[:, :, 2] * 0.2
-
-        # Edge-weighted (perceptually important near edges)
-        ref_gray = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(ref_gray, 50, 150).astype(np.float32) / 255.0
-        edge_weight = 1.0 + edges * 2.0  # 3x weight at edges
-        weighted = weighted * edge_weight
-
-        # Map to butteraugli-like scale (rough calibration)
-        score = float(np.percentile(weighted, 99)) / 30.0
-        return max(0.0, score)
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -180,33 +156,34 @@ class ButteraugliModule(ReferenceBasedModule):
         return sample
 
     def _process_video(self, path: Path, ref_path: Path) -> Optional[float]:
+        if self._backend not in ("jxlpy", "butteraugli"):
+            return None
         ref_cap = cv2.VideoCapture(str(ref_path))
         dist_cap = cv2.VideoCapture(str(path))
         scores = []
         idx = 0
 
-        while True:
-            r1, ref_f = ref_cap.read()
-            r2, dist_f = dist_cap.read()
-            if not r1 or not r2:
-                break
-            if idx % self.subsample == 0:
-                h = min(ref_f.shape[0], dist_f.shape[0])
-                w = min(ref_f.shape[1], dist_f.shape[1])
-                ref_r = cv2.resize(ref_f, (w, h))
-                dist_r = cv2.resize(dist_f, (w, h))
-                try:
-                    if self._backend == "jxlpy":
-                        s = self._compute_jxlpy(ref_r, dist_r)
-                    elif self._backend == "butteraugli":
-                        s = self._compute_butteraugli(ref_r, dist_r)
-                    else:
-                        s = self._compute_approx(ref_r, dist_r)
-                    scores.append(s)
-                except Exception:
-                    pass
-            idx += 1
-
-        ref_cap.release()
-        dist_cap.release()
+        try:
+            while True:
+                r1, ref_f = ref_cap.read()
+                r2, dist_f = dist_cap.read()
+                if not r1 or not r2:
+                    break
+                if idx % self.subsample == 0:
+                    h = min(ref_f.shape[0], dist_f.shape[0])
+                    w = min(ref_f.shape[1], dist_f.shape[1])
+                    ref_r = cv2.resize(ref_f, (w, h))
+                    dist_r = cv2.resize(dist_f, (w, h))
+                    try:
+                        if self._backend == "jxlpy":
+                            s = self._compute_jxlpy(ref_r, dist_r)
+                        else:
+                            s = self._compute_butteraugli(ref_r, dist_r)
+                        scores.append(s)
+                    except Exception:
+                        pass
+                idx += 1
+        finally:
+            ref_cap.release()
+            dist_cap.release()
         return float(np.mean(scores)) if scores else None

@@ -40,6 +40,7 @@ class BVQIModule(PipelineModule):
         self._model = None
         self._ml_available = False
         self._backend = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.test_mode:
@@ -57,14 +58,19 @@ class BVQIModule(PipelineModule):
 
         try:
             import pyiqa
-            self._model = pyiqa.create_metric("bvqi", device="cpu")
+
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = pyiqa.create_metric("bvqi", device=self._device)
             self._backend = "pyiqa"
             self._ml_available = True
-            logger.info("BVQI (pyiqa) initialised")
+            logger.info("BVQI (pyiqa) initialised on %s", self._device)
             return
         except (ImportError, Exception):
             pass
 
+        self._backend = "unavailable"
         logger.warning("BVQI unavailable: install bvqi or pyiqa")
 
     def process(self, sample: Sample) -> Sample:

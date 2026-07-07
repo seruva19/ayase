@@ -15,9 +15,11 @@ Algorithm (from the paper):
        gradients; poorly-recognised faces deviate from training statistics,
        producing large gradients.
 
-Tiered backend:
-    - Tier 1 (best): PyTorch model with BN-statistics gradient (true GraFIQs).
-    - Tier 2 (fallback): InsightFace embedding norm + det_score proxy.
+Backend:
+    PyTorch model with BN-statistics gradient (the GraFIQs algorithm) on top of
+    InsightFace detection/alignment. Requires both InsightFace and a torch model
+    with BatchNorm layers; otherwise the metric is left unset (no embedding-norm
+    proxy stand-in).
 
 grafiqs_score -- higher = better quality (0-1)
 """
@@ -59,6 +61,7 @@ class GraFIQsModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._torch_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         if self.test_mode:
@@ -72,7 +75,6 @@ class GraFIQsModule(PipelineModule):
                 providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
             )
             self._face_app.prepare(ctx_id=0, det_size=(self.det_size, self.det_size))
-            self._ml_available = True
             logger.info("GraFIQs initialised with InsightFace (%s)", self.face_model)
         except ImportError:
             logger.warning(
@@ -81,17 +83,30 @@ class GraFIQsModule(PipelineModule):
         except Exception as e:
             logger.warning("GraFIQs setup failed: %s", e)
 
-        # Try to load a torch model for true gradient computation
+        # Load the torch model for the BN-statistics gradient (the GraFIQs core).
         self._try_load_torch_model()
+
+        # The real GraFIQs computation needs both the detector and the gradient
+        # model; without either there is no honest metric to report.
+        if self._face_app is not None and self._torch_available:
+            self._ml_available = True
+            self._backend = "grafiqs_bn_gradient"
+        else:
+            self._ml_available = False
+            self._backend = "unavailable"
+            logger.warning(
+                "GraFIQs unavailable: requires both InsightFace and a torch BN-gradient model."
+            )
 
     def _try_load_torch_model(self) -> None:
         """Load a PyTorch model with BatchNorm layers for GraFIQs gradient computation."""
         try:
-            import torch
+            import torch  # noqa: F401
             import torch.nn as nn
             from torchvision import models, transforms
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             # Use ResNet-50 pretrained on ImageNet as differentiable FR proxy.
             # The key requirement is BatchNorm layers whose running statistics
@@ -160,11 +175,7 @@ class GraFIQsModule(PipelineModule):
             key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
         )
 
-        if self._torch_available:
-            return self._compute_bn_gradient_quality(frame, face)
-
-        # Fallback: use embedding properties if torch model unavailable
-        return self._compute_embedding_quality(face)
+        return self._compute_bn_gradient_quality(frame, face)
 
     def _compute_bn_gradient_quality(self, frame: np.ndarray, face) -> Optional[float]:
         """GraFIQs core: BN-statistics loss gradient w.r.t. input.
@@ -233,14 +244,14 @@ class GraFIQsModule(PipelineModule):
                 hook.remove()
 
             if bn_loss.item() == 0.0:
-                return self._compute_embedding_quality(face)
+                return None
 
             # Backward pass to get gradient w.r.t. input
             bn_loss.backward()
 
             grad = input_tensor.grad
             if grad is None:
-                return self._compute_embedding_quality(face)
+                return None
 
             # GraFIQs: quality inversely proportional to sum of |grad|
             grad_sum = float(torch.sum(torch.abs(grad)).item())
@@ -251,21 +262,7 @@ class GraFIQsModule(PipelineModule):
 
         except Exception as e:
             logger.debug("GraFIQs gradient computation failed: %s", e)
-            return self._compute_embedding_quality(face)
-
-    def _compute_embedding_quality(self, face) -> Optional[float]:
-        """Tier 2 fallback: quality from embedding properties.
-
-        Use embedding norm + detection confidence as quality proxy.
-        """
-        embedding = face.embedding
-        norm = float(np.linalg.norm(embedding))
-        det_score = float(getattr(face, "det_score", 0.5))
-
-        # Combine norm (MagFace-like) with detection confidence
-        norm_quality = np.clip((norm - 10.0) / 20.0, 0.0, 1.0)
-        quality = 0.6 * norm_quality + 0.4 * det_score
-        return float(np.clip(quality, 0.0, 1.0))
+            return None
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
         """Extract frames from video or load image."""

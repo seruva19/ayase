@@ -59,6 +59,7 @@ class CodecSpecificQualityModule(PipelineModule):
         self.warning_efficiency = self.config.get("warning_efficiency", 30.0)
         self.warning_artifacts = self.config.get("warning_artifacts", 40.0)
         self._ffprobe_available = False
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         # Check ffprobe availability
@@ -116,10 +117,11 @@ class CodecSpecificQualityModule(PipelineModule):
     # Codec efficiency
     # ------------------------------------------------------------------
 
-    def _compute_efficiency(self, stream: dict) -> float:
+    def _compute_efficiency(self, stream: dict) -> Optional[float]:
         """Compute quality-per-bit efficiency score (0-100).
 
-        Compares actual bits-per-pixel to expected for the codec.
+        Compares actual bits-per-pixel to expected for the codec. Returns
+        ``None`` when the required stream metadata is unavailable.
         """
         codec = stream.get("codec_name", "").lower()
         bitrate = stream.get("bit_rate")
@@ -128,7 +130,7 @@ class CodecSpecificQualityModule(PipelineModule):
         fps_str = stream.get("r_frame_rate", "30/1")
 
         if not all([bitrate, width, height]):
-            return 50.0  # Unknown — neutral
+            return None  # Required metadata missing — cannot compute
 
         try:
             bitrate = int(bitrate)
@@ -137,11 +139,11 @@ class CodecSpecificQualityModule(PipelineModule):
             num, den = fps_str.split("/")
             fps = float(num) / float(den)
         except (ValueError, ZeroDivisionError):
-            return 50.0
+            return None
 
         pixels_per_sec = width * height * fps
         if pixels_per_sec == 0:
-            return 50.0
+            return None
 
         actual_bpp = bitrate / pixels_per_sec
         target_bpp = CODEC_BPP_TARGETS.get(codec, 0.10)
@@ -156,16 +158,18 @@ class CodecSpecificQualityModule(PipelineModule):
     # GOP quality
     # ------------------------------------------------------------------
 
-    def _compute_gop_quality(self, frames: List[dict]) -> float:
+    def _compute_gop_quality(self, frames: List[dict]) -> Optional[float]:
         """Assess GOP structure quality (0-100).
 
         Checks:
         - Reasonable I-frame spacing (not too far apart)
         - Mix of frame types
         - No excessive consecutive B-frames
+
+        Returns ``None`` when no frame-type information is available.
         """
         if not frames:
-            return 50.0
+            return None
 
         types = [f.get("pict_type", "?") for f in frames]
         total = len(types)
@@ -174,7 +178,7 @@ class CodecSpecificQualityModule(PipelineModule):
         p_count = sum(1 for t in types if t == "P")
 
         if total == 0:
-            return 50.0
+            return None
 
         # I-frame ratio: ideally ~1-5% of frames
         i_ratio = i_count / total
@@ -214,34 +218,36 @@ class CodecSpecificQualityModule(PipelineModule):
     # Codec artifacts (block boundary detection)
     # ------------------------------------------------------------------
 
-    def _detect_block_artifacts(self, path: Path) -> float:
+    def _detect_block_artifacts(self, path: Path) -> Optional[float]:
         """Detect block-boundary artifacts in video frames.
 
         Measures periodic discontinuities at 8x8 or 16x16 block
         boundaries (typical of H.264/H.265/MPEG codecs).
-        Score 0-100 (lower = fewer artifacts).
+        Score 0-100 (lower = fewer artifacts). Returns ``None`` when the
+        video cannot be decoded.
         """
         cap = cv2.VideoCapture(str(path))
         if not cap.isOpened():
-            return 0.0
+            return None
 
         block_scores = []
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32)
-                score = self._block_boundary_strength(gray)
-                block_scores.append(score)
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float32)
+                    score = self._block_boundary_strength(gray)
+                    block_scores.append(score)
+                idx += 1
+        finally:
+            cap.release()
 
         if not block_scores:
-            return 0.0
+            return None
 
         return float(np.mean(block_scores))
 
@@ -300,16 +306,21 @@ class CodecSpecificQualityModule(PipelineModule):
             # 1. Codec efficiency (via ffprobe)
             stream = self._get_video_stream(sample.path)
             if stream:
-                sample.quality_metrics.codec_efficiency = self._compute_efficiency(stream)
+                efficiency = self._compute_efficiency(stream)
+                if efficiency is not None:
+                    sample.quality_metrics.codec_efficiency = efficiency
 
             # 2. GOP quality (via ffprobe frame analysis)
             frame_info = self._get_frame_info(sample.path)
             if frame_info:
-                sample.quality_metrics.gop_quality = self._compute_gop_quality(frame_info)
+                gop = self._compute_gop_quality(frame_info)
+                if gop is not None:
+                    sample.quality_metrics.gop_quality = gop
 
             # 3. Block artifact detection (via OpenCV)
             artifacts = self._detect_block_artifacts(sample.path)
-            sample.quality_metrics.codec_artifacts = artifacts
+            if artifacts is not None:
+                sample.quality_metrics.codec_artifacts = artifacts
 
             # Warnings
             eff = sample.quality_metrics.codec_efficiency
@@ -323,7 +334,7 @@ class CodecSpecificQualityModule(PipelineModule):
                     )
                 )
 
-            if artifacts > self.warning_artifacts:
+            if artifacts is not None and artifacts > self.warning_artifacts:
                 sample.validation_issues.append(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
@@ -336,7 +347,7 @@ class CodecSpecificQualityModule(PipelineModule):
             logger.debug(
                 f"Codec quality for {sample.path.name}: "
                 f"eff={sample.quality_metrics.codec_efficiency} gop={sample.quality_metrics.gop_quality} "
-                f"artifacts={artifacts:.1f}"
+                f"artifacts={artifacts}"
             )
 
         except Exception as e:

@@ -38,8 +38,9 @@ class AudioTextAlignmentModule(PipelineModule):
         try:
             import torch
             from transformers import ClapModel, ClapProcessor
-            
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading CLAP for Audio-Text alignment on {self._device}...")
             
             models_dir = self.config.get("models_dir", "models")

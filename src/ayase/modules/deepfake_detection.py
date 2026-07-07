@@ -52,6 +52,7 @@ class DeepfakeDetectionModule(PipelineModule):
         self._clip_processor = None
         self._clip_device = "cpu"
         self._clip_available = False
+        self._backend = "spectral"
 
     def setup(self) -> None:
         # Try to load CLIP for zero-shot classification
@@ -91,6 +92,7 @@ class DeepfakeDetectionModule(PipelineModule):
             )
             self._clip_device = device
             self._clip_available = True
+            self._backend = "clip+spectral"
             logger.info(f"Deepfake detection: CLIP classifier on {device}")
         except ImportError:
             logger.info("CLIP not available, using frequency analysis only")

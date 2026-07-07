@@ -56,32 +56,40 @@ class AdvancedFlowModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._transforms = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import os
-            import torch
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
             # Redirect torch hub cache to models_dir so RAFT weights respect config
             models_dir = self.config.get("models_dir")
             if models_dir:
                 os.environ["TORCH_HOME"] = str(models_dir)
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            variant = "raft_large" if self.use_large_model else "raft_small"
 
-            if self.use_large_model:
-                from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
-                weights = Raft_Large_Weights.DEFAULT
-                self._model = raft_large(weights=weights, progress=False).to(self._device)
-                logger.info(f"Setting up RAFT-Large on {self._device}...")
-            else:
-                from torchvision.models.optical_flow import raft_small, Raft_Small_Weights
-                weights = Raft_Small_Weights.DEFAULT
-                self._model = raft_small(weights=weights, progress=False).to(self._device)
-                logger.info(f"Setting up RAFT-Small on {self._device}...")
+            def load_raft():
+                if self.use_large_model:
+                    from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
+                    weights = Raft_Large_Weights.DEFAULT
+                    model = raft_large(weights=weights, progress=False).to(self._device)
+                else:
+                    from torchvision.models.optical_flow import raft_small, Raft_Small_Weights
+                    weights = Raft_Small_Weights.DEFAULT
+                    model = raft_small(weights=weights, progress=False).to(self._device)
+                model.eval()
+                return model, weights.transforms()
 
-            self._model.eval()
-            self._transforms = weights.transforms()
+            logger.info("Setting up RAFT (%s) on %s...", variant, self._device)
+            self._model, self._transforms = shared_runtime_resource(
+                self,
+                ("raft", variant, str(self._device)),
+                load_raft,
+            )
+            self._backend = variant
             self._ml_available = True
 
         except ImportError:
@@ -145,6 +153,7 @@ class AdvancedFlowModule(PipelineModule):
 
     def _load_all_frames(self, sample: Sample) -> List[np.ndarray]:
         frames = []
+        cap = None
         try:
             cap = cv2.VideoCapture(str(sample.path))
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -170,7 +179,9 @@ class AdvancedFlowModule(PipelineModule):
                     frames.append(_cap_frame_resolution(frame, self.max_resolution))
                     if len(frames) >= self.max_frames:
                         break
-            cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames for advanced flow: {e}")
+        finally:
+            if cap is not None:
+                cap.release()
         return frames

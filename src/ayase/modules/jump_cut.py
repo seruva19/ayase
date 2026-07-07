@@ -25,6 +25,8 @@ class JumpCutModule(PipelineModule):
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
+        # Histogram chi-squared shot-boundary detection: pure algorithmic.
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -36,42 +38,46 @@ class JumpCutModule(PipelineModule):
             import cv2
 
             cap = cv2.VideoCapture(str(sample.path))
-            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            threshold = self.config.get("threshold", 40.0)
+            try:
+                fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                threshold = self.config.get("threshold", 40.0)
 
-            # Sample densely for cut detection (every ~3 frames)
-            step = max(1, int(fps / 10))
-            prev_hist = None
-            jump_count = 0
-            frame_pairs = 0
+                # Sample densely for cut detection (every ~3 frames)
+                step = max(1, int(fps / 10))
+                prev_hist = None
+                jump_count = 0
+                frame_pairs = 0
 
-            for i in range(0, total, step):
-                cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-                ret, frame = cap.read()
-                if not ret:
-                    break
+                for i in range(0, total, step):
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+                    ret, frame = cap.read()
+                    if not ret:
+                        break
 
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                hist = cv2.calcHist([gray], [0], None, [64], [0, 256])
-                hist = hist.flatten() / (hist.sum() + 1e-8)
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    hist = cv2.calcHist([gray], [0], None, [64], [0, 256])
+                    hist = hist.flatten() / (hist.sum() + 1e-8)
 
-                if prev_hist is not None:
-                    # Chi-squared distance between histograms
-                    chi2 = float(np.sum((hist - prev_hist) ** 2 / (hist + prev_hist + 1e-8)))
-                    if chi2 > threshold:
-                        jump_count += 1
-                    frame_pairs += 1
+                    if prev_hist is not None:
+                        # Chi-squared distance between histograms
+                        chi2 = float(np.sum((hist - prev_hist) ** 2 / (hist + prev_hist + 1e-8)))
+                        if chi2 > threshold:
+                            jump_count += 1
+                        frame_pairs += 1
 
-                prev_hist = hist
-            cap.release()
+                    prev_hist = hist
+            finally:
+                cap.release()
 
             if frame_pairs == 0:
-                sample.quality_metrics.jump_cut_score = 1.0
-            else:
-                duration = total / fps
-                cuts_per_second = jump_count / max(duration, 0.1)
-                sample.quality_metrics.jump_cut_score = 1.0 / (1.0 + cuts_per_second * 5.0)
+                # Could not compare any frame pair (decode failure / single frame):
+                # leave the metric unset rather than fabricate a "no cuts" score.
+                return sample
+
+            duration = total / fps
+            cuts_per_second = jump_count / max(duration, 0.1)
+            sample.quality_metrics.jump_cut_score = 1.0 / (1.0 + cuts_per_second * 5.0)
         except Exception as e:
             logger.warning("Jump cut detection failed: %s", e)
         return sample

@@ -10,10 +10,13 @@ Outputs (per sample, identical within a group):
     * ``entitybench_identity_consistency``  — face/identity persistence.
     * ``entitybench_appearance_consistency`` — overall visual persistence.
 
-Tiered backend:
+Backends (real visual/identity embeddings only):
     1. DINOv2 visual + ArcFace/MagFace face embeddings, clustered per group.
     2. CLIP visual embedding cosine across the group.
-    3. Color-histogram correlation heuristic.
+
+When neither DINOv2 nor CLIP is available the metric is left unset — a
+color-histogram correlation is NOT used as a stand-in for identity/appearance
+consistency.
 """
 
 import logging
@@ -37,7 +40,7 @@ class EntityBenchModule(BatchMetricModule):
     name = "entitybench"
     description = "EntityBench cross-shot identity persistence (arXiv:2605.15199)"
     default_config = {
-        "backend": "auto",  # "auto" | "dinov2_face" | "clip" | "histogram"
+        "backend": "auto",  # "auto" | "dinov2_face" | "clip"
         "clip_model": "openai/clip-vit-base-patch32",
         "models_dir": "models",
     }
@@ -57,7 +60,7 @@ class EntityBenchModule(BatchMetricModule):
         self._face_model = None
         self._clip_model = None
         self._clip_processor = None
-        self.active_backend = "histogram"
+        self.active_backend = "unavailable"
         # Group key → list of (sample, embedding) tuples
         self._groups: Dict[str, List[Tuple[Sample, Optional[np.ndarray], Optional[np.ndarray]]]] = defaultdict(list)
 
@@ -65,23 +68,54 @@ class EntityBenchModule(BatchMetricModule):
         if getattr(self, "test_mode", False):
             return
         try:
-            import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            from ayase.runtime import resolve_torch_device
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
+            self.active_backend = "unavailable"
             return
         if self.backend_pref in ("auto", "dinov2_face") and self._try_setup_dinov2_face():
             self.active_backend = "dinov2_face"
         elif self.backend_pref in ("auto", "clip") and self._try_setup_clip():
             self.active_backend = "clip"
         else:
-            self.active_backend = "histogram"
+            self.active_backend = "unavailable"
+            logger.warning(
+                "EntityBench: no real embedding backend available "
+                "(install transformers for DINOv2/CLIP) — metric left unset."
+            )
         logger.info(f"EntityBench initialized with backend={self.active_backend}")
 
     def _try_setup_dinov2_face(self) -> bool:
         try:
             from transformers import AutoModel, AutoImageProcessor
-            self._dinov2_proc = AutoImageProcessor.from_pretrained("facebook/dinov2-base")
-            self._dinov2 = AutoModel.from_pretrained("facebook/dinov2-base").to(self._device).eval()
+            from ayase.runtime import from_pretrained_with_attention, shared_runtime_resource
+
+            model_name = "facebook/dinov2-base"
+
+            def load_dino():
+                proc = AutoImageProcessor.from_pretrained(model_name)
+                model = from_pretrained_with_attention(
+                    AutoModel,
+                    model_name,
+                    self.config,
+                    device=self._device,
+                    use_safetensors=True,
+                ).to(self._device).eval()
+                return model, proc
+
+            # Share the DINOv2-base backbone with other modules (e.g.
+            # subject_consistency) via the pipeline runtime resource cache.
+            self._dinov2, self._dinov2_proc = shared_runtime_resource(
+                self,
+                (
+                    "hf_vision",
+                    model_name,
+                    self._device,
+                    str(self.config.get("attention_backend", "auto")),
+                    "safetensors",
+                ),
+                load_dino,
+            )
         except Exception as e:
             logger.debug(f"EntityBench: DINOv2 unavailable: {e}")
             return False
@@ -139,6 +173,8 @@ class EntityBenchModule(BatchMetricModule):
         # Compute per-sample (visual, face) embedding so we can cluster
         # them per group in on_dispose. Returns a tuple so the base class's
         # cache works, though we maintain a richer group structure ourselves.
+        if self.active_backend == "unavailable":
+            return None
         img = sample.load_image()
         if img is None:
             return None
@@ -168,48 +204,31 @@ class EntityBenchModule(BatchMetricModule):
         self._groups.clear()
 
     # --------------------------------------------------------------------
-    def _write_group(self, items, id_score: float, app_score: float) -> None:
+    def _write_group(self, items, id_score: Optional[float], app_score: Optional[float]) -> None:
         for sample, _, _ in items:
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.entitybench_identity_consistency = round(float(id_score), 3)
-            sample.quality_metrics.entitybench_appearance_consistency = round(float(app_score), 3)
+            if id_score is not None:
+                sample.quality_metrics.entitybench_identity_consistency = round(float(id_score), 3)
+            if app_score is not None:
+                sample.quality_metrics.entitybench_appearance_consistency = round(float(app_score), 3)
 
-    def _identity_consistency(self, items) -> float:
+    def _identity_consistency(self, items) -> Optional[float]:
         faces = [face for _, _, face in items if face is not None]
         if len(faces) >= 2:
             return _pairwise_mean_cosine(faces)
-        # No face embeddings → fall back to visual cosine
+        # No face embeddings → fall back to real visual (DINOv2/CLIP) cosine.
         visuals = [v for _, v, _ in items if v is not None]
         if len(visuals) >= 2:
             return _pairwise_mean_cosine(visuals)
-        return self._histogram_consistency(items)
+        # No real embeddings available → do not fabricate a score.
+        return None
 
-    def _appearance_consistency(self, items) -> float:
+    def _appearance_consistency(self, items) -> Optional[float]:
         visuals = [v for _, v, _ in items if v is not None]
         if len(visuals) >= 2:
             return _pairwise_mean_cosine(visuals)
-        return self._histogram_consistency(items)
-
-    def _histogram_consistency(self, items) -> float:
-        hists = []
-        for sample, _, _ in items:
-            img = sample.load_image()
-            if img is None:
-                continue
-            h = cv2.calcHist([img], [0, 1, 2], None, [8, 8, 8], [0, 256] * 3)
-            cv2.normalize(h, h)
-            hists.append(h.flatten())
-        if len(hists) < 2:
-            return 0.5
-        sims = []
-        for i in range(len(hists)):
-            for j in range(i + 1, len(hists)):
-                # OpenCV correlation in [-1, 1] → map to [0, 1]
-                sim = float(np.dot(hists[i], hists[j]) /
-                            (np.linalg.norm(hists[i]) * np.linalg.norm(hists[j]) + 1e-9))
-                sims.append((sim + 1.0) / 2.0)
-        return float(np.mean(sims))
+        return None
 
     def _visual_embed(self, sample: Sample, img_rgb: np.ndarray) -> Optional[np.ndarray]:
         if self.active_backend == "dinov2_face" and self._dinov2 is not None:

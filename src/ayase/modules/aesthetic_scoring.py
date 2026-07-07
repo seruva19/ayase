@@ -130,17 +130,18 @@ class AestheticScoringModule(PipelineModule):
             return sample
 
         try:
-            from ayase.utils.sampling import FrameSampler
-            frames = FrameSampler.sample_frames(sample.path, num_frames=8)
-            
+            from ayase.image import sample_frames
+            frames = sample_frames(sample.path, max_frames=8, color="rgb")
+
             if not frames:
                 return sample
 
             import torch
             from PIL import Image
 
+            # sample_frames returns RGB read-only views; copy for PIL.
             pil_images = [
-                Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)) for image in frames
+                Image.fromarray(np.ascontiguousarray(image)) for image in frames
             ]
             inputs = self._processor(images=pil_images, return_tensors="pt").to(self._device)
 

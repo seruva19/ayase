@@ -10,6 +10,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -33,6 +34,7 @@ class DepthAnythingModule(PipelineModule):
         self._ml_available = False
         self._pipe = None
         self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
@@ -48,6 +50,7 @@ class DepthAnythingModule(PipelineModule):
             )
             self._device = device
             self._ml_available = True
+            self._backend = "depth-anything-v2"
             logger.info("Depth Anything V2 loaded (device=%s)", device)
         except (ImportError, Exception) as e:
             logger.warning("Depth Anything unavailable: %s", e)
@@ -59,25 +62,13 @@ class DepthAnythingModule(PipelineModule):
             return sample
 
         try:
-            import cv2
             from PIL import Image
 
             subsample = self.config.get("subsample", 8)
-            frames = []
-
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        frames.append(Image.fromarray(rgb))
-                cap.release()
-            else:
-                frames.append(Image.open(str(sample.path)).convert("RGB"))
+            # Uniformly sampled RGB frames from the shared per-sample cache
+            # (read-only views; PIL.fromarray only reads them).
+            arrays = sample_frames(sample.path, max_frames=subsample, color="rgb")
+            frames = [Image.fromarray(np.ascontiguousarray(a)) for a in arrays]
 
             if not frames:
                 return sample

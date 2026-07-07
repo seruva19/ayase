@@ -11,19 +11,21 @@ Outputs:
 Requires ``sample.reference_path`` pointing to a reference face image.
 Gracefully skips when no reference is provided.
 
-Tiered backends:
+Backends (real ArcFace face-recognition embeddings only):
     1. InsightFace (buffalo_l ArcFace) — industry standard
     2. DeepFace (ArcFace) — fallback
-    3. MediaPipe FaceMesh (geometric landmarks) — lightweight fallback
-    4. Skip — no face models available
+
+Identity is defined by a face-recognition embedding; a geometric-landmark
+similarity is NOT face recognition and is not used as a stand-in. When no real
+face-recognition backend is available the metrics are left ``None``.
 """
 
 import logging
-from typing import Optional
 
 import cv2
 import numpy as np
 
+from ayase.image import load_representative_frame, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -32,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class IdentityLossModule(PipelineModule):
     name = "identity_loss"
-    description = "Face identity preservation metric (cosine distance/similarity vs reference)"
+    description = "Face identity preservation metric (ArcFace cosine distance/similarity vs reference)"
     default_config = {
         "model_name": "buffalo_l",
         "subsample": 8,
@@ -48,49 +50,40 @@ class IdentityLossModule(PipelineModule):
         self.model_name = self.config.get("model_name", "buffalo_l")
         self.subsample = self.config.get("subsample", 8)
         self.warning_threshold = self.config.get("warning_threshold", 0.5)
-        self._backend = None  # "insightface" | "deepface" | "mediapipe"
+        self._backend = None  # "insightface" | "deepface" | "unavailable"
         self._app = None  # InsightFace FaceAnalysis
         self._deepface = None
-        self._mp_face_mesh = None
 
     def setup(self):
-        # Tier 1: InsightFace
+        # Tier 1: InsightFace (ArcFace)
         try:
             from insightface.app import FaceAnalysis
             self._app = FaceAnalysis(name=self.model_name, providers=["CPUExecutionProvider"])
             self._app.prepare(ctx_id=-1, det_size=(640, 640))
             self._backend = "insightface"
-            logger.info("IdentityLoss: using InsightFace backend.")
+            logger.info("IdentityLoss: using InsightFace (ArcFace) backend.")
             return
         except Exception:
             pass
 
-        # Tier 2: DeepFace
+        # Tier 2: DeepFace (ArcFace)
         try:
             from deepface import DeepFace
             self._deepface = DeepFace
             self._backend = "deepface"
-            logger.info("IdentityLoss: using DeepFace backend.")
+            logger.info("IdentityLoss: using DeepFace (ArcFace) backend.")
             return
         except Exception:
             pass
 
-        # Tier 3: MediaPipe FaceMesh
-        try:
-            import mediapipe as mp
-            self._mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
-                static_image_mode=True, max_num_faces=1, min_detection_confidence=0.5
-            )
-            self._backend = "mediapipe"
-            logger.info("IdentityLoss: using MediaPipe landmark fallback.")
-            return
-        except Exception:
-            pass
-
-        logger.warning("IdentityLoss: no face backend available — module disabled.")
+        self._backend = "unavailable"
+        logger.warning(
+            "IdentityLoss: no ArcFace face-recognition backend available "
+            "(install insightface+onnxruntime or deepface); identity_loss left unset."
+        )
 
     def process(self, sample: Sample) -> Sample:
-        if self._backend is None:
+        if self._backend not in ("insightface", "deepface"):
             return sample
 
         ref_path = getattr(sample, "reference_path", None)
@@ -98,10 +91,9 @@ class IdentityLossModule(PipelineModule):
             return sample
 
         try:
-            ref_img = cv2.imread(str(ref_path))
-            if ref_img is None:
+            ref_rgb = load_representative_frame(ref_path, color="rgb")
+            if ref_rgb is None:
                 return sample
-            ref_rgb = cv2.cvtColor(ref_img, cv2.COLOR_BGR2RGB)
 
             frames = self._load_frames(sample)
             if not frames:
@@ -112,7 +104,7 @@ class IdentityLossModule(PipelineModule):
             elif self._backend == "deepface":
                 distance = self._compute_deepface(ref_path, sample, frames)
             else:
-                distance = self._compute_mediapipe(ref_rgb, frames)
+                distance = None
 
             if distance is None:
                 return sample
@@ -133,7 +125,7 @@ class IdentityLossModule(PipelineModule):
     # -- Backend implementations ------------------------------------------------
 
     def _compute_insightface(self, ref_rgb, frames):
-        ref_faces = self._app.get(ref_rgb)
+        ref_faces = self._app.get(np.ascontiguousarray(ref_rgb))
         if not ref_faces:
             return None
         ref_emb = ref_faces[0].embedding
@@ -141,7 +133,7 @@ class IdentityLossModule(PipelineModule):
 
         distances = []
         for frame in frames:
-            faces = self._app.get(frame)
+            faces = self._app.get(np.ascontiguousarray(frame))
             if not faces:
                 continue
             emb = faces[0].embedding
@@ -160,7 +152,7 @@ class IdentityLossModule(PipelineModule):
         for frame in frames:
             with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
                 tmp_path = tmp.name
-                Image.fromarray(frame).save(tmp_path)
+                Image.fromarray(np.ascontiguousarray(frame)).save(tmp_path)
             try:
                 result = self._deepface.verify(
                     img1_path=str(ref_path),
@@ -176,57 +168,11 @@ class IdentityLossModule(PipelineModule):
 
         return float(np.mean(distances)) if distances else None
 
-    def _compute_mediapipe(self, ref_rgb, frames):
-        ref_lm = self._extract_landmarks(ref_rgb)
-        if ref_lm is None:
-            return None
-
-        distances = []
-        for frame in frames:
-            lm = self._extract_landmarks(frame)
-            if lm is None:
-                continue
-            dist = float(np.mean(np.linalg.norm(ref_lm - lm, axis=1)))
-            distances.append(min(dist, 1.0))
-
-        return float(np.mean(distances)) if distances else None
-
-    def _extract_landmarks(self, rgb_image):
-        """Extract normalized 468-point face landmarks from an RGB image."""
-        results = self._mp_face_mesh.process(rgb_image)
-        if not results.multi_face_landmarks:
-            return None
-        lm = results.multi_face_landmarks[0]
-        pts = np.array([[p.x, p.y, p.z] for p in lm.landmark])
-        centroid = pts.mean(axis=0)
-        pts = pts - centroid
-        scale = np.linalg.norm(pts, axis=1).max() + 1e-10
-        pts = pts / scale
-        return pts
-
     # -- Frame loading ----------------------------------------------------------
 
     def _load_frames(self, sample: Sample):
-        frames = []
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return frames
-                n = min(self.subsample, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames.append(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            return list(sample_frames(sample.path, max_frames=self.subsample, color="rgb"))
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
-        return frames
+            return []

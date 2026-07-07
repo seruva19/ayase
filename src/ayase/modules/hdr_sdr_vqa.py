@@ -30,6 +30,8 @@ class HDRSDRVQAModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 5)
+        # Dynamic-range-aware quality statistics (entropy/clipping/sharpness).
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         pass
@@ -99,7 +101,7 @@ class HDRSDRVQAModule(PipelineModule):
             quality = (1.0 - clipping) * entropy_norm
             quality_scores.append(quality)
 
-        return float(np.mean(quality_scores)) if quality_scores else 0.5
+        return float(np.mean(quality_scores)) if quality_scores else None
 
     def _compute_sdr_quality(self, frames: list) -> float:
         """Compute SDR-specific quality metrics."""
@@ -120,7 +122,7 @@ class HDRSDRVQAModule(PipelineModule):
             quality = (brightness + contrast + sharpness) / 3.0
             quality_scores.append(quality)
 
-        return float(np.mean(quality_scores)) if quality_scores else 0.5
+        return float(np.mean(quality_scores)) if quality_scores else None
 
     def process(self, sample: Sample) -> Sample:
         """Process sample with HDR/SDR-aware quality assessment."""
@@ -135,11 +137,15 @@ class HDRSDRVQAModule(PipelineModule):
 
                 if is_hdr:
                     quality = self._compute_hdr_quality([img])
+                    if quality is None:
+                        return sample
                     if sample.quality_metrics is None:
                         sample.quality_metrics = QualityMetrics()
                     sample.quality_metrics.hdr_quality = quality * 100.0
                 else:
                     quality = self._compute_sdr_quality([img])
+                    if quality is None:
+                        return sample
                     if sample.quality_metrics is None:
                         sample.quality_metrics = QualityMetrics()
                     sample.quality_metrics.sdr_quality = quality * 100.0
@@ -180,11 +186,15 @@ class HDRSDRVQAModule(PipelineModule):
 
             if is_hdr:
                 quality = self._compute_hdr_quality(frames)
+                if quality is None:
+                    return sample
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
                 sample.quality_metrics.hdr_quality = quality * 100.0
             else:
                 quality = self._compute_sdr_quality(frames)
+                if quality is None:
+                    return sample
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
                 sample.quality_metrics.sdr_quality = quality * 100.0
@@ -214,6 +224,8 @@ class FourKVQAModule(PipelineModule):
         super().__init__(config)
         self.tile_size = self.config.get("tile_size", 512)
         self.subsample = self.config.get("subsample", 10)
+        # Tiled sharpness statistic for 4K+ content.
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         pass
@@ -237,7 +249,7 @@ class FourKVQAModule(PipelineModule):
                 sharpness = cv2.Laplacian(gray, cv2.CV_64F).var()
                 tile_scores.append(min(sharpness / 1000.0, 1.0))
 
-        return float(np.mean(tile_scores)) if tile_scores else 0.5
+        return float(np.mean(tile_scores)) if tile_scores else None
 
     def process(self, sample: Sample) -> Sample:
         """Process 4K+ content with memory-efficient tiling."""
@@ -251,8 +263,9 @@ class FourKVQAModule(PipelineModule):
         try:
             if not sample.is_video:
                 img = cv2.imread(str(sample.path))
-                if img is not None:
-                    quality = self._process_tiled(img) * 100.0
+                tiled = self._process_tiled(img) if img is not None else None
+                if tiled is not None:
+                    quality = tiled * 100.0
 
                     # Store in existing quality field (no specific 4k_quality field)
                     if sample.quality_metrics is None:
@@ -276,7 +289,8 @@ class FourKVQAModule(PipelineModule):
 
                 if frame_idx % self.subsample == 0:
                     score = self._process_tiled(frame)
-                    quality_scores.append(score)
+                    if score is not None:
+                        quality_scores.append(score)
                     if len(quality_scores) >= 10:  # Max 10 frames
                         break
 

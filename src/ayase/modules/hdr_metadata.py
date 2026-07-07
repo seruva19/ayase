@@ -64,6 +64,8 @@ class HDRMetadataModule(PipelineModule):
         self.subsample = self.config.get("subsample", 3)
         self.peak_nits = self.config.get("peak_nits", 10000.0)
         self._ml_available = True  # Pure OpenCV
+        # MaxFALL/MaxCLL are computed directly from pixel luminance (ST.2084 PQ).
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:
