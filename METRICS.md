@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 15:46 · **333 modules** · **397 metrics**
+> **Version 0.1.60** · Generated 2026-07-07 18:13 · **334 modules** · **398 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **332/333 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **333/334 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**333** modules · **447** output fields · **397** metrics · **232** tiered · **148** GPU · **21** categories
+**334** modules · **448** output fields · **398** metrics · **233** tiered · **149** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,11 +35,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-74-metrics) (74) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-27-metrics) (27) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-75-metrics) (75) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-27-metrics) (27) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
-## No-Reference Quality (74 metrics)
+## No-Reference Quality (75 metrics)
 
 ### `afine_score` [↑](#categories)
 > A-FINE fidelity-naturalness (CVPR 2025) · ↑ higher=better
@@ -848,6 +848,18 @@
 - **Packages**: scikit-video
 - **Tests**: covered by [`test_viideo.py`](tests/modules/per_module/test_viideo.py)
 - **Config**: `subsample=8`
+
+### `vqinsight_score` [↑](#categories)
+> VQ-Insight ByteDance (higher=better) · ↑ higher=better
+
+**[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: real → unavailable
+- **Packages**: qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://huggingface.co/ByteDance/Q-Insight" target="_blank">HF</a>
+- **Tests**: covered by [`test_vqinsight.py`](tests/modules/per_module/test_vqinsight.py)
+- **Config**: `video_type=aigc`, `model_name_or_path=ByteDance/Q-Insight`, `max_new_tokens=256`, `nframes=16`, `device=auto`
 
 ### `vsfa_score` [↑](#categories)
 > VSFA quality-aware feature aggregation (higher=better) · ↑ higher=better
@@ -5025,13 +5037,13 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 
 ---
 
-## Experimental — pending real backend (36 modules)
+## Experimental — pending real backend (35 modules)
 
-These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **39** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
+These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **38** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
 
 - **[`adadqa`](src/ayase/modules/adadqa.py)** — Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023) · Metrics: `adadqa_score` · Needs: adadqa
 - **[`aigcvqa`](src/ayase/modules/aigcvqa.py)** — AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024) · Metrics: `aigcvqa_aesthetic`, `aigcvqa_alignment`, `aigcvqa_technical` · Needs: aigcvqa
-- **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025) · Metrics: `aigvqa_score` · Needs: aigvqa
+- **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025) · Metrics: `aigvqa_score`
 - **[`avqt`](src/ayase/modules/avqt.py)** — Apple AVQT perceptual video quality (full-reference) · Metrics: `avqt_score`
 - **[`c3dvqa`](src/ayase/modules/c3dvqa.py)** — C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020) · Metrics: `c3dvqa_score` · Needs: c3dvqa
 - **[`deepvqa`](src/ayase/modules/deepvqa.py)** — DeepVQA spatiotemporal masking FR-VQA (ECCV 2018) · Metrics: `deepvqa_score`
@@ -5061,7 +5073,6 @@ These modules ship in the package and stay registered, but currently have **no t
 - **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014) · Metrics: `vbliinds_score`
 - **[`video_atlas`](src/ayase/modules/video_atlas.py)** — Video ATLAS temporal artifacts+stalls assessment (2018) · Metrics: `video_atlas_score` · Needs: video_atlas
 - **[`videoreward`](src/ayase/modules/videoreward.py)** — VideoReward Kling multi-dim reward model (NeurIPS 2025) · Metrics: `videoreward_mq`, `videoreward_ta`, `videoreward_vq`
-- **[`vqa2`](src/ayase/modules/vqa2.py)** — VQA^2 LMM video quality assessment (MM 2025) · Metrics: `vqa2_score` · Needs: vqa2
+- **[`vqa2`](src/ayase/modules/vqa2.py)** — VQA^2 LMM video/image quality assessment (ACM MM 2025) · Metrics: `vqa2_score` · Needs: Pillow, llava, opencv-python, torch
 - **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025) · Metrics: `vqathinker_score` · Needs: vqathinker
-- **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026) · Metrics: `vqinsight_score` · Needs: vqinsight
 - **[`worldscore`](src/ayase/modules/worldscore.py)** — WorldScore world generation evaluation (ICCV 2025) · Metrics: — (dataset-level / none) · Needs: worldscore

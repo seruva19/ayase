@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 15:47 · **208 models** across **10 sources**
+> **Version 0.1.60** · Generated 2026-07-07 18:14 · **209 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**208** models · **73** HuggingFace · **54** pyiqa · **10** sources
+**209** models · **74** HuggingFace · **54** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (50)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (54)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (51)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (54)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -49,6 +49,12 @@
 - **Parameters**: 8.3B · **Downloads**: 646
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2509.25787" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/ByteDance/Q-Insight" target="_blank">`ByteDance/Q-Insight`</a> [↑](#categories)
+> apache-2.0
+
+- **Used by**: `vqinsight`
+- **Source**: <a href="https://arxiv.org/abs/2503.22679" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Falconsai/nsfw_image_detection" target="_blank">`Falconsai/nsfw_image_detection`</a> [↑](#categories)
 > image-classification · apache-2.0

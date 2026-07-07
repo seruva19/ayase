@@ -1,15 +1,19 @@
 """AIGVQA --- Multi-Dimensional AI-Generated VQA (ICCVW 2025).
 
 GitHub: https://github.com/IntMeGroup/AIGVQA
+Weights: https://huggingface.co/IntMeGroup/ICCVW_mos0_8B (8B, InternVL2-based)
 
-The published AIGVQA model is a trained multi-dimensional quality network. There
-is no installable AIGVQA backend, and a CLIP multi-prompt proxy (spatial /
-temporal / aesthetic zero-shot contrasts) is not AIGVQA, so it is not emitted
-under the AIGVQA name. This module reports itself unavailable until a real
-AIGVQA backend is wired in.
+AIGVQA is the SJTU-IntMeGroup entry to the VQualA 2025 GenAI-Bench AIGC video
+quality challenge. It is not a stock InternVL chat model: the released
+checkpoint is a custom two-stream regression network whose forward returns a
+predicted MOS (``score1``) --- it does NOT generate a rateable text answer at
+inference, and it cannot be loaded by ``transformers`` alone (see REVIVAL NOTES).
+No installable/self-contained AIGVQA backend exists, and a CLIP multi-prompt
+proxy is not AIGVQA, so nothing is emitted under the AIGVQA name until a real
+backend is wired in. This module reports itself unavailable and leaves
+``aigvqa_score`` unset.
 
-Output field: ``aigvqa_score`` (populated only with a real backend).
-"""
+Output field: ``aigvqa_score`` (populated only with a real backend)."""
 
 import logging
 from typing import Optional
@@ -22,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class AIGVQAModule(PipelineModule):
     name = "aigvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    provisional = True  # no turnkey / self-contained real backend
     description = "AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)"
     default_config = {
         "subsample": 8,
@@ -35,35 +39,31 @@ class AIGVQAModule(PipelineModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
         self._ml_available = False
-        self._backend = None
+        self._backend = "unavailable"
         self._model = None
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        try:
-            import aigvqa  # type: ignore  # official AIGVQA backend
-
-            self._model = aigvqa
-            self._ml_available = True
-            self._backend = "aigvqa"
-            logger.info("AIGVQA initialised (aigvqa backend)")
-            return
-        except ImportError:
-            pass
-
+        # The published AIGVQA checkpoint (IntMeGroup/ICCVW_mos0_8B) is a custom
+        # two-stream InternVL2 regression model whose modeling code is NOT shipped
+        # with the weights; it needs the GitHub repo pipeline + a separate LOVE
+        # temporal.pth. There is no importable/turnkey backend,
+        # so the metric stays unset rather than falling back to a proxy.
         self._backend = "unavailable"
         self._ml_available = False
         logger.info(
-            "AIGVQA unavailable: no trained AIGVQA model is installable; "
-            "aigvqa_score will not be populated by this module."
+            "AIGVQA unavailable: IntMeGroup/ICCVW_mos0_8B has no self-contained "
+            "loader (custom repo architecture + temporal.pth required); "
+            "aigvqa_score will not be populated. See module REVIVAL NOTES."
         )
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        if not self._ml_available or self._backend != "aigvqa":
+        # Real-or-none: without the real AIGVQA backend, emit nothing.
+        if not self._ml_available or self._backend != "real":
             return sample
 
         try:
