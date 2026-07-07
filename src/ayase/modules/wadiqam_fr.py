@@ -31,21 +31,27 @@ class WaDIQaMFRModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            from ayase.runtime import resolve_torch_device
+
+            device = resolve_torch_device(self.config.get("device", "auto"))
             self._model = pyiqa.create_metric("wadiqam_fr", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
-                self._device = torch.device("cpu")
+                self._device = device
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("WaDIQaM-FR model loaded on %s", device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("WaDIQaM-FR unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

@@ -56,6 +56,7 @@ class VideoTypeClassifierModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
         self._model = None
         self._processor = None
         self._device = "cpu"
@@ -106,8 +107,10 @@ class VideoTypeClassifierModule(PipelineModule):
                 device=self._device,
             )
             self._ml_available = True
+            self._backend = "clip"
             logger.info("CLIP model loaded for video type classification on %s", self._device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("Video type classifier unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

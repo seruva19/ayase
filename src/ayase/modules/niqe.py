@@ -3,6 +3,8 @@
 NIQE is a no-reference image quality metric based on natural scene statistics.
 It compares image statistics to a pre-trained model of natural images.
 Lower scores = better quality. Typical ranges: 2-10 (lower is better).
+
+Uses the ``pyiqa`` package for the pretrained NIQE model.
 """
 
 import logging
@@ -14,6 +16,7 @@ import numpy as np
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.base_modules import NoReferenceModule
+from ayase.runtime import resolve_torch_device
 
 logger = logging.getLogger(__name__)
 
@@ -35,109 +38,89 @@ class NIQEModule(NoReferenceModule):
         self.warning_threshold = self.config.get("warning_threshold", 7.0)
         self._ml_available = False
         self._niqe_metric = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
 
-            # Create NIQE metric
-            self._niqe_metric = pyiqa.create_metric('niqe', device='cpu')
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._niqe_metric = pyiqa.create_metric("niqe", device=self._device)
             self._ml_available = True
-            logger.info("NIQE module initialized")
+            self._backend = "pyiqa"
+            logger.info("NIQE module initialized on %s", self._device)
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa package not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup NIQE: {e}")
 
     def compute_nr_score(self, sample_path: Path) -> Optional[float]:
-        """Compute NIQE score for sample.
-
-        Args:
-            sample_path: Path to video/image
-
-        Returns:
-            NIQE score (lower is better), or None if computation failed
-        """
+        """Compute NIQE score for sample (lower is better)."""
         try:
-            # Check if video or image
             sample_str = str(sample_path)
             if sample_str.lower().endswith(('.mp4', '.avi', '.mov', '.mkv', '.webm')):
                 return self._compute_niqe_video(sample_path)
-            else:
-                return self._compute_niqe_image(sample_path)
-
+            return self._score_image_path(sample_str)
         except Exception as e:
             logger.warning(f"NIQE computation failed: {e}")
             return None
 
-    def _compute_niqe_image(self, sample_path: Path) -> Optional[float]:
-        """Compute NIQE for a single image."""
+    def _score_image_path(self, path: str) -> Optional[float]:
+        """Score an image file directly (pyiqa reads the real file)."""
         try:
-            # Load image
-            img = cv2.imread(str(sample_path))
-            if img is None:
-                return None
+            import torch
 
-            # Convert BGR to RGB
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-            # Compute NIQE
-            # pyiqa expects PIL Image or path
-            score = self._niqe_metric(str(sample_path)).item()
-
-            return float(score)
-
+            with torch.no_grad():
+                return float(self._niqe_metric(path).item())
         except Exception as e:
             logger.debug(f"NIQE image computation failed: {e}")
             return None
 
-    def _compute_niqe_video(self, sample_path: Path) -> Optional[float]:
-        """Compute NIQE for video (average across frames)."""
+    def _score_frame(self, frame_bgr: np.ndarray) -> Optional[float]:
+        """Score a decoded BGR video frame via a direct RGB tensor call."""
         try:
-            cap = cv2.VideoCapture(str(sample_path))
-            try:
-                niqe_scores = []
-                frame_idx = 0
+            import torch
 
-                # Create temporary directory for frames
-                import tempfile
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    tmpdir_path = Path(tmpdir)
-
-                    while True:
-                        ret, frame = cap.read()
-                        if not ret:
-                            break
-
-                        # Subsample frames
-                        if frame_idx % self.subsample != 0:
-                            frame_idx += 1
-                            continue
-
-                        # Save frame temporarily
-                        frame_path = tmpdir_path / f"frame_{frame_idx}.png"
-                        cv2.imwrite(str(frame_path), frame)
-
-                        # Compute NIQE
-                        try:
-                            score = self._niqe_metric(str(frame_path)).item()
-                            niqe_scores.append(score)
-                        except Exception as e:
-                            logger.debug(f"Failed to compute NIQE for frame {frame_idx}: {e}")
-
-                        frame_idx += 1
-            finally:
-                cap.release()
-
-            if not niqe_scores:
-                return None
-
-            return float(np.mean(niqe_scores))
-
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            tensor = (
+                torch.from_numpy(np.ascontiguousarray(rgb))
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                / 255.0
+            ).to(self._device)
+            with torch.no_grad():
+                return float(self._niqe_metric(tensor).item())
         except Exception as e:
-            logger.debug(f"NIQE video computation failed: {e}")
+            logger.debug(f"NIQE frame scoring failed: {e}")
             return None
+
+    def _compute_niqe_video(self, sample_path: Path) -> Optional[float]:
+        """Compute NIQE for video (average across sampled frames) via tensors."""
+        cap = cv2.VideoCapture(str(sample_path))
+        if not cap.isOpened():
+            return None
+
+        scores = []
+        idx = 0
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    s = self._score_frame(frame)
+                    if s is not None:
+                        scores.append(s)
+                idx += 1
+        finally:
+            cap.release()
+
+        return float(np.mean(scores)) if scores else None
 
     def process(self, sample: Sample) -> Sample:
         """Process sample with NIQE metric."""
@@ -145,13 +128,11 @@ class NIQEModule(NoReferenceModule):
             return sample
 
         try:
-            # Compute NIQE score
             niqe_score = self.compute_nr_score(sample.path)
 
             if niqe_score is None:
                 return sample
 
-            # Store in quality metrics
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
 

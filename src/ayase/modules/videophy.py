@@ -162,8 +162,10 @@ class VideoPhyModule(PipelineModule):
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.videophy_pc_score = round(float(pc), 3)
-        sample.quality_metrics.videophy_sa_score = round(float(sa), 3)
+        if pc is not None:
+            sample.quality_metrics.videophy_pc_score = round(float(pc), 3)
+        if sa is not None:
+            sample.quality_metrics.videophy_sa_score = round(float(sa), 3)
         return sample
 
     def _score_vlm(self, sample: Sample, caption: str) -> Tuple[float, float]:
@@ -211,21 +213,21 @@ class VideoPhyModule(PipelineModule):
         sa = 1.0 if not _has_negative_issue(sa_out) else 0.0
         return pc, sa
 
-    def _score_trajectory(self, sample: Sample, caption: str) -> Tuple[float, float]:
-        # Reuse the existing trajectory-based physics score; map to [0,1]
-        # if not already in that range. Semantic adherence falls back to a
-        # neutral 0.5 since trajectories carry no caption signal.
+    def _score_trajectory(self, sample: Sample, caption: str) -> Tuple[Optional[float], Optional[float]]:
+        # Reuse the existing trajectory-based physics score for physical
+        # commonsense. Semantic adherence has no signal from trajectories,
+        # so it is left unset (None) rather than a fabricated neutral value.
         if self._physics_module is not None:
             try:
                 out = self._physics_module.process(sample)
                 if out.quality_metrics is not None and out.quality_metrics.physics_score is not None:
                     pc = float(np.clip(out.quality_metrics.physics_score, 0.0, 1.0))
-                    return pc, 0.5
+                    return pc, None
             except Exception:
                 pass
-        # No model + no trajectory → leave a neutral marker so the field
-        # is still populated and downstream consumers see something.
-        return 0.5, 0.5
+        # No model + no trajectory signal → leave both unset rather than
+        # emitting a fabricated neutral score.
+        return None, None
 
     def _sample_frames(self, path, n: int) -> Optional[np.ndarray]:
         frames = sample_frames(path, max_frames=n, color="rgb")
@@ -234,11 +236,13 @@ class VideoPhyModule(PipelineModule):
         return np.stack(frames, axis=0)
 
 
-def _parse_likert(text: str) -> float:
+def _parse_likert(text: str) -> Optional[float]:
     # VideoPhy-2 prompts ask for a 1-5 integer; we accept the first digit.
+    # If the response has no parseable rating, return None rather than a
+    # fabricated neutral value.
     m = re.search(r"[1-5]", text)
     if not m:
-        return 0.5
+        return None
     return (int(m.group(0)) - 1) / 4.0
 
 

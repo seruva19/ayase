@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SceneTaggingModule(PipelineModule):
     name = "scene_tagging"
-    description = "Tags scene context (Proxy for Tag2Text/RAM using CLIP)"
+    description = "Zero-shot scene context tags via CLIP (top-3 scene labels)"
     default_config = {"models_dir": "models"}
 
     def __init__(self, config=None):

@@ -13,15 +13,16 @@ Architecture (faithful to the paper):
     differences computed at both slow (stride-1) and fast (stride-4)
     rates — to capture frame-rate-dependent temporal quality.
 
-Tier 1: Loads pretrained weights from the official checkpoint
-        (ViTbCLIP_SpatialTemporal_modular_LSVQ.pth) if available.
-Tier 2: CLIP ViT-B/32 backbone with Laplacian spatial + SlowFast
-        temporal rectifiers (random head initialisation).
-Tier 3: ResNet-50 fallback with the same rectifier design.
+Requires the official pretrained checkpoint
+(``ViTbCLIP_SpatialTemporal_modular_LSVQ.pth``) via ``weights_path``. The
+base/spatial/temporal heads are randomly initialised until those weights are
+loaded, so — per the no-heuristic policy — the module is DISABLED (leaves
+``modularbvqa_score`` unset) whenever a matching checkpoint is not available,
+rather than emitting a fabricated score from untrained heads.
 
 GitHub: https://github.com/winwinwenwen77/ModularBVQA
 
-modularbvqa_score — higher = better quality (0-1)
+modularbvqa_score — higher = better quality (0-1); pretrained checkpoint only.
 """
 
 import logging
@@ -76,9 +77,25 @@ class ModularBVQAModule(PipelineModule):
         self._transform = None
         self._use_clip = False
         self._pretrained_loaded = False
+        self._backend = None
 
     def setup(self) -> None:
         if self.test_mode:
+            return
+
+        # ModularBVQA only produces a genuine score when the official pretrained
+        # checkpoint is loaded. Without it the base/spatial/temporal heads are
+        # randomly initialised, so any score would be fabricated. Refuse to run
+        # in that case rather than emit meaningless numbers.
+        wpath = Path(self.weights_path) if self.weights_path else None
+        if wpath is None or not wpath.exists():
+            self._backend = "unavailable"
+            self._ml_available = False
+            logger.warning(
+                "ModularBVQA: no pretrained checkpoint configured (weights_path); "
+                "module disabled (modularbvqa_score left unset). Set weights_path to "
+                "a genuine ModularBVQA checkpoint to enable."
+            )
             return
 
         try:
@@ -142,6 +159,18 @@ class ModularBVQAModule(PipelineModule):
             # Try loading pretrained weights
             self._try_load_pretrained(feat_dim, spatial_feat_dim, temporal_feat_dim)
 
+            if not self._pretrained_loaded:
+                # Checkpoint present but no matching weights loaded -> heads stay
+                # random-init. Do not fabricate a score.
+                self._backend = "unavailable"
+                self._ml_available = False
+                logger.warning(
+                    "ModularBVQA: checkpoint at %s did not yield matching head "
+                    "weights; module disabled (modularbvqa_score left unset).",
+                    wpath,
+                )
+                return
+
             self._transform = transforms.Compose([
                 transforms.ToPILImage(),
                 transforms.Resize(self.frame_size + 32),
@@ -155,10 +184,10 @@ class ModularBVQAModule(PipelineModule):
 
             self._ml_available = True
             backend = "CLIP-ViT" if self._use_clip else "ResNet-50"
-            wt_status = " (pretrained)" if self._pretrained_loaded else " (random heads)"
+            self._backend = f"port-{'clip' if self._use_clip else 'resnet'}"
             logger.info(
-                "ModularBVQA initialised on %s (%s + Laplacian spatial + SlowFast temporal)%s",
-                self._device, backend, wt_status,
+                "ModularBVQA initialised on %s (%s + Laplacian spatial + SlowFast temporal) (pretrained)",
+                self._device, backend,
             )
 
         except ImportError:

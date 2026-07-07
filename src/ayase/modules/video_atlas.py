@@ -1,49 +1,75 @@
-"""Video ATLAS — Assessment of Temporal Artifacts and Stalls (2018).
+"""Video ATLAS — Assessment of Temporal Artifacts and Stalls (Bampis et al., 2018).
 
-The built-in implementation uses frame-difference stall detection,
-Laplacian sharpness, and temporal variance analysis — these are the
-paper's core algorithmic components, not proxy heuristics.
+Video ATLAS predicts continuous QoE for streaming video from a set of
+features (VQA, rebuffering, memory) combined by a *trained* regressor
+(github.com/christosbampis/ATLAS_release).
 
-video_atlas_score — higher = better
+There is no installable ``video_atlas`` package with a callable scorer, and
+a frame-difference / Laplacian / stall heuristic is not Video ATLAS. Rather
+than emit a heuristic under the ATLAS name, this module reports itself
+unavailable until a real backend is wired in.
+
+video_atlas_score — higher = better, populated only with a real backend.
 """
-import logging, cv2, numpy as np
-from ayase.models import Sample, QualityMetrics
+
+import logging
+
+from ayase.models import Sample
 from ayase.pipeline import PipelineModule
+
 logger = logging.getLogger(__name__)
+
+
 class VideoATLASModule(PipelineModule):
-    name = "video_atlas"; description = "Video ATLAS temporal artifacts+stalls assessment (2018)"; default_config = {"subsample": 16}
+    name = "video_atlas"
+    description = "Video ATLAS temporal artifacts+stalls assessment (2018)"
+    default_config = {"subsample": 16}
     metric_groups = {
         "video_atlas_score": "nr_quality",
     }
+
     def __init__(self, config=None):
-        super().__init__(config); self.subsample = self.config.get("subsample", 16); self._ml_available = True; self._backend = "native"
-    def setup(self):
-        try: import video_atlas; self._model = video_atlas; self._backend = "video_atlas_pkg"; return
-        except ImportError: pass
-        self._backend = "native"
-    def process(self, sample):
-        if not sample.is_video: return sample
+        super().__init__(config)
+        self.subsample = self.config.get("subsample", 16)
+        self._model = None
+        self._ml_available = False
+        self._backend = None
+
+    def setup(self) -> None:
+        # Try a genuine, callable video_atlas package; anything else is a proxy.
         try:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 1: cap.release(); return sample
-            indices = np.linspace(0, total-1, min(self.subsample, total), dtype=int)
-            grays = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx); ret, f = cap.read()
-                if ret: grays.append(cv2.resize(cv2.cvtColor(f, cv2.COLOR_BGR2GRAY).astype(float), (160,120)))
-            cap.release()
-            if len(grays) < 2: return sample
-            # Perceptual quality
-            spatial = float(np.mean([min(cv2.Laplacian(g, cv2.CV_64F).var()/500, 1) for g in grays]))
-            # Stall detection: near-zero frame differences = potential stall
-            diffs = [np.mean(np.abs(grays[i]-grays[i+1])) for i in range(len(grays)-1)]
-            stall_count = sum(1 for d in diffs if d < 0.5)
-            stall_penalty = 1.0 - (stall_count / len(diffs)) * 0.5
-            # Temporal artifact: high variance in diffs
-            temporal = 1.0/(1.0+np.var(diffs)*0.01)
-            score = 0.40*spatial + 0.30*temporal + 0.30*stall_penalty
-            if sample.quality_metrics is None: sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.video_atlas_score = float(np.clip(score, 0, 1))
-        except Exception as e: logger.warning(f"Video ATLAS failed: {e}")
+            import video_atlas  # noqa: F401
+
+            if hasattr(video_atlas, "score") or hasattr(video_atlas, "evaluate"):
+                self._model = video_atlas
+                self._backend = "video_atlas_pkg"
+                self._ml_available = True
+                logger.info("Video ATLAS initialised with installed video_atlas package")
+                return
+        except ImportError:
+            pass
+        except Exception as e:  # pragma: no cover - defensive
+            logger.debug("video_atlas import failed: %s", e)
+
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.info(
+            "Video ATLAS unavailable: no callable video_atlas package with a trained "
+            "QoE regressor is installed; video_atlas_score will not be populated."
+        )
+
+    def process(self, sample: Sample) -> Sample:
+        if not self._ml_available or not sample.is_video:
+            return sample
+        try:
+            from ayase.models import QualityMetrics
+
+            scorer = getattr(self._model, "score", None) or getattr(self._model, "evaluate", None)
+            score = scorer(str(sample.path))
+            if score is not None:
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                sample.quality_metrics.video_atlas_score = float(score)
+        except Exception as e:
+            logger.warning("Video ATLAS failed: %s", e)
         return sample

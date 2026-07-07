@@ -1,14 +1,18 @@
 """TTSDS2 speech quality benchmark wrapper.
 
-TTSDS2 is a heavier TTS evaluation pipeline, so this module is opt-in by
-default. When enabled, it uses an installed TTSDS2 implementation if present or
-a deterministic multi-axis speech proxy for lightweight reproducibility tests.
+TTSDS2 is a heavier TTS evaluation pipeline, so this module is opt-in
+(``enabled=False`` by default). When enabled it uses an installed TTSDS2
+implementation. A generic signal-based speech-quality heuristic is not
+TTSDS2, so it is not emitted under the TTSDS2 name: if the ``ttsds2`` package
+is not installed the module reports itself unavailable.
+
+ttsds2_score — aggregate speech quality (0-1, higher=better), populated only
+with the real TTSDS2 backend.
 """
 
 import logging
 from typing import Optional
 
-from ayase.audio import audio_feature_summary, load_audio, speech_quality_proxy
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -40,7 +44,7 @@ class TTSDS2Module(PipelineModule):
         super().__init__(config)
         self.enabled = self.config.get("enabled", False)
         self.sample_rate = self.config.get("sample_rate", 16000)
-        self._backend = "signal_proxy"
+        self._backend = None
         self._model = None
 
     def setup(self) -> None:
@@ -53,23 +57,22 @@ class TTSDS2Module(PipelineModule):
             self._backend = "ttsds2"
             logger.info("TTSDS2 initialised with installed package")
         except ImportError:
-            logger.info("TTSDS2 package not installed; using signal proxy")
+            self._backend = "unavailable"
+            logger.info(
+                "TTSDS2 unavailable: the ttsds2 package is not installed; "
+                "ttsds2_score will not be populated by this module."
+            )
         except Exception as e:
-            logger.warning("TTSDS2 setup failed (%s); using signal proxy", e)
+            self._backend = "unavailable"
+            logger.warning("TTSDS2 setup failed (%s); reporting unavailable", e)
 
     def process(self, sample: Sample) -> Sample:
-        if not self.enabled:
+        if not self.enabled or self._backend != "ttsds2":
             return sample
         try:
-            score = self._score_package(sample.path) if self._backend == "ttsds2" else None
+            score = self._score_package(sample.path)
             if score is None:
-                audio = load_audio(sample.path, target_sr=self.sample_rate)
-                if audio is None:
-                    return sample
-                base = speech_quality_proxy(audio, sr=self.sample_rate)
-                feats = audio_feature_summary(audio, sr=self.sample_rate)
-                stability = 1.0 - min(feats["spectral_flux"], 1.0)
-                score = float(max(0.0, min(1.0, 0.75 * base + 0.25 * stability)))
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()

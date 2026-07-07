@@ -1,15 +1,23 @@
 """ST-MAD — Spatiotemporal Most Apparent Distortion (TIP 2012).
 
-Full-reference metric using spatiotemporal slices + contrast masking.
-st_mad — lower = better (distortion magnitude)
+MAD (Larson & Chandler, "Most apparent distortion", JEI 2010) and its
+spatiotemporal extension ST-MAD are two-stage full-reference metrics: a
+detection stage using a contrast-sensitivity-weighted local-contrast model in
+the near-threshold regime, and an appearance stage using log-Gabor subband
+statistics, combined by a distortion-level-dependent weighting.
+
+A previous revision approximated this with a contrast-masking-weighted mean
+absolute error (``|dist - ref|`` weighted by an inverse-Laplacian mask). That
+is not the MAD algorithm — it shares neither the CSF detection stage nor the
+log-Gabor appearance stage — so it does not measure "most apparent
+distortion". There is no faithful ST-MAD reference implementation bundled, so
+the metric is reported as unavailable rather than emitting a proxy value.
 """
 import logging
-import cv2
-import numpy as np
 from pathlib import Path
 from typing import Optional
 
-from ayase.models import Sample, QualityMetrics
+from ayase.models import Sample
 from ayase.base_modules import ReferenceBasedModule
 
 logger = logging.getLogger(__name__)
@@ -27,75 +35,21 @@ class STMADModule(ReferenceBasedModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
+        self._backend = None
 
-    def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
-        try:
-            s_ext = str(sample_path).lower()
-            if s_ext.endswith((".mp4", ".avi", ".mov", ".mkv", ".webm")):
-                return self._score_video(str(sample_path), str(reference_path))
-            else:
-                return self._score_image(str(sample_path), str(reference_path))
-        except Exception as e:
-            logger.warning(f"ST-MAD failed: {e}")
-            return None
+    def setup(self) -> None:
+        if getattr(self, "test_mode", False):
+            return
+        self._backend = "unavailable"
+        logger.info(
+            "ST-MAD: no faithful implementation of the MAD two-stage "
+            "(CSF detection + log-Gabor appearance) algorithm is available; "
+            "metric reported as unavailable."
+        )
 
-    def _score_image(self, sample_p: str, ref_p: str) -> Optional[float]:
-        img = cv2.imread(sample_p, cv2.IMREAD_GRAYSCALE)
-        ref = cv2.imread(ref_p, cv2.IMREAD_GRAYSCALE)
-        if img is None or ref is None:
-            return None
-        return self._spatial_mad(img, ref)
-
-    def _score_video(self, sample_p: str, ref_p: str) -> Optional[float]:
-        cap_s = cv2.VideoCapture(sample_p)
-        cap_r = cv2.VideoCapture(ref_p)
-        try:
-            total = min(
-                int(cap_s.get(cv2.CAP_PROP_FRAME_COUNT)),
-                int(cap_r.get(cv2.CAP_PROP_FRAME_COUNT)),
-            )
-            if total <= 0:
-                return None
-            indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-            spatial_mads = []
-            prev_s, prev_r = None, None
-
-            for idx in indices:
-                cap_s.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                cap_r.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret_s, frame_s = cap_s.read()
-                ret_r, frame_r = cap_r.read()
-                if not (ret_s and ret_r):
-                    continue
-
-                gray_s = cv2.cvtColor(frame_s, cv2.COLOR_BGR2GRAY)
-                gray_r = cv2.cvtColor(frame_r, cv2.COLOR_BGR2GRAY)
-
-                # Spatial MAD per frame
-                spatial_mads.append(self._spatial_mad(gray_s, gray_r))
-
-                # Temporal MAD: difference of frame diffs
-                if prev_s is not None:
-                    diff_s = np.abs(gray_s.astype(float) - prev_s.astype(float))
-                    diff_r = np.abs(gray_r.astype(float) - prev_r.astype(float))
-                    temporal_err = np.mean(np.abs(diff_s - diff_r))
-                    spatial_mads[-1] = 0.7 * spatial_mads[-1] + 0.3 * temporal_err
-
-                prev_s, prev_r = gray_s, gray_r
-
-            return float(np.mean(spatial_mads)) if spatial_mads else None
-        finally:
-            cap_s.release()
-            cap_r.release()
-
-    def _spatial_mad(self, img: np.ndarray, ref: np.ndarray) -> float:
-        """Visibility-weighted spatial MAD with contrast masking."""
-        h, w = img.shape[:2]
-        ref = cv2.resize(ref, (w, h))
-        img_f = img.astype(np.float64)
-        ref_f = ref.astype(np.float64)
-        diff = np.abs(img_f - ref_f)
-        # Contrast masking
-        ref_contrast = cv2.Laplacian(ref_f, cv2.CV_64F)
-        mask = 1.0 / (1.0 + np.abs(ref_contrast) * 0.01)
-        return float(np.mean(diff * mask))
+    def compute_reference_score(
+        self, sample_path: Path, reference_path: Path
+    ) -> Optional[float]:
+        # No faithful ST-MAD backend -> leave st_mad unset rather than emit a
+        # contrast-masked MAE proxy that misrepresents the published metric.
+        return None

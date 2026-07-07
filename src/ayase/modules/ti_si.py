@@ -44,6 +44,7 @@ class TISIModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.max_frames = self.config.get("max_frames", 300)
+        self._backend = "algorithmic"
 
     def _compute_si(self, gray: np.ndarray) -> float:
         """Standard deviation of Sobel-filtered luminance frame."""

@@ -1,4 +1,13 @@
-"""PointSSIM — Structural Similarity for Point Clouds (2020). pointssim_score — 0-1, higher = better"""
+"""PointSSIM — Structural Similarity for Point Clouds (2020).
+
+This module computes a symmetric Chamfer-distance similarity between the two
+point clouds as a numpy geometric proxy. It is NOT the exact PointSSIM
+structural-similarity formulation (which compares local geometric/normal/
+curvature feature statistics); treat ``pointssim_score`` as an approximate
+geometric similarity.
+
+pointssim_score — 0-1, higher = better.
+"""
 import logging, numpy as np
 from pathlib import Path
 from typing import Optional
@@ -10,6 +19,9 @@ class PointSSIMModule(ReferenceBasedModule):
     metric_groups = {
         "pointssim_score": "fr_quality",
     }
+    def __init__(self, config=None):
+        super().__init__(config)
+        self._backend = "numpy"
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         ext = sample_path.suffix.lower()
         if ext not in (".ply", ".pcd"): return None

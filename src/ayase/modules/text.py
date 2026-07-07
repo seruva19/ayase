@@ -35,6 +35,7 @@ class TextDetectionModule(PipelineModule):
         
         self._ocr_available = False
         self._engine = None # 'paddle' or 'tesseract'
+        self._backend = None
         self._model = None
         self.pytesseract = None
 
@@ -58,6 +59,7 @@ class TextDetectionModule(PipelineModule):
                     kw["lang"] = self.lang
                 self._model = PaddleOCR(**kw)
                 self._engine = 'paddle'
+                self._backend = 'paddle'
                 self._ocr_available = True
                 return
             except ImportError:
@@ -70,9 +72,11 @@ class TextDetectionModule(PipelineModule):
             import pytesseract
             pytesseract.get_tesseract_version()
             self._engine = 'tesseract'
+            self._backend = 'tesseract'
             self.pytesseract = pytesseract
             self._ocr_available = True
         except Exception:
+            self._backend = "unavailable"
             logger.warning("Tesseract not found. OCR disabled.")
 
     def process(self, sample: Sample) -> Sample:

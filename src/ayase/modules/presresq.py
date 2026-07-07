@@ -1,14 +1,13 @@
 """PreResQ-R1 -- Fine-Grained Rank-and-Score VQA (2025).
 
-Quality assessment via ranking: frames are compared against quality-level
-text prompts using CLIP, producing a ranking-based quality score.
-
-Implementation:
-    CLIP backbone compares video frames to a set of quality-level text
-    prompts (from "very poor quality" to "excellent quality").  Quality is
-    derived from the softmax distribution over prompt similarities,
-    yielding a rank-aware continuous score.  Falls back to ResNet-50 with
-    learned quality regressor if CLIP is unavailable.
+This module implements a CLIP zero-shot rank-and-score quality signal in the
+CLIP-IQA family: video frames are compared against an ordered set of
+quality-level text prompts (worst -> best) and the softmax over prompt
+similarities yields a rank-aware continuous score. It uses a real, pretrained
+CLIP backbone (config-selectable via ``clip_model``); it does NOT load the
+trained PreResQ-R1 weights, so treat ``presresq_score`` as a CLIP-IQA-style
+proxy rather than the published model's output. When CLIP is unavailable the
+module emits no score.
 
 presresq_score -- higher = better quality (0-1)
 """
@@ -63,28 +62,20 @@ class PreResQModule(PipelineModule):
         self._clip_model = None
         self._clip_preprocess = None
         self._text_features = None
-        self._resnet = None
-        self._resnet_transform = None
-        self._quality_regressor = None
         self._device = "cpu"
         self._ml_available = False
-        self._backend = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Tier 1: CLIP (preferred for rank-and-score via prompts)
         if self._try_clip_setup():
             return
 
-        # Tier 2: ResNet-50 fallback
-        if self._try_resnet_setup():
-            return
-
+        self._backend = "unavailable"
         logger.warning(
-            "PreResQ: no ML backend available. "
-            "Install with: pip install torch torchvision  (or: pip install clip)"
+            "PreResQ unavailable: CLIP backend not available (pip install clip)"
         )
 
     def _try_clip_setup(self) -> bool:
@@ -120,51 +111,6 @@ class PreResQModule(PipelineModule):
             logger.debug("CLIP setup failed: %s", e)
             return False
 
-    def _try_resnet_setup(self) -> bool:
-        try:
-            import torch
-            import torchvision.models as models
-            from torchvision import transforms
-
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
-
-            resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-            self._resnet = torch.nn.Sequential(*list(resnet.children())[:-1])
-            self._resnet.eval().to(self._device)
-
-            self._resnet_transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225],
-                ),
-            ])
-
-            # Quality regressor with ranking-aware output
-            self._quality_regressor = torch.nn.Sequential(
-                torch.nn.Linear(2048, 512),
-                torch.nn.ReLU(),
-                torch.nn.Dropout(0.2),
-                torch.nn.Linear(512, 128),
-                torch.nn.ReLU(),
-                torch.nn.Linear(128, 1),
-                torch.nn.Sigmoid(),
-            ).to(self._device)
-            self._quality_regressor.eval()
-
-            self._ml_available = True
-            self._backend = "resnet"
-            logger.info("PreResQ initialised with ResNet-50 on %s", self._device)
-            return True
-
-        except ImportError:
-            return False
-        except Exception as e:
-            logger.debug("ResNet setup failed: %s", e)
-            return False
-
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
             return sample
@@ -174,10 +120,7 @@ class PreResQModule(PipelineModule):
             if not frames:
                 return sample
 
-            if self._backend == "clip":
-                score = self._compute_clip_rank_score(sample, frames)
-            else:
-                score = self._compute_resnet_score(frames)
+            score = self._compute_clip_rank_score(sample, frames)
 
             if score is not None:
                 if sample.quality_metrics is None:
@@ -230,27 +173,6 @@ class PreResQModule(PipelineModule):
 
         return score
 
-    def _compute_resnet_score(self, frames: List[np.ndarray]) -> Optional[float]:
-        """Quality scoring via ResNet-50 features."""
-        import torch
-
-        frame_scores = []
-        for frame in frames:
-            try:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                tensor = self._resnet_transform(rgb).unsqueeze(0).to(self._device)
-                with torch.no_grad():
-                    feat = self._resnet(tensor).flatten()
-                    score = self._quality_regressor(feat.unsqueeze(0)).item()
-                frame_scores.append(score)
-            except Exception:
-                continue
-
-        if not frame_scores:
-            return None
-
-        return float(np.mean(frame_scores))
-
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
         try:
             rgb_frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
@@ -261,8 +183,6 @@ class PreResQModule(PipelineModule):
 
     def on_dispose(self) -> None:
         self._clip_model = None
-        self._resnet = None
-        self._quality_regressor = None
         self._text_features = None
         import gc
 

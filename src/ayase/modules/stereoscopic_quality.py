@@ -48,6 +48,7 @@ class StereoscopicQualityModule(PipelineModule):
         self.max_frames = self.config.get("max_frames", 30)
         self.max_disp_pct = self.config.get("max_disparity_percent", 3.0)
         self.warning_threshold = self.config.get("warning_threshold", 50.0)
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         logger.info("Stereoscopic quality: OpenCV stereo matching initialised")
@@ -111,8 +112,8 @@ class StereoscopicQualityModule(PipelineModule):
         disp = stereo.compute(left_gray, right_gray).astype(np.float32) / 16.0
         return disp
 
-    def _evaluate_stereo(self, left: np.ndarray, right: np.ndarray) -> float:
-        """Score stereo quality for one frame pair.  Returns 0-100."""
+    def _evaluate_stereo(self, left: np.ndarray, right: np.ndarray) -> Optional[float]:
+        """Score stereo quality for one frame pair.  Returns 0-100 or None."""
         left_gray = cv2.cvtColor(left, cv2.COLOR_BGR2GRAY)
         right_gray = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
 
@@ -127,7 +128,9 @@ class StereoscopicQualityModule(PipelineModule):
         # 1. Depth comfort: disparity range within comfortable limits
         valid = disp > 0
         if valid.sum() < 100:
-            return 50.0
+            # Too few valid disparities to assess this pair -> skip it rather
+            # than fabricate a mid-scale score.
+            return None
 
         disp_range = float(np.percentile(disp[valid], 95) - np.percentile(disp[valid], 5))
         max_comfortable = w * self.max_disp_pct / 100.0
@@ -212,7 +215,9 @@ class StereoscopicQualityModule(PipelineModule):
 
         scores = []
         left, right = self._split_views(first_frame, fmt)
-        scores.append(self._evaluate_stereo(left, right))
+        first_score = self._evaluate_stereo(left, right)
+        if first_score is not None:
+            scores.append(first_score)
 
         idx = 1
         while len(scores) < self.max_frames:
@@ -221,7 +226,9 @@ class StereoscopicQualityModule(PipelineModule):
                 break
             if idx % self.subsample == 0:
                 left, right = self._split_views(frame, fmt)
-                scores.append(self._evaluate_stereo(left, right))
+                s = self._evaluate_stereo(left, right)
+                if s is not None:
+                    scores.append(s)
             idx += 1
 
         cap.release()

@@ -47,6 +47,7 @@ class PerceptualFRModule(PipelineModule):
         self.device_config = self.config.get("device", "auto")
         self.device = None
         self._ml_available = False
+        self._backend = "unavailable"
         self._fsim_fn = None
         self._gmsd_fn = None
         self._vsi_fn = None
@@ -56,20 +57,22 @@ class PerceptualFRModule(PipelineModule):
             import torch
             import piq
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            from ayase.runtime import resolve_torch_device
+
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             self._fsim_fn = piq.fsim
             self._gmsd_fn = piq.gmsd
             self._vsi_fn = piq.vsi
             self._ml_available = True
+            self._backend = "piq"
             logger.info(f"Perceptual FR metrics (FSIM/GMSD/VSI) initialised on {self.device}")
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("piq not installed. Install with: pip install piq")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup perceptual FR metrics: {e}")
 
     # ------------------------------------------------------------------
@@ -166,23 +169,24 @@ class PerceptualFRModule(PipelineModule):
         fsim_vals, gmsd_vals, vsi_vals = [], [], []
         idx = 0
 
-        while True:
-            r1, ref_f = ref_cap.read()
-            r2, dist_f = dist_cap.read()
-            if not r1 or not r2:
-                break
-            if idx % self.subsample == 0:
-                f, g, v = self._score_pair(ref_f, dist_f)
-                if f is not None:
-                    fsim_vals.append(f)
-                if g is not None:
-                    gmsd_vals.append(g)
-                if v is not None:
-                    vsi_vals.append(v)
-            idx += 1
-
-        ref_cap.release()
-        dist_cap.release()
+        try:
+            while True:
+                r1, ref_f = ref_cap.read()
+                r2, dist_f = dist_cap.read()
+                if not r1 or not r2:
+                    break
+                if idx % self.subsample == 0:
+                    f, g, v = self._score_pair(ref_f, dist_f)
+                    if f is not None:
+                        fsim_vals.append(f)
+                    if g is not None:
+                        gmsd_vals.append(g)
+                    if v is not None:
+                        vsi_vals.append(v)
+                idx += 1
+        finally:
+            ref_cap.release()
+            dist_cap.release()
 
         return (
             float(np.mean(fsim_vals)) if fsim_vals else None,

@@ -56,6 +56,7 @@ class PUMetricsModule(ReferenceBasedModule):
         self.subsample = self.config.get("subsample", 5)
         self.nits_range = self.config.get("assume_nits_range", 10000.0)
         self._ml_available = True  # Pure numpy, always available
+        self._backend = "numpy"
 
     def setup(self) -> None:
         logger.info("PU metrics module initialised (numpy-based)")

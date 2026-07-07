@@ -35,6 +35,7 @@ class StabilizedMotionModule(PipelineModule):
         self.stabilize = self.config.get("stabilize", True)
         self.high_camera_motion_threshold = self.config.get("high_camera_motion_threshold", 5.0)
         self.static_threshold = self.config.get("static_threshold", 0.1)
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:

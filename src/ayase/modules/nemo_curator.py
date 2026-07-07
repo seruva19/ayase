@@ -101,11 +101,13 @@ class NemoCuratorModule(PipelineModule):
         # loaded via PyTorchModelHubMixin, NOT AutoModelForSequenceClassification.
         if preferred in ("auto", "deberta"):
             try:
-                import torch
+                import torch  # noqa: F401
                 from transformers import AutoConfig, AutoTokenizer
 
+                from ayase.runtime import resolve_torch_device
+
                 model_name = self.config.get("model_name", _DEBERTA_MODEL_ID)
-                device = "cuda" if torch.cuda.is_available() else "cpu"
+                device = resolve_torch_device(self.config.get("device", "auto"))
 
                 QualityModel = _get_quality_model_class()
 
@@ -150,6 +152,7 @@ class NemoCuratorModule(PipelineModule):
             except Exception as e:
                 logger.warning(f"FastText init failed: {e}")
 
+        self._backend = "unavailable"
         logger.warning("NeMo Curator: no backend available (install transformers+torch or fasttext)")
 
     def process(self, sample: Sample) -> Sample:

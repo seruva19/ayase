@@ -38,12 +38,17 @@ class WatermarkClassificationModule(PipelineModule):
         self._ml_available = False
         self._use_hf = False
         self._transform = None
+        self._backend = None
 
     def setup(self):
         try:
-            import torch
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            import torch  # noqa: F401
+
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("torch not installed. Watermark classifier disabled.")
             return
 
@@ -72,6 +77,7 @@ class WatermarkClassificationModule(PipelineModule):
                 ])
                 self._ml_available = True
                 self._use_hf = False
+                self._backend = "resnet50_custom"
                 return
             except Exception as e:
                 logger.warning(f"Failed to load custom weights: {e}. Trying HuggingFace fallback.")
@@ -86,7 +92,9 @@ class WatermarkClassificationModule(PipelineModule):
             self._hf_pipe = hf_pipeline("image-classification", model=hf_model, device=self._device)
             self._ml_available = True
             self._use_hf = True
+            self._backend = f"hf:{hf_model}"
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to load image classifier: {e}")
 
     def process(self, sample: Sample) -> Sample:

@@ -43,6 +43,7 @@ class VMAFNEGModule(ReferenceBasedModule):
         self.warning_threshold = self.config.get("warning_threshold", 70.0)
         self._ml_available = False
         self._ffmpeg_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -55,15 +56,19 @@ class VMAFNEGModule(ReferenceBasedModule):
             if "libvmaf" in result.stdout or "vmaf" in result.stdout:
                 self._ffmpeg_available = True
                 self._ml_available = True
+                self._backend = "ffmpeg_libvmaf"
                 logger.info("VMAF NEG module initialised (FFmpeg libvmaf)")
             else:
+                self._backend = "unavailable"
                 logger.warning(
                     "FFmpeg found but libvmaf not available. "
                     "VMAF NEG requires FFmpeg with libvmaf support."
                 )
         except FileNotFoundError:
+            self._backend = "unavailable"
             logger.warning("FFmpeg not found. VMAF NEG requires FFmpeg with libvmaf.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup VMAF NEG: {e}")
 
     def compute_reference_score(

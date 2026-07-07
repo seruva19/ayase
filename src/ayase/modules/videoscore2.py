@@ -31,9 +31,9 @@ class VideoScore2Module(PipelineModule):
         {"id": "TIGER-Lab/VideoScore2", "type": "huggingface", "task": "VideoScore2 VLM for 3D generative video evaluation"},
     ]
     metric_info = {
-        "videoscore2_visual": "Visual quality subscore (0-10, higher=better)",
-        "videoscore2_alignment": "Text-to-video alignment subscore (0-10, higher=better)",
-        "videoscore2_physical": "Physical/common-sense consistency subscore (0-10, higher=better)",
+        "videoscore2_visual": "Visual quality subscore (1-5, higher=better)",
+        "videoscore2_alignment": "Text-to-video alignment subscore (1-5, higher=better)",
+        "videoscore2_physical": "Physical/common-sense consistency subscore (1-5, higher=better)",
     }
     metric_groups = {
         "videoscore2_alignment": "alignment",
@@ -105,6 +105,7 @@ class VideoScore2Module(PipelineModule):
             self._backend = "transformers"
             logger.info("VideoScore2 model loaded on %s", self._device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("VideoScore2 unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -180,7 +181,14 @@ class VideoScore2Module(PipelineModule):
             r"text-to-video alignment:\s*(\d+).*?"
             r"physical/common-sense consistency:\s*(\d+)"
         )
-        match = re.search(pattern, output_text, re.DOTALL | re.IGNORECASE)
+        # VideoScore2 emits a <think>...</think> chain-of-thought block before
+        # the final scores; parse the answer region after the last </think> so a
+        # score mentioned inside the reasoning does not shadow the real answer.
+        answer_text = output_text.rsplit("</think>", 1)[-1]
+        match = re.search(pattern, answer_text, re.DOTALL | re.IGNORECASE)
+        if match is None:
+            # Fall back to the full decode (e.g. no think block was emitted).
+            match = re.search(pattern, output_text, re.DOTALL | re.IGNORECASE)
         hard_scores = {
             "visual_quality": int(match.group(1)) if match else None,
             "text_to_video_alignment": int(match.group(2)) if match else None,
@@ -223,9 +231,12 @@ class VideoScore2Module(PipelineModule):
 
         generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=False)
         pattern = r"(?:\(\d+\)\s*|\n\s*)?" + re.escape(prompt_text)
-        match = re.search(pattern, generated_text, flags=re.IGNORECASE)
-        if not match:
+        # Use the last occurrence: the label may also appear inside the
+        # <think>...</think> reasoning block, but the scored answer is last.
+        matches = list(re.finditer(pattern, generated_text, flags=re.IGNORECASE))
+        if not matches:
             return -1
+        match = matches[-1]
 
         tail = generated_text[match.end():]
         digit_match = re.search(r"\d", tail)

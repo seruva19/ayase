@@ -44,6 +44,7 @@ class VideoTextMatchingModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._is_xclip = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -89,6 +90,7 @@ class VideoTextMatchingModule(PipelineModule):
                     )
                     self._is_xclip = True
                     self._ml_available = True
+                    self._backend = "xclip"
                     return
                 except Exception as e:
                     logger.warning(f"Failed to load X-CLIP: {e}. Falling back to standard CLIP.")
@@ -120,10 +122,13 @@ class VideoTextMatchingModule(PipelineModule):
             )
 
             self._ml_available = True
+            self._backend = "clip"
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("Transformers not installed.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup VideoTextMatching: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -170,7 +175,10 @@ class VideoTextMatchingModule(PipelineModule):
                 sample.quality_metrics = QualityMetrics()
 
             sample.quality_metrics.video_text_score = float(normalized)
-            sample.quality_metrics.video_text_temporal = 1.0
+            # X-CLIP emits a single video-level alignment logit and carries no
+            # per-frame consistency signal, so temporal consistency is left
+            # unset rather than fabricated as a perfect 1.0.
+            sample.quality_metrics.video_text_temporal = None
 
             if normalized < self.min_score_threshold:
                 sample.validation_issues.append(

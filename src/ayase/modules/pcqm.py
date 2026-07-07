@@ -1,4 +1,12 @@
-"""PCQM — Point Cloud Quality Metric (2020). pcqm_score — higher = better"""
+"""PCQM — Point Cloud Quality Metric (2020).
+
+Simplified geometry+color formulation: point-to-point nearest-neighbour
+squared distance (geometry) combined with nearest-neighbour colour error.
+This is a numpy approximation of the full PCQM (which uses local
+curvature/lightness/chroma/contrast statistics), not an exact port.
+
+pcqm_score — higher = better.
+"""
 import logging, numpy as np
 from pathlib import Path
 from typing import Optional
@@ -10,6 +18,9 @@ class PCQMModule(ReferenceBasedModule):
     metric_groups = {
         "pcqm_score": "fr_quality",
     }
+    def __init__(self, config=None):
+        super().__init__(config)
+        self._backend = "numpy"
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         ext = sample_path.suffix.lower()
         if ext not in (".ply", ".pcd"): return None

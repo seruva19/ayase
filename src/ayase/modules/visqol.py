@@ -41,7 +41,7 @@ class ViSQOLModule(PipelineModule):
         # Try Python bindings
         try:
             from visqol import visqol_lib_py
-            self._backend = "python"
+            self._backend = "visqol_python"
             self._ml_available = True
             logger.info("ViSQOL module initialised (Python bindings)")
             return
@@ -54,7 +54,7 @@ class ViSQOLModule(PipelineModule):
                 ["visqol", "--help"], capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0 or "visqol" in result.stdout.lower():
-                self._backend = "cli"
+                self._backend = "visqol_cli"
                 self._ml_available = True
                 logger.info("ViSQOL module initialised (CLI)")
                 return
@@ -63,6 +63,7 @@ class ViSQOLModule(PipelineModule):
         except Exception:
             pass
 
+        self._backend = "unavailable"
         logger.warning("ViSQOL not available. Install from: https://github.com/google/visqol")
 
     def _compute_visqol_python(
@@ -125,7 +126,7 @@ class ViSQOLModule(PipelineModule):
             return sample
 
         try:
-            if self._backend == "python":
+            if self._backend == "visqol_python":
                 score = self._compute_visqol_python(str(reference), str(sample.path))
             else:
                 score = self._compute_visqol_cli(str(reference), str(sample.path))

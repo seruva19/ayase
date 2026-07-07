@@ -42,16 +42,22 @@ class WatermarkRobustnessModule(PipelineModule):
         self.max_frames = self.config.get("max_frames", 30)
         self._decoder = None
         self._decoder_available = False
+        # DCT/LSB signal analysis is always available (deterministic algorithm);
+        # the imwatermark decoder augments it when installed.
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         try:
             from imwatermark import WatermarkDecoder
             self._decoder = WatermarkDecoder("bytes", 32)
             self._decoder_available = True
+            self._backend = "imwatermark"
             logger.info("Watermark robustness: imwatermark decoder available")
         except ImportError:
-            logger.info("imwatermark not installed, using heuristic detection only")
+            self._backend = "algorithmic"
+            logger.info("imwatermark not installed, using DCT/LSB signal analysis only")
         except Exception as e:
+            self._backend = "algorithmic"
             logger.warning(f"Watermark decoder init failed: {e}")
 
     # ------------------------------------------------------------------

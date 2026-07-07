@@ -25,6 +25,7 @@ class SphericalPSNRModule(ReferenceBasedModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 8)
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         ref = getattr(sample, "reference_path", None)
@@ -47,7 +48,13 @@ class SphericalPSNRModule(ReferenceBasedModule):
         return scores.get("ws_psnr") if scores else None
 
     def _compute(self, sample_p, ref_p):
-        """Heuristic: equirectangular area-weighted PSNR."""
+        """Equirectangular area-weighted spherical PSNR (WS-PSNR / CPP-PSNR).
+
+        WS-PSNR and CPP-PSNR are the exact area-weighting formulas from the
+        MPEG/JVET 360-video tooling. S-PSNR proper requires sphere point-set
+        sampling; without it we report the standard (unweighted) equirectangular
+        PSNR under the ``s_psnr`` field.
+        """
         img = cv2.imread(sample_p, cv2.IMREAD_GRAYSCALE)
         ref = cv2.imread(ref_p, cv2.IMREAD_GRAYSCALE)
         if img is None or ref is None: return None
@@ -57,7 +64,7 @@ class SphericalPSNRModule(ReferenceBasedModule):
         ref_f = ref.astype(np.float64)
         diff_sq = (img_f - ref_f) ** 2
 
-        # Standard PSNR (proxy for S-PSNR)
+        # Standard (unweighted) equirectangular PSNR
         mse = np.mean(diff_sq)
         s_psnr = 10 * np.log10(255**2 / max(mse, 1e-10))
 

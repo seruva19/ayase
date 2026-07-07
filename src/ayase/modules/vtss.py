@@ -37,6 +37,8 @@ class VTSSModule(PipelineModule):
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
+        # Deterministic weighted fusion of upstream metrics (ayase aggregate).
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:

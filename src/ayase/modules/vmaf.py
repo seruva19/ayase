@@ -44,6 +44,7 @@ class VMAFModule(ReferenceBasedModule):
         self.warning_threshold = self.config.get("warning_threshold", 70.0)
         self._ml_available = False
         self._ffmpeg_vmaf_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -79,7 +80,15 @@ class VMAFModule(ReferenceBasedModule):
                 else:
                     self._ml_available = True  # FFmpeg method available
 
+            if self._ffmpeg_vmaf_available:
+                self._backend = "ffmpeg_libvmaf"
+            elif self._ml_available:
+                self._backend = "vmaf_python"
+            else:
+                self._backend = "unavailable"
+
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup VMAF: {e}")
 
     def compute_reference_score(

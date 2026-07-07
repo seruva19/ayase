@@ -70,6 +70,7 @@ class T2VEvalModule(PipelineModule):
         self._w_real = self.config.get("realness_weight", 0.35)
         self._w_quality = self.config.get("quality_weight", 0.30)
         self._ml_available = False
+        self._backend = None
         self._model = None
         self._processor = None
         self._device = "cpu"
@@ -150,8 +151,10 @@ class T2VEvalModule(PipelineModule):
             )
 
             self._ml_available = True
+            self._backend = "clip"
             logger.info("T2VEval (CLIP) initialised on %s", self._device)
         except (ImportError, Exception) as e:
+            self._backend = "unavailable"
             logger.warning("T2VEval setup failed: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -273,15 +276,20 @@ class T2VEvalModule(PipelineModule):
                 alignment = float(
                     torch.clamp((sims.mean() - 0.15) / 0.20, 0.0, 1.0).item()
                 )
+            score = (
+                self._w_align * alignment
+                + self._w_real * realness
+                + self._w_quality * quality
+            )
         else:
-            # Without caption: rely on quality + realness only
-            alignment = 0.5
+            # Without a caption the alignment component is undefined; combine the
+            # caption-independent realness + quality with renormalised weights
+            # rather than fabricating a mid-scale alignment value.
+            denom = self._w_real + self._w_quality
+            if denom <= 0:
+                return None
+            score = (self._w_real * realness + self._w_quality * quality) / denom
 
-        score = (
-            self._w_align * alignment
-            + self._w_real * realness
-            + self._w_quality * quality
-        )
         return float(np.clip(score, 0.0, 1.0))
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:

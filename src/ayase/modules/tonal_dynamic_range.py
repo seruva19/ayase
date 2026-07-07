@@ -37,6 +37,7 @@ class TonalDynamicRangeModule(PipelineModule):
         self.low_pct = self.config.get("low_percentile", 1)
         self.high_pct = self.config.get("high_percentile", 99)
         self.subsample = self.config.get("subsample", 8)
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:

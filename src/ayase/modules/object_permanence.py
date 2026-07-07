@@ -52,6 +52,7 @@ class ObjectPermanenceModule(PipelineModule):
         self._bg_subtractor = None
         self._use_yolo = False
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         if self.backend in ("yolo", "auto"):
@@ -60,16 +61,19 @@ class ObjectPermanenceModule(PipelineModule):
                 self._yolo_model = YOLO("yolov8n.pt")
                 self._use_yolo = True
                 self._ml_available = True
+                self._backend = "yolo"
                 logger.info("Object permanence: YOLO backend initialised")
                 return
             except ImportError:
                 if self.backend == "yolo":
+                    self._backend = "unavailable"
                     logger.warning("ultralytics not installed")
                     return
                 logger.info("ultralytics not found, falling back to contour backend")
             except Exception as e:
                 logger.warning(f"YOLO init failed: {e}")
                 if self.backend == "yolo":
+                    self._backend = "unavailable"
                     return
 
         # Fallback: background-subtraction-based contour detection.
@@ -81,6 +85,7 @@ class ObjectPermanenceModule(PipelineModule):
             history=20, varThreshold=40, detectShadows=False
         )
         self._ml_available = True
+        self._backend = "contour"
         logger.info("Object permanence: contour (BGS) backend initialised")
 
     # ------------------------------------------------------------------

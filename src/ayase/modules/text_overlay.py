@@ -27,14 +27,17 @@ class TextOverlayModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
-            import cv2
+            import cv2  # noqa: F401
 
             self._ml_available = True
+            self._backend = "algorithmic"
             logger.info("Text overlay detector ready")
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("Text overlay detector unavailable: OpenCV not installed")
 
     def process(self, sample: Sample) -> Sample:

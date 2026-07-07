@@ -26,6 +26,7 @@ class PlaybackSpeedModule(PipelineModule):
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -38,17 +39,18 @@ class PlaybackSpeedModule(PipelineModule):
 
             subsample = self.config.get("subsample", 16)
             cap = cv2.VideoCapture(str(sample.path))
-            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
+            try:
+                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                indices = list(range(0, total, max(1, total // subsample)))[:subsample]
 
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
-            cap.release()
+                frames = []
+                for idx in indices:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                    ret, frame = cap.read()
+                    if ret:
+                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+            finally:
+                cap.release()
 
             if len(frames) < 2:
                 return sample

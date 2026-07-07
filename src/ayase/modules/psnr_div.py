@@ -1,8 +1,11 @@
 """PSNR_DIV — Motion-Weighted PSNR for Frame Interpolation (ICIP 2025).
 
-Full-reference metric that weights PSNR by motion-field divergence,
-giving more importance to regions with complex motion where interpolation
-artefacts are most visible.
+Full-reference metric that weights PSNR by motion complexity, giving more
+importance to regions with complex motion where interpolation artefacts are
+most visible. This implementation uses per-block gradient-difference magnitude
+as an algorithmic proxy for motion-field divergence (no optical-flow model),
+so it is a numpy approximation of the published metric rather than an exact
+port.
 
 psnr_div — dB, higher = better.
 """
@@ -33,9 +36,10 @@ class PSNRDIVModule(ReferenceBasedModule):
         self._model = None
         self.subsample = self.config.get("subsample", 8)
         self.block_size = self.config.get("block_size", 16)
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
-        logger.info("PSNR_DIV module initialised (heuristic)")
+        logger.info("PSNR_DIV module initialised (gradient-weighted PSNR, numpy)")
 
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         try:

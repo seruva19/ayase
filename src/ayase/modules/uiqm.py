@@ -112,6 +112,9 @@ class UIQMModule(PipelineModule):
         self.c2 = self.config.get("c2", 0.2953)
         self.c3 = self.config.get("c3", 3.5753)
         self.subsample = self.config.get("subsample", 8)
+        # Faithful port of the Panetta et al. (2016) UIQM formula
+        # (UICM + UISM + UIConM).
+        self._backend = "port"
 
     def process(self, sample: Sample) -> Sample:
         try:

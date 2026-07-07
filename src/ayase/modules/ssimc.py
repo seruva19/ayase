@@ -31,21 +31,24 @@ class SSIMCModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._backend = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         try:
             import pyiqa
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._model = pyiqa.create_metric("ssimc", device=device)
-            try:
-                self._device = next(self._model.parameters()).device
-            except StopIteration:
-                self._device = torch.device("cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = pyiqa.create_metric("ssimc", device=self._device)
             self._ml_available = True
-            logger.info("SSIM-C model loaded on %s", device)
-        except (ImportError, Exception) as e:
+            self._backend = "pyiqa"
+            logger.info("SSIM-C model loaded on %s", self._device)
+        except ImportError:
+            self._backend = "unavailable"
+            logger.warning("SSIM-C unavailable: pyiqa not installed")
+        except Exception as e:
+            self._backend = "unavailable"
             logger.warning("SSIM-C unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

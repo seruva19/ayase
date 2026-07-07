@@ -33,9 +33,10 @@ class PSNR99Module(ReferenceBasedModule):
         self._model = None
         self.subsample = self.config.get("subsample", 8)
         self.block_size = self.config.get("block_size", 32)
+        self._backend = "numpy"
 
     def setup(self) -> None:
-        logger.info("PSNR99 module initialised (heuristic)")
+        logger.info("PSNR99 module initialised (worst-case block-PSNR, numpy)")
 
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         try:

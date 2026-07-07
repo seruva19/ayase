@@ -1,12 +1,13 @@
 """MOVIE (MOtion-based Video Integrity Evaluation) module.
 
 Full-reference video quality metric using spatiotemporal Gabor filter
-decomposition and optical flow analysis.
+decomposition and optical-flow analysis: a spatiotemporal Gabor filter bank
+(5 spatial orientations x 3 spatial frequencies) plus motion-compensated flow
+comparison between the reference and distorted videos (paper reimplementation).
 
-Backend tiers:
-  1. **FR Gabor decomposition** — spatiotemporal Gabor filter bank
-     (5 spatial orientations x 3 temporal scales) comparing ref vs dist
-  2. **NR heuristic** — Gabor energy analysis + flow coherence (no reference)
+MOVIE is inherently full-reference — it has no meaning without a pristine
+reference — so this module leaves ``movie_score`` unset when no
+``reference_path`` is provided rather than emitting a no-reference proxy.
 """
 
 import logging
@@ -35,6 +36,7 @@ class MOVIEModule(PipelineModule):
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
+        self._backend = None
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -43,19 +45,21 @@ class MOVIEModule(PipelineModule):
         reference_path = getattr(sample, "reference_path", None)
         has_reference = reference_path is not None and Path(str(reference_path)).exists()
 
-        try:
-            import cv2
+        if not has_reference:
+            # MOVIE is full-reference; without a reference there is nothing to
+            # compute. Leave movie_score unset rather than fabricate one.
+            self._backend = "unavailable"
+            return sample
 
+        try:
             frames = self._load_frames(sample)
             if not frames:
                 return sample
 
-            if has_reference:
-                score = self._compute_fr(sample, Path(str(reference_path)), frames)
-            else:
-                score = self._compute_nr(frames, sample)
+            score = self._compute_fr(sample, Path(str(reference_path)), frames)
 
             if score is not None:
+                self._backend = "port"
                 sample.quality_metrics.movie_score = float(np.clip(score, 0.0, 1.0))
         except Exception as e:
             logger.warning("MOVIE failed: %s", e)
@@ -67,7 +71,7 @@ class MOVIEModule(PipelineModule):
 
         ref_frames = self._load_frames_from_path(reference_path)
         if not ref_frames:
-            return self._compute_nr(dist_frames, sample)
+            return None
 
         n_pairs = min(len(dist_frames), len(ref_frames))
 
@@ -149,83 +153,6 @@ class MOVIEModule(PipelineModule):
             scores.append(motion_quality)
 
         return float(np.mean(scores)) if scores else 1.0
-
-    def _compute_nr(self, frames: list, sample: Sample) -> Optional[float]:
-        """No-reference MOVIE: Gabor energy analysis + flow coherence."""
-        import cv2
-
-        # Spatial MOVIE: multi-orientation Gabor quality
-        spatial_scores = []
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64)
-            s_score = self._spatial_movie_nr(gray)
-            spatial_scores.append(s_score)
-
-        # Temporal MOVIE: motion coherence
-        temporal_score = self._temporal_movie_nr(frames) if len(frames) >= 2 else 0.8
-
-        spatial_mean = float(np.mean(spatial_scores))
-        movie_score = np.sqrt(max(0.0, spatial_mean) * max(0.0, temporal_score))
-        return float(movie_score)
-
-    def _spatial_movie_nr(self, gray: np.ndarray) -> float:
-        """NR spatial quality via Gabor filter energy analysis."""
-        import cv2
-
-        scores = []
-        for theta in SPATIAL_ORIENTATIONS:
-            kernel = cv2.getGaborKernel(
-                (21, 21), sigma=4.0, theta=theta,
-                lambd=10.0, gamma=0.5, psi=0
-            )
-            filtered = cv2.filter2D(gray, cv2.CV_64F, kernel)
-            energy = np.mean(filtered ** 2)
-            scores.append(energy)
-
-        energies = np.array(scores)
-        total_energy = np.sum(energies)
-        if total_energy > 0:
-            probs = energies / total_energy
-            entropy = -np.sum(probs * np.log2(probs + 1e-10))
-            max_entropy = np.log2(len(SPATIAL_ORIENTATIONS))
-            orientation_balance = entropy / max_entropy
-        else:
-            orientation_balance = 0.0
-
-        energy_score = min(1.0, total_energy / 5000.0)
-        return 0.5 * orientation_balance + 0.5 * energy_score
-
-    def _temporal_movie_nr(self, frames) -> float:
-        """NR temporal quality via motion coherence analysis."""
-        import cv2
-
-        coherences = []
-        flow_magnitudes = []
-
-        for i in range(len(frames) - 1):
-            g1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
-            g2 = cv2.cvtColor(frames[i + 1], cv2.COLOR_BGR2GRAY)
-
-            flow = cv2.calcOpticalFlowFarneback(g1, g2, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-            mag = np.sqrt(flow[..., 0] ** 2 + flow[..., 1] ** 2)
-            flow_magnitudes.append(np.mean(mag))
-
-            fx = cv2.Sobel(flow[..., 0], cv2.CV_64F, 1, 0, ksize=3)
-            fy = cv2.Sobel(flow[..., 1], cv2.CV_64F, 0, 1, ksize=3)
-            flow_grad = np.sqrt(fx ** 2 + fy ** 2)
-            coherence = 1.0 / (1.0 + np.mean(flow_grad))
-            coherences.append(coherence)
-
-        if len(flow_magnitudes) >= 2:
-            mag_smoothness = 1.0 - min(1.0, np.std(flow_magnitudes) / (np.mean(flow_magnitudes) + 1e-8))
-        else:
-            mag_smoothness = 1.0
-
-        spatial_coherence = float(np.mean(coherences)) if coherences else 0.5
-        mean_mag = float(np.mean(flow_magnitudes)) if flow_magnitudes else 0.0
-        natural_motion = float(np.exp(-0.5 * ((mean_mag - 5.0) / 10.0) ** 2))
-
-        return 0.35 * spatial_coherence + 0.35 * mag_smoothness + 0.30 * natural_motion
 
     def _load_frames(self, sample: Sample) -> list:
         import cv2

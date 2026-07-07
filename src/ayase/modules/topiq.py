@@ -12,13 +12,12 @@ Score range: 0-1 (higher = better quality).
 """
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -44,6 +43,8 @@ class TOPIQModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 0.4)
         self._ml_available = False
         self._metric = None
+        self._backend = None
+        self._device = "cpu"
 
     def setup(self) -> None:
         if self.variant not in ("topiq_nr",):
@@ -55,16 +56,19 @@ class TOPIQModule(PipelineModule):
 
         try:
             import pyiqa
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._metric = pyiqa.create_metric(self.variant, device=device)
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric(self.variant, device=self._device)
             self._ml_available = True
-            logger.info(f"TOPIQ ({self.variant}) initialised")
+            self._backend = "pyiqa"
+            logger.info(f"TOPIQ ({self.variant}) initialised on {self._device}")
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup TOPIQ: {e}")
 
     def _score_path(self, path: str) -> Optional[float]:
@@ -72,6 +76,20 @@ class TOPIQModule(PipelineModule):
             return float(self._metric(path).item())
         except Exception as e:
             logger.debug(f"TOPIQ scoring failed: {e}")
+            return None
+
+    def _score_frame(self, frame_rgb: np.ndarray) -> Optional[float]:
+        """Score a single RGB frame via a direct [0,1] BCHW tensor (no temp PNG)."""
+        import torch
+
+        try:
+            contiguous = np.ascontiguousarray(frame_rgb)
+            tensor = (
+                torch.from_numpy(contiguous).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+            ).to(self._device)
+            return float(self._metric(tensor).item())
+        except Exception as e:
+            logger.debug(f"TOPIQ frame scoring failed: {e}")
             return None
 
     def process(self, sample: Sample) -> Sample:
@@ -110,27 +128,15 @@ class TOPIQModule(PipelineModule):
         return sample
 
     def _process_video(self, video_path: Path) -> Optional[float]:
-        cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
+        num_frames = int(self.config.get("num_frames", 8))
+        frames = sample_frames(video_path, max_frames=max(1, num_frames), color="rgb")
+        if not frames:
             return None
 
         scores = []
-        idx = 0
-
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
-        finally:
-            cap.release()
+        for frame in frames:
+            s = self._score_frame(frame)
+            if s is not None:
+                scores.append(s)
 
         return float(np.mean(scores)) if scores else None
