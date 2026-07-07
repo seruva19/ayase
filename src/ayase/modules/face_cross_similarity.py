@@ -289,8 +289,13 @@ class FaceCrossSimilarityModule(PipelineModule):
         return []
 
     def _extract_insightface(self, rgb_image: np.ndarray) -> List[np.ndarray]:
-        """Extract ArcFace embeddings via InsightFace."""
-        faces = self._app.get(rgb_image)
+        """Extract ArcFace embeddings via InsightFace.
+
+        InsightFace ``.get()`` expects BGR (it uses cv2 internally); frames here
+        are RGB, so convert first to avoid channel-swapped, degraded embeddings.
+        """
+        bgr = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+        faces = self._app.get(bgr)
         if not faces:
             return []
 

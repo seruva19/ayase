@@ -1,33 +1,39 @@
 """T2V-CompBench module — CVPR 2025.
 
-Seven compositional sub-metrics for text-to-video generation evaluation:
-  1. Attribute binding — does generated object have the described attribute?
-  2. Object relationship — are described inter-object relations present?
-  3. Action binding — does the subject perform the described action?
-  4. Spatial relationship — correct spatial arrangement?
-  5. Generative numeracy — correct count of objects?
-  6. Scene composition — overall scene matches caption?
-  7. Overall — weighted mean of sub-metrics.
+Compositional metrics for text-to-video generation. The official T2V-CompBench
+evaluators are model-specific per dimension:
 
-Backend tiers:
-  1. **YOLO+Depth+CLIP** — YOLO-World detection + Depth Anything V2 + CLIP verification
-  2. **CLIP-only** — CLIP text-image matching (no detection, skip spatial/numeracy)
+  * MLLM (LLaVA / Grid-LLaVA) — consistent & dynamic attribute binding,
+    action binding, object interactions.
+  * Detection (GroundingDINO / GroundingSAM + Depth) — spatial relationships,
+    generative numeracy.
+  * Tracking (GroundingSAM + dense optical tracking) — motion binding.
 
+This module keeps only the sub-metrics whose implementation matches the official
+evaluator class:
+
+  * ``compbench_spatial`` / ``compbench_numeracy`` — computed with a real
+    open-vocabulary object detector (+ Depth for behind/in-front), matching the
+    official detection-based evaluators.
+  * ``compbench_attribute`` / ``compbench_object_rel`` / ``compbench_action`` /
+    ``compbench_scene`` — the official evaluator is an MLLM (LLaVA). A bare
+    CLIP text-image cosine is a proxy, not that evaluator, so these are produced
+    only when a real MLLM evaluator backend is available and are otherwise left
+    unset (no CLIP-prompt fallback).
+
+``compbench_overall`` is the weighted mean of the sub-metrics actually produced.
 Video-only (requires caption).
 """
 
 import logging
 import re
-import hashlib
 from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
 
-from ayase.image import arrays_to_pil
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
-from ayase.runtime import cached_clip_image_features, cached_clip_text_features
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +71,7 @@ ACTION_VERBS = [
 
 class T2VCompBenchModule(PipelineModule):
     name = "t2v_compbench"
-    description = "T2V-CompBench compositional metrics (YOLO+Depth+CLIP / CLIP)"
+    description = "T2V-CompBench compositional metrics (detection spatial/numeracy; MLLM for the rest)"
     default_config = {
         "subsample": 8,
         "enable_attribute": True,
@@ -74,7 +80,6 @@ class T2VCompBenchModule(PipelineModule):
         "enable_spatial": True,
         "enable_numeracy": True,
         "enable_scene": True,
-        "clip_model": "openai/clip-vit-base-patch32",
         "weights": [1, 1, 1, 1, 1, 1],
     }
     metric_groups = {
@@ -91,86 +96,55 @@ class T2VCompBenchModule(PipelineModule):
         super().__init__(config)
         self._backend = None
         self._ml_available = False
+        self._detector_available = False
+        self._mllm_available = False
         self._yolo = None
         self._depth = None
-        self._clip_model = None
-        self._clip_processor = None
+        self._mllm = None
         self._device = "cpu"
-        self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Tier 1: YOLO-World + Depth Anything + CLIP
         try:
             from ayase.runtime import resolve_torch_device
             self._device = resolve_torch_device(self.config.get("device", "auto"))
         except ImportError:
             self._device = "cpu"
 
-        yolo_ok = self._try_load_yolo()
-        clip_ok = self._try_load_clip()
-        depth_ok = self._try_load_depth()
+        detector_ok = self._try_load_detector()
+        depth_ok = self._try_load_depth() if detector_ok else False
+        mllm_ok = self._try_load_mllm()
 
-        if yolo_ok and clip_ok:
-            self._backend = "yolo_depth" if depth_ok else "yolo_clip"
+        self._detector_available = detector_ok
+        self._mllm_available = mllm_ok
+
+        if detector_ok or mllm_ok:
             self._ml_available = True
-            logger.info("T2VCompBench using YOLO+CLIP%s backend", "+Depth" if depth_ok else "")
-        elif clip_ok:
-            self._backend = "clip"
-            self._ml_available = True
-            logger.info("T2VCompBench using CLIP-only backend")
+            parts = []
+            if detector_ok:
+                parts.append("detector_depth" if depth_ok else "detector")
+            if mllm_ok:
+                parts.append("mllm")
+            self._backend = "+".join(parts)
+            logger.info("T2VCompBench using %s backend", self._backend)
         else:
-            logger.warning("T2VCompBench: no ML backend available")
+            self._backend = "unavailable"
+            logger.info(
+                "T2VCompBench unavailable: neither an open-vocabulary detector "
+                "(spatial/numeracy) nor an MLLM evaluator (attribute/object_rel/"
+                "action/scene) could be loaded; no compbench_* metrics will be "
+                "populated."
+            )
 
-    def _try_load_yolo(self) -> bool:
+    def _try_load_detector(self) -> bool:
         try:
             from ultralytics import YOLO
             self._yolo = YOLO("yolov8s-world.pt")
             return True
         except Exception as e:
-            logger.info("YOLO-World unavailable: %s", e)
-            return False
-
-    def _try_load_clip(self) -> bool:
-        try:
-            from transformers import CLIPModel, CLIPProcessor
-            from ayase.config import resolve_model_path
-            from ayase.runtime import (
-                from_pretrained_with_attention,
-                resolve_torch_device,
-                shared_runtime_resource,
-            )
-
-            self._device = resolve_torch_device(self.config.get("device", "auto"))
-            models_dir = self.config.get("models_dir", "models")
-            resolved = resolve_model_path(self.clip_model_name, models_dir)
-
-            def load_clip():
-                model = from_pretrained_with_attention(
-                    CLIPModel,
-                    resolved,
-                    self.config,
-                    device=self._device,
-                ).to(self._device).eval()
-                processor = CLIPProcessor.from_pretrained(resolved)
-                return model, processor
-
-            self._clip_model, self._clip_processor = shared_runtime_resource(
-                self,
-                (
-                    "hf_clip",
-                    resolved,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "default",
-                ),
-                load_clip,
-            )
-            return True
-        except Exception as e:
-            logger.info("CLIP unavailable: %s", e)
+            logger.info("Open-vocabulary detector unavailable: %s", e)
             return False
 
     def _try_load_depth(self) -> bool:
@@ -184,6 +158,24 @@ class T2VCompBenchModule(PipelineModule):
             return True
         except Exception as e:
             logger.info("Depth Anything unavailable: %s", e)
+            return False
+
+    def _try_load_mllm(self) -> bool:
+        """Load the official MLLM (LLaVA/Grid-LLaVA) T2V-CompBench evaluator.
+
+        The attribute / object-interaction / action / scene dimensions are
+        MLLM-scored in the official benchmark. There is no installable backend
+        for that evaluator here, so this returns False and those dimensions are
+        left unset rather than substituting a CLIP-prompt proxy.
+        """
+        try:
+            import t2v_compbench_eval  # type: ignore  # official MLLM evaluator
+            self._mllm = t2v_compbench_eval
+            return True
+        except ImportError:
+            return False
+        except Exception as e:  # pragma: no cover - defensive
+            logger.info("T2V-CompBench MLLM evaluator unavailable: %s", e)
             return False
 
     def process(self, sample: Sample) -> Sample:
@@ -203,14 +195,12 @@ class T2VCompBenchModule(PipelineModule):
             if len(frames) < 2:
                 return sample
 
-            scores = {}
+            scores: Dict[str, float] = {}
+            if self._detector_available:
+                scores.update(self._compute_detection(frames, caption))
+            if self._mllm_available:
+                scores.update(self._compute_mllm(frames, caption))
 
-            if self._backend in ("yolo_depth", "yolo_clip"):
-                scores = self._compute_yolo_depth(frames, caption)
-            elif self._backend == "clip":
-                scores = self._compute_clip_only(frames, caption)
-
-            # Write scores to quality metrics
             qm = sample.quality_metrics
             if self.config.get("enable_attribute", True) and "attribute" in scores:
                 qm.compbench_attribute = scores["attribute"]
@@ -225,7 +215,6 @@ class T2VCompBenchModule(PipelineModule):
             if self.config.get("enable_scene", True) and "scene" in scores:
                 qm.compbench_scene = scores["scene"]
 
-            # Overall = weighted mean
             weights = self.config.get("weights", [1, 1, 1, 1, 1, 1])
             sub_keys = ["attribute", "object_rel", "action", "spatial", "numeracy", "scene"]
             valid_scores = []
@@ -273,7 +262,6 @@ class T2VCompBenchModule(PipelineModule):
     @staticmethod
     def _parse_attributes(caption: str) -> List[Tuple[str, str]]:
         """Parse 'adjective noun' pairs from caption."""
-        # Simple pattern: adj + noun
         pattern = re.compile(
             r'\b(red|blue|green|yellow|black|white|large|small|big|tiny|tall|short|'
             r'old|young|new|bright|dark|round|square|long|thin|thick|heavy|light|'
@@ -299,7 +287,6 @@ class T2VCompBenchModule(PipelineModule):
         """Parse 'number noun' patterns."""
         results = []
         number_words = set(WORD_TO_NUM.keys())
-        # Match: number word/digit + optional 1-2 adjectives + noun
         pattern = re.compile(
             r'\b(' + '|'.join(re.escape(w) for w in WORD_TO_NUM) + r'|\d+)\s+(\w+(?:\s+\w+)?)\b',
             re.IGNORECASE
@@ -307,10 +294,8 @@ class T2VCompBenchModule(PipelineModule):
         for m in pattern.finditer(caption):
             word = m.group(1).lower()
             rest = m.group(2).strip()
-            # Take the last word as noun (skip adjective words and other number words)
             parts = rest.split()
             noun = parts[-1]
-            # Skip if noun is itself a number word
             if noun.lower() in number_words:
                 continue
             if word in WORD_TO_NUM:
@@ -320,7 +305,7 @@ class T2VCompBenchModule(PipelineModule):
                     num = int(word)
                 except ValueError:
                     continue
-            if num >= 0:  # Skip vague counts
+            if num >= 0:
                 results.append((num, noun))
         return results
 
@@ -347,56 +332,12 @@ class T2VCompBenchModule(PipelineModule):
         return results
 
     # ------------------------------------------------------------------ #
-    # CLIP similarity helper                                               #
-    # ------------------------------------------------------------------ #
-
-    def _clip_sim(self, image: np.ndarray, text: str) -> float:
-        """Compute CLIP cosine similarity between image and text."""
-        image_features = self._clip_image_features(image)
-        logits = self._clip_logits(image_features, [text])
-        return float(logits[0, 0].item() / 100.0)
-
-    def _clip_sim_batch_text(self, image: np.ndarray, texts: List[str]) -> List[float]:
-        """CLIP similarity of one image against multiple texts."""
-        image_features = self._clip_image_features(image)
-        sims = self._clip_logits(image_features, texts).softmax(dim=-1)[0]
-        return [float(s) for s in sims]
-
-    def _clip_image_features(self, image: np.ndarray):
-        rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        contiguous = np.ascontiguousarray(rgb)
-        digest = hashlib.blake2b(contiguous.tobytes(), digest_size=16).hexdigest()
-        return cached_clip_image_features(
-            self,
-            self._clip_model,
-            self._clip_processor,
-            arrays_to_pil([contiguous]),
-            model_key=self.clip_model_name,
-            device=self._device,
-            cache_key=("t2v_compbench_image", contiguous.shape, digest),
-        )
-
-    def _clip_logits(self, image_features, texts: List[str]):
-        text_features = cached_clip_text_features(
-            self,
-            self._clip_model,
-            self._clip_processor,
-            texts,
-            model_key=self.clip_model_name,
-            device=self._device,
-            cache_key=("t2v_compbench_text", tuple(texts)),
-        )
-        scale = getattr(self._clip_model, "logit_scale", None)
-        if scale is not None:
-            return (image_features @ text_features.T) * scale.exp()
-        return image_features @ text_features.T
-
-    # ------------------------------------------------------------------ #
-    # Tier 1: YOLO + Depth + CLIP                                          #
+    # Detection-based evaluators (spatial, numeracy) — matches official   #
+    # GroundingDINO/GroundingSAM detector class.                          #
     # ------------------------------------------------------------------ #
 
     def _detect_objects(self, frame: np.ndarray, classes: List[str]) -> list:
-        """Run YOLO-World detection for specific classes."""
+        """Run open-vocabulary detection for specific classes."""
         self._yolo.set_classes(classes)
         results = self._yolo(frame, verbose=False)
         detections = []
@@ -412,67 +353,10 @@ class T2VCompBenchModule(PipelineModule):
                 })
         return detections
 
-    def _compute_yolo_depth(self, frames: list, caption: str) -> Dict[str, float]:
-        scores = {}
+    def _compute_detection(self, frames: list, caption: str) -> Dict[str, float]:
+        scores: Dict[str, float] = {}
 
-        # Attribute binding
-        attrs = self._parse_attributes(caption)
-        if attrs:
-            attr_scores = []
-            for adj, noun in attrs:
-                for frame in frames[::max(1, len(frames) // 4)]:
-                    dets = self._detect_objects(frame, [noun])
-                    if dets:
-                        # Crop detected region and verify attribute via CLIP
-                        det = max(dets, key=lambda d: d["conf"])
-                        x1, y1, x2, y2 = [int(c) for c in det["box"]]
-                        crop = frame[max(0, y1):y2, max(0, x1):x2]
-                        if crop.size > 0:
-                            sim = self._clip_sim(crop, f"a {adj} {noun}")
-                            attr_scores.append(sim)
-            if attr_scores:
-                scores["attribute"] = float(np.mean(attr_scores))
-
-        # Object relationship
-        rels = self._parse_relations(caption)
-        if rels:
-            rel_scores = []
-            for subj, rel, obj in rels:
-                for frame in frames[::max(1, len(frames) // 4)]:
-                    dets_subj = self._detect_objects(frame, [subj])
-                    dets_obj = self._detect_objects(frame, [obj])
-                    if dets_subj and dets_obj:
-                        # Both objects detected — verify relation via CLIP
-                        sim = self._clip_sim(frame, f"{subj} {rel} {obj}")
-                        rel_scores.append(sim)
-                    elif dets_subj or dets_obj:
-                        rel_scores.append(0.3)
-                    else:
-                        rel_scores.append(0.0)
-            if rel_scores:
-                scores["object_rel"] = float(np.mean(rel_scores))
-
-        # Action binding
-        actions = self._parse_actions(caption)
-        if actions:
-            action_scores = []
-            for noun, verb in actions:
-                frame_scores = []
-                for frame in frames[::max(1, len(frames) // 3)]:
-                    dets = self._detect_objects(frame, [noun])
-                    if dets:
-                        det = max(dets, key=lambda d: d["conf"])
-                        x1, y1, x2, y2 = [int(c) for c in det["box"]]
-                        crop = frame[max(0, y1):y2, max(0, x1):x2]
-                        if crop.size > 0:
-                            sim = self._clip_sim(crop, f"a {noun} {verb}")
-                            frame_scores.append(sim)
-                if frame_scores:
-                    action_scores.append(float(np.mean(frame_scores)))
-            if action_scores:
-                scores["action"] = float(np.mean(action_scores))
-
-        # Spatial relationship
+        # Spatial relationship — detection + geometric/depth rule
         spatials = self._parse_spatial(caption)
         if spatials:
             spatial_scores = []
@@ -490,7 +374,7 @@ class T2VCompBenchModule(PipelineModule):
             if spatial_scores:
                 scores["spatial"] = float(np.mean(spatial_scores))
 
-        # Numeracy
+        # Generative numeracy — detection + count comparison
         counts = self._parse_count(caption)
         if counts:
             count_scores = []
@@ -507,16 +391,6 @@ class T2VCompBenchModule(PipelineModule):
             if count_scores:
                 scores["numeracy"] = float(np.mean(count_scores))
 
-        # Scene composition
-        scene_scores = []
-        for frame in frames[::max(1, len(frames) // 4)]:
-            sim = self._clip_sim(frame, caption)
-            scene_scores.append(sim)
-        if scene_scores:
-            scores["scene"] = float(np.mean(scene_scores))
-
-        # Dimensions not present in the caption (or with no detections) are left
-        # unset rather than filled with a fabricated 0.5.
         return scores
 
     def _verify_spatial(self, s_box: list, o_box: list, prep: str, frame: np.ndarray) -> bool:
@@ -539,7 +413,6 @@ class T2VCompBenchModule(PipelineModule):
             diag = np.sqrt(frame.shape[0] ** 2 + frame.shape[1] ** 2)
             return dist < diag * 0.3
         elif prep in ("behind", "in front of"):
-            # Use depth if available
             if self._depth is not None:
                 try:
                     from PIL import Image
@@ -559,56 +432,27 @@ class T2VCompBenchModule(PipelineModule):
         return True
 
     # ------------------------------------------------------------------ #
-    # Tier 2: CLIP-only                                                    #
+    # MLLM-based evaluators (attribute, object_rel, action, scene)        #
     # ------------------------------------------------------------------ #
 
-    def _compute_clip_only(self, frames: list, caption: str) -> Dict[str, float]:
-        scores = {}
+    def _compute_mllm(self, frames: list, caption: str) -> Dict[str, float]:
+        """Score the MLLM dimensions with the official LLaVA-based evaluator.
 
-        # Attribute binding via CLIP
-        attrs = self._parse_attributes(caption)
-        if attrs:
-            attr_scores = []
-            for adj, noun in attrs:
-                for frame in frames[::max(1, len(frames) // 4)]:
-                    pos_text = f"a {adj} {noun}"
-                    neg_text = f"a {noun}"
-                    sims = self._clip_sim_batch_text(frame, [pos_text, neg_text])
-                    attr_scores.append(sims[0])
-            if attr_scores:
-                scores["attribute"] = float(np.mean(attr_scores))
-
-        # Object relationship via CLIP
-        rels = self._parse_relations(caption)
-        if rels:
-            rel_scores = []
-            for subj, rel, obj in rels:
-                for frame in frames[::max(1, len(frames) // 4)]:
-                    sim = self._clip_sim(frame, f"{subj} {rel} {obj}")
-                    rel_scores.append(sim)
-            if rel_scores:
-                scores["object_rel"] = float(np.mean(rel_scores))
-
-        # Action binding via CLIP temporal
-        actions = self._parse_actions(caption)
-        if actions:
-            action_scores = []
-            for noun, verb in actions:
-                for frame in frames:
-                    sim = self._clip_sim(frame, f"a {noun} {verb}")
-                    action_scores.append(sim)
-            if action_scores:
-                scores["action"] = float(np.mean(action_scores))
-
-        # Scene via CLIP
-        scene_scores = []
-        for frame in frames[::max(1, len(frames) // 4)]:
-            sim = self._clip_sim(frame, caption)
-            scene_scores.append(sim)
-        if scene_scores:
-            scores["scene"] = float(np.mean(scene_scores))
-
-        # Spatial/numeracy are not reliably measurable with CLIP only, and any
-        # dimension absent from the caption is left unset (no fabricated 0.5).
+        Only reached when a real MLLM evaluator backend is loaded; otherwise the
+        attribute / object_rel / action / scene dimensions are left unset.
+        """
+        scores: Dict[str, float] = {}
+        evaluate = getattr(self._mllm, "evaluate", None)
+        if evaluate is None:
+            return scores
+        try:
+            result = evaluate(frames, caption)
+        except Exception as e:
+            logger.warning("T2VCompBench MLLM evaluation failed: %s", e)
+            return scores
+        if not isinstance(result, dict):
+            return scores
+        for key in ("attribute", "object_rel", "action", "scene"):
+            if result.get(key) is not None:
+                scores[key] = float(result[key])
         return scores
-
