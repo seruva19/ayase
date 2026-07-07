@@ -508,7 +508,7 @@ class Pipeline:
         of that decode, and each ``color`` is converted-and-cached on first use.
         Callers must not mutate the returned arrays in place (copy first).
         """
-        from .image import _sample_frames_uncached, _convert_frame_color
+        from .image import _sample_frames_uncached, _sample_frames_uncached_detailed, _convert_frame_color
 
         max_frames = max(0, int(max_frames))
         color = str(color)
@@ -522,14 +522,24 @@ class Pipeline:
         if entry is None or (
             entry["decoded_max"] < max_frames and not entry["exhausted"]
         ):
-            decoded = _sample_frames_uncached(path, max_frames=max_frames, color="bgr")
+            decoded, reliable_total = _sample_frames_uncached_detailed(
+                path, max_frames=max_frames, color="bgr"
+            )
             base = [readonly_view(frame) for frame in decoded]
+            # "Exhausted" must mean the decoder reports the source has no more
+            # frames than we requested — NOT merely that fewer frames came back
+            # (a short read from failed seeks on a long video would otherwise be
+            # cached as exhausted and never re-decoded at a higher max_frames).
+            if reliable_total is not None:
+                exhausted = reliable_total <= max_frames
+            else:
+                # Frame count unreliable (<=0 / undecodable): do not cache an
+                # authoritative "exhausted" so a larger request can re-attempt.
+                exhausted = False
             entry = {
                 "bgr": base,
                 "decoded_max": max_frames,
-                # If fewer frames came back than requested, the source is
-                # exhausted; never re-decode for a larger max_frames.
-                "exhausted": len(base) < max_frames,
+                "exhausted": exhausted,
                 "colors": {"bgr": base},
             }
             self._frame_cache[key] = entry
@@ -1000,6 +1010,13 @@ class Pipeline:
             except Exception as e:
                 logger.error(f"Error in on_dispose for module {module.name}: {e}")
 
+        # on_dispose() (e.g. dedup batch modules) can flip validity or write
+        # metrics onto samples AFTER post_process ran; refold those into the
+        # sample-derived aggregate stats so exported numbers match the final
+        # sample states. Rebuild recomputes from scratch, so it is idempotent
+        # and does not double-count the earlier post_process rebuild.
+        self._rebuild_sample_stats()
+
         # Log batch metrics if any were computed
         if self._batch_modules:
             logger.info(f"Processed {len(self._batch_modules)} batch metric modules")
@@ -1041,6 +1058,48 @@ class Pipeline:
                 ),
             )
         )
+
+    @staticmethod
+    def _restore_failure_state(
+        sample: Sample,
+        failed_modules: List[str],
+        module_error_issues: List["ValidationIssue"],
+    ) -> None:
+        """Re-apply failure markers a fresh after-hook Sample would have dropped.
+
+        An after-hook may return a brand-new ``Sample`` (e.g. ``model_copy``)
+        that predates any ``failed_modules`` / ``module_error`` issue recorded
+        while the module was processing (by the pipeline itself, or internally
+        by a default ``process_batch``). Without this, a failed sample gets
+        cached as complete and is never retried. Merges are idempotent (guarded
+        by name / message) so re-running on an in-place-mutated sample is safe.
+        """
+        for name in failed_modules:
+            if name not in sample.failed_modules:
+                sample.failed_modules.append(name)
+        if not module_error_issues:
+            return
+        existing = {
+            issue.message
+            for issue in sample.validation_issues
+            if getattr(issue, "issue_type", None) == "module_error"
+        }
+        for issue in module_error_issues:
+            if issue.message not in existing:
+                sample.validation_issues.append(issue)
+
+    @staticmethod
+    def _snapshot_failure_state(
+        sample: Sample,
+    ) -> tuple[List[str], List["ValidationIssue"]]:
+        """Capture failure markers so they can survive an after-hook revert."""
+        failed = list(getattr(sample, "failed_modules", ()) or ())
+        issues = [
+            issue
+            for issue in sample.validation_issues
+            if getattr(issue, "issue_type", None) == "module_error"
+        ]
+        return failed, issues
 
     @staticmethod
     def _persist_backend(sample: Sample, module: "PipelineModule") -> None:
@@ -1148,6 +1207,11 @@ class Pipeline:
                         # used to leak the before-hook's mutation to later
                         # modules and the stored result).
                         if entered and hooks and "after" in hooks:
+                            # Snapshot failure markers before the revert; an
+                            # after-hook that returns a fresh Sample would
+                            # otherwise discard them (caching a failed sample as
+                            # complete so it is never retried).
+                            pre_failed, pre_issues = self._snapshot_failure_state(sample)
                             try:
                                 restored = hooks["after"](sample)
                             except Exception as e:
@@ -1161,6 +1225,9 @@ class Pipeline:
                                 restored = None
                             if isinstance(restored, Sample):
                                 sample = restored
+                                self._restore_failure_state(
+                                    sample, pre_failed, pre_issues
+                                )
                             elif restored is not None:
                                 logger.error(
                                     "After-hook for module %s returned %s for %s; "
@@ -1304,6 +1371,11 @@ class Pipeline:
             # that produced valid output, then record timing.
             if hooks and "after" in hooks:
                 for pos in eligible_positions:
+                    # Snapshot failure markers before the revert. An after-hook
+                    # returning a fresh Sample (or a marker recorded internally
+                    # by the default process_batch) would otherwise be dropped,
+                    # caching a failed sample as complete so it is never retried.
+                    pre_failed, pre_issues = self._snapshot_failure_state(working[pos])
                     try:
                         restored = hooks["after"](working[pos])
                     except Exception as e:
@@ -1317,6 +1389,9 @@ class Pipeline:
                         restored = None
                     if isinstance(restored, Sample):
                         working[pos] = restored
+                        self._restore_failure_state(
+                            working[pos], pre_failed, pre_issues
+                        )
                     elif restored is not None:
                         logger.error(
                             "After-hook for module %s returned %s for %s; "
@@ -1485,13 +1560,76 @@ class Pipeline:
             with open(path, "w", encoding="utf-8") as f:
                 f.write("\n".join(html))
 
+    @staticmethod
+    def _json_safe(value: Any) -> Any:
+        """Recursively coerce *value* into JSON-native types.
+
+        Handles the values a module may stash in ``Sample.metadata``
+        (``Dict[str, Any]``): numpy scalars/arrays, ``Path``, sets, and any
+        other object, none of which pydantic's JSON serializer accepts.
+        """
+        if isinstance(value, dict):
+            return {str(k): Pipeline._json_safe(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [Pipeline._json_safe(v) for v in value]
+        if isinstance(value, (set, frozenset)):
+            return [Pipeline._json_safe(v) for v in value]
+        if isinstance(value, (str, bool, int, float)) or value is None:
+            return value
+        try:
+            import numpy as _np
+
+            if isinstance(value, _np.generic):
+                return Pipeline._json_safe(value.item())
+            if isinstance(value, _np.ndarray):
+                return Pipeline._json_safe(value.tolist())
+        except Exception:
+            pass
+        if isinstance(value, Path):
+            return str(value)
+        return str(value)
+
+    @classmethod
+    def _dump_sample_state(cls, key: str, sample: Sample) -> Dict[str, Any]:
+        """Serialize a sample to JSON-safe dict, tolerating bad ``metadata``.
+
+        A module may store a non-JSON value (numpy scalar/array, ``Path``, ...)
+        in ``Sample.metadata``, which makes ``model_dump(mode="json")`` raise.
+        A single such sample must not abort the whole ``save_state`` (which
+        would drop the entire run's resume cache). On failure, retry with
+        ``metadata`` coerced to JSON-safe types; keep valid metadata intact.
+        """
+        try:
+            return sample.model_dump(mode="json")
+        except Exception as exc:
+            logger.warning(
+                "Sample %s has non-serializable metadata; coercing to JSON-safe "
+                "types for state save: %s",
+                key,
+                exc,
+            )
+        try:
+            safe = sample.model_copy(update={"metadata": cls._json_safe(sample.metadata)})
+            return safe.model_dump(mode="json")
+        except Exception as exc:
+            logger.warning(
+                "Sample %s metadata still non-serializable after coercion; "
+                "dropping metadata for state save: %s",
+                key,
+                exc,
+            )
+            dropped = sample.model_copy(update={"metadata": {}})
+            return dropped.model_dump(mode="json")
+
     def save_state(self, path: Path) -> None:
         """Save current pipeline state to disk for resume."""
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             data = {
                 "pipeline_fingerprint": self._pipeline_fingerprint(),
-                "results": {k: v.model_dump(mode="json") for k, v in self.results.items()},
+                "results": {
+                    k: self._dump_sample_state(k, v) for k, v in self.results.items()
+                },
                 "stats": self.stats.model_dump(mode="json"),
                 "cache_manifest": {
                     k: self._result_manifests.get(k) or self._sample_state_manifest(v)
@@ -1501,7 +1639,9 @@ class Pipeline:
             tmp_fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
             try:
                 with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2)
+                    # default=str is a final backstop for any stray non-JSON
+                    # value elsewhere so one bad value can't sink the save.
+                    json.dump(data, f, indent=2, default=str)
                 Path(tmp_path).replace(path)
             except Exception:
                 Path(tmp_path).unlink(missing_ok=True)

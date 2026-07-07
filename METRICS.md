@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 10:31 · **369 modules** · **438 metrics**
+> **Version 0.1.60** · Generated 2026-07-07 12:00 · **369 modules** · **438 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -1542,7 +1542,7 @@
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: port
+- **Backend**: unavailable → port
 - **Tests**: covered by [`test_physics_iq.py`](tests/modules/per_module/test_physics_iq.py)
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`
 
@@ -1552,7 +1552,7 @@
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: port
+- **Backend**: unavailable → port
 - **Tests**: covered by [`test_physics_iq.py`](tests/modules/per_module/test_physics_iq.py)
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`
 
@@ -1562,7 +1562,7 @@
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: port
+- **Backend**: unavailable → port
 - **Tests**: covered by [`test_physics_iq.py`](tests/modules/per_module/test_physics_iq.py)
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`
 
@@ -1572,7 +1572,7 @@
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: port
+- **Backend**: unavailable → port
 - **Tests**: covered by [`test_physics_iq.py`](tests/modules/per_module/test_physics_iq.py)
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`
 
@@ -1582,7 +1582,7 @@
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: port
+- **Backend**: unavailable → port
 - **Tests**: covered by [`test_physics_iq.py`](tests/modules/per_module/test_physics_iq.py)
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`
 
@@ -2383,9 +2383,9 @@
 
 **[`video_reward`](src/ayase/modules/video_reward.py)** — VideoAlign human preference reward model (NeurIPS 2025)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: videoreward_hf → unavailable
-- **Packages**: Pillow, opencv-python, torch, transformers
+- **Packages**: qwen-vl-utils, torch, transformers
 - **Source**: <a href="https://huggingface.co/KlingTeam/VideoReward" target="_blank">HF</a>
 - **Tests**: covered by [`test_video_reward.py`](tests/modules/per_module/test_video_reward.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 - **Config**: `model_name=KlingTeam/VideoReward`, `subsample=8`, `trust_remote_code=True`
@@ -2856,7 +2856,7 @@
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable
-- **Packages**: Pillow, torch, transformers
+- **Packages**: Pillow, qwen-vl-utils, torch, transformers
 - **Source**: <a href="https://huggingface.co/chancharikm/qwen2.5-vl-7b-cam-motion" target="_blank">HF</a>
 - **Tests**: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py)
 - **Config**: `model_id=chancharikm/qwen2.5-vl-7b-cam-motion`, `processor_id=Qwen/Qwen2.5-VL-7B-Instruct`, `num_frames=16`, `fps=8.0`
@@ -3538,7 +3538,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: unavailable → port
 - **Packages**: librosa
 - **Tests**: covered by [`test_av_align.py`](tests/modules/per_module/test_av_align.py)
-- **Config**: `max_frames=3000`
+- **Config**: `max_frames=1000`
 
 ### `av_sync_offset` [↑](#categories)
 > Audio-video sync offset in ms
@@ -5435,7 +5435,7 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 - **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_exposure.py`](tests/modules/per_module/test_exposure.py)
 - **[`knowledge_graph`](src/ayase/modules/knowledge_graph.py)** — Generates a conceptual knowledge graph of the video dataset · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_knowledge_graph.py`](tests/modules/per_module/test_knowledge_graph.py)
 - **[`llm_advisor`](src/ayase/modules/llm_advisor.py)** — Rule-based improvement recommendations derived from quality metrics (no LLM used) · Input: img/vid · Speed: 🐌 slow · Tests: covered by [`test_llm_advisor.py`](tests/modules/per_module/test_llm_advisor.py)
-- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +5 more
+- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +6 more
 - **[`msswd`](src/ayase/modules/msswd.py)** — MS-SWD multiscale sliced Wasserstein colour distance via pyiqa (batch, lower=better) · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_msswd.py`](tests/modules/per_module/test_msswd.py)
 - **[`multiple_objects`](src/ayase/modules/multiple_objects.py)** — Verifies object count matches caption (VBench multiple_objects dimension) · Input: img/vid +cap · Speed: ⚡ fast · Tests: covered by [`test_multiple_objects.py`](tests/modules/per_module/test_multiple_objects.py)
 - **[`paranoid_decoder`](src/ayase/modules/paranoid_decoder.py)** — Deep bitstream validation using FFmpeg (Paranoid Mode) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_paranoid_decoder.py`](tests/modules/per_module/test_paranoid_decoder.py)

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 10:34 · **208 models** across **10 sources**
+> **Version 0.1.60** · Generated 2026-07-07 12:00 · **209 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**208** models · **71** HuggingFace · **55** pyiqa · **10** sources
+**209** models · **72** HuggingFace · **55** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (49)](#huggingface-models) · [Weight Files (22)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (50)](#huggingface-models) · [Weight Files (22)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -46,7 +46,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 633
+- **Parameters**: 8.3B · **Downloads**: 646
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2509.25787" target="_blank">arXiv</a>
 
@@ -76,7 +76,7 @@
 > apache-2.0
 
 - **Used by**: `aigv_assessor`
-- **Parameters**: 8.2B · **Downloads**: 2
+- **Parameters**: 8.2B · **Downloads**: 3
 - **Disk**: ~30.4 GB
 
 ### <a href="https://huggingface.co/IntMeGroup/FineVQ_score" target="_blank">`IntMeGroup/FineVQ_score`</a> [↑](#categories)
@@ -87,6 +87,12 @@
 - **Disk**: ~30.5 GB
 
 ### <a href="https://huggingface.co/KlingTeam/VideoReward" target="_blank">`KlingTeam/VideoReward`</a> [↑](#categories)
+> apache-2.0
+
+- **Used by**: `video_reward`
+- **Source**: <a href="https://arxiv.org/abs/2501.13918" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/KwaiVGI/VideoReward" target="_blank">`KwaiVGI/VideoReward`</a> [↑](#categories)
 > apache-2.0
 
 - **Used by**: `video_reward`
@@ -104,14 +110,14 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Downloads**: 103
+- **Downloads**: 109
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">`OpenMuQ/MuQ-large-msd-iter`</a> [↑](#categories)
 > audio-classification · cc-by-nc-4.0
 
 - **Used by**: `song_eval`
-- **Parameters**: 333M · **Downloads**: 334K
+- **Parameters**: 333M · **Downloads**: 331K
 - **Disk**: ~1.2 GB
 - **Source**: <a href="https://arxiv.org/abs/2501.01108" target="_blank">arXiv</a>
 
@@ -135,7 +141,7 @@
 > any-to-any · other
 
 - **Used by**: `aqascore`
-- **Parameters**: 10.7B · **Downloads**: 602K
+- **Parameters**: 10.7B · **Downloads**: 603K
 - **Disk**: ~40.0 GB
 - **Source**: <a href="https://arxiv.org/abs/2503.20215" target="_blank">arXiv</a>
 
@@ -143,7 +149,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 10.0M
+- **Parameters**: 8.3B · **Downloads**: 10.1M
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2309.00071" target="_blank">arXiv</a>
 
@@ -199,7 +205,7 @@
 > video-text-to-text · other
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 515
+- **Parameters**: 8.3B · **Downloads**: 528
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2404.01291" target="_blank">arXiv</a>
 
@@ -227,7 +233,7 @@
 > image-to-3d · cc-by-nc-4.0
 
 - **Used by**: `camera_trajectory`
-- **Parameters**: 1.3B · **Downloads**: 297K
+- **Parameters**: 1.3B · **Downloads**: 299K
 - **Disk**: ~4.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2503.11651" target="_blank">arXiv</a>
 
@@ -251,7 +257,7 @@
 > video-classification · apache-2.0
 
 - **Used by**: `jedi`, `jedi_metric`
-- **Parameters**: 1.0B · **Downloads**: 139K
+- **Parameters**: 1.0B · **Downloads**: 137K
 - **Disk**: ~3.9 GB
 
 ### `fsmn-vad` [↑](#categories)

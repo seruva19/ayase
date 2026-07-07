@@ -122,6 +122,11 @@ class PhysicsIQModule(ReferenceBasedModule):
         # Pure cv2/numpy algorithm — no model to load. cv2 and numpy are
         # imported at module scope, so process() is fully self-contained even
         # when setup() is never called (e.g. from tests).
+        # Record provenance: "unavailable" once configured, upgraded to "port"
+        # the first time a computation actually succeeds. This ensures samples
+        # that are skipped (no reference, non-video, too short) report
+        # "unavailable" rather than the pre-setup None sentinel.
+        self._backend = "unavailable"
         logger.info("Physics-IQ initialised (deterministic port; no model)")
 
     # ------------------------------------------------------------------

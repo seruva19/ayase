@@ -37,11 +37,18 @@ class VideoRewardModule(PipelineModule):
         self._device = "cpu"
 
     def setup(self) -> None:
+        # VideoReward (KwaiVGI/VideoReward) is a Qwen2-VL-based multi-dimensional
+        # preference reward model (VQ/MQ/TA). Its custom reward-head class is not a
+        # standard transformers Auto class, so we load it generically via AutoModel
+        # + trust_remote_code (resolved through the checkpoint's auto_map, when the
+        # checkpoint ships HF-compatible config/remote code). Real-or-none: any
+        # failure (including the public raw-.pth checkpoint that has no HF config)
+        # leaves the metric None with backend "unavailable".
         try:
-            from transformers import AutoModelForSequenceClassification, AutoProcessor
+            from transformers import AutoModel, AutoProcessor
             from ayase.runtime import resolve_torch_device
 
-            model_name = self.config.get("model_name", "KlingTeam/VideoReward")
+            model_name = self.config.get("model_name", "KwaiVGI/VideoReward")
             device = resolve_torch_device(self.config.get("device", "auto"))
 
             trc = self.config.get("trust_remote_code", True)
@@ -49,7 +56,7 @@ class VideoRewardModule(PipelineModule):
             self._processor = AutoProcessor.from_pretrained(
                 model_name, trust_remote_code=trc, revision=rev
             )
-            self._model = AutoModelForSequenceClassification.from_pretrained(
+            self._model = AutoModel.from_pretrained(
                 model_name, trust_remote_code=trc, revision=rev
             ).to(device)
             self._model.eval()
@@ -57,53 +64,69 @@ class VideoRewardModule(PipelineModule):
             self._ml_available = True
             self._backend = "videoreward_hf"
             logger.info("VideoAlign reward model loaded on %s", device)
-        except (ImportError, Exception) as e:
+        except Exception as e:
             self._backend = "unavailable"
             logger.warning("VideoAlign unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        if not self._ml_available:
+        if not self._ml_available or self._model is None:
+            return sample
+        # VideoReward is a video model (Qwen2-VL video path); images have no
+        # defined reward, so leave the metric None for non-video samples.
+        if not sample.is_video:
             return sample
 
         try:
-            import cv2
             import torch
-            from PIL import Image
+            from qwen_vl_utils import process_vision_info
 
-            subsample = self.config.get("subsample", 8)
-            frames = []
+            caption = sample.caption.text if sample.caption else ""
+            prompt = caption if caption else "the video"
+            nframes = int(self.config.get("subsample", 8))
+            max_pixels = int(self.config.get("max_pixels", 448 * 448))
 
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        frames.append(Image.fromarray(rgb))
-                cap.release()
-            else:
-                frames.append(Image.open(str(sample.path)).convert("RGB"))
+            messages = [
+                [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "video",
+                                "video": f"file://{sample.path}",
+                                "max_pixels": max_pixels,
+                                "nframes": nframes,
+                            },
+                            {"type": "text", "text": prompt},
+                        ],
+                    }
+                ]
+            ]
 
-            if not frames:
-                return sample
-
-            caption = sample.caption.text if sample.caption else "a video"
-            prompt = f"Rate the quality of this video: {caption}"
-
-            inputs = self._processor(
-                text=prompt, images=frames, return_tensors="pt"
+            text = self._processor.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            image_inputs, video_inputs = process_vision_info(messages)
+            batch = self._processor(
+                text=text,
+                images=image_inputs,
+                videos=video_inputs,
+                padding=True,
+                return_tensors="pt",
+                videos_kwargs={"do_rescale": True},
             ).to(self._device)
 
             with torch.no_grad():
-                outputs = self._model(**inputs)
-                score = outputs.logits.squeeze(-1).mean().item()
+                rewards = self._model(return_dict=True, **batch)["logits"]
 
-            sample.quality_metrics.video_reward_score = float(score)
+            # Each row holds the three dimensions: VQ, MQ, TA. The module declares a
+            # single overall reward, defined (per the reference inference) as the sum.
+            reward = rewards[0]
+            vq = float(reward[0].item())
+            mq = float(reward[1].item())
+            ta = float(reward[2].item())
+            sample.quality_metrics.video_reward_score = vq + mq + ta
         except Exception as e:
             logger.warning("VideoAlign processing failed: %s", e)
         return sample

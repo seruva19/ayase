@@ -256,12 +256,15 @@ def test_semantic_alignment_process_batch_batches_clip_images(
     from ayase.modules.semantic_alignment import SemanticAlignmentModule
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
-        return [
+        frames = [
             np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8)
             for i in range(max_frames)
         ]
+        return frames, len(frames)
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_sample_frames)
+    monkeypatch.setattr(
+        image_utils, "_sample_frames_uncached_detailed", fake_sample_frames
+    )
 
     first_path = tmp_path / "first.mp4"
     second_path = tmp_path / "second.mp4"
@@ -310,12 +313,15 @@ def test_clip_temporal_process_batch_batches_clip_images(
     from ayase.modules.clip_temporal import CLIPTemporalModule
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
-        return [
+        frames = [
             np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8)
             for i in range(max_frames)
         ]
+        return frames, len(frames)
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_sample_frames)
+    monkeypatch.setattr(
+        image_utils, "_sample_frames_uncached_detailed", fake_sample_frames
+    )
 
     first_path = tmp_path / "first.mp4"
     second_path = tmp_path / "second.mp4"
@@ -372,9 +378,11 @@ def test_pipeline_frame_cache_reuses_decoded_frames(
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
         calls["count"] += 1
-        return [np.zeros((2, 2, 3), dtype=np.uint8)]
+        return [np.zeros((2, 2, 3), dtype=np.uint8)], 1
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_sample_frames)
+    monkeypatch.setattr(
+        image_utils, "_sample_frames_uncached_detailed", fake_sample_frames
+    )
 
     pipeline = Pipeline([_FrameCacheProbeModule()])
     pipeline.start()

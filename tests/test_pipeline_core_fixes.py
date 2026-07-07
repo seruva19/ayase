@@ -123,6 +123,32 @@ class _NestedConfigModule(PipelineModule):
         return sample
 
 
+class _DisposeInvalidatorModule(PipelineModule):
+    """Flips processed samples to invalid during ``on_dispose`` (like dedup)."""
+
+    name = "corefix_dispose_invalidator"
+    description = "Appends an ERROR issue during on_dispose"
+
+    def __init__(self, config=None):
+        super().__init__(config)
+        self._targets = []
+
+    def process(self, sample: Sample) -> Sample:
+        self._targets.append(sample)
+        return sample
+
+    def on_dispose(self) -> None:
+        for s in self._targets:
+            s.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.ERROR,
+                    issue_type="duplicate",
+                    message="near-duplicate removed",
+                )
+            )
+        super().on_dispose()
+
+
 def _media(tmp_path: Path, name: str = "clip.mp4") -> Path:
     path = tmp_path / name
     path.write_bytes(b"video-bytes")
@@ -362,6 +388,52 @@ def test_hook_reverted_when_module_raises_batch_path(tmp_path: Path):
         assert result.failed_modules == ["corefix_failing"]
 
 
+def test_failed_marker_survives_after_hook_returning_copy_single(tmp_path: Path):
+    """Fix 4: an after-hook that returns a fresh Sample must not drop the marker.
+
+    Regression: the failure marker used to be written to the pre-revert sample;
+    an after-hook returning a new object (model_copy) discarded it, so the
+    failed sample was cached as complete and never retried.
+    """
+    media = _media(tmp_path)
+    module = _FailingModule()
+    pipeline = Pipeline([module])
+    # After-hook returns a NEW Sample that carries no failure marker.
+    pipeline.add_hook(
+        "corefix_failing",
+        after=lambda item: item.model_copy(update={"failed_modules": []}),
+    )
+    pipeline.start()
+
+    result = pipeline.process_sample(Sample(path=media, is_video=True))
+
+    assert result.failed_modules == ["corefix_failing"]
+    assert any(i.issue_type == "module_error" for i in result.validation_issues)
+    # And the incomplete result must not be served from cache.
+    pipeline.process_sample(Sample(path=media, is_video=True))
+    assert module.calls == 2
+
+
+def test_failed_marker_survives_after_hook_returning_copy_batch(tmp_path: Path):
+    """Fix 4 (batch path): ``working[pos] = after(...)`` must keep the marker."""
+    samples = [
+        Sample(path=_media(tmp_path, f"{i}.mp4"), is_video=True) for i in range(2)
+    ]
+    module = _FailingModule()
+    pipeline = Pipeline([module])
+    pipeline.add_hook(
+        "corefix_failing",
+        after=lambda item: item.model_copy(update={"failed_modules": []}),
+    )
+    pipeline.start()
+
+    results = pipeline.process_samples(samples, batch_size=2)
+
+    for result in results:
+        assert result.failed_modules == ["corefix_failing"]
+        assert any(i.issue_type == "module_error" for i in result.validation_issues)
+
+
 def test_raising_hook_does_not_crash_pipeline(tmp_path: Path):
     media = _media(tmp_path)
     module = _BackendProbeModule()
@@ -422,6 +494,71 @@ def test_post_process_stats_match_after_resume(tmp_path: Path):
     assert (
         restored.stats.severity_distribution == pipeline.stats.severity_distribution
     )
+
+
+def test_on_dispose_validity_flip_reflected_in_final_stats(tmp_path: Path):
+    """Fix 5: on_dispose validity flips must be folded into exported stats.
+
+    Regression: sample-derived stats were rebuilt BEFORE on_dispose ran, so a
+    batch module (e.g. dedup) that invalidated samples in on_dispose was not
+    reflected in the final aggregate counts.
+    """
+    media = _media(tmp_path)
+    pipeline = Pipeline([_DisposeInvalidatorModule()])
+    pipeline.start()
+    pipeline.process_sample(Sample(path=media, is_video=True))
+
+    # Before stop(): the on_dispose issue does not exist yet.
+    assert pipeline.stats.valid_samples == 1
+    assert pipeline.stats.invalid_samples == 0
+
+    pipeline.stop()
+
+    assert pipeline.stats.total_samples == 1
+    assert pipeline.stats.valid_samples == 0
+    assert pipeline.stats.invalid_samples == 1
+    assert pipeline.stats.issues_by_type.get("duplicate") == 1
+    assert pipeline.stats.severity_distribution.get("error") == 1
+
+
+def test_save_state_tolerates_non_json_metadata(tmp_path: Path):
+    """Fix 3: a non-JSON value in Sample.metadata must not abort the whole save."""
+    media = _media(tmp_path)
+    state_path = tmp_path / "state.json"
+    pipeline = Pipeline([_BackendProbeModule()])
+    pipeline.start()
+    result = pipeline.process_sample(Sample(path=media, is_video=True))
+
+    # A module stashed non-JSON-serializable values in metadata.
+    result.metadata["arr"] = np.arange(3)
+    result.metadata["scalar"] = np.float32(1.5)
+    result.metadata["where"] = tmp_path / "sub"
+    result.metadata["layout"] = "2x2"  # valid metadata must be preserved
+
+    pipeline.save_state(state_path)
+
+    assert state_path.exists()  # the whole save was NOT aborted
+    data = json.loads(state_path.read_text(encoding="utf-8"))
+    meta = data["results"][str(media)]["metadata"]
+    assert meta["arr"] == [0, 1, 2]
+    assert meta["scalar"] == 1.5
+    assert meta["layout"] == "2x2"
+
+
+def test_save_state_round_trips_non_json_metadata(tmp_path: Path):
+    """Coerced metadata still loads back into a valid resumable state."""
+    media = _media(tmp_path)
+    state_path = tmp_path / "state.json"
+    pipeline = Pipeline([_BackendProbeModule()])
+    pipeline.start()
+    result = pipeline.process_sample(Sample(path=media, is_video=True))
+    result.metadata["scalar"] = np.int64(7)
+    pipeline.save_state(state_path)
+
+    resumed = Pipeline([_BackendProbeModule()])
+    resumed.load_state(state_path)
+    restored = resumed.results[str(media)]
+    assert restored.metadata["scalar"] == 7
 
 
 # ---------------------------------------------------------------------------
@@ -552,11 +689,13 @@ def _install_fake_decoder(monkeypatch, total_frames: int = 8):
     def fake_decode(path, max_frames=8, color="rgb"):
         calls.append((int(max_frames), str(color)))
         n = min(int(max_frames), total_frames)
-        return [
+        frames = [
             np.full((4, 4, 3), fill_value=i, dtype=np.uint8) for i in range(n)
         ]
+        # reliable_total == the video's true frame count (decoder-reported).
+        return frames, total_frames
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_decode)
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_decode)
     return calls
 
 
@@ -624,6 +763,123 @@ def test_frame_cache_does_not_redecode_exhausted_source(
     assert len(first) == 2
     assert len(second) == 2
     assert len(calls) == 1  # source exhausted; no futile re-decode
+
+
+def test_frame_cache_short_read_not_treated_as_exhausted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A short read from failed seeks on a LONG video must not cache exhausted.
+
+    Regression: ``exhausted`` used to be ``len(frames) < max_frames`` — a long
+    video that yielded fewer frames purely because some seeks failed was wrongly
+    marked exhausted and never re-decoded for a higher ``max_frames``.
+    """
+    import ayase.image as image_utils
+
+    calls = []
+
+    def flaky_detailed(path, max_frames=8, color="rgb"):
+        calls.append(int(max_frames))
+        # Video actually has 100 frames, but seeks fail so only 3 come back.
+        n = min(3, int(max_frames))
+        frames = [np.full((4, 4, 3), i, dtype=np.uint8) for i in range(n)]
+        return frames, 100  # reliable_total >> returned count
+
+    monkeypatch.setattr(
+        image_utils, "_sample_frames_uncached_detailed", flaky_detailed
+    )
+    media = _media(tmp_path)
+    pipeline = Pipeline([])
+
+    first = pipeline.sample_frames(media, max_frames=4, color="rgb")
+    pipeline.sample_frames(media, max_frames=8, color="rgb")
+
+    assert len(first) == 3
+    # Not exhausted (reliable_total 100 > 4) => higher request re-decodes.
+    assert calls == [4, 8]
+
+
+def test_frame_cache_unreliable_count_allows_redecode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """When the decoder frame count is unreliable, a larger request re-attempts."""
+    import ayase.image as image_utils
+
+    calls = []
+
+    def seq_detailed(path, max_frames=8, color="rgb"):
+        calls.append(int(max_frames))
+        n = min(int(max_frames), 2)
+        frames = [np.full((4, 4, 3), i, dtype=np.uint8) for i in range(n)]
+        return frames, None  # frame count unreliable (<=0)
+
+    monkeypatch.setattr(
+        image_utils, "_sample_frames_uncached_detailed", seq_detailed
+    )
+    media = _media(tmp_path)
+    pipeline = Pipeline([])
+
+    pipeline.sample_frames(media, max_frames=4, color="rgb")
+    pipeline.sample_frames(media, max_frames=8, color="rgb")
+
+    assert calls == [4, 8]  # unreliable count => not cached as exhausted
+
+
+def test_sample_frames_detailed_reports_frame_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """``_sample_frames_uncached_detailed`` reports a reliable total, or None."""
+    import ayase.image as image_utils
+
+    class _CountCapture(_FakeZeroCountCapture):
+        def get(self, prop):
+            return 12.0  # reliable CAP_PROP_FRAME_COUNT
+
+    monkeypatch.setattr(image_utils.cv2, "VideoCapture", _CountCapture)
+    media = _media(tmp_path, "clip.mp4")
+    frames, total = image_utils._sample_frames_uncached_detailed(
+        media, max_frames=4, color="rgb"
+    )
+    assert total == 12  # decoder-reported count, not len(frames)
+    assert len(frames) == 4
+
+    # Zero/unreliable count => None (sequential fallback path).
+    monkeypatch.setattr(image_utils.cv2, "VideoCapture", _FakeZeroCountCapture)
+    media2 = _media(tmp_path, "broken.webm")
+    frames2, total2 = image_utils._sample_frames_uncached_detailed(
+        media2, max_frames=4, color="rgb"
+    )
+    assert total2 is None
+
+
+def test_uncached_sample_frames_are_read_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Fix 1: the uncached fallback path returns read-only frames too.
+
+    The contract must be identical to the pipeline (cached) path so a module
+    that mutates a returned frame in place fails in tests, not only in prod.
+    """
+    import ayase.image as image_utils
+
+    def fake_decode(path, max_frames=8, color="rgb"):
+        return [np.full((4, 4, 3), 5, dtype=np.uint8) for _ in range(int(max_frames))]
+
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached", fake_decode)
+    monkeypatch.setattr(
+        image_utils,
+        "_load_representative_frame_uncached",
+        lambda path, color="rgb": np.full((4, 4, 3), 5, dtype=np.uint8),
+    )
+
+    # No pipeline active => uncached fallback path is taken.
+    frames = image_utils.sample_frames(tmp_path / "x.mp4", max_frames=3)
+    assert frames and all(f.flags.writeable is False for f in frames)
+    with pytest.raises((ValueError, RuntimeError)):
+        frames[0][0, 0, 0] = 9
+
+    rep = image_utils.load_representative_frame(tmp_path / "x.mp4")
+    assert rep is not None and rep.flags.writeable is False
 
 
 def test_representative_frame_cached_and_read_only(

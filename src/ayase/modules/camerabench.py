@@ -129,6 +129,12 @@ class CameraBenchModule(PipelineModule):
         import torch  # noqa: F401
         from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
+        # qwen_vl_utils.process_vision_info is the canonical way to build the
+        # Qwen2.5-VL video inputs (see the model card). Require it up front so a
+        # missing dependency disables the module cleanly (setup -> unavailable)
+        # rather than failing later inside process().
+        from qwen_vl_utils import process_vision_info  # noqa: F401
+
         from ayase.runtime import shared_runtime_resource
 
         model_id = self.config.get("model_id", "chancharikm/qwen2.5-vl-7b-cam-motion")
@@ -195,8 +201,15 @@ class CameraBenchModule(PipelineModule):
         return best_label, best_prob
 
     def _score_yes(self, pil_frames: List, description: str) -> Optional[float]:
-        """Return P('Yes') for 'Does this video show "<description>"?'."""
+        """Return P('Yes') for 'Does this video show "<description>"?'.
+
+        Builds the video input via the canonical Qwen2.5-VL path
+        (``qwen_vl_utils.process_vision_info``) so the frames and fps are
+        packed exactly as the model expects, then reads the next-token
+        distribution and sums the probability mass on the ``Yes`` token(s).
+        """
         import torch
+        from qwen_vl_utils import process_vision_info
 
         processor = self._processor
         question = f'Does this video show "{description}"?'
@@ -204,7 +217,11 @@ class CameraBenchModule(PipelineModule):
             {
                 "role": "user",
                 "content": [
-                    {"type": "video", "video": pil_frames, "fps": self.config.get("fps", 8.0)},
+                    {
+                        "type": "video",
+                        "video": pil_frames,
+                        "fps": self.config.get("fps", 8.0),
+                    },
                     {"type": "text", "text": question},
                 ],
             }
@@ -212,9 +229,17 @@ class CameraBenchModule(PipelineModule):
         text = processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
-        inputs = processor(text=[text], videos=[pil_frames], return_tensors="pt").to(
-            self._device
+        image_inputs, video_inputs, video_kwargs = process_vision_info(
+            messages, return_video_kwargs=True
         )
+        inputs = processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+            **video_kwargs,
+        ).to(self._device)
         with torch.inference_mode():
             outputs = self._model(**inputs)
             next_logits = outputs.logits[:, -1, :]
