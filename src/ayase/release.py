@@ -105,22 +105,33 @@ def promote_changelog(
 def sync_readme_counts(readme_path: Path = Path("README.md")) -> ReadmeSyncResult:
     """Update README module/metric/category counts from the packaged registry."""
 
-    from .metrics_doc import _get_quality_metrics_fields
+    from .metrics_doc import _get_quality_metrics_fields, compute_provisional_partition
     from .models import QualityMetrics
     from .pipeline import ModuleRegistry
 
     ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules(packaged_only=True)
-    total = len([n for n in all_modules if ModuleRegistry.get_module(n) is not None])
+    # Provisional modules have no turnkey real backend; exclude them (and the
+    # metric fields owned only by them) from the documented, delivered counts.
+    provisional_modules, provisional_only_fields = compute_provisional_partition(all_modules)
+    delivered_modules = [
+        n for n in all_modules
+        if ModuleRegistry.get_module(n) is not None and n not in provisional_modules
+    ]
+    total = len(delivered_modules)
     # Exclude provenance/bookkeeping fields (e.g. metric_backends) — they are
-    # not metrics. Matches QualityMetrics' own metric-view helpers and the
-    # count the README-contract tests assert against.
-    n_fields = len(QualityMetrics.model_fields) - len(QualityMetrics._NON_METRIC_FIELDS)
+    # not metrics — and metric fields that belong exclusively to provisional
+    # modules. Matches the delivered set documented in METRICS.md.
+    n_fields = (
+        len(QualityMetrics.model_fields)
+        - len(QualityMetrics._NON_METRIC_FIELDS)
+        - len(provisional_only_fields)
+    )
 
     qm_fields = _get_quality_metrics_fields()
     field_writers: set[str] = set()
     has_no_output_modules = False
-    for name in all_modules:
+    for name in delivered_modules:
         cls = ModuleRegistry.get_module(name)
         if cls is None:
             continue
@@ -133,7 +144,7 @@ def sync_readme_counts(readme_path: Path = Path("README.md")) -> ReadmeSyncResul
     has_dataset_outputs = any(
         ModuleRegistry.get_module(name) is not None
         and ModuleRegistry.get_module(name).get_metadata().get("dataset_output_fields")
-        for name in all_modules
+        for name in delivered_modules
     )
     rendered_cats = {qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields}
     n_categories = (

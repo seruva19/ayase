@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class OAVQAModule(PipelineModule):
     name = "oavqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "OAVQA omnidirectional audio-visual QA (2024; real model only, disabled if unavailable)"
     default_config = {
         "subsample": 8,

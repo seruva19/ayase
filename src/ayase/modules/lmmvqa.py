@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class LMMVQAModule(PipelineModule):
     name = "lmmvqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "LMM-VQA spatiotemporal quality (real model only; disabled if unavailable)"
     default_config = {
         "subsample": 8,

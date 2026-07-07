@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class RAPIQUEModule(PipelineModule):
     name = "rapique"
+    provisional = True  # no turnkey real backend in a standard install
     description = "RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only)"
     default_config = {
         "subsample": 8,

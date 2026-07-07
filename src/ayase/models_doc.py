@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from .metrics_doc import compute_provisional_partition
 from .pipeline import ModuleRegistry
 
 
@@ -747,12 +748,18 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     """
     ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules(packaged_only=not include_plugins)
+    # Provisional modules (no turnkey real backend) are excluded from the model
+    # catalog: models referenced only by them drop out, and their names are
+    # removed from every "Used by" list, so MODELS.md reflects the delivered set.
+    provisional_modules, _ = compute_provisional_partition(all_modules)
 
     # Collect all model references
     entries: Dict[str, ModelEntry] = {}  # key -> ModelEntry
     source_counts: Dict[str, int] = defaultdict(int)  # source type -> count
 
     for mod_name in sorted(all_modules):
+        if mod_name in provisional_modules:
+            continue
         cls = ModuleRegistry.get_module(mod_name)
         if cls is None or cls.name == "unnamed_module":
             continue

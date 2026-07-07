@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class UNQAModule(PipelineModule):
     name = "unqa"
+    provisional = True  # no turnkey real backend in a standard install
     description = "UNQA unified no-reference quality for audio/image/video (2024)"
     default_config = {
         "subsample": 8,

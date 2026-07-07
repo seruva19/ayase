@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 class GAMIVALModule(PipelineModule):
     name = "gamival"
+    provisional = True  # no turnkey real backend in a standard install
     description = "GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023)"
     default_config = {
         "subsample": 8,

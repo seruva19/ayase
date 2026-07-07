@@ -340,6 +340,57 @@ def _detect_dataset_fields_written(source: str) -> Set[str]:
     return set(re.findall(r'add_dataset_metric\(\s*["\'](\w+)["\']', source))
 
 
+def _module_owned_qm_fields(cls) -> Set[str]:
+    """Return the QualityMetrics metric fields a module *owns*.
+
+    Ownership = the union of its ``metric_groups`` keys, its ``metric_info``
+    keys, and every ``quality_metrics.FIELD =`` / ``qm.FIELD =`` assignment in
+    its source. Used to decide which fields belong exclusively to provisional
+    modules (and are therefore excluded from the documented metric count).
+    """
+    from .models import QualityMetrics
+
+    qm_fields = set(QualityMetrics.model_fields)
+    owned: Set[str] = set()
+    owned |= set(getattr(cls, "metric_groups", None) or {})
+    owned |= set(getattr(cls, "metric_info", None) or {})
+    owned |= _detect_fields_written(_get_source(cls))
+    return owned & qm_fields
+
+
+def compute_provisional_partition(module_names: Iterable[str]) -> Tuple[Set[str], Set[str]]:
+    """Partition modules/fields into delivered vs provisional.
+
+    Returns ``(provisional_modules, provisional_only_fields)`` where:
+
+    - ``provisional_modules`` — names flagged ``provisional`` among *module_names*.
+    - ``provisional_only_fields`` — QualityMetrics metric fields whose EVERY
+      owning module is provisional (a field kept alive by at least one delivered
+      module stays delivered). These are excluded from the documented metric
+      count and moved to the Experimental section.
+
+    Fields with no owner at all (schema orphans) are NOT reported here; they
+    stay counted the way they always were.
+    """
+    provisional_modules: Set[str] = set()
+    field_owners: Dict[str, Set[str]] = defaultdict(set)
+    for name in module_names:
+        cls = ModuleRegistry.get_module(name)
+        if cls is None:
+            continue
+        is_prov = bool(getattr(cls, "provisional", False))
+        if is_prov:
+            provisional_modules.add(name)
+        for field in _module_owned_qm_fields(cls):
+            field_owners[field].add(name)
+    provisional_only_fields = {
+        field
+        for field, owners in field_owners.items()
+        if owners and owners <= provisional_modules
+    }
+    return provisional_modules, provisional_only_fields
+
+
 _UTILITY_MODULES = {"embedding", "dedup", "diversity_selection", "knowledge_graph"}
 
 # ── Metric category display names and ordering ────────────────────────────
@@ -857,8 +908,18 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     """
     ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules(packaged_only=not include_plugins)
+    # Provisional modules (no turnkey real backend) are excluded from the
+    # delivered/documented set and rendered separately in an Experimental
+    # section. ``provisional_only_fields`` are metric fields owned exclusively
+    # by provisional modules — excluded from the headline metric count.
+    provisional_modules, provisional_only_fields = compute_provisional_partition(all_modules)
+    delivered_modules = [n for n in all_modules if n not in provisional_modules]
     qm_fields = _get_quality_metrics_fields()
     ds_fields = _get_dataset_stats_fields()
+    # Metric fields that belong to the delivered set (used for headline counts).
+    delivered_qm_fields = {
+        fn for fn in qm_fields if fn not in provisional_only_fields
+    }
 
     # ── Collect module data ──────────────────────────────────────────────
     results: List[Dict] = []
@@ -871,7 +932,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     speed_counts: Counter = Counter()
     gpu_count = 0
 
-    for name in all_modules:
+    for name in delivered_modules:
         cls = ModuleRegistry.get_module(name)
         if cls is None or cls.name == "unnamed_module":
             continue
@@ -992,7 +1053,10 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
 
     written_fields = set(field_writers.keys())
     all_qm_field_names = set(qm_fields.keys())
-    orphaned = all_qm_field_names - written_fields
+    # Fields owned only by provisional modules are intentionally undocumented in
+    # the delivered body (they live in the Experimental section), so they are
+    # NOT orphans — don't flag them as declared-but-never-written.
+    orphaned = all_qm_field_names - written_fields - provisional_only_fields
     collisions = {f: writers for f, writers in field_writers.items() if len(writers) > 1}
 
     # Module dependencies (modules that read fields written by other modules)
@@ -1042,7 +1106,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a("# Ayase Metrics Reference")
     a("")
     a(f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
-      f"· **{total_modules} modules** · **{len(qm_fields)} metrics**")
+      f"· **{total_modules} modules** · **{len(delivered_qm_fields)} metrics**")
     a(">")
     a("> `ayase modules docs -o METRICS.md` to regenerate")
     a(">")
@@ -1075,7 +1139,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a("## Summary")
     a("")
     a(f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
-      f"· **{len(qm_fields)}** metrics · **{tiered_count}** tiered "
+      f"· **{len(delivered_qm_fields)}** metrics · **{tiered_count}** tiered "
       f"· **{gpu_count}** GPU · **{total_categories}** categories")
 
     # ── 2. Charts ─────────────────────────────────────────────────────
@@ -1407,6 +1471,46 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 items.append("GPU")
             items.append(f"Tests: {_format_test_coverage(r['name'], test_coverage, test_results)}")
             a(f"- **{mod_link}** — {r['description']} · {' · '.join(items)}")
+        a("")
+
+    # ── Experimental — pending real backend (provisional modules) ─────
+    # These modules are code-complete and registered (revivable), but have no
+    # turnkey real backend in a standard install (uninstallable dep, unreleased
+    # weights, needs training/native build, or architecturally impossible).
+    # They are EXCLUDED from every count above and produce no values today.
+    if provisional_modules:
+        prov_sorted = sorted(provisional_modules)
+        a("---")
+        a("")
+        a(f"## Experimental — pending real backend ({len(prov_sorted)} modules)")
+        a("")
+        a("These modules ship in the package and stay registered, but currently "
+          "have **no turnkey real backend** in a standard `pip install ayase` + "
+          "network environment (uninstallable dependency, unreleased weights, "
+          "needs training or a native build, or architecturally impossible). "
+          "They are **excluded from the module/metric/category counts above** and "
+          "produce no values until a real backend is wired. The "
+          f"**{len(provisional_only_fields)}** metric field(s) below stay in the "
+          "`QualityMetrics` schema, reserved for that revival.")
+        a("")
+        for name in prov_sorted:
+            cls = ModuleRegistry.get_module(name)
+            if cls is None:
+                continue
+            extra = mod_extra.get(name, {})
+            file_path = extra.get("file_path", "")
+            mod_link = f"[`{name}`]({file_path})" if file_path else f"`{name}`"
+            owned = sorted(_module_owned_qm_fields(cls) & provisional_only_fields)
+            src = _get_source(cls)
+            pkgs = _detect_packages(src)
+            parts = [f"**{mod_link}** — {cls.description}"]
+            if owned:
+                parts.append("Metrics: " + ", ".join(f"`{f}`" for f in owned))
+            else:
+                parts.append("Metrics: — (dataset-level / none)")
+            if pkgs:
+                parts.append("Needs: " + ", ".join(pkgs))
+            a(f"- " + " · ".join(parts))
         a("")
 
     return "\n".join(L)

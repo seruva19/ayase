@@ -21,7 +21,20 @@ def _load_metrics_md_fields():
 
 
 def test_metrics_table_matches_quality_metrics():
-    """Verify METRICS.md references are consistent with QualityMetrics model."""
+    """Verify METRICS.md references are consistent with QualityMetrics model.
+
+    Delivered metric fields (owned by at least one real-backend module) are
+    documented as ``### `field``` headings in the main body. Fields owned only
+    by provisional (no-backend) modules are NOT in the main body; they are
+    listed by name in the "Experimental — pending real backend" section instead.
+    The full schema stays 436; the delivered set is what the doc advertises.
+    """
+    from ayase.metrics_doc import compute_provisional_partition
+    from ayase.pipeline import ModuleRegistry
+
+    metrics_path = Path("METRICS.md")
+    text = metrics_path.read_text(encoding="utf-8") if metrics_path.exists() else ""
+
     fields_in_doc = _load_metrics_md_fields()
     # Provenance fields (metric_backends) are not metrics and are not listed in
     # METRICS.md, so exclude them from the doc-consistency checks below.
@@ -29,6 +42,11 @@ def test_metrics_table_matches_quality_metrics():
         QualityMetrics._NON_METRIC_FIELDS
     )
     dataset_fields = set(DatasetStats.model_fields.keys())
+
+    ModuleRegistry.discover_modules()
+    all_modules = ModuleRegistry.list_modules(packaged_only=True)
+    _, provisional_only_fields = compute_provisional_partition(all_modules)
+    delivered_fields = model_fields - provisional_only_fields
 
     # Every field mentioned in METRICS.md must exist in QualityMetrics
     unknown = fields_in_doc - model_fields - dataset_fields
@@ -38,9 +56,22 @@ def test_metrics_table_matches_quality_metrics():
     )}
     assert not unknown, f"METRICS.md references unknown fields: {unknown}"
 
+    # Every DELIVERED field must be documented as a heading in the main body.
     documented_qm_fields = fields_in_doc & model_fields
-    missing = model_fields - documented_qm_fields
-    assert not missing, f"METRICS.md omits QualityMetrics fields: {missing}"
+    missing = delivered_fields - documented_qm_fields
+    assert not missing, f"METRICS.md omits delivered QualityMetrics fields: {missing}"
 
-    # QualityMetrics field count must be correct
+    # Provisional-only fields must NOT appear as delivered headings, but must be
+    # named in the Experimental section so the schema stays fully documented.
+    leaked = provisional_only_fields & documented_qm_fields
+    assert not leaked, (
+        f"provisional-only fields leaked into the delivered doc body: {leaked}"
+    )
+    undocumented_prov = {f for f in provisional_only_fields if f"`{f}`" not in text}
+    assert not undocumented_prov, (
+        f"Experimental section omits provisional fields: {undocumented_prov}"
+    )
+
+    # Schema count (all metric fields) is unchanged; delivered = schema − prov.
     assert len(model_fields) == 436, f"Expected 436 fields, got {len(model_fields)}"
+    assert len(delivered_fields) == 436 - len(provisional_only_fields)

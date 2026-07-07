@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class VideoRewardModule(PipelineModule):
     name = "videoreward"
+    provisional = True  # no turnkey real backend in a standard install
     description = "VideoReward Kling multi-dim reward model (NeurIPS 2025)"
     default_config = {
         "subsample": 8,

@@ -46,6 +46,14 @@ class PipelineModule(ABC):
     metric_info: Dict[str, str] = {}
     metric_groups: Dict[str, str] = {}
 
+    # True = no turnkey real backend in a standard install (uninstallable dep,
+    # unreleased weights, needs training, or architecturally impossible). The
+    # module stays registered and revivable but is excluded from documented
+    # metric/module counts (README, METRICS.md, MODELS.md) and is instead shown
+    # in an "Experimental — pending real backend" section. Flip to False the
+    # moment a reachable real backend lands.
+    provisional: bool = False
+
     _global_test_mode: bool = False
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -1788,12 +1796,31 @@ class ModuleRegistry:
         return getattr(module_cls, "__module__", "").startswith("ayase.modules.")
 
     @classmethod
-    def list_modules(cls, packaged_only: bool = False) -> Dict[str, str]:
-        """Return dict of name -> description, sorted by name for stable iteration."""
+    def is_provisional(cls, name: str) -> bool:
+        """Return whether a registered module is flagged ``provisional``.
+
+        Provisional modules have no turnkey real backend in a standard install;
+        they stay registered/revivable but are excluded from the documented
+        module/metric counts and listed in an Experimental section instead.
+        Unknown names return False.
+        """
+        module_cls = cls._modules.get(name)
+        return bool(module_cls is not None and getattr(module_cls, "provisional", False))
+
+    @classmethod
+    def list_modules(
+        cls, packaged_only: bool = False, include_provisional: bool = True
+    ) -> Dict[str, str]:
+        """Return dict of name -> description, sorted by name for stable iteration.
+
+        ``include_provisional=False`` drops modules flagged ``provisional`` so
+        doc generators can report only the delivered (real-backend) set.
+        """
         return {
             name: cls._modules[name].description
             for name in sorted(cls._modules)
-            if not packaged_only or cls.is_packaged_module(cls._modules[name])
+            if (not packaged_only or cls.is_packaged_module(cls._modules[name]))
+            and (include_provisional or not getattr(cls._modules[name], "provisional", False))
         }
 
     @classmethod

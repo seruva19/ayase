@@ -636,22 +636,37 @@ class TestGeneratedDocsAreFresh:
         if not readme_path.exists():
             pytest.skip("README.md is not present in the working tree")
 
-        from ayase.metrics_doc import _get_quality_metrics_fields
+        from ayase.metrics_doc import (
+            _get_quality_metrics_fields,
+            compute_provisional_partition,
+        )
 
         ModuleRegistry.discover_modules()
         all_modules = ModuleRegistry.list_modules(packaged_only=True)
-        total = len([n for n in all_modules
-                     if ModuleRegistry.get_module(n) is not None])
+        # Provisional modules (no turnkey real backend) and the fields owned only
+        # by them are excluded from the delivered/documented counts.
+        provisional_modules, provisional_only_fields = compute_provisional_partition(
+            all_modules
+        )
+        delivered_modules = [
+            n for n in all_modules
+            if ModuleRegistry.get_module(n) is not None
+            and n not in provisional_modules
+        ]
+        total = len(delivered_modules)
         # Exclude provenance/bookkeeping fields (e.g. ``metric_backends``) that
-        # are not metrics — the README prose counts computed metrics only.
-        n_fields = len(QualityMetrics.model_fields) - len(
-            QualityMetrics._NON_METRIC_FIELDS
+        # are not metrics, and fields owned only by provisional modules — the
+        # README prose counts delivered metrics only.
+        n_fields = (
+            len(QualityMetrics.model_fields)
+            - len(QualityMetrics._NON_METRIC_FIELDS)
+            - len(provisional_only_fields)
         )
         qm_fields = _get_quality_metrics_fields()
 
         field_writers: Set[str] = set()
         has_no_output_modules = False
-        for name in all_modules:
+        for name in delivered_modules:
             cls = ModuleRegistry.get_module(name)
             if cls is None:
                 continue
@@ -665,7 +680,7 @@ class TestGeneratedDocsAreFresh:
         has_dataset_outputs = any(
             ModuleRegistry.get_module(name) is not None
             and ModuleRegistry.get_module(name).get_metadata().get("dataset_output_fields")
-            for name in all_modules
+            for name in delivered_modules
         )
         n_categories = (
             len(rendered_cats)

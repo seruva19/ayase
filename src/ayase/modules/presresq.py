@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class PreResQModule(PipelineModule):
     name = "presresq"
+    provisional = True  # no turnkey real backend in a standard install
     description = "PreResQ-R1 rank+score VQA (2025)"
     default_config = {
         "subsample": 8,

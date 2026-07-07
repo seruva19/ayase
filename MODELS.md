@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 15:14 · **210 models** across **10 sources**
+> **Version 0.1.60** · Generated 2026-07-07 15:47 · **208 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**210** models · **73** HuggingFace · **55** pyiqa · **10** sources
+**208** models · **73** HuggingFace · **54** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (50)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (50)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (54)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -426,7 +426,7 @@
 
 - `nima_mobilenet_aesthetic.onnx` — used by `nima_legacy_onnx`
 
-## pyiqa Metrics (55)
+## pyiqa Metrics (54)
 
 <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection of image/video quality metrics. Weights auto-download on first `pyiqa.create_metric()` call. `pip install pyiqa`
 
@@ -476,7 +476,6 @@
 | `promptiqa` | Few-shot prompt-based NR-IQA | research | — | `promptiqa` |
 | `qcn` | Geometric order blind IQA | research | — | `qcn` |
 | `qualiclip` | Quality-aware CLIP embeddings | research | — | `qualiclip` |
-| `rapique` | IQA | research | — | `rapique` |
 | `ssimc` | Complex wavelet SSIM-C FR | MIT (pyiqa) | Yes | `ssimc` |
 | `topiq` | TOPIQ transformer quality | research | — | `topiq` |
 | `topiq_fr` | Transformer-based FR image quality | MIT (pyiqa) | Yes | `topiq_fr` |
@@ -557,12 +556,6 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `CLIP ViT-B-32` [↑](#categories)
 
 - **Used by**: `i2v_similarity`
-
-### `CLIP ViT-B/32` [↑](#categories)
-> MIT (OpenAI)
-
-- **Used by**: `unified_vqa`
-- **VRAM**: ~600 MB · **Disk**: ~340 MB
 
 ### `open_clip/ViT-B-32` [↑](#categories)
 
@@ -671,7 +664,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `insightface` [↑](#categories)
 > InsightFace (face recognition)
 
-- **Used by**: `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`, `serfiq`
+- **Used by**: `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`
 - **Install**: `pip install insightface`
 
 ### `joblib` [↑](#categories)
