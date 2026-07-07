@@ -23,6 +23,11 @@ class DiversitySelectionModule(PipelineModule):
         "priority_metric": "aesthetic_score" # aesthetic_score, fast_vqa_score, technical_score
     }
 
+    def __init__(self, config=None):
+        super().__init__(config)
+        # Cross-sample cosine-similarity dedup; inherently algorithmic.
+        self._backend = "algorithmic"
+
     def process(self, sample: Sample) -> Sample:
         # Cross-sample analysis happens in post_process
         return sample

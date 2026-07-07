@@ -1,8 +1,10 @@
 """FVMD (Fréchet Video Motion Distance) module.
 
-FVMD is a variant of FVD that focuses on motion features instead of appearance.
-It extracts optical flow features and computes Fréchet distance on motion statistics.
-Lower FVMD = better motion quality in generated videos.
+The published FVMD (Liu et al. 2024) builds velocity/acceleration statistics
+from tracked keypoints (point tracking) and computes a Fréchet distance over
+those features. ayase has no such tracking backend wired, so the metric is
+left unset rather than reported from a dense-optical-flow proxy (which would
+not reproduce FVMD).
 
 This is a dataset-level metric that compares two distributions of videos.
 """
@@ -38,87 +40,20 @@ class FVMDModule(BatchMetricModule):
         self.num_frames = self.config.get("num_frames", 16)
         self.flow_method = self.config.get("flow_method", "farneback")
         self.subsample_videos = self.config.get("subsample_videos", None)
-        self._ml_available = True  # Always available (OpenCV only)
+        self._ml_available = False
         self._processed_count = 0
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         self._processed_count = 0
-        logger.info("FVMD module initialized (OpenCV optical flow)")
+        logger.warning(
+            "FVMD unavailable: no keypoint-tracking backend for Frechet Video "
+            "Motion Distance is wired; metric disabled."
+        )
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract motion features (optical flow) from video.
-
-        Args:
-            sample: Video sample
-
-        Returns:
-            Motion feature vector, or None if extraction failed
-        """
-        if not sample.is_video:
-            return None
-
-        # Check subsample limit
-        if self.subsample_videos is not None and self._processed_count >= self.subsample_videos:
-            return None
-
-        try:
-            # Load video frames
-            cap = cv2.VideoCapture(str(sample.path))
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-            if total_frames < self.num_frames:
-                cap.release()
-                return None
-
-            # Sample frames uniformly
-            frame_indices = np.linspace(0, total_frames - 1, self.num_frames, dtype=int)
-            frames = []
-
-            for idx in frame_indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if not ret:
-                    cap.release()
-                    return None
-
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                frames.append(gray)
-
-            cap.release()
-
-            # Compute optical flow between consecutive frames
-            flow_features = []
-
-            for i in range(len(frames) - 1):
-                flow = cv2.calcOpticalFlowFarneback(
-                    frames[i], frames[i + 1], None, 0.5, 3, 15, 3, 5, 1.2, 0
-                )
-
-                # Extract flow statistics as features
-                magnitude, angle = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-
-                # Feature vector: mean/std of magnitude and angle
-                flow_feats = [
-                    magnitude.mean(),
-                    magnitude.std(),
-                    magnitude.max(),
-                    angle.mean(),
-                    angle.std(),
-                    # Histogram of magnitudes (4 bins)
-                    *np.histogram(magnitude, bins=4, range=(0, 10))[0] / magnitude.size,
-                ]
-
-                flow_features.append(flow_feats)
-
-            # Concatenate all flow features
-            features = np.concatenate(flow_features)
-
-            self._processed_count += 1
-            return features
-
-        except Exception as e:
-            logger.debug(f"Failed to extract motion features from {sample.path}: {e}")
-            return None
+        """FVMD has no real feature extractor wired; no features are produced."""
+        return None
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None

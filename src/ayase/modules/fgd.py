@@ -1,8 +1,10 @@
-"""FGD — Frechet Gesture Distance (2020).
+"""FGD — Frechet Gesture Distance (Yoon et al. 2020).
 
-Dataset-level metric that measures the distance between distributions
-of gesture/motion sequences using feature embeddings and the Frechet
-distance formula. Designed for gesture generation evaluation.
+Dataset-level metric that measures the Frechet distance between distributions
+of gesture/motion sequences. The published FGD uses a trained gesture
+autoencoder to embed pose sequences; ayase has no such pretrained backend
+wired, so the metric is left unset rather than reported from an optical-flow
+proxy (which would not reproduce FGD).
 
 fgd_score — lower = better (distribution closer to reference).
 """
@@ -37,79 +39,18 @@ class FGDModule(BatchMetricModule):
         self.num_frames = self.config.get("num_frames", 16)
         self.subsample_videos = self.config.get("subsample_videos", None)
         self._processed_count = 0
+        self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
-        logger.info("FGD module initialised (heuristic)")
+        logger.warning(
+            "FGD unavailable: no pretrained gesture-autoencoder backend for "
+            "Frechet Gesture Distance is wired; metric disabled."
+        )
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract motion features from video for gesture distribution comparison."""
-        if not sample.is_video:
-            return None
-        if self.subsample_videos is not None and self._processed_count >= self.subsample_videos:
-            return None
-
-        try:
-            features = self._extract_motion_features(sample.path)
-            if features is not None:
-                self._processed_count += 1
-            return features
-        except Exception as e:
-            logger.debug(f"FGD feature extraction failed for {sample.path}: {e}")
-            return None
-
-    def _extract_motion_features(self, path: Path) -> Optional[np.ndarray]:
-        """Extract temporal motion features via optical flow statistics."""
-        cap = cv2.VideoCapture(str(path))
-        try:
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total < 2:
-                return None
-
-            n_sample = min(self.num_frames, total)
-            indices = np.linspace(0, total - 1, n_sample, dtype=int)
-
-            prev_gray = None
-            flow_features = []
-
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if not ret:
-                    continue
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray = cv2.resize(gray, (64, 64))
-
-                if prev_gray is not None:
-                    flow = cv2.calcOpticalFlowFarneback(
-                        prev_gray, gray, None,
-                        pyr_scale=0.5, levels=3, winsize=15,
-                        iterations=3, poly_n=5, poly_sigma=1.2, flags=0,
-                    )
-                    mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-
-                    # Statistics: mean, std, max of magnitude + angle histogram
-                    stats = [
-                        mag.mean(), mag.std(), mag.max(),
-                        ang.mean(), ang.std(),
-                    ]
-                    # Angle histogram (8 bins)
-                    hist, _ = np.histogram(ang.flatten(), bins=8, range=(0, 2 * np.pi))
-                    hist = hist.astype(np.float64)
-                    hist /= hist.sum() + 1e-8
-                    stats.extend(hist.tolist())
-
-                    flow_features.append(stats)
-
-                prev_gray = gray
-
-            if not flow_features:
-                return None
-
-            # Aggregate across frames: mean of all per-frame feature vectors
-            feat = np.mean(flow_features, axis=0)
-            return feat.astype(np.float64)
-        finally:
-            cap.release()
+        """FGD has no real feature extractor wired; no features are produced."""
+        return None
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None

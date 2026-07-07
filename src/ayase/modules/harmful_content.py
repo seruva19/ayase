@@ -53,6 +53,9 @@ class HarmfulContentModule(PipelineModule):
         self._clip_processor = None
         self._clip_device = "cpu"
         self._clip_available = False
+        # Safety screen (ayase-defined, not a published metric): CLIP zero-shot
+        # classification when available, otherwise colour/motion image statistics.
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         try:
@@ -91,6 +94,7 @@ class HarmfulContentModule(PipelineModule):
             )
             self._clip_device = device
             self._clip_available = True
+            self._backend = "clip_zeroshot"
             logger.info(f"Harmful content: CLIP classifier on {device}")
         except ImportError:
             logger.info("CLIP unavailable, using heuristic-only detection")

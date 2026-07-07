@@ -46,6 +46,7 @@ class AudioSISDRModule(PipelineModule):
         super().__init__(config)
         self.target_sr = self.config.get("target_sr", 16000)
         self.warning_threshold = self.config.get("warning_threshold", 0.0)
+        self._backend = "algorithmic"
 
     def _extract_audio(self, video_path: Path) -> Optional[Path]:
         """Extract audio from a video file to a temporary WAV."""
@@ -98,6 +99,8 @@ class AudioSISDRModule(PipelineModule):
             deg_audio = deg_audio[:min_len]
 
             si_sdr = self._compute_si_sdr(ref_audio, deg_audio)
+            if si_sdr is None:
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -123,12 +126,15 @@ class AudioSISDRModule(PipelineModule):
         return sample
 
     @staticmethod
-    def _compute_si_sdr(reference: np.ndarray, estimate: np.ndarray) -> float:
+    def _compute_si_sdr(reference: np.ndarray, estimate: np.ndarray) -> Optional[float]:
         """Compute Scale-Invariant SDR.
 
         SI-SDR = 10 * log10(||s_target||^2 / ||e_noise||^2)
         where s_target = (<est, ref> / <ref, ref>) * ref
               e_noise  = est - s_target
+
+        Returns ``None`` when the reference is (near-)silent, since SI-SDR is
+        undefined without reference energy — better than fabricating 0 dB.
         """
         ref = reference - np.mean(reference)
         est = estimate - np.mean(estimate)
@@ -137,7 +143,7 @@ class AudioSISDRModule(PipelineModule):
         s_ref = np.dot(ref, ref)
 
         if s_ref < 1e-8:
-            return 0.0
+            return None
 
         s_target = (dot / s_ref) * ref
         e_noise = est - s_target

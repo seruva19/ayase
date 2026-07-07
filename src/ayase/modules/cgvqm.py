@@ -6,8 +6,8 @@ frame generation that traditional metrics miss.
 
 Range: higher = better quality.
 
-Requires the ``cgvqm`` package from Intel.
-Falls back to frequency-domain analysis for rendered content.
+Requires the ``cgvqm`` package from Intel. When it is unavailable the
+metric is left ``None`` (no approximation is substituted).
 """
 
 import logging
@@ -41,7 +41,7 @@ class CGVQMModule(ReferenceBasedModule):
 
     def setup(self) -> None:
         try:
-            import cgvqm
+            import cgvqm  # noqa: F401
             self._backend = "cgvqm"
             self._ml_available = True
             logger.info("CGVQM module initialised (Intel package)")
@@ -49,14 +49,16 @@ class CGVQMModule(ReferenceBasedModule):
         except ImportError:
             pass
 
-        # Fallback: frequency-domain analysis for rendering artifacts
-        self._backend = "approx"
-        self._ml_available = True
-        logger.info("CGVQM module initialised (frequency-domain approximation)")
+        # No real CGVQM backend available -> metric stays None.
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.warning("CGVQM unavailable: install the Intel `cgvqm` package")
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        if self._backend != "cgvqm":
+            return None
         ref = cv2.imread(str(reference_path))
         dist = cv2.imread(str(sample_path))
         if ref is None or dist is None:
@@ -67,9 +69,7 @@ class CGVQMModule(ReferenceBasedModule):
         ref = cv2.resize(ref, (w, h))
         dist = cv2.resize(dist, (w, h))
 
-        if self._backend == "cgvqm":
-            return self._compute_cgvqm(ref, dist)
-        return self._compute_approx(ref, dist)
+        return self._compute_cgvqm(ref, dist)
 
     def _compute_cgvqm(self, ref_bgr, dist_bgr) -> Optional[float]:
         try:
@@ -77,57 +77,7 @@ class CGVQMModule(ReferenceBasedModule):
             return float(cgvqm.compute(ref_bgr, dist_bgr))
         except Exception as e:
             logger.debug(f"CGVQM native failed: {e}")
-            return self._compute_approx(ref_bgr, dist_bgr)
-
-    def _compute_approx(self, ref_bgr, dist_bgr) -> float:
-        """Approximate gaming quality using frequency-domain analysis.
-
-        Gaming/upscaler artifacts often manifest as:
-        - Ghosting (temporal smearing) -> high-freq difference
-        - Aliasing (jagged edges) -> directional freq energy
-        - Detail loss (over-smoothing) -> reduced high-freq content
-        """
-        ref_gray = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-        dist_gray = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32)
-
-        # FFT-based frequency analysis
-        ref_fft = np.fft.fft2(ref_gray)
-        dist_fft = np.fft.fft2(dist_gray)
-
-        ref_mag = np.abs(np.fft.fftshift(ref_fft))
-        dist_mag = np.abs(np.fft.fftshift(dist_fft))
-
-        # High-frequency preservation ratio
-        h, w = ref_gray.shape
-        cy, cx = h // 2, w // 2
-        r_inner = min(h, w) // 8
-        r_outer = min(h, w) // 2
-
-        y, x = np.ogrid[:h, :w]
-        dist_from_center = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        hf_mask = (dist_from_center > r_inner) & (dist_from_center < r_outer)
-
-        ref_hf = float(np.mean(ref_mag[hf_mask]))
-        dist_hf = float(np.mean(dist_mag[hf_mask]))
-
-        if ref_hf > 0:
-            hf_ratio = min(dist_hf / ref_hf, 1.0)
-        else:
-            hf_ratio = 1.0
-
-        # Edge preservation (Sobel)
-        ref_edges = cv2.Sobel(ref_gray, cv2.CV_32F, 1, 1)
-        dist_edges = cv2.Sobel(dist_gray, cv2.CV_32F, 1, 1)
-        # Constant (flat) inputs produce NaN from corrcoef; treat identical as no distortion
-        if np.std(ref_edges) < 1e-6 or np.std(dist_edges) < 1e-6:
-            edge_sim = 1.0
-        else:
-            edge_sim = float(np.corrcoef(ref_edges.flatten(), dist_edges.flatten())[0, 1])
-            edge_sim = max(0.0, edge_sim)
-
-        # Combine
-        score = (0.6 * hf_ratio + 0.4 * edge_sim) * 100.0
-        return float(np.clip(score, 0, 100))
+            return None
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -155,28 +105,28 @@ class CGVQMModule(ReferenceBasedModule):
         return sample
 
     def _process_video(self, path, ref_path) -> Optional[float]:
+        if self._backend != "cgvqm":
+            return None
         ref_cap = cv2.VideoCapture(str(ref_path))
         dist_cap = cv2.VideoCapture(str(path))
         scores = []
         idx = 0
-        while True:
-            r1, rf = ref_cap.read()
-            r2, df = dist_cap.read()
-            if not r1 or not r2:
-                break
-            if idx % self.subsample == 0:
-                h = min(rf.shape[0], df.shape[0])
-                w = min(rf.shape[1], df.shape[1])
-                # Direct computation
-                rf_r = cv2.resize(rf, (w, h))
-                df_r = cv2.resize(df, (w, h))
-                if self._backend == "cgvqm":
+        try:
+            while True:
+                r1, rf = ref_cap.read()
+                r2, df = dist_cap.read()
+                if not r1 or not r2:
+                    break
+                if idx % self.subsample == 0:
+                    h = min(rf.shape[0], df.shape[0])
+                    w = min(rf.shape[1], df.shape[1])
+                    rf_r = cv2.resize(rf, (w, h))
+                    df_r = cv2.resize(df, (w, h))
                     s = self._compute_cgvqm(rf_r, df_r)
-                else:
-                    s = self._compute_approx(rf_r, df_r)
-                if s is not None:
-                    scores.append(s)
-            idx += 1
-        ref_cap.release()
-        dist_cap.release()
+                    if s is not None:
+                        scores.append(s)
+                idx += 1
+        finally:
+            ref_cap.release()
+            dist_cap.release()
         return float(np.mean(scores)) if scores else None

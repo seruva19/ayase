@@ -339,37 +339,50 @@ class GAMIVALModule(PipelineModule):
         self._ml_available = False
         self._svr_model = None
         self._scaler = None
-        self._backend = "nss_only"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Try loading pre-trained SVR
-        self._try_load_svr()
+        # GAMIVAL requires the pre-trained LIVE-Meta SVR — the published metric is
+        # the SVR mapping of the 2180-d NSS+3D-CNN feature vector. Without it the
+        # metric is left unset (no heuristic feature->score mapping).
+        if not self._try_load_svr():
+            logger.warning(
+                "GAMIVAL unavailable: pretrained SVR (gamival_svr.pkl + "
+                "gamival_scaler.pkl under models/gamival) not found."
+            )
+            return
 
-        # Try loading 3D CNN
         try:
-            import torch
+            import torch  # noqa: F401
             import torch.nn as nn
             import torchvision.models.video as video_models
             from torchvision import transforms
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
-            # r3d_18 as C3D substitute: 512-d features
-            r3d = video_models.r3d_18(weights=video_models.R3D_18_Weights.DEFAULT)
-            # Remove classification head, keep avgpool
-            self._cnn3d = nn.Sequential(
-                r3d.stem,
-                r3d.layer1,
-                r3d.layer2,
-                r3d.layer3,
-                r3d.layer4,
-                nn.AdaptiveAvgPool3d(1),
-                nn.Flatten(),
+            def load_cnn3d():
+                # r3d_18 as C3D substitute: 512-d features
+                r3d = video_models.r3d_18(weights=video_models.R3D_18_Weights.DEFAULT)
+                model = nn.Sequential(
+                    r3d.stem,
+                    r3d.layer1,
+                    r3d.layer2,
+                    r3d.layer3,
+                    r3d.layer4,
+                    nn.AdaptiveAvgPool3d(1),
+                    nn.Flatten(),
+                )
+                return model.eval().to(self._device)
+
+            self._cnn3d = shared_runtime_resource(
+                self,
+                ("gamival_r3d18", str(self._device)),
+                load_cnn3d,
             )
-            self._cnn3d.eval().to(self._device)
 
             self._transform = transforms.Compose([
                 transforms.ToPILImage(),
@@ -382,23 +395,16 @@ class GAMIVALModule(PipelineModule):
             ])
 
             self._ml_available = True
-            self._backend = "full" if self._svr_model is not None else "cnn+nss"
-            logger.info(
-                "GAMIVAL initialised with r3d_18 + NSS on %s (backend=%s)",
-                self._device, self._backend,
-            )
-
-        except ImportError:
-            # Fall back to NSS-only
-            self._ml_available = True
-            self._backend = "nss_only"
-            logger.info("GAMIVAL initialised (NSS features only, no 3D CNN)")
+            self._backend = "gamival"
+            logger.info("GAMIVAL initialised with r3d_18 + NSS + SVR on %s", self._device)
 
         except Exception as e:
-            # Still usable with NSS only
-            self._ml_available = True
-            self._backend = "nss_only"
-            logger.warning("GAMIVAL 3D CNN setup failed, using NSS only: %s", e)
+            # The SVR was trained on the full 2180-d NSS+CNN vector; without the
+            # 3D CNN we cannot reproduce a valid input, so disable the metric.
+            self._cnn3d = None
+            self._ml_available = False
+            self._backend = "unavailable"
+            logger.warning("GAMIVAL unavailable: 3D CNN backbone failed to load: %s", e)
 
     def _try_load_svr(self) -> bool:
         """Try loading pre-trained SVR for the combined 2180-d vector."""
@@ -455,72 +461,25 @@ class GAMIVALModule(PipelineModule):
         else:
             cnn_features = None
 
-        # Combine branches
+        # Combine branches into the full 2180-d vector expected by the SVR.
         if cnn_features is not None:
-            # Full 2180-d vector
             combined = np.concatenate([nss_features, cnn_features])
         else:
-            # NSS-only: pad CNN portion with zeros
             combined = np.concatenate([nss_features, np.zeros(1024)])
 
-        # Quality prediction
-        if self._svr_model is not None:
-            feat_2d = combined.reshape(1, -1)
-            if self._scaler is not None:
-                feat_2d = self._scaler.transform(feat_2d)
-            mos = self._svr_model.predict(feat_2d)[0]
-            mos_min = self.config.get("mos_min", 1.0)
-            mos_max = self.config.get("mos_max", 5.0)
-            score = float((mos - mos_min) / (mos_max - mos_min))
-        else:
-            # Heuristic mapping from feature statistics
-            score = self._heuristic_score(nss_features, cnn_features)
+        # Quality prediction via the trained SVR (required — no heuristic mapping).
+        if self._svr_model is None:
+            return None
+
+        feat_2d = combined.reshape(1, -1)
+        if self._scaler is not None:
+            feat_2d = self._scaler.transform(feat_2d)
+        mos = self._svr_model.predict(feat_2d)[0]
+        mos_min = self.config.get("mos_min", 1.0)
+        mos_max = self.config.get("mos_max", 5.0)
+        score = float((mos - mos_min) / (mos_max - mos_min))
 
         return float(np.clip(score, 0.0, 1.0))
-
-    def _heuristic_score(
-        self, nss_features: np.ndarray, cnn_features: Optional[np.ndarray]
-    ) -> float:
-        """Heuristic quality mapping from extracted features."""
-        # NSS-based quality indicators
-        # Use the first-scale luminance features (indices 0-43)
-        # GGD shape near 2.0 = Gaussian = natural (index 0)
-        shape_quality = 1.0 / (1.0 + abs(nss_features[0] - 2.0) * 0.5)
-
-        # MSCN variance near 1.0 (index 3)
-        var_quality = 1.0 / (1.0 + abs(nss_features[3] - 1.0))
-
-        # Gradient energy (index 22): higher = sharper
-        grad_energy = float(np.clip(nss_features[22] / 50.0, 0.0, 1.0))
-
-        # Laplacian sharpness (index 34)
-        lap_val = abs(nss_features[34]) if len(nss_features) > 34 else 0.0
-        sharpness = float(np.clip(lap_val / 30.0, 0.0, 1.0))
-
-        # Gaming-specific: blockiness should be low
-        # Blockiness is near the end of NSS features
-        blockiness_idx = min(528, len(nss_features) - 4)
-        if blockiness_idx > 0 and len(nss_features) > blockiness_idx:
-            blockiness = nss_features[blockiness_idx]
-            block_quality = 1.0 / (1.0 + blockiness * 0.05)
-        else:
-            block_quality = 0.5
-
-        nss_score = (
-            0.25 * shape_quality
-            + 0.20 * var_quality
-            + 0.20 * grad_energy
-            + 0.15 * sharpness
-            + 0.20 * block_quality
-        )
-
-        # CNN-based quality (feature norms)
-        if cnn_features is not None:
-            norm = float(np.linalg.norm(cnn_features))
-            cnn_score = float(np.clip(norm / 50.0, 0.0, 1.0))
-            return 0.53 * nss_score + 0.47 * cnn_score
-        else:
-            return nss_score
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
         frames = []

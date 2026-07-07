@@ -10,6 +10,10 @@ class GraphSIMModule(ReferenceBasedModule):
     metric_groups = {
         "graphsim_score": "fr_quality",
     }
+    def __init__(self, config=None):
+        super().__init__(config)
+        # Point-cloud graph-gradient geometry statistic via open3d/scipy.
+        self._backend = "algorithmic"
     def compute_reference_score(self, sample_path: Path, reference_path: Path) -> Optional[float]:
         ext = sample_path.suffix.lower()
         if ext not in (".ply", ".pcd"): return None

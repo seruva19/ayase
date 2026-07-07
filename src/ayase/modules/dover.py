@@ -99,9 +99,9 @@ class DOVERModule(PipelineModule):
         self._std = None
 
     def setup(self) -> None:
-        # In test mode, skip all heavy model loading
+        # In test mode, skip all heavy model loading (no metric produced).
         if self.test_mode:
-            self._backend = "heuristic"
+            self._backend = "unavailable"
             logger.debug("DOVER: test mode, skipping ML backends")
             return
 
@@ -126,6 +126,7 @@ class DOVERModule(PipelineModule):
         if not self._ml_available and self._try_pyiqa_setup():
             return
 
+        self._backend = "unavailable"
         logger.warning(
             "DOVER unavailable. Install with: "
             "pip install git+https://github.com/VQAssessment/DOVER.git  "
@@ -138,11 +139,12 @@ class DOVERModule(PipelineModule):
 
     def _try_native_setup(self) -> bool:
         try:
-            import torch
+            import torch  # noqa: F401
             from ayase.third_party.dover.models import DOVER as DOVERModel
             from ayase.third_party.dover.datasets import UnifiedFrameSampler, spatial_temporal_view_decomposition  # noqa: F401
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             # Resolve weights path
             weights = self._resolve_weights()
@@ -324,9 +326,10 @@ class DOVERModule(PipelineModule):
     def _try_pyiqa_setup(self) -> bool:
         try:
             import pyiqa
-            import torch
+            import torch  # noqa: F401
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             models_dir = self.config.get("models_dir", None)
             old_torch_home = os.environ.get("TORCH_HOME")

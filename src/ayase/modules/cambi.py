@@ -39,6 +39,7 @@ class CAMBIModule(PipelineModule):
         super().__init__(config)
         self.warning_threshold = self.config.get("warning_threshold", 5.0)
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -47,12 +48,16 @@ class CAMBIModule(PipelineModule):
             )
             if "libvmaf" in result.stdout:
                 self._ml_available = True
+                self._backend = "ffmpeg_libvmaf"
                 logger.info("CAMBI module initialised (FFmpeg libvmaf)")
             else:
+                self._backend = "unavailable"
                 logger.warning("FFmpeg libvmaf not available for CAMBI")
         except FileNotFoundError:
+            self._backend = "unavailable"
             logger.warning("FFmpeg not found. CAMBI requires FFmpeg with libvmaf.")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup CAMBI: {e}")
 
     def process(self, sample: Sample) -> Sample:

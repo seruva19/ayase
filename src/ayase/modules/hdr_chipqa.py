@@ -112,7 +112,7 @@ class HDRChipQAModule(PipelineModule):
         self.bit_depth = int(self.config.get("bit_depth", 10))
         self.color_space = str(self.config.get("color_space", "BT2020"))
         self.warning_threshold = self.config.get("warning_threshold")
-        self._backend = None
+        self._backend = "unavailable"
         self._repo_dir: Path | None = None
 
     def setup(self) -> None:

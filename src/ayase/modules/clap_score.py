@@ -104,12 +104,14 @@ class MSCLAPScoreModule(HumanCLAPModule):
 
             version = self.config.get("version", "2023")
             self._model = CLAP(version=version, use_cuda=self._device == "cuda")
-            self._processor = None
             self._ml_available = True
+            self._backend = "msclap"
             logger.info("MS-CLAP initialised with microsoft/msclap:%s on %s", version, self._device)
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("MS-CLAP requires the optional `msclap` package")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning("MS-CLAP setup failed: %s", e)
 
     def _score(self, audio, caption: str) -> Optional[float]:

@@ -26,6 +26,8 @@ class LetterboxModule(PipelineModule):
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
+        # Geometric black-bar detection: pure algorithmic.
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -90,22 +92,7 @@ class LetterboxModule(PipelineModule):
         return sample
 
     def _load_frames(self, sample: Sample) -> list:
-        import cv2
+        from ayase.image import sample_frames
 
         subsample = self.config.get("subsample", 4)
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        return list(sample_frames(sample.path, max_frames=subsample, color="bgr"))

@@ -23,21 +23,22 @@ class CWSSIMModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._model = pyiqa.create_metric("cw_ssim", device=device)
-            try:
-                self._device = next(self._model.parameters()).device
-            except StopIteration:
-                self._device = torch.device("cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = pyiqa.create_metric("cw_ssim", device=self._device)
             self._ml_available = True
-            logger.info("CW-SSIM model loaded on %s", device)
-        except (ImportError, Exception) as e:
+            self._backend = "pyiqa"
+            logger.info("CW-SSIM model loaded on %s", self._device)
+        except ImportError:
+            logger.warning("CW-SSIM unavailable: pyiqa not installed. Install with: pip install pyiqa")
+        except Exception as e:
             logger.warning("CW-SSIM unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:

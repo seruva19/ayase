@@ -60,6 +60,7 @@ class ConceptPresenceModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
+        self._backend = "unavailable"
 
         # Face detection backend state
         self._face_backend: Optional[str] = None  # "insightface" | "mediapipe" | "haar"
@@ -84,6 +85,12 @@ class ConceptPresenceModule(PipelineModule):
         # Module is available if at least one backend is ready
         if self._face_backend is not None or self._clip_backend is not None:
             self._ml_available = True
+            parts = []
+            if self._face_backend is not None:
+                parts.append(f"face_{self._face_backend}")
+            if self._clip_backend is not None:
+                parts.append(f"clip_{self._clip_backend}")
+            self._backend = "+".join(parts)
 
     def _setup_face_backend(self) -> None:
         """Try face detection backends in order of preference."""

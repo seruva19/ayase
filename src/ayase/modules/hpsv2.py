@@ -80,6 +80,11 @@ class HPSv2Module(PipelineModule):
 
         if self.backend_pref not in ("auto", "hpsv2", "diffsynth"):
             logger.warning("Unsupported HPSv2 backend: %s", self.backend_pref)
+        else:
+            logger.warning(
+                "HPSv2 unavailable: install the 'hpsv2' package or the diffsynth backend."
+            )
+        self._backend = "unavailable"
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:

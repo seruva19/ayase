@@ -9,6 +9,7 @@ import logging
 import numpy as np
 from typing import Optional
 
+from ayase.image import load_representative_frame
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -32,6 +33,9 @@ class BasicQualityModule(PipelineModule):
         "noise_score": "basic",
         "saturation": "basic",
         "technical_score": "basic",
+        # vqa_t_score is a published temporal-VQA metric; this module does not
+        # compute it (it is left None), but keeps the grouping so the field is
+        # not orphaned in _FIELD_GROUPS.
         "vqa_t_score": "alignment",
     }
 
@@ -40,6 +44,7 @@ class BasicQualityModule(PipelineModule):
         self.threshold = self.config.get("threshold", 40.0)
         self.blur_threshold = self.config.get("blur_threshold", 100.0)
         self.noise_threshold = self.config.get("noise_threshold", 50.0)
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         """Calculate basic quality metrics."""
@@ -86,7 +91,6 @@ class BasicQualityModule(PipelineModule):
             sample.quality_metrics.noise_score = noise_score
             sample.quality_metrics.artifacts_score = artifact_score
             sample.quality_metrics.technical_score = final_score_100
-            sample.quality_metrics.vqa_t_score = final_score_100
             sample.quality_metrics.gradient_detail = gradient_detail
 
             if final_score_100 < self.threshold:
@@ -118,21 +122,10 @@ class BasicQualityModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                if not cap.isOpened():
-                    raise IOError(f"Cannot open video: {sample.path}")
-                # Read middle frame for better representation
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is None:
-                    raise IOError(f"Cannot read image: {sample.path}")
-                return img
+            # Middle video frame or the still image, served from the shared
+            # per-sample frame cache (read-only view; cv2 ops below never
+            # mutate in place). Returns BGR to match the rest of this module.
+            return load_representative_frame(sample.path, color="bgr")
         except Exception as e:
             logger.warning(f"Failed to load image for {sample.path}: {e}")
             return None

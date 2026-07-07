@@ -2,13 +2,15 @@
 
 CVPR 2025. Generalized IQA that handles imperfect references.
 Adaptively combines fidelity and naturalness. Both FR and NR variants.
+Computed with the real ``afine_nr`` metric from pyiqa; left unset otherwise.
 """
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -27,22 +29,28 @@ class AFINEModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = resolve_torch_device(self.config.get("device", "auto"))
             # Use NR variant by default (no reference needed)
             self._model = pyiqa.create_metric("afine_nr", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
-                self._device = torch.device("cpu")
+                self._device = torch.device(device)
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("A-FINE (NR) model loaded on %s", device)
-        except (ImportError, Exception) as e:
+        except ImportError:
+            logger.warning("A-FINE unavailable: pyiqa is not installed (pip install pyiqa)")
+        except Exception as e:
             logger.warning("A-FINE unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -51,7 +59,6 @@ class AFINEModule(PipelineModule):
         if not self._ml_available:
             return sample
         try:
-            import cv2
             import torch
 
             frames = self._load_frames(sample)
@@ -60,9 +67,13 @@ class AFINEModule(PipelineModule):
 
             scores = []
             for frame in frames:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                # frames are RGB read-only views; copy before torch.from_numpy.
                 tensor = (
-                    torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+                    torch.from_numpy(np.ascontiguousarray(frame))
+                    .permute(2, 0, 1)
+                    .unsqueeze(0)
+                    .float()
+                    / 255.0
                 )
                 tensor = tensor.to(self._device)
                 with torch.no_grad():
@@ -74,23 +85,10 @@ class AFINEModule(PipelineModule):
             logger.warning("A-FINE processing failed: %s", e)
         return sample
 
-    def _load_frames(self, sample: Sample) -> list:
-        import cv2
-
+    def _load_frames(self, sample: Sample) -> List[np.ndarray]:
         subsample = self.config.get("subsample", 4)
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=subsample, color="rgb")
+        except Exception as e:
+            logger.debug("A-FINE frame load failed for %s: %s", sample.path, e)
+            return []

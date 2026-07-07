@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from typing import Optional, List, Set, Dict
 
+from ayase.image import load_representative_frame
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -23,6 +24,7 @@ class ColorConsistencyModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
+        self._backend = "algorithmic"
         self.color_map = {
             "red": ([0, 50, 50], [10, 255, 255]), # Red wraps around 180
             "green": ([36, 50, 50], [86, 255, 255]),
@@ -102,14 +104,6 @@ class ColorConsistencyModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

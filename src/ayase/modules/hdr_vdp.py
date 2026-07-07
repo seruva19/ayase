@@ -38,9 +38,9 @@ class HDRVDPModule(ReferenceBasedModule):
         self._backend = None
 
     def setup(self) -> None:
-        # Try hdrvdp Python bindings
+        # HDR-VDP requires the real hdrvdp Python bindings/CLI.
         try:
-            import hdrvdp
+            import hdrvdp  # noqa: F401
             self._backend = "python"
             self._ml_available = True
             logger.info("HDR-VDP module initialised (Python bindings)")
@@ -48,14 +48,15 @@ class HDRVDPModule(ReferenceBasedModule):
         except ImportError:
             pass
 
-        # Fallback: approximation using PU21 + frequency-weighted difference
-        self._backend = "approx"
-        self._ml_available = True
-        logger.info("HDR-VDP module initialised (approximation fallback)")
+        self._backend = "unavailable"
+        self._ml_available = False
+        logger.warning("HDR-VDP unavailable: hdrvdp Python bindings are not installed.")
 
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        if self._backend != "python":
+            return None
         ref_img = cv2.imread(str(reference_path))
         dist_img = cv2.imread(str(sample_path))
         if ref_img is None or dist_img is None:
@@ -66,9 +67,7 @@ class HDRVDPModule(ReferenceBasedModule):
         ref_img = cv2.resize(ref_img, (w, h))
         dist_img = cv2.resize(dist_img, (w, h))
 
-        if self._backend == "python":
-            return self._compute_hdrvdp(ref_img, dist_img)
-        return self._compute_approx(ref_img, dist_img)
+        return self._compute_hdrvdp(ref_img, dist_img)
 
     def _compute_hdrvdp(self, ref_bgr, dist_bgr) -> Optional[float]:
         try:
@@ -80,29 +79,6 @@ class HDRVDPModule(ReferenceBasedModule):
         except Exception as e:
             logger.debug(f"HDR-VDP native failed: {e}")
             return None
-
-    def _compute_approx(self, ref_bgr, dist_bgr) -> float:
-        """Approximate HDR-VDP using multi-scale frequency-weighted analysis."""
-        ref_gray = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
-        dist_gray = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
-
-        # Multi-scale analysis (Laplacian pyramid proxy)
-        scores = []
-        for scale in range(4):
-            diff = np.abs(ref_gray - dist_gray)
-            mse = float(np.mean(diff ** 2))
-            score = max(0, 1.0 - mse * 10.0)
-            scores.append(score)
-            ref_gray = cv2.pyrDown(ref_gray)
-            dist_gray = cv2.pyrDown(dist_gray)
-            if ref_gray.shape[0] < 16:
-                break
-
-        # Weight higher frequencies more (HVS sensitivity)
-        weights = [0.4, 0.3, 0.2, 0.1][:len(scores)]
-        total_w = sum(weights)
-        q = sum(s * w for s, w in zip(scores, weights)) / total_w
-        return float(np.clip(q * 100.0, 0, 100))
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -144,10 +120,7 @@ class HDRVDPModule(ReferenceBasedModule):
                 w = min(ref_f.shape[1], dist_f.shape[1])
                 ref_r = cv2.resize(ref_f, (w, h))
                 dist_r = cv2.resize(dist_f, (w, h))
-                if self._backend == "python":
-                    s = self._compute_hdrvdp(ref_r, dist_r)
-                else:
-                    s = self._compute_approx(ref_r, dist_r)
+                s = self._compute_hdrvdp(ref_r, dist_r)
                 if s is not None:
                     scores.append(s)
             idx += 1

@@ -19,6 +19,7 @@ from typing import List, Optional
 import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -55,8 +56,9 @@ class AdaDQAModule(PipelineModule):
             import torch
             import torchvision.models as models
             from torchvision import transforms
+            from ayase.runtime import resolve_torch_device
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             # ResNet-50 backbone -- extract features before the final FC
             resnet = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
@@ -137,6 +139,10 @@ class AdaDQAModule(PipelineModule):
 
             # Distortion quality: feature consistency across scales
             distortion_score = self._compute_distortion_quality(frame_features)
+            if distortion_score is None:
+                # Cross-scale consistency undefined (e.g. single scale
+                # configured) — leave the score unset rather than fabricate one.
+                return sample
 
             # Motion quality: temporal smoothness of features
             motion_score = self._compute_motion_quality(frame_features)
@@ -175,7 +181,8 @@ class AdaDQAModule(PipelineModule):
         import torch
 
         try:
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            # frame is an RGB read-only view from sample_frames.
+            rgb = np.ascontiguousarray(frame)
             all_feats = []
 
             for scale in self.scales:
@@ -215,12 +222,12 @@ class AdaDQAModule(PipelineModule):
             diversity = float(np.clip(
                 np.mean(np.std(feat_matrix, axis=0)) * 0.5, 0.0, 1.0
             ))
-        else:
-            diversity = 0.5
+            return 0.6 * magnitude + 0.4 * diversity
+        # A single frame has no cross-frame diversity to measure; report the
+        # magnitude component alone instead of blending in a fabricated value.
+        return magnitude
 
-        return 0.6 * magnitude + 0.4 * diversity
-
-    def _compute_distortion_quality(self, features: List[np.ndarray]) -> float:
+    def _compute_distortion_quality(self, features: List[np.ndarray]) -> Optional[float]:
         """Distortion awareness: consistency across scales within each frame."""
         n_scales = len(self.scales)
         feat_dim = (256 + 1024 + 2048)
@@ -245,7 +252,7 @@ class AdaDQAModule(PipelineModule):
                 consistencies.append(float(np.mean(sims)))
 
         if not consistencies:
-            return 0.5
+            return None
         return float(np.clip(np.mean(consistencies), 0.0, 1.0))
 
     def _compute_motion_quality(self, features: List[np.ndarray]) -> float:
@@ -276,28 +283,11 @@ class AdaDQAModule(PipelineModule):
         return 0.5 * coherence + 0.5 * smoothness
 
     def _extract_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(
-                    0, total - 1, min(self.subsample, total), dtype=int
-                )
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
-        else:
-            img = cv2.imread(str(sample.path))
-            if img is not None:
-                frames.append(img)
-        return frames
+        try:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        except Exception as e:
+            logger.debug("Ada-DQA frame load failed for %s: %s", sample.path, e)
+            return []
 
     def on_dispose(self) -> None:
         self._resnet_layers = None

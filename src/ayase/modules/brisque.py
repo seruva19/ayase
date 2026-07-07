@@ -11,7 +11,6 @@ Uses the ``pyiqa`` package (already an Ayase dependency).
 """
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -41,26 +40,57 @@ class BRISQUEModule(PipelineModule):
         self.warning_threshold = self.config.get("warning_threshold", 50.0)
         self._ml_available = False
         self._metric = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
 
-            self._metric = pyiqa.create_metric("brisque", device="cpu")
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric("brisque", device=self._device)
             self._ml_available = True
-            logger.info("BRISQUE module initialised")
+            self._backend = "pyiqa"
+            logger.info("BRISQUE module initialised on %s", self._device)
 
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("pyiqa not installed. Install with: pip install pyiqa")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to setup BRISQUE: {e}")
 
     def _score_image_path(self, path: str) -> Optional[float]:
-        """Score an image file on disk."""
+        """Score an image file on disk (pyiqa reads the real file directly)."""
         try:
-            return float(self._metric(path).item())
+            import torch
+
+            with torch.no_grad():
+                return float(self._metric(path).item())
         except Exception as e:
             logger.debug(f"BRISQUE scoring failed: {e}")
+            return None
+
+    def _score_frame(self, frame_bgr: np.ndarray) -> Optional[float]:
+        """Score a decoded BGR video frame via a direct RGB tensor call."""
+        try:
+            import torch
+
+            rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            tensor = (
+                torch.from_numpy(np.ascontiguousarray(rgb))
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                / 255.0
+            )
+            tensor = tensor.to(self._device)
+            with torch.no_grad():
+                return float(self._metric(tensor).item())
+        except Exception as e:
+            logger.debug(f"BRISQUE frame scoring failed: {e}")
             return None
 
     def process(self, sample: Sample) -> Sample:
@@ -102,7 +132,7 @@ class BRISQUEModule(PipelineModule):
         return sample
 
     def _process_video(self, video_path: Path) -> Optional[float]:
-        """Average BRISQUE across sampled video frames."""
+        """Average BRISQUE across sampled video frames using direct tensors."""
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
             return None
@@ -111,18 +141,15 @@ class BRISQUEModule(PipelineModule):
         idx = 0
 
         try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_image_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    s = self._score_frame(frame)
+                    if s is not None:
+                        scores.append(s)
+                idx += 1
         finally:
             cap.release()
 

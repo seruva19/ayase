@@ -6,13 +6,14 @@ potential imbalances:
   bias_score — 0-1 (higher = more imbalanced representation)
 
 This module operates at two levels:
-  1. Per-sample: detects face count and rough age-group distribution.
+  1. Per-sample: detects face count and relative face-size distribution.
   2. Dataset-level (via pipeline stats): aggregates across all samples
      to identify skewed representation.
 
-Uses MediaPipe Face Mesh for age estimation heuristics (face
-proportions).  Does NOT attempt race/ethnicity classification —
-such systems are unreliable and ethically problematic.
+Uses an OpenCV Haar cascade face detector. It counts faces and measures
+their relative sizes/framing only. It does NOT attempt age, gender, or
+race/ethnicity classification — such systems are unreliable and ethically
+problematic.
 
 Note: This module provides coarse signals only.  Representation
 audits should be performed by qualified evaluators with proper
@@ -52,14 +53,17 @@ class BiasDetectionModule(PipelineModule):
 
         self._face_cascade = None
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
         self._face_cascade = cv2.CascadeClassifier(cascade_path)
         if not self._face_cascade.empty():
             self._ml_available = True
+            self._backend = "haar_cascade"
             logger.info("Bias detection: Haar cascade initialised")
         else:
+            self._backend = "unavailable"
             logger.warning("Failed to load face cascade for bias detection")
 
     # ------------------------------------------------------------------
@@ -193,15 +197,16 @@ class BiasDetectionModule(PipelineModule):
         analyses = []
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                analyses.append(self._analyse_frame(frame))
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    analyses.append(self._analyse_frame(frame))
+                idx += 1
+        finally:
+            cap.release()
 
         if not analyses:
             return None

@@ -35,9 +35,12 @@ class CDCModule(PipelineModule):
         self._model = None
         self.subsample = self.config.get("subsample", 16)
         self.hist_bins = self.config.get("hist_bins", 32)
+        # CDC is defined as the JS-divergence of per-frame LAB colour
+        # histograms; the numpy implementation below IS that metric.
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
-        logger.info("CDC module initialised (heuristic)")
+        logger.info("CDC module initialised (algorithmic JS-divergence)")
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:

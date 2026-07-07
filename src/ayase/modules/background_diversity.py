@@ -27,6 +27,7 @@ class BackgroundDiversityModule(PipelineModule):
         self.use_rembg = self.config.get("use_rembg", True)
         self._rembg_session = None
         self._available = False
+        self._backend = None
 
     def setup(self):
         if self.use_rembg:
@@ -35,10 +36,13 @@ class BackgroundDiversityModule(PipelineModule):
                 # Initialize session (downloads u2net model if needed)
                 self._rembg_session = new_session()
                 self._available = True
+                self._backend = "rembg"
                 logger.info("rembg loaded for background analysis.")
             except ImportError:
+                self._backend = "unavailable"
                 logger.warning("rembg not installed. Background diversity check disabled.")
             except Exception as e:
+                self._backend = "unavailable"
                 logger.warning(f"rembg init failed: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -161,14 +165,16 @@ class BackgroundDiversityModule(PipelineModule):
         frames = []
         try:
             cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = np.linspace(0, total - 1, num_frames, dtype=int)
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            cap.release()
+            try:
+                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                indices = np.linspace(0, total - 1, num_frames, dtype=int)
+                for idx in indices:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                    ret, frame = cap.read()
+                    if ret:
+                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            finally:
+                cap.release()
         except Exception as e:
             logger.debug(f"Failed to load frames for background diversity: {e}")
         return frames
@@ -192,10 +198,12 @@ class BackgroundDiversityModule(PipelineModule):
         try:
             if sample.is_video:
                 cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
+                try:
+                    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
+                    ret, frame = cap.read()
+                finally:
+                    cap.release()
                 return frame if ret else None
             else:
                 return cv2.imread(str(sample.path))

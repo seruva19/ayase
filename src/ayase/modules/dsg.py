@@ -44,6 +44,7 @@ class DSGModule(PipelineModule):
         super().__init__(config)
         self._model = None
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         if self.test_mode:
@@ -52,6 +53,7 @@ class DSGModule(PipelineModule):
             import dsg  # noqa: F401
             self._model = dsg
             self._ml_available = True
+            self._backend = "dsg-t2i"
             logger.info("DSG initialised (native dsg-t2i package)")
         except ImportError:
             logger.warning("DSG: dsg-t2i not installed, module disabled")
@@ -81,5 +83,6 @@ class DSGModule(PipelineModule):
         """Use the official dsg-t2i package."""
         result = self._model.evaluate(str(sample.path), caption)
         if isinstance(result, dict):
-            return float(result.get("score", result.get("dsg_score", 0.0)))
+            value = result.get("score", result.get("dsg_score"))
+            return None if value is None else float(value)
         return float(result)

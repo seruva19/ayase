@@ -8,9 +8,9 @@ distributions.  Higher IS = better visual quality and diversity.
 import logging
 from typing import Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -36,18 +36,30 @@ class InceptionScoreModule(PipelineModule):
         self._device = "cpu"
         self._ml_available = False
         self._transform = None
+        self._backend = None
 
     def setup(self):
         try:
-            import torch
             from torchvision import models, transforms
             from torchvision.models import Inception_V3_Weights
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
 
-            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading InceptionV3 for IS on {self._device}...")
 
-            self._model = models.inception_v3(weights=Inception_V3_Weights.IMAGENET1K_V1, transform_input=False)
-            self._model.to(self._device).eval()
+            def load_inception():
+                # Full InceptionV3 (classification head intact) for logits.
+                m = models.inception_v3(
+                    weights=Inception_V3_Weights.IMAGENET1K_V1,
+                    transform_input=False,
+                )
+                return m.to(self._device).eval()
+
+            self._model = shared_runtime_resource(
+                self,
+                ("inception_v3_logits", str(self._device)),
+                load_inception,
+            )
 
             self._transform = transforms.Compose([
                 transforms.ToPILImage(),
@@ -57,7 +69,9 @@ class InceptionScoreModule(PipelineModule):
                                      std=[0.229, 0.224, 0.225]),
             ])
             self._ml_available = True
+            self._backend = "inception_v3"
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to load InceptionV3: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -113,25 +127,8 @@ class InceptionScoreModule(PipelineModule):
         return sample
 
     def _load_frames(self, sample: Sample):
-        frames = []
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return frames
-                indices = np.linspace(0, total - 1, min(self.num_frames, total), dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                cap.release()
-            else:
-                img = cv2.imread(str(sample.path))
-                if img is not None:
-                    frames.append(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            return list(sample_frames(sample.path, max_frames=self.num_frames, color="rgb"))
         except Exception as e:
             logger.debug(f"Frame loading failed for IS: {e}")
-        return frames
+            return []

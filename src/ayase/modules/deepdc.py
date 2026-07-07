@@ -10,10 +10,11 @@ deepdc_score — LOWER = better quality (distance from natural distribution)
 """
 
 import logging
-import cv2
-import numpy as np
-from typing import Optional
+from typing import List, Optional
 
+import numpy as np
+
+from ayase.image import load_representative_frame, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -35,19 +36,22 @@ class DeepDCModule(PipelineModule):
         self.subsample = self.config.get("subsample", 8)
         self._model = None
         self._ml_available = False
-        self._backend = None
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         if self.test_mode:
             return
 
-        # Tier 1: Try pyiqa DeepDC
         try:
             import pyiqa
-            self._model = pyiqa.create_metric("deepdc", device="cpu")
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = pyiqa.create_metric("deepdc", device=self._device)
             self._backend = "pyiqa"
             self._ml_available = True
-            logger.info("DeepDC (pyiqa) initialised")
+            logger.info("DeepDC (pyiqa) initialised on %s", self._device)
             return
         except (ImportError, Exception):
             pass
@@ -72,49 +76,24 @@ class DeepDCModule(PipelineModule):
         return sample
 
     def _process_pyiqa(self, sample: Sample) -> Optional[float]:
-        """Process via pyiqa DeepDC metric."""
+        """Process via pyiqa DeepDC metric (direct tensor path)."""
         import torch
 
         if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return None
-                indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                scores = []
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if not ret:
-                        continue
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    tensor = (
-                        torch.from_numpy(frame_rgb)
-                        .permute(2, 0, 1)
-                        .unsqueeze(0)
-                        .float()
-                        / 255.0
-                    )
-                    with torch.no_grad():
-                        result = self._model(tensor)
-                    val = float(result.item()) if hasattr(result, "item") else float(result)
-                    scores.append(val)
-            finally:
-                cap.release()
-            return float(np.mean(scores)) if scores else None
+            frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
         else:
-            img = cv2.imread(str(sample.path))
-            if img is None:
-                return None
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            tensor = (
-                torch.from_numpy(img_rgb)
-                .permute(2, 0, 1)
-                .unsqueeze(0)
-                .float()
-                / 255.0
-            )
+            frame = load_representative_frame(sample.path, color="rgb")
+            frames = [frame] if frame is not None else []
+
+        scores: List[float] = []
+        for frame in frames:
+            if frame is None:
+                continue
+            arr = np.ascontiguousarray(frame)
+            tensor = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0).float().div(255.0)
+            tensor = tensor.to(self._device)
             with torch.no_grad():
                 result = self._model(tensor)
-            return float(result.item()) if hasattr(result, "item") else float(result)
+            val = float(result.item()) if hasattr(result, "item") else float(result)
+            scores.append(val)
+        return float(np.mean(scores)) if scores else None

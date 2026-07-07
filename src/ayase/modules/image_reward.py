@@ -11,7 +11,6 @@ This is a per-sample metric that requires a caption/prompt for each sample.
 import logging
 from typing import List, Optional
 
-import cv2
 import numpy as np
 from PIL import Image
 
@@ -40,6 +39,7 @@ class ImageRewardModule(PipelineModule):
         self._model = None
         self._device = "cpu"
         self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         if self.test_mode:
@@ -64,13 +64,21 @@ class ImageRewardModule(PipelineModule):
                 pass
 
             import ImageReward as ir_lib
+            from ayase.runtime import resolve_torch_device
 
-            self._model = ir_lib.load(self.model_name)
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = ir_lib.load(self.model_name, device=self._device)
             self._ml_available = True
-            logger.info(f"ImageReward module initialized with {self.model_name}")
+            self._backend = "image_reward"
+            logger.info(
+                "ImageReward module initialized with %s on %s",
+                self.model_name, self._device,
+            )
         except ImportError:
+            self._backend = "unavailable"
             logger.warning("ImageReward: image-reward library not installed, module disabled")
         except Exception as e:
+            self._backend = "unavailable"
             logger.warning(f"Failed to load ImageReward model: {e}")
 
     def process(self, sample: Sample) -> Sample:
@@ -154,31 +162,9 @@ class ImageRewardModule(PipelineModule):
             List of PIL Image objects in RGB
         """
         try:
-            if not sample.is_video:
-                bgr = cv2.imread(str(sample.path))
-                if bgr is None:
-                    return []
-                rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-                return [Image.fromarray(rgb)]
+            from ayase.image import arrays_to_pil, sample_frames
 
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-
-            n = min(self.num_frames, total)
-            indices = np.linspace(0, total - 1, n, dtype=int)
-
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ret, frame = cap.read()
-                if ret:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(Image.fromarray(rgb))
-            cap.release()
-            return frames
-
+            rgb_frames = sample_frames(sample.path, max_frames=self.num_frames, color="rgb")
+            return arrays_to_pil(rgb_frames)
         except Exception:
             return []

@@ -29,6 +29,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -74,11 +75,13 @@ class DINOFaceIdentityModule(PipelineModule):
         self._transform = None
         self._face_app = None
         self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self):
         import torch
+        from ayase.runtime import resolve_torch_device
 
-        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        self._device = resolve_torch_device(self.config.get("device", "auto"))
 
         # Load DINOv2. The architecture comes from the torch.hub repo code; the
         # weights come from the ayase-models HF mirror (reliable, and consistent with
@@ -117,6 +120,10 @@ class DINOFaceIdentityModule(PipelineModule):
             logger.info("DINOFaceIdentity: face detector ready")
         except Exception as e:
             logger.error(f"Failed to load face detector: {e}")
+            return
+
+        # Both DINOv2 embedder and the face detector are ready.
+        self._backend = f"dinov2:{self.model_name}+insightface"
 
     def process(self, sample: Sample) -> Sample:
         if self._dino is None or self._face_app is None:
@@ -238,28 +245,12 @@ class DINOFaceIdentityModule(PipelineModule):
         return emb / np.linalg.norm(emb)
 
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
-        """Load frames from video or image."""
-        from pathlib import Path
-        path = Path(sample.path)
+        """Uniformly sampled BGR frames (image → one) from the shared cache.
 
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
-            indices = np.linspace(0, total - 1, self.subsample, dtype=int)
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-            return frames
-        else:
-            img = cv2.imread(str(path))
-            return [img] if img is not None else []
+        InsightFace and the crop path only read these arrays, so the read-only
+        cache views are safe to pass through.
+        """
+        return sample_frames(sample.path, max_frames=self.subsample, color="bgr")
 
     def on_dispose(self) -> None:
         """Release GPU memory."""

@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -23,20 +24,24 @@ class FaceIQAModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = None
         self._face_cascade = None
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device(resolve_torch_device(self.config.get("device", "auto")))
             self._model = pyiqa.create_metric("topiq_nr-face", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
-                self._device = torch.device("cpu")
+                self._device = device
             self._ml_available = True
+            self._backend = "pyiqa"
             logger.info("Face-IQA (topiq_nr-face) model loaded on %s", device)
         except (ImportError, Exception) as e:
             logger.warning("Face-IQA unavailable: %s", e)
@@ -111,22 +116,6 @@ class FaceIQAModule(PipelineModule):
         return list(faces) if len(faces) > 0 else []
 
     def _load_frames(self, sample: Sample) -> list:
-        import cv2
-
+        # Uniformly sampled BGR frames served from the shared per-sample cache.
         subsample = self.config.get("subsample", 8)
-        frames = []
-        if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(str(sample.path))
-            if frame is not None:
-                frames.append(frame)
-        return frames
+        return sample_frames(sample.path, max_frames=subsample, color="bgr")

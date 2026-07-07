@@ -33,6 +33,7 @@ class CompressionArtifactsModule(PipelineModule):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 3)
         self.warning_threshold = self.config.get("warning_threshold", 40.0)
+        self._backend = "algorithmic"
 
     def setup(self) -> None:
         pass  # No setup needed
@@ -204,20 +205,21 @@ class CompressionArtifactsModule(PipelineModule):
             artifacts_scores = []
             frame_idx = 0
 
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-
-                if frame_idx % self.subsample == 0:
-                    score = self._compute_artifacts_score(frame)
-                    artifacts_scores.append(score)
-                    if len(artifacts_scores) >= max_frames:
+            try:
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
                         break
 
-                frame_idx += 1
+                    if frame_idx % self.subsample == 0:
+                        score = self._compute_artifacts_score(frame)
+                        artifacts_scores.append(score)
+                        if len(artifacts_scores) >= max_frames:
+                            break
 
-            cap.release()
+                    frame_idx += 1
+            finally:
+                cap.release()
 
             if not artifacts_scores:
                 return sample

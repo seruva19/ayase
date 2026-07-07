@@ -5,17 +5,16 @@ Excellent generalisation to unseen distortion types.
 
 contrique_score — higher = better quality
 
-Uses ``pyiqa`` for pretrained CONTRIQUE weights.
+Uses ``pyiqa`` for pretrained CONTRIQUE weights. When ``pyiqa`` is not
+installed the metric is left unset (no heuristic fallback).
 """
 
 import logging
-import tempfile
-from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
-import cv2
 import numpy as np
 
+from ayase.image import load_representative_frame, sample_frames
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -37,24 +36,37 @@ class CONTRIQUEModule(PipelineModule):
         self.subsample = self.config.get("subsample", 5)
         self._metric = None
         self._ml_available = False
+        self._device = "cpu"
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import pyiqa
-            self._metric = pyiqa.create_metric("contrique", device="cpu")
+            from ayase.runtime import resolve_torch_device
+
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._metric = pyiqa.create_metric("contrique", device=self._device)
             self._ml_available = True
-            logger.info("CONTRIQUE initialised")
+            self._backend = "pyiqa"
+            logger.info("CONTRIQUE initialised on %s", self._device)
         except ImportError:
-            logger.warning("pyiqa not installed. Install with: pip install pyiqa")
+            logger.warning("pyiqa not installed; CONTRIQUE metric skipped. Install with: pip install pyiqa")
         except Exception as e:
             logger.warning(f"Failed to setup CONTRIQUE: {e}")
 
-    def _score_path(self, path: str) -> Optional[float]:
-        try:
-            return float(self._metric(path).item())
-        except Exception as e:
-            logger.debug(f"CONTRIQUE scoring failed: {e}")
-            return None
+    def _score_frames(self, frames: List[np.ndarray]) -> Optional[float]:
+        import torch
+
+        scores = []
+        for frame in frames:
+            if frame is None:
+                continue
+            arr = np.ascontiguousarray(frame)
+            tensor = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0).float().div(255.0)
+            tensor = tensor.to(self._device)
+            with torch.no_grad():
+                scores.append(float(self._metric(tensor).item()))
+        return float(np.mean(scores)) if scores else None
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -62,10 +74,12 @@ class CONTRIQUEModule(PipelineModule):
 
         try:
             if sample.is_video:
-                score = self._process_video(sample.path)
+                frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
             else:
-                score = self._score_path(str(sample.path))
+                frame = load_representative_frame(sample.path, color="rgb")
+                frames = [frame] if frame is not None else []
 
+            score = self._score_frames(frames)
             if score is None:
                 return sample
 
@@ -79,29 +93,3 @@ class CONTRIQUEModule(PipelineModule):
             logger.error(f"CONTRIQUE failed for {sample.path}: {e}")
 
         return sample
-
-    def _process_video(self, video_path: Path) -> Optional[float]:
-        cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            return None
-
-        scores = []
-        idx = 0
-
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    if idx % self.subsample == 0:
-                        tmp_path = str(Path(tmpdir) / f"f{idx}.png")
-                        cv2.imwrite(tmp_path, frame)
-                        s = self._score_path(tmp_path)
-                        if s is not None:
-                            scores.append(s)
-                    idx += 1
-        finally:
-            cap.release()
-
-        return float(np.mean(scores)) if scores else None

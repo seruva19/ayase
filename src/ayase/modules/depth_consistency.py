@@ -52,15 +52,14 @@ class DepthConsistencyModule(PipelineModule):
         self._model = None
         self._transform = None
         self._ml_available = False
+        self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
             import torch
+            from ayase.runtime import resolve_torch_device
 
-            if self.device_config == "auto":
-                self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            else:
-                self.device = torch.device(self.device_config)
+            self.device = torch.device(resolve_torch_device(self.device_config))
 
             # Load MiDaS via torch hub
             self._model = torch.hub.load(
@@ -80,6 +79,7 @@ class DepthConsistencyModule(PipelineModule):
                 self._transform = midas_transforms.small_transform
 
             self._ml_available = True
+            self._backend = f"midas:{self.model_type}"
             logger.info(
                 f"Depth consistency: {self.model_type} initialised on {self.device}"
             )
@@ -137,17 +137,18 @@ class DepthConsistencyModule(PipelineModule):
         depth_maps: List[np.ndarray] = []
         idx = 0
 
-        while idx < self.max_frames:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                dm = self._estimate_depth(frame)
-                if dm is not None:
-                    depth_maps.append(dm)
-            idx += 1
-
-        cap.release()
+        try:
+            while idx < self.max_frames:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if idx % self.subsample == 0:
+                    dm = self._estimate_depth(frame)
+                    if dm is not None:
+                        depth_maps.append(dm)
+                idx += 1
+        finally:
+            cap.release()
 
         if len(depth_maps) < 3:
             return sample

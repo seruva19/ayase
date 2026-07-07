@@ -44,7 +44,7 @@ class HumanFidelityModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._backend = None
+        self._backend = "unavailable"
         self._ml_available = False
         self._mp_available = False
         self._dwpose_available = False
@@ -280,14 +280,10 @@ class HumanFidelityModule(PipelineModule):
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            from ayase.image import load_representative_frame
+
+            # Shared per-sample decode; the frame is a read-only view, so the
+            # detector paths copy via cv2.cvtColor before use.
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

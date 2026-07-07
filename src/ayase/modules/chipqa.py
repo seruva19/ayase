@@ -104,6 +104,7 @@ class ChipQAModule(PipelineModule):
             import scipy  # noqa: F401
             import sklearn  # noqa: F401
         except ImportError as exc:
+            self._backend = "unavailable"
             logger.warning("ChipQA unavailable: missing dependency: %s", exc)
             return
 
@@ -122,6 +123,7 @@ class ChipQAModule(PipelineModule):
             "save_stats.py",
         ]
         if not _has_required_paths(repo_dir, required):
+            self._backend = "unavailable"
             logger.warning("ChipQA unavailable: required source files are missing.")
             return
 

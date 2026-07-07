@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from typing import Optional
 
+from ayase.image import load_representative_frame
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -28,6 +29,8 @@ class ExposureModule(PipelineModule):
         self.overexposure_threshold = self.config.get("overexposure_threshold", 0.3) # Max % of pixels > 240
         self.underexposure_threshold = self.config.get("underexposure_threshold", 0.3) # Max % of pixels < 15
         self.contrast_threshold = self.config.get("contrast_threshold", 30.0) # Min std dev of brightness
+        # Luminance histogram statistics; inherently algorithmic.
+        self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
         image = self._load_image(sample)
@@ -88,15 +91,9 @@ class ExposureModule(PipelineModule):
         return sample
 
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
+        # Representative (middle) BGR frame from the shared per-sample cache.
+        # Returned array may be a read-only view; downstream only reads it.
         try:
-            if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
-            else:
-                return cv2.imread(str(sample.path))
+            return load_representative_frame(sample.path, color="bgr")
         except Exception:
             return None

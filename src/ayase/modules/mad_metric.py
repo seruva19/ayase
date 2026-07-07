@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -23,21 +24,24 @@ class MADModule(PipelineModule):
         super().__init__(config)
         self._ml_available = False
         self._model = None
+        self._device = "cpu"
+        self._backend = None
 
     def setup(self) -> None:
         try:
             import pyiqa
-            import torch
+            from ayase.runtime import resolve_torch_device
 
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._model = pyiqa.create_metric("mad", device=device)
-            try:
-                self._device = next(self._model.parameters()).device
-            except StopIteration:
-                self._device = torch.device("cpu")
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            self._model = pyiqa.create_metric("mad", device=self._device)
             self._ml_available = True
-            logger.info("MAD model loaded on %s", device)
-        except (ImportError, Exception) as e:
+            self._backend = "pyiqa"
+            logger.info("MAD model loaded on %s", self._device)
+        except ImportError:
+            self._backend = "unavailable"
+            logger.warning("pyiqa not installed. Install with: pip install pyiqa")
+        except Exception as e:
+            self._backend = "unavailable"
             logger.warning("MAD unavailable: %s", e)
 
     def process(self, sample: Sample) -> Sample:
@@ -52,52 +56,46 @@ class MADModule(PipelineModule):
             import cv2
             import torch
 
-            ref_frames = self._load_frames_from(str(reference_path), sample.is_video)
-            dist_frames = self._load_frames_from(str(sample.path), sample.is_video)
+            ref_frames = sample_frames(
+                str(reference_path), max_frames=self.config.get("subsample", 8), color="rgb"
+            )
+            dist_frames = sample_frames(
+                str(sample.path), max_frames=self.config.get("subsample", 8), color="rgb"
+            )
             if not ref_frames or not dist_frames:
                 return sample
 
             n = min(len(ref_frames), len(dist_frames))
             scores = []
-            device = self._device
             for i in range(n):
-                ref_rgb = cv2.cvtColor(ref_frames[i], cv2.COLOR_BGR2RGB)
-                dist_rgb = cv2.cvtColor(dist_frames[i], cv2.COLOR_BGR2RGB)
+                ref_rgb = ref_frames[i]
+                dist_rgb = dist_frames[i]
                 h = min(ref_rgb.shape[0], dist_rgb.shape[0])
                 w = min(ref_rgb.shape[1], dist_rgb.shape[1])
-                ref_rgb = cv2.resize(ref_rgb, (w, h))
-                dist_rgb = cv2.resize(dist_rgb, (w, h))
-                ref_t = torch.from_numpy(ref_rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                dist_t = torch.from_numpy(dist_rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+                # cv2.resize returns fresh writable arrays (safe vs read-only cache views)
+                ref_rgb = cv2.resize(np.ascontiguousarray(ref_rgb), (w, h))
+                dist_rgb = cv2.resize(np.ascontiguousarray(dist_rgb), (w, h))
+                ref_t = (
+                    torch.from_numpy(np.ascontiguousarray(ref_rgb, dtype=np.float32))
+                    .permute(2, 0, 1)
+                    .unsqueeze(0)
+                    / 255.0
+                )
+                dist_t = (
+                    torch.from_numpy(np.ascontiguousarray(dist_rgb, dtype=np.float32))
+                    .permute(2, 0, 1)
+                    .unsqueeze(0)
+                    / 255.0
+                )
                 with torch.no_grad():
-                    score = self._model(dist_t.to(device), ref_t.to(device)).item()
+                    score = self._model(dist_t.to(self._device), ref_t.to(self._device)).item()
                 scores.append(score)
 
-            sample.quality_metrics.mad = float(np.mean(scores))
+            if scores:
+                sample.quality_metrics.mad = float(np.mean(scores))
         except Exception as e:
             logger.warning("MAD processing failed: %s", e)
         return sample
-
-    def _load_frames_from(self, path: str, is_video: bool) -> list:
-        import cv2
-
-        subsample = self.config.get("subsample", 8)
-        frames = []
-        if is_video:
-            cap = cv2.VideoCapture(path)
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
-        else:
-            frame = cv2.imread(path)
-            if frame is not None:
-                frames.append(frame)
-        return frames
 
 
 class MADCompatModule(MADModule):

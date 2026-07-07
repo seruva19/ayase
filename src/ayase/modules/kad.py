@@ -1,8 +1,14 @@
 """KAD Kernel Audio Distance.
 
-Dataset-level audio distribution metric. Uses installed KAD/FADTK tooling when
-available; otherwise computes a kernel distance over compact spectral features.
-Lower KAD indicates generated audio closer to the reference distribution.
+Dataset-level audio distribution metric. The published KAD (Kernel Audio
+Distance) is defined over learned audio embeddings (the ``kadtk`` toolkit).
+Ayase does not wire a real embedding backend, so it does not emit a ``kad``
+value in the pipeline: a kernel distance over hand-crafted spectral features is
+only a proxy for KAD and is therefore not written into the named metric.
+
+The generic MMD math (``compute_distribution_metric`` / ``_mmd2``) is retained
+as a reusable utility so a real embedding backend can plug in later; it does not
+run over spectral proxy features in the pipeline.
 """
 
 import logging
@@ -10,7 +16,6 @@ from typing import List, Optional
 
 import numpy as np
 
-from ayase.audio import audio_distribution_features, load_audio
 from ayase.base_modules import BatchMetricModule
 from ayase.models import Sample
 
@@ -19,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class KADModule(BatchMetricModule):
     name = "kad"
-    description = "Kernel Audio Distance for audio generation (batch metric)"
+    description = "Kernel Audio Distance for audio generation (real kadtk backend only)"
     default_config = {
         "sample_rate": 16000,
         "kernel": "rbf",
@@ -29,7 +34,7 @@ class KADModule(BatchMetricModule):
         {
             "id": "fadtk/kadtk",
             "type": "other",
-            "task": "Optional Kernel Audio Distance backend",
+            "task": "Kernel Audio Distance backend (learned audio embeddings)",
         },
     ]
     metric_info = {
@@ -41,30 +46,32 @@ class KADModule(BatchMetricModule):
         self.sample_rate = self.config.get("sample_rate", 16000)
         self.kernel = self.config.get("kernel", "rbf")
         self.sigma = self.config.get("sigma", None)
-        self._backend = "spectral_proxy"
+        self._backend = None
 
     def setup(self) -> None:
-        try:
-            import kadtk  # noqa: F401
-
-            self._backend = "kadtk"
-            logger.info("KAD detected kadtk package; using spectral feature adapter")
-        except ImportError:
-            logger.info("KAD package not installed; using spectral proxy")
-        except Exception as e:
-            logger.debug("KAD package setup failed: %s", e)
+        # A real KAD requires the kadtk toolkit and its learned audio embedding
+        # model. That integration is not wired, so the module emits no `kad`.
+        self._backend = "unavailable"
+        logger.warning(
+            "KAD: real Kernel Audio Distance backend (kadtk embeddings) not wired; "
+            "spectral-feature proxy removed, kad left unset."
+        )
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        audio = load_audio(sample.path, target_sr=self.sample_rate)
-        if audio is None:
-            return None
-        return audio_distribution_features(audio, sr=self.sample_rate)
+        # Do not accumulate proxy features -> no fabricated `kad` in the pipeline.
+        return None
 
     def compute_distribution_metric(
         self,
         features: List[np.ndarray],
         reference_features: Optional[List[np.ndarray]] = None,
     ) -> float:
+        """Maximum Mean Discrepancy over provided feature sets.
+
+        Pure math utility: computes MMD^2 between ``features`` and
+        ``reference_features`` (or a self-split when no reference is given). Only
+        meaningful when fed genuine audio embeddings by a real backend.
+        """
         gen = np.stack(features).astype(np.float64)
         if reference_features:
             ref = np.stack(reference_features).astype(np.float64)
