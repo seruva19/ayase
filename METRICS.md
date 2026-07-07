@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 12:00 · **369 modules** · **438 metrics**
+> **Version 0.1.60** · Generated 2026-07-07 12:40 · **369 modules** · **438 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**369** modules · **488** output fields · **438** metrics · **265** tiered · **142** GPU · **21** categories
+**369** modules · **488** output fields · **438** metrics · **265** tiered · **146** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -29,9 +29,9 @@
 </tr></table>
 
 > [!WARNING]
-> **28 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
+> **25 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
 >
-> `confidence_score`, `discovqa_score`, `faver_score`, `internvqa_score`, `lmmvqa_score`, `mc360iqa_score`, `mdvqa_distortion`, `mdvqa_motion`, `mdvqa_semantic`, `memoryvqa_score`, `mm_pcqa_score`, `nr_gvqm_score`, `oavqa_score`, `sama_score`, `serfiq_score`, `siamvqa_score`, `simplevqa_score`, `sqi_score`, `sr4kvqa_score`, `stablevqa_score`, `ugvq_score`, `unified_vqa_score`, `vbliinds_score`, `video_memorability`, `videoreward_mq`, `videoreward_ta`, `videoreward_vq`, `vqa_t_score`
+> `confidence_score`, `discovqa_score`, `faver_score`, `internvqa_score`, `lmmvqa_score`, `mc360iqa_score`, `mdvqa_distortion`, `mdvqa_motion`, `mdvqa_semantic`, `memoryvqa_score`, `mm_pcqa_score`, `nr_gvqm_score`, `oavqa_score`, `serfiq_score`, `siamvqa_score`, `sqi_score`, `sr4kvqa_score`, `ugvq_score`, `unified_vqa_score`, `vbliinds_score`, `video_memorability`, `videoreward_mq`, `videoreward_ta`, `videoreward_vq`, `vqa_t_score`
 
 <a id="categories"></a>
 
@@ -801,14 +801,15 @@
 - **Config**: `subsample=8`, `trust_remote_code=True`
 
 ### `sama_score` [↑](#categories)
-> SAMA scaling+masking (higher=better) · ↑ higher=better
+> SAMA scaling+masking (higher=better) · ↑ higher=better · unbounded
 
-**[`sama`](src/ayase/modules/sama.py)** — SAMA scaling+masking VQA (real model only)
+**[`sama`](src/ayase/modules/sama.py)** — SAMA scaling+masking VQA (AAAI 2024, real model only)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: vid · **Speed**: ⏱️ medium
+- **Backend**: unavailable → real
+- **Packages**: decord, huggingface_hub, torch
 - **Tests**: covered by [`test_sama.py`](tests/modules/per_module/test_sama.py)
-- **Config**: `subsample=8`, `mask_ratio=0.5`
+- **Config**: `fragments_h=7`, `fragments_w=7`, `fsize_h=32`, `fsize_w=32`, `aligned=32`, `clip_len=32`, `num_clips=4`, `frame_interval=2`, `device=auto`
 
 ### `siamvqa_score` [↑](#categories)
 > SiamVQA Siamese high-res (higher=better) · ↑ higher=better
@@ -825,10 +826,11 @@
 
 **[`simplevqa`](src/ayase/modules/simplevqa.py)** — SimpleVQA Swin+SlowFast blind VQA (real model only)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: real → unavailable
+- **Packages**: opencv-python, torch
 - **Tests**: covered by [`test_simplevqa.py`](tests/modules/per_module/test_simplevqa.py)
-- **Config**: `slow_frames=8`, `fast_frames=32`, `frame_size=224`, `fast_frame_size=112`
+- **Config**: `n_frames=8`, `clip_len=32`, `spatial_size=384`, `motion_size=224`, `device=auto`
 
 ### `spectral_entropy` [↑](#categories)
 > DINOv2 spectral entropy
@@ -891,10 +893,11 @@
 
 **[`stablevqa`](src/ayase/modules/stablevqa.py)** — StableVQA video stability quality assessment (ACM MM 2023)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → real
+- **Packages**: huggingface_hub, opencv-python, torch
 - **Tests**: covered by [`test_stablevqa.py`](tests/modules/per_module/test_stablevqa.py)
-- **Config**: `step=2`, `max_frames=120`, `frame_size=224`
+- **Config**: `device=auto`, `clip_len=32`, `frame_size=224`
 
 ### `t2v_quality` [↑](#categories)
 > Video production quality · ↑ higher=better
@@ -1193,11 +1196,11 @@
 
 **[`zoomvqa`](src/ayase/modules/zoomvqa.py)** — Zoom-VQA dual-branch IQA+VQA late-fusion blind VQA (CVPRW 2023)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: zoomvqa → unavailable
-- **Packages**: zoomvqa
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → real
+- **Packages**: Pillow, decord, huggingface_hub, opencv-python, timm, torchvision
 - **Tests**: covered by [`test_zoomvqa.py`](tests/modules/per_module/test_zoomvqa.py)
-- **Config**: `subsample=16`
+- **Config**: `subsample=16`, `iqa_rsize=512`, `iqa_csize=320`, `vqa_rsize=480`, `vqa_patch_size=6`, `vqa_clip_len=32`, `vqa_num_clips=4`, `vqa_frame_interval=2`, `fusion_iqa_weight=0.5`, `device=auto`
 
 
 ## Full-Reference Quality (64 metrics)
@@ -2553,26 +2556,28 @@
 - **Config**: `subsample=16`, `hist_bins=32`
 
 ### `chronomagic_ch_score` [↑](#categories)
-> Chrono-hallucination (0-1, lower=fewer) · ↓ lower=better · 0-1, lower=fewer
+> CHScore = 1/TSI_sum (unbounded, higher=more coherent) · ↑ higher=better · unbounded, higher=more coherent
 
-**[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore + CHScore
+**[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore (InternVideo2) + CHScore (CoTracker2)
 
-- **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: chronomagic_bench → unavailable
-- **Packages**: chronomagic_bench
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: real → unavailable
+- **Packages**: configs, imageio, opencv-python, torch
+- **Source**: <a href="https://huggingface.co/configs/internvideo2_stage2_config.py" target="_blank">HF</a>
 - **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=16`
+- **Config**: `ch_grid_size=30`, `ch_threshold=0.1`, `internvideo2_config=configs/internvideo2_stage2_config.py`, `mt_topk=5`
 
 ### `chronomagic_mt_score` [↑](#categories)
 > Metamorphic temporal (0-1, higher=better) · ↑ higher=better · 0-1
 
-**[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore + CHScore
+**[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore (InternVideo2) + CHScore (CoTracker2)
 
-- **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: chronomagic_bench → unavailable
-- **Packages**: chronomagic_bench
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: real → unavailable
+- **Packages**: configs, imageio, opencv-python, torch
+- **Source**: <a href="https://huggingface.co/configs/internvideo2_stage2_config.py" target="_blank">HF</a>
 - **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
-- **Config**: `subsample=16`
+- **Config**: `ch_grid_size=30`, `ch_threshold=0.1`, `internvideo2_config=configs/internvideo2_stage2_config.py`, `mt_topk=5`
 
 ### `clip_temp` [↑](#categories)
 
@@ -5357,7 +5362,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`stream_metric`](src/ayase/modules/stream_metric.py)** — STREAM-S spatial fidelity/diversity (dataset-level, real backend only)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
 
 ### `stream_temporal` [↑](#categories)
@@ -5365,7 +5370,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`stream_metric`](src/ayase/modules/stream_metric.py)** — STREAM-T temporal naturalness (dataset-level, real backend only)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
 
 ### `umap_coverage` [↑](#categories)

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 12:00 · **209 models** across **10 sources**
+> **Version 0.1.60** · Generated 2026-07-07 13:01 · **211 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**209** models · **72** HuggingFace · **55** pyiqa · **10** sources
+**211** models · **73** HuggingFace · **55** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (50)](#huggingface-models) · [Weight Files (22)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (50)](#huggingface-models) · [Weight Files (23)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (15)](#pip-packages) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -405,6 +405,7 @@
 - `FAST_VQA_3D_1_1.pth` — used by `fast_vqa`
 - `FAST_VQA_B_1_4.pth` — used by `fast_vqa`
 - `FAST_VQA_M_1_4.pth` — used by `fast_vqa`
+- `SAMA-baseline_val-ltest_s_dev_v0.0.pth` — used by `sama`
 - `ViT-B-32.safetensors` — used by `brightrate`
 - `ViT-B-32.safetensors` — used by `i2v_similarity`
 - `ViT-L-14.safetensors` — used by `brightrate`
@@ -577,7 +578,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `facebookresearch/co-tracker` [↑](#categories)
 > torch.hub · Apache-2.0
 
-- **Used by**: `dynamics_controllability`, `physics`
+- **Used by**: `chronomagic`, `dynamics_controllability`, `physics`
 
 ### `facebookresearch/dinov2` [↑](#categories)
 > torch.hub · Apache-2.0
