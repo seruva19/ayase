@@ -7,6 +7,15 @@ temporal distortions in a single forward pass.
 This module requires the trained C3DVQA backend. When that backend is not
 installed the metric is left ``None`` — no proxy network or handcrafted
 approximation is substituted for the published metric.
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: C3DVQA (Xu et al. 2020).
+Category: TRAINING-ONLY.
+Why provisional: No released weights; the 3D-CNN full-reference model must be trained.
+To revive: Reimplement the 3D-CNN FR arch; train on LIVE-VQA + CSIQ (small, public); validate you
+  reproduce the paper's SRCC/PLCC before flipping provisional=False. Legacy; redundant with ayase's
+  FR suite -- low marginal value.
+Source: C3DVQA, Xu et al. 2020 (no released weights).
 """
 
 import logging

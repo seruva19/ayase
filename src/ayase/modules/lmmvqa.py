@@ -11,6 +11,15 @@ regression/attention heads. Until a real LMM-VQA backend is wired in, the score
 is left unset.
 
 lmmvqa_score -- higher = better quality (0-1); real model only.
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: LMM-VQA (2024).
+Category: TRAINING-ONLY.
+Why provisional: Repo (Sueqk/LMM-VQA) is an empty placeholder; only the projectors train but no weights ship.
+To revive: Reimplement Llama-3-8B + CLIP + SlowFast with trainable projectors; train on
+  LSVQ/KoNViD/YT-UGC/LIVE-VQC/LIVE-YT-Gaming; validate SRCC/PLCC before flipping provisional=False.
+  Effort L, 8B runtime.
+Source: https://github.com/Sueqk/LMM-VQA (empty placeholder)
 """
 
 import logging

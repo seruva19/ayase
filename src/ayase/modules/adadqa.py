@@ -8,6 +8,15 @@ Ada-DQA name. This module reports itself unavailable until a real Ada-DQA
 backend (with trained weights) is wired in.
 
 Output field: ``adadqa_score`` (populated only with a real backend).
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: Ada-DQA (ACM MM 2023).
+Category: TRAINING-ONLY.
+Why provisional: No released weights; the adaptive acquisition/fusion quality head must be trained.
+To revive: Reimplement the diverse frozen-model feature acquisition + fusion head; train on
+  public NR-VQA sets (KoNViD-1k / LIVE-VQC / YouTube-UGC); validate you reproduce the paper's
+  SRCC/PLCC before flipping provisional=False. Effort S-M; largely duplicates ayase's DOVER/FAST-VQA.
+Source: Ada-DQA, ACM MM 2023 (no released weights).
 """
 
 import logging

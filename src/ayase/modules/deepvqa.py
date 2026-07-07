@@ -11,6 +11,15 @@ VGG features and hand-tuned masking (which would not reproduce the paper's
 scores), the metric is left unavailable until the official model is wired in.
 
 deepvqa_score -- higher = better quality (0-1); left None when unavailable.
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: DeepVQA / CNAN (ECCV 2018).
+Category: TRAINING-ONLY.
+Why provisional: Authors never released code/weights; the FR spatiotemporal CNN must be trained.
+To revive: Reimplement the FR spatiotemporal CNN + sensitivity masking; train on LIVE-VQA + CSIQ;
+  validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Low marginal value
+  (tiny 2018-era data).
+Source: DeepVQA / CNAN, ECCV 2018 (no released code/weights).
 """
 
 import logging

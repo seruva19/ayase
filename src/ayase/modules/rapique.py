@@ -12,6 +12,15 @@ when available; otherwise it is left ``None``.
 GitHub: https://github.com/vztu/RAPIQUE
 
 rapique_score — higher = better quality
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: RAPIQUE (IEEE OJSP 2021).
+Category: CLASSICAL-PORT.
+Why provisional: pyiqa does NOT expose a "rapique" metric (create_metric('rapique') always fails →
+  the module's only path is unavailable); the trained SVR is not shipped.
+To revive: Reimplement NSS + ResNet-50 features and retrain the SVR on public KoNViD-1k / YT-UGC;
+  validate before flipping provisional=False. Effort L.
+Source: https://github.com/vztu/RAPIQUE
 """
 
 import logging

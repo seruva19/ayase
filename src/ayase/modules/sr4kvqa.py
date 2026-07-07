@@ -11,6 +11,14 @@ arbitrary values and does not measure SR quality. Rather than emit a
 fabricated score, the module now reports the metric as unavailable: no
 public trained SR4KVQA checkpoint is bundled, so ``sr4kvqa_score`` is left
 unset.
+
+REVIVAL NOTES (provisional -- no turnkey backend)
+Metric: SR4KVQA (2024).
+Category: TRAINING-ONLY.
+Why provisional: Repo links only a Swin-T *init*, no trained ckpt.
+To revive: Train on the SR4KVQA DB (public, 30 pristine + 600 SR-distorted 4K); validate you reproduce
+  the paper's SRCC/PLCC before flipping provisional=False. Effort M; niche (4K super-resolution only).
+Source: SR4KVQA, 2024 (Swin-T init only, no trained ckpt).
 """
 
 import logging

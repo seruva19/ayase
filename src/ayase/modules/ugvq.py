@@ -9,6 +9,15 @@ is a proxy — not UGVQ — so it is not emitted under the UGVQ name. This
 module reports itself unavailable until a real UGVQ backend is wired in.
 
 Output field: ``ugvq_score`` (populated only with a real backend).
+
+REVIVAL NOTES (provisional — no turnkey backend)
+Metric: UGVQ / LGVQ (ACM TOMM 2024).
+Category: TRAINING-ONLY.
+Why provisional: No shipped weights, but dataset AND reference code are on GitHub — mostly wiring + a run.
+To revive: Use the released reference code + LGVQ dataset (2,808 AIGC videos, public) to train the
+  3-dim (spatial/temporal/text-align) model; validate you reproduce the paper's SRCC/PLCC before
+  flipping provisional=False. Effort M; genuine AIGC gap-filler.
+Source: UGVQ / LGVQ, ACM TOMM 2024 (dataset + reference code on GitHub).
 """
 
 import logging

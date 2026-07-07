@@ -9,6 +9,15 @@ AIGC-VQA backend is wired in.
 
 Output fields (populated only with a real backend):
     aigcvqa_technical, aigcvqa_aesthetic, aigcvqa_alignment --- 0-1, higher = better
+
+REVIVAL NOTES (provisional --- no turnkey backend)
+Metric: AIGC-VQA (CVPRW/NTIRE 2024).
+Category: TRAINING-ONLY.
+Why provisional: No released weights; the 3-branch model must be trained.
+To revive: Reimplement the 3-branch arch (ResNet50 + ConvNeXt-3D + BLIP); train on T2VQA-DB
+  (public T2V MOS); validate you reproduce the paper's SRCC/PLCC before flipping provisional=False.
+  Effort M; differentiated value (AIGC video).
+Source: AIGC-VQA, CVPRW/NTIRE 2024 (no released weights).
 """
 
 import logging
