@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 13:46 · **369 modules** · **436 metrics**
+> **Version 0.1.60** · Generated 2026-07-07 15:14 · **369 modules** · **436 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -35,11 +35,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-102-metrics) (102) · [Full-Reference Quality](#full-reference-quality-64-metrics) (64) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-28-metrics) (28) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-43-metrics) (43) · [Face & Identity](#face--identity-20-metrics) (20) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-31-modules) (31)
+[No-Reference Quality](#no-reference-quality-101-metrics) (101) · [Full-Reference Quality](#full-reference-quality-65-metrics) (65) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-28-metrics) (28) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-43-metrics) (43) · [Face & Identity](#face--identity-20-metrics) (20) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-5-metrics) (5) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-6-metrics) (6) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-31-modules) (31)
 
 ---
 
-## No-Reference Quality (102 metrics)
+## No-Reference Quality (101 metrics)
 
 ### `adadqa_score` [↑](#categories)
 > Ada-DQA adaptive diverse (higher=better) · ↑ higher=better
@@ -840,17 +840,6 @@
 - **Tests**: covered by [`test_spectral_complexity.py`](tests/modules/per_module/test_spectral_complexity.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `model_type=dinov2_vits14`, `sample_rate=8`, `min_rank_ratio=0.05`, `max_entropy_threshold=6.0`
 
-### `speedqa_score` [↑](#categories)
-> SpEED-QA entropic differencing (higher=better) · ↑ higher=better
-
-**[`speedqa`](src/ayase/modules/speedqa.py)** — SpEED-QA spatial efficient entropic differencing (real model only)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: speedqa_pkg → unavailable
-- **Packages**: speedqa
-- **Tests**: covered by [`test_speedqa.py`](tests/modules/per_module/test_speedqa.py)
-- **Config**: `subsample=8`
-
 ### `sqi_score` [↑](#categories)
 > SQI streaming quality index · ↑ higher=better
 
@@ -1185,7 +1174,7 @@
 - **Config**: `subsample=16`, `iqa_rsize=512`, `iqa_csize=320`, `vqa_rsize=480`, `vqa_patch_size=6`, `vqa_clip_len=32`, `vqa_num_clips=4`, `vqa_frame_interval=2`, `fusion_iqa_weight=0.5`, `device=auto`
 
 
-## Full-Reference Quality (64 metrics)
+## Full-Reference Quality (65 metrics)
 
 ### `ahiq` [↑](#categories)
 > Attention Hybrid IQA (higher=better) · ↑ higher=better
@@ -1662,6 +1651,17 @@
 - **Tests**: covered by [`test_spherical_psnr.py`](tests/modules/per_module/test_spherical_psnr.py)
 - **Config**: `subsample=8`
 
+### `speedqa_score` [↑](#categories)
+> SpEED-QA entropic differencing (higher=better) · ↑ higher=better
+
+**[`speedqa`](src/ayase/modules/speedqa.py)** — SpEED-QA spatial+temporal entropic differencing (deterministic port; distortion index, higher=worse)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Backend**: port
+- **Packages**: opencv-python, scipy
+- **Tests**: covered by [`test_speedqa.py`](tests/modules/per_module/test_speedqa.py)
+- **Config**: `subsample=8`, `blk=5`, `sigma_nsq=0.1`, `down_size=4`, `gaussian_size=7`
+
 ### `ssimc` [↑](#categories)
 > Complex Wavelet SSIM-C FR (higher=better) · ↑ higher=better
 
@@ -1709,12 +1709,13 @@
 ### `st_mad` [↑](#categories)
 > ST-MAD spatiotemporal MAD (lower=better) · ↓ lower=better
 
-**[`st_mad`](src/ayase/modules/st_mad.py)** — ST-MAD spatiotemporal MAD (TIP 2012)
+**[`st_mad`](src/ayase/modules/st_mad.py)** — ST-MAD spatiotemporal MAD (ICIP 2011, deterministic port, lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Backend**: port
+- **Packages**: opencv-python
 - **Tests**: covered by [`test_st_mad.py`](tests/modules/per_module/test_st_mad.py)
-- **Config**: `subsample=8`
+- **Config**: `max_frames=64`
 
 ### `strred` [↑](#categories)
 > STRRED reduced-reference temporal (lower=better) · ↓ lower=better
@@ -3059,13 +3060,13 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 ### `trajan_score` [↑](#categories)
 > Point track motion consistency · ↑ higher=better
 
-**[`trajan`](src/ayase/modules/trajan.py)** — TRAJAN point-track autoencoder motion realism (ICLR 2025)
+**[`trajan`](src/ayase/modules/trajan.py)** — TRAJAN point-track autoencoder motion realism (ICLR 2025, pure-torch)
 
 - **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: trajan → unavailable
-- **Packages**: trajan
+- **Backend**: port → unavailable
+- **Packages**: einops, huggingface_hub, opencv-python
 - **Tests**: covered by [`test_trajan.py`](tests/modules/per_module/test_trajan.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
-- **Config**: `num_frames=16`, `num_points=256`
+- **Config**: `max_frames=60`, `resize=256`, `num_points=4096`, `num_support_tracks=2048`, `num_target_tracks=2048`, `query_chunk_size=32`
 
 ### `videophy_pc_score` [↑](#categories)
 > Physical commonsense · ↑ higher=better
@@ -4554,9 +4555,10 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`p1204`](src/ayase/modules/p1204.py)** — ITU-T P.1204.3 bitstream NR quality (2020)
 
 - **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: unavailable
+- **Backend**: unavailable → real
+- **Packages**: huggingface_hub, scipy
 - **Tests**: covered by [`test_p1204.py`](tests/modules/per_module/test_p1204.py)
-- **Config**: `subsample=4`
+- **Config**: `device_type=pc`, `device_resolution=3840x2160`
 
 
 ## Depth & Spatial (5 metrics)
