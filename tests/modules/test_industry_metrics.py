@@ -242,12 +242,16 @@ def test_hdr_vdp_no_reference(image_sample):
 
 
 def test_hdr_vdp_setup():
+    """No 'approx' tier anymore: real hdrvdp bindings or honest unavailable."""
     from ayase.modules.hdr_vdp import HDRVDPModule
 
     m = HDRVDPModule()
     m.setup()
-    assert m._ml_available is True
-    assert m._backend == "approx"
+    if m._backend == "python":
+        assert m._ml_available is True
+    else:
+        assert m._backend == "unavailable"
+        assert m._ml_available is False
 
 
 def test_hdr_vdp_reference(tmp_dir):
@@ -265,8 +269,13 @@ def test_hdr_vdp_reference(tmp_dir):
     cv2.imwrite(str(ref_path), ref_img)
     cv2.imwrite(str(dist_path), dist_img)
     score = m.compute_reference_score(dist_path, ref_path)
-    assert score is not None
-    assert score > 0
+    if m._backend == "python":
+        assert score is not None
+        assert score > 0
+    else:
+        # Without the real backend no score may be fabricated
+        assert m._backend == "unavailable"
+        assert score is None
 
 
 def test_delta_ictcp_basics():
@@ -366,12 +375,16 @@ def test_cgvqm_no_reference(image_sample):
 
 
 def test_cgvqm_setup():
+    """No 'approx' tier anymore: real Intel cgvqm package or honest unavailable."""
     from ayase.modules.cgvqm import CGVQMModule
 
     m = CGVQMModule()
     m.setup()
-    assert m._ml_available is True
-    assert m._backend == "approx"
+    if m._backend == "cgvqm":
+        assert m._ml_available is True
+    else:
+        assert m._backend == "unavailable"
+        assert m._ml_available is False
 
 
 def test_cgvqm_reference(tmp_dir):
@@ -389,8 +402,13 @@ def test_cgvqm_reference(tmp_dir):
     cv2.imwrite(str(ref_path), ref_img)
     cv2.imwrite(str(dist_path), dist_img)
     score = m.compute_reference_score(dist_path, ref_path)
-    assert score is not None
-    assert 0.0 <= score <= 100.0
+    if m._backend == "cgvqm":
+        assert score is not None
+        assert 0.0 <= score <= 100.0
+    else:
+        # Without the real backend no score may be fabricated
+        assert m._backend == "unavailable"
+        assert score is None
 
 
 def test_ciede2000_basics():
@@ -586,9 +604,15 @@ def test_p1203_with_metadata(synthetic_video):
         ),
     )
     result = m.process(sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.p1203_mos is not None
-    assert 1.0 <= result.quality_metrics.p1203_mos <= 5.0
+    if m._backend == "official":
+        assert result.quality_metrics is not None
+        assert result.quality_metrics.p1203_mos is not None
+        assert 1.0 <= result.quality_metrics.p1203_mos <= 5.0
+    else:
+        # No official itu_p1203 → honest unavailable, no fabricated MOS
+        assert m._backend == "unavailable"
+        assert (result.quality_metrics is None
+                or result.quality_metrics.p1203_mos is None)
 
 
 def test_p1203_low_bitrate_lower_mos(synthetic_video):
@@ -627,7 +651,14 @@ def test_p1203_low_bitrate_lower_mos(synthetic_video):
     )
     r_high = m.process(high_br)
     r_low = m.process(low_br)
-    assert r_high.quality_metrics.p1203_mos >= r_low.quality_metrics.p1203_mos
+    if m._backend == "official":
+        assert r_high.quality_metrics.p1203_mos >= r_low.quality_metrics.p1203_mos
+    else:
+        assert m._backend == "unavailable"
+        assert (r_high.quality_metrics is None
+                or r_high.quality_metrics.p1203_mos is None)
+        assert (r_low.quality_metrics is None
+                or r_low.quality_metrics.p1203_mos is None)
 
 
 def test_industry_fields():

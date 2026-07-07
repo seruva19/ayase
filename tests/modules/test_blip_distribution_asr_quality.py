@@ -73,16 +73,29 @@ def test_quality_metrics_fields_for_metric_modules():
         assert field in fields
 
 
-def test_image_distribution_proxy_features(image_sample):
+def test_image_distribution_features_real_backend_or_none(image_sample):
     from ayase.modules.cmmd import CMMDModule
     from ayase.modules.fid import FIDModule
     from ayase.modules.prdc_dinov2 import PRDCDINOv2Module
 
-    for cls in (CMMDModule, FIDModule, PRDCDINOv2Module):
+    # CMMD/FID no longer have proxy feature extractors: without the real
+    # CLIP/InceptionV3 backend loaded, extract_features must return None.
+    for cls, real_backend in ((CMMDModule, "clip"), (FIDModule, "inception_v3")):
         mod = cls({"use_torchvision_backend": False} if cls is FIDModule else {})
         feat = mod.extract_features(image_sample)
-        assert feat is not None
-        assert np.asarray(feat).ndim == 1
+        if mod._backend == real_backend:
+            assert feat is not None
+            assert np.asarray(feat).ndim == 1
+        else:
+            assert mod._backend == "unavailable"
+            assert feat is None
+
+    # PRDC's image_stats fallback is a real (handcrafted-statistics) feature
+    # extractor, not a fabricated proxy — it must keep producing features.
+    prdc = PRDCDINOv2Module({})
+    feat = prdc.extract_features(image_sample)
+    assert feat is not None
+    assert np.asarray(feat).ndim == 1
 
 
 def test_asr_cer_wer_use_shared_transcript_config(synthetic_wav):
@@ -100,23 +113,32 @@ def test_asr_cer_wer_use_shared_transcript_config(synthetic_wav):
     assert result.quality_metrics.asr_wer == pytest.approx(0.5)
 
 
-def test_audio_signal_proxy_modules_write_scores(synthetic_wav):
+def test_audio_modules_real_backend_or_none(synthetic_wav):
+    """Signal-proxy tiers were removed: each module scores only via its real
+    backend and otherwise leaves its field unset with _backend 'unavailable'."""
     from ayase.modules.audio_utmos_v2 import AudioUTMOSv2Module
     from ayase.modules.pam import PAMModule
     from ayase.modules.scoreq import SCOREQModule
     from ayase.modules.ttsds2 import TTSDS2Module
 
     sample = Sample(path=synthetic_wav, is_video=False)
-    sample = SCOREQModule().process(sample)
-    sample = AudioUTMOSv2Module().process(sample)
-    sample = PAMModule().process(sample)
-    sample = TTSDS2Module({"enabled": True}).process(sample)
-
-    assert sample.quality_metrics is not None
-    assert 0.0 <= sample.quality_metrics.scoreq_score <= 1.0
-    assert 1.0 <= sample.quality_metrics.utmos_v2_score <= 5.0
-    assert 0.0 <= sample.quality_metrics.pam_score <= 1.0
-    assert 0.0 <= sample.quality_metrics.ttsds2_score <= 1.0
+    checks = [
+        (SCOREQModule(), "scoreq_score", ("scoreq",), (0.0, 1.0)),
+        (AudioUTMOSv2Module(), "utmos_v2_score",
+         ("utmosv2_package", "torch_hub"), (1.0, 5.0)),
+        (PAMModule(), "pam_score", ("clap",), (0.0, 1.0)),
+        (TTSDS2Module({"enabled": True}), "ttsds2_score", ("ttsds2",), (0.0, 1.0)),
+    ]
+    for module, field, real_backends, (lo, hi) in checks:
+        module.on_mount()
+        sample = module.process(sample)
+        value = getattr(sample.quality_metrics, field) if sample.quality_metrics else None
+        if module._backend in real_backends:
+            assert value is not None, f"{field} should be set by real backend"
+            assert lo <= value <= hi
+        else:
+            assert module._backend in (None, "unavailable")
+            assert value is None, f"{field} must stay unset without a real backend"
 
 
 def test_aqascore_is_opt_in(synthetic_wav):
@@ -129,9 +151,17 @@ def test_aqascore_is_opt_in(synthetic_wav):
     )
     assert AQAScoreModule().process(sample).quality_metrics is None
 
-    result = AQAScoreModule({"enabled": True}).process(sample)
-    assert result.quality_metrics is not None
-    assert 0.0 <= result.quality_metrics.aqascore_score <= 1.0
+    enabled = AQAScoreModule({"enabled": True})
+    enabled.on_mount()
+    result = enabled.process(sample)
+    if enabled._backend == "qwen_omni":
+        assert result.quality_metrics is not None
+        assert 0.0 <= result.quality_metrics.aqascore_score <= 1.0
+    else:
+        # Honest state: opt-in but real Qwen2.5-Omni backend unavailable
+        assert enabled._backend == "unavailable"
+        assert (result.quality_metrics is None
+                or result.quality_metrics.aqascore_score is None)
 
 
 def test_kad_and_fad_infinity_math():

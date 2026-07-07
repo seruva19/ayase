@@ -111,7 +111,7 @@ class TestMetricCount:
         field_count = len(QualityMetrics.model_fields) - len(
             QualityMetrics._NON_METRIC_FIELDS
         )
-        assert field_count == 422, f"Expected 422, got {field_count}"
+        assert field_count == 438, f"Expected 438, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README metric count must match QualityMetrics metric fields."""
@@ -163,7 +163,7 @@ README_METRICS = sorted(
 
 class TestMetricsTable:
     def test_readme_table_count(self):
-        assert len(README_METRICS) == 422
+        assert len(README_METRICS) == 438
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
@@ -934,24 +934,30 @@ class TestAyasePipeline:
         assert qm.blur_score is not None
         assert qm.sdr_quality is not None
 
-    def test_ayase_pipeline_skips_failed_mount_module(self, tmp_dir):
+    def test_ayase_pipeline_skips_failed_mount_module(self, tmp_dir, monkeypatch):
         """Modules that fail on_mount are skipped during processing (no crash)."""
         dataset = _make_dataset(tmp_dir)
 
-        # Temporarily disable test_mode so setup() actually runs and can fail
+        # Temporarily disable test_mode so setup() actually runs and can fail.
+        # test_mode is an OR of the class flag and AYASE_TEST_MODE, so the env
+        # var must be cleared too or on_mount() would short-circuit and mark
+        # the failing module as mounted.
+        monkeypatch.delenv("AYASE_TEST_MODE", raising=False)
         PipelineModule.set_test_mode(False)
 
-        # Build pipeline with one good module and one that always fails
-        ModuleRegistry.discover_modules()
-        good_cls = ModuleRegistry.get_module("basic")
-        fail_module = _AlwaysFailsMount()
-        good_module = good_cls()
+        try:
+            # Build pipeline with one good module and one that always fails
+            ModuleRegistry.discover_modules()
+            good_cls = ModuleRegistry.get_module("basic")
+            fail_module = _AlwaysFailsMount()
+            good_module = good_cls()
 
-        pipeline = Pipeline([fail_module, good_module])
-        pipeline.start()
-
-        # Restore test_mode
-        PipelineModule.set_test_mode(True)
+            pipeline = Pipeline([fail_module, good_module])
+            pipeline.start()
+        finally:
+            # Restore test_mode even if start() raises, so the class-level
+            # flag never leaks into other tests
+            PipelineModule.set_test_mode(True)
 
         # fail_module should NOT be mounted
         assert not fail_module._mounted

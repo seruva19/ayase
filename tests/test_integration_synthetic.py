@@ -244,25 +244,38 @@ class TestConsistency:
 
 
 class TestMotionSmoothness:
+    """The flow-proxy fallback was removed: motion_smoothness is computed by
+    the real RIFE interpolation backend or left unset."""
+
     def test_static_video_is_smooth(self, static_video):
         from ayase.modules.motion_smoothness import MotionSmoothnessModule
 
         module = MotionSmoothnessModule({})
+        module.setup()
         sample = _sample(static_video)
         result = module.process(sample)
-        qm = result.quality_metrics
-        assert qm.motion_smoothness is not None
-        # Static video should be very smooth
-        assert qm.motion_smoothness > 0.8
+        if module._rife_available:
+            qm = result.quality_metrics
+            assert qm.motion_smoothness is not None
+            # Static video should be very smooth
+            assert qm.motion_smoothness > 0.8
+        else:
+            assert (result.quality_metrics is None
+                    or result.quality_metrics.motion_smoothness is None)
 
     def test_moving_video_has_smoothness(self, moving_video):
         from ayase.modules.motion_smoothness import MotionSmoothnessModule
 
         module = MotionSmoothnessModule({})
+        module.setup()
         sample = _sample(moving_video)
         result = module.process(sample)
-        assert result.quality_metrics.motion_smoothness is not None
-        assert 0.0 <= result.quality_metrics.motion_smoothness <= 1.0
+        if module._rife_available:
+            assert result.quality_metrics.motion_smoothness is not None
+            assert 0.0 <= result.quality_metrics.motion_smoothness <= 1.0
+        else:
+            assert (result.quality_metrics is None
+                    or result.quality_metrics.motion_smoothness is None)
 
 
 # ===========================================================================

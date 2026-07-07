@@ -87,14 +87,10 @@ def test_t2v_score_image(image_sample):
     assert result.quality_metrics is None or result.quality_metrics.t2v_score is None
 
 
-def test_t2v_score_quality_simple():
-    from ayase.modules.t2v_score import T2VScoreModule
-
-    m = T2VScoreModule()
-    frames = [np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8) for _ in range(4)]
-    score = m._compute_video_quality_simple(frames)
-    assert isinstance(score, float)
-    assert 0 <= score <= 1
+# test_t2v_score_quality_simple was removed: its subject
+# T2VScoreModule._compute_video_quality_simple (a heuristic sharpness proxy)
+# was deleted under the no-heuristic policy. The remaining t2v tests cover
+# the honest no-caption / image no-op behavior.
 
 
 def test_vif_basics():
@@ -155,24 +151,34 @@ def test_naturalness_is_no_reference():
     assert issubclass(NaturalnessModule, NoReferenceModule)
 
 
-def test_naturalness_nss():
+def test_naturalness_brisque_mapping():
+    """The handcrafted NSS/MSCN heuristic was removed; naturalness is now a
+    mapping of the real (pyiqa) BRISQUE score into [0, 1]."""
+    from ayase.modules.naturalness import NaturalnessModule
+
+    f = NaturalnessModule._brisque_to_naturalness
+    assert f(0.0) == 1.0
+    assert f(100.0) == 0.0
+    assert f(150.0) == 0.0  # clamped
+    assert f(25.0) > f(75.0)  # lower BRISQUE → more natural
+
+
+def test_naturalness_real_backend_or_unset(image_sample):
     from ayase.modules.naturalness import NaturalnessModule
 
     m = NaturalnessModule()
-    m._ml_available = True
-    frame = np.random.randint(0, 255, (64, 64, 3), dtype=np.uint8)
-    score = m._compute_nss_naturalness(frame)
-    assert isinstance(score, float)
-    assert 0 <= score <= 1
-
-
-def test_naturalness_mscn():
-    from ayase.modules.naturalness import NaturalnessModule
-
-    m = NaturalnessModule()
-    gray = np.random.randint(0, 255, (64, 64), dtype=np.uint8)
-    mscn = m._compute_mscn_features(gray)
-    assert mscn.shape == gray.shape
+    m.setup()
+    result = m.process(image_sample)
+    if m._backend == "pyiqa_brisque":
+        assert result.quality_metrics is not None
+        score = result.quality_metrics.naturalness_score
+        assert score is not None
+        assert 0 <= score <= 1
+    else:
+        # Honest state: pyiqa missing → no fabricated naturalness
+        assert m._backend == "unavailable"
+        assert (result.quality_metrics is None
+                or result.quality_metrics.naturalness_score is None)
 
 
 def test_hdr_sdr_vqa_basics():
@@ -261,13 +267,14 @@ def test_usability_rate_basics():
 
 
 def test_usability_rate_no_metrics(image_sample):
+    """Without any quality signal there is no fabricated neutral 50.0:
+    usability_rate stays unset."""
     from ayase.modules.usability_rate import UsabilityRateModule
 
     m = UsabilityRateModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.usability_rate is not None
-    assert result.quality_metrics.usability_rate == 50.0
+    assert (result.quality_metrics is None
+            or result.quality_metrics.usability_rate is None)
 
 
 def test_usability_rate_with_metrics(image_sample):

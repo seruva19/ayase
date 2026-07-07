@@ -26,6 +26,10 @@ class STREAMModule(BatchMetricModule):
     name = "stream_metric"
     description = "STREAM spatial/temporal generation eval (ICLR 2024)"
     default_config = {"subsample": 8}
+    metric_info = {
+        "stream_spatial": "STREAM-S spatial fidelity/diversity (dataset-level, real backend only)",
+        "stream_temporal": "STREAM-T temporal naturalness (dataset-level, real backend only)",
+    }
 
     def __init__(self, config=None):
         super().__init__(config)

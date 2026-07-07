@@ -259,30 +259,43 @@ class TestFieldCoverage:
     """Check that QualityMetrics float fields are actually written by some module."""
 
     def test_orphaned_float_fields(self) -> None:
-        """Every Optional[float] field in QualityMetrics should be written by
-        at least one module. Warn-only: some fields may be intentionally
-        reserved for future use."""
+        """Every Optional[float] field in QualityMetrics should be owned by
+        at least one module — either written directly, written through the
+        ``metric_field``/``metric_field_name`` base-class hooks, or declared
+        as a module output (``metric_groups``/``metric_info``) that stays
+        None until the module's real backend is wired (no-heuristic policy).
+        Warn-only: some fields may be intentionally reserved for future use."""
         all_sources = {}
         for name, cls in ALL_MODULES.items():
             all_sources[name] = _get_full_source(cls)
 
         written: Set[str] = set()
         for src in all_sources.values():
-            for pat in (r"quality_metrics\.(\w+)\s*=", r"\bqm\.(\w+)\s*="):
+            for pat in (
+                r"quality_metrics\.(\w+)\s*=",
+                r"\bqm\.(\w+)\s*=",
+                # Base-class-mediated writes (setattr via declared field name)
+                r"metric_field(?:_name)?\s*=\s*[\"'](\w+)[\"']",
+            ):
                 written.update(re.findall(pat, src))
+
+        declared: Set[str] = set()
+        for cls in ALL_MODULES.values():
+            declared.update(getattr(cls, "metric_groups", None) or {})
+            declared.update(getattr(cls, "metric_info", None) or {})
 
         float_fields = {
             f for f, info in QualityMetrics.model_fields.items()
             if "float" in str(info.annotation)
         }
         # Known intentionally-unwritten fields
-        orphaned = float_fields - written
+        orphaned = float_fields - written - declared
 
         # This is a soft check — warn rather than fail for small numbers
         if len(orphaned) > 20:
             pytest.fail(
                 f"{len(orphaned)} orphaned QualityMetrics float fields "
-                f"(not written by any module): {sorted(orphaned)[:20]}..."
+                f"(not written or declared by any module): {sorted(orphaned)[:20]}..."
             )
 
 

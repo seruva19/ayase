@@ -43,4 +43,4 @@ def test_metrics_table_matches_quality_metrics():
     assert not missing, f"METRICS.md omits QualityMetrics fields: {missing}"
 
     # QualityMetrics field count must be correct
-    assert len(model_fields) == 422, f"Expected 422 fields, got {len(model_fields)}"
+    assert len(model_fields) == 438, f"Expected 438 fields, got {len(model_fields)}"

@@ -30,23 +30,29 @@ def test_audio_nisqa_basics():
     _test_module_basics(AudioNISQAModule, "audio_nisqa")
 
 
-def test_audio_nisqa_heuristic_runs(tmp_dir):
+def test_audio_nisqa_real_backend_or_none(tmp_dir):
+    """No spectral proxy tier: real NISQA scores or all fields left unset."""
     from ayase.modules.audio_nisqa import AudioNISQAModule
     wav_path = _write_synthetic_wav(tmp_dir)
     sample = Sample(path=wav_path, is_video=False)
 
-    m = AudioNISQAModule(config={"backend": "spectral"})
+    m = AudioNISQAModule()
     m.on_mount()
-    # Spectral signal-proxy backend should be active when forced
-    assert m.active_backend == "spectral"
-
     out = m.process(sample)
-    assert out.quality_metrics is not None
-    for field in ("nisqa_mos", "nisqa_noisiness", "nisqa_coloration",
-                  "nisqa_discontinuity", "nisqa_loudness"):
-        v = getattr(out.quality_metrics, field)
-        assert v is not None, f"{field} should be populated"
-        assert 1.0 <= v <= 5.0, f"{field}={v} out of MOS range"
+
+    fields = ("nisqa_mos", "nisqa_noisiness", "nisqa_coloration",
+              "nisqa_discontinuity", "nisqa_loudness")
+    if m.active_backend == "nisqa":
+        assert out.quality_metrics is not None
+        for field in fields:
+            v = getattr(out.quality_metrics, field)
+            assert v is not None, f"{field} should be populated"
+            assert 1.0 <= v <= 5.0, f"{field}={v} out of MOS range"
+    else:
+        # Honest state: no real model → backend unavailable, no fabricated MOS
+        assert m.active_backend == "unavailable"
+        for field in fields:
+            assert out.quality_metrics is None or getattr(out.quality_metrics, field) is None
 
 
 def test_audio_nisqa_missing_audio_is_noop(image_sample):

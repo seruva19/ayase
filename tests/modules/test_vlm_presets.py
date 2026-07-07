@@ -55,31 +55,31 @@ def test_vlm_match_label_fallback():
     assert result in labels
 
 
-def test_vlm_heuristic_presets(image_sample):
+def test_vlm_presets_require_real_vlm(image_sample):
+    """The heuristic preset classifier was removed: without a real VLM
+    backend no preset detections may be emitted at all."""
     from ayase.modules.vlm_judge import VLMJudgeModule
 
     m = VLMJudgeModule({"mode": "presets", "presets": ["time_of_day", "shot_scale"]})
+    assert m._ml_available is False  # setup not run → no VLM loaded
     result = m.process(image_sample)
 
     preset_dets = [d for d in result.detections if d.get("type") == "vlm_preset"]
-    assert len(preset_dets) == 2
-    preset_names = {d["preset"] for d in preset_dets}
-    assert preset_names == {"time_of_day", "shot_scale"}
-    for d in preset_dets:
-        assert "label" in d
-        assert d["method"] == "heuristic"
+    assert preset_dets == []
+    # In particular, no detection may ever claim method="heuristic"
+    assert all(d.get("method") != "heuristic" for d in result.detections)
 
 
-def test_vlm_heuristic_all_presets(image_sample):
+def test_vlm_all_presets_require_real_vlm(image_sample):
     from ayase.modules.vlm_judge import VLM_PRESETS, VLMJudgeModule
 
     m = VLMJudgeModule({"mode": "presets"})  # empty presets list → all presets
+    assert m._ml_available is False
     result = m.process(image_sample)
 
     preset_dets = [d for d in result.detections if d.get("type") == "vlm_preset"]
-    assert len(preset_dets) == len(VLM_PRESETS)
-    for d in preset_dets:
-        assert d["label"] in VLM_PRESETS[d["preset"]]
+    assert preset_dets == []
+    assert len(VLM_PRESETS) == 5  # presets themselves remain defined
 
 
 def test_vlm_heuristic_no_duplicate_detections(image_sample):
