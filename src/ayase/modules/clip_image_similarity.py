@@ -54,6 +54,7 @@ class CLIPImageSimilarityModule(PipelineModule):
         "model_name": "open_clip:ViT-B-32",
         "pretrained": "laion2b_s34b_b79k",
         "device": "auto",
+        "subsample": 8,  # frames sampled per video, averaged for CLIP-I
         "warning_threshold": 0.5,
     }
     metric_info = {
@@ -173,16 +174,29 @@ class CLIPImageSimilarityModule(PipelineModule):
             return sample
 
         try:
-            sample_img = self._load_image(sample.path)
-            if sample_img is None:
-                return sample
             ref_img = self._load_image(ref_path)
             if ref_img is None:
                 return sample
 
-            score = self._compute_similarity(sample_img, ref_img)
-            if score is None:
-                return sample
+            # For video, average CLIP-I over sampled frames; for an image,
+            # score the single frame. (PIL cannot open a video container, so
+            # video must be decoded into frames first.)
+            if sample.is_video:
+                frames = self._load_video_frames(sample.path)
+                if not frames:
+                    return sample
+                per_frame = [self._compute_similarity(fr, ref_img) for fr in frames]
+                per_frame = [s for s in per_frame if s is not None]
+                if not per_frame:
+                    return sample
+                score = float(np.mean(per_frame))
+            else:
+                sample_img = self._load_image(sample.path)
+                if sample_img is None:
+                    return sample
+                score = self._compute_similarity(sample_img, ref_img)
+                if score is None:
+                    return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -198,6 +212,19 @@ class CLIPImageSimilarityModule(PipelineModule):
         except Exception as e:  # pylint: disable=broad-except
             logger.debug("Failed to load image %s: %s", path, e)
             return None
+
+    def _load_video_frames(self, path: Path):
+        """Decode a handful of evenly-spaced RGB frames as PIL images."""
+        from ayase.image import sample_frames
+
+        max_frames = self.config.get("subsample", 8)
+        frames = []
+        for fr in sample_frames(path, max_frames=max_frames, color="rgb"):
+            try:
+                frames.append(Image.fromarray(np.ascontiguousarray(fr)))
+            except Exception as e:  # pragma: no cover - defensive
+                logger.debug("CLIP-I frame decode failed: %s", e)
+        return frames
 
     def _compute_similarity(
         self, sample_img: Image.Image, ref_img: Image.Image
