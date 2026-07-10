@@ -36,6 +36,12 @@ class VMBenchCommonsenseAdherenceModule(PipelineModule):
     metric_groups = {
         "commonsense_adherence_score": "motion",
     }
+    models = [
+        {"id": "GD-ML/VMBench", "type": "huggingface",
+         "url": "https://huggingface.co/GD-ML/VMBench",
+         "task": "VideoMAEv2 ViT-giant commonsense head (vit_g_vmbench.pt)",
+         "notes": "Loaded via vendored ayase.vendor.videomae"},
+    ]
 
     def __init__(self, config=None):
         super().__init__(config)

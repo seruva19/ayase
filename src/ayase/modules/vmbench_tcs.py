@@ -60,6 +60,16 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
     metric_groups = {
         "temporal_coherence_score": "motion",
     }
+    models = [
+        {"id": "GD-ML/VMBench", "type": "huggingface",
+         "url": "https://huggingface.co/GD-ML/VMBench",
+         "task": "GroundingDINO SwinB + SAM2 Hiera-L weights",
+         "notes": "groundingdino_swinb_cogcoor.pth + sam2.1_hiera_large.pt via ayase.vendor.groundingdino/sam2"},
+        {"id": "bootstapir_checkpoint_v2.pt", "type": "other",
+         "url": "https://storage.googleapis.com/dm-tapnet/bootstap/bootstapir_checkpoint_v2.pt",
+         "task": "BootsTAPIR point tracker (visibility for vanish/emerge)",
+         "notes": "Shared with the trajan module"},
+    ]
 
     def __init__(self, config=None):
         super().__init__(config)

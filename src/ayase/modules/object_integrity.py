@@ -56,6 +56,14 @@ class ObjectIntegrityModule(PipelineModule):
     metric_groups = {
         "object_integrity_score": "motion",
     }
+    models = [
+        {"id": "yolox_m.onnx", "type": "local",
+         "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/rtmpose_fidelity/yolox_m.onnx",
+         "task": "YOLOX person detector (rtmlib backend)", "notes": "Shared with rtmpose_fidelity"},
+        {"id": "rtmpose_m.onnx", "type": "local",
+         "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/rtmpose_fidelity/rtmpose_m.onnx",
+         "task": "RTMPose keypoint estimator (rtmlib backend)", "notes": "Shared with rtmpose_fidelity"},
+    ]
 
     def __init__(self, config=None):
         super().__init__(config)
