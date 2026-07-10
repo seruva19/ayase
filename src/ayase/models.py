@@ -811,6 +811,9 @@ class QualityMetrics(BaseModel):
     # VMBench Motion Smoothness Score (Q-Align per-frame quality jump detection)
     vmbench_mss: Optional[float] = None  # VMBench MSS (0-1, higher=smoother)
 
+    # VMBench Perceptible Amplitude Score (subject-vs-background motion magnitude)
+    perceptible_amplitude_score: Optional[float] = None  # VMBench PAS (0-1, subject motion degree)
+
     # Layout artifacts
     grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
 
