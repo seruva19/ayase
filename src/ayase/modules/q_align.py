@@ -90,80 +90,43 @@ class QAlignModule(PipelineModule):
     def setup(self) -> None:
         try:
             import torch
-            from transformers import AutoModelForCausalLM, AutoProcessor
-            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
+            from ayase.runtime import resolve_torch_device
 
             self.device = torch.device(resolve_torch_device(self.device_config))
-
             dtype = self._resolve_dtype()
 
             logger.info(
-                f"Loading Q-Align model ({self.model_name}) on {self.device} "
-                f"(dtype={dtype}) — this may take a while (~7 GB)..."
+                f"Loading Q-Align (vendored mPLUG-Owl2) from {self.model_name} on "
+                f"{self.device} (dtype={dtype}) — this may take a while (~7 GB)..."
             )
 
-            models_dir = self.config.get("models_dir", None)
-            trc = self.config.get("trust_remote_code", True)
-            rev = self.config.get("model_revision", None)
+            # Import the vendored mPLUG-Owl2 architecture. Importing registers the
+            # ``mplug_owl2`` config/model with the transformers Auto* factories, so the
+            # weights load with trust_remote_code=False (no remote code download, no
+            # icecream dependency) while the checkpoint itself still comes from HF.
+            import ayase.vendor.q_align  # noqa: F401
+            from ayase.vendor.q_align.modeling_mplug_owl2 import MPLUGOwl2LlamaForCausalLM
 
-            # Load processor (handles image + text tokenisation)
-            try:
-                self._processor = AutoProcessor.from_pretrained(
-                    self.model_name,
-                    trust_remote_code=trc,
-                    revision=rev,
-                    cache_dir=models_dir,
-                )
-            except Exception as e:
-                logger.warning(f"Q-Align processor failed, trying tokenizer: {e}")
-                from transformers import AutoTokenizer
-                self._processor = AutoTokenizer.from_pretrained(
-                    self.model_name,
-                    trust_remote_code=trc,
-                    revision=rev,
-                    cache_dir=models_dir,
-                )
-
-            # Load model
-            self._model = from_pretrained_with_attention(
-                AutoModelForCausalLM,
+            self._model = MPLUGOwl2LlamaForCausalLM.from_pretrained(
                 self.model_name,
-                self.config,
-                device=str(self.device),
-                trust_remote_code=trc,
-                revision=rev,
                 torch_dtype=dtype,
-                cache_dir=models_dir,
+                trust_remote_code=False,
                 device_map="auto" if self.device.type == "cuda" else None,
             )
-
             if self.device.type != "cuda":
                 self._model = self._model.to(self.device)
-
             self._model.eval()
 
-            # Pre-resolve token IDs for quality level words so we can
-            # read logits directly instead of generating text.
-            tokenizer = (
-                self._processor.tokenizer
-                if hasattr(self._processor, "tokenizer")
-                else self._processor
-            )
-            for level, score in QUALITY_LEVELS.items():
-                ids = tokenizer.encode(level, add_special_tokens=False)
-                if ids:
-                    self._quality_token_ids[ids[0]] = score
-
+            # The model builds its own tokenizer / CLIP image processor /
+            # preferential level-token ids in __init__, so the native .score()
+            # API is ready to use.
             self._ml_available = True
             self._backend = "qalign"
-            logger.info(f"Q-Align initialised ({len(self._quality_token_ids)} level tokens found)")
+            logger.info("Q-Align initialised (vendored, native .score())")
 
-        except ImportError:
+        except ImportError as e:
             self._backend = "unavailable"
-            logger.warning(
-                "transformers not installed or Q-Align model unavailable. "
-                "Install with: pip install transformers accelerate"
-            )
+            logger.warning("Q-Align unavailable (torch/transformers missing): %s", e)
         except Exception as e:
             self._backend = "unavailable"
             logger.warning(f"Failed to setup Q-Align: {e}")
@@ -262,6 +225,37 @@ class QAlignModule(PipelineModule):
             logger.debug(f"Q-Align assessment failed: {e}")
             return None
 
+    def _pil_score(self, pil_img, task_: str) -> Optional[float]:
+        """Native Q-Align score (1-5) for one PIL image on the given task."""
+        try:
+            import torch
+            with torch.no_grad():
+                out = self._model.score([pil_img], task_=task_, input_="image")
+            return float(out.reshape(-1)[0].item())
+        except Exception as e:
+            logger.debug("Q-Align .score(%s) failed: %s", task_, e)
+            return None
+
+    def score_frames(self, frames_bgr: List[np.ndarray], task_: str = "quality") -> Optional[float]:
+        """Native Q-Align *video* score (1-5) over a list of BGR frames.
+
+        Used both here and by the VMBench Motion Smoothness metric, which scores
+        Q-Align over sliding windows of frames.
+        """
+        if not self._ml_available or not frames_bgr:
+            return None
+        from PIL import Image
+
+        pil_frames = [Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in frames_bgr]
+        try:
+            import torch
+            with torch.no_grad():
+                out = self._model.score([pil_frames], task_=task_, input_="video")
+            return float(out.reshape(-1)[0].item())
+        except Exception as e:
+            logger.debug("Q-Align video .score(%s) failed: %s", task_, e)
+            return None
+
     def _score_frame(
         self, frame_bgr: np.ndarray
     ) -> Tuple[Optional[float], Optional[float]]:
@@ -270,17 +264,7 @@ class QAlignModule(PipelineModule):
 
         rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(rgb)
-
-        quality = self._assess(
-            img,
-            "USER: <image>\nRate the quality of this image.\nASSISTANT: The quality is",
-        )
-        aesthetic = self._assess(
-            img,
-            "USER: <image>\nRate the aesthetic quality of this image.\n"
-            "ASSISTANT: The aesthetic quality is",
-        )
-        return quality, aesthetic
+        return self._pil_score(img, "quality"), self._pil_score(img, "aesthetics")
 
     # ------------------------------------------------------------------
     # Process
