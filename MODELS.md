@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.63** · Generated 2026-07-10 21:57 · **215 models** across **10 sources**
+> **Version 0.1.63** · Generated 2026-07-10 22:33 · **214 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**215** models · **77** HuggingFace · **54** pyiqa · **10** sources
+**214** models · **77** HuggingFace · **54** pyiqa · **10** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
