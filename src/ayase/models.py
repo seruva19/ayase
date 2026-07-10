@@ -805,6 +805,9 @@ class QualityMetrics(BaseModel):
     # RTMPose pose/gesture plausibility
     rtmpose_score: Optional[float] = None  # RTMPose keypoint-confidence pose plausibility (0-1, higher=better)
 
+    # VMBench Object Integrity Score (human bone-length/joint-angle temporal integrity)
+    object_integrity_score: Optional[float] = None  # VMBench OIS (0-1, higher=better)
+
     # Layout artifacts
     grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
 
