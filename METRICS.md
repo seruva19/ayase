@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.60** · Generated 2026-07-07 18:13 · **334 modules** · **398 metrics**
+> **Version 0.1.63** · Generated 2026-07-10 21:56 · **340 modules** · **406 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **333/334 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **333/340 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**334** modules · **448** output fields · **398** metrics · **233** tiered · **149** GPU · **21** categories
+**340** modules · **456** output fields · **406** metrics · **237** tiered · **155** GPU · **22** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-75-metrics) (75) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-27-metrics) (27) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-75-metrics) (75) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-32-metrics) (32) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -546,7 +546,7 @@
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → qalign
-- **Packages**: Pillow, torch, transformers
+- **Packages**: Pillow, torch
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
 - **Tests**: covered by [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
@@ -1582,7 +1582,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: no dedicated test reference found
-- **Config**: `backend=auto`, `model_name=open_clip:ViT-B-32`, `pretrained=laion2b_s34b_b79k`, `device=auto`, `warning_threshold=0.5`
+- **Config**: `backend=auto`, `model_name=open_clip:ViT-B-32`, `pretrained=laion2b_s34b_b79k`, `device=auto`, `subsample=8`, `warning_threshold=0.5`
 
 ### `clip_score` [↑](#categories)
 > Caption-image alignment · ↑ higher=better
@@ -2326,24 +2326,24 @@
 ### `lse_c` [↑](#categories)
 > LSE-C lip sync error confidence (higher=better) · ↑ higher=better
 
-**[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet/Wav2Lip; real model only)
+**[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet, reference-free; no dataset required)
 
 - **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: syncnet → unavailable
+- **Backend**: syncnet
 - **Packages**: syncnet
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py)
-- **Config**: `subsample=16`, `sample_rate=16000`
+- **Config**: `device=auto`
 
 ### `lse_d` [↑](#categories)
 > LSE-D lip sync error distance (lower=better) · ↓ lower=better
 
-**[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet/Wav2Lip; real model only)
+**[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet, reference-free; no dataset required)
 
 - **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: syncnet → unavailable
+- **Backend**: syncnet
 - **Packages**: syncnet
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py)
-- **Config**: `subsample=16`, `sample_rate=16000`
+- **Config**: `device=auto`
 
 ### `object_permanence_score` [↑](#categories)
 > ↑ higher=better
@@ -2450,7 +2450,7 @@
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (27 metrics)
+## Motion & Dynamics (32 metrics)
 
 ### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
@@ -2542,6 +2542,16 @@
 - **Source**: <a href="https://huggingface.co/facebook/VGGT-1B" target="_blank">HF</a>
 - **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py)
 - **Config**: `num_frames=16`, `trajectory_key=camera_trajectory`, `trajectory_suffix=.camera.json`, `model_id=facebook/VGGT-1B`, `colmap_matcher=sequential`, `sfm_timeout=600`
+
+### `commonsense_adherence_score` [↑](#categories)
+> VMBench CAS (0-1, higher=more plausible) · ↑ higher=better · VideoMAEv2 ordinal plausibility; 0-1
+
+**[`vmbench_cas`](src/ayase/modules/vmbench_cas.py)** — VMBench Commonsense Adherence — VideoMAEv2 ordinal plausibility rating (0-1, higher=better)
+
+- **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Source**: <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
+- **Tests**: no dedicated test reference found
+- **Config**: `device=auto`, `max_frames=64`
 
 ### `dynamics_controllability` [↑](#categories)
 > Motion control fidelity
@@ -2639,6 +2649,28 @@
 - **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `vfi_error_threshold=0.08`, `max_frames=64`
 
+### `object_integrity_score` [↑](#categories)
+> VMBench OIS (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`object_integrity`](src/ayase/modules/object_integrity.py)** — VMBench Object Integrity Score — human bone-length/joint-angle temporal integrity (0-1, higher=better)
+
+- **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable → rtmlib
+- **Packages**: rtmlib
+- **Tests**: no dedicated test reference found
+- **Config**: `max_frames=120`, `det_input_size=[640, 640]`, `pose_input_size=[192, 256]`, `warn_threshold=0.6`, `device=auto`
+
+### `perceptible_amplitude_score` [↑](#categories)
+> VMBench PAS (0-1, subject motion degree) · ↑ higher=better · subject-vs-background tracked motion; 0-1
+
+**[`vmbench_pas`](src/ayase/modules/vmbench_pas.py)** — VMBench Perceptible Amplitude — subject-vs-background tracked-point motion (0-1)
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: opencv-python, torch
+- **Source**: <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
+- **Tests**: no dedicated test reference found
+- **Config**: `device=auto`, `max_frames=60`, `grid_size=30`, `box_threshold=0.3`, `text_threshold=0.25`, `long_side=512`, `query_chunk_size=64`
+
 ### `physics_score` [↑](#categories)
 > Physics plausibility (0-1, higher=better) · ↑ higher=better · 0-1
 
@@ -2705,6 +2737,17 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Tests**: covered by [`test_stabilized_motion.py`](tests/modules/per_module/test_stabilized_motion.py)
 - **Config**: `step=2`, `threshold_px=0.5`, `stabilize=True`, `high_camera_motion_threshold=5.0`, `static_threshold=0.1`
 
+### `temporal_coherence_score` [↑](#categories)
+> VMBench TCS (0-1, higher=more coherent) · ↑ higher=better · implausible object vanish/emerge; 0-1
+
+**[`vmbench_tcs`](src/ayase/modules/vmbench_tcs.py)** — VMBench Temporal Coherence — implausible object vanish/emerge over tracked masks (0-1, higher=better)
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Packages**: opencv-python, torch
+- **Source**: <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
+- **Tests**: no dedicated test reference found
+- **Config**: `device=auto`, `max_frames=48`, `grid_size=30`, `box_threshold=0.35`, `text_threshold=0.35`, `iou_threshold=0.75`, `long_side=640`, `query_chunk_size=64`
+
 ### `trajan_score` [↑](#categories)
 > Point track motion consistency · ↑ higher=better
 
@@ -2751,6 +2794,18 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Source**: <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">HF</a>
 - **Tests**: covered by [`test_videoscore.py`](tests/modules/per_module/test_videoscore.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=16`, `trust_remote_code=True`
+
+### `vmbench_mss` [↑](#categories)
+> VMBench MSS (0-1, higher=smoother) · Q-Align quality-jump; 0-1, higher=smoother
+
+**[`vmbench_mss`](src/ayase/modules/vmbench_mss.py)** — VMBench Motion Smoothness — Q-Align per-frame quality-jump detection (0-1, higher=smoother)
+
+- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Packages**: torch
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: no dedicated test reference found
+- **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `window_size=5`, `max_frames=64`, `batch_windows=8`, `warn_threshold=0.6`
 
 
 ## Basic Visual Quality (16 metrics)
@@ -3036,7 +3091,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → qalign
-- **Packages**: Pillow, torch, transformers
+- **Packages**: Pillow, torch
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
 - **Tests**: covered by [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
@@ -3766,7 +3821,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`, `norm_min=10.0`, `norm_max=30.0`
 
 
-## Scene & Content (17 metrics)
+## Scene & Content (19 metrics)
 
 ### `action_confidence` [↑](#categories)
 > Top-1 action confidence (0-100) · 0-100
@@ -3903,6 +3958,28 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: unavailable → dwpose → mediapipe
 - **Packages**: dwpose, mediapipe
 - **Tests**: covered by [`test_human_fidelity.py`](tests/modules/per_module/test_human_fidelity.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
+
+### `person_count` [↑](#categories)
+> Peak number of 'person' detections in a single frame (crowd size) · type: int
+
+**[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: grit → ultralytics → unavailable
+- **Packages**: grit, torch, ultralytics
+- **Tests**: covered by [`test_object_detection.py`](tests/modules/per_module/test_object_detection.py)
+- **Config**: `model_name=yolov8n.pt`, `use_yolo_world=False`, `use_grit=False`
+
+### `person_count_score` [↑](#categories)
+> Normalized crowd/person-count score (0-100, saturates at 10/frame) · ↑ higher=better · 0-100, saturates at 10/frame
+
+**[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: grit → ultralytics → unavailable
+- **Packages**: grit, torch, ultralytics
+- **Tests**: covered by [`test_object_detection.py`](tests/modules/per_module/test_object_detection.py)
+- **Config**: `model_name=yolov8n.pt`, `use_yolo_world=False`, `use_grit=False`
 
 ### `qwen_image_bench_real_world_fidelity` [↑](#categories)
 > Real-world fidelity L1 · ↑ higher=better · 0-100
@@ -4987,7 +5064,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 ### `verse_bench_metrics` [↑](#categories)
 > Raw Verse-Bench component metrics · type: float
 
-**[`verse_bench`](src/ayase/modules/verse_bench.py)** — Raw 12-component metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, AV-A
+**[`verse_bench`](src/ayase/modules/verse_bench.py)** — Raw metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, LSE-D, AV-A
 
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
