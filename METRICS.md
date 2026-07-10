@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.63** · Generated 2026-07-10 21:56 · **340 modules** · **406 metrics**
+> **Version 0.1.63** · Generated 2026-07-10 22:32 · **340 modules** · **406 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**340** modules · **456** output fields · **406** metrics · **237** tiered · **155** GPU · **22** categories
+**340** modules · **456** output fields · **406** metrics · **235** tiered · **155** GPU · **22** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
