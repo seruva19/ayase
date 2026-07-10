@@ -201,6 +201,8 @@ class QualityMetrics(BaseModel):
     blip_bleu: Optional[float] = None
     detection_score: Optional[float] = None
     count_score: Optional[float] = None
+    person_count: Optional[int] = None  # Peak number of 'person' detections in a single frame (crowd size)
+    person_count_score: Optional[float] = None  # Normalized crowd/person-count score (0-100, saturates at 10/frame)
     color_score: Optional[float] = None
     celebrity_id_score: Optional[float] = None
     identity_loss: Optional[float] = None  # Face identity cosine distance (0-1, lower=better)
@@ -799,6 +801,9 @@ class QualityMetrics(BaseModel):
 
     # Human anatomy plausibility
     anatomy_score: Optional[float] = None  # Keypoint-based limb-count/anatomy plausibility (0-1, higher=better)
+
+    # RTMPose pose/gesture plausibility
+    rtmpose_score: Optional[float] = None  # RTMPose keypoint-confidence pose plausibility (0-1, higher=better)
 
     # Layout artifacts
     grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)

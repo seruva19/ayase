@@ -26,6 +26,8 @@ class ObjectDetectionModule(PipelineModule):
         "count_score": "scene",
         "detection_diversity": "scene",
         "detection_score": "scene",
+        "person_count": "scene",
+        "person_count_score": "scene",
     }
 
     def __init__(self, config=None):
@@ -132,6 +134,22 @@ class ObjectDetectionModule(PipelineModule):
             else:
                 sample.quality_metrics.detection_score = 0.0
             sample.quality_metrics.count_score = min(len(own_detections) / 10.0, 1.0) * 100.0
+
+            # Person / crowd axis: count 'person' detections per frame and use
+            # the peak per-frame count as the crowd-size indicator, so a single
+            # person recurring across the 8 sampled frames does not inflate it.
+            # (YOLO/YOLO-World label the COCO person class 'person'; GRiT emits
+            # numeric class ids and so contributes no person count here.)
+            person_by_frame = {}
+            for d in own_detections:
+                if str(d.get("label", "")).lower() == "person":
+                    fi = d.get("frame_idx")
+                    person_by_frame[fi] = person_by_frame.get(fi, 0) + 1
+            peak_persons = max(person_by_frame.values()) if person_by_frame else 0
+            sample.quality_metrics.person_count = int(peak_persons)
+            # Normalized 0-100, saturating at 10 people in a frame (mirrors
+            # count_score's /10 normalization).
+            sample.quality_metrics.person_count_score = min(peak_persons / 10.0, 1.0) * 100.0
 
             if own_detections:
                 label_scores = {}
