@@ -16,10 +16,10 @@ Backends (all in-tree, weights from HF, pure ``pip install ayase``):
   * subject grounding — vendored GroundingDINO SwinB (``ayase.vendor.groundingdino``).
   * per-frame masks + video propagation — vendored SAM 2.1 Hiera-L
     (``ayase.vendor.sam2``), in-memory frames, weight from GD-ML/VMBench.
-  * point tracking + visibility — the in-tree BootsTAPIR tracker (shared with the
-    ``trajan``/PAS modules), standing in for VMBench's CoTracker: it lays a grid on
-    the object mask and reports per-point tracks and visibility, which the verbatim
-    vanish/emerge classifiers (``temporal_coherence_utils``) consume identically.
+  * point tracking + visibility — vendored CoTracker3 offline (``ayase.vendor.cotracker``,
+    weight ``scaled_offline.pth`` from GD-ML/VMBench on HF), the tracker VMBench uses:
+    it lays a grid on the object mask and reports per-point tracks and visibility,
+    which the verbatim vanish/emerge classifiers (``temporal_coherence_utils``) consume.
 
 The subject noun defaults to ``"person"`` (human-centric) and can be overridden per
 sample via ``sample.metadata["subject_noun"]`` or the module config.
@@ -63,12 +63,8 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
     models = [
         {"id": "GD-ML/VMBench", "type": "huggingface",
          "url": "https://huggingface.co/GD-ML/VMBench",
-         "task": "GroundingDINO SwinB + SAM2 Hiera-L weights",
-         "notes": "groundingdino_swinb_cogcoor.pth + sam2.1_hiera_large.pt via ayase.vendor.groundingdino/sam2"},
-        {"id": "bootstapir_checkpoint_v2.pt", "type": "other",
-         "url": "https://storage.googleapis.com/dm-tapnet/bootstap/bootstapir_checkpoint_v2.pt",
-         "task": "BootsTAPIR point tracker (visibility for vanish/emerge)",
-         "notes": "Shared with the trajan module"},
+         "task": "GroundingDINO SwinB + SAM2 Hiera-L + CoTracker3 offline weights",
+         "notes": "groundingdino_swinb_cogcoor.pth, sam2.1_hiera_large.pt, scaled_offline.pth via ayase.vendor.groundingdino/sam2/cotracker"},
     ]
 
     def __init__(self, config=None):
@@ -76,8 +72,7 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
         self._device = None
         self._grounder = None
         self._sam2 = None
-        self._tapir = None
-        self._backend = None
+        self._cotracker = None
         self._ml_available = False
 
     def setup(self) -> None:
@@ -97,26 +92,14 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
             self._grounder = load_grounding_dino(models_dir=models_dir, device=device_str)
             self._sam2 = load_sam2(models_dir=models_dir, device=device_str)
 
-            # Shared in-tree BootsTAPIR point tracker (same backend as trajan/PAS).
-            from ayase.modules.trajan import (
-                _build_backend, _BOOTSTAPIR_REL, _BOOTSTAPIR_URL,
-            )
-            from ayase.config import download_model_file
+            # In-tree vendored CoTracker3 (the tracker VMBench TCS uses; weight
+            # scaled_offline.pth from GD-ML/VMBench on HF).
+            from ayase.vendor.cotracker import load_cotracker
 
-            self._backend = _build_backend()
-            tapir_ckpt = download_model_file(_BOOTSTAPIR_REL, _BOOTSTAPIR_URL, models_dir)
-            tapir = self._backend.TAPIR(pyramid_level=1, softmax_temperature=10.0, extra_convs=True)
-            sd = torch.load(str(tapir_ckpt), map_location="cpu", weights_only=False)
-            missing, unexpected = tapir.load_state_dict(sd, strict=False)
-            if missing or unexpected:
-                raise RuntimeError(
-                    f"BootsTAPIR checkpoint key mismatch (missing={len(missing)}, "
-                    f"unexpected={len(unexpected)})")
-            tapir.eval().to(self._device)
-            self._tapir = tapir
+            self._cotracker = load_cotracker(models_dir=models_dir, device=device_str)
 
             self._ml_available = True
-            logger.info("VMBench TCS initialised (GroundingDINO + SAM2 + in-tree BootsTAPIR)")
+            logger.info("VMBench TCS initialised (GroundingDINO + SAM2 + CoTracker3)")
         except ImportError as e:
             logger.warning("VMBench TCS unavailable (missing backend): %s", e)
         except Exception as e:
@@ -159,59 +142,29 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
             fps = 0.0
         return np.stack([np.ascontiguousarray(f) for f in frames]).astype(np.uint8), w, h, fps
 
-    def _cotracker_like(self, frames_u8, segm_mask, grid_query_frame, width, height):
-        """CoTracker-equivalent grid tracking on ``segm_mask`` via BootsTAPIR.
-
-        Lays a ``grid_size`` grid, keeps the points inside the mask, and tracks
-        them across the whole clip from ``grid_query_frame``. Returns
+    def _track_masked_grid(self, frames_u8, segm_mask, grid_query_frame, width, height):
+        """Grid tracking on ``segm_mask`` with CoTracker3 (VMBench's tracker):
+        the ``grid_size`` grid points inside the mask are tracked across the clip
+        from ``grid_query_frame`` (backward + forward). Returns
         (pred_tracks [1, T, N, 2] pixel xy, pred_visibility [1, T, N] bool) or
-        (None, None) if no grid point falls in the mask.
+        (None, None) if the mask holds no grid point.
         """
-        import torch
-
-        grid_size = int(self.config.get("grid_size", 30))
-        n_frames = frames_u8.shape[0]
-        gqf = int(max(0, min(grid_query_frame, n_frames - 1)))
-
         mask = np.asarray(segm_mask)
         if mask.ndim != 2:
             mask = mask.reshape(mask.shape[-2], mask.shape[-1])
         mask = mask.astype(bool)
-
-        ys = np.linspace(0, height - 1, grid_size)
-        xs = np.linspace(0, width - 1, grid_size)
-        gx, gy = np.meshgrid(xs, ys)
-        gx = gx.reshape(-1)
-        gy = gy.reshape(-1)
-        yi = np.clip(np.round(gy).astype(int), 0, height - 1)
-        xi = np.clip(np.round(gx).astype(int), 0, width - 1)
-        keep = mask[yi, xi]
-        gx, gy = gx[keep], gy[keep]
-        if gx.size == 0:
+        if not mask.any():
             return None, None
 
-        query_points = np.stack(
-            [np.full_like(gx, gqf), gy, gx], axis=-1).astype(np.float32)  # (t, y, x)
-
-        frames = torch.from_numpy(
-            self._backend.preprocess_frames(frames_u8))[None].to(self._device)  # [1,T,H,W,3]
-        chunk = int(self.config.get("query_chunk_size", 64))
-        all_tracks, all_vis = [], []
-        with torch.no_grad():
-            feature_grids = self._tapir.get_feature_grids(frames)
-            for c in range(0, query_points.shape[0], chunk):
-                qp = torch.from_numpy(query_points[c:c + chunk])[None].to(self._device)
-                out = self._tapir(video=frames, query_points=qp,
-                                  query_chunk_size=chunk, feature_grids=feature_grids)
-                vis = self._backend.postprocess_occlusions(out["occlusion"], out["expected_dist"])
-                all_tracks.append(out["tracks"][0].cpu())    # [n, T, 2]
-                all_vis.append(vis[0].cpu())                 # [n, T] bool
-        tracks = torch.cat(all_tracks, dim=0)   # [N, T, 2]
-        visibles = torch.cat(all_vis, dim=0)    # [N, T]
-        # -> CoTracker layout: [1, T, N, 2] and [1, T, N].
-        pred_tracks = tracks.permute(1, 0, 2)[None].float()
-        pred_visibility = visibles.permute(1, 0)[None].bool()
-        return pred_tracks, pred_visibility
+        n_frames = frames_u8.shape[0]
+        gqf = int(max(0, min(grid_query_frame, n_frames - 1)))
+        pred_tracks, pred_visibility = self._cotracker.track(
+            frames_u8, grid_size=int(self.config.get("grid_size", 30)),
+            grid_query_frame=gqf, segm_mask=mask, backward_tracking=True)
+        if pred_tracks is None or pred_tracks.shape[2] < 1:
+            return None, None
+        # Classifiers run on CPU tensors ([1, T, N, 2] and [1, T, N] bool).
+        return pred_tracks.float().cpu(), pred_visibility.bool().cpu()
 
     def _build_tracking(self, frames_u8, width, height, subject_noun, step):
         """Reproduce VMBench's keyframe grounding + SAM2 propagation, returning
@@ -326,7 +279,7 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
                     if mask is None or np.asarray(mask).ndim != 2:
                         continue
                     gqf = obj_info['first_appearance']
-                    pred_tracks, pred_vis = self._cotracker_like(frames_u8, mask, gqf, width, height)
+                    pred_tracks, pred_vis = self._track_masked_grid(frames_u8, mask, gqf, width, height)
                     if pred_tracks is None:
                         continue
                     edge = is_edge_vanish(pred_tracks, pred_vis, gqf, width, height)
@@ -347,7 +300,7 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
                     if mask is None or np.asarray(mask).ndim != 2:
                         continue
                     gqf = obj_info['first_appearance']
-                    pred_tracks, pred_vis = self._cotracker_like(frames_u8, mask, gqf, width, height)
+                    pred_tracks, pred_vis = self._track_masked_grid(frames_u8, mask, gqf, width, height)
                     if pred_tracks is None:
                         continue
                     edge = is_edge_emerge(pred_tracks, pred_vis, gqf, width, height)
