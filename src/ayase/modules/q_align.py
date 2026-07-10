@@ -58,6 +58,12 @@ class QAlignModule(PipelineModule):
         "qalign_aesthetic": "aesthetic",
         "qalign_quality": "nr_quality",
     }
+    models = [
+        {"id": "q-future/one-align", "type": "huggingface",
+         "url": "https://huggingface.co/q-future/one-align",
+         "task": "OneAlign (mPLUG-Owl2) quality/aesthetic scorer",
+         "notes": "Loaded via vendored ayase.vendor.q_align"},
+    ]
 
     def __init__(self, config=None):
         super().__init__(config)

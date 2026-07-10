@@ -58,6 +58,16 @@ class VMBenchPerceptibleAmplitudeModule(PipelineModule):
     metric_groups = {
         "perceptible_amplitude_score": "motion",
     }
+    models = [
+        {"id": "GD-ML/VMBench", "type": "huggingface",
+         "url": "https://huggingface.co/GD-ML/VMBench",
+         "task": "GroundingDINO SwinB + SAM ViT-H weights",
+         "notes": "groundingdino_swinb_cogcoor.pth + sam_vit_h_4b8939.pth via ayase.vendor.groundingdino/sam"},
+        {"id": "bootstapir_checkpoint_v2.pt", "type": "other",
+         "url": "https://storage.googleapis.com/dm-tapnet/bootstap/bootstapir_checkpoint_v2.pt",
+         "task": "BootsTAPIR point tracker (subject/background motion)",
+         "notes": "Shared with the trajan module"},
+    ]
 
     def __init__(self, config=None):
         super().__init__(config)
