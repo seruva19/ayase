@@ -808,6 +808,9 @@ class QualityMetrics(BaseModel):
     # VMBench Object Integrity Score (human bone-length/joint-angle temporal integrity)
     object_integrity_score: Optional[float] = None  # VMBench OIS (0-1, higher=better)
 
+    # VMBench Motion Smoothness Score (Q-Align per-frame quality jump detection)
+    vmbench_mss: Optional[float] = None  # VMBench MSS (0-1, higher=smoother)
+
     # Layout artifacts
     grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
 
