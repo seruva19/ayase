@@ -33,6 +33,7 @@ _METRIC_BOUNDS = {
     "PQ": {"best": 10.0, "worst": 1.0},
     "WER": {"best": 0.0, "worst": 1.0},
     "LSE-C": {"best": 10.0, "worst": 0.0},
+    "LSE-D": {"best": 0.0, "worst": 15.0},
     "AV-A": {"best": 0.0, "worst": 1.0},
 }
 
@@ -70,8 +71,14 @@ class VerseBenchModule(PipelineModule):
     ]
     metric_info = {
         "verse_bench_overall": "Weighted aggregate score (0-1, higher=better) from S_joint(50%), S_video(20%), S_audio(20%), S_other(10%)",
-        "verse_bench_metrics": "Raw 12-component metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, AV-A",
+        "verse_bench_metrics": "Raw metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, LSE-D, AV-A",
         "verse_bench_breakdown": "Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score",
+    }
+    # LSE-C/LSE-D are surfaced on the same lip-sync (temporal) axis as the
+    # lip_sync module, so grouping stays consistent across producers.
+    metric_groups = {
+        "lse_c": "temporal",
+        "lse_d": "temporal",
     }
 
     def __init__(self, config: Optional[dict] = None) -> None:
@@ -203,6 +210,7 @@ class VerseBenchModule(PipelineModule):
             "wer": [],
             "ava": [],
             "lse_c": [],
+            "lse_d": [],
             "id": [],
         }
 
@@ -231,6 +239,7 @@ class VerseBenchModule(PipelineModule):
             "PQ": self._mean_or_missing(totals["pq"]),
             "WER": self._mean_or_missing(totals["wer"]),
             "LSE-C": self._mean_or_missing(totals["lse_c"]),
+            "LSE-D": self._mean_or_missing(totals["lse_d"]),
             "AV-A": self._mean_or_missing(totals["ava"]),
         }
         return scores_dict, self._calculate_overall_score(scores_dict)
@@ -317,9 +326,15 @@ class VerseBenchModule(PipelineModule):
                 if audio_prompt and set_name in {"set1", "set2"}:
                     totals["ava"].append(inferencers["syncformer"].infer(str(video_path)))
                 if speech_text:
-                    sync_score = inferencers["syncnet"].infer(str(video_path))[1]
-                    if sync_score is not None:
-                        totals["lse_c"].append(sync_score)
+                    # SyncnetInferencer.infer -> (offset, conf, dists). conf is
+                    # LSE-C (confidence, higher=better). dists is the per-offset
+                    # mean audio-visual feature distance; SyncNet defines LSE-D
+                    # as its minimum over offsets (min distance, lower=better).
+                    offset, sync_conf, sync_dists = inferencers["syncnet"].infer(str(video_path))
+                    if sync_conf is not None:
+                        totals["lse_c"].append(sync_conf)
+                    if sync_dists is not None and len(sync_dists) > 0:
+                        totals["lse_d"].append(float(min(sync_dists)))
                 if image_path.exists():
                     totals["id"].append(
                         self._evaluate_dinov3_video(video_path, inferencers["dino"], image_path)
