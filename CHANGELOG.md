@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.64] - 2026-07-10
+
+### Added
+
+- **VMBench motion axes** — the five perception-aligned motion metrics from VMBench (AMAP-ML, ICCV 2025) are ported faithfully and run from a plain `pip install ayase`:
+  - `object_integrity` (`object_integrity_score`): bone-length / joint-angle temporal integrity on the rtmlib RTMPose backend.
+  - `vmbench_mss`: motion smoothness via Q-Align per-frame quality-jump detection over centred sliding windows.
+  - `vmbench_pas` (`perceptible_amplitude_score`): subject-vs-background tracked-point motion amplitude (GroundingDINO + SAM + CoTracker3).
+  - `vmbench_cas` (`commonsense_adherence_score`): VideoMAEv2 ViT-giant 5-level ordinal commonsense-plausibility rating.
+  - `vmbench_tcs` (`temporal_coherence_score`): implausible object vanish/emerge over SAM2-propagated masks (GroundingDINO + SAM2 + CoTracker3).
+- Self-contained, pure-torch vendored backends (no new dependencies; weights auto-downloaded from Hugging Face): GroundingDINO SwinB, SAM ViT-H, SAM 2.1 Hiera-L, VideoMAEv2 ViT-giant, Q-Align (mPLUG-Owl2), and CoTracker3 (offline).
+
+## [0.1.63] - 2026-07-10
+
+### Added
+
+- **clip_image_similarity**: video support — CLIP-I is averaged over sampled frames (previously image-only, videos were skipped).
+
+## [0.1.62] - 2026-07-10
+
+### Changed
+
+- **lip_sync**: LSE-C / LSE-D are now computed by a bundled reference-free SyncNet (mirrored weights), removing the external `syncnet` package dependency and the need for an external evaluation dataset.
+
+## [0.1.61] - 2026-07-10
+
+### Added
+
+- **rtmpose_fidelity**: RTMPose keypoint-confidence pose-plausibility metric (rtmlib backend), plus `LSE-D` and `person_count` outputs.
+
 ## [0.1.60] - 2026-07-06
 
 ### Fixed
