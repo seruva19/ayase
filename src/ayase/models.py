@@ -814,6 +814,12 @@ class QualityMetrics(BaseModel):
     # VMBench Perceptible Amplitude Score (subject-vs-background motion magnitude)
     perceptible_amplitude_score: Optional[float] = None  # VMBench PAS (0-1, subject motion degree)
 
+    # VMBench Temporal Coherence Score (implausible object vanish/emerge)
+    temporal_coherence_score: Optional[float] = None  # VMBench TCS (0-1, higher=more coherent)
+
+    # VMBench Commonsense Adherence Score (physical-commonsense plausibility)
+    commonsense_adherence_score: Optional[float] = None  # VMBench CAS (0-1, higher=more plausible)
+
     # Layout artifacts
     grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
 
