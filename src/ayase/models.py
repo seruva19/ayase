@@ -407,6 +407,12 @@ class QualityMetrics(BaseModel):
     videoscore2_visual: Optional[float] = None  # VideoScore2 visual quality
     videoscore2_alignment: Optional[float] = None  # VideoScore2 text-video alignment
     videoscore2_physical: Optional[float] = None  # VideoScore2 physical/common-sense consistency
+    mj_video_overall_score: Optional[float] = None  # MJ-Video learned preference reward
+    mj_video_alignment_score: Optional[float] = None  # MJ-Video prompt alignment aspect
+    mj_video_safety_score: Optional[float] = None  # MJ-Video safety aspect
+    mj_video_fineness_score: Optional[float] = None  # MJ-Video fine-detail aspect
+    mj_video_coherence_score: Optional[float] = None  # MJ-Video coherence/consistency aspect
+    mj_video_fairness_score: Optional[float] = None  # MJ-Video bias/fairness aspect
 
     # Face-specific IQA
     face_iqa_score: Optional[float] = None  # TOPIQ-face face quality (higher=better)
@@ -469,7 +475,7 @@ class QualityMetrics(BaseModel):
     # Video-native VQA
     finevq_score: Optional[float] = None  # FineVQ fine-grained UGC VQA (CVPR 2025)
     kvq_score: Optional[float] = None  # KVQ saliency-guided VQA (CVPR 2025)
-    rqvqa_score: Optional[float] = None  # RQ-VQA rich quality-aware (CVPR 2024 winner)
+    rqvqa_score: Optional[float] = None  # RQ-VQA raw regression score (higher=better)
     videval_score: Optional[float] = None  # VIDEVAL 60-feature fusion NR-VQA
     tlvqm_score: Optional[float] = None  # TLVQM two-level video quality
     funque_score: Optional[float] = None  # FUNQUE unified quality (beats VMAF)
@@ -994,6 +1000,45 @@ class DatasetStats(BaseModel):
     stream_spatial: Optional[float] = None  # STREAM spatial fidelity+diversity
     stream_temporal: Optional[float] = None  # STREAM temporal naturalness
     worldscore: Optional[float] = None  # WorldScore generation quality
+
+    # Official VBench 2.0 intrinsic-faithfulness suite (dataset-level)
+    vbench2_human_anatomy: Optional[float] = None
+    vbench2_human_identity: Optional[float] = None
+    vbench2_human_clothes: Optional[float] = None
+    vbench2_diversity: Optional[float] = None
+    vbench2_composition: Optional[float] = None
+    vbench2_dynamic_spatial_relationship: Optional[float] = None
+    vbench2_dynamic_attribute: Optional[float] = None
+    vbench2_motion_order_understanding: Optional[float] = None
+    vbench2_human_interaction: Optional[float] = None
+    vbench2_complex_landscape: Optional[float] = None
+    vbench2_complex_plot: Optional[float] = None
+    vbench2_camera_motion: Optional[float] = None
+    vbench2_motion_rationality: Optional[float] = None
+    vbench2_instance_preservation: Optional[float] = None
+    vbench2_mechanics: Optional[float] = None
+    vbench2_thermotics: Optional[float] = None
+    vbench2_material: Optional[float] = None
+    vbench2_multiview_consistency: Optional[float] = None
+    vbench2_creativity_score: Optional[float] = None
+    vbench2_commonsense_score: Optional[float] = None
+    vbench2_controllability_score: Optional[float] = None
+    vbench2_human_fidelity_score: Optional[float] = None
+    vbench2_physics_score: Optional[float] = None
+    vbench2_total_score: Optional[float] = None
+
+    # WorldModelBench (CVPR 2025 workshop, dataset-level; higher=better)
+    worldmodelbench_instruction_score: Optional[float] = None  # Official range 0-3
+    worldmodelbench_newton_adherence: Optional[float] = None  # Fraction without violation
+    worldmodelbench_mass_solid_adherence: Optional[float] = None
+    worldmodelbench_fluid_adherence: Optional[float] = None
+    worldmodelbench_penetration_adherence: Optional[float] = None
+    worldmodelbench_gravity_adherence: Optional[float] = None
+    worldmodelbench_aesthetics_adherence: Optional[float] = None
+    worldmodelbench_temporal_adherence: Optional[float] = None
+    worldmodelbench_physical_score: Optional[float] = None  # Sum of five adherence rates, 0-5
+    worldmodelbench_common_sense_score: Optional[float] = None  # Sum of two rates, 0-2
+    worldmodelbench_total_score: Optional[float] = None  # Official raw total, 0-10
 
     # Codec comparison (dataset-level)
     bd_rate: Optional[float] = None  # BD-Rate compression efficiency (%, negative=better)

@@ -70,7 +70,7 @@ _BOOTSTAPIR_REL = "trajan/bootstapir_checkpoint_v2.pt"
 # Track-autoencoder weights (DeepMind Flax params, mirrored). Flat
 # "path/to/param" -> array npz, converted to a torch state_dict at load time.
 _AE_REPO = "AkaneTendo25/ayase-models"
-_AE_FILE = "weights/trajan/track_autoencoder_ckpt.npz"
+_AE_FILE = "trajan/track_autoencoder_ckpt.npz"
 
 # Cache for the lazily-built torch backend (classes + helpers).
 _BACKEND = None

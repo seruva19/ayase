@@ -61,7 +61,7 @@ class RTMPoseFidelityModule(PipelineModule):
         "rtmpose_score": "RTMPose keypoint-confidence pose plausibility (0-1, higher=better)",
     }
     metric_groups = {
-        "rtmpose_score": "pose",
+        "rtmpose_score": "motion",
     }
 
     def __init__(self, config=None):

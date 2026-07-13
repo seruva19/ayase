@@ -52,9 +52,7 @@ class DatasetScanner:
 
         logger.info(f"Scanning dataset: {self.dataset_path}")
 
-        # Collect all media files
-        media_files = self._discover_media_files()
-        caption_map, caption_stem_map = self._build_caption_map()
+        media_files, caption_map, caption_stem_map = self._index_files()
 
         for media_file in media_files:
             is_video = media_file.suffix.lower() in VIDEO_EXTENSIONS
@@ -70,6 +68,35 @@ class DatasetScanner:
             )
 
             yield sample
+
+    def _index_files(self) -> Tuple[List[Path], Dict[str, Path], Dict[str, List[Path]]]:
+        """Index media and caption sidecars in one directory traversal."""
+        allowed_extensions: Set[str] = set()
+        if self.include_videos:
+            allowed_extensions.update(VIDEO_EXTENSIONS)
+        if self.include_images:
+            allowed_extensions.update(IMAGE_EXTENSIONS)
+
+        media_files: List[Path] = []
+        caption_map: Dict[str, Path] = {}
+        caption_stem_map: Dict[str, List[Path]] = {}
+        pattern = "**/*" if self.recursive else "*"
+
+        for file_path in self.dataset_path.glob(pattern):
+            if file_path.is_symlink() or not file_path.is_file():
+                continue
+            suffix = file_path.suffix.lower()
+            if suffix in allowed_extensions:
+                media_files.append(file_path)
+            if suffix in CAPTION_EXTENSIONS:
+                rel_stem = file_path.relative_to(self.dataset_path).with_suffix("").as_posix()
+                caption_map[rel_stem] = file_path
+                caption_stem_map.setdefault(file_path.stem, []).append(file_path)
+
+        media_files.sort()
+        logger.info("Discovered %d media files", len(media_files))
+        logger.debug("Found %d caption files", len(caption_map))
+        return media_files, caption_map, caption_stem_map
 
     def _discover_media_files(self) -> List[Path]:
         """Discover all media files in the dataset.

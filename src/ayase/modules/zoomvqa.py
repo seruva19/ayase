@@ -40,8 +40,8 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-IQA_WEIGHT = "weights/zoomvqa/iqa_best_29epoch_checkpoint.pth.tar"
-VQA_WEIGHT = "weights/zoomvqa/vqa_best_29e_val-vqpve_s.pth"
+IQA_WEIGHT = "zoomvqa/iqa_best_29epoch_checkpoint.pth.tar"
+VQA_WEIGHT = "zoomvqa/vqa_best_29e_val-vqpve_s.pth"
 HF_REPO = "AkaneTendo25/ayase-models"
 
 # ---------------------------------------------------------------------------

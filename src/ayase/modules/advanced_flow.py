@@ -13,6 +13,19 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+_RAFT_MIRRORS = {
+    "raft_large": (
+        "raft_large_C_T_SKHT_V2-ff5fadd5.pth",
+        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "advanced_flow/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
+    ),
+    "raft_small": (
+        "raft_small_C_T_V2-01064c6d.pth",
+        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "advanced_flow/raft_small_C_T_V2-01064c6d.pth",
+    ),
+}
+
 
 def _cap_frame_resolution(frame: np.ndarray, max_side: int) -> np.ndarray:
     """Downscale a frame so its longer side <= max_side, keeping dims divisible by 8.
@@ -62,14 +75,16 @@ class AdvancedFlowModule(PipelineModule):
         try:
             import os
             from ayase.runtime import resolve_torch_device, shared_runtime_resource
+            from ayase.config import download_torch_hub_checkpoint
 
             # Redirect torch hub cache to models_dir so RAFT weights respect config
-            models_dir = self.config.get("models_dir")
-            if models_dir:
-                os.environ["TORCH_HOME"] = str(models_dir)
+            models_dir = str(self.config.get("models_dir", "models"))
+            os.environ["TORCH_HOME"] = models_dir
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             variant = "raft_large" if self.use_large_model else "raft_small"
+            filename, url = _RAFT_MIRRORS[variant]
+            download_torch_hub_checkpoint(filename, url, models_dir)
 
             def load_raft():
                 if self.use_large_model:

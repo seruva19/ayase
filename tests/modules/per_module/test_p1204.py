@@ -77,15 +77,15 @@ def test_p1204_predict_parametric_and_rf():
     try:
         reg = huggingface_hub.hf_hub_download(
             repo_id="AkaneTendo25/ayase-models",
-            filename="weights/p1204/models/p1204_3/mode3_pc_20trees_depth_8_reg.json",
+            filename="p1204/models/p1204_3/mode3_pc_20trees_depth_8_reg.json",
         )
         fs = huggingface_hub.hf_hub_download(
             repo_id="AkaneTendo25/ayase-models",
-            filename="weights/p1204/models/p1204_3/mode3_pc_20trees_depth_8_fs.json",
+            filename="p1204/models/p1204_3/mode3_pc_20trees_depth_8_fs.json",
         )
         cfg = huggingface_hub.hf_hub_download(
             repo_id="AkaneTendo25/ayase-models",
-            filename="weights/p1204/models/p1204_3/config.json",
+            filename="p1204/models/p1204_3/config.json",
         )
     except Exception as exc:  # offline / hub unavailable
         pytest.skip(f"P.1204.3 model not downloadable: {exc}")

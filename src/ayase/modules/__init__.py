@@ -86,6 +86,10 @@ _IMPORTS = [
     # --- SOTA video quality (CVPR/NeurIPS/EMNLP 2024-2025) ---
     ("VideoScoreModule", ".videoscore"),
     ("VideoScore2Module", ".videoscore2"),
+    ("OfficialVBench2Module", ".vbench2_official"),
+    ("WorldModelBenchModule", ".worldmodelbench"),
+    ("MJVideoModule", ".mj_video"),
+    ("RTMPoseFidelityModule", ".rtmpose_fidelity"),
     ("VideoRewardModule", ".video_reward"),
     ("RQVQAModule", ".rqvqa"),
     ("AIGVAssessorModule", ".aigv_assessor"),
