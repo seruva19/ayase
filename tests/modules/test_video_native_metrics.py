@@ -361,23 +361,18 @@ def test_kvq_dispatches_to_real_model_when_loaded():
     mock_model.assert_called_once()
 
 
-def test_rqvqa_dispatches_to_real_model_when_loaded():
-    """RQ-VQA module dispatches to real model when backend=='rqvqa'."""
+def test_rqvqa_dispatches_to_real_ensemble_when_loaded():
+    """RQ-VQA stores the published unbounded raw score without clipping."""
     from ayase.modules.rqvqa import RQVQAModule
 
-    module = RQVQAModule()
+    module = RQVQAModule({"test_mode": True})
     module._backend = "rqvqa"
     module._ml_available = True
-    module._device = "cpu"
+    module._score_video = MagicMock(return_value=8.8)
+    sample = Sample(path=Path("test.mp4"), is_video=True)
 
-    mock_model = MagicMock()
-    mock_model.return_value = MagicMock(item=MagicMock(return_value=0.8))
-    module._model = mock_model
+    result = module.process(sample)
 
-    frame = np.full((64, 64, 3), 128, dtype=np.uint8)
-
-    score = module._process_rqvqa_model(
-        Sample(path=Path("test.png"), is_video=False), [frame]
-    )
-    assert score is not None
-    mock_model.assert_called_once()
+    assert result is sample
+    assert result.quality_metrics.rqvqa_score == 8.8
+    module._score_video.assert_called_once_with(sample)

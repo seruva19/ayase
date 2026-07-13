@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 
 HF_REPO = "AkaneTendo25/ayase-models"
 _WEIGHT_FILES = {
-    "OIQA": "weights/mc360iqa/OIQA.pkl",
-    "CVIQ": "weights/mc360iqa/CVIQ.pkl",
+    "OIQA": "mc360iqa/OIQA.pkl",
+    "CVIQ": "mc360iqa/CVIQ.pkl",
 }
 
 # ImageNet normalisation used by the upstream test/train transforms.

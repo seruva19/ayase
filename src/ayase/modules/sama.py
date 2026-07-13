@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Original weights (GoogleDrive/BaiDu in upstream repo), mirrored on HF.
 SAMA_REPO_ID = "AkaneTendo25/ayase-models"
-SAMA_WEIGHTS_FILE = "weights/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth"
+SAMA_WEIGHTS_FILE = "sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth"
 
 # Normalisation constants (Kinetics / FAST-VQA / SAMA shared).
 _MEAN = (123.675, 116.28, 103.53)
@@ -183,7 +183,7 @@ class SAMAModule(PipelineModule):
         {
             "id": SAMA_WEIGHTS_FILE,
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/weights/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth",
             "task": "SAMA LSVQ baseline video quality checkpoint",
         },
     ]

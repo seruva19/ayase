@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **vbench2_official**: native Apache-2.0 VBench 2.0 evaluation with setup-time checkpoint resolution, all 18 intrinsic-faithfulness dimensions, and five category aggregates.
+- **worldmodelbench**: native VILA-judge evaluation for instruction following, physical adherence, commonsense, and seven component scores, with the official judge downloaded during setup.
+- **mj_video**: native MJ-VIDEO-2B inference for the learned overall preference reward, five aspect rewards, and raw 28-criterion training diagnostics, with weights downloaded during setup.
+- Pipeline JSON reports now expose requested, mounted, and failed module coverage through `run_status`.
+
+### Changed
+
+- Dataset scanning indexes media and caption sidecars in one directory traversal.
+- **rqvqa**: reports the released PLCC-trained raw regression output instead of clipping it to 0–1; the published score is unbounded and higher is better.
+- **videoscore2**: soft ratings use the probability-weighted expectation on the documented 1–5 scale; the existing sampling default is unchanged.
+- **vbench2_official**, **worldmodelbench**, and **mj_video**: external source archives and non-Hugging-Face checkpoints are resolved through the `AkaneTendo25/ayase-models` mirror; native Hugging Face model repositories remain unchanged.
+- Mirrored model files now use flat module directories at the repository root; the duplicate `weights/` hierarchy and all runtime references to it were removed.
+- The `dev` extra now installs `pytest-asyncio`, which is required by the TUI test suite.
+
+### Fixed
+
+- **rqvqa**: replaced the invalid Transformers loader with the published ten-fold Swin-B/BoT ensemble and its real SlowFast, Q-Align, LIQE, and FAST-VQA feature streams; all non-Hugging-Face checkpoints are resolved through the Ayase model mirror, and stochastic FAST-VQA fragment selection is isolated for reproducible scoring.
+- **depth_consistency/depth_map_quality**: strict-load all supported MiDaS Small, Hybrid, and Large checkpoints from the Ayase model mirror.
+- **song_eval**: register the published attention head as a real PyTorch module and strict-load its mirrored checkpoint instead of silently leaving its parameters unusable.
+- Pipeline state fingerprints now include module source, runtime versions, model declarations, and score-affecting runtime configuration; sample cache signatures include structured metadata and annotations.
+- Requested modules and hooks that fail initialization or execution now mark affected samples incomplete instead of producing cacheable partial results silently.
+- **videophy**: VLM judgments ignore unrelated pre-existing issues and isolate physical and semantic issue ranges from each other.
+
 ## [0.1.64] - 2026-07-10
 
 ### Added

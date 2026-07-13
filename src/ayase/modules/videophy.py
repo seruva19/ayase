@@ -137,9 +137,9 @@ class VideoPhyModule(PipelineModule):
     def _try_setup_trajectory(self) -> bool:
         try:
             from ayase.modules.physics import PhysicsModule
-            self._physics_module = PhysicsModule()
+            self._physics_module = PhysicsModule(config=dict(self.config))
             self._physics_module.on_mount()
-            return True
+            return bool(getattr(self._physics_module, "_mounted", False))
         except Exception as e:
             logger.debug(f"VideoPhy: trajectory fallback unavailable: {e}")
             return False
@@ -203,15 +203,22 @@ class VideoPhyModule(PipelineModule):
         original = self._vlm_judge.verification_prompt
         try:
             self._vlm_judge.verification_prompt = PHYSICS_PROMPT
+            pc_issue_start = len(sample.validation_issues)
             pc_out = self._vlm_judge.process(sample)
+            pc = 1.0 if not _has_negative_issue(pc_out, pc_issue_start) else 0.0
             self._vlm_judge.verification_prompt = SEMANTIC_PROMPT.format(caption=caption or "the scene")
+            sa_issue_start = len(sample.validation_issues)
             sa_out = self._vlm_judge.process(sample)
+            sa = 1.0 if not _has_negative_issue(sa_out, sa_issue_start) else 0.0
         finally:
             self._vlm_judge.verification_prompt = original
-        # vlm_judge writes a yes/no validation issue; approximate as 1.0 or 0.0
-        pc = 1.0 if not _has_negative_issue(pc_out) else 0.0
-        sa = 1.0 if not _has_negative_issue(sa_out) else 0.0
         return pc, sa
+
+    def teardown(self) -> None:
+        if self._vlm_judge is not None:
+            self._vlm_judge.on_dispose()
+        if self._physics_module is not None:
+            self._physics_module.on_dispose()
 
     def _score_trajectory(self, sample: Sample, caption: str) -> Tuple[Optional[float], Optional[float]]:
         # Reuse the existing trajectory-based physics score for physical
@@ -246,9 +253,9 @@ def _parse_likert(text: str) -> Optional[float]:
     return (int(m.group(0)) - 1) / 4.0
 
 
-def _has_negative_issue(sample: Sample) -> bool:
+def _has_negative_issue(sample: Sample, start_index: int = 0) -> bool:
     from ayase.models import ValidationSeverity
     return any(
         issue.severity in (ValidationSeverity.ERROR, ValidationSeverity.WARNING)
-        for issue in sample.validation_issues
+        for issue in sample.validation_issues[start_index:]
     )

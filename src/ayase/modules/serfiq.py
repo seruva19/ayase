@@ -32,7 +32,7 @@ serfiq_score -- higher = better quality (0-1)
 REVIVAL NOTES (provisional -- EXTERNAL): already code-complete (faithful T=100 stochastic-pass
 computation). Blocker: requires MXNet, which has no installable wheel on Windows/Python-3.10. To
 revive: on Linux, ``pip install mxnet insightface``; the module then auto-downloads
-AkaneTendo25/ayase-models::weights/serfiq/serfiq_model.zip and works. No code change needed.
+AkaneTendo25/ayase-models::serfiq/serfiq_model.zip and works. No code change needed.
 Source: https://github.com/pterhoer/FaceImageQuality
 """
 
@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 # HuggingFace mirror of the official SER-FIQ dropout-ArcFace weights (MXNet).
 _WEIGHTS_REPO = "AkaneTendo25/ayase-models"
-_WEIGHTS_FILE = "weights/serfiq/serfiq_model.zip"
+_WEIGHTS_FILE = "serfiq/serfiq_model.zip"
 _SYMBOL_NAME = "insightface-symbol.json"
 _PARAMS_NAME = "insightface-0000.params"
 
