@@ -1,32 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.64** · Generated 2026-07-10 22:40 · **340 modules** · **406 metrics**
+> **Version 0.1.64** · Generated 2026-07-13 16:33 · **343 modules** · **412 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **333/340 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **336/343 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**340** modules · **456** output fields · **406** metrics · **235** tiered · **155** GPU · **22** categories
-
-<table width="100%"><tr>
-<td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
-<td width="50%" valign="top"><h4>Input Types</h4><img src="docs/chart_input_types.png" width="100%"/></td>
-</tr></table>
-
-<table width="100%"><tr>
-<td width="50%" valign="top"><h4>Speed Tiers</h4><img src="docs/chart_speed.png" width="100%"/></td>
-<td width="50%" valign="top"><h4>Backend Usage</h4><img src="docs/chart_backends.png" width="100%"/></td>
-</tr></table>
-
-<table width="100%"><tr>
-<td width="50%" valign="top"><h4>Top Packages</h4><img src="docs/chart_packages.png" width="100%"/></td>
-<td width="50%" valign="top"><h4>Metrics per Category</h4><img src="docs/chart_metrics_per_cat.png" width="100%"/></td>
-</tr></table>
+**343** modules · **497** output fields · **412** metrics · **238** tiered · **157** GPU · **21** categories
 
 > [!WARNING]
 > **2 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
@@ -35,11 +20,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-75-metrics) (75) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-26-metrics) (26) · [Motion & Dynamics](#motion--dynamics-32-metrics) (32) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-7-metrics) (7) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-50-fields) (50) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-76-metrics) (76) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-27-metrics) (27) · [Motion & Dynamics](#motion--dynamics-33-metrics) (33) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-85-fields) (85) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
-## No-Reference Quality (75 metrics)
+## No-Reference Quality (76 metrics)
 
 ### `afine_score` [↑](#categories)
 > A-FINE fidelity-naturalness (CVPR 2025) · ↑ higher=better
@@ -415,6 +400,18 @@
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
 - **Config**: `clip_len=16`, `max_clips=8`, `device=auto`
 
+### `mj_video_fineness_score` [↑](#categories)
+> MJ-Video fine-detail aspect · ↑ higher=better
+
+**[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: mj_video → unavailable
+- **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
+- **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+
 ### `modularbvqa_score` [↑](#categories)
 > ModularBVQA resolution-aware (higher=better) · ↑ higher=better
 
@@ -599,16 +596,17 @@
 - **Config**: `model_name=Qwen/Qwen-Image-Bench`, `backend=auto`, `dimensions=all`, `device=auto`, `dtype=bfloat16`, `device_map=auto`, `max_new_tokens=4096`, `temperature=0.0`, `top_p=1.0`, `top_k=1`, `repetition_penalty=1.05`, `max_image_size=1024`, `resize_to_square=True`, `trust_remote_code=True`
 
 ### `rqvqa_score` [↑](#categories)
-> RQ-VQA rich quality-aware (CVPR 2024 winner) · ↑ higher=better
+> RQ-VQA raw regression score (higher=better) · ↑ higher=better · unbounded;
 
-**[`rqvqa`](src/ayase/modules/rqvqa.py)** — Multi-attribute video quality (real RQ-VQA model only)
+**[`rqvqa`](src/ayase/modules/rqvqa.py)** — RQ-VQA rich quality-aware blind VQA ensemble (raw regression score)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Backend**: rqvqa → unavailable
-- **Packages**: opencv-python, torch, transformers
-- **Source**: <a href="https://huggingface.co/AkaneTendo25/ayase-models" target="_blank">HF</a>
+- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable → rqvqa
+- **Packages**: Pillow, opencv-python, torch
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
 - **Tests**: covered by [`test_rqvqa.py`](tests/modules/per_module/test_rqvqa.py), [`test_video_native_metrics.py`](tests/modules/test_video_native_metrics.py)
-- **Config**: `subsample=8`, `trust_remote_code=True`
+- **Config**: `ensemble_size=10`, `device=auto`, `dtype=float16`, `qalign_dtype=float16`, `fastvqa_seed=42`
 
 ### `sama_score` [↑](#categories)
 > SAMA scaling+masking (higher=better) · ↑ higher=better · unbounded
@@ -1534,7 +1532,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_industry_metrics.py`](tests/modules/test_industry_metrics.py)
 
 
-## Text-Video Alignment (51 metrics)
+## Text-Video Alignment (53 metrics)
 
 ### `aigv_alignment` [↑](#categories)
 > AI video text-video alignment
@@ -1810,6 +1808,30 @@
 - **Packages**: ImageReward, transformers
 - **Tests**: covered by [`test_image_reward.py`](tests/modules/per_module/test_image_reward.py)
 - **Config**: `model_name=ImageReward-v1.0`, `num_frames=5`, `warning_threshold=0.0`
+
+### `mj_video_alignment_score` [↑](#categories)
+> MJ-Video prompt alignment aspect · ↑ higher=better
+
+**[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: mj_video → unavailable
+- **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
+- **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+
+### `mj_video_overall_score` [↑](#categories)
+> MJ-Video learned preference reward · ↑ higher=better
+
+**[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: mj_video → unavailable
+- **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
+- **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `pickscore_score` [↑](#categories)
 > PickScore prompt-image preference score (higher=better) · ↑ higher=better
@@ -2150,7 +2172,7 @@
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 
-## Temporal Consistency (26 metrics)
+## Temporal Consistency (27 metrics)
 
 ### `aigv_temporal` [↑](#categories)
 > AI video temporal smoothness
@@ -2345,6 +2367,18 @@
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py)
 - **Config**: `device=auto`
 
+### `mj_video_coherence_score` [↑](#categories)
+> MJ-Video coherence/consistency aspect · ↑ higher=better
+
+**[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: mj_video → unavailable
+- **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
+- **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+
 ### `object_permanence_score` [↑](#categories)
 > ↑ higher=better
 
@@ -2450,7 +2484,7 @@
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (32 metrics)
+## Motion & Dynamics (33 metrics)
 
 ### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
@@ -2716,6 +2750,17 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Packages**: torch, torchvision
 - **Tests**: covered by [`test_raft_motion.py`](tests/modules/per_module/test_raft_motion.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 - **Config**: `subsample=8`
+
+### `rtmpose_score` [↑](#categories)
+> RTMPose keypoint-confidence pose plausibility (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`rtmpose_fidelity`](src/ayase/modules/rtmpose_fidelity.py)** — RTMPose keypoint-confidence pose/gesture plausibility (rtmlib, local ONNX; 0-1, higher=better)
+
+- **Input**: img/vid · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable → rtmlib
+- **Packages**: rtmlib
+- **Tests**: no dedicated test reference found
+- **Config**: `subsample=8`, `det_input_size=[640, 640]`, `pose_input_size=[192, 256]`, `warn_threshold=0.4`, `device=auto`
 
 ### `stabilized_camera_score` [↑](#categories)
 > Stabilized camera motion estimate · ↑ higher=better
@@ -3502,7 +3547,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: songeval
 - **Packages**: librosa, muq, safetensors, torch
-- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
 - **Tests**: covered by [`test_song_eval.py`](tests/modules/per_module/test_song_eval.py)
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
@@ -3514,7 +3559,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: songeval
 - **Packages**: librosa, muq, safetensors, torch
-- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
 - **Tests**: covered by [`test_song_eval.py`](tests/modules/per_module/test_song_eval.py)
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
@@ -3526,7 +3571,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: songeval
 - **Packages**: librosa, muq, safetensors, torch
-- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
 - **Tests**: covered by [`test_song_eval.py`](tests/modules/per_module/test_song_eval.py)
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
@@ -3538,7 +3583,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: songeval
 - **Packages**: librosa, muq, safetensors, torch
-- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
 - **Tests**: covered by [`test_song_eval.py`](tests/modules/per_module/test_song_eval.py)
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
@@ -3550,7 +3595,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: songeval
 - **Packages**: librosa, muq, safetensors, torch
-- **Source**: <a href="https://github.com/ASLP-lab/SongEval" target="_blank">GitHub</a> · <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
+- **Source**: <a href="https://huggingface.co/OpenMuQ/MuQ-large-msd-iter" target="_blank">HF</a>
 - **Tests**: covered by [`test_song_eval.py`](tests/modules/per_module/test_song_eval.py)
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
@@ -4434,7 +4479,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`, `edge_threshold=0.15`
 
 
-## Safety & Ethics (7 metrics)
+## Safety & Ethics (9 metrics)
 
 ### `ai_generated_probability` [↑](#categories)
 > AI-generated content likelihood 0-1 · 0-1
@@ -4484,6 +4529,30 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_harmful_content.py`](tests/modules/per_module/test_harmful_content.py), [`test_safety_modules.py`](tests/modules/test_safety_modules.py)
 - **Config**: `subsample=10`, `max_frames=60`, `clip_model=openai/clip-vit-base-patch32`, `warning_threshold=0.4`
+
+### `mj_video_fairness_score` [↑](#categories)
+> MJ-Video bias/fairness aspect · ↑ higher=better
+
+**[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: mj_video → unavailable
+- **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
+- **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+
+### `mj_video_safety_score` [↑](#categories)
+> MJ-Video safety aspect · ↑ higher=better
+
+**[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: mj_video → unavailable
+- **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
+- **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `nsfw_score` [↑](#categories)
 > 0-1, likelihood of being NSFW · ↑ higher=better · 0-1
@@ -4648,7 +4717,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (50 fields)
+## Dataset-Level Metrics (85 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -5045,6 +5114,198 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py)
 
+### `vbench2_camera_motion` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Camera Motion score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_commonsense_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — VBench 2.0 commonsense aggregate
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_complex_landscape` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Complex Landscape score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_complex_plot` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Complex Plot score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_composition` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Composition score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_controllability_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — VBench 2.0 controllability aggregate
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_creativity_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — VBench 2.0 creativity aggregate
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_diversity` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Diversity score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_dynamic_attribute` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Dynamic Attribute score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_dynamic_spatial_relationship` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Dynamic Spatial Relationship score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_human_anatomy` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Human Anatomy score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_human_clothes` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Human Clothes score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_human_fidelity_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — VBench 2.0 human-fidelity aggregate
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_human_identity` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Human Identity score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_human_interaction` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Human Interaction score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_instance_preservation` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Instance Preservation score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_material` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Material score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_mechanics` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Mechanics score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_motion_order_understanding` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Motion Order Understanding score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_motion_rationality` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Motion Rationality score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_multiview_consistency` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Multi-View Consistency score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_physics_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — VBench 2.0 physics aggregate
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_thermotics` [↑](#categories)
+> type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Official VBench 2.0 Thermotics score
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
+### `vbench2_total_score` [↑](#categories)
+> WorldModelBench (CVPR 2025 workshop, dataset-level; higher=better) · ↑ higher=better · type: float
+
+**[`vbench2_official`](src/ayase/modules/vbench2_official.py)** — Mean of the five official VBench 2.0 category aggregates
+
+- **Input**: img/vid · **Speed**: 🐌 slow
+- **Tests**: covered by [`test_vbench2_official.py`](tests/modules/per_module/test_vbench2_official.py)
+
 ### `vendi` [↑](#categories)
 > Vendi Score diversity (higher=better) · ↑ higher=better · type: float
 
@@ -5076,6 +5337,94 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+
+### `worldmodelbench_aesthetics_adherence` [↑](#categories)
+> type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without poor-aesthetics finding (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_common_sense_score` [↑](#categories)
+> Sum of two rates, 0-2 · ↑ higher=better · type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Sum of two commonsense adherence rates (0-2)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_fluid_adherence` [↑](#categories)
+> type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without fluid-law violation (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_gravity_adherence` [↑](#categories)
+> type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without gravity violation (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_instruction_score` [↑](#categories)
+> Official range 0-3 · ↑ higher=better · type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Instruction following mean (0-3, higher=better)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_mass_solid_adherence` [↑](#categories)
+> type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without mass/solid-law violation (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_newton_adherence` [↑](#categories)
+> Fraction without violation · type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without a Newton-law violation (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_penetration_adherence` [↑](#categories)
+> type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without nonphysical penetration (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_physical_score` [↑](#categories)
+> Sum of five adherence rates, 0-5 · ↑ higher=better · type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Sum of five physical adherence rates (0-5)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_temporal_adherence` [↑](#categories)
+> type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without temporal inconsistency (0-1)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+
+### `worldmodelbench_total_score` [↑](#categories)
+> Official raw total, 0-10 · ↑ higher=better · type: float
+
+**[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Official raw total (0-10, higher=better)
+
+- **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
 
 ## Utility & Validation (30 modules)
 

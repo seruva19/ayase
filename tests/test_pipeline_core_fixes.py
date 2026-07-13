@@ -449,6 +449,76 @@ def test_raising_hook_does_not_crash_pipeline(tmp_path: Path):
 
     assert result is not None
     assert module.calls == 0  # module skipped when its before-hook fails
+    assert result.failed_modules == ["corefix_backend_probe"]
+    assert any(issue.issue_type == "module_error" for issue in result.validation_issues)
+
+
+def test_mount_failure_marks_samples_incomplete(tmp_path: Path):
+    class MountFailureModule(PipelineModule):
+        name = "corefix_mount_failure"
+        description = "Test mount failure reporting"
+
+        def on_mount(self) -> None:
+            raise RuntimeError("weights unavailable")
+
+        def process(self, sample: Sample) -> Sample:
+            raise AssertionError("unmounted module must not execute")
+
+    media = _media(tmp_path)
+    pipeline = Pipeline([MountFailureModule()])
+    pipeline.start()
+
+    result = pipeline.process_sample(Sample(path=media, is_video=True))
+
+    assert result.failed_modules == ["corefix_mount_failure"]
+    assert pipeline.get_run_status()["complete"] is False
+    assert "mount failed" in pipeline.get_run_status()["module_failures"][
+        "corefix_mount_failure"
+    ]
+
+
+def test_post_process_failure_marks_run_and_samples_incomplete(tmp_path: Path):
+    class PostProcessFailureModule(PipelineModule):
+        name = "corefix_post_process_failure"
+        description = "Test post-process failure reporting"
+
+        def process(self, sample: Sample) -> Sample:
+            return sample
+
+        def post_process(self, all_samples):
+            raise RuntimeError("aggregate exploded")
+
+    media = _media(tmp_path)
+    pipeline = Pipeline([PostProcessFailureModule()])
+    pipeline.start()
+    result = pipeline.process_sample(Sample(path=media, is_video=True))
+    pipeline.stop()
+
+    assert result.failed_modules == ["corefix_post_process_failure"]
+    assert pipeline.get_run_status()["complete"] is False
+    assert "post_process failed" in pipeline.get_run_status()["module_failures"][
+        "corefix_post_process_failure"
+    ]
+
+
+def test_raising_before_hook_marks_every_batched_sample_incomplete(tmp_path: Path):
+    samples = [
+        Sample(path=_media(tmp_path, f"{index}.mp4"), is_video=True)
+        for index in range(2)
+    ]
+    module = _BackendProbeModule()
+    pipeline = Pipeline([module])
+
+    def bad_hook(sample):
+        raise ValueError("batch hook exploded")
+
+    pipeline.add_hook("corefix_backend_probe", before=bad_hook)
+    pipeline.start()
+
+    results = pipeline.process_samples(samples, batch_size=2)
+
+    assert module.calls == 0
+    assert all(result.failed_modules == ["corefix_backend_probe"] for result in results)
 
 
 # ---------------------------------------------------------------------------

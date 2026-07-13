@@ -9,7 +9,7 @@ combines a parametric baseline (per-codec coding + upscaling + framerate
 degradations on the ITU R-scale) with a trained random-forest *residual*.
 
 Both parts are wired here from the JSON coefficients mirrored on the Hugging
-Face Hub (``weights/p1204/models/p1204_3/``):
+Face Hub (``p1204/models/p1204_3/``):
 
 * ``config.json`` -- per-device (``pc``/``mobile``) parametric coefficients plus
   the name of the RF regressor file.
@@ -56,7 +56,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 _HF_REPO = "AkaneTendo25/ayase-models"
-_HF_MODEL_DIR = "weights/p1204/models/p1204_3"
+_HF_MODEL_DIR = "p1204/models/p1204_3"
 _HF_CONFIG = _HF_MODEL_DIR + "/config.json"
 
 # ITU-T R <-> MOS conversion (P.1204.3 modelutils). MOS_MIN/MAX and the

@@ -784,6 +784,49 @@ def test_load_state_skips_incompatible_pipeline_fingerprint(tmp_path: Path):
     assert second_pipeline.stats.total_samples == 1
 
 
+def test_sample_cache_signature_includes_freeform_metadata(tmp_path: Path):
+    media_path = tmp_path / "clip.mp4"
+    media_path.write_bytes(b"video")
+    pipeline = Pipeline([_FileSizeScoreModule()])
+    pipeline.start()
+
+    first = Sample(path=media_path, is_video=True, metadata={"target_action": "walk"})
+    second = Sample(path=media_path, is_video=True, metadata={"target_action": "run"})
+
+    result_1 = pipeline.process_sample(first)
+    result_2 = pipeline.process_sample(second)
+
+    assert result_1 is not result_2
+
+
+def test_pipeline_fingerprint_tracks_semantic_runtime_config():
+    first = _FileSizeScoreModule(config={"dtype": "float16", "parallel_jobs": 1})
+    second = _FileSizeScoreModule(config={"dtype": "float32", "parallel_jobs": 8})
+
+    first_fingerprint = Pipeline([first])._pipeline_fingerprint()
+    second_fingerprint = Pipeline([second])._pipeline_fingerprint()
+
+    assert first_fingerprint != second_fingerprint
+    assert first_fingerprint["modules"][0]["source_sha256"]
+    assert first_fingerprint["runtime"]["python"]
+
+
+def test_json_report_includes_run_status(tmp_path: Path):
+    media_path = tmp_path / "clip.mp4"
+    media_path.write_bytes(b"video")
+    report_path = tmp_path / "report.json"
+    pipeline = Pipeline([_FileSizeScoreModule()])
+    pipeline.start()
+    pipeline.process_sample(Sample(path=media_path, is_video=True))
+
+    pipeline.export_report(report_path)
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert report["run_status"]["complete"] is True
+    assert report["run_status"]["requested_modules"] == ["file_size_score_probe"]
+    assert report["run_status"]["failed_samples"] == {}
+
+
 def test_sanitize_cached_sample_drops_unknown_metric_keys(caplog):
     import logging
 
@@ -1533,3 +1576,20 @@ def test_pipeline_repeated_start_resets_previous_run_state(tmp_path: Path):
     assert second_result.quality_metrics is not None
     assert pipeline.stats.total_samples == 1
     assert sorted(pipeline.results) == [str(second_image)]
+def test_download_hf_snapshot_uses_stable_models_dir(monkeypatch, tmp_path):
+    import huggingface_hub
+
+    from ayase.config import download_hf_snapshot
+
+    captured = {}
+
+    def fake_snapshot_download(**kwargs):
+        captured.update(kwargs)
+        return kwargs["local_dir"]
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", fake_snapshot_download)
+    resolved = download_hf_snapshot("org/model", str(tmp_path), revision="pinned")
+
+    assert resolved == (tmp_path / "org--model").resolve()
+    assert captured["repo_id"] == "org/model"
+    assert captured["revision"] == "pinned"

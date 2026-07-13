@@ -25,12 +25,22 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+_MIDAS_MIRRORS = {
+    "MiDaS_small": (
+        "midas_v21_small_256.pt",
+        "depth_consistency/midas_v21_small_256.pt",
+    ),
+    "DPT_Hybrid": ("dpt_hybrid_384.pt", "depth_consistency/dpt_hybrid_384.pt"),
+    "DPT_Large": ("dpt_large_384.pt", "depth_consistency/dpt_large_384.pt"),
+}
+_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+
 
 class DepthConsistencyModule(PipelineModule):
     name = "depth_consistency"
     description = "Monocular depth temporal consistency"
     default_config = {
-        "model_type": "MiDaS_small",  # "MiDaS_small", "DPT_Hybrid", "DPT_Large"
+        "model_type": "MiDaS_small",
         "device": "auto",
         "subsample": 3,
         "max_frames": 200,
@@ -57,15 +67,24 @@ class DepthConsistencyModule(PipelineModule):
     def setup(self) -> None:
         try:
             import torch
+            import os
+            from ayase.config import download_torch_hub_checkpoint
             from ayase.runtime import resolve_torch_device
 
             self.device = torch.device(resolve_torch_device(self.device_config))
-
-            # Load MiDaS via torch hub
-            self._model = torch.hub.load(
-                "intel-isl/MiDaS", self.model_type, trust_repo=True
+            models_dir = str(self.config.get("models_dir", "models"))
+            os.environ["TORCH_HOME"] = models_dir
+            mirror = _MIDAS_MIRRORS.get(self.model_type)
+            if mirror is None:
+                raise ValueError(f"Unsupported mirrored MiDaS model: {self.model_type}")
+            filename, relative_path = mirror
+            checkpoint_path = download_torch_hub_checkpoint(
+                filename, _MIRROR_BASE + relative_path, models_dir
             )
-            self._model.to(self.device).eval()
+
+            from ayase.modules._midas_utils import load_midas_model
+
+            self._model = load_midas_model(self.model_type, checkpoint_path, self.device)
 
             midas_transforms = torch.hub.load(
                 "intel-isl/MiDaS", "transforms", trust_repo=True

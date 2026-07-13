@@ -37,3 +37,32 @@ def test_videophy_no_backend_leaves_fields_unset(video_sample):
     if out.quality_metrics is not None:
         assert out.quality_metrics.videophy_pc_score is None
         assert out.quality_metrics.videophy_sa_score is None
+
+
+def test_videophy_judge_ignores_preexisting_and_prior_dimension_issues(video_sample):
+    from ayase.models import ValidationIssue, ValidationSeverity
+    from ayase.modules.videophy import VideoPhyModule
+
+    class Judge:
+        verification_prompt = ""
+
+        def process(self, sample):
+            if "caption" in self.verification_prompt:
+                sample.validation_issues.append(
+                    ValidationIssue(
+                        severity=ValidationSeverity.WARNING,
+                        message="semantic mismatch",
+                    )
+                )
+            return sample
+
+    video_sample.validation_issues.append(
+        ValidationIssue(severity=ValidationSeverity.WARNING, message="preexisting blur")
+    )
+    module = VideoPhyModule()
+    module._vlm_judge = Judge()
+
+    physical, semantic = module._score_via_judge(video_sample, "a person walking")
+
+    assert physical == 1.0
+    assert semantic == 0.0

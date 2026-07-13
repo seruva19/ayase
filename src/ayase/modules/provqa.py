@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 # HuggingFace mirror of the official ProVQA checkpoint.
 _HF_REPO = "AkaneTendo25/ayase-models"
-_HF_FILENAME = "weights/provqa/net_g_26400.pth"
+_HF_FILENAME = "provqa/net_g_26400.pth"
 
 # Hyperparameters from the upstream test config
 # (options/test/test_bvqa360_OURs.yaml).  ``num_frame=6`` is load-bearing: it

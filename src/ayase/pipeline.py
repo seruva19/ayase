@@ -326,6 +326,9 @@ class PipelineModule(ABC):
             field = m.group(1)
             if field not in dataset_outputs and field in dataset_field_descs:
                 dataset_outputs[field] = dataset_field_descs[field]
+        for field, description in cls.metric_info.items():
+            if field in dataset_field_descs and field not in dataset_outputs:
+                dataset_outputs[field] = description or dataset_field_descs[field]
 
         return {
             "name": cls.name,
@@ -413,18 +416,10 @@ class Pipeline:
         "severity_distribution",
     }
     _RUNTIME_CONFIG_KEYS = {
-        "models_dir",
         "parallel_jobs",
-        "device",
-        "dtype",
-        "amp_enabled",
-        "attention_backend",
         "frame_cache_enabled",
         "timing_enabled",
         "cache_enabled",
-        "content_hash_keys",
-        "sample_batch_size",
-        "max_clip_images_per_forward",
     }
 
     def __init__(self, modules: List[PipelineModule]):
@@ -437,6 +432,7 @@ class Pipeline:
         self._hooks: Dict[str, Dict[str, Callable[[Sample], Sample]]] = {}
         self.module_timings: Dict[str, float] = {}
         self.module_call_counts: Dict[str, int] = {}
+        self.module_failures: Dict[str, str] = {}
         # Per-sample frame store, keyed by file identity only. Each entry holds
         # one native-BGR decode plus lazily converted per-color variants; see
         # sample_frames() / load_representative_frame().
@@ -642,16 +638,38 @@ class Pipeline:
         """Store a value in the current runtime cache."""
         self._runtime_value_cache[key] = value
 
-    @staticmethod
-    def _sample_cache_signature(sample: Sample) -> tuple[object, ...]:
+    @classmethod
+    def _sample_cache_signature(cls, sample: Sample) -> tuple[object, ...]:
         """Return the parts of a sample that materially affect processing output."""
         caption = sample.caption
+        input_context = {
+            "video_metadata": (
+                sample.video_metadata.model_dump(mode="json") if sample.video_metadata else None
+            ),
+            "image_metadata": (
+                sample.image_metadata.model_dump(mode="json") if sample.image_metadata else None
+            ),
+            "audio_metadata": (
+                sample.audio_metadata.model_dump(mode="json") if sample.audio_metadata else None
+            ),
+            "caption": caption.model_dump(mode="json") if caption else None,
+            "detections": sample.detections,
+            "embedding": sample.embedding,
+            "metadata": sample.metadata,
+        }
+        normalized = cls._normalize_fingerprint_value(input_context)
+        context_digest = hashlib.sha256(
+            json.dumps(normalized, sort_keys=True, separators=(",", ":"), default=str).encode(
+                "utf-8"
+            )
+        ).hexdigest()
         return (
             str(sample.path),
             sample.is_video,
             str(sample.reference_path) if sample.reference_path else None,
             caption.text if caption else None,
             str(caption.source_file) if caption and caption.source_file else None,
+            context_digest,
         )
 
     @classmethod
@@ -674,16 +692,76 @@ class Pipeline:
             ]
         if isinstance(value, (str, int, float, bool)) or value is None:
             return value
+        try:
+            import numpy as np
+
+            if isinstance(value, np.generic):
+                return cls._normalize_fingerprint_value(value.item())
+            if isinstance(value, np.ndarray):
+                if value.dtype.hasobject:
+                    return cls._normalize_fingerprint_value(value.tolist())
+                contiguous = np.ascontiguousarray(value)
+                return {
+                    "__ndarray__": True,
+                    "dtype": str(contiguous.dtype),
+                    "shape": list(contiguous.shape),
+                    "sha256": hashlib.sha256(contiguous.tobytes()).hexdigest(),
+                }
+        except ImportError:
+            pass
         return str(value)
+
+    @staticmethod
+    def _module_source_digest(module: PipelineModule) -> str:
+        """Return a stable digest of the module implementation used for scoring."""
+        try:
+            module_path = Path(inspect.getfile(module.__class__))
+            source = module_path.read_text(encoding="utf-8", errors="replace")
+        except (OSError, TypeError):
+            try:
+                source = inspect.getsource(module.__class__)
+            except (OSError, TypeError):
+                source = f"{module.__class__.__module__}.{module.__class__.__qualname__}"
+        return hashlib.sha256(source.encode("utf-8")).hexdigest()
+
+    def _runtime_environment_fingerprint(self) -> Dict[str, Any]:
+        """Capture runtime versions that can materially change metric values."""
+        import platform
+        from importlib import metadata as importlib_metadata
+
+        packages = {"numpy", "opencv-python", "pydantic", "torch", "transformers"}
+        for module in self.modules:
+            packages.update(str(package) for package in module.required_packages)
+
+        versions: Dict[str, str] = {}
+        for package in sorted(packages):
+            try:
+                versions[package] = importlib_metadata.version(package)
+            except importlib_metadata.PackageNotFoundError:
+                continue
+
+        try:
+            ayase_version = importlib_metadata.version("ayase")
+        except importlib_metadata.PackageNotFoundError:
+            ayase_version = str(getattr(sys.modules.get("ayase"), "__version__", "unknown"))
+
+        return {
+            "ayase": ayase_version,
+            "python": platform.python_version(),
+            "packages": versions,
+        }
 
     def _pipeline_fingerprint(self) -> Dict[str, Any]:
         """Describe the active module stack for cache/state compatibility checks."""
         return {
+            "runtime": self._runtime_environment_fingerprint(),
             "modules": [
                 {
                     "name": module.name,
                     "class": f"{module.__class__.__module__}.{module.__class__.__qualname__}",
+                    "source_sha256": self._module_source_digest(module),
                     "config": self._normalize_fingerprint_value(module.config),
+                    "models": self._normalize_fingerprint_value(module.models),
                     "test_mode": module.test_mode,
                 }
                 for module in self.modules
@@ -955,6 +1033,7 @@ class Pipeline:
             self._start_needs_reset = False
         self.module_timings = {}
         self.module_call_counts = {}
+        self.module_failures = {}
         self._frame_cache = {}
         self._runtime_value_cache = {}
         for module in self.modules:
@@ -966,11 +1045,45 @@ class Pipeline:
                     # must remain unmounted so process_sample() skips them.
             except Exception as e:
                 logger.error(f"Error in on_mount for module {module.name}: {e}")
+                self.module_failures[module.name] = f"mount failed: {type(e).__name__}: {e}"
+            if not getattr(module, "_mounted", False):
+                self.module_failures.setdefault(module.name, "module did not mount")
+            elif (
+                getattr(module, "_backend", None) == "unavailable"
+                and not getattr(module, "_ml_available", False)
+                and not getattr(module, "_available", False)
+            ):
+                self.module_failures.setdefault(module.name, "backend unavailable")
         for module in self.modules:
+            if module.name in self.module_failures:
+                continue
+            on_execute = getattr(module, "on_execute", None)
+            if not callable(on_execute):
+                continue
             try:
-                module.on_execute()
+                on_execute()
             except Exception as e:
                 logger.error(f"Error in on_execute for module {module.name}: {e}")
+                self.module_failures[module.name] = (
+                    f"on_execute failed: {type(e).__name__}: {e}"
+                )
+
+    def get_run_status(self) -> Dict[str, Any]:
+        """Return requested/mounted module coverage for the current run."""
+        requested = [module.name for module in self.modules]
+        failed = dict(self.module_failures)
+        failed_samples = {
+            path: list(sample.failed_modules)
+            for path, sample in self.results.items()
+            if sample.failed_modules
+        }
+        return {
+            "complete": not failed and not failed_samples,
+            "requested_modules": requested,
+            "mounted_modules": [name for name in requested if name not in failed],
+            "module_failures": failed,
+            "failed_samples": failed_samples,
+        }
 
     def _rebuild_sample_stats(self) -> None:
         """Recompute sample-derived aggregate stats from the stored results.
@@ -1002,10 +1115,19 @@ class Pipeline:
 
         # Call post_process on all modules first
         for module in self.modules:
+            if module.name in self.module_failures:
+                continue
+            post_process = getattr(module, "post_process", None)
+            if not callable(post_process):
+                continue
             try:
-                module.post_process(all_samples)
+                post_process(all_samples)
             except Exception as e:
                 logger.error(f"Error in post_process for module {module.name}: {e}")
+                detail = f"post_process failed: {type(e).__name__}: {e}"
+                self.module_failures[module.name] = detail
+                for sample in all_samples:
+                    self._register_module_failure(sample, module.name, detail)
 
         # post_process() can append issues / change validity after results were
         # stored; refold those into the sample-derived aggregate stats.
@@ -1013,10 +1135,17 @@ class Pipeline:
 
         # Call on_dispose (this triggers batch metric computation)
         for module in self.modules:
+            on_dispose = getattr(module, "on_dispose", None)
+            if not callable(on_dispose):
+                continue
             try:
-                module.on_dispose()
+                on_dispose()
             except Exception as e:
                 logger.error(f"Error in on_dispose for module {module.name}: {e}")
+                detail = f"on_dispose failed: {type(e).__name__}: {e}"
+                self.module_failures[module.name] = detail
+                for sample in all_samples:
+                    self._register_module_failure(sample, module.name, detail)
 
         # on_dispose() (e.g. dedup batch modules) can flip validity or write
         # metrics onto samples AFTER post_process ran; refold those into the
@@ -1054,18 +1183,23 @@ class Pipeline:
         """
         if module_name not in sample.failed_modules:
             sample.failed_modules.append(module_name)
-        sample.validation_issues.append(
-            ValidationIssue(
-                severity=ValidationSeverity.WARNING,
-                issue_type="module_error",
-                message=f"Module '{module_name}' failed: {detail}",
-                details={"module": module_name, "detail": detail},
-                recommendation=(
-                    "Module raised or returned invalid output; this sample will "
-                    "be reprocessed on the next run instead of served from cache."
-                ),
+        message = f"Module '{module_name}' failed: {detail}"
+        if not any(
+            issue.issue_type == "module_error" and issue.message == message
+            for issue in sample.validation_issues
+        ):
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    issue_type="module_error",
+                    message=message,
+                    details={"module": module_name, "detail": detail},
+                    recommendation=(
+                        "Module raised or returned invalid output; this sample will "
+                        "be reprocessed on the next run instead of served from cache."
+                    ),
+                )
             )
-        )
 
     @staticmethod
     def _restore_failure_state(
@@ -1147,12 +1281,18 @@ class Pipeline:
         ):
             return cached
 
+        for module_name, detail in self.module_failures.items():
+            self._register_module_failure(sample, module_name, detail)
+
         self._frame_cache = {}
         self._runtime_value_cache = {}
         try:
             with pipeline_context(self):
                 for module in self.modules:
-                    if not getattr(module, "_mounted", False):
+                    if (
+                        not getattr(module, "_mounted", False)
+                        or module.name in self.module_failures
+                    ):
                         continue
                     started_at = perf_counter()
                     hooks = self._hooks.get(module.name)
@@ -1160,9 +1300,11 @@ class Pipeline:
                     succeeded = False
                     try:
                         if hooks and "before" in hooks:
+                            hook_raised = False
                             try:
                                 hooked = hooks["before"](sample)
                             except Exception as e:
+                                hook_raised = True
                                 logger.error(
                                     "Before-hook for module %s raised for %s: %s; "
                                     "skipping module",
@@ -1171,6 +1313,11 @@ class Pipeline:
                                     e,
                                 )
                                 hooked = None
+                                self._register_module_failure(
+                                    sample,
+                                    module.name,
+                                    f"before hook raised {type(e).__name__}: {e}",
+                                )
                             if not isinstance(hooked, Sample):
                                 if hooked is not None:
                                     logger.error(
@@ -1179,6 +1326,18 @@ class Pipeline:
                                         module.name,
                                         type(hooked).__name__,
                                         str_path,
+                                    )
+                                    self._register_module_failure(
+                                        sample,
+                                        module.name,
+                                        f"before hook returned {type(hooked).__name__}, "
+                                        "expected Sample",
+                                    )
+                                elif not hook_raised:
+                                    self._register_module_failure(
+                                        sample,
+                                        module.name,
+                                        "before hook returned None, expected Sample",
                                     )
                                 entered = False
                                 continue
@@ -1231,6 +1390,11 @@ class Pipeline:
                                     e,
                                 )
                                 restored = None
+                                self._register_module_failure(
+                                    sample,
+                                    module.name,
+                                    f"after hook raised {type(e).__name__}: {e}",
+                                )
                             if isinstance(restored, Sample):
                                 sample = restored
                                 self._restore_failure_state(
@@ -1243,6 +1407,12 @@ class Pipeline:
                                     module.name,
                                     type(restored).__name__,
                                     str_path,
+                                )
+                                self._register_module_failure(
+                                    sample,
+                                    module.name,
+                                    f"after hook returned {type(restored).__name__}, "
+                                    "expected Sample",
                                 )
                         if succeeded:
                             self._persist_backend(sample, module)
@@ -1283,9 +1453,11 @@ class Pipeline:
             for idx, sample in enumerate(working):
                 str_path = str(sample.path)
                 if hooks and "before" in hooks:
+                    hook_raised = False
                     try:
                         hooked = hooks["before"](sample)
                     except Exception as e:
+                        hook_raised = True
                         logger.error(
                             "Before-hook for module %s raised for %s: %s; "
                             "skipping module",
@@ -1294,6 +1466,11 @@ class Pipeline:
                             e,
                         )
                         hooked = None
+                        self._register_module_failure(
+                            working[idx],
+                            module.name,
+                            f"before hook raised {type(e).__name__}: {e}",
+                        )
                     if not isinstance(hooked, Sample):
                         if hooked is not None:
                             logger.error(
@@ -1302,6 +1479,18 @@ class Pipeline:
                                 module.name,
                                 type(hooked).__name__,
                                 str_path,
+                            )
+                            self._register_module_failure(
+                                working[idx],
+                                module.name,
+                                f"before hook returned {type(hooked).__name__}, "
+                                "expected Sample",
+                            )
+                        elif not hook_raised:
+                            self._register_module_failure(
+                                working[idx],
+                                module.name,
+                                "before hook returned None, expected Sample",
                             )
                         continue
                     working[idx] = hooked
@@ -1395,6 +1584,11 @@ class Pipeline:
                             e,
                         )
                         restored = None
+                        self._register_module_failure(
+                            working[pos],
+                            module.name,
+                            f"after hook raised {type(e).__name__}: {e}",
+                        )
                     if isinstance(restored, Sample):
                         working[pos] = restored
                         self._restore_failure_state(
@@ -1407,6 +1601,11 @@ class Pipeline:
                             module.name,
                             type(restored).__name__,
                             working[pos].path,
+                        )
+                        self._register_module_failure(
+                            working[pos],
+                            module.name,
+                            f"after hook returned {type(restored).__name__}, expected Sample",
                         )
             for pos in succeeded_positions:
                 self._persist_backend(working[pos], module)
@@ -1446,6 +1645,10 @@ class Pipeline:
             pending_samples.append(sample)
             pending_meta.append((idx, str_path, signature, manifest))
 
+        for sample in pending_samples:
+            for module_name, detail in self.module_failures.items():
+                self._register_module_failure(sample, module_name, detail)
+
         if pending_samples:
             active_samples = pending_samples
             self._frame_cache = {}
@@ -1453,7 +1656,10 @@ class Pipeline:
             try:
                 with pipeline_context(self):
                     for module in self.modules:
-                        if not getattr(module, "_mounted", False):
+                        if (
+                            not getattr(module, "_mounted", False)
+                            or module.name in self.module_failures
+                        ):
                             continue
                         active_samples = self._process_module_batch(module, active_samples)
             finally:
@@ -1505,6 +1711,7 @@ class Pipeline:
         if format == "json":
             with open(path, "w", encoding="utf-8") as f:
                 data = {
+                    "run_status": self.get_run_status(),
                     "stats": self.stats.model_dump(),
                     "samples": [s.model_dump(mode="json") for s in self.results.values()],
                 }

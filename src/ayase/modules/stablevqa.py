@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # HuggingFace mirror of the official StableVQA checkpoint.
 _HF_REPO = "AkaneTendo25/ayase-models"
-_HF_FILENAME = "weights/stablevqa/stablevqa_checkpoint.pth"
+_HF_FILENAME = "stablevqa/stablevqa_checkpoint.pth"
 
 # Frame preprocessing constants (upstream FusionDataset).
 _MEAN = [123.675, 116.28, 103.53]

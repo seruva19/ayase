@@ -27,51 +27,53 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
-class _SongEvalGenerator:
-    """SongEval Generator model (from ASLP-lab/SongEval).
+def _build_song_eval_generator(
+    in_features: int = 1024,
+    ffd_hidden_size: int = 4096,
+    num_classes: int = 5,
+    attn_layer_num: int = 4,
+):
+    """Build the published SongEval head without importing torch at module import."""
+    import torch
+    import torch.nn as nn
 
-    Multi-head attention + FFN architecture that predicts 5 aesthetic
-    dimensions from MuQ audio features. Output range: [1, 5].
-    """
-
-    def __init__(self, in_features: int = 1024, ffd_hidden_size: int = 4096,
-                 num_classes: int = 5, attn_layer_num: int = 4):
-        import torch
-        import torch.nn as nn
-
-        self.attn = nn.ModuleList([
-            nn.MultiheadAttention(
-                embed_dim=in_features,
-                num_heads=8,
-                dropout=0.2,
-                batch_first=True,
+    class SongEvalGenerator(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.attn = nn.ModuleList(
+                [
+                    nn.MultiheadAttention(
+                        embed_dim=in_features,
+                        num_heads=8,
+                        dropout=0.2,
+                        batch_first=True,
+                    )
+                    for _ in range(attn_layer_num)
+                ]
             )
-            for _ in range(attn_layer_num)
-        ])
-        self.ffd = nn.Sequential(
-            nn.Linear(in_features, ffd_hidden_size),
-            nn.ReLU(),
-            nn.Linear(ffd_hidden_size, in_features),
-        )
-        self.dropout = nn.Dropout(0.2)
-        self.fc = nn.Linear(in_features * 2, num_classes)
-        self.proj = nn.Tanh()
+            self.ffd = nn.Sequential(
+                nn.Linear(in_features, ffd_hidden_size),
+                nn.ReLU(),
+                nn.Linear(ffd_hidden_size, in_features),
+            )
+            self.dropout = nn.Dropout(0.2)
+            self.fc = nn.Linear(in_features * 2, num_classes)
+            self.proj = nn.Tanh()
 
-    def forward(self, ssl_feature):
-        import torch
+        def forward(self, ssl_feature):
+            ssl_feature = self.ffd(ssl_feature)
+            attended = ssl_feature
+            for attention in self.attn:
+                attended, _ = attention(attended, attended, attended)
+            pooled = self.dropout(
+                torch.concat(
+                    [torch.mean(attended, dim=1), torch.max(ssl_feature, dim=1)[0]],
+                    dim=1,
+                )
+            )
+            return self.proj(self.fc(pooled)) * 2.0 + 3
 
-        B, T, D = ssl_feature.shape
-        ssl_feature = self.ffd(ssl_feature)
-        tmp_ssl_feature = ssl_feature
-        for attn in self.attn:
-            tmp_ssl_feature, _ = attn(tmp_ssl_feature, tmp_ssl_feature, tmp_ssl_feature)
-        ssl_feature = self.dropout(torch.concat([
-            torch.mean(tmp_ssl_feature, dim=1),
-            torch.max(ssl_feature, dim=1)[0],
-        ], dim=1))
-        x = self.fc(ssl_feature)
-        x = self.proj(x) * 2.0 + 3
-        return x
+    return SongEvalGenerator()
 
 
 class SongEvalModule(PipelineModule):
@@ -112,7 +114,10 @@ class SongEvalModule(PipelineModule):
         "song_eval_naturalness": "audio",
     }
 
-    _CHECKPOINT_URL = "https://github.com/ASLP-lab/SongEval/raw/main/ckpt/model.safetensors"
+    _CHECKPOINT_URL = (
+        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "song_eval/model.safetensors"
+    )
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -147,13 +152,13 @@ class SongEvalModule(PipelineModule):
                 return
 
             state_dict = load_file(str(checkpoint_path), device="cpu")
-            model = _SongEvalGenerator(
+            model = _build_song_eval_generator(
                 in_features=1024,
                 ffd_hidden_size=4096,
                 num_classes=5,
                 attn_layer_num=4,
             )
-            model.load_state_dict(state_dict, strict=False)
+            model.load_state_dict(state_dict, strict=True)
             model = model.to(device).eval()
 
             muq = MuQ.from_pretrained("OpenMuQ/MuQ-large-msd-iter")

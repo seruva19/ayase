@@ -111,7 +111,7 @@ class VideoScore2Module(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        if self._backend is None:
+        if self._backend != "transformers":
             return sample
 
         try:
@@ -274,6 +274,7 @@ class VideoScore2Module(PipelineModule):
         total_prob = sum(probs)
         if total_prob <= 0:
             return None
-        max_prob = max(probs)
-        best_score = discrete_scores[probs.index(max_prob)]
-        return round(best_score * (max_prob / total_prob), 4)
+        expected_score = sum(
+            score * probability for score, probability in zip(discrete_scores, probs)
+        ) / total_prob
+        return round(float(expected_score), 4)

@@ -34,7 +34,7 @@ _WINDOW = 12
 _MIN_SIDE = 128
 
 _HF_REPO = "AkaneTendo25/ayase-models"
-_HF_WEIGHTS = "weights/vfips/model.pytorch"
+_HF_WEIGHTS = "vfips/model.pytorch"
 
 
 # ---------------------------------------------------------------------------
@@ -540,8 +540,8 @@ def _build_arch():
             diffs = self.net.forward(in0_input, in1_input)
             res = [spatial_average(self.lins[kk](diffs[kk]), keepdim=True) for kk in range(self.L)]
             val = res[0]
-            for l in range(1, self.L):
-                val = val + res[l]
+            for layer_index in range(1, self.L):
+                val = val + res[layer_index]
             return val
 
     return LPIPS_3D_Diff

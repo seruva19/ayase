@@ -43,7 +43,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 _HF_REPO = "AkaneTendo25/ayase-models"
-_HF_WEIGHTS = "weights/simplevqa/Swin_b_384_in22k_SlowFast_Fast_LSVQ.pth"
+_HF_WEIGHTS = "simplevqa/Swin_b_384_in22k_SlowFast_Fast_LSVQ.pth"
 
 _SPATIAL_MEAN = (0.485, 0.456, 0.406)
 _SPATIAL_STD = (0.229, 0.224, 0.225)

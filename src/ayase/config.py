@@ -45,6 +45,15 @@ def download_model_file(relative_path: str, url: str, models_dir: str = "models"
     return dest
 
 
+def download_torch_hub_checkpoint(
+    filename: str, url: str, models_dir: str = "models"
+) -> Path:
+    """Populate torch.hub's checkpoint cache from an Ayase-controlled URL."""
+    if Path(filename).name != filename:
+        raise ValueError(f"Torch Hub checkpoint must be a basename: {filename!r}")
+    return download_model_file(f"hub/checkpoints/{filename}", url, models_dir)
+
+
 def resolve_model_path(model_name: str, models_dir: str = "models") -> str:
     """Resolve a HuggingFace model name to a local path if available.
 
@@ -63,6 +72,38 @@ def resolve_model_path(model_name: str, models_dir: str = "models") -> str:
         return str(flat)
     # Not cached locally — return original name for Hub download
     return model_name
+
+
+def download_hf_snapshot(
+    repo_id: str,
+    models_dir: str = "models",
+    *,
+    revision: Optional[str] = None,
+    allow_patterns: Optional[List[str]] = None,
+    ignore_patterns: Optional[List[str]] = None,
+) -> Path:
+    """Download a Hugging Face repository into Ayase's model directory.
+
+    The stable, human-readable destination is ``models_dir/org--model``.  An
+    already complete snapshot is reused by ``huggingface_hub``; interrupted
+    downloads resume through its normal local-directory metadata.
+    """
+    if not repo_id or repo_id.startswith((".", "/", "\\")) or ".." in repo_id.split("/"):
+        raise ValueError(f"Invalid Hugging Face repository id: {repo_id!r}")
+    destination = (Path(models_dir).resolve() / repo_id.replace("/", "--")).resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    from huggingface_hub import snapshot_download
+
+    _log.info("Resolving Hugging Face snapshot %s → %s", repo_id, destination)
+    resolved = snapshot_download(
+        repo_id=repo_id,
+        revision=revision,
+        local_dir=str(destination),
+        allow_patterns=allow_patterns,
+        ignore_patterns=ignore_patterns,
+    )
+    return Path(resolved).resolve()
 
 
 class GeneralConfig(BaseModel):

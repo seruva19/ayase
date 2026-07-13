@@ -14,6 +14,12 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_DINOV2_WEIGHTS = {
+    "dinov2_vits14": "spectral/dinov2_vits14_pretrain.pth",
+    "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
+}
+
 class SpectralComplexityModule(PipelineModule):
     name = "spectral_complexity"
     description = "Analyzes spectral complexity (Effective Rank) of video features (DINOv2)"
@@ -45,12 +51,24 @@ class SpectralComplexityModule(PipelineModule):
     def setup(self):
         try:
             import torch  # noqa: F401
+            from ayase.config import download_model_file
             from ayase.runtime import resolve_torch_device
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up Spectral Complexity (DINOv2) on {self._device}...")
-            
-            # Use Torch Hub for DINOv2
-            self._model = torch.hub.load('facebookresearch/dinov2', self.model_type).to(self._device)
+
+            relative_path = _DINOV2_WEIGHTS.get(self.model_type)
+            if relative_path is None:
+                raise ValueError(f"Unsupported mirrored DINOv2 model: {self.model_type}")
+            checkpoint = download_model_file(
+                relative_path,
+                _DINOV2_MIRROR_BASE + relative_path,
+                str(self.config.get("models_dir", "models")),
+            )
+            self._model = torch.hub.load(
+                'facebookresearch/dinov2', self.model_type, pretrained=False
+            )
+            self._model.load_state_dict(torch.load(str(checkpoint), map_location="cpu"))
+            self._model = self._model.to(self._device)
             self._model.eval()
             
             # DINOv2 transforms

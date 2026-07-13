@@ -72,6 +72,7 @@ dependencies = [
     "pyrtools>=1.0.9",
     "PyYAML>=6.0",
     "requests>=2.31.0",
+    "scenedetect>=0.6.5,<1.0",
     "omegaconf>=2.3.0",
     "nltk>=3.8.0",
     "accelerate>=0.25.0",
@@ -107,6 +108,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
     "pytest-sugar>=1.0.0",
     "black>=24.0.0",
