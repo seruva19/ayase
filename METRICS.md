@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.64** · Generated 2026-07-13 16:33 · **343 modules** · **412 metrics**
+> **Version 0.1.65** · Generated 2026-07-13 18:56 · **343 modules** · **412 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -12,6 +12,21 @@
 ## Summary
 
 **343** modules · **497** output fields · **412** metrics · **238** tiered · **157** GPU · **21** categories
+
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Input Types</h4><img src="docs/chart_input_types.png" width="100%"/></td>
+</tr></table>
+
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Speed Tiers</h4><img src="docs/chart_speed.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Backend Usage</h4><img src="docs/chart_backends.png" width="100%"/></td>
+</tr></table>
+
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Top Packages</h4><img src="docs/chart_packages.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Metrics per Category</h4><img src="docs/chart_metrics_per_cat.png" width="100%"/></td>
+</tr></table>
 
 > [!WARNING]
 > **2 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
@@ -605,7 +620,7 @@
 - **Packages**: Pillow, opencv-python, torch
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
-- **Tests**: covered by [`test_rqvqa.py`](tests/modules/per_module/test_rqvqa.py), [`test_video_native_metrics.py`](tests/modules/test_video_native_metrics.py)
+- **Tests**: covered by [`test_rqvqa.py`](tests/modules/per_module/test_rqvqa.py), [`test_video_native_metrics.py`](tests/modules/test_video_native_metrics.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 - **Config**: `ensemble_size=10`, `device=auto`, `dtype=float16`, `qalign_dtype=float16`, `fastvqa_seed=42`
 
 ### `sama_score` [↑](#categories)
