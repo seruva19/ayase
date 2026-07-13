@@ -372,6 +372,39 @@ def main(
         console.print("[dim]Verbose mode enabled[/dim]")
 
 
+@app.command("help")
+def metric_help(
+    name: Annotated[
+        Optional[str],
+        typer.Argument(help="Metric field or module name, for example rqvqa_score or rqvqa"),
+    ] = None,
+) -> None:
+    """List every available metric or show complete help for one metric/module."""
+    config = AyaseConfig.load()
+    _discover_all_modules(config)
+
+    from .metric_catalog import build_metric_catalog, render_metric_help
+
+    index = build_metric_catalog(detailed=False)
+    if not name:
+        render_metric_help(console, index)
+        return
+
+    module = index.module(name)
+    if module is not None:
+        catalog = build_metric_catalog([module.name], detailed=True)
+    else:
+        providers = index.metric(name)
+        if providers:
+            catalog = build_metric_catalog(
+                [owner.name for owner, _ in providers], detailed=True
+            )
+        else:
+            catalog = index
+    if not render_metric_help(console, catalog, name):
+        raise typer.Exit(code=2)
+
+
 @app.command()
 def scan(
     dataset_path: Annotated[
