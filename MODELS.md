@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.64** · Generated 2026-07-13 16:33 · **239 models** across **10 sources**
+> **Version 0.1.65** · Generated 2026-07-13 18:57 · **239 models** across **10 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -11,6 +11,16 @@
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
 *Resolution order: hardcoded source mappings, HuggingFace metadata when available, then parent-repo inheritance for weight files.*
+
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>Models by Source</h4><img src="docs/models_sources.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>License Distribution</h4><img src="docs/models_licenses.png" width="100%"/></td>
+</tr></table>
+
+<table width="100%"><tr>
+<td width="50%" valign="top"><h4>VRAM Tiers</h4><img src="docs/models_vram.png" width="100%"/></td>
+<td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
+</tr></table>
 
 **Estimated total download size (all models):** ~490 GB
 
