@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.65] - 2026-07-13
+
 ### Added
 
 - **vbench2_official**: native Apache-2.0 VBench 2.0 evaluation with setup-time checkpoint resolution, all 18 intrinsic-faithfulness dimensions, and five category aggregates.
