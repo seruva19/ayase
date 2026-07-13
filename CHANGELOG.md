@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **worldmodelbench**: native VILA-judge evaluation for instruction following, physical adherence, commonsense, and seven component scores, with the official judge downloaded during setup.
 - **mj_video**: native MJ-VIDEO-2B inference for the learned overall preference reward, five aspect rewards, and raw 28-criterion training diagnostics, with weights downloaded during setup.
 - Pipeline JSON reports now expose requested, mounted, and failed module coverage through `run_status`.
+- Interactive `ayase help [metric-or-module]` catalog with output semantics, owning modules, model assets, automatic-download status, dependencies, defaults, and runnable CLI/profile examples.
 
 ### Changed
 

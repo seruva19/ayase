@@ -25,6 +25,8 @@ project itself, and model weights are downloaded and cached on first use.
 ayase scan ./dataset                                    # default balanced pipeline
 ayase scan ./dataset --deep                             # run every discovered module
 ayase scan ./dataset --modules metadata,basic_quality   # selected modules
+ayase help                                              # list every metric and provider
+ayase help rqvqa_score                                  # metric/module models, config, and usage
 ayase modules list                                      # show all 343 modules
 ayase modules check                                     # import/dependency readiness
 ayase filter ./dataset --min-score 70 --output ./good   # filter by quality
