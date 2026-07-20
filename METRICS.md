@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.66** · Generated 2026-07-20 11:14 · **344 modules** · **415 metrics**
+> **Version 0.1.66** · Generated 2026-07-20 11:50 · **344 modules** · **415 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -3738,7 +3738,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `expression_following` [↑](#categories)
 > Driver-expression fidelity (0-1, higher=better) · ↑ higher=better · 0-1
 
-**[`expression_following`](src/ayase/modules/expression_following.py)** — Identity-invariant driver-expression fidelity via MediaPipe blendshapes
+**[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → mediapipe_face_landmarker
@@ -3749,7 +3749,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `expression_following_coverage` [↑](#categories)
 > Joint valid-face coverage (0-1) · 0-1
 
-**[`expression_following`](src/ayase/modules/expression_following.py)** — Identity-invariant driver-expression fidelity via MediaPipe blendshapes
+**[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → mediapipe_face_landmarker
@@ -3760,7 +3760,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `expression_following_distance` [↑](#categories)
 > Mean blendshape L1 distance (0-1, lower=better) · ↓ lower=better · 0-1
 
-**[`expression_following`](src/ayase/modules/expression_following.py)** — Identity-invariant driver-expression fidelity via MediaPipe blendshapes
+**[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → mediapipe_face_landmarker
