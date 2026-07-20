@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.65** · Generated 2026-07-13 18:56 · **343 modules** · **412 metrics**
+> **Version 0.1.66** · Generated 2026-07-20 11:14 · **344 modules** · **415 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **336/343 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **337/344 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**343** modules · **497** output fields · **412** metrics · **238** tiered · **157** GPU · **21** categories
+**344** modules · **500** output fields · **415** metrics · **239** tiered · **157** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-76-metrics) (76) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-27-metrics) (27) · [Motion & Dynamics](#motion--dynamics-33-metrics) (33) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-19-metrics) (19) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-85-fields) (85) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-76-metrics) (76) · [Full-Reference Quality](#full-reference-quality-60-metrics) (60) · [Text-Video Alignment](#text-video-alignment-53-metrics) (53) · [Temporal Consistency](#temporal-consistency-27-metrics) (27) · [Motion & Dynamics](#motion--dynamics-33-metrics) (33) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-42-metrics) (42) · [Face & Identity](#face--identity-22-metrics) (22) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-85-fields) (85) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -3661,7 +3661,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `mode=audio`
 
 
-## Face & Identity (19 metrics)
+## Face & Identity (22 metrics)
 
 ### `anatomy_score` [↑](#categories)
 > Keypoint-based limb-count/anatomy plausibility (0-1, higher=better) · ↑ higher=better · 0-1
@@ -3734,6 +3734,39 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://huggingface.co/facebookresearch/dinov2" target="_blank">HF</a>
 - **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py)
 - **Config**: `model_name=dinov2_vitb14`, `face_model=buffalo_l`, `subsample=8`, `face_margin=0.3`, `warning_threshold=0.3`
+
+### `expression_following` [↑](#categories)
+> Driver-expression fidelity (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`expression_following`](src/ayase/modules/expression_following.py)** — Identity-invariant driver-expression fidelity via MediaPipe blendshapes
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable → mediapipe_face_landmarker
+- **Packages**: mediapipe
+- **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
+- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `num_faces=5`
+
+### `expression_following_coverage` [↑](#categories)
+> Joint valid-face coverage (0-1) · 0-1
+
+**[`expression_following`](src/ayase/modules/expression_following.py)** — Identity-invariant driver-expression fidelity via MediaPipe blendshapes
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable → mediapipe_face_landmarker
+- **Packages**: mediapipe
+- **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
+- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `num_faces=5`
+
+### `expression_following_distance` [↑](#categories)
+> Mean blendshape L1 distance (0-1, lower=better) · ↓ lower=better · 0-1
+
+**[`expression_following`](src/ayase/modules/expression_following.py)** — Identity-invariant driver-expression fidelity via MediaPipe blendshapes
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable → mediapipe_face_landmarker
+- **Packages**: mediapipe
+- **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
+- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `num_faces=5`
 
 ### `face_consistency` [↑](#categories)
 > ↑ higher=better

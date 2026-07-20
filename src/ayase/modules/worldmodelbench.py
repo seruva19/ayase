@@ -32,7 +32,9 @@ MIRROR_BASE = (
 BENCHMARK_URL = (
     f"{MIRROR_BASE}worldmodelbench/worldmodelbench.json"
 )
-VILA_SOURCE_URL = f"{MIRROR_BASE}worldmodelbench/vila-source-{VILA_REVISION}.zip"
+# Mirrored subset of the VILA tree at VILA_REVISION: the llava package only,
+# without the prebuilt CUDA kernel artifacts and training scripts.
+VILA_SOURCE_URL = f"{MIRROR_BASE}worldmodelbench/vila-llava-{VILA_REVISION}.zip"
 S2WRAPPER_SOURCE_URL = (
     f"{MIRROR_BASE}worldmodelbench/s2wrapper-source-{S2WRAPPER_REVISION}.zip"
 )
@@ -294,13 +296,13 @@ class WorldModelBenchModule(PipelineModule):
                 models_dir,
             )
             vila_archive = download_model_file(
-                f"worldmodelbench/vila-source-{VILA_REVISION}.zip",
+                f"worldmodelbench/vila-llava-{VILA_REVISION}.zip",
                 str(self.config.get("vila_source_url", VILA_SOURCE_URL)),
                 models_dir,
             )
             vila_root = self._extract_source(
                 vila_archive,
-                Path(models_dir) / "worldmodelbench" / f"vila-source-{VILA_REVISION}",
+                Path(models_dir) / "worldmodelbench" / f"vila-llava-{VILA_REVISION}",
             )
             s2wrapper_archive = download_model_file(
                 f"worldmodelbench/s2wrapper-source-{S2WRAPPER_REVISION}.zip",
