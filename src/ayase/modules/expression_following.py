@@ -1,9 +1,13 @@
-"""Identity-invariant facial expression following using MediaPipe blendshapes.
+"""Facial expression following using MediaPipe blendshapes.
 
 Compares generated and driver-video trajectories as 52 ARKit-style facial
-action coefficients. Higher scores indicate more faithful expression following;
-person identity, raw landmark shape, head pose, face size, and position are not
-part of the score.
+action coefficients. Higher scores indicate more faithful expression following.
+Working in blendshape space suppresses much of the identity, face-size, and
+position signal that raw landmark comparison carries, but does not remove it:
+distorting a face's aspect ratio while holding the expression fixed still shifts
+the score, by an amount comparable to the expression range of a short clip.
+Compare clips that share framing and aspect ratio, or the difference in crop is
+read as a difference in expression.
 """
 
 import logging
@@ -78,12 +82,17 @@ class ExpressionFollowingModule(PipelineModule):
     This metric instead compares per-frame ARKit-style facial blendshape
     coefficients produced by MediaPipe Face Landmarker, then temporally aligns
     and aggregates the trajectories. Higher scores mean that the generated video
-    follows the driver's expression more faithfully; identity similarity is not
-    being measured.
+    follows the driver's expression more faithfully.
+
+    The blendshape space suppresses face-shape signal rather than eliminating it.
+    Under a controlled check — the same frames with only the face's aspect ratio
+    distorted, so the expression is unchanged — the score still moved by up to
+    0.05, which matched the full expression range of the clip under test. Treat
+    the score as comparable only across clips with similar framing.
     """
 
     name = "expression_following"
-    description = "Identity-invariant driver-expression fidelity via MediaPipe blendshapes"
+    description = "Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)"
     default_config = {
         "models_dir": "models",
         "min_face_detection_confidence": 0.5,

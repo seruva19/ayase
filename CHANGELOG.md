@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **expression_following**: documented that blendshape comparison suppresses rather than removes face-shape signal, and that scores are comparable only across clips with similar framing.
+
 ## [0.1.66] - 2026-07-20
 
 ### Added
