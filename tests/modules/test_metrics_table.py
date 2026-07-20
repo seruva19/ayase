@@ -27,7 +27,7 @@ def test_metrics_table_matches_quality_metrics():
     documented as ``### `field``` headings in the main body. Fields owned only
     by provisional (no-backend) modules are NOT in the main body; they are
     listed by name in the "Experimental — pending real backend" section instead.
-    The full schema stays 450; the delivered set is what the doc advertises.
+    The full schema stays 453; the delivered set is what the doc advertises.
     """
     from ayase.metrics_doc import compute_provisional_partition
     from ayase.pipeline import ModuleRegistry
@@ -73,5 +73,5 @@ def test_metrics_table_matches_quality_metrics():
     )
 
     # Schema count (all metric fields) is unchanged; delivered = schema − prov.
-    assert len(model_fields) == 450, f"Expected 450 fields, got {len(model_fields)}"
-    assert len(delivered_fields) == 450 - len(provisional_only_fields)
+    assert len(model_fields) == 453, f"Expected 453 fields, got {len(model_fields)}"
+    assert len(delivered_fields) == 453 - len(provisional_only_fields)

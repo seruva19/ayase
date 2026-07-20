@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.66] - 2026-07-20
+
+### Added
+
+- **expression_following**: identity-invariant driver-expression fidelity using temporally aligned MediaPipe facial blendshape trajectories, with coverage and per-frame diagnostics.
+
+### Changed
+
+- **worldmodelbench**: the VILA judge source now downloads as a trimmed archive containing only the inference package, cutting the fetch from 8.3 MB to 0.8 MB.
+
 ## [0.1.65] - 2026-07-13
 
 ### Added

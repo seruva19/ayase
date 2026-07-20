@@ -113,7 +113,7 @@ class TestMetricCount:
         field_count = len(QualityMetrics.model_fields) - len(
             QualityMetrics._NON_METRIC_FIELDS
         )
-        assert field_count == 450, f"Expected 450, got {field_count}"
+        assert field_count == 453, f"Expected 453, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README's headline "N metrics" claim = the DELIVERED metric count.
@@ -182,7 +182,7 @@ class TestMetricsTable:
         # SCHEMA field count — every QualityMetrics metric field, delivered and
         # provisional alike. Unchanged by the provisional flag (the model keeps
         # all fields); the delivered subset is what the README headline claims.
-        assert len(README_METRICS) == 450
+        assert len(README_METRICS) == 453
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):

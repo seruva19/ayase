@@ -212,6 +212,9 @@ class QualityMetrics(BaseModel):
     face_identity_count: Optional[int] = None  # Number of unique identities detected
     dino_face_identity: Optional[float] = None  # DINOv2 face identity cosine similarity (0-1, higher=better)
     dino_face_identity_max: Optional[float] = None  # Max DINOv2 face identity across frames (0-1, higher=better)
+    expression_following: Optional[float] = None  # Driver-expression fidelity (0-1, higher=better)
+    expression_following_distance: Optional[float] = None  # Mean blendshape L1 distance (0-1, lower=better)
+    expression_following_coverage: Optional[float] = None  # Joint valid-face coverage (0-1)
     ocr_score: Optional[float] = None
     ocr_fidelity: Optional[float] = None  # OCR text accuracy vs caption (0-100, higher=better)
     ocr_cer: Optional[float] = None  # Character Error Rate (0-1, lower=better)

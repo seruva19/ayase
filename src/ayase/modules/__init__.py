@@ -117,6 +117,7 @@ _IMPORTS = [
     ("FaceLandmarkQualityModule", ".face_landmark_quality"),
     ("FaceIQAModule", ".face_iqa"),
     ("IdentityLossModule", ".identity_loss"),
+    ("ExpressionFollowingModule", ".expression_following"),
     ("FaceCrossSimilarityModule", ".face_cross_similarity"),
     # --- Scene & content ---
     ("SceneModule", ".scene"),
