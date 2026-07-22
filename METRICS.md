@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.66** · Generated 2026-07-20 11:50 · **344 modules** · **415 metrics**
+> **Version 0.1.67** · Generated 2026-07-22 19:29 · **344 modules** · **415 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
