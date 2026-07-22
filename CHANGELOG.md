@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **expression_following**: documented that blendshape comparison suppresses rather than removes face-shape signal, and that scores are comparable only across clips with similar framing.
 
+## [0.1.67] - 2026-07-22
+
+### Added
+
+- **flow**: `raft_flow_field(prev_rgb, cur_rgb) -> (H, W, 2)` and `load_raft_flow_model`, exposing the dense RAFT-Large displacement field that `advanced_flow` / `raft_motion` compute internally and then discard. Downstream consumers that need the full field (camera-motion compensation, subject-region residual flow) can now share one RAFT backend, weights (`C_T_SKHT_V2`) and preprocessing instead of duplicating the torchvision path.
+
 ## [0.1.66] - 2026-07-20
 
 ### Added
