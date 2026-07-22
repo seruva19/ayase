@@ -3,7 +3,7 @@ Ayase - Modular media quality metrics toolkit
 
 """
 
-__version__ = "0.1.66"
+__version__ = "0.1.67"
 __author__ = "Ayase Contributors"
 __description__ = "Modular media quality metrics toolkit"
 
@@ -11,6 +11,7 @@ __description__ = "Modular media quality metrics toolkit"
 # import a stale dep (e.g. pyiqa → openai-clip). See ayase/_compat.py.
 from . import _compat  # noqa: F401
 
+from .flow import load_raft_flow_model, raft_flow_field
 from .pipeline import AyasePipeline
 from .profile import PipelineProfile, instantiate_profile_modules, load_profile
 
@@ -22,4 +23,6 @@ __all__ = [
     "PipelineProfile",
     "load_profile",
     "instantiate_profile_modules",
+    "raft_flow_field",
+    "load_raft_flow_model",
 ]
