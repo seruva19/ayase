@@ -1,4 +1,4 @@
-"""Physics-IQ full-reference physical-understanding metric.
+"""Physics-IQ and Physics-IQ Verified physical-understanding metrics.
 
 Faithful port of the Physics-IQ benchmark evaluation protocol
 (``google-deepmind/physics-IQ-benchmark``, ICCV 2025). A *generated*
@@ -15,7 +15,7 @@ reference is the real continuation):
   Physics-IQ score      combined score                               (0-100, higher=better)
 
 The binary motion masks, the three IoU formulas and the MSE are ported
-verbatim from the official code:
+verbatim from the upstream code:
 
   * ``physiq/binary_mask_generator.py`` — ``generate_mask`` (grayscale +
     GaussianBlur, ``cv2.accumulateWeighted`` running-average background,
@@ -27,20 +27,27 @@ verbatim from the official code:
     ``weighted_spatial_mask``, ``compute_weighted_spatial_iou`` and
     ``mse_per_frame``.
 
-The combined score follows ``physiq/calculate_iq_score.py``:
+The legacy combined score follows ``physiq/calculate_iq_score.py``:
 
     score = mean( ST/var_ST, spatial/var_spatial, weighted/var_weighted )
             - (mse - var_mse)
     score = clamp(round(score * 100, 2), 0, 100)
 
-DEVIATION (documented): the official ``var_*`` terms are the *physical
+DEVIATION (documented): the legacy ``physics_iq_score`` uses neutral ``var_*``
+terms because a single-reference sample has no second real take. The reference
+``var_*`` terms are the *physical
 variance* — the metric between two *independent real takes* (take-1 vs
-take-2) of the same scenario. That normalisation requires a second real
-recording, which a single-reference module does not have. Here the
-normalisation is set to its neutral identity (``var_ST = var_spatial =
+take-2) of the same scenario. For the legacy score the normalisation is set to
+its neutral identity (``var_ST = var_spatial =
 var_weighted = 1`` and ``var_mse = 0``), so the score reduces to
 ``clamp(round((mean(ST, spatial, weighted) - mse) * 100, 2), 0, 100)``.
 The four sub-metrics themselves are exact.
+
+When ``variance_reference_path`` points to an independent second real take,
+the module also emits Physics-IQ Verified (arXiv 2026,
+``calculate_iq_score_stable.py``): generated/real IoUs are divided by the
+real-take/real-take IoUs, MSE uses the inverse ratio, each of the four
+components is clipped to [0, 1], and their arithmetic mean is reported.
 
 This is a deterministic algorithmic metric — there is no learned model,
 so a faithful port *is* the real backend (``self._backend = "port"``).
@@ -68,25 +75,30 @@ class PhysicsIQModule(ReferenceBasedModule):
     )
     default_config = {
         # cv2.threshold cutoff on the running-average frame difference
-        # (official ``threshold_value`` in binary_mask_generator.generate_mask).
+        # (upstream ``threshold_value`` in binary_mask_generator.generate_mask).
         "motion_threshold": 10,
-        # cv2.accumulateWeighted running-average weight (official 0.3).
+        # cv2.accumulateWeighted running-average weight (upstream 0.3).
         "accumulate_alpha": 0.3,
-        # GaussianBlur kernel size, (k, k) (official 5).
+        # GaussianBlur kernel size, (k, k) (upstream 5).
         "gaussian_kernel": 5,
-        # Morphology structuring-element size for OPEN then CLOSE (official 5).
+        # Morphology structuring-element size for OPEN then CLOSE (upstream 5).
         "morph_kernel": 5,
-        # Binarise the downscaled mask with ``> threshold`` (official 127).
+        # Binarise the downscaled mask with ``> threshold`` (upstream 127).
         "mask_binarize_threshold": 127,
-        # target_size = (W // factor, H // factor); official downscales by 4.
+        # target_size = (W // factor, H // factor); upstream downscales by 4.
         "downscale_factor": 4,
         # Frame-count cap (fps alignment): 0 = use all matched frames.
-        # The official code considers ``fps * 5`` frames from the start.
+        # The upstream code considers ``fps * 5`` frames from the start.
         "max_frames": 0,
         # Minimum matched frames required to compute motion (need >= 2).
         "min_frames": 2,
         # Optional explicit reference path when sample.reference_path is unset.
         "reference_path": None,
+        # Independent second real take used for Physics-IQ Verified physical
+        # variance. The legacy score remains available when this is omitted.
+        "variance_reference_path": None,
+        # stable implementation's divide-by-zero guard.
+        "ratio_epsilon": 1e-8,
     }
     metric_info = {
         "physics_iq_score": "Combined Physics-IQ score (0-100, higher=better)",
@@ -94,6 +106,11 @@ class PhysicsIQModule(ReferenceBasedModule):
         "physics_iq_spatiotemporal_iou": "Mean per-frame motion-mask IoU vs real continuation (0-1)",
         "physics_iq_weighted_spatial_iou": "IoU of per-pixel motion-frequency maps vs real continuation (0-1)",
         "physics_iq_mse": "Mean per-frame RGB MSE vs real continuation (lower=better)",
+        "physics_iq_verified_score": "Physics-IQ Verified arithmetic score (0-100, higher=better)",
+        "physics_iq_verified_spatial_score": "Physical-variance-normalized spatial IoU (0-1)",
+        "physics_iq_verified_spatiotemporal_score": "Physical-variance-normalized spatiotemporal IoU (0-1)",
+        "physics_iq_verified_weighted_spatial_score": "Physical-variance-normalized weighted spatial IoU (0-1)",
+        "physics_iq_verified_mse_score": "Inverse physical-variance-normalized MSE (0-1)",
     }
     metric_groups = {
         "physics_iq_score": "fr_quality",
@@ -101,6 +118,11 @@ class PhysicsIQModule(ReferenceBasedModule):
         "physics_iq_spatiotemporal_iou": "fr_quality",
         "physics_iq_weighted_spatial_iou": "fr_quality",
         "physics_iq_mse": "fr_quality",
+        "physics_iq_verified_score": "fr_quality",
+        "physics_iq_verified_spatial_score": "fr_quality",
+        "physics_iq_verified_spatiotemporal_score": "fr_quality",
+        "physics_iq_verified_weighted_spatial_score": "fr_quality",
+        "physics_iq_verified_mse_score": "fr_quality",
     }
 
     _VIDEO_SUFFIXES = (".mp4", ".avi", ".mkv", ".mov", ".webm", ".m4v")
@@ -115,6 +137,7 @@ class PhysicsIQModule(ReferenceBasedModule):
         self.downscale_factor = max(1, int(self.config.get("downscale_factor", 4)))
         self.max_frames = int(self.config.get("max_frames", 0))
         self.min_frames = max(2, int(self.config.get("min_frames", 2)))
+        self.ratio_epsilon = float(self.config.get("ratio_epsilon", 1e-8))
         # Set to "port" only once a computation actually succeeds.
         self._backend = None
 
@@ -130,7 +153,7 @@ class PhysicsIQModule(ReferenceBasedModule):
         logger.info("Physics-IQ initialised (deterministic port; no model)")
 
     # ------------------------------------------------------------------
-    # Official mask generation (binary_mask_generator.generate_mask) plus
+    # mask generation (binary_mask_generator.generate_mask) plus
     # the load_view downscale + binarise, computed in a single decode pass.
     # ------------------------------------------------------------------
     def _decode_masks_and_rgb(
@@ -208,14 +231,14 @@ class PhysicsIQModule(ReferenceBasedModule):
             cap.release()
 
     # ------------------------------------------------------------------
-    # Official metric primitives (calculate_and_write_metrics_to_csv).
+    # metric primitives (calculate_and_write_metrics_to_csv).
     # ------------------------------------------------------------------
     @staticmethod
     def _spatiotemporal_iou_per_frame(mask1: np.ndarray, mask2: np.ndarray) -> np.ndarray:
         """Per-frame IoU for two (n_frames, h, w) bool arrays.
 
         Union of 0 (no motion in either mask) yields an IoU of 1.0, matching the
-        official ``spatiotemporal_iou_per_frame``.
+        upstream ``spatiotemporal_iou_per_frame``.
         """
         spatial_axes = tuple(range(1, mask1.ndim))
         intersection = np.logical_and(mask1, mask2).sum(axis=spatial_axes)
@@ -314,6 +337,33 @@ class PhysicsIQModule(ReferenceBasedModule):
 
         return spatial_iou, st_iou, weighted_iou, mse, score
 
+    def _compute_verified_scores(
+        self,
+        generated: Tuple[float, float, float, float],
+        physical_variance: Tuple[float, float, float, float],
+    ) -> Tuple[float, float, float, float, float]:
+        """Return the upstream stable arithmetic score and four components.
+
+        Tuple order is spatial IoU, spatiotemporal IoU, weighted spatial IoU,
+        and MSE. This is the one-view/one-scenario form of the reference
+        ``IQTable.compute_scores_scenario_by_view`` calculation.
+        """
+        gen_spatial, gen_st, gen_weighted, gen_mse = generated
+        var_spatial, var_st, var_weighted, var_mse = physical_variance
+        eps = self.ratio_epsilon
+
+        spatial = float(np.clip(gen_spatial / (var_spatial + eps), 0.0, 1.0))
+        spatiotemporal = float(np.clip(gen_st / (var_st + eps), 0.0, 1.0))
+        weighted = float(np.clip(gen_weighted / (var_weighted + eps), 0.0, 1.0))
+        # code computes (generated / (variance + eps)) ** -1.
+        mse = (
+            1.0
+            if gen_mse <= 0.0
+            else float(np.clip((var_mse + eps) / gen_mse, 0.0, 1.0))
+        )
+        verified = round(float(np.mean((spatial, spatiotemporal, weighted, mse))) * 100.0, 2)
+        return verified, spatial, spatiotemporal, weighted, mse
+
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
@@ -325,6 +375,12 @@ class PhysicsIQModule(ReferenceBasedModule):
         reference = getattr(sample, "reference_path", None)
         if reference is None:
             reference = self.config.get("reference_path")
+        if reference is None:
+            return None
+        return reference if isinstance(reference, Path) else Path(reference)
+
+    def _resolve_variance_reference(self) -> Optional[Path]:
+        reference = self.config.get("variance_reference_path")
         if reference is None:
             return None
         return reference if isinstance(reference, Path) else Path(reference)
@@ -358,7 +414,36 @@ class PhysicsIQModule(ReferenceBasedModule):
         sample.quality_metrics.physics_iq_weighted_spatial_iou = weighted_iou
         sample.quality_metrics.physics_iq_mse = mse
         sample.quality_metrics.physics_iq_score = score
-        self._backend = "port"
+
+        variance_reference = self._resolve_variance_reference()
+        if variance_reference is not None:
+            if not variance_reference.exists():
+                logger.debug(
+                    "physics_iq: variance reference not found: %s; verified score skipped",
+                    variance_reference,
+                )
+            else:
+                try:
+                    variance_result = self._compute(variance_reference, reference)
+                    if variance_result is not None:
+                        verified = self._compute_verified_scores(
+                            (spatial_iou, st_iou, weighted_iou, mse),
+                            variance_result[:4],
+                        )
+                        sample.quality_metrics.physics_iq_verified_score = verified[0]
+                        sample.quality_metrics.physics_iq_verified_spatial_score = verified[1]
+                        sample.quality_metrics.physics_iq_verified_spatiotemporal_score = verified[2]
+                        sample.quality_metrics.physics_iq_verified_weighted_spatial_score = verified[3]
+                        sample.quality_metrics.physics_iq_verified_mse_score = verified[4]
+                        self._backend = "verified_port"
+                except Exception as e:
+                    logger.debug(
+                        "physics_iq: verified computation failed for %s: %s",
+                        sample.path.name,
+                        e,
+                    )
+        if self._backend != "verified_port":
+            self._backend = "port"
 
         logger.debug(
             "physics_iq for %s: score=%.2f sIoU=%.3f stIoU=%.3f wIoU=%.3f mse=%.4f",

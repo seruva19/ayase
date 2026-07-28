@@ -74,7 +74,7 @@ def _third_party_path(*parts: str) -> Path:
 
 class ChipQAModule(PipelineModule):
     name = "chipqa"
-    description = "ChipQA no-reference video quality via official feature extractor and LIVE-Livestream SVR"
+    description = "ChipQA no-reference video quality via its feature extractor and LIVE-Livestream SVR"
     default_config = {
         "repo_path": None,
         "python_executable": None,

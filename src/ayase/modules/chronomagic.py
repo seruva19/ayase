@@ -1,6 +1,6 @@
 """ChronoMagic-Bench module — NeurIPS 2024 (arXiv:2406.18522).
 
-Two metrics for time-lapse / metamorphic video, from the official
+Two metrics for time-lapse / metamorphic video, from the reference
 ChronoMagic-Bench (github.com/PKU-YuanGroup/ChronoMagic-Bench):
 
   - **MTScore** (Metamorphic Temporal score) — ``chronomagic_mt_score``.

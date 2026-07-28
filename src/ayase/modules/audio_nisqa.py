@@ -12,7 +12,7 @@ The upstream PyPI ``nisqa`` package pins old torch/numpy and cascading-
 downgrades half the env on install. To avoid that, the inference code is
 vendored at ``ayase/third_party/nisqa/`` (MIT-licensed, source-identical
 to https://github.com/gabrielmittag/NISQA) and the ~1 MB checkpoint is
-auto-fetched from ``AkaneTendo25/ayase-models``.
+auto-fetched from ``AkaneTendo25/ayase-runtime-assets``.
 
 Backend: the real vendored NISQA model + checkpoint. When it cannot be loaded
 (missing torch, or the checkpoint cannot be downloaded), the NISQA metrics are
@@ -31,7 +31,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
-_NISQA_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/nisqa/nisqa.tar"
+_NISQA_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/nisqa/nisqa.tar"
 _NISQA_WEIGHTS_FILENAME = "nisqa/nisqa.tar"
 
 

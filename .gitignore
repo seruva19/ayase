@@ -51,3 +51,5 @@ reports/
 .*/
 !.github/
 .ayase_sd_cache/
+.artifacts/
+.tmp/

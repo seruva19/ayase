@@ -16,8 +16,8 @@ Face Hub (``p1204/models/p1204_3/``):
 * ``mode3_{pc,mobile}_20trees_depth_8_reg.json`` -- a scikit-learn
   ``RandomForestRegressor`` serialized as node arrays (20 trees, depth 8,
   16 input features). Loaded and run with a self-contained pure-NumPy tree
-  forward (verified bit-for-bit against scikit-learn's own predict), so it does
-  not depend on any particular scikit-learn internal ``Tree`` layout.
+  forward equivalent to scikit-learn prediction, without depending on any
+  particular scikit-learn internal ``Tree`` layout.
 * ``mode3_{pc,mobile}_20trees_depth_8_fs.json`` -- a 20-element boolean
   feature-selection mask applied before the regressor.
 
@@ -33,10 +33,10 @@ pixels under the P.1204.3 name. Point the env var
 
 p1204_mos -- 1-5, higher = better
 
-REVIVAL NOTES (provisional -- EXTERNAL): RF model + parametric baseline are already code-complete
-(verified bit-for-bit vs sklearn). To revive: build the bitstream feature parser
-``bitstream_mode3_videoparser`` (patched ffmpeg; run its build.sh) and set env var
-AYASE_P1204_VIDEOPARSER=/path/to/parser.sh (+ ffprobe on PATH). No code change needed.
+Backend requirements
+The bitstream feature parser ``bitstream_mode3_videoparser`` requires its patched
+FFmpeg build. Set ``AYASE_P1204_VIDEOPARSER=/path/to/parser.sh`` and provide
+``ffprobe`` on ``PATH``; without them, the module remains unavailable.
 Source: https://github.com/Telecommunication-Telemedia-Assessment/bitstream_mode3_videoparser
 """
 
@@ -55,7 +55,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-models"
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_MODEL_DIR = "p1204/models/p1204_3"
 _HF_CONFIG = _HF_MODEL_DIR + "/config.json"
 
@@ -199,7 +199,7 @@ _RF_COLUMNS = sorted(
 
 class P1204Module(PipelineModule):
     name = "p1204"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "ITU-T P.1204.3 bitstream NR quality (2020)"
     default_config = {
         "device_type": "pc",  # pc | tv | tablet | mobile

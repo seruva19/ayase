@@ -18,12 +18,10 @@ in, ``nr_gvqm_score`` is left unset.
 
 nr_gvqm_score — higher = better quality (0-1); real trained model only.
 
-REVIVAL NOTES (provisional — no turnkey backend)
+Backend requirements
 Metric: NR-GVQM (ISM 2018).
-Category: REDUNDANT.
-Why provisional: It is an SVR that regresses 9 frame features to predict VMAF, which ayase already
+Unavailable because: It is an SVR that regresses 9 frame features to predict VMAF, which ayase already
   computes for real -- so it only approximates something ayase has.
-To revive: Not worth reviving -- redundant with ayase's real VMAF. Remove or keep provisional.
 Source: NR-GVQM, ISM 2018.
 """
 
@@ -37,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class NRGVQMModule(PipelineModule):
     name = "nr_gvqm"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable)"
     default_config = {
         "subsample": 8,

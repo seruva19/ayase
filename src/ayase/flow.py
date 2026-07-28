@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # torchvision mirror for the RAFT-Large weights (shared with ``advanced_flow``).
 _RAFT_LARGE_MIRROR = (
     "raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
     "advanced_flow/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
 )
 

@@ -90,7 +90,7 @@ class ModuleCatalogItem:
     gpu: bool
     vram: str
     paper: str
-    provisional: bool
+    requires_external_backend: bool
     packaged: bool
 
 
@@ -383,7 +383,7 @@ def _build_module_item(cls: type, detailed: bool) -> ModuleCatalogItem:
         gpu=_detect_gpu(source) if detailed else False,
         vram=(_estimate_vram(source) or "unknown") if detailed else "unknown",
         paper=(_detect_paper(cls) or "") if detailed else "",
-        provisional=bool(getattr(cls, "provisional", False)),
+        requires_external_backend=bool(getattr(cls, "requires_external_backend", False)),
         packaged=ModuleRegistry.is_packaged_module(cls),
     )
 
@@ -462,7 +462,7 @@ def _render_metric_list(console: Console, catalog: MetricCatalog) -> None:
         inputs = ", ".join(sorted({module.input_type for module, _ in providers}))
         directions = ", ".join(sorted({metric.direction for _, metric in providers}))
         statuses = {
-            "experimental" if module.provisional else "ready" for module, _ in providers
+            "external-backend" if module.requires_external_backend else "ready" for module, _ in providers
         }
         description = next(
             (metric.description for _, metric in providers if metric.description), ""
@@ -489,7 +489,7 @@ def _render_module(
     module: ModuleCatalogItem,
     selected_metric: Optional[str] = None,
 ) -> None:
-    status = "experimental" if module.provisional else "ready"
+    status = "external-backend" if module.requires_external_backend else "ready"
     console.print(f"\n[bold cyan]{module.name}[/bold cyan] — {module.description}")
 
     summary = Table(show_header=False, box=None, pad_edge=False)

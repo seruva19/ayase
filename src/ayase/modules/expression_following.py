@@ -25,11 +25,12 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-MODEL_REPO_ID = "AkaneTendo25/ayase-models"
+MODEL_REPO_ID = "AkaneTendo25/ayase-runtime-assets"
 MODEL_FILENAME = "expression_following/face_landmarker.task"
 MODEL_REVISION = "409c832ac7a30524a48ab642455bf963c2a95d1f"
 MODEL_URL = (
-    f"https://huggingface.co/{MODEL_REPO_ID}/resolve/{MODEL_REVISION}/{MODEL_FILENAME}"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
+    f"{MODEL_REVISION}/{MODEL_FILENAME}"
 )
 BLENDSHAPE_DIM = 52
 FPS_TOLERANCE = 1e-4

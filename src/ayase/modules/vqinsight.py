@@ -10,7 +10,7 @@ video sub-folders:
 * ``vqinsight-naturalvideo`` — a single 0-100 natural-video quality score.
 
 The model *thinks* inside ``<think>...</think>`` and emits the final score inside
-``<answer>...</answer>``. This module reproduces the official demo inference
+``<answer>...</answer>``. This module reproduces the upstream demo inference
 protocol (``src/eval/demo_vqinsight_score.py`` in ``github.com/bytedance/Q-Insight``):
 the same system prompt, per-mode user prompt, ``qwen_vl_utils.process_vision_info``
 frame handling, greedy generation, and ``<answer>`` parsing. The parsed 0-100 score
@@ -36,7 +36,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# Official demo constants (demo_vqinsight_score.py).
+# demo constants (demo_vqinsight_score.py).
 _SUBFOLDERS = {
     "aigc": "vqinsight-aigcvideo",
     "natural": "vqinsight-naturalvideo",
@@ -69,7 +69,7 @@ _PROMPTS = {
 
 class VQInsightModule(PipelineModule):
     name = "vqinsight"
-    provisional = False  # real weights verified end-to-end on an H100 (see docstring)
+    requires_external_backend = False  # real weights verified end-to-end on an H100 (see docstring)
     description = "VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)"
     default_config = {
         "video_type": "aigc",  # "aigc" (multi-dim) or "natural" (single score)

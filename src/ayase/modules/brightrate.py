@@ -23,22 +23,22 @@ logger = logging.getLogger(__name__)
 
 _LOCAL_AYASE_MODELS_REPO = Path(r"H:\models\ayase-models")
 _BRIGHTRATE_MODEL_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/brightrate_brightvq.pt"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/brightvq/brightrate_brightvq.pt"
 )
 _CONTRIQUE_MODEL_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/CONTRIQUE_checkpoint25.tar"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/brightvq/CONTRIQUE_checkpoint25.tar"
 )
 _HDR_NIQE_PARAMS_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/frames_modelparameters.mat"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/brightvq/frames_modelparameters.mat"
 )
 _CLIP_VIT_B32_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/ViT-B-32.safetensors"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/brightvq/ViT-B-32.safetensors"
 )
 _CLIP_VIT_L14_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/ViT-L-14.safetensors"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/brightvq/ViT-L-14.safetensors"
 )
 _CLIPIQA_VITL14_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/brightvq/CLIPIQA+_ViTL14_512-e66488f2.pth"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/brightvq/CLIPIQA+_ViTL14_512-e66488f2.pth"
 )
 
 
@@ -56,7 +56,7 @@ def _third_party_path(*parts: str) -> Path:
 
 class BrightRateModule(PipelineModule):
     name = "brightrate"
-    description = "BrightRate HDR no-reference video quality via official BrightVQ inference script"
+    description = "BrightRate HDR no-reference video quality via the BrightVQ inference script"
     default_config = {
         "repo_path": None,
         "python_executable": None,

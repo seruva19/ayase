@@ -13,7 +13,7 @@ Architecture (faithful to the paper):
     differences computed at both slow (stride-1) and fast (stride-4)
     rates — to capture frame-rate-dependent temporal quality.
 
-Requires the official pretrained checkpoint
+Requires the upstream pretrained checkpoint
 (``ViTbCLIP_SpatialTemporal_modular_LSVQ.pth``) via ``weights_path``. The
 base/spatial/temporal heads are randomly initialised until those weights are
 loaded, so — per the no-heuristic policy — the module is DISABLED (leaves
@@ -83,7 +83,7 @@ class ModularBVQAModule(PipelineModule):
         if self.test_mode:
             return
 
-        # ModularBVQA only produces a genuine score when the official pretrained
+        # ModularBVQA only produces a genuine score when the upstream pretrained
         # checkpoint is loaded. Without it the base/spatial/temporal heads are
         # randomly initialised, so any score would be fabricated. Refuse to run
         # in that case rather than emit meaningless numbers.
@@ -220,7 +220,7 @@ class ModularBVQAModule(PipelineModule):
             return 0
 
     def _try_load_pretrained(self, feat_dim: int, spatial_dim: int, temporal_dim: int) -> None:
-        """Try loading official pretrained weights."""
+        """Try loading upstream pretrained weights."""
         import torch
 
         if not self.weights_path:
@@ -234,7 +234,7 @@ class ModularBVQAModule(PipelineModule):
         try:
             state = torch.load(str(wpath), map_location=self._device, weights_only=False)
 
-            # The official checkpoint may wrap weights in different keys
+            # The upstream checkpoint may wrap weights in different keys
             if "state_dict" in state:
                 state = state["state_dict"]
             elif "model" in state:

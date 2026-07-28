@@ -1,6 +1,6 @@
 """T2V-CompBench module — CVPR 2025.
 
-Compositional metrics for text-to-video generation. The official T2V-CompBench
+Compositional metrics for text-to-video generation. The upstream T2V-CompBench
 evaluators are model-specific per dimension:
 
   * MLLM (LLaVA / Grid-LLaVA) — consistent & dynamic attribute binding,
@@ -9,14 +9,14 @@ evaluators are model-specific per dimension:
     generative numeracy.
   * Tracking (GroundingSAM + dense optical tracking) — motion binding.
 
-This module keeps only the sub-metrics whose implementation matches the official
+This module keeps only the sub-metrics whose implementation matches the reference
 evaluator class:
 
   * ``compbench_spatial`` / ``compbench_numeracy`` — computed with a real
     open-vocabulary object detector (+ Depth for behind/in-front), matching the
-    official detection-based evaluators.
+    upstream detection-based evaluators.
   * ``compbench_attribute`` / ``compbench_object_rel`` / ``compbench_action`` /
-    ``compbench_scene`` — the official evaluator is an MLLM (LLaVA). A bare
+    ``compbench_scene`` — the upstream evaluator is an MLLM (LLaVA). A bare
     CLIP text-image cosine is a proxy, not that evaluator, so these are produced
     only when a real MLLM evaluator backend is available and are otherwise left
     unset (no CLIP-prompt fallback).
@@ -161,15 +161,15 @@ class T2VCompBenchModule(PipelineModule):
             return False
 
     def _try_load_mllm(self) -> bool:
-        """Load the official MLLM (LLaVA/Grid-LLaVA) T2V-CompBench evaluator.
+        """Load the upstream MLLM (LLaVA/Grid-LLaVA) T2V-CompBench evaluator.
 
         The attribute / object-interaction / action / scene dimensions are
-        MLLM-scored in the official benchmark. There is no installable backend
+        MLLM-scored in the upstream benchmark. There is no installable backend
         for that evaluator here, so this returns False and those dimensions are
         left unset rather than substituting a CLIP-prompt proxy.
         """
         try:
-            import t2v_compbench_eval  # type: ignore  # official MLLM evaluator
+            import t2v_compbench_eval  # type: ignore  # upstream MLLM evaluator
             self._mllm = t2v_compbench_eval
             return True
         except ImportError:
@@ -332,7 +332,7 @@ class T2VCompBenchModule(PipelineModule):
         return results
 
     # ------------------------------------------------------------------ #
-    # Detection-based evaluators (spatial, numeracy) — matches official   #
+    # Detection-based evaluators (spatial, numeracy) — matches upstream   #
     # GroundingDINO/GroundingSAM detector class.                          #
     # ------------------------------------------------------------------ #
 
@@ -436,7 +436,7 @@ class T2VCompBenchModule(PipelineModule):
     # ------------------------------------------------------------------ #
 
     def _compute_mllm(self, frames: list, caption: str) -> Dict[str, float]:
-        """Score the MLLM dimensions with the official LLaVA-based evaluator.
+        """Score the MLLM dimensions with the upstream LLaVA-based evaluator.
 
         Only reached when a real MLLM evaluator backend is loaded; otherwise the
         attribute / object_rel / action / scene dimensions are left unset.

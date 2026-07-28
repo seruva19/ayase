@@ -10,12 +10,12 @@ AIGC-VQA backend is wired in.
 Output fields (populated only with a real backend):
     aigcvqa_technical, aigcvqa_aesthetic, aigcvqa_alignment --- 0-1, higher = better
 
-REVIVAL NOTES (provisional --- no turnkey backend)
+REVIVAL NOTES (requires_external_backend --- no turnkey backend)
 Metric: AIGC-VQA (CVPRW/NTIRE 2024).
 Category: TRAINING-ONLY.
-Why provisional: No released weights; the 3-branch model must be trained.
+Why requires_external_backend: No released weights; the 3-branch model must be trained.
 To revive: Reimplement the 3-branch arch (ResNet50 + ConvNeXt-3D + BLIP); train on T2VQA-DB
-  (public T2V MOS); validate you reproduce the paper's SRCC/PLCC before flipping provisional=False.
+  (public T2V MOS); validate you reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False.
   Effort M; differentiated value (AIGC video).
 Source: AIGC-VQA, CVPRW/NTIRE 2024 (no released weights).
 """
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class AIGCVQAModule(PipelineModule):
     name = "aigcvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "AIGC-VQA holistic 3-branch AIGC perception (CVPRW 2024)"
     default_config = {
         "subsample": 8,
@@ -54,7 +54,7 @@ class AIGCVQAModule(PipelineModule):
             return
 
         try:
-            import aigcvqa  # type: ignore  # official AIGC-VQA backend
+            import aigcvqa  # type: ignore  # upstream AIGC-VQA backend
 
             self._model = aigcvqa
             self._ml_available = True

@@ -1,6 +1,6 @@
 """Q-Align (Quality and Aesthetic Alignment) module.
 
-State-of-the-art unified quality and aesthetic assessment using a
+Unified quality and aesthetic assessment using a
 vision-language model (ICML 2024, q-future/one-align).
 
 The model processes an image/frame with a quality-related prompt and

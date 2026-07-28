@@ -5,7 +5,7 @@ a single forward pass returns 5 continuous dimension scores (1.0-4.0) —
 visual quality, temporal consistency, dynamic degree, text-to-video alignment,
 factual consistency — read directly from the regression head logits.
 
-Inference follows the official model card: ``Idefics2ForSequenceClassification``
+Inference follows the upstream model card: ``Idefics2ForSequenceClassification``
 (from the ``mantis`` package shipped with VideoScore) with the regression query
 prompt and one ``<image>`` token per sampled frame. Real-or-none: when the
 model / ``mantis`` package is unavailable the module reports itself unavailable
@@ -21,7 +21,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# Official VideoScore regression query prompt (5 dimensions, 1.0-4.0 each).
+# VideoScore regression query prompt (5 dimensions, 1.0-4.0 each).
 REGRESSION_QUERY_PROMPT = (
     "Suppose you are an expert in judging and evaluating the quality of "
     "AI-generated videos,\nplease watch the following frames of a given video "
@@ -139,7 +139,7 @@ class VideoScoreModule(PipelineModule):
 
         caption = sample.caption.text if sample.caption else "a video"
         eval_prompt = REGRESSION_QUERY_PROMPT.format(text_prompt=caption)
-        # One <image> token per frame (per the official inference recipe).
+        # One <image> token per frame (per the upstream inference recipe).
         num_image_token = eval_prompt.count("<image>")
         if num_image_token < len(frames):
             eval_prompt += "<image> " * (len(frames) - num_image_token)

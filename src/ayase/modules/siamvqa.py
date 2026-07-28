@@ -2,23 +2,18 @@
 
 Siamese network sharing weights between aesthetic and technical branches.
 
-Only the real trained SiamVQA model produces ``siamvqa_score``. Earlier
-revisions ran a ResNet-50 backbone through randomly-initialised technical,
-aesthetic, fusion and pooling heads — those heads are untrained, so their output
-is meaningless and has been removed. No trained SiamVQA weights are wired up
-here, so the score is left ``None``.
+Only the real trained SiamVQA model produces ``siamvqa_score``. Randomly
+initialised technical, aesthetic, fusion, and pooling heads do not produce a
+meaningful SiamVQA score. No public trained SiamVQA weights are available, so
+the score is left ``None``.
 
 Paper: https://arxiv.org/html/2503.02330
 
 siamvqa_score — higher = better quality
 
-REVIVAL NOTES (provisional — no turnkey backend)
+Backend requirements
 Metric: SiamVQA (ICASSP 2025).
-Category: TRAINING-ONLY.
-Why provisional: Samsung paper, no public release; the Simple-Siamese high-res model must be trained.
-To revive: Reimplement the Simple-Siamese high-res arch; train on LSVQ-1080p / LIVE-Qualcomm /
-  YouTube-UGC; validate you reproduce the paper's SRCC/PLCC before flipping provisional=False.
-  Effort M; beats DOVER with fewer params — best "headline" candidate.
+Unavailable because: Samsung paper, no public release; the Simple-Siamese high-res model must be trained.
 Source: SiamVQA, ICASSP 2025 (no public release).
 """
 
@@ -32,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class SiamVQAModule(PipelineModule):
     name = "siamvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "SiamVQA Siamese high-resolution VQA (real model only)"
     default_config = {
         "subsample": 8,

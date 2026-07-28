@@ -11,7 +11,7 @@ Outputs:
     concept_face_count  — number of faces detected
 
 Tiered backends (face):
-    1. **InsightFace** — industry-standard face detector/embedder
+    1. **InsightFace** — face detector and embedder
     2. **MediaPipe** FaceDetection — lightweight fallback
     3. **OpenCV Haar cascade** — always available
 

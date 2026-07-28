@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # the torch.hub entrypoint's fbaipublicfiles original, which is unreliable on some
 # networks (and bypasses the mirror the rest of the pipeline already relies on).
 # The architecture still comes from the (reliable, cacheable) torch.hub repo code.
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 # Only sizes actually rehosted on the mirror; any other ``model_name`` falls back to
 # the torch.hub pretrained path (upstream fbaipublicfiles).
 _DINOV2_WEIGHTS = {

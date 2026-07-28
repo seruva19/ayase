@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 # Weights are the same rtmlib ONNX pair as rtmpose_fidelity, mirrored and fetched
 # on first use (shared cache directory).
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 _DET_REL = "rtmpose_fidelity/yolox_m.onnx"
 _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 
@@ -58,10 +58,10 @@ class ObjectIntegrityModule(PipelineModule):
     }
     models = [
         {"id": "yolox_m.onnx", "type": "local",
-         "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/rtmpose_fidelity/yolox_m.onnx",
+         "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx",
          "task": "YOLOX person detector (rtmlib backend)", "notes": "Shared with rtmpose_fidelity"},
         {"id": "rtmpose_m.onnx", "type": "local",
-         "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/rtmpose_fidelity/rtmpose_m.onnx",
+         "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx",
          "task": "RTMPose keypoint estimator (rtmlib backend)", "notes": "Shared with rtmpose_fidelity"},
     ]
 

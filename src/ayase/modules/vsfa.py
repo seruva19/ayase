@@ -31,7 +31,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # HuggingFace repo where VSFA weights are hosted.
-_HF_REPO = "AkaneTendo25/ayase-models"
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_FILENAME = "vsfa/VSFA.pt"
 
 

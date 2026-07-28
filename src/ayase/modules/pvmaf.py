@@ -1,4 +1,4 @@
-"""pVMAF — Predictive VMAF (35x faster).
+"""pVMAF — Predictive VMAF from bitstream and pixel-level features.
 
 2024 research method that predicts VMAF from bitstream and pixel-level
 features via a *trained* lightweight regression head, avoiding full
@@ -6,17 +6,14 @@ reference decoding.
 
 No public pretrained pVMAF weights are available, so this module does not
 emit a score: predicting VMAF through an untrained (randomly initialised)
-head would be fabrication. Wire trained pVMAF weights to enable it.
+head would be fabrication. A trained pVMAF backend is required.
 
 pvmaf_score — 0-100 scale (higher = better)
 
-REVIVAL NOTES (provisional — no turnkey backend)
+Backend requirements
 Metric: pVMAF (Synamedia 2024).
-Category: REDUNDANT.
-Why provisional: Predicts VMAF from in-loop x264 encoder bitstream features (not a standalone FR
+Unavailable because: Predicts VMAF from in-loop x264 encoder bitstream features (not a standalone FR
   metric, and predicts VMAF which ayase already has).
-To revive: Not worth reviving -- redundant with ayase's real VMAF, and architecturally inapplicable to
-  a decoded file (needs in-loop encoder bitstream features). Remove or keep provisional.
 Source: pVMAF, Synamedia 2024.
 """
 
@@ -32,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class PVMAFModule(ReferenceBasedModule):
     name = "pvmaf"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100)"
     metric_field = "pvmaf_score"
     default_config = {

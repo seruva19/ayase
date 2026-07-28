@@ -9,12 +9,9 @@ WorldScore backend; when it is not installed the metric is left ``None`` —
 Laplacian/frame-difference heuristics are not substituted for the published
 evaluation.
 
-REVIVAL NOTES (provisional — no turnkey backend)
+Backend requirements
 Metric: WorldScore (ICCV 2025).
-Category: EXTERNAL.
-Why provisional: Code-complete suite, but needs a heavy external model zoo installed.
-To revive: `pip install -e` the repo (pulls GroundingDINO / SAM2 / VFIMamba / DROID-SLAM), then wire
-  the aggregate score. Heavy; batch/dataset-level, owns no per-sample QualityMetrics field.
+Unavailable because: Code-complete suite, but needs a heavy external model zoo installed.
 Source: https://github.com/haoyi-duan/WorldScore
 """
 import logging
@@ -28,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class WorldScoreModule(BatchMetricModule):
     name = "worldscore"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "WorldScore world generation evaluation (ICCV 2025)"
     default_config = {"subsample": 8}
 
@@ -44,7 +41,7 @@ class WorldScoreModule(BatchMetricModule):
             return
 
         try:
-            import worldscore  # type: ignore  # official WorldScore backend
+            import worldscore  # type: ignore  # upstream WorldScore backend
 
             self._model = worldscore
             self._ml_available = True

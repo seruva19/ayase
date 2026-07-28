@@ -12,13 +12,9 @@ is left unset.
 
 lmmvqa_score -- higher = better quality (0-1); real model only.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+Backend requirements
 Metric: LMM-VQA (2024).
-Category: TRAINING-ONLY.
-Why provisional: Repo (Sueqk/LMM-VQA) is an empty placeholder; only the projectors train but no weights ship.
-To revive: Reimplement Llama-3-8B + CLIP + SlowFast with trainable projectors; train on
-  LSVQ/KoNViD/YT-UGC/LIVE-VQC/LIVE-YT-Gaming; validate SRCC/PLCC before flipping provisional=False.
-  Effort L, 8B runtime.
+Unavailable because: Repo (Sueqk/LMM-VQA) is an empty placeholder; only the projectors train but no weights ship.
 Source: https://github.com/Sueqk/LMM-VQA (empty placeholder)
 """
 
@@ -33,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class LMMVQAModule(PipelineModule):
     name = "lmmvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "LMM-VQA spatiotemporal quality (real model only; disabled if unavailable)"
     default_config = {
         "subsample": 8,

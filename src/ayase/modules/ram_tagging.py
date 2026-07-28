@@ -3,7 +3,7 @@
 Auto-tags video frames with multi-label tags from RAM++ (4,585 tag classes).
 The HuggingFace repo `xinyu1205/recognize-anything-plus-model` only hosts
 raw `.pth` checkpoints, not a transformers-compatible model — so we use the
-official `recognize-anything` PyPI/GitHub package for loading and inference.
+upstream `recognize-anything` PyPI/GitHub package for loading and inference.
 
 Installation:
     pip install git+https://github.com/xinyu1205/recognize-anything.git

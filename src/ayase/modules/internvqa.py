@@ -11,13 +11,9 @@ real InternVQA backend is wired in, ``internvqa_score`` is left unset.
 
 internvqa_score -- higher = better quality (0-1); real model only.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+Backend requirements
 Metric: InternVQA (ISCAS 2025).
-Category: TRAINING-ONLY.
-Why provisional: No released weights; homologous distillation needs the large InternVideo2 teacher.
-To revive: Reimplement the distillation from InternVideo2 (the large teacher); train on BVI-HD /
-  Waterloo IVC 4K; validate you reproduce the paper's SRCC/PLCC before flipping provisional=False.
-  Effort L; compressed-video niche.
+Unavailable because: No released weights; homologous distillation needs the large InternVideo2 teacher.
 Source: InternVQA, ISCAS 2025 (no released weights).
 """
 
@@ -32,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class InternVQAModule(PipelineModule):
     name = "internvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "InternVQA compressed-video quality (real model only; disabled if unavailable)"
     default_config = {
         "subsample": 8,

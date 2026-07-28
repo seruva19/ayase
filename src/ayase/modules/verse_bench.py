@@ -183,7 +183,7 @@ class VerseBenchModule(PipelineModule):
         if not set2_materialized or not set3_materialized:
             logger.warning(
                 "Verse-Bench dataset is not fully materialized. "
-                "The official scorer requires set2/set3 clip assets (.wav/.jpg) in addition to metadata."
+                "The upstream scorer requires set2/set3 clip assets (.wav/.jpg) in addition to metadata."
             )
             return False
 

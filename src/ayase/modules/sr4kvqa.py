@@ -4,20 +4,13 @@ SR4KVQA targets quality assessment of super-resolved 4K content, predicting a
 learned quality score calibrated against subjective ratings of SR artifacts
 (ringing, texture loss, aliasing, hallucination).
 
-A previous revision of this module produced ``sr4kvqa_score`` from ResNet-50
-features fed into *randomly-initialised* artifact/quality heads
-(``nn.init.xavier_uniform_`` with no trained weights). Such a network outputs
-arbitrary values and does not measure SR quality. Rather than emit a
-fabricated score, the module now reports the metric as unavailable: no
-public trained SR4KVQA checkpoint is bundled, so ``sr4kvqa_score`` is left
-unset.
+SR4KVQA requires trained artifact and quality heads. No public trained
+SR4KVQA checkpoint is bundled, so the module reports the metric as unavailable
+and leaves ``sr4kvqa_score`` unset rather than emitting an untrained score.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+Backend requirements
 Metric: SR4KVQA (2024).
-Category: TRAINING-ONLY.
-Why provisional: Repo links only a Swin-T *init*, no trained ckpt.
-To revive: Train on the SR4KVQA DB (public, 30 pristine + 600 SR-distorted 4K); validate you reproduce
-  the paper's SRCC/PLCC before flipping provisional=False. Effort M; niche (4K super-resolution only).
+Unavailable because: Repo links only a Swin-T *init*, no trained ckpt.
 Source: SR4KVQA, 2024 (Swin-T init only, no trained ckpt).
 """
 
@@ -31,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class SR4KVQAModule(PipelineModule):
     name = "sr4kvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "SR4KVQA super-resolution 4K quality (2024)"
     default_config = {
         "subsample": 8,

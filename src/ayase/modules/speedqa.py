@@ -5,7 +5,7 @@ Differencing for Image and Video Quality", IEEE Signal Processing Letters, vol.
 24, no. 9, pp. 1333-1337, Sept. 2017.
 
 This is a deterministic, reduced/full-reference distortion algorithm with NO
-trained weights. It is a faithful numpy/scipy port of the official MATLAB
+trained weights. It is a faithful numpy/scipy port of the upstream MATLAB
 release (github.com/christosbampis/SpEED-QA_release), functions:
 
 * ``est_params.m``               — GSM local-variance + conditional entropy

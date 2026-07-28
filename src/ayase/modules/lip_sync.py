@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Weights are mirrored under <models_dir>/lip_sync/ and fetched on first use,
 # matching the other weight-backed modules.
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 _SYNCNET_REL = "lip_sync/syncnet_v2.model"
 
 

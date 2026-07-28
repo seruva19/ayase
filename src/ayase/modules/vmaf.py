@@ -1,6 +1,6 @@
 """VMAF (Video Multimethod Assessment Fusion) module.
 
-VMAF is an industry-standard perceptual video quality metric developed by Netflix.
+VMAF is a perceptual video quality metric developed by Netflix.
 It combines multiple quality models to predict human perception of video quality.
 Range: 0-100 (higher is better). Typically 80+ is excellent quality.
 

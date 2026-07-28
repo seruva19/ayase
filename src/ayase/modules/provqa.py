@@ -2,7 +2,7 @@
 
 Faithful re-implementation of the published ProVQA predictor of Yang et al.,
 "Blind VQA on 360° Video via Progressively Learning from Pixels, Frames and
-Video" (IEEE TIP 2022).  Official code: https://github.com/yanglixiaoshen/ProVQA
+Video" (IEEE TIP 2022).  code: https://github.com/yanglixiaoshen/ProVQA
 
 The trained generator (upstream ``network_g`` of type ``BVQA360v240``) is a
 no-reference omnidirectional-video quality network built from spherical
@@ -50,8 +50,8 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# HuggingFace mirror of the official ProVQA checkpoint.
-_HF_REPO = "AkaneTendo25/ayase-models"
+# HuggingFace mirror of the upstream ProVQA checkpoint.
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_FILENAME = "provqa/net_g_26400.pth"
 
 # Hyperparameters from the upstream test config

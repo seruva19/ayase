@@ -5,7 +5,7 @@ verifies each one against the generated image/video via visual question
 answering.  The final score is the fraction of questions answered
 affirmatively.
 
-Backend: official ``dsg-t2i`` package (LLM decomposition + VQA).
+Backend: upstream ``dsg-t2i`` package (LLM decomposition + VQA).
 
 dsg_score — higher = better faithfulness (0-1)
 Requires a caption (``sample.caption.text`` or ``sample.auto_caption``).
@@ -80,7 +80,7 @@ class DSGModule(PipelineModule):
         return sample
 
     def _process_native(self, sample: Sample, caption: str) -> Optional[float]:
-        """Use the official dsg-t2i package."""
+        """Use the upstream dsg-t2i package."""
         result = self._model.evaluate(str(sample.path), caption)
         if isinstance(result, dict):
             value = result.get("score", result.get("dsg_score"))

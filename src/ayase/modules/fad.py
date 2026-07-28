@@ -79,8 +79,8 @@ class FADModule(BatchMetricModule):
         },
     ]
     metric_info = {
-        "fad": "Frechet Audio Distance, VGGish backbone (legacy alias, lower=better)",
-        "fad_infinity": "FAD VGGish extrapolated to infinite sample size (legacy alias)",
+        "fad": "Frechet Audio Distance, VGGish backbone (lower=better)",
+        "fad_infinity": "FAD VGGish extrapolated to infinite sample size",
         "fad_vggish": "Frechet Audio Distance, VGGish backbone (lower=better)",
         "fad_vggish_infinity": "FAD VGGish extrapolated to infinite sample size",
         "fad_panns": "Frechet Audio Distance, PANNs Cnn14 backbone",

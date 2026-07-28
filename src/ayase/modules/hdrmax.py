@@ -34,7 +34,7 @@ def _third_party_path(*parts: str) -> Path:
 
 class HDRMAXModule(PipelineModule):
     name = "hdrmax"
-    description = "HDRMAX full-reference HDR video quality via official HDRMAX feature and prediction scripts"
+    description = "HDRMAX full-reference HDR video quality via its feature and prediction scripts"
     default_config = {
         "repo_path": None,
         "python_executable": None,

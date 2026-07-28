@@ -40,7 +40,7 @@ class T2VEvalModule(PipelineModule):
             return
 
         try:
-            import t2veval  # type: ignore  # official T2VEval backend
+            import t2veval  # type: ignore  # upstream T2VEval backend
 
             self._model = t2veval
             self._ml_available = True

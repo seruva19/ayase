@@ -14,7 +14,7 @@ Dataset-level outputs (stored in DatasetStats via ``pipeline.add_dataset_metric`
     identity_cluster_count     — number of distinct identity clusters
 
 Backends (real face-recognition embeddings only):
-    1. InsightFace (buffalo_l ArcFace) — industry standard
+    1. InsightFace (buffalo_l ArcFace)
     2. DeepFace (ArcFace) — fallback
     3. Skip — no face-recognition model available (metric left unset)
 
