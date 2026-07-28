@@ -2,7 +2,7 @@
 
 Faithful re-implementation of the published StableVQA predictor of Kou et al.,
 "StableVQA: A Deep No-Reference Quality Assessment Model for Video Stability"
-(ACM MM 2023).  Official code: https://github.com/QMME/StableVQA
+(ACM MM 2023).  code: https://github.com/QMME/StableVQA
 
 The network (``Stablev2Evaluator`` upstream) fuses three feature branches and
 regresses a single stability score:
@@ -34,8 +34,8 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# HuggingFace mirror of the official StableVQA checkpoint.
-_HF_REPO = "AkaneTendo25/ayase-models"
+# HuggingFace mirror of the upstream StableVQA checkpoint.
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_FILENAME = "stablevqa/stablevqa_checkpoint.pth"
 
 # Frame preprocessing constants (upstream FusionDataset).

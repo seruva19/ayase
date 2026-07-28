@@ -29,10 +29,10 @@ cleanly reports ``_backend="unavailable"`` and leaves ``serfiq_score`` unset.
 
 serfiq_score -- higher = better quality (0-1)
 
-REVIVAL NOTES (provisional -- EXTERNAL): already code-complete (faithful T=100 stochastic-pass
+REVIVAL NOTES (requires_external_backend -- EXTERNAL): already code-complete (faithful T=100 stochastic-pass
 computation). Blocker: requires MXNet, which has no installable wheel on Windows/Python-3.10. To
 revive: on Linux, ``pip install mxnet insightface``; the module then auto-downloads
-AkaneTendo25/ayase-models::serfiq/serfiq_model.zip and works. No code change needed.
+AkaneTendo25/ayase-runtime-assets::serfiq/serfiq_model.zip and works. No code change needed.
 Source: https://github.com/pterhoer/FaceImageQuality
 """
 
@@ -48,8 +48,8 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# HuggingFace mirror of the official SER-FIQ dropout-ArcFace weights (MXNet).
-_WEIGHTS_REPO = "AkaneTendo25/ayase-models"
+# HuggingFace mirror of the upstream SER-FIQ dropout-ArcFace weights (MXNet).
+_WEIGHTS_REPO = "AkaneTendo25/ayase-runtime-assets"
 _WEIGHTS_FILE = "serfiq/serfiq_model.zip"
 _SYMBOL_NAME = "insightface-symbol.json"
 _PARAMS_NAME = "insightface-0000.params"
@@ -57,7 +57,7 @@ _PARAMS_NAME = "insightface-0000.params"
 
 class SERFIQModule(PipelineModule):
     name = "serfiq"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "SER-FIQ face quality via dropout embedding robustness (CVPR 2020)"
     default_config = {
         "subsample": 4,
@@ -102,7 +102,7 @@ class SERFIQModule(PipelineModule):
             import mxnet as mx  # type: ignore
         except Exception:
             logger.warning(
-                "SER-FIQ unavailable: the official dropout-ArcFace model is MXNet-only "
+                "SER-FIQ unavailable: the upstream dropout-ArcFace model is MXNet-only "
                 "and 'mxnet' is not importable. Install a compatible mxnet build to enable it."
             )
             return

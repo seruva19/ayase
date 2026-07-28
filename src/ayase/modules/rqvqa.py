@@ -27,8 +27,8 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-models"
-_HF_ROOT = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main"
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_ROOT = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main"
 
 # The best published fold comes first, so ensemble_size=1 remains a genuine,
 # useful RQ-VQA model. With the default ensemble_size=10, ordering is immaterial.

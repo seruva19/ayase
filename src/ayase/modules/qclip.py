@@ -8,13 +8,13 @@ backend is wired in.
 
 Output field: ``qclip_score`` (populated only with a real backend).
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: Q-CLIP (2025).
 Category: TRAINING-ONLY.
-Why provisional: No released adapter weights; only the Shared Cross-Modal Adapter trains (VLM frozen).
+Why requires_external_backend: No released adapter weights; only the Shared Cross-Modal Adapter trains (VLM frozen).
 To revive: Reimplement the Shared Cross-Modal Adapter on a frozen VLM; train on LSVQ
   (cross-test KoNViD / LIVE-VQC); validate you reproduce the paper's SRCC/PLCC before flipping
-  provisional=False. Effort S — cheapest revival of the whole set.
+  requires_external_backend=False. Effort S — cheapest revival of the whole set.
 Source: Q-CLIP, 2025 (no released adapter weights).
 """
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class QCLIPModule(PipelineModule):
     name = "qclip"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Q-CLIP VLM-based VQA (2025)"
     default_config = {
         "subsample": 8,
@@ -50,7 +50,7 @@ class QCLIPModule(PipelineModule):
             return
 
         try:
-            import qclip  # type: ignore  # official Q-CLIP backend (trained weights)
+            import qclip  # type: ignore  # upstream Q-CLIP backend (trained weights)
 
             self._model = qclip
             self._ml_available = True

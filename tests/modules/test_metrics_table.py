@@ -25,11 +25,11 @@ def test_metrics_table_matches_quality_metrics():
 
     Delivered metric fields (owned by at least one real-backend module) are
     documented as ``### `field``` headings in the main body. Fields owned only
-    by provisional (no-backend) modules are NOT in the main body; they are
-    listed by name in the "Experimental — pending real backend" section instead.
+    by requires_external_backend (no-backend) modules are NOT in the main body; they are
+    listed by name in the "External backend required — pending real backend" section instead.
     The full schema stays 453; the delivered set is what the doc advertises.
     """
-    from ayase.metrics_doc import compute_provisional_partition
+    from ayase.metrics_doc import compute_external_backend_partition
     from ayase.pipeline import ModuleRegistry
 
     metrics_path = Path("METRICS.md")
@@ -45,8 +45,8 @@ def test_metrics_table_matches_quality_metrics():
 
     ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules(packaged_only=True)
-    _, provisional_only_fields = compute_provisional_partition(all_modules)
-    delivered_fields = model_fields - provisional_only_fields
+    _, external_only_fields = compute_external_backend_partition(all_modules)
+    delivered_fields = model_fields - external_only_fields
 
     # Every field mentioned in METRICS.md must exist in QualityMetrics
     unknown = fields_in_doc - model_fields - dataset_fields
@@ -61,17 +61,17 @@ def test_metrics_table_matches_quality_metrics():
     missing = delivered_fields - documented_qm_fields
     assert not missing, f"METRICS.md omits delivered QualityMetrics fields: {missing}"
 
-    # Provisional-only fields must NOT appear as delivered headings, but must be
-    # named in the Experimental section so the schema stays fully documented.
-    leaked = provisional_only_fields & documented_qm_fields
+    # External-backend-only fields must NOT appear as delivered headings, but must be
+    # named in the External backend required section so the schema stays fully documented.
+    leaked = external_only_fields & documented_qm_fields
     assert not leaked, (
-        f"provisional-only fields leaked into the delivered doc body: {leaked}"
+        f"requires_external_backend-only fields leaked into the delivered doc body: {leaked}"
     )
-    undocumented_prov = {f for f in provisional_only_fields if f"`{f}`" not in text}
+    undocumented_prov = {f for f in external_only_fields if f"`{f}`" not in text}
     assert not undocumented_prov, (
-        f"Experimental section omits provisional fields: {undocumented_prov}"
+        f"External backend required section omits requires_external_backend fields: {undocumented_prov}"
     )
 
-    # Schema count (all metric fields) is unchanged; delivered = schema − prov.
-    assert len(model_fields) == 453, f"Expected 453 fields, got {len(model_fields)}"
-    assert len(delivered_fields) == 453 - len(provisional_only_fields)
+    # Schema count includes all fields; delivered = schema − requires_external_backend-only.
+    assert len(model_fields) == 501, f"Expected 501 fields, got {len(model_fields)}"
+    assert len(delivered_fields) == 501 - len(external_only_fields)

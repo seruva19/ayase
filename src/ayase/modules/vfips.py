@@ -33,7 +33,7 @@ _WINDOW = 12
 # Minimum frame side so the 5x-downsampled feature stays >= the Swin window (4).
 _MIN_SIDE = 128
 
-_HF_REPO = "AkaneTendo25/ayase-models"
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_WEIGHTS = "vfips/model.pytorch"
 
 

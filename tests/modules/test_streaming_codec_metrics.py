@@ -1,3 +1,5 @@
+"""Tests for streaming, codec, and media transport metrics."""
+
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -375,23 +377,19 @@ def test_cgvqm_no_reference(image_sample):
 
 
 def test_cgvqm_setup():
-    """No 'approx' tier anymore: real Intel cgvqm package or honest unavailable."""
+    """Invalid variants fail closed without downloading model weights."""
     from ayase.modules.cgvqm import CGVQMModule
 
-    m = CGVQMModule()
+    m = CGVQMModule({"variant": "invented"})
     m.setup()
-    if m._backend == "cgvqm":
-        assert m._ml_available is True
-    else:
-        assert m._backend == "unavailable"
-        assert m._ml_available is False
+    assert m._backend == "unavailable"
 
 
 def test_cgvqm_reference(tmp_dir):
+    """The published spatiotemporal metric never fabricates an image score."""
     from ayase.modules.cgvqm import CGVQMModule
 
     m = CGVQMModule()
-    m.setup()
     ref_img = np.full((64, 64, 3), 128, dtype=np.uint8)
     dist_img = ref_img.copy()
     dist_img[:32, :32] = 200
@@ -402,13 +400,7 @@ def test_cgvqm_reference(tmp_dir):
     cv2.imwrite(str(ref_path), ref_img)
     cv2.imwrite(str(dist_path), dist_img)
     score = m.compute_reference_score(dist_path, ref_path)
-    if m._backend == "cgvqm":
-        assert score is not None
-        assert 0.0 <= score <= 100.0
-    else:
-        # Without the real backend no score may be fabricated
-        assert m._backend == "unavailable"
-        assert score is None
+    assert score is None
 
 
 def test_ciede2000_basics():
@@ -604,12 +596,12 @@ def test_p1203_with_metadata(synthetic_video):
         ),
     )
     result = m.process(sample)
-    if m._backend == "official":
+    if m._backend == "itu_p1203":
         assert result.quality_metrics is not None
         assert result.quality_metrics.p1203_mos is not None
         assert 1.0 <= result.quality_metrics.p1203_mos <= 5.0
     else:
-        # No official itu_p1203 → honest unavailable, no fabricated MOS
+        # No upstream itu_p1203 → honest unavailable, no fabricated MOS
         assert m._backend == "unavailable"
         assert (result.quality_metrics is None
                 or result.quality_metrics.p1203_mos is None)
@@ -651,7 +643,7 @@ def test_p1203_low_bitrate_lower_mos(synthetic_video):
     )
     r_high = m.process(high_br)
     r_low = m.process(low_br)
-    if m._backend == "official":
+    if m._backend == "itu_p1203":
         assert r_high.quality_metrics.p1203_mos >= r_low.quality_metrics.p1203_mos
     else:
         assert m._backend == "unavailable"
@@ -710,12 +702,12 @@ def test_psnr_hvs_differs_from_plain_psnr(tmp_dir):
     )
 
 
-def test_p1203_dispatches_to_official_when_loaded():
-    """P.1203 dispatches to official backend when backend=='official'."""
+def test_p1203_dispatches_to_itu_p1203_when_loaded():
+    """P.1203 dispatches to upstream backend when backend=='reference'."""
     from ayase.modules.p1203 import P1203Module
 
     module = P1203Module()
-    module._backend = "official"
+    module._backend = "itu_p1203"
     module._ml_available = True
 
     mock_cls = MagicMock()

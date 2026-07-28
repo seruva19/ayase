@@ -12,13 +12,13 @@ this module reports itself unavailable rather than emit a heuristic proxy.
 
 vbliinds_score — higher = better quality, populated only with a real backend.
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: V-BLIINDS (TIP 2014).
 Category: CLASSICAL-PORT.
-Why provisional: Deterministic DCT-domain NSS features exist in Python, but no pip package ships the
+Why requires_external_backend: Deterministic DCT-domain NSS features exist in Python, but no pip package ships the
   trained SVR (DMOS regressor).
 To revive: Port the DCT-domain NSS + motion-coherency feature pipeline (LIVE MATLAB reference; Python
-  ports exist); retrain the small SVR on public LIVE-VQC; validate before flipping provisional=False.
+  ports exist); retrain the small SVR on public LIVE-VQC; validate before flipping requires_external_backend=False.
   Effort M.
 Source: V-BLIINDS, Saad & Bovik, TIP 2014 (LIVE MATLAB reference).
 """
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class VBLIINDSModule(PipelineModule):
     name = "vbliinds"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014)"
     default_config = {
         "subsample": 8,

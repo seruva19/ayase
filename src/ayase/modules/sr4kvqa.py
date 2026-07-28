@@ -12,12 +12,12 @@ fabricated score, the module now reports the metric as unavailable: no
 public trained SR4KVQA checkpoint is bundled, so ``sr4kvqa_score`` is left
 unset.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: SR4KVQA (2024).
 Category: TRAINING-ONLY.
-Why provisional: Repo links only a Swin-T *init*, no trained ckpt.
+Why requires_external_backend: Repo links only a Swin-T *init*, no trained ckpt.
 To revive: Train on the SR4KVQA DB (public, 30 pristine + 600 SR-distorted 4K); validate you reproduce
-  the paper's SRCC/PLCC before flipping provisional=False. Effort M; niche (4K super-resolution only).
+  the paper's SRCC/PLCC before flipping requires_external_backend=False. Effort M; niche (4K super-resolution only).
 Source: SR4KVQA, 2024 (Swin-T init only, no trained ckpt).
 """
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class SR4KVQAModule(PipelineModule):
     name = "sr4kvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "SR4KVQA super-resolution 4K quality (2024)"
     default_config = {
         "subsample": 8,

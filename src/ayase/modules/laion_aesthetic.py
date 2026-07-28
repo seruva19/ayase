@@ -1,6 +1,6 @@
 """LAION Aesthetics Predictor V2 module.
 
-Industry-standard aesthetic scoring used by NVIDIA Curator,
+Aesthetic scoring used by NVIDIA Curator,
 Stable Diffusion, and most video curation pipelines.
 Linear classifier on CLIP ViT-L/14 embeddings, scores 0-10.
 """
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class LAIONAestheticModule(PipelineModule):
     name = "laion_aesthetic"
-    description = "LAION Aesthetics V2 predictor (0-10, industry standard)"
+    description = "LAION Aesthetics V2 predictor (0-10)"
     default_config = {"subsample": 4}
     metric_groups = {
         "laion_aesthetic": "aesthetic",

@@ -66,7 +66,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # DINOv2 backbone weights (mirror, consistent with dino_face_identity/i2v_similarity).
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 _DINOV2_WEIGHTS = {
     "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
 }

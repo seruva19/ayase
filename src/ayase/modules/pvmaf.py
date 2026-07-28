@@ -10,13 +10,13 @@ head would be fabrication. Wire trained pVMAF weights to enable it.
 
 pvmaf_score — 0-100 scale (higher = better)
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: pVMAF (Synamedia 2024).
 Category: REDUNDANT.
-Why provisional: Predicts VMAF from in-loop x264 encoder bitstream features (not a standalone FR
+Why requires_external_backend: Predicts VMAF from in-loop x264 encoder bitstream features (not a standalone FR
   metric, and predicts VMAF which ayase already has).
 To revive: Not worth reviving -- redundant with ayase's real VMAF, and architecturally inapplicable to
-  a decoded file (needs in-loop encoder bitstream features). Remove or keep provisional.
+  a decoded file (needs in-loop encoder bitstream features). Remove or keep requires_external_backend.
 Source: pVMAF, Synamedia 2024.
 """
 
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class PVMAFModule(ReferenceBasedModule):
     name = "pvmaf"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100)"
     metric_field = "pvmaf_score"
     default_config = {

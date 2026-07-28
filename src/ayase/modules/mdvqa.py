@@ -43,7 +43,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-models"
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_HEAD = "mdvqa/LSVQ_rp0.pth"  # default: LSVQ-trained fusion/head
 
 # ImageNet normalisation (semantic + motion branches, per upstream video_transform).

@@ -50,9 +50,9 @@ class PipelineModule(ABC):
     # unreleased weights, needs training, or architecturally impossible). The
     # module stays registered and revivable but is excluded from documented
     # metric/module counts (README, METRICS.md, MODELS.md) and is instead shown
-    # in an "Experimental — pending real backend" section. Flip to False the
+    # in an "External backend required — pending real backend" section. Flip to False the
     # moment a reachable real backend lands.
-    provisional: bool = False
+    requires_external_backend: bool = False
 
     _global_test_mode: bool = False
 
@@ -2003,31 +2003,31 @@ class ModuleRegistry:
         return getattr(module_cls, "__module__", "").startswith("ayase.modules.")
 
     @classmethod
-    def is_provisional(cls, name: str) -> bool:
-        """Return whether a registered module is flagged ``provisional``.
+    def requires_external_backend(cls, name: str) -> bool:
+        """Return whether a registered module is flagged ``requires_external_backend``.
 
-        Provisional modules have no turnkey real backend in a standard install;
+        External-backend modules have no turnkey real backend in a standard install;
         they stay registered/revivable but are excluded from the documented
-        module/metric counts and listed in an Experimental section instead.
+        module/metric counts and listed in an External backend required section instead.
         Unknown names return False.
         """
         module_cls = cls._modules.get(name)
-        return bool(module_cls is not None and getattr(module_cls, "provisional", False))
+        return bool(module_cls is not None and getattr(module_cls, "requires_external_backend", False))
 
     @classmethod
     def list_modules(
-        cls, packaged_only: bool = False, include_provisional: bool = True
+        cls, packaged_only: bool = False, include_external_backends: bool = True
     ) -> Dict[str, str]:
         """Return dict of name -> description, sorted by name for stable iteration.
 
-        ``include_provisional=False`` drops modules flagged ``provisional`` so
+        ``include_external_backends=False`` drops modules flagged ``requires_external_backend`` so
         doc generators can report only the delivered (real-backend) set.
         """
         return {
             name: cls._modules[name].description
             for name in sorted(cls._modules)
             if (not packaged_only or cls.is_packaged_module(cls._modules[name]))
-            and (include_provisional or not getattr(cls._modules[name], "provisional", False))
+            and (include_external_backends or not getattr(cls._modules[name], "requires_external_backend", False))
         }
 
     @classmethod

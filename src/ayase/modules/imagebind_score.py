@@ -65,7 +65,7 @@ class ImageBindScoreModule(PipelineModule):
 
     _WEIGHTS_URLS = {
         "imagebind_huge.pth": (
-            "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
             "imagebind/imagebind_huge.pth"
         ),
     }
@@ -122,7 +122,7 @@ class ImageBindScoreModule(PipelineModule):
         if not self._ensure_weights():
             logger.warning(
                 "ImageBind weights unavailable (cannot download from "
-                "AkaneTendo25/ayase-models HF mirror); module disabled"
+                "AkaneTendo25/ayase-runtime-assets HF mirror); module disabled"
             )
             self._ml_available = False
             self._backend = "unavailable"

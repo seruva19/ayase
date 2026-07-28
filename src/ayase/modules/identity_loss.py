@@ -12,7 +12,7 @@ Requires ``sample.reference_path`` pointing to a reference face image.
 Gracefully skips when no reference is provided.
 
 Backends (real ArcFace face-recognition embeddings only):
-    1. InsightFace (buffalo_l ArcFace) — industry standard
+    1. InsightFace (buffalo_l ArcFace)
     2. DeepFace (ArcFace) — fallback
 
 Identity is defined by a face-recognition embedding; a geometric-landmark

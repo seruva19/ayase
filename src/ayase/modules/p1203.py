@@ -6,7 +6,7 @@ resolution changes, and temporal effects.
 
 Range: 1-5 MOS (higher = better QoE).
 
-This module uses the official ITU-T P.1203 implementation (the ``itu_p1203``
+This module uses the upstream ITU-T P.1203 implementation (the ``itu_p1203``
 package), building the per-segment description from the decoded video's
 metadata. When ``itu_p1203`` is not installed the module reports no score
 rather than substituting an ad-hoc parametric approximation.
@@ -38,19 +38,19 @@ class P1203Module(PipelineModule):
         self._backend = None
 
     def setup(self) -> None:
-        # Only the official P.1203 implementation is a real backend.
+        # Only the upstream P.1203 implementation is a real backend.
         try:
             from itu_p1203 import P1203Standalone
             self._p1203_cls = P1203Standalone
-            self._backend = "official"
+            self._backend = "itu_p1203"
             self._ml_available = True
-            logger.info("P.1203 module initialised (official implementation)")
+            logger.info("P.1203 module initialised (upstream implementation)")
         except ImportError:
             self._p1203_cls = None
             self._backend = "unavailable"
             self._ml_available = False
             logger.warning(
-                "P.1203 unavailable: official itu_p1203 not installed "
+                "P.1203 unavailable: upstream itu_p1203 not installed "
                 "(pip install itu-p1203); no score emitted."
             )
 
@@ -75,7 +75,7 @@ class P1203Module(PipelineModule):
         return sample
 
     def _compute_official(self, sample: Sample) -> Optional[float]:
-        """Compute MOS using the official ITU-T P.1203 implementation."""
+        """Compute MOS using the upstream ITU-T P.1203 implementation."""
         meta = sample.video_metadata
         if meta is None:
             return None
@@ -116,5 +116,5 @@ class P1203Module(PipelineModule):
                 return float(max(1.0, min(5.0, mos)))
             return None
         except Exception as e:
-            logger.warning(f"Official P.1203 computation failed: {e}")
+            logger.warning(f"P.1203 computation failed: {e}")
             return None

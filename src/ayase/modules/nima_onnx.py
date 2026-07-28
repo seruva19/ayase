@@ -1,11 +1,10 @@
-"""NIMA legacy ONNX module.
+"""NIMA aesthetic scoring with a frozen ONNX model.
 
 Frozen-ONNX inference wrapper for the original NIMA (Neural Image Assessment,
 Talebi & Milanfar 2017) MobileNet-based aesthetic predictor. The original
 implementation was trained with TensorFlow; this module loads a pre-exported
 .onnx file via onnxruntime so the metric can run without pulling in a heavy
-TensorFlow dependency, preserving numerical reproducibility of legacy
-leaderboard runs.
+TensorFlow dependency while preserving numerical reproducibility.
 
 The ONNX export step itself is performed offline and is not part of this
 module — only the inference path lives here.
@@ -15,7 +14,7 @@ The model head outputs a 10-bin probability distribution over the MOS scale
 
     score = sum(p[i] * (i + 1) for i in range(10))   # in [1, 10]
 
-Stores the score in ``QualityMetrics.aesthetic_score_legacy``.
+Stores the score in ``QualityMetrics.nima_onnx_score``.
 """
 
 import logging
@@ -28,10 +27,10 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
-class NIMALegacyONNXModule(PipelineModule):
-    name = "nima_legacy_onnx"
+class NIMAONNXModule(PipelineModule):
+    name = "nima_onnx"
     description = (
-        "Legacy NIMA aesthetic score (1-10) via a frozen ONNX MobileNet export"
+        "NIMA aesthetic score (1-10) via a frozen ONNX MobileNet export"
     )
     default_config = {
         "model_path": "nima/nima_mobilenet_aesthetic.onnx",
@@ -48,12 +47,12 @@ class NIMALegacyONNXModule(PipelineModule):
         },
     ]
     metric_info = {
-        "aesthetic_score_legacy": (
-            "NIMA legacy aesthetic score (1-10), frozen ONNX MobileNet backend"
+        "nima_onnx_score": (
+            "NIMA aesthetic score (1-10), frozen ONNX MobileNet backend"
         ),
     }
     metric_groups = {
-        "aesthetic_score_legacy": "aesthetic",
+        "nima_onnx_score": "aesthetic",
     }
 
     def __init__(self, config: Optional[dict] = None) -> None:
@@ -79,7 +78,7 @@ class NIMALegacyONNXModule(PipelineModule):
         except ImportError:
             self._backend = "unavailable"
             logger.warning(
-                "NIMA legacy ONNX unavailable: onnxruntime is not installed"
+                "NIMA ONNX unavailable: onnxruntime is not installed"
             )
             return
 
@@ -87,7 +86,7 @@ class NIMALegacyONNXModule(PipelineModule):
         if model_path is None or not model_path.exists():
             self._backend = "unavailable"
             logger.warning(
-                "NIMA legacy ONNX unavailable: model file not found at %s",
+                "NIMA ONNX unavailable: model file not found at %s",
                 model_path,
             )
             return
@@ -101,7 +100,7 @@ class NIMALegacyONNXModule(PipelineModule):
             if not inputs:
                 self._backend = "unavailable"
                 logger.warning(
-                    "NIMA legacy ONNX unavailable: model %s has no inputs",
+                    "NIMA ONNX unavailable: model %s has no inputs",
                     model_path,
                 )
                 self._session = None
@@ -115,13 +114,13 @@ class NIMALegacyONNXModule(PipelineModule):
             self._ml_available = True
             self._backend = "onnxruntime"
             logger.info(
-                "NIMA legacy ONNX loaded from %s (providers=%s)",
+                "NIMA ONNX loaded from %s (providers=%s)",
                 model_path,
                 active,
             )
         except Exception as e:
             self._backend = "unavailable"
-            logger.warning("NIMA legacy ONNX setup failed: %s", e)
+            logger.warning("NIMA ONNX setup failed: %s", e)
             self._session = None
 
     def _resolve_model_path(self) -> Optional[Path]:
@@ -152,7 +151,7 @@ class NIMALegacyONNXModule(PipelineModule):
 
             return download_model_file(str(path), url, str(models_dir))
         except Exception as e:
-            logger.warning("NIMA legacy ONNX download failed: %s", e)
+            logger.warning("NIMA ONNX download failed: %s", e)
             return path
 
     @staticmethod
@@ -196,7 +195,7 @@ class NIMALegacyONNXModule(PipelineModule):
         if not self._ml_available:
             return sample
         # Image-only first cut; video samples are out of scope for this
-        # legacy wrapper. Keyframe support can be added later via the same
+        # ONNX wrapper. Keyframe support can be added later via the same
         # pattern used by laion_aesthetic._load_frames.
         if sample.is_video:
             return sample
@@ -228,13 +227,13 @@ class NIMALegacyONNXModule(PipelineModule):
             outputs = self._session.run(None, {self._input_name: tensor})
             if not outputs:
                 logger.warning(
-                    "NIMA legacy ONNX produced no outputs for %s", sample.path
+                    "NIMA ONNX produced no outputs for %s", sample.path
                 )
                 return sample
             probs = np.asarray(outputs[0]).reshape(-1).astype(np.float64)
             if probs.size != 10:
                 logger.warning(
-                    "NIMA legacy ONNX: expected 10-bin output, got shape %s "
+                    "NIMA ONNX: expected 10-bin output, got shape %s "
                     "for %s",
                     np.asarray(outputs[0]).shape,
                     sample.path,
@@ -246,9 +245,9 @@ class NIMALegacyONNXModule(PipelineModule):
             score = float(
                 sum(float(probs[i]) * (i + 1) for i in range(10))
             )
-            sample.quality_metrics.aesthetic_score_legacy = float(score)
+            sample.quality_metrics.nima_onnx_score = float(score)
         except Exception as e:
             logger.warning(
-                "NIMA legacy ONNX processing failed for %s: %s", sample.path, e
+                "NIMA ONNX processing failed for %s: %s", sample.path, e
             )
         return sample

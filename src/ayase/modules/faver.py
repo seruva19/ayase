@@ -8,16 +8,16 @@ aggregation, and regresses quality with a *trained* SVR.
 The published FAVER pipeline depends on its trained regressor; there is no
 maintained Python package or portable weights for it. A ResNet-feature + NSS
 approximation without the trained regressor would not reproduce FAVER's scores,
-so the metric is left unavailable until the official model is wired in.
+so the metric is left unavailable until the upstream model is wired in.
 
 faver_score -- higher = better quality (0-1); left None when unavailable.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: FAVER (Signal Processing 2024).
 Category: CLASSICAL-PORT.
-Why provisional: The ensemble SVR regressor is not shipped; heaviest classical port.
+Why requires_external_backend: The ensemble SVR regressor is not shipped; heaviest classical port.
 To revive: Port the wavelet temporal NSS + deep motion feature pipeline; retrain the ensemble SVR on
-  public LIVE-YT-HFR; validate before flipping provisional=False. Effort L.
+  public LIVE-YT-HFR; validate before flipping requires_external_backend=False. Effort L.
 Source: Zheng et al., FAVER, Signal Processing 2024.
 """
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class FAVERModule(PipelineModule):
     name = "faver"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "FAVER blind VQA for variable frame rate videos (2024)"
     default_config = {
         "subsample": 16,

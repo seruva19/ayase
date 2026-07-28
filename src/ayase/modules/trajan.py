@@ -17,13 +17,13 @@ DeepMind ships TRAJAN as JAX/Flax, which does not run on this (Windows) platform
 This module is a faithful **pure-torch reimplementation** — it imports **no jax**
 at runtime. It has two vendored, self-contained torch model definitions:
 
-  * BootsTAPIR (point tracker): DeepMind's official torch port of TAPIR, loading
-    the official ``bootstapir_checkpoint_v2.pt`` torch checkpoint
+  * BootsTAPIR (point tracker): DeepMind's upstream torch port of TAPIR, loading
+    the upstream ``bootstapir_checkpoint_v2.pt`` torch checkpoint
     (GCS: ``dm-tapnet/bootstap/``) — fetched to ``models/trajan/``.
   * Track autoencoder: a from-scratch torch reimplementation of the Flax
     ``TrackAutoEncoder`` (Perceiver cross/self-attention encoder + decoder), whose
     weights are converted from the Flax checkpoint ``track_autoencoder_ckpt.npz``
-    (mirrored at ``AkaneTendo25/ayase-models``; Flax Dense kernels transposed,
+    (mirrored at ``AkaneTendo25/ayase-runtime-assets``; Flax Dense kernels transposed,
     DenseGeneral qkv/out reshaped, LayerNorm/RMSNorm scale mapped 1:1).
 
 VALIDATION (decisive evidence of faithfulness)
@@ -69,7 +69,7 @@ _BOOTSTAPIR_REL = "trajan/bootstapir_checkpoint_v2.pt"
 
 # Track-autoencoder weights (DeepMind Flax params, mirrored). Flat
 # "path/to/param" -> array npz, converted to a torch state_dict at load time.
-_AE_REPO = "AkaneTendo25/ayase-models"
+_AE_REPO = "AkaneTendo25/ayase-runtime-assets"
 _AE_FILE = "trajan/track_autoencoder_ckpt.npz"
 
 # Cache for the lazily-built torch backend (classes + helpers).
@@ -893,7 +893,7 @@ class TRAJANModule(PipelineModule):
         models_dir = self.config.get("models_dir", "models")
         from ayase.config import download_model_file
 
-        # BootsTAPIR torch checkpoint (official DeepMind torch port).
+        # BootsTAPIR torch checkpoint (upstream DeepMind torch port).
         tapir_ckpt = download_model_file(_BOOTSTAPIR_REL, _BOOTSTAPIR_URL, models_dir)
         tapir = backend.TAPIR(pyramid_level=1, softmax_temperature=10.0, extra_convs=True)
         sd = torch.load(str(tapir_ckpt), map_location="cpu", weights_only=False)

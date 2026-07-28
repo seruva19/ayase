@@ -7,18 +7,18 @@ DisCoVQA is a *trained* transformer model (content/distortion dual-path
 networks plus a learned quality head). There is no maintained Python package or
 portable set of weights for it, and a randomly-initialised reimplementation
 would produce meaningless scores. The metric is therefore left unavailable
-until the official DisCoVQA weights are wired in.
+until the upstream DisCoVQA weights are wired in.
 
 GitHub: https://github.com/VQAssessment/DisCoVQA
 
 discovqa_score — higher = better quality (0-1); left None when unavailable.
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: DisCoVQA (2023).
 Category: TRAINING-ONLY.
-Why provisional: Repo is an explicit "code released later" stub; no weights.
+Why requires_external_backend: Repo is an explicit "code released later" stub; no weights.
 To revive: Reimplement the distortion-content Swin-T transformer; train on LSVQ + standard VQA
-  benchmarks; validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort M.
+  benchmarks; validate you reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Effort M.
 Source: https://github.com/VQAssessment/DisCoVQA
 """
 
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class DisCoVQAModule(PipelineModule):
     name = "discovqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "DisCoVQA temporal distortion-content VQA (2023)"
     default_config = {
         "subsample": 8,

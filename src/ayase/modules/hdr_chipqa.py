@@ -87,7 +87,7 @@ def _third_party_path(*parts: str) -> Path:
 
 class HDRChipQAModule(PipelineModule):
     name = "hdr_chipqa"
-    description = "HDR-ChipQA no-reference HDR video quality via official feature extractor and LIVE-HDR SVR"
+    description = "HDR-ChipQA no-reference HDR video quality via its feature extractor and LIVE-HDR SVR"
     default_config = {
         "repo_path": None,
         "python_executable": None,

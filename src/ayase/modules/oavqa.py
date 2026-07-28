@@ -14,12 +14,12 @@ implementation did). Until a genuine OAVQA checkpoint is wired in,
 
 oavqa_score -- higher = better quality (0-1); real model only
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: OAVQA (CICAI 2023).
 Category: TRAINING-ONLY.
-Why provisional: Repo ships the OAVQA DB (public) only -- no fused audio-visual model / weights.
+Why requires_external_backend: Repo ships the OAVQA DB (public) only -- no fused audio-visual model / weights.
 To revive: Reimplement the omnidirectional audio-visual FR fusion; train on the OAVQA DB; validate you
-  reproduce the paper's SRCC/PLCC before flipping provisional=False. Niche (360° A/V).
+  reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Niche (360° A/V).
 Source: OAVQA, CICAI 2023 (dataset-only repo on GitHub).
 """
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class OAVQAModule(PipelineModule):
     name = "oavqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "OAVQA omnidirectional audio-visual QA (2024; real model only, disabled if unavailable)"
     default_config = {
         "subsample": 8,

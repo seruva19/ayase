@@ -1,7 +1,7 @@
 """UTMOSv2 no-reference speech MOS prediction.
 
 Predicts speech Mean Opinion Score on a 1-5 scale using the UTMOSv2 model
-(``utmosv2`` package or the official torch.hub checkpoint). When neither real
+(``utmosv2`` package or the upstream torch.hub checkpoint). When neither real
 backend is available the metric is left ``None`` — no signal-quality proxy is
 substituted for the published UTMOSv2 score.
 """

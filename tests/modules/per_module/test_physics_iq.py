@@ -100,6 +100,51 @@ def test_physics_iq_motion_mismatch(tmp_path):
     assert qm.physics_iq_score < ident_qm.physics_iq_score
 
 
+def test_physics_iq_verified_formula_matches_reference_stable_score():
+    """Verified uses clipped IoU ratios and the inverse MSE ratio."""
+    m = _new_module()
+    score, spatial, st, weighted, mse = m._compute_verified_scores(
+        (0.40, 0.90, 0.10, 0.08),
+        (0.50, 0.60, 0.20, 0.02),
+    )
+
+    assert spatial == pytest.approx(0.8)
+    assert st == pytest.approx(1.0)  # 1.5 is clipped
+    assert weighted == pytest.approx(0.5)
+    assert mse == pytest.approx(0.25)
+    assert score == pytest.approx(63.75)
+
+
+def test_physics_iq_verified_with_second_real_take(tmp_path):
+    """A configured independent real take enables all Verified fields."""
+    real_1 = _make_square_video(tmp_path / "real_1.mp4", y=8)
+    real_2 = _make_square_video(tmp_path / "real_2.mp4", y=12)
+    generated = _make_square_video(tmp_path / "generated.mp4", y=10)
+    sample = Sample(path=generated, is_video=True, reference_path=real_1)
+
+    from ayase.modules.physics_iq import PhysicsIQModule
+
+    module = PhysicsIQModule(
+        {
+            **_CFG,
+            "variance_reference_path": real_2,
+        }
+    )
+    qm = module.process(sample).quality_metrics
+
+    assert qm is not None
+    for value in (
+        qm.physics_iq_verified_score,
+        qm.physics_iq_verified_spatial_score,
+        qm.physics_iq_verified_spatiotemporal_score,
+        qm.physics_iq_verified_weighted_spatial_score,
+        qm.physics_iq_verified_mse_score,
+    ):
+        assert value is not None
+    assert 0.0 <= qm.physics_iq_verified_score <= 100.0
+    assert module._backend == "verified_port"
+
+
 def test_physics_iq_no_reference(tmp_path):
     """No reference -> every physics_iq_* field stays None."""
     vid = _make_square_video(tmp_path / "gen.mp4")

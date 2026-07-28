@@ -12,14 +12,14 @@ GitHub: https://chenfeng-bristol.github.io/RankDVQA/
 
 rankdvqa_score — higher = better quality
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: RankDVQA (WACV 2024).
 Category: TRAINING-ONLY.
-Why provisional: Repo is training-code-only, no .pth; but labels are VMAF-generated (NO human MOS
+Why requires_external_backend: Repo is training-code-only, no .pth; but labels are VMAF-generated (NO human MOS
   needed → fully reproducible).
 To revive: Reimplement the ranking-based hybrid FR transformer; build the self-labelled DB with
   VMAF-generated labels; train and validate you reproduce the paper's SRCC/PLCC before flipping
-  provisional=False. Effort L; ~ a better-VMAF.
+  requires_external_backend=False. Effort L; ~ a better-VMAF.
 Source: https://chenfeng-bristol.github.io/RankDVQA/
 """
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class RankDVQAModule(ReferenceBasedModule):
     name = "rankdvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "RankDVQA ranking-based FR VQA (real model only)"
     metric_field = "rankdvqa_score"
     default_config = {"subsample": 8}

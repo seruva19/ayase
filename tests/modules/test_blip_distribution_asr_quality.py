@@ -164,16 +164,49 @@ def test_aqascore_is_opt_in(synthetic_wav):
                 or result.quality_metrics.aqascore_score is None)
 
 
-def test_kad_and_fad_infinity_math():
+def test_kad_reference_math_and_fad_infinity():
     from ayase.modules.fad import FADModule
     from ayase.modules.kad import KADModule
 
     rng = np.random.default_rng(123)
-    features = [rng.normal(size=8) for _ in range(8)]
-    refs = [rng.normal(loc=0.1, size=8) for _ in range(8)]
+    features = [rng.normal(size=(2, 8)).astype(np.float32) for _ in range(8)]
+    refs = [rng.normal(loc=0.1, size=(2, 8)).astype(np.float32) for _ in range(8)]
 
-    kad = KADModule().compute_distribution_metric(features, refs)
-    fad_inf = FADModule({"infinity": True}).compute_distribution_metric(features, refs)
+    import torch
+
+    def official_test_fn(x, y, cache_dirs, device, bandwidth=None, kernel="gaussian"):
+        del cache_dirs, device, bandwidth, kernel
+        # A compact unbiased linear-kernel MMD stand-in for API-contract testing.
+        kxx = x @ x.T
+        kyy = y @ y.T
+        kxy = x @ y.T
+        nx, ny = len(x), len(y)
+        value = (
+            (kxx.sum() - kxx.diag().sum()) / (nx * (nx - 1))
+            + (kyy.sum() - kyy.diag().sum()) / (ny * (ny - 1))
+            - 2 * kxy.mean()
+        )
+        return value * 100
+
+    module = KADModule()
+    module._torch = torch
+    module._kad_fn = official_test_fn
+    kad = module.compute_distribution_metric(features, refs)
+    fad_features = [feature.mean(axis=0) for feature in features]
+    fad_refs = [feature.mean(axis=0) for feature in refs]
+    fad_inf = FADModule({"infinity": True}).compute_distribution_metric(
+        fad_features, fad_refs
+    )
 
     assert np.isfinite(kad)
     assert np.isfinite(fad_inf)
+
+
+def test_kad_requires_real_backend_and_references(synthetic_wav):
+    from ayase.modules.kad import KADModule
+
+    sample = Sample(path=synthetic_wav, is_video=False)
+    module = KADModule()
+    assert module.extract_features(sample) is None
+    with pytest.raises(RuntimeError, match="upstream KADTK"):
+        module.compute_distribution_metric([np.zeros((2, 8), dtype=np.float32)])

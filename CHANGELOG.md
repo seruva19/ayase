@@ -7,9 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.68] - 2026-07-28
+
+### Added
+
+- Added independently validated image-edit, video-edit, image/video fidelity, music-quality, audio-distribution, rendered-video, and perceptual video-quality metrics, including CycleReward, DICE, VE-Bench, ColorVideoVDP, UVQ 1.5, VQA², CGVQM, MuQ-Eval, and MAUVE Audio Divergence.
+- Added LOVE, Ref4D, and PhyGround result importers with separate module boundaries and declared dataset-level metadata.
+
 ### Changed
 
 - **expression_following**: documented that blendshape comparison suppresses rather than removes face-shape signal, and that scores are comparable only across clips with similar framing.
+- Renamed metric modules and backend identifiers to use method or model names rather than status labels; `vbench2`, `nima_onnx`, `love_results`, `ref4d_results`, and `phyground_results` now expose neutral registry names.
+- Renamed the unavailable-runtime flag to `requires_external_backend` and describe those modules by their operational requirement instead of assigning an experimental status.
+- **vebench**: moved all six evaluator checkpoints to a pinned Hugging Face snapshot and removed the Google Drive downloader dependency.
+- Added `.artifacts/` and `.tmp/` to `.gitignore`.
+
+### Fixed
+
+- Corrected generated metric/model metadata for local and pip-package sources, model URL validation, MAD dataset statistics, and shared result-adapter field ownership.
 
 ## [0.1.67] - 2026-07-22
 
@@ -31,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **vbench2_official**: native Apache-2.0 VBench 2.0 evaluation with setup-time checkpoint resolution, all 18 intrinsic-faithfulness dimensions, and five category aggregates.
+- **vbench2**: native Apache-2.0 VBench 2.0 evaluation with setup-time checkpoint resolution, all 18 intrinsic-faithfulness dimensions, and five category aggregates.
 - **worldmodelbench**: native VILA-judge evaluation for instruction following, physical adherence, commonsense, and seven component scores, with the official judge downloaded during setup.
 - **mj_video**: native MJ-VIDEO-2B inference for the learned overall preference reward, five aspect rewards, and raw 28-criterion training diagnostics, with weights downloaded during setup.
 - Pipeline JSON reports now expose requested, mounted, and failed module coverage through `run_status`.
@@ -42,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dataset scanning indexes media and caption sidecars in one directory traversal.
 - **rqvqa**: reports the released PLCC-trained raw regression output instead of clipping it to 0–1; the published score is unbounded and higher is better.
 - **videoscore2**: soft ratings use the probability-weighted expectation on the documented 1–5 scale; the existing sampling default is unchanged.
-- **vbench2_official**, **worldmodelbench**, and **mj_video**: external source archives and non-Hugging-Face checkpoints are resolved through the `AkaneTendo25/ayase-models` mirror; native Hugging Face model repositories remain unchanged.
+- **vbench2**, **worldmodelbench**, and **mj_video**: external source archives and non-Hugging-Face checkpoints are resolved through the `AkaneTendo25/ayase-runtime-assets` mirror; native Hugging Face model repositories remain unchanged.
 - Mirrored model files now use flat module directories at the repository root; the duplicate `weights/` hierarchy and all runtime references to it were removed.
 - The `dev` extra now installs `pytest-asyncio`, which is required by the TUI test suite.
 
@@ -101,13 +116,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **dreamsim**: the base DINO ViT-B/16 backbone pulled by `dreamsim(pretrained=True)` via `torch.hub` is now pre-cached from the `AkaneTendo25/ayase-models` HF mirror into the torch hub checkpoints directory before the model loads, matching the mirror path `dover` uses for its ConvNeXt backbone. The checkpoint (originally `dl.fbaipublicfiles.com/dino/dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth`) then loads offline. Metric values are unchanged — identical checkpoint.
+- **dreamsim**: the base DINO ViT-B/16 backbone pulled by `dreamsim(pretrained=True)` via `torch.hub` is now pre-cached from the `AkaneTendo25/ayase-runtime-assets` HF mirror into the torch hub checkpoints directory before the model loads, matching the mirror path `dover` uses for its ConvNeXt backbone. The checkpoint (originally `dl.fbaipublicfiles.com/dino/dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth`) then loads offline. Metric values are unchanged — identical checkpoint.
 
 ## [0.1.57] - 2026-07-04
 
 ### Changed
 
-- **dino_face_identity**: the DINOv2 backbone weights are now fetched from the `AkaneTendo25/ayase-models` HF mirror instead of the torch.hub entrypoint's fbaipublicfiles original; the architecture still comes from the torch.hub repo code. This aligns the checkpoint download with the mirror the other modules already use. Metric values are unchanged — identical architecture and identical weights. Adds a `models_dir` config key (default `"models"`) so the weights land in the standard Ayase model cache.
+- **dino_face_identity**: the DINOv2 backbone weights are now fetched from the `AkaneTendo25/ayase-runtime-assets` HF mirror instead of the torch.hub entrypoint's fbaipublicfiles original; the architecture still comes from the torch.hub repo code. This aligns the checkpoint download with the mirror the other modules already use. Metric values are unchanged — identical architecture and identical weights. Adds a `models_dir` config key (default `"models"`) so the weights land in the standard Ayase model cache.
 
 ## [0.1.56] - 2026-07-03
 
@@ -199,7 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **pipeline**: added optional dataset-level sample batching via `sample_batch_size`, `Pipeline.process_samples()`, and overridable module `process_batch()` hooks.
 - **examples**: added `examples/benchmark_inference.py` for comparing inference throughput across `sample_batch_size` values.
 - **audio_isc** and **audio_kl**: added optional dataset-level audio distribution metrics with PANNs/PaSST backends.
-- **clap_score**, **imagebind_score**, and **nima_legacy_onnx**: added first-class optional CLAP/ImageBind audio-text alignment and legacy NIMA ONNX modules.
+- **clap_score**, **imagebind_score**, and **nima_onnx**: added first-class optional CLAP/ImageBind audio-text alignment and NIMA ONNX modules.
 
 ### Changed
 
@@ -296,7 +311,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Replace all heuristic fallback backends with real ML implementations across 79 modules
 - Modules now gracefully skip when ML backend is unavailable instead of computing proxy values
-- CLIP weights on AkaneTendo25/ayase-models converted from .pt to .safetensors
+- CLIP weights on AkaneTendo25/ayase-runtime-assets converted from .pt to .safetensors
 - Fix model references: KVQ (lero233/KVQ), AIGV-Assessor (IntMeGroup/), SenseVoice (FunAudioLLM/)
 
 ### Added
@@ -387,7 +402,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **dover**, **i2v_similarity**, **aesthetic_scoring**, **fast_vqa**: model download URLs migrated to [HuggingFace Hub](https://huggingface.co/AkaneTendo25/ayase-models) for reliable access; original URLs preserved in source comments
+- **dover**, **i2v_similarity**, **aesthetic_scoring**, **fast_vqa**: model download URLs migrated to [HuggingFace Hub](https://huggingface.co/AkaneTendo25/ayase-runtime-assets) for reliable access; original URLs preserved in source comments
 
 ## [0.1.4]
 

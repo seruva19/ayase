@@ -18,10 +18,10 @@ embedding in a Contrastive Language-Audio Pretraining space, rescaled to
 ``metric_field_name`` hook so all CLAP variants can share the same processing
 implementation.
 
-MS-CLAP backbone note: Microsoft's official ``microsoft/msclap`` HF repo ships
+MS-CLAP backbone note: Microsoft's upstream ``microsoft/msclap`` HF repo ships
 the original ``.pth`` checkpoints, not a ``transformers`` ``ClapModel`` layout.
-``MSCLAPScoreModule`` therefore uses the official ``msclap`` Python wrapper,
-which downloads ``CLAP_weights_2023.pth`` from the official HF repo.
+``MSCLAPScoreModule`` therefore uses the upstream ``msclap`` Python wrapper,
+which downloads ``CLAP_weights_2023.pth`` from the upstream HF repo.
 """
 
 import logging
@@ -66,7 +66,7 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
 class MSCLAPScoreModule(HumanCLAPModule):
     """Microsoft CLAP audio-text alignment cosine similarity.
 
-    Uses the official ``msclap`` package and official ``microsoft/msclap``
+    Uses the upstream ``msclap`` package and upstream ``microsoft/msclap``
     HuggingFace weights. The module still writes a 0-1 cosine score to keep the
     metric scale aligned with ``human_clap_score`` and ``laion_clap_score``.
     """
@@ -81,7 +81,7 @@ class MSCLAPScoreModule(HumanCLAPModule):
         {
             "id": "microsoft/msclap",
             "type": "huggingface",
-            "task": "Official MS-CLAP audio-text encoder weights",
+            "task": "MS-CLAP audio-text encoder weights",
         },
     ]
     metric_info = {
@@ -115,7 +115,7 @@ class MSCLAPScoreModule(HumanCLAPModule):
             logger.warning("MS-CLAP setup failed: %s", e)
 
     def _score(self, audio, caption: str) -> Optional[float]:
-        """Score an in-memory waveform with the official MS-CLAP wrapper."""
+        """Score an in-memory waveform with the upstream MS-CLAP wrapper."""
         tmp_path: Optional[Path] = None
         try:
             import soundfile as sf

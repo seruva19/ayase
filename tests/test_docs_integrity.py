@@ -638,29 +638,29 @@ class TestGeneratedDocsAreFresh:
 
         from ayase.metrics_doc import (
             _get_quality_metrics_fields,
-            compute_provisional_partition,
+            compute_external_backend_partition,
         )
 
         ModuleRegistry.discover_modules()
         all_modules = ModuleRegistry.list_modules(packaged_only=True)
-        # Provisional modules (no turnkey real backend) and the fields owned only
+        # External-backend modules (no turnkey real backend) and the fields owned only
         # by them are excluded from the delivered/documented counts.
-        provisional_modules, provisional_only_fields = compute_provisional_partition(
+        external_backend_modules, external_only_fields = compute_external_backend_partition(
             all_modules
         )
         delivered_modules = [
             n for n in all_modules
             if ModuleRegistry.get_module(n) is not None
-            and n not in provisional_modules
+            and n not in external_backend_modules
         ]
         total = len(delivered_modules)
         # Exclude provenance/bookkeeping fields (e.g. ``metric_backends``) that
-        # are not metrics, and fields owned only by provisional modules — the
+        # are not metrics, and fields owned only by requires_external_backend modules — the
         # README prose counts delivered metrics only.
         n_fields = (
             len(QualityMetrics.model_fields)
             - len(QualityMetrics._NON_METRIC_FIELDS)
-            - len(provisional_only_fields)
+            - len(external_only_fields)
         )
         qm_fields = _get_quality_metrics_fields()
 

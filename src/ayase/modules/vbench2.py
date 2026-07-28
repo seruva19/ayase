@@ -1,7 +1,7 @@
-"""Official VBench 2.0 intrinsic-faithfulness evaluation adapter.
+"""VBench 2.0 intrinsic-faithfulness evaluation.
 
 Runs the Apache-2.0 VBench 2.0 implementation as an optional dataset-level
-backend. No proxy scores are emitted when the official package or checkpoints
+backend. No proxy scores are emitted when the upstream package or checkpoints
 are unavailable. Higher scores indicate better intrinsic faithfulness.
 """
 
@@ -21,9 +21,9 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-MIRROR_REPO = "AkaneTendo25/ayase-models"
+MIRROR_REPO = "AkaneTendo25/ayase-runtime-assets"
 MIRROR_REVISION = "main"
-MIRROR_RESOLVE_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve"
+MIRROR_RESOLVE_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve"
 VBENCH_REVISION = "45e79ec14e69a2187202c675d2dbce1a71843d53"
 COTRACKER_REVISION = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
 
@@ -83,11 +83,11 @@ CUSTOM_INPUT_DIMENSIONS = {
 }
 
 
-class OfficialVBench2Module(PipelineModule):
-    """Run the official VBench 2.0 evaluator after sample processing."""
+class VBench2Module(PipelineModule):
+    """Run the VBench 2.0 evaluator after sample processing."""
 
-    name = "vbench2_official"
-    description = "Official VBench 2.0 18-dimension intrinsic-faithfulness suite"
+    name = "vbench2"
+    description = "VBench 2.0 18-dimension intrinsic-faithfulness suite"
     default_config = {
         "dimensions": list(DIMENSION_FIELDS),
         "mode": "vbench_standard",
@@ -106,7 +106,7 @@ class OfficialVBench2Module(PipelineModule):
         {
             "id": "Vchitect/VBench-2.0_models",
             "type": "huggingface",
-            "task": "Official VBench 2.0 anatomy and identity checkpoints",
+            "task": "VBench 2.0 anatomy and identity checkpoints",
             "size": "2.26 GB",
             "auto_download": True,
         },
@@ -121,13 +121,13 @@ class OfficialVBench2Module(PipelineModule):
             "id": "Vchitect/VBench@45e79ec14e69a2187202c675d2dbce1a71843d53",
             "type": "other",
             "url": "https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0",
-            "task": "Official VBench 2.0 evaluator and dimension-specific checkpoints",
-            "notes": "Apache-2.0 source; install the official VBench-2.0 package",
+            "task": "VBench 2.0 evaluator and dimension-specific checkpoints",
+            "notes": "Apache-2.0 source; install the upstream VBench-2.0 package",
         }
     ]
     metric_info = {
         **{
-            field: f"Official VBench 2.0 {dimension.replace('_', ' ')} score"
+            field: f"VBench 2.0 {dimension.replace('_', ' ')} score"
             for dimension, field in DIMENSION_FIELDS.items()
         },
         "vbench2_creativity_score": "VBench 2.0 creativity aggregate",
@@ -135,7 +135,7 @@ class OfficialVBench2Module(PipelineModule):
         "vbench2_controllability_score": "VBench 2.0 controllability aggregate",
         "vbench2_human_fidelity_score": "VBench 2.0 human-fidelity aggregate",
         "vbench2_physics_score": "VBench 2.0 physics aggregate",
-        "vbench2_total_score": "Mean of the five official VBench 2.0 category aggregates",
+        "vbench2_total_score": "Mean of the five VBench 2.0 category aggregates",
     }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -340,7 +340,7 @@ class OfficialVBench2Module(PipelineModule):
                 sys.path.insert(0, str(package_root))
             # VBench 2.0 reads this at import time. Point it directly at the
             # snapshot, whose Human_Anatomy/Human_Identity layout matches the
-            # official cache layout.
+            # upstream cache layout.
             os.environ["VBENCH2_CACHE_DIR"] = str(checkpoint_root)
 
             self._ensure_offline_gdown_compatibility()
@@ -356,7 +356,7 @@ class OfficialVBench2Module(PipelineModule):
             self._default_full_info = package_root / "VBench2_full_info.json"
             # Some installations imported utils before the environment variable
             # was set. Keep its module-level cache root synchronized, then ask
-            # the official initializer to resolve every selected dependency now
+            # the upstream initializer to resolve every selected dependency now
             # instead of deferring downloads until post_process().
             if hasattr(vbench2_utils, "CACHE_DIR"):
                 vbench2_utils.CACHE_DIR = str(checkpoint_root)
@@ -366,10 +366,10 @@ class OfficialVBench2Module(PipelineModule):
                 local=True,
                 read_frame=bool(self.config.get("read_frame", False)),
             )
-            self._backend = "official_vbench2"
+            self._backend = "vbench2"
         except Exception as exc:
             self._backend = "unavailable"
-            logger.warning("Official VBench 2.0 unavailable: %s", exc)
+            logger.warning("VBench 2.0 unavailable: %s", exc)
 
     def process(self, sample: Sample) -> Sample:
         return sample
@@ -415,7 +415,7 @@ class OfficialVBench2Module(PipelineModule):
         return None
 
     def post_process(self, all_samples: List[Sample]) -> None:
-        if self._backend != "official_vbench2" or self._vbench_cls is None:
+        if self._backend != "vbench2" or self._vbench_cls is None:
             return
         video_samples = [sample for sample in all_samples if sample.is_video]
         if not video_samples or self.pipeline is None:
@@ -434,7 +434,7 @@ class OfficialVBench2Module(PipelineModule):
             unsupported = sorted(set(dimensions) - CUSTOM_INPUT_DIMENSIONS)
             if unsupported:
                 logger.warning(
-                    "Official VBench 2.0 custom-input mode does not support: %s",
+                    "VBench 2.0 custom-input mode does not support: %s",
                     ", ".join(unsupported),
                 )
                 return
@@ -466,7 +466,7 @@ class OfficialVBench2Module(PipelineModule):
             result_path = output_dir / f"{result_name}_eval_results.json"
             raw_results = json.loads(result_path.read_text(encoding="utf-8"))
         except Exception as exc:
-            logger.warning("Official VBench 2.0 evaluation failed: %s", exc)
+            logger.warning("VBench 2.0 evaluation failed: %s", exc)
             return
 
         scores: Dict[str, float] = {}

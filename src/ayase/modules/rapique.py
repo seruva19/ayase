@@ -13,13 +13,13 @@ GitHub: https://github.com/vztu/RAPIQUE
 
 rapique_score — higher = better quality
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: RAPIQUE (IEEE OJSP 2021).
 Category: CLASSICAL-PORT.
-Why provisional: pyiqa does NOT expose a "rapique" metric (create_metric('rapique') always fails →
+Why requires_external_backend: pyiqa does NOT expose a "rapique" metric (create_metric('rapique') always fails →
   the module's only path is unavailable); the trained SVR is not shipped.
 To revive: Reimplement NSS + ResNet-50 features and retrain the SVR on public KoNViD-1k / YT-UGC;
-  validate before flipping provisional=False. Effort L.
+  validate before flipping requires_external_backend=False. Effort L.
 Source: https://github.com/vztu/RAPIQUE
 """
 
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 class RAPIQUEModule(PipelineModule):
     name = "rapique"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only)"
     default_config = {
         "subsample": 8,

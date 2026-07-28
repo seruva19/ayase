@@ -14,12 +14,12 @@ implementation did). Until a genuine Memory-VQA checkpoint is wired in,
 
 memoryvqa_score -- higher = better quality (0-1); real model only
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: Memory-VQA (Neurocomputing 2025).
 Category: TRAINING-ONLY.
-Why provisional: Code on GitHub but README says "weights after acceptance"; no loadable checkpoint.
+Why requires_external_backend: Code on GitHub but README says "weights after acceptance"; no loadable checkpoint.
 To revive: Reimplement the human-memory HVS model; train on the 5 public UGC-VQA sets; validate you
-  reproduce the paper's SRCC/PLCC before flipping provisional=False. Incremental gains.
+  reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Incremental gains.
 Source: Memory-VQA, Neurocomputing 2025 (weights pending acceptance).
 """
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class MemoryVQAModule(PipelineModule):
     name = "memoryvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable)"
     default_config = {
         "subsample": 12,

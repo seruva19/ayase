@@ -5,18 +5,18 @@ Full-reference metric using deep perceptual features with multi-scale
 comparison modelling the human visual system.
 
 Implementation:
-    The only real backend is the official AVQT CLI tool (macOS). When it is
+    The only real backend is the upstream AVQT CLI tool (macOS). When it is
     not installed the metric is left ``None`` (no proxy is substituted).
 
 avqt_score -- higher = better quality (0-1)
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: AVQT (Apple Advanced Video Quality Tool).
 Category: IMPOSSIBLE.
-Why provisional: Closed-source macOS/Metal CLI binary; no published architecture or weights,
+Why requires_external_backend: Closed-source macOS/Metal CLI binary; no published architecture or weights,
   Windows-unsupported.
 To revive: Not reproducible -- no public architecture/weights to reimplement. The only real path is the
-  official Apple AVQT CLI on macOS. Permanent.
+  upstream Apple AVQT CLI on macOS. Permanent.
 Source: Apple AVQT (closed-source, macOS only).
 """
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class AVQTModule(ReferenceBasedModule):
     name = "avqt"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Apple AVQT perceptual video quality (full-reference)"
     metric_field = "avqt_score"
     default_config = {
@@ -58,7 +58,7 @@ class AVQTModule(ReferenceBasedModule):
         if self.test_mode:
             return
 
-        # The official AVQT CLI tool (macOS only) is the sole real backend.
+        # The upstream AVQT CLI tool (macOS only) is the sole real backend.
         try:
             result = subprocess.run(
                 ["avqt", "--version"],

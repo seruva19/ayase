@@ -81,7 +81,7 @@ class AVDesyncModule(PipelineModule):
     # Same checkpoint / mirror the av_sync module uses for the vendored inferencer.
     _WEIGHTS_URLS = {
         "24-01-04T16-39-21.pt": (
-            "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
             "synchformer/24-01-04T16-39-21.pt"
         ),
     }
@@ -131,7 +131,7 @@ class AVDesyncModule(PipelineModule):
             if not self._ensure_synchformer_weights(model_path):
                 logger.warning(
                     "av_desync: Synchformer weights unavailable "
-                    "(cannot fetch AkaneTendo25/ayase-models mirror); "
+                    "(cannot fetch AkaneTendo25/ayase-runtime-assets mirror); "
                     "desync_score left unset."
                 )
                 self._backend = "unavailable"

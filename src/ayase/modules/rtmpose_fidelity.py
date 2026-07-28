@@ -41,7 +41,7 @@ KEYPOINT_CONF = 0.30
 
 # Weights are mirrored under <models_dir>/rtmpose_fidelity/ and fetched on first
 # use, matching the other weight-backed modules.
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 _DET_REL = "rtmpose_fidelity/yolox_m.onnx"
 _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 

@@ -115,7 +115,7 @@ class SongEvalModule(PipelineModule):
     }
 
     _CHECKPOINT_URL = (
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
         "song_eval/model.safetensors"
     )
 

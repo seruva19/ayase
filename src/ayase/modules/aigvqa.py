@@ -15,10 +15,10 @@ backend is wired in. This module reports itself unavailable and leaves
 
 Output field: ``aigvqa_score`` (populated only with a real backend).
 
-REVIVAL NOTES (provisional --- no turnkey / self-contained backend)
+REVIVAL NOTES (requires_external_backend --- no turnkey / self-contained backend)
 Metric: AIGVQA / Overall Quality Predictor (VQualA 2025 @ ICCVW, SJTU-IntMeGroup).
 Category: MULTI-CHECKPOINT LMM REGRESSION (not pip-installable, not stock InternVL).
-Why provisional: The HF checkpoint ``IntMeGroup/ICCVW_mos0_8B`` ships weights
+Why requires_external_backend: The HF checkpoint ``IntMeGroup/ICCVW_mos0_8B`` ships weights
   (top-level modules ``vision_model``, ``language_model``, ``mlp1``, ``fast_mlp``,
   ``mlpscore``, ``evaluator``) but NO modeling code --- ``config.json`` auto_map
   points at ``modeling_internvl_chat.InternVLChatModel`` /
@@ -53,7 +53,7 @@ To revive (verified inference protocol, reverse-engineered from the repo):
      challenge Track-I overall is a 0.25-weighted ensemble of two 8B + two 26B
      checkpoints; a single 8B (``mos0``) already yields a usable score.
   6. Validate you reproduce the repo's SRCC/PLCC on GenAI-Bench before flipping
-     ``provisional=False``, and wire ``_backend="real"`` only once the checkpoint
+     ``requires_external_backend=False``, and wire ``_backend="real"`` only once the checkpoint
      runs end-to-end from this module.
 Source: github.com/IntMeGroup/AIGVQA (AIGVQA_8B/train/stage2_eval_AIGV.py,
   shell/eval_score_overall1.sh, data/final_test_mos0.jsonl); HF config.json +
@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
 
 class AIGVQAModule(PipelineModule):
     name = "aigvqa"
-    provisional = True  # no turnkey / self-contained real backend (see REVIVAL NOTES)
+    requires_external_backend = True  # no turnkey / self-contained real backend (see REVIVAL NOTES)
     description = "AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)"
     default_config = {
         "subsample": 8,

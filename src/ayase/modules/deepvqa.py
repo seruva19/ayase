@@ -8,16 +8,16 @@ quality regressor are learned end-to-end on subjective VQA data. There is no
 maintained Python package or published set of portable weights for it, so this
 module has no real backend to run. Rather than approximate DeepVQA with generic
 VGG features and hand-tuned masking (which would not reproduce the paper's
-scores), the metric is left unavailable until the official model is wired in.
+scores), the metric is left unavailable until the upstream model is wired in.
 
 deepvqa_score -- higher = better quality (0-1); left None when unavailable.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: DeepVQA / CNAN (ECCV 2018).
 Category: TRAINING-ONLY.
-Why provisional: Authors never released code/weights; the FR spatiotemporal CNN must be trained.
+Why requires_external_backend: Authors never released code/weights; the FR spatiotemporal CNN must be trained.
 To revive: Reimplement the FR spatiotemporal CNN + sensitivity masking; train on LIVE-VQA + CSIQ;
-  validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Low marginal value
+  validate you reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Low marginal value
   (tiny 2018-era data).
 Source: DeepVQA / CNAN, ECCV 2018 (no released code/weights).
 """
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class DeepVQAModule(ReferenceBasedModule):
     name = "deepvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "DeepVQA spatiotemporal masking FR-VQA (ECCV 2018)"
     metric_field = "deepvqa_score"
     default_config = {

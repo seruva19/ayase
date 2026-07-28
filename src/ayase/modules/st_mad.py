@@ -1,6 +1,6 @@
 """ST-MAD -- Spatiotemporal Most Apparent Distortion (Vu/Vu/Chandler, ICIP 2011).
 
-A faithful, deterministic numpy/scipy port of the official MATLAB reference
+A faithful, deterministic numpy/scipy port of the upstream MATLAB reference
 (Netflix/vmaf ``matlab/STMAD_2011_MatlabCode``). ST-MAD extends the image MAD
 metric (Larson & Chandler, JEI 2010) to video:
 

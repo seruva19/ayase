@@ -25,13 +25,13 @@ def test_aigvqa_video(video_sample):
     assert result is video_sample
 
 
-def test_aigvqa_provisional_real_or_none(video_sample):
-    # Provisional: no self-contained AIGVQA backend, so real-or-none must hold
+def test_aigvqa_requires_external_backend_real_or_none(video_sample):
+    # External-backend: no self-contained AIGVQA backend, so real-or-none must hold
     # (aigvqa_score is left unset rather than filled by a proxy).
     from ayase.modules.aigvqa import AIGVQAModule
     video_sample.quality_metrics = QualityMetrics()
     m = AIGVQAModule()
-    assert m.provisional is True
+    assert m.requires_external_backend is True
     m.setup()  # non-test-mode setup path: must resolve to unavailable
     assert m._backend == "unavailable"
     assert m._ml_available is False

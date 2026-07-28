@@ -12,12 +12,12 @@ Paper: https://arxiv.org/abs/2405.17765
 
 ptmvqa_score — higher = better quality (0-1)
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: PTM-VQA (CVPR 2024).
 Category: TRAINING-ONLY.
-Why provisional: No weights repo; the fusion head ("minimal learnable weights") + ICID loss must be trained.
+Why requires_external_backend: No weights repo; the fusion head ("minimal learnable weights") + ICID loss must be trained.
 To revive: Reimplement the frozen pretrained-model fusion + ICID loss; train on 3 public NR-VQA sets;
-  validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort S — cheapest
+  validate you reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Effort S — cheapest
   full-train path.
 Source: https://arxiv.org/abs/2405.17765
 """
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class PTMVQAModule(PipelineModule):
     name = "ptmvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "PTM-VQA multi-PTM fusion VQA (CVPR 2024)"
     default_config = {
         "subsample": 8,

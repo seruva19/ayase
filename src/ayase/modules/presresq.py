@@ -8,12 +8,12 @@ PreResQ-R1 backend is wired in.
 
 Output field: ``presresq_score`` (populated only with a real backend).
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: PreResQ-R1 (Nov 2025).
 Category: TRAINING-ONLY.
-Why provisional: Very recent, paper only; no code/weights and needs a VLM + GRPO RL pipeline.
+Why requires_external_backend: Very recent, paper only; no code/weights and needs a VLM + GRPO RL pipeline.
 To revive: Reimplement the VLM + GRPO RL rank+score training; train on LSVQ / LSVQ-KonIQ / VQA2 subsets;
-  validate you reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort L (RL pipeline).
+  validate you reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Effort L (RL pipeline).
 Source: PreResQ-R1, Nov 2025 (paper only).
 """
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 class PreResQModule(PipelineModule):
     name = "presresq"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "PreResQ-R1 rank+score VQA (2025)"
     default_config = {
         "subsample": 8,
@@ -49,7 +49,7 @@ class PreResQModule(PipelineModule):
             return
 
         try:
-            import presresq  # type: ignore  # official PreResQ-R1 backend
+            import presresq  # type: ignore  # upstream PreResQ-R1 backend
 
             self._model = presresq
             self._ml_available = True

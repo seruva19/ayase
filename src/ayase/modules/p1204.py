@@ -33,7 +33,7 @@ pixels under the P.1204.3 name. Point the env var
 
 p1204_mos -- 1-5, higher = better
 
-REVIVAL NOTES (provisional -- EXTERNAL): RF model + parametric baseline are already code-complete
+REVIVAL NOTES (requires_external_backend -- EXTERNAL): RF model + parametric baseline are already code-complete
 (verified bit-for-bit vs sklearn). To revive: build the bitstream feature parser
 ``bitstream_mode3_videoparser`` (patched ffmpeg; run its build.sh) and set env var
 AYASE_P1204_VIDEOPARSER=/path/to/parser.sh (+ ffprobe on PATH). No code change needed.
@@ -55,7 +55,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-models"
+_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 _HF_MODEL_DIR = "p1204/models/p1204_3"
 _HF_CONFIG = _HF_MODEL_DIR + "/config.json"
 
@@ -199,7 +199,7 @@ _RF_COLUMNS = sorted(
 
 class P1204Module(PipelineModule):
     name = "p1204"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "ITU-T P.1204.3 bitstream NR quality (2020)"
     default_config = {
         "device_type": "pc",  # pc | tv | tablet | mobile

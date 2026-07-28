@@ -12,12 +12,12 @@ Paper: https://arxiv.org/html/2503.02330
 
 siamvqa_score — higher = better quality
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: SiamVQA (ICASSP 2025).
 Category: TRAINING-ONLY.
-Why provisional: Samsung paper, no public release; the Simple-Siamese high-res model must be trained.
+Why requires_external_backend: Samsung paper, no public release; the Simple-Siamese high-res model must be trained.
 To revive: Reimplement the Simple-Siamese high-res arch; train on LSVQ-1080p / LIVE-Qualcomm /
-  YouTube-UGC; validate you reproduce the paper's SRCC/PLCC before flipping provisional=False.
+  YouTube-UGC; validate you reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False.
   Effort M; beats DOVER with fewer params — best "headline" candidate.
 Source: SiamVQA, ICASSP 2025 (no public release).
 """
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class SiamVQAModule(PipelineModule):
     name = "siamvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "SiamVQA Siamese high-resolution VQA (real model only)"
     default_config = {
         "subsample": 8,

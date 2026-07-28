@@ -7,12 +7,12 @@ substituted for the published metric.
 
 vqathinker_score — higher = better (0-1)
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: VQAThinker (AAAI 2025).
 Category: TRAINING-ONLY.
-Why provisional: Paper only, no code/weights; needs an InternVL3-8B + GRPO RL pipeline.
+Why requires_external_backend: Paper only, no code/weights; needs an InternVL3-8B + GRPO RL pipeline.
 To revive: Reimplement InternVL3-8B + GRPO RL (explainable); train on LSVQ (38,811 vids); validate you
-  reproduce the paper's SRCC/PLCC before flipping provisional=False. Effort L, heavy.
+  reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Effort L, heavy.
 Source: VQAThinker, AAAI 2025 (paper only).
 """
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class VQAThinkerModule(PipelineModule):
     name = "vqathinker"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "VQAThinker RL-based explainable VQA (2025)"
     default_config = {
         "subsample": 8,
@@ -48,7 +48,7 @@ class VQAThinkerModule(PipelineModule):
             return
 
         try:
-            import vqathinker  # type: ignore  # official VQAThinker backend
+            import vqathinker  # type: ignore  # upstream VQAThinker backend
 
             self._model = vqathinker
             self._ml_available = True

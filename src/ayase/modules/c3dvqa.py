@@ -8,12 +8,12 @@ This module requires the trained C3DVQA backend. When that backend is not
 installed the metric is left ``None`` — no proxy network or handcrafted
 approximation is substituted for the published metric.
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: C3DVQA (Xu et al. 2020).
 Category: TRAINING-ONLY.
-Why provisional: No released weights; the 3D-CNN full-reference model must be trained.
+Why requires_external_backend: No released weights; the 3D-CNN full-reference model must be trained.
 To revive: Reimplement the 3D-CNN FR arch; train on LIVE-VQA + CSIQ (small, public); validate you
-  reproduce the paper's SRCC/PLCC before flipping provisional=False. Legacy; redundant with ayase's
+  reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Legacy; redundant with ayase's
   FR suite -- low marginal value.
 Source: C3DVQA, Xu et al. 2020 (no released weights).
 """
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class C3DVQAModule(PipelineModule):
     name = "c3dvqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020)"
     default_config = {
         "clip_length": 16,
@@ -47,7 +47,7 @@ class C3DVQAModule(PipelineModule):
 
     def setup(self) -> None:
         try:
-            import c3dvqa  # type: ignore  # official C3DVQA backend
+            import c3dvqa  # type: ignore  # upstream C3DVQA backend
 
             self._model = c3dvqa
             self._ml_available = True

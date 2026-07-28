@@ -105,27 +105,27 @@ def promote_changelog(
 def sync_readme_counts(readme_path: Path = Path("README.md")) -> ReadmeSyncResult:
     """Update README module/metric/category counts from the packaged registry."""
 
-    from .metrics_doc import _get_quality_metrics_fields, compute_provisional_partition
+    from .metrics_doc import _get_quality_metrics_fields, compute_external_backend_partition
     from .models import QualityMetrics
     from .pipeline import ModuleRegistry
 
     ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules(packaged_only=True)
-    # Provisional modules have no turnkey real backend; exclude them (and the
+    # External-backend modules have no turnkey real backend; exclude them (and the
     # metric fields owned only by them) from the documented, delivered counts.
-    provisional_modules, provisional_only_fields = compute_provisional_partition(all_modules)
+    external_backend_modules, external_only_fields = compute_external_backend_partition(all_modules)
     delivered_modules = [
         n for n in all_modules
-        if ModuleRegistry.get_module(n) is not None and n not in provisional_modules
+        if ModuleRegistry.get_module(n) is not None and n not in external_backend_modules
     ]
     total = len(delivered_modules)
     # Exclude provenance/bookkeeping fields (e.g. metric_backends) — they are
-    # not metrics — and metric fields that belong exclusively to provisional
+    # not metrics — and metric fields that belong exclusively to requires_external_backend
     # modules. Matches the delivered set documented in METRICS.md.
     n_fields = (
         len(QualityMetrics.model_fields)
         - len(QualityMetrics._NON_METRIC_FIELDS)
-        - len(provisional_only_fields)
+        - len(external_only_fields)
     )
 
     qm_fields = _get_quality_metrics_fields()

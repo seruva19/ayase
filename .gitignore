@@ -50,3 +50,5 @@ reports/
 !/models/README.md
 .claude/
 .ayase_sd_cache/
+.artifacts/
+.tmp/

@@ -34,7 +34,7 @@ _MIDAS_MIRRORS = {
     "DPT_Hybrid": ("dpt_hybrid_384.pt", "depth_map_quality/dpt_hybrid_384.pt"),
     "DPT_Large": ("dpt_large_384.pt", "depth_map_quality/dpt_large_384.pt"),
 }
-_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 
 
 class DepthMapQualityModule(PipelineModule):

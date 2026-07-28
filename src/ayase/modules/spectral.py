@@ -14,7 +14,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
 _DINOV2_WEIGHTS = {
     "dinov2_vits14": "spectral/dinov2_vits14_pretrain.pth",
     "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
