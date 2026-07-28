@@ -30,13 +30,13 @@ def test_worldmodelbench_native_autodownload_defaults():
     assert "judge_path" not in config
     assert "evaluator_script" not in config
     assert config["benchmark_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
     )
     assert config["vila_source_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
     )
     assert config["s2wrapper_source_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
     )
     assert WorldModelBenchModule.models[0]["auto_download"] is True
 
@@ -85,7 +85,7 @@ def test_worldmodelbench_setup_downloads_and_loads_judge(monkeypatch, tmp_path):
     assert module._backend == "vila"
 
 
-def test_worldmodelbench_parses_official_flat_accumulators():
+def test_worldmodelbench_parses_reference_flat_accumulators():
     from ayase.modules.worldmodelbench import WorldModelBenchModule
 
     metrics = WorldModelBenchModule._parse_metrics(

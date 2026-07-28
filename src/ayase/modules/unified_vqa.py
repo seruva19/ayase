@@ -12,10 +12,10 @@ field belongs solely to the DOVER module.
 
 Output field: ``unified_vqa_score`` (populated only with a real backend).
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+REVIVAL NOTES (requires_external_backend -- no turnkey backend)
 Metric: "Unified-VQA" (not a real published metric -- invented name).
 Category: DUPE.
-Why provisional: The prior code was CLIP-embedding statistics under a made-up label; there is no such
+Why requires_external_backend: The prior code was CLIP-embedding statistics under a made-up label; there is no such
   published model.
 To revive: Nothing to revive -- not a real metric. Delete candidate.
 Source: N/A (invented name; no paper).
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 class UnifiedVQAModule(PipelineModule):
     name = "unified_vqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Unified-VQA FR+NR multi-task quality assessment (2025)"
     default_config = {
         "subsample": 8,

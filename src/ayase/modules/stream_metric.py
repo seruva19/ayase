@@ -71,7 +71,7 @@ class STREAMModule(BatchMetricModule):
         self._warned_no_ref = False
         try:
             import torch  # noqa: F401
-            from stream import STREAM  # official v-stream backend
+            from stream import STREAM  # upstream v-stream backend
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))

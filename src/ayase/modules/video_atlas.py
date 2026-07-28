@@ -11,13 +11,13 @@ unavailable until a real backend is wired in.
 
 video_atlas_score — higher = better, populated only with a real backend.
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: Video ATLAS (Bampis et al., TIP 2018).
 Category: IMPOSSIBLE.
-Why provisional: Predicts QoE from REBUFFERING-EVENT features (stall count/duration, time-since-stall)
+Why requires_external_backend: Predicts QoE from REBUFFERING-EVENT features (stall count/duration, time-since-stall)
   of a streaming session; code is released but that session telemetry is inapplicable to a plain file.
 To revive: Not revivable here -- the required rebuffering-event session telemetry cannot be derived
-  from a media file on disk. Permanent; keep provisional or delete.
+  from a media file on disk. Permanent; keep requires_external_backend or delete.
 Source: https://github.com/christosbampis/ATLAS_release
 """
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class VideoATLASModule(PipelineModule):
     name = "video_atlas"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Video ATLAS temporal artifacts+stalls assessment (2018)"
     default_config = {"subsample": 16}
     metric_groups = {

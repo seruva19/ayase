@@ -7,13 +7,56 @@ AIGVQA is the SJTU-IntMeGroup entry to the VQualA 2025 GenAI-Bench AIGC video
 quality challenge. It is not a stock InternVL chat model: the released
 checkpoint is a custom two-stream regression network whose forward returns a
 predicted MOS (``score1``) --- it does NOT generate a rateable text answer at
-inference, and it cannot be loaded by ``transformers`` alone (see REVIVAL NOTES).
+inference, and it cannot be loaded by ``transformers`` alone.
 No installable/self-contained AIGVQA backend exists, and a CLIP multi-prompt
 proxy is not AIGVQA, so nothing is emitted under the AIGVQA name until a real
 backend is wired in. This module reports itself unavailable and leaves
 ``aigvqa_score`` unset.
 
-Output field: ``aigvqa_score`` (populated only with a real backend)."""
+Output field: ``aigvqa_score`` (populated only with a real backend).
+
+External backend requirements
+Metric: AIGVQA / Overall Quality Predictor (VQualA 2025 @ ICCVW, SJTU-IntMeGroup).
+Unavailable because: The HF checkpoint ``IntMeGroup/ICCVW_mos0_8B`` ships weights
+  (top-level modules ``vision_model``, ``language_model``, ``mlp1``, ``fast_mlp``,
+  ``mlpscore``, ``evaluator``) but NO modeling code --- ``config.json`` auto_map
+  points at ``modeling_internvl_chat.InternVLChatModel`` /
+  ``configuration_internvl_chat.py`` which are ABSENT from the repo, so
+  ``AutoModel.from_pretrained(..., trust_remote_code=True)`` fails. The custom
+  architecture (a FAST-VQA fragment swin branch ``evaluator.fragments_backbone``
+  + ``fast_mlp`` fused with the InternVL2 stream, ``mlpscore`` head emitting the
+  regression MOS ``score1``) lives only in the GitHub repo and additionally needs
+  a separate LOVE temporal checkpoint (``anonymousdb/LOVE-pretrain/temporal.pth``)
+  and a two-stream (dynamic-tile + spatial-fragment) preprocessor. This module is
+  constrained to torch/transformers only and cannot bundle that repo pipeline, so
+  no faithful score is reproducible in-process. The checkpoint requires the repository code and temporal checkpoint, which are
+  outside the self-contained module contract.
+External inference protocol:
+  1. Runtime source: https://github.com/IntMeGroup/AIGVQA, directory ``AIGVQA_8B/`` (its
+     ``model/internvl_chat_st2/`` custom InternVL + ``swin_backbone.py``).
+  2. Runtime requirements: Python 3.9, the repository requirements, ``flash-attn==2.3.6``,
+     decord, timm, and deepspeed, plus ``IntMeGroup/ICCVW_mos0_8B`` (~16GB),
+     ``IntMeGroup/ICCVW_mos0_st222``, and ``anonymousdb/LOVE-pretrain/temporal.pth``.
+  3. Entry point: ``AIGVQA_8B/train/stage2_eval_AIGV.py`` (driven by
+     ``shell/eval_score_overall1.sh``): ``--model_name_or_path IntMeGroup/ICCVW_mos0_8B
+     --conv_style internlm2-chat --force_image_size 448 --max_dynamic_patch 6``.
+  4. Per video the dataset builds TWO pixel streams --- InternVL dynamic tiles
+     (``pixel_values``) + FAST-VQA spatial fragments (``pixel_values2``, 8 segments)
+     --- and the fixed prompt: "How would you rate the overall quality of the
+     video? Considering the Aesthetic Quality, Image Quality, Temporal Quality and
+     Text-Video Alignment of this video and its prompt? prompt: <caption>.".
+  5. ``score1 = model(mos=..., pixel_values=..., pixel_values2=..., input_ids=...,
+     image_flags=..., labels=...)['score1'].item()`` is the predicted MOS, trained
+     on a /100 scale (multiply by 100 for the challenge CSV ``Overall_MOS``). The
+     challenge Track-I overall is a 0.25-weighted ensemble of two 8B + two 26B
+     checkpoints; a single 8B (``mos0``) already yields a usable score.
+  6. This module does not claim repository-level SRCC/PLCC parity and keeps
+     ``requires_external_backend=True`` until a complete backend supplies this protocol.
+Source: github.com/IntMeGroup/AIGVQA (AIGVQA_8B/train/stage2_eval_AIGV.py,
+  shell/eval_score_overall1.sh, data/final_test_mos0.jsonl); HF config.json +
+  model.safetensors.index.json for IntMeGroup/ICCVW_mos0_8B; VQualA 2025 Challenge
+  paper (ICCVW 2025).
+"""
 
 import logging
 from typing import Optional
@@ -26,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 class AIGVQAModule(PipelineModule):
     name = "aigvqa"
-    provisional = True  # no turnkey / self-contained real backend
+    requires_external_backend = True  # no turnkey / self-contained real backend
     description = "AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)"
     default_config = {
         "subsample": 8,

@@ -26,7 +26,7 @@ module reports the direct fused output of the two real trained networks
 checkpoints -- no proxy or heuristic model is substituted.
 
 Real backend requires ``torch``, ``timm``, ``einops``, ``decord`` and the two
-released checkpoints (mirrored on HF ``AkaneTendo25/ayase-models``). When any
+released checkpoints (mirrored on HF ``AkaneTendo25/ayase-runtime-assets``). When any
 are missing the metric is left ``None``.
 
 zoomvqa_score -- higher = better quality
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 IQA_WEIGHT = "zoomvqa/iqa_best_29epoch_checkpoint.pth.tar"
 VQA_WEIGHT = "zoomvqa/vqa_best_29e_val-vqpve_s.pth"
-HF_REPO = "AkaneTendo25/ayase-models"
+HF_REPO = "AkaneTendo25/ayase-runtime-assets"
 
 # ---------------------------------------------------------------------------
 # Vendored minimal model definitions (from github.com/k-zha14/Zoom-VQA).

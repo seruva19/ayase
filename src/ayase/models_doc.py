@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from .metrics_doc import compute_provisional_partition
+from .metrics_doc import compute_external_backend_partition
 from .pipeline import ModuleRegistry
 
 
@@ -748,17 +748,17 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     """
     ModuleRegistry.discover_modules()
     all_modules = ModuleRegistry.list_modules(packaged_only=not include_plugins)
-    # Provisional modules (no turnkey real backend) are excluded from the model
+    # External-backend modules (no turnkey real backend) are excluded from the model
     # catalog: models referenced only by them drop out, and their names are
     # removed from every "Used by" list, so MODELS.md reflects the delivered set.
-    provisional_modules, _ = compute_provisional_partition(all_modules)
+    external_backend_modules, _ = compute_external_backend_partition(all_modules)
 
     # Collect all model references
     entries: Dict[str, ModelEntry] = {}  # key -> ModelEntry
     source_counts: Dict[str, int] = defaultdict(int)  # source type -> count
 
     for mod_name in sorted(all_modules):
-        if mod_name in provisional_modules:
+        if mod_name in external_backend_modules:
             continue
         cls = ModuleRegistry.get_module(mod_name)
         if cls is None or cls.name == "unnamed_module":
@@ -819,9 +819,10 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 if src_type == "huggingface" and "/" in model_id and not url:
                     url = f"https://huggingface.co/{model_id}"
                 disk, vram = _SIZE_DB.get(model_id, (decl.get("size"), decl.get("vram")))
+                rendered_source = "pip" if src_type == "pip_package" else src_type
                 entries[key] = ModelEntry(
                     name=model_id,
-                    source=src_type,
+                    source=rendered_source,
                     url=url,
                     install=decl.get("install"),
                     size_estimate=disk,
@@ -910,7 +911,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 )
             entries[key].modules.append(mod_name)
 
-        # Direct HF download URLs (AkaneTendo25/ayase-models etc.)
+        # Direct HF download URLs (AkaneTendo25/ayase-runtime-assets etc.)
         # Use full module source to catch module-level URL constants
         full_source = _get_module_source(cls)
         for repo, path in _extract_hf_direct_urls(full_source):
@@ -1026,7 +1027,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                             entry.size_estimate = f"~{size_mb:.0f} MB"
 
     # 3. Inherit license from parent repo for file entries
-    # e.g., AkaneTendo25/ayase-models files inherit from the repo
+    # e.g., AkaneTendo25/ayase-runtime-assets files inherit from the repo
     repo_licenses: Dict[str, tuple] = {}
     for key, entry in entries.items():
         if entry.source == "huggingface" and entry.license and "/" in entry.name and entry.name.count("/") == 1:
@@ -1195,6 +1196,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     hub_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torch_hub"]
     ff_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "ffmpeg"]
     pip_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pip"]
+    local_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "local"]
 
     # Group weight files by parent repo
     weight_file_repos: Dict[str, List[tuple]] = defaultdict(list)
@@ -1222,6 +1224,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
         nav_sections.append((f"FFmpeg ({len(ff_entries)})", "ffmpeg"))
     if pip_entries:
         nav_sections.append((f"pip Packages ({len(pip_entries)})", "pip-packages"))
+    if local_entries:
+        nav_sections.append((f"Local Weights ({len(local_entries)})", "local-weight-files"))
     nav_sections.append(("Quick Install Guide", "quick-install-guide"))
 
     a("")
@@ -1301,6 +1305,41 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
             for fe in sorted(files, key=lambda x: x.name):
                 file_mods = ", ".join(f"`{m}`" for m in fe.modules)
                 a(f"- `{fe.name}` — used by {file_mods}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: Local/direct-download weight files
+    # ══════════════════════════════════════════════════════════════════════
+    if local_entries:
+        a("## Local Weight Files")
+        a("")
+        a(
+            "Checkpoint files downloaded directly by Ayase modules or supplied "
+            "through a local model path."
+        )
+        a("")
+
+        for _key, e in local_entries:
+            if e.url:
+                a(f'### <a href="{e.url}" target="_blank">`{e.name}`</a> [↑](#categories)')
+            else:
+                a(f"### `{e.name}` [↑](#categories)")
+            a("")
+
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+            if e.task:
+                a(f"- **Task**: {e.task}")
+
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+            if e.notes:
+                a(f"- **Notes**: {e.notes}")
             a("")
 
     # ══════════════════════════════════════════════════════════════════════

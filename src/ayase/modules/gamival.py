@@ -42,14 +42,10 @@ name):
 
 gamival_score -- higher = better quality (0-1).
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+Backend requirements
 Metric: GAMIVAL (IEEE SPL 2023).
-Category: TRAINING-ONLY.
-Why provisional: Three missing pieces -- MATLAB-only NSS branch, no TensorFlow/Keras for the
+Unavailable because: Three missing pieces -- MATLAB-only NSS branch, no TensorFlow/Keras for the
   NDNetGaming DenseNet, and no shipped SVR (grid-searched per split from absent best_pamtr .mat).
-To revive: (1) install TensorFlow/Keras to run the NDNetGaming DenseNet; (2) port the MATLAB NSS
-  feature branch (GAMIVAL_spatial_features.m + WPT filter banks) to Python; (3) train a GAMIVAL
-  SVR on the public LIVE-Meta gaming DB. Effort L.
 Source: https://github.com/utlive/GAMIVAL
 """
 
@@ -66,7 +62,7 @@ logger = logging.getLogger(__name__)
 
 class GAMIVALModule(PipelineModule):
     name = "gamival"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023)"
     default_config = {
         "subsample": 8,

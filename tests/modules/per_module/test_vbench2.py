@@ -1,4 +1,4 @@
-"""Tests for the official VBench 2.0 dataset-level adapter."""
+"""Tests for the VBench 2.0 dataset-level evaluator."""
 
 import json
 import sys
@@ -10,32 +10,32 @@ import pytest
 from ..conftest import _test_module_basics
 
 
-def test_vbench2_official_basics():
-    from ayase.modules.vbench2_official import OfficialVBench2Module
+def test_vbench2_basics():
+    from ayase.modules.vbench2 import VBench2Module
 
-    _test_module_basics(OfficialVBench2Module, "vbench2_official")
-
-
-def test_vbench2_official_process_is_noop(video_sample):
-    from ayase.modules.vbench2_official import OfficialVBench2Module
-
-    assert OfficialVBench2Module().process(video_sample) is video_sample
+    _test_module_basics(VBench2Module, "vbench2")
 
 
-def test_vbench2_official_uses_autodownload_cache_defaults():
-    from ayase.modules.vbench2_official import OfficialVBench2Module
+def test_vbench2_process_is_noop(video_sample):
+    from ayase.modules.vbench2 import VBench2Module
 
-    assert OfficialVBench2Module.default_config["model_repo"] == "Vchitect/VBench-2.0_models"
-    assert OfficialVBench2Module.default_config["models_dir"] == "models"
-    assert OfficialVBench2Module.default_config["mirror_revision"] == "main"
-    assert "load_ckpt_from_local" not in OfficialVBench2Module.default_config
-    assert OfficialVBench2Module.models[0]["auto_download"] is True
+    assert VBench2Module().process(video_sample) is video_sample
+
+
+def test_vbench2_uses_autodownload_cache_defaults():
+    from ayase.modules.vbench2 import VBench2Module
+
+    assert VBench2Module.default_config["model_repo"] == "Vchitect/VBench-2.0_models"
+    assert VBench2Module.default_config["models_dir"] == "models"
+    assert VBench2Module.default_config["mirror_revision"] == "main"
+    assert "load_ckpt_from_local" not in VBench2Module.default_config
+    assert VBench2Module.models[0]["auto_download"] is True
 
 
 def test_vbench2_setup_downloads_and_prewarms(monkeypatch, tmp_path):
     import ayase.config
 
-    from ayase.modules.vbench2_official import OfficialVBench2Module
+    from ayase.modules.vbench2 import VBench2Module
 
     captured = {}
     fake_utils = SimpleNamespace(
@@ -58,12 +58,12 @@ def test_vbench2_setup_downloads_and_prewarms(monkeypatch, tmp_path):
     source_root = tmp_path / "upstream"
     (source_root / "VBench-2.0").mkdir(parents=True)
     monkeypatch.setattr(
-        OfficialVBench2Module,
+        VBench2Module,
         "_download_external_artifacts",
         lambda self, checkpoint_root, models_dir: source_root,
     )
 
-    module = OfficialVBench2Module(
+    module = VBench2Module(
         {"models_dir": tmp_path, "dimensions": ["Human_Identity"]}
     )
     module.setup()
@@ -72,34 +72,34 @@ def test_vbench2_setup_downloads_and_prewarms(monkeypatch, tmp_path):
     assert captured["repo_id"] == "Vchitect/VBench-2.0_models"
     assert captured["dimensions"] == ["Human_Identity"]
     assert captured["kwargs"]["local"] is True
-    assert module._backend == "official_vbench2"
+    assert module._backend == "vbench2"
 
 
 def test_vbench2_external_artifacts_use_akane_hf_mirror():
-    from ayase.modules.vbench2_official import OfficialVBench2Module
+    from ayase.modules.vbench2 import VBench2Module
 
-    module = OfficialVBench2Module()
+    module = VBench2Module()
     assert module._mirror_url("vbench2/raft/models.zip").startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
     )
-    assert "AkaneTendo25/ayase-models" in module._mirror_url(
+    assert "AkaneTendo25/ayase-runtime-assets" in module._mirror_url(
         "vbench2/torchvision/vgg19-dcbb9e9d.pth"
     )
 
 
-def test_vbench2_official_extracts_upstream_result_shape():
-    from ayase.modules.vbench2_official import OfficialVBench2Module
+def test_vbench2_extracts_upstream_result_shape():
+    from ayase.modules.vbench2 import VBench2Module
 
-    assert OfficialVBench2Module._extract_score([0.75, [{"detail": 1}]]) == 0.75
-    assert OfficialVBench2Module._extract_score({"score": 0.25}) == 0.25
-    assert OfficialVBench2Module._extract_score("invalid") is None
+    assert VBench2Module._extract_score([0.75, [{"detail": 1}]]) == 0.75
+    assert VBench2Module._extract_score({"score": 0.25}) == 0.25
+    assert VBench2Module._extract_score("invalid") is None
 
 
-def test_vbench2_official_aggregates_match_upstream_formula():
-    from ayase.modules.vbench2_official import DIMENSION_FIELDS, OfficialVBench2Module
+def test_vbench2_aggregates_match_upstream_formula():
+    from ayase.modules.vbench2 import DIMENSION_FIELDS, VBench2Module
 
     scores = {dimension: 1.0 for dimension in DIMENSION_FIELDS}
-    aggregates = OfficialVBench2Module._aggregate_scores(scores)
+    aggregates = VBench2Module._aggregate_scores(scores)
 
     assert aggregates["vbench2_creativity_score"] == 1.0
     assert aggregates["vbench2_commonsense_score"] == 1.0
@@ -109,9 +109,9 @@ def test_vbench2_official_aggregates_match_upstream_formula():
     assert aggregates["vbench2_total_score"] == 1.0
 
 
-def test_vbench2_official_runs_configured_backend(tmp_path: Path):
+def test_vbench2_runs_configured_backend(tmp_path: Path):
     from ayase.models import Sample
-    from ayase.modules.vbench2_official import DIMENSION_FIELDS, OfficialVBench2Module
+    from ayase.modules.vbench2 import DIMENSION_FIELDS, VBench2Module
 
     output_dir = tmp_path / "results"
     full_info_path = tmp_path / "VBench2_full_info.json"
@@ -137,13 +137,13 @@ def test_vbench2_official_runs_configured_backend(tmp_path: Path):
         def add_dataset_metric(name, value):
             recorded[name] = value
 
-    module = OfficialVBench2Module(
+    module = VBench2Module(
         config={
             "full_info_path": full_info_path,
             "output_dir": output_dir,
         }
     )
-    module._backend = "official_vbench2"
+    module._backend = "vbench2"
     module._vbench_cls = FakeVBench2
     module.pipeline = PipelineProbe()
 
@@ -153,10 +153,10 @@ def test_vbench2_official_runs_configured_backend(tmp_path: Path):
     assert recorded["vbench2_total_score"] == pytest.approx(0.5)
 
 
-def test_vbench2_official_metadata_exposes_dataset_fields():
-    from ayase.modules.vbench2_official import OfficialVBench2Module
+def test_vbench2_metadata_exposes_dataset_fields():
+    from ayase.modules.vbench2 import VBench2Module
 
-    metadata = OfficialVBench2Module.get_metadata()
+    metadata = VBench2Module.get_metadata()
 
     assert "vbench2_human_anatomy" in metadata["dataset_output_fields"]
     assert "vbench2_total_score" in metadata["dataset_output_fields"]

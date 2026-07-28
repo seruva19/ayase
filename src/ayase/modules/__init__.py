@@ -26,7 +26,7 @@ _IMPORTS = [
     ("AestheticModule", ".aesthetic"),
     ("AestheticScoringModule", ".aesthetic_scoring"),
     ("NIMAModule", ".nima"),
-    ("NIMALegacyONNXModule", ".nima_legacy_onnx"),
+    ("NIMAONNXModule", ".nima_onnx"),
     ("LAIONAestheticModule", ".laion_aesthetic"),
     # --- Text / OCR ---
     ("TextDetectionModule", ".text"),
@@ -63,11 +63,15 @@ _IMPORTS = [
     ("ImageRewardModule", ".image_reward"),
     ("HPSv2Module", ".hpsv2"),
     ("HPSv3Module", ".hpsv3"),
+    ("CycleRewardModule", ".cycle_reward"),
     ("UnifiedReward2Module", ".unified_reward_2"),
     ("QwenImageBenchModule", ".qwen_image_bench"),
     ("UnifiedRewardEditModule", ".unified_reward_edit"),
+    ("DICEEditModule", ".dice_edit"),
+    ("VEBenchModule", ".vebench"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
+    ("UVQModule", ".uvq"),
     ("FastVQAModule", ".fast_vqa"),
     ("QAlignModule", ".q_align"),
     ("TOPIQModule", ".topiq"),
@@ -81,12 +85,13 @@ _IMPORTS = [
     ("EvoQualityModule", ".evoquality"),
     # --- Full-reference quality ---
     ("VMAFModule", ".vmaf"),
+    ("ColorVideoVDPModule", ".cvvdp"),
     ("DISTSModule", ".dists"),
     ("PerceptualFRModule", ".perceptual_fr"),
-    # --- SOTA video quality (CVPR/NeurIPS/EMNLP 2024-2025) ---
+    # --- Video quality (CVPR/NeurIPS/EMNLP 2024-2025) ---
     ("VideoScoreModule", ".videoscore"),
     ("VideoScore2Module", ".videoscore2"),
-    ("OfficialVBench2Module", ".vbench2_official"),
+    ("VBench2Module", ".vbench2"),
     ("WorldModelBenchModule", ".worldmodelbench"),
     ("MJVideoModule", ".mj_video"),
     ("RTMPoseFidelityModule", ".rtmpose_fidelity"),
@@ -144,6 +149,7 @@ _IMPORTS = [
     ("SCOREQModule", ".scoreq"),
     ("TTSDS2Module", ".ttsds2"),
     ("KADModule", ".kad"),
+    ("MAUVEAudioDivergenceModule", ".mauve_audio_divergence"),
     ("HumanCLAPModule", ".human_clap"),
     ("LAIONCLAPScoreModule", ".clap_score"),
     ("MSCLAPScoreModule", ".clap_score"),
@@ -154,6 +160,7 @@ _IMPORTS = [
     ("DNSMOSModule", ".dnsmos"),
     ("BeatAlignmentModule", ".beat_alignment"),
     ("SongEvalModule", ".song_eval"),
+    ("MuQEvalModule", ".muq_eval"),
     # --- HDR / codec ---
     ("HDRMetadataModule", ".hdr_metadata"),
     ("HDRChipQAModule", ".hdr_chipqa"),
@@ -179,8 +186,13 @@ _IMPORTS = [
     ("ChronoMagicModule", ".chronomagic"),
     ("T2VCompBenchModule", ".t2v_compbench"),
     ("VerseBenchModule", ".verse_bench"),
+    ("LOVEResultModule", ".love"),
+    ("Ref4DResultModule", ".ref4d"),
+    ("PhyGroundResultModule", ".phyground"),
     # --- Image LPIPS & Concept Presence ---
     ("ImageLPIPSModule", ".image_lpips"),
+    ("I2IFidelityModule", ".i2i_fidelity"),
+    ("I2ILearnedModule", ".i2i_learned"),
     ("ConceptPresenceModule", ".concept_presence"),
 ]
 

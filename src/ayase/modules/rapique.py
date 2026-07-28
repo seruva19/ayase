@@ -3,23 +3,17 @@
 IEEE OJSP 2021 — combines bandpass natural scene statistics (NSS) with deep
 CNN semantic features fed to a trained SVR for MOS prediction.
 
-Only the real RAPIQUE predictor produces ``rapique_score``. Earlier revisions
-extracted NSS + ResNet-50 features and fed them to a randomly-initialised
-regression head — that head is untrained, so its output is meaningless and has
-been removed. The score is produced solely by the trained pyiqa RAPIQUE metric
+Only the real RAPIQUE predictor produces ``rapique_score``. The score is produced solely by the trained pyiqa RAPIQUE metric
 when available; otherwise it is left ``None``.
 
 GitHub: https://github.com/vztu/RAPIQUE
 
 rapique_score — higher = better quality
 
-REVIVAL NOTES (provisional — no turnkey backend)
+Backend requirements
 Metric: RAPIQUE (IEEE OJSP 2021).
-Category: CLASSICAL-PORT.
-Why provisional: pyiqa does NOT expose a "rapique" metric (create_metric('rapique') always fails →
+Unavailable because: pyiqa does NOT expose a "rapique" metric (create_metric('rapique') always fails →
   the module's only path is unavailable); the trained SVR is not shipped.
-To revive: Reimplement NSS + ResNet-50 features and retrain the SVR on public KoNViD-1k / YT-UGC;
-  validate before flipping provisional=False. Effort L.
 Source: https://github.com/vztu/RAPIQUE
 """
 
@@ -37,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class RAPIQUEModule(PipelineModule):
     name = "rapique"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only)"
     default_config = {
         "subsample": 8,

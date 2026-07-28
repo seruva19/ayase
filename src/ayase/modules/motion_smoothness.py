@@ -30,7 +30,7 @@ class MotionSmoothnessModule(PipelineModule):
         {
             "id": "flownet.pkl",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/motion_smoothness/flownet.pkl",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/motion_smoothness/flownet.pkl",
             "task": "Bundled RIFE HD v3 interpolation weights",
         },
         {
@@ -74,7 +74,7 @@ class MotionSmoothnessModule(PipelineModule):
                 if not os.path.exists(weights_path):
                     download_model_file(
                         "rife/flownet.pkl",
-                        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/motion_smoothness/flownet.pkl",
+                        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/motion_smoothness/flownet.pkl",
                         models_dir,
                     )
 

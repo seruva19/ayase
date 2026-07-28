@@ -107,32 +107,32 @@ class TestMetricCount:
 
     def test_quality_metrics_field_count(self):
         # SCHEMA count: every computed-metric field in QualityMetrics, including
-        # those owned only by provisional (no-backend) modules. Provenance
+        # those owned only by requires_external_backend (no-backend) modules. Provenance
         # fields (metric_backends) are excluded. This is the full schema and is
-        # deliberately unchanged by the provisional flag.
+        # deliberately unchanged by the requires_external_backend flag.
         field_count = len(QualityMetrics.model_fields) - len(
             QualityMetrics._NON_METRIC_FIELDS
         )
-        assert field_count == 453, f"Expected 453, got {field_count}"
+        assert field_count == 501, f"Expected 501, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README's headline "N metrics" claim = the DELIVERED metric count.
 
         Delivered = schema metric fields minus fields owned exclusively by
-        provisional modules (which have no turnkey real backend). The full
+        requires_external_backend modules (which have no turnkey real backend). The full
         schema stays 450; the README advertises only metrics that can produce
         values today.
         """
-        from ayase.metrics_doc import compute_provisional_partition
+        from ayase.metrics_doc import compute_external_backend_partition
         from ayase.pipeline import ModuleRegistry
 
         ModuleRegistry.discover_modules()
         all_modules = ModuleRegistry.list_modules(packaged_only=True)
-        _, provisional_only_fields = compute_provisional_partition(all_modules)
+        _, external_only_fields = compute_external_backend_partition(all_modules)
         delivered = (
             len(QualityMetrics.model_fields)
             - len(QualityMetrics._NON_METRIC_FIELDS)
-            - len(provisional_only_fields)
+            - len(external_only_fields)
         )
         readme = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
         assert f"{delivered} metrics" in readme, (
@@ -180,9 +180,9 @@ README_METRICS = sorted(
 class TestMetricsTable:
     def test_readme_table_count(self):
         # SCHEMA field count — every QualityMetrics metric field, delivered and
-        # provisional alike. Unchanged by the provisional flag (the model keeps
+        # requires_external_backend alike. Unchanged by the requires_external_backend flag (the model keeps
         # all fields); the delivered subset is what the README headline claims.
-        assert len(README_METRICS) == 453
+        assert len(README_METRICS) == 501
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):

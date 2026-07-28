@@ -9,13 +9,13 @@ backend (with trained weights) is wired in.
 
 Output field: ``adadqa_score`` (populated only with a real backend).
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: Ada-DQA (ACM MM 2023).
 Category: TRAINING-ONLY.
-Why provisional: No released weights; the adaptive acquisition/fusion quality head must be trained.
+Why requires_external_backend: No released weights; the adaptive acquisition/fusion quality head must be trained.
 To revive: Reimplement the diverse frozen-model feature acquisition + fusion head; train on
   public NR-VQA sets (KoNViD-1k / LIVE-VQC / YouTube-UGC); validate you reproduce the paper's
-  SRCC/PLCC before flipping provisional=False. Effort S-M; largely duplicates ayase's DOVER/FAST-VQA.
+  SRCC/PLCC before flipping requires_external_backend=False. Effort S-M; largely duplicates ayase's DOVER/FAST-VQA.
 Source: Ada-DQA, ACM MM 2023 (no released weights).
 """
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 class AdaDQAModule(PipelineModule):
     name = "adadqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Ada-DQA adaptive diverse quality feature VQA (ACM MM 2023)"
     default_config = {
         "subsample": 8,
@@ -51,7 +51,7 @@ class AdaDQAModule(PipelineModule):
             return
 
         try:
-            import adadqa  # type: ignore  # official Ada-DQA backend (trained weights)
+            import adadqa  # type: ignore  # upstream Ada-DQA backend (trained weights)
 
             self._model = adadqa
             self._ml_available = True

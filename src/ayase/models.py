@@ -307,8 +307,9 @@ class QualityMetrics(BaseModel):
     aqascore_score: Optional[float] = None  # AQAScore audio question-answering alignment (0-1)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
 
-    # SOTA no-reference VQA
+    # No-reference VQA
     dover_score: Optional[float] = None  # DOVER overall (higher=better)
+    uvq1p5_score: Optional[float] = None  # Google UVQ 1.5 MOS (1-5, higher=better)
     unified_vqa_score: Optional[float] = None  # Unified-VQA FR/NR quality (0-1, higher=better)
     dover_technical: Optional[float] = None  # DOVER technical quality
     dover_aesthetic: Optional[float] = None  # DOVER aesthetic quality
@@ -316,7 +317,7 @@ class QualityMetrics(BaseModel):
     topiq_score: Optional[float] = None  # TOPIQ transformer-based IQA (higher=better)
     liqe_score: Optional[float] = None  # LIQE lightweight IQA (higher=better)
     clip_iqa_score: Optional[float] = None  # CLIP-IQA semantic quality (0-1, higher=better)
-    aesthetic_score_legacy: Optional[float] = None  # Legacy NIMA aesthetic score (1-10, higher=better)
+    nima_onnx_score: Optional[float] = None  # NIMA ONNX aesthetic score (1-10, higher=better)
 
     # Professional production quality
     color_grading_score: Optional[float] = None  # Colour consistency 0-100
@@ -366,7 +367,7 @@ class QualityMetrics(BaseModel):
     multiview_consistency: Optional[float] = None  # Geometric consistency 0-1 (higher=better)
     stereo_comfort_score: Optional[float] = None  # Stereo viewing comfort 0-100 (higher=better)
 
-    # Additional SOTA IQA/VQA
+    # Additional IQA/VQA
     musiq_score: Optional[float] = None  # MUSIQ multi-scale IQA (higher=better)
     contrique_score: Optional[float] = None  # CONTRIQUE contrastive IQA (higher=better)
     mdtvsfa_score: Optional[float] = None  # MDTVSFA fragment-based VQA (higher=better)
@@ -463,6 +464,7 @@ class QualityMetrics(BaseModel):
     pickscore_score: Optional[float] = None  # PickScore prompt-image preference score (higher=better)
     hpsv2_score: Optional[float] = None  # HPSv2 prompt-image preference score (higher=better)
     hpsv3_score: Optional[float] = None  # HPSv3 human preference reward mu (higher=better)
+    cycle_reward_score: Optional[float] = None  # CycleReward-Combo alignment (higher=better)
     chipqa_score: Optional[float] = None  # ChipQA space-time-chip NR-VQA (higher=better)
     evoquality_score: Optional[float] = None  # EvoQuality self-evolving VLM NR-IQA (1-5, higher=better)
 
@@ -491,6 +493,7 @@ class QualityMetrics(BaseModel):
     hdrmax_score: Optional[float] = None  # HDRMAX / HDR-VMAF family score (higher=better)
     brightrate_score: Optional[float] = None  # BrightRate HDR UGC NR-VQA (higher=better)
     st_lpips: Optional[float] = None  # ST-LPIPS spatiotemporal perceptual FR
+    cvvdp_score: Optional[float] = None  # ColorVideoVDP quality in JOD units (max 10)
 
     # Video curation signals
     camera_jitter_score: Optional[float] = None  # Camera stability (0-1, 1=stable)
@@ -605,6 +608,8 @@ class QualityMetrics(BaseModel):
     unified_reward_edit_image_1_score: Optional[float] = None  # Pairwise edit image 1 score
     unified_reward_edit_image_2_score: Optional[float] = None  # Pairwise edit image 2 score
     unified_reward_edit_winner: Optional[float] = None  # 0=tie, 1=image1, 2=image2
+    dice_edit_coherence_score: Optional[float] = None  # DICE coherent localized changes (0-1)
+    vebench_score: Optional[float] = None  # Comparative instruction-guided video-edit quality
 
     # TC-Bench temporal compositionality (T2V, 0-1, higher=better)
     tcbench_attribute_score: Optional[float] = None  # Time-ordered attribute changes
@@ -755,6 +760,7 @@ class QualityMetrics(BaseModel):
     song_eval_memorability: Optional[float] = None  # SongEval memorability (1-5, higher=better)
     song_eval_clarity: Optional[float] = None  # SongEval clarity of song structure (1-5, higher=better)
     song_eval_naturalness: Optional[float] = None  # SongEval vocal breathing/phrasing naturalness (1-5, higher=better)
+    muq_eval_mi_score: Optional[float] = None  # MuQ-Eval musical impression MOS (1-5, higher=better)
 
     # Talking head / lip sync
     thqa_score: Optional[float] = None  # THQA talking head quality (higher=better)
@@ -791,6 +797,52 @@ class QualityMetrics(BaseModel):
     physics_iq_spatiotemporal_iou: Optional[float] = None  # Spatiotemporal IoU vs real continuation (0-1)
     physics_iq_weighted_spatial_iou: Optional[float] = None  # Weighted spatial IoU vs real continuation (0-1)
     physics_iq_mse: Optional[float] = None  # MSE vs real continuation (lower=better)
+    physics_iq_verified_score: Optional[float] = None  # Two-real-take verified score (0-100)
+    physics_iq_verified_spatial_score: Optional[float] = None  # Variance-normalized spatial IoU
+    physics_iq_verified_spatiotemporal_score: Optional[float] = None  # Variance-normalized ST-IoU
+    physics_iq_verified_weighted_spatial_score: Optional[float] = None  # Normalized weighted IoU
+    physics_iq_verified_mse_score: Optional[float] = None  # Inverse variance-normalized MSE
+
+    # 2025-2026 reference video-generation evaluator result adapters
+    love_perception_score: Optional[float] = None  # LOVE raw perception regressor score
+    love_correspondence_score: Optional[float] = None  # LOVE raw prompt correspondence score
+    ref4d_semantic_score: Optional[float] = None  # Ref4D semantic score (0-100)
+    ref4d_event_score: Optional[float] = None  # Ref4D event-temporal score (0-100)
+    ref4d_motion_score: Optional[float] = None  # Ref4D motion-dynamics score (0-100)
+    ref4d_world_score: Optional[float] = None  # Ref4D world-knowledge score
+    ref4d_overall_score: Optional[float] = None  # Mean of available Ref4D dimensions
+    phyground_spatial_alignment_score: Optional[float] = None  # SA judge score (1-5)
+    phyground_prompt_temporal_validity_score: Optional[float] = None  # PTV judge score (1-5)
+    phyground_persistence_score: Optional[float] = None  # Persistence judge score (1-5)
+    phyground_general_score: Optional[float] = None  # Mean general judge score (1-5)
+    phyground_physical_score: Optional[float] = None  # Mean applicable-law score (1-5)
+    phyground_physical_coverage: Optional[float] = None  # Fraction of laws scored (0-1)
+
+    # Image-to-image fidelity diagnostics
+    i2i_mse: Optional[float] = None
+    i2i_mae: Optional[float] = None
+    i2i_mean_bias: Optional[float] = None
+    i2i_exact_match_ratio: Optional[float] = None
+    i2i_red_bias: Optional[float] = None
+    i2i_green_bias: Optional[float] = None
+    i2i_blue_bias: Optional[float] = None
+    i2i_luminance_mae: Optional[float] = None
+    i2i_chroma_cr_mae: Optional[float] = None
+    i2i_chroma_cb_mae: Optional[float] = None
+    i2i_hue_mae_degrees: Optional[float] = None
+    i2i_colorfulness_delta: Optional[float] = None
+    i2i_hist_bhattacharyya_red: Optional[float] = None
+    i2i_hist_bhattacharyya_green: Optional[float] = None
+    i2i_hist_bhattacharyya_blue: Optional[float] = None
+    i2i_gradient_similarity_mean: Optional[float] = None
+    i2i_edge_f1: Optional[float] = None
+    i2i_spectral_cosine: Optional[float] = None
+    i2i_mutual_information: Optional[float] = None
+    i2i_dinov2_cls_similarity: Optional[float] = None
+    i2i_dinov2_patch_similarity: Optional[float] = None
+    i2i_clip_similarity: Optional[float] = None
+    i2i_siglip_similarity: Optional[float] = None
+    i2i_lpips_alex: Optional[float] = None
 
     # Camera trajectory adherence (CamI2V-style pose errors)
     camera_rot_error: Optional[float] = None  # RotErr: rotation error vs target trajectory (deg, lower=better)
@@ -994,6 +1046,7 @@ class DatasetStats(BaseModel):
     audio_isc_mean: Optional[float] = None  # Inception Score for Audio mean (higher=better)
     audio_isc_std: Optional[float] = None  # Inception Score for Audio standard deviation
     audio_kl: Optional[float] = None  # Audio classifier distribution KL divergence (lower=better)
+    mauve_audio_divergence: Optional[float] = None  # MAD -log(MAUVE), lower=better
     kad: Optional[float] = None  # Kernel Audio Distance (lower=better)
     fgd: Optional[float] = None  # Frechet Gesture Distance (lower=better)
     fmd: Optional[float] = None  # Frechet Motion Distance (lower=better)
@@ -1004,7 +1057,7 @@ class DatasetStats(BaseModel):
     stream_temporal: Optional[float] = None  # STREAM temporal naturalness
     worldscore: Optional[float] = None  # WorldScore generation quality
 
-    # Official VBench 2.0 intrinsic-faithfulness suite (dataset-level)
+    # Reference VBench 2.0 intrinsic-faithfulness suite (dataset-level)
     vbench2_human_anatomy: Optional[float] = None
     vbench2_human_identity: Optional[float] = None
     vbench2_human_clothes: Optional[float] = None
@@ -1031,7 +1084,7 @@ class DatasetStats(BaseModel):
     vbench2_total_score: Optional[float] = None
 
     # WorldModelBench (CVPR 2025 workshop, dataset-level; higher=better)
-    worldmodelbench_instruction_score: Optional[float] = None  # Official range 0-3
+    worldmodelbench_instruction_score: Optional[float] = None  # Range 0-3
     worldmodelbench_newton_adherence: Optional[float] = None  # Fraction without violation
     worldmodelbench_mass_solid_adherence: Optional[float] = None
     worldmodelbench_fluid_adherence: Optional[float] = None
@@ -1041,7 +1094,7 @@ class DatasetStats(BaseModel):
     worldmodelbench_temporal_adherence: Optional[float] = None
     worldmodelbench_physical_score: Optional[float] = None  # Sum of five adherence rates, 0-5
     worldmodelbench_common_sense_score: Optional[float] = None  # Sum of two rates, 0-2
-    worldmodelbench_total_score: Optional[float] = None  # Official raw total, 0-10
+    worldmodelbench_total_score: Optional[float] = None  # Raw total, 0-10
 
     # Codec comparison (dataset-level)
     bd_rate: Optional[float] = None  # BD-Rate compression efficiency (%, negative=better)
@@ -1051,7 +1104,7 @@ class DatasetStats(BaseModel):
     lpips_diversity: Optional[float] = None  # Average pairwise LPIPS across dataset (higher=more diverse)
 
     # Verse-Bench benchmark (dataset-level)
-    verse_bench_overall: Optional[float] = None  # Official Verse-Bench final score
+    verse_bench_overall: Optional[float] = None  # Verse-Bench final score
     verse_bench_metrics: Optional[Dict[str, float]] = None  # Raw Verse-Bench component metrics
     verse_bench_breakdown: Optional[Dict[str, float]] = None  # Verse-Bench subscores and overall
 

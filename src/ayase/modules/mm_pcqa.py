@@ -14,13 +14,10 @@ unset.
 
 mm_pcqa_score -- higher = better quality (0-1); real model only
 
-REVIVAL NOTES (provisional -- no turnkey backend)
+Backend requirements
 Metric: MM-PCQA (IJCAI 2023).
-Category: EXTERNAL.
-Why provisional: Code is complete but needs an external weight AND point-cloud (.ply) input, which
+Unavailable because: Code is complete but needs an external weight AND point-cloud (.ply) input, which
   ayase (video/image validator) does not feed.
-To revive: Mirror WPC.pth (Baidu pan.baidu.com/s/1SuDsQxSRGJ5jePjhTPatHQ, code `pcqa`; or OneDrive
-  1drv.ms/f/s!AjaDoj_-yWggygWzjplEICwa2G9k) AND add .ply input plumbing. Low fit for this project.
 Source: MM-PCQA, IJCAI 2023.
 """
 
@@ -34,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 class MMPCQAModule(PipelineModule):
     name = "mm_pcqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable)"
     default_config = {
         "n_views": 6,

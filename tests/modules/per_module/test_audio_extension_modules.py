@@ -57,12 +57,12 @@ def test_imagebind_score_basics(video_sample):
     assert qm.imagebind_score == 0.5
 
 
-def test_nima_legacy_onnx_basics(image_sample):
-    from ayase.modules.nima_legacy_onnx import NIMALegacyONNXModule
+def test_nima_onnx_basics(image_sample):
+    from ayase.modules.nima_onnx import NIMAONNXModule
 
-    _test_module_basics(NIMALegacyONNXModule, "nima_legacy_onnx")
-    module = NIMALegacyONNXModule()
+    _test_module_basics(NIMAONNXModule, "nima_onnx")
+    module = NIMAONNXModule()
     assert module.process(image_sample) is image_sample
     assert image_sample.quality_metrics is not None
-    qm = QualityMetrics(aesthetic_score_legacy=5.0)
-    assert qm.aesthetic_score_legacy == 5.0
+    qm = QualityMetrics(nima_onnx_score=5.0)
+    assert qm.nima_onnx_score == 5.0

@@ -1,6 +1,6 @@
 """World-model instruction, physics, and commonsense evaluation.
 
-Loads the official human-aligned VILA judge from Hugging Face during setup and
+Loads the upstream human-aligned VILA judge from Hugging Face during setup and
 evaluates matching WorldModelBench videos natively. Scores preserve the raw
 benchmark ranges: instruction 0-3, physics 0-5, commonsense 0-2, total 0-10.
 """
@@ -26,7 +26,7 @@ VILA_REVISION = "0f1426e8da9181e6e6653e10bc15f62d515fa2f6"
 S2WRAPPER_REVISION = "9c008a37540e761f53574b488979db6e49a64312"
 MIRROR_REVISION = "main"
 MIRROR_BASE = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
     f"{MIRROR_REVISION}/"
 )
 BENCHMARK_URL = (
@@ -64,10 +64,10 @@ COMMON_SENSE_QUESTIONS = (
 
 
 class WorldModelBenchModule(PipelineModule):
-    """Evaluate a WorldModelBench-compatible video set with its official judge."""
+    """Evaluate a WorldModelBench-compatible video set with its upstream judge."""
 
     name = "worldmodelbench"
-    description = "Official WorldModelBench instruction, physics, and commonsense scores"
+    description = "WorldModelBench instruction, physics, and commonsense scores"
     default_config = {
         "model_name": "Efficient-Large-Model/vila-ewm-qwen2-1.5b",
         "model_revision": None,
@@ -88,7 +88,7 @@ class WorldModelBenchModule(PipelineModule):
             "auto_download": True,
         },
         {
-            "id": "AkaneTendo25/ayase-models",
+            "id": "AkaneTendo25/ayase-runtime-assets",
             "type": "huggingface",
             "url": BENCHMARK_URL,
             "task": "Mirrored benchmark definition and VILA runtime source",
@@ -110,7 +110,7 @@ class WorldModelBenchModule(PipelineModule):
         "worldmodelbench_temporal_adherence": "Fraction without temporal inconsistency (0-1)",
         "worldmodelbench_physical_score": "Sum of five physical adherence rates (0-5)",
         "worldmodelbench_common_sense_score": "Sum of two commonsense adherence rates (0-2)",
-        "worldmodelbench_total_score": "Official raw total (0-10, higher=better)",
+        "worldmodelbench_total_score": "Raw total (0-10, higher=better)",
     }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -250,7 +250,7 @@ class WorldModelBenchModule(PipelineModule):
 
     @staticmethod
     def _ensure_unused_qwen2_fp8_compatibility() -> None:
-        """Restore names imported by VILA's unused experimental FP8 classes."""
+        """Restore names imported by VILA's unused external-backend FP8 classes."""
         from transformers.models.qwen2 import modeling_qwen2
 
         attention = modeling_qwen2.Qwen2Attention

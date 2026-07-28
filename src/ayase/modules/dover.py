@@ -1,6 +1,6 @@
 """DOVER (Disentangled Objective Video Quality Evaluator) module.
 
-ICCV 2023 — state-of-the-art no-reference video quality assessment
+ICCV 2023 no-reference video quality assessment
 that disentangles *technical* quality (noise, blur, compression) from
 *aesthetic* quality (composition, colour harmony, content).
 
@@ -50,20 +50,20 @@ class DOVERModule(PipelineModule):
         {
             "id": "DOVER.pth",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/DOVER.pth",
             "task": "Native DOVER video quality weights",
             "notes": "Resolved from weights_path or models_dir",
         },
         {
             "id": "onnx_dover.onnx",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/onnx_dover.onnx",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/onnx_dover.onnx",
             "task": "Optional ONNX DOVER backend",
         },
         {
             "id": "convnext_tiny_1k_224_ema.pth",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/convnext_tiny_1k_224_ema.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth",
             "task": "ConvNeXt-Tiny aesthetic backbone",
         },
         {
@@ -202,7 +202,7 @@ class DOVERModule(PipelineModule):
             return False
 
     # Original: https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
-    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
+    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
     _CONVNEXT_FILENAME = "convnext_tiny_1k_224_ema.pth"
 
     def _ensure_convnext_cached(self) -> None:
@@ -227,7 +227,7 @@ class DOVERModule(PipelineModule):
             shutil.copy2(str(tmp), cached)
 
     # Original: https://github.com/VQAssessment/DOVER/releases/download/v0.1.0/DOVER.pth
-    _DOVER_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/DOVER.pth"
+    _DOVER_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/DOVER.pth"
 
     def _resolve_weights(self) -> Optional[str]:
         """Find DOVER.pth weights file, auto-downloading if needed."""
@@ -265,7 +265,7 @@ class DOVERModule(PipelineModule):
     # ------------------------------------------------------------------ #
 
     # Original: https://github.com/VQAssessment/DOVER (convert_to_onnx.py)
-    _ONNX_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/dover/onnx_dover.onnx"
+    _ONNX_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/onnx_dover.onnx"
 
     def _try_onnx_setup(self) -> bool:
         try:

@@ -26,7 +26,7 @@ def test_mj_video_uses_native_autodownload_defaults():
     assert "results_path" not in MJVideoModule.default_config
     assert "runner_command" not in MJVideoModule.default_config
     assert MJVideoModule.default_config["source_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
     )
     assert MJVideoModule.default_config["tokenizer_base_url"] == (
         "https://huggingface.co/internlm/internlm2-chat-1_8b/resolve"
@@ -34,7 +34,7 @@ def test_mj_video_uses_native_autodownload_defaults():
     assert MJVideoModule.models[0]["auto_download"] is True
 
 
-def test_mj_video_setup_downloads_official_checkpoint(monkeypatch, tmp_path):
+def test_mj_video_setup_downloads_reference_checkpoint(monkeypatch, tmp_path):
     import torch
 
     import ayase.config
@@ -128,7 +128,7 @@ def test_mj_video_setup_downloads_official_checkpoint(monkeypatch, tmp_path):
     assert module._backend == "mj_video"
 
 
-def test_mj_video_attaches_official_output_shape(video_sample):
+def test_mj_video_attaches_reference_output_shape(video_sample):
     from ayase.modules.mj_video import MJVideoModule
 
     output = SimpleNamespace(

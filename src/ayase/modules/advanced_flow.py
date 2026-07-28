@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 _RAFT_MIRRORS = {
     "raft_large": (
         "raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
         "advanced_flow/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
     ),
     "raft_small": (
         "raft_small_C_T_V2-01064c6d.pth",
-        "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
         "advanced_flow/raft_small_C_T_V2-01064c6d.pth",
     ),
 }

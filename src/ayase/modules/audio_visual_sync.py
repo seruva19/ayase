@@ -66,7 +66,7 @@ class AudioVisualSyncModule(PipelineModule):
 
     _WEIGHTS_URLS = {
         "24-01-04T16-39-21.pt": (
-            "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
             "synchformer/24-01-04T16-39-21.pt"
         ),
     }
@@ -110,7 +110,7 @@ class AudioVisualSyncModule(PipelineModule):
             if not self._ensure_synchformer_weights(model_path):
                 logger.warning(
                     "Synchformer weights unavailable (cannot download from "
-                    "AkaneTendo25/ayase-models HF mirror); using energy backend"
+                    "AkaneTendo25/ayase-runtime-assets HF mirror); using energy backend"
                 )
                 self._backend = "energy"
                 return

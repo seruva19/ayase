@@ -119,7 +119,7 @@ class I2VSimilarityModule(PipelineModule):
             self._backend = "+".join(available)
 
     _CLIP_URLS = {
-        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/ViT-B-32.safetensors",
+        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/i2v_similarity/ViT-B-32.safetensors",
     }
 
     def _init_clip(self) -> None:
@@ -175,7 +175,7 @@ class I2VSimilarityModule(PipelineModule):
 
     # Original: https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth
     _DINO_URLS = {
-        "dinov2_vitb14": "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth",
+        "dinov2_vitb14": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth",
     }
 
     def _init_dino(self) -> None:
@@ -225,7 +225,7 @@ class I2VSimilarityModule(PipelineModule):
             logger.error(f"Failed to load DINOv2 for I2V: {e}")
 
     # Original: https://github.com/richzhang/PerceptualSimilarity/raw/master/lpips/weights/v0.1/alex.pth
-    _LPIPS_URL = "https://huggingface.co/AkaneTendo25/ayase-models/resolve/main/i2v_similarity/alex.pth"
+    _LPIPS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/i2v_similarity/alex.pth"
 
     def _init_lpips(self) -> None:
         try:

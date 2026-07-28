@@ -1,7 +1,7 @@
 """BD-Rate (Bjøntegaard Delta Rate) module.
 
 BD-Rate measures the average bitrate difference between two codecs
-at equivalent quality. It is the industry standard for codec comparison.
+at equivalent quality for codec comparison.
 
 BD-Rate: % (negative = better compression, e.g., -20% means 20% bitrate savings)
 BD-PSNR: dB (positive = better quality at same bitrate)

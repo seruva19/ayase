@@ -4,7 +4,7 @@ A unified framework that shares feature representations across audio,
 image, and video modalities for quality prediction.
 
 The published UNQA method relies on a *trained* unified quality head. No
-official UNQA weights are distributed as an installable package, and a
+upstream UNQA weights are distributed as an installable package, and a
 ResNet backbone with a randomly-initialised (untrained) regression head
 does not produce a meaningful UNQA score. Rather than emit a fabricated
 number, this module reports itself unavailable until a real UNQA backend
@@ -12,13 +12,13 @@ is wired in.
 
 Output field: ``confidence_score`` (populated only with a real backend).
 
-REVIVAL NOTES (provisional — no turnkey backend)
+REVIVAL NOTES (requires_external_backend — no turnkey backend)
 Metric: UNQA (2024).
 Category: TRAINING-ONLY.
-Why provisional: No installable weights; the unified rank-based joint head must be trained.
+Why requires_external_backend: No installable weights; the unified rank-based joint head must be trained.
 To revive: Reimplement the unified audio/image/video/AV NR-QA rank-based joint training; train on the
   joint public A/I/V/AV QA DBs; validate you reproduce the paper's SRCC/PLCC before flipping
-  provisional=False. Redundant with ayase's per-modality metrics.
+  requires_external_backend=False. Redundant with ayase's per-modality metrics.
 Source: UNQA, 2024 (no released weights).
 """
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class UNQAModule(PipelineModule):
     name = "unqa"
-    provisional = True  # no turnkey real backend in a standard install
+    requires_external_backend = True  # no turnkey real backend in a standard install
     description = "UNQA unified no-reference quality for audio/image/video (2024)"
     default_config = {
         "subsample": 8,

@@ -1,6 +1,6 @@
 """Fine-grained video preference scoring with MJ-Video.
 
-Downloads the public MJ-VIDEO-2B checkpoint during setup and runs the official
+Downloads the public MJ-VIDEO-2B checkpoint during setup and runs the reference
 reward architecture in-process. Exposes the learned overall reward and five
 aspect rewards; all 28 criterion rewards are retained in sample metadata.
 Higher rewards indicate stronger learned preference.
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 SOURCE_REVISION = "cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a"
 MIRROR_REVISION = "main"
 SOURCE_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-models/resolve/"
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
     f"{MIRROR_REVISION}/mj_video/source-{SOURCE_REVISION}.zip"
 )
 TOKENIZER_BASE_URL = (
@@ -46,7 +46,7 @@ ASPECT_TO_CRITERIA = {
 
 
 class MJVideoModule(PipelineModule):
-    """Score each text-video pair with the official MJ-VIDEO-2B reward model."""
+    """Score each text-video pair with the upstream MJ-VIDEO-2B reward model."""
 
     name = "mj_video"
     description = "MJ-Video overall reward and five fine-grained preference aspects"
@@ -75,10 +75,10 @@ class MJVideoModule(PipelineModule):
             "notes": "Eight uniformly sampled frames by default",
         },
         {
-            "id": "AkaneTendo25/ayase-models",
+            "id": "AkaneTendo25/ayase-runtime-assets",
             "type": "huggingface",
             "url": SOURCE_URL,
-            "task": "Mirrored official MJ-Video reward architecture",
+            "task": "Mirrored upstream MJ-Video reward architecture",
             "auto_download": True,
             "notes": f"Upstream commit {SOURCE_REVISION}",
         },

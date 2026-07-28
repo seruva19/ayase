@@ -20,6 +20,20 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+_IMAGE_SUFFIXES = {
+    ".avif",
+    ".bmp",
+    ".gif",
+    ".heic",
+    ".heif",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".tif",
+    ".tiff",
+    ".webp",
+}
+
 
 class DNSMOSModule(PipelineModule):
     name = "dnsmos"
@@ -157,6 +171,11 @@ class DNSMOSModule(PipelineModule):
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
+            return sample
+        # ``Sample.is_video`` is false for both images and standalone audio.
+        # Reject known image containers before invoking ffmpeg/soundfile/librosa:
+        # some audio decoders probe malformed/unsupported inputs very slowly.
+        if sample.path.suffix.lower() in _IMAGE_SUFFIXES:
             return sample
 
         result = self._extract_audio(sample.path)
