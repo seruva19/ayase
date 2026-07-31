@@ -53,6 +53,7 @@ class CGVQMModule(ReferenceBasedModule):
             "(full-reference, nominal 0-100, higher=better)"
         ),
     }
+    metric_groups = {"cgvqm": "fr_quality"}
 
     def __init__(self, config=None):
         super().__init__(config)
