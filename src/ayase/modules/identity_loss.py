@@ -15,6 +15,10 @@ Backends (real ArcFace face-recognition embeddings only):
     1. InsightFace (buffalo_l ArcFace)
     2. DeepFace (ArcFace) — fallback
 
+The largest detected face is used. Pre-cropped face chips (an aligned face filling
+the frame) are invisible to RetinaFace, so detection is retried once on a
+replicate-padded copy (``pad_retry``).
+
 Identity is defined by a face-recognition embedding; a geometric-landmark
 similarity is NOT face recognition and is not used as a stand-in. When no real
 face-recognition backend is available the metrics are left ``None``.
@@ -25,6 +29,7 @@ import logging
 import cv2
 import numpy as np
 
+from ayase.faces import detect_largest_face
 from ayase.image import load_representative_frame, sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
@@ -39,6 +44,9 @@ class IdentityLossModule(PipelineModule):
         "model_name": "buffalo_l",
         "subsample": 8,
         "warning_threshold": 0.5,
+        # Retry detection on a replicate-padded copy when a tightly cropped face
+        # leaves the detector no context (0 disables the retry).
+        "pad_retry": 0.25,
     }
     metric_groups = {
         "face_recognition_score": "face",
@@ -50,6 +58,7 @@ class IdentityLossModule(PipelineModule):
         self.model_name = self.config.get("model_name", "buffalo_l")
         self.subsample = self.config.get("subsample", 8)
         self.warning_threshold = self.config.get("warning_threshold", 0.5)
+        self.pad_retry = max(0.0, float(self.config.get("pad_retry", 0.25)))
         self._backend = None  # "insightface" | "deepface" | "unavailable"
         self._app = None  # InsightFace FaceAnalysis
         self._deepface = None
@@ -124,28 +133,28 @@ class IdentityLossModule(PipelineModule):
 
     # -- Backend implementations ------------------------------------------------
 
-    def _compute_insightface(self, ref_rgb, frames):
-        # ref_rgb / frames are RGB, but InsightFace .get() expects BGR (cv2
-        # convention); convert so detection + ArcFace embeddings are correct.
-        ref_faces = self._app.get(
-            cv2.cvtColor(np.ascontiguousarray(ref_rgb), cv2.COLOR_RGB2BGR)
-        )
-        if not ref_faces:
+    def _insightface_embedding(self, rgb_image):
+        """Unit-norm ArcFace embedding of the largest face, or None."""
+        # Inputs are RGB, but InsightFace .get() expects BGR (cv2 convention);
+        # convert so detection + ArcFace embeddings are correct.
+        bgr = cv2.cvtColor(np.ascontiguousarray(rgb_image), cv2.COLOR_RGB2BGR)
+        face, _ = detect_largest_face(self._app, bgr, self.pad_retry)
+        if face is None:
             return None
-        ref_emb = ref_faces[0].embedding
-        ref_emb = ref_emb / (np.linalg.norm(ref_emb) + 1e-10)
+        emb = face.embedding
+        return emb / (np.linalg.norm(emb) + 1e-10)
+
+    def _compute_insightface(self, ref_rgb, frames):
+        ref_emb = self._insightface_embedding(ref_rgb)
+        if ref_emb is None:
+            return None
 
         distances = []
         for frame in frames:
-            faces = self._app.get(
-                cv2.cvtColor(np.ascontiguousarray(frame), cv2.COLOR_RGB2BGR)
-            )
-            if not faces:
+            emb = self._insightface_embedding(frame)
+            if emb is None:
                 continue
-            emb = faces[0].embedding
-            emb = emb / (np.linalg.norm(emb) + 1e-10)
-            cos_sim = float(np.dot(ref_emb, emb))
-            distances.append(1.0 - cos_sim)
+            distances.append(1.0 - float(np.dot(ref_emb, emb)))
 
         return float(np.mean(distances)) if distances else None
 

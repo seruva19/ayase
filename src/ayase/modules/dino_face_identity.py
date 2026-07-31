@@ -16,6 +16,9 @@ Outputs:
 Requires ``sample.reference_path`` pointing to a reference face image or directory.
 Gracefully skips when no reference is provided.
 
+Pre-cropped face chips (an aligned face filling the frame) are invisible to
+RetinaFace, so detection is retried once on a replicate-padded copy (``pad_retry``).
+
 Backends:
     - Face detection: InsightFace (buffalo_l)
     - Embedding: DINOv2 ViT-B/14 (facebookresearch/dinov2 architecture; weights from
@@ -29,6 +32,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from ayase.faces import detect_largest_face
 from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
@@ -56,6 +60,9 @@ class DINOFaceIdentityModule(PipelineModule):
         "subsample": 8,
         "face_margin": 0.3,
         "warning_threshold": 0.3,
+        # Retry detection on a replicate-padded copy when a tightly cropped face
+        # leaves the detector no context (0 disables the retry).
+        "pad_retry": 0.25,
         "models_dir": "models",
     }
     metric_groups = {
@@ -70,6 +77,7 @@ class DINOFaceIdentityModule(PipelineModule):
         self.subsample = self.config.get("subsample", 8)
         self.face_margin = self.config.get("face_margin", 0.3)
         self.warning_threshold = self.config.get("warning_threshold", 0.3)
+        self.pad_retry = max(0.0, float(self.config.get("pad_retry", 0.25)))
         self.models_dir = self.config.get("models_dir", "models")
         self._dino = None
         self._transform = None
@@ -220,23 +228,23 @@ class DINOFaceIdentityModule(PipelineModule):
         """Detect face, crop, encode with DINOv2."""
         import torch
 
-        faces = self._face_app.get(frame)
-        if not faces:
+        largest, detect_image = detect_largest_face(self._face_app, frame, self.pad_retry)
+        if largest is None:
             return None
 
-        # Take largest face
-        largest = max(faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]))
+        # The bbox refers to ``detect_image`` (the padded copy when the detector
+        # only found the face after the retry), so crop from that image.
         x1, y1, x2, y2 = [int(c) for c in largest.bbox]
 
         # Add margin
         margin = int((x2 - x1) * self.face_margin)
-        h, w = frame.shape[:2]
+        h, w = detect_image.shape[:2]
         x1 = max(0, x1 - margin)
         y1 = max(0, y1 - margin)
         x2 = min(w, x2 + margin)
         y2 = min(h, y2 + margin)
 
-        crop = Image.fromarray(cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2RGB))
+        crop = Image.fromarray(cv2.cvtColor(detect_image[y1:y2, x1:x2], cv2.COLOR_BGR2RGB))
         tensor = self._transform(crop).unsqueeze(0).to(self._device)
 
         with torch.no_grad():
