@@ -27,9 +27,9 @@ def _write_csv(path, rows):
 )
 def test_reference_result_adapter_basics(class_name, module_name):
     module_path = {
-        "LOVEResultModule": "ayase.modules.love",
-        "Ref4DResultModule": "ayase.modules.ref4d",
-        "PhyGroundResultModule": "ayase.modules.phyground",
+        "LOVEResultModule": "ayase.modules.love_results",
+        "Ref4DResultModule": "ayase.modules.ref4d_results",
+        "PhyGroundResultModule": "ayase.modules.phyground_results",
     }[class_name]
     module = __import__(module_path, fromlist=[class_name])
     _test_module_basics(getattr(module, class_name), module_name)
@@ -44,7 +44,7 @@ def test_love_imports_reference_csv_predictions(tmp_path):
         tmp_path / "correspondence.csv",
         [{"video_name": "clip.mp4", "pred_score": "3.75"}],
     )
-    from ayase.modules.love import LOVEResultModule
+    from ayase.modules.love_results import LOVEResultModule
 
     sample = Sample(path=tmp_path / "clip.mp4", is_video=True)
     result = LOVEResultModule(
@@ -71,7 +71,7 @@ def test_ref4d_imports_four_dimension_summaries(tmp_path):
             tmp_path / f"{dimension}.csv",
             [{"sample_id": "sample-1", f"{dimension}_score_0_100": score}],
         )
-    from ayase.modules.ref4d import Ref4DResultModule
+    from ayase.modules.ref4d_results import Ref4DResultModule
 
     sample = Sample(path=tmp_path / "sample-1.mp4", is_video=True)
     result = Ref4DResultModule(paths).process(sample)
@@ -104,7 +104,7 @@ def test_phyground_imports_structured_scores(tmp_path):
         ),
         encoding="utf-8",
     )
-    from ayase.modules.phyground import PhyGroundResultModule
+    from ayase.modules.phyground_results import PhyGroundResultModule
 
     sample = Sample(path=tmp_path / "falling_ball.mp4", is_video=True)
     result = PhyGroundResultModule({"results_path": results}).process(sample)
@@ -124,7 +124,7 @@ def test_unmatched_reference_result_degrades_gracefully(tmp_path):
         tmp_path / "perception.csv",
         [{"video_name": "another.mp4", "pred_score": "4.0"}],
     )
-    from ayase.modules.love import LOVEResultModule
+    from ayase.modules.love_results import LOVEResultModule
 
     sample = Sample(path=tmp_path / "clip.mp4", is_video=True)
     result = LOVEResultModule({"perception_results_path": results}).process(sample)

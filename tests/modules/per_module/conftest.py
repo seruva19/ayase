@@ -14,6 +14,21 @@ import pytest
 from ayase.models import Sample
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _registered_modules():
+    """Populate the registry before any per-module test reads it.
+
+    ``QualityMetrics._FIELD_GROUPS`` is empty by design and filled in from each
+    module's ``metric_groups`` at discovery time. Tests that assert on a field's
+    group therefore passed or failed depending on whether some earlier test in
+    the same session happened to trigger discovery first -- with random test
+    ordering, the same test flipped between runs. Discovering once per session
+    removes the ordering dependency instead of hiding it behind luck.
+    """
+    from ayase.pipeline import ModuleRegistry
+
+    ModuleRegistry.discover_modules()
+
 @pytest.fixture(scope="session")
 def _shared_tmp_dir():
     with tempfile.TemporaryDirectory() as d:
