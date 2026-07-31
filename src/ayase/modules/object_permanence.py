@@ -35,10 +35,17 @@ class ObjectPermanenceModule(PipelineModule):
         "max_frames": 300,
         "match_distance": 80.0,  # Max pixel distance for centroid matching
         "warning_threshold": 50.0,
+        # Width of the frame-border band, as a fraction of frame size. A track
+        # that ends inside this band left the shot; one that ends outside it
+        # vanished. Set to 0 to skip the split entirely.
+        "border_margin": 0.02,
     }
     metric_groups = {
         "object_permanence_score": "temporal",
-    }
+            "object_permanence_interior_vanish": "temporal",
+        "object_permanence_border_exit": "temporal",
+        "object_permanence_occlusion_share": "temporal",
+}
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -47,6 +54,7 @@ class ObjectPermanenceModule(PipelineModule):
         self.max_frames = self.config.get("max_frames", 300)
         self.match_distance = self.config.get("match_distance", 80.0)
         self.warning_threshold = self.config.get("warning_threshold", 50.0)
+        self.border_margin = float(self.config.get("border_margin", 0.02))
 
         self._yolo_model = None
         self._bg_subtractor = None
@@ -144,6 +152,50 @@ class ObjectPermanenceModule(PipelineModule):
     # Centroid matching (greedy nearest-neighbour)
     # ------------------------------------------------------------------
 
+    def _unmatched(
+        self,
+        prev: List[Tuple[float, float]],
+        curr: List[Tuple[float, float]],
+    ) -> List[Tuple[float, float]]:
+        """Previous centroids with no continuation within ``match_distance``."""
+        if not prev:
+            return []
+        if not curr:
+            return list(prev)
+        prev_arr = np.array(prev, dtype=float)
+        curr_arr = np.array(curr, dtype=float)
+        gone: List[Tuple[float, float]] = []
+        for index, point in enumerate(prev_arr):
+            distances = np.linalg.norm(curr_arr - point, axis=1)
+            if float(np.min(distances)) > self.match_distance:
+                gone.append(tuple(prev[index]))
+        return gone
+
+    def _at_border(self, centroid: Tuple[float, float], shape) -> bool:
+        """Whether a centroid sits inside the frame-border band."""
+        height, width = shape[0], shape[1]
+        margin_x = width * self.border_margin
+        margin_y = height * self.border_margin
+        x, y = float(centroid[0]), float(centroid[1])
+        return x <= margin_x or y <= margin_y or x >= width - margin_x or y >= height - margin_y
+
+    @staticmethod
+    def _has_overlap(centroids: List[Tuple[float, float]], min_distance: float = 40.0) -> bool:
+        """Whether any two objects are close enough to occlude one another.
+
+        Reported as a trust indicator: in a dense scene a person hidden behind
+        someone else produces exactly the same broken track as a person who
+        vanished, and no centroid rule can tell the two apart.
+        """
+        if len(centroids) < 2:
+            return False
+        points = np.array(centroids, dtype=float)
+        for index in range(len(points)):
+            distances = np.linalg.norm(points[index + 1:] - points[index], axis=1)
+            if distances.size and float(np.min(distances)) < min_distance:
+                return True
+        return False
+
     def _match_centroids(
         self,
         prev: List[Tuple[float, float]],
@@ -203,6 +255,9 @@ class ObjectPermanenceModule(PipelineModule):
             return sample
 
         prev_centroids: List[Tuple[float, float]] = []
+        interior_vanish = 0
+        border_exits = 0
+        overlap_frames = 0
         total_objects = 0
         total_matched = 0
         total_switches = 0
@@ -225,6 +280,19 @@ class ObjectPermanenceModule(PipelineModule):
                     total_matched += matched
                     total_switches += switches
                     total_disappeared += disappeared
+                    # WHERE a track ended matters as much as THAT it ended: an
+                    # object leaving through the frame edge is ordinary, one
+                    # vanishing in mid-frame is the defect. The existing score
+                    # counts both the same way and is left untouched; the split
+                    # is reported next to it.
+                    if disappeared and self.border_margin > 0:
+                        for centroid in self._unmatched(prev_centroids, centroids):
+                            if self._at_border(centroid, frame.shape):
+                                border_exits += 1
+                            else:
+                                interior_vanish += 1
+                    if self._has_overlap(centroids):
+                        overlap_frames += 1
 
                 total_objects += len(centroids)
                 prev_centroids = centroids
@@ -251,6 +319,12 @@ class ObjectPermanenceModule(PipelineModule):
             sample.quality_metrics = QualityMetrics()
 
         sample.quality_metrics.object_permanence_score = score
+        if self.border_margin > 0:
+            sample.quality_metrics.object_permanence_interior_vanish = float(interior_vanish)
+            sample.quality_metrics.object_permanence_border_exit = float(border_exits)
+            sample.quality_metrics.object_permanence_occlusion_share = round(
+                overlap_frames / float(max(1, frame_count)), 4
+            )
 
         if score < self.warning_threshold:
             sample.validation_issues.append(
