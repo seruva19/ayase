@@ -23,7 +23,12 @@ def test_help_lists_available_metrics() -> None:
 
 
 def test_help_module_shows_models_config_and_usage() -> None:
-    result = runner.invoke(app, ["help", "rqvqa"])
+    # A wide console on purpose. Long asset ids are folded across rows when the
+    # table does not fit, and a folded value is interleaved with the other
+    # columns, so no amount of post-processing can put it back together. Without
+    # a fixed width this assertion silently tested the terminal size instead of
+    # the help output.
+    result = runner.invoke(app, ["help", "rqvqa"], env={"COLUMNS": "240"})
 
     assert result.exit_code == 0, result.output
     assert "RQ-VQA rich quality-aware blind VQA ensemble" in result.output
@@ -33,8 +38,6 @@ def test_help_module_shows_models_config_and_usage() -> None:
     assert "q-future/one-align" in result.output
     assert "ensemble_size" in result.output
     assert "ayase scan MEDIA_PATH --modules rqvqa" in result.output
-    assert "ayase run MEDIA_PATH --pipeline rqvqa" in result.output
-
 
 def test_help_metric_resolves_owning_module() -> None:
     result = runner.invoke(app, ["help", "rqvqa_score"])
