@@ -212,6 +212,7 @@ class QualityMetrics(BaseModel):
     face_identity_count: Optional[int] = None  # Number of unique identities detected
     dino_face_identity: Optional[float] = None  # DINOv2 face identity cosine similarity (0-1, higher=better)
     dino_face_identity_max: Optional[float] = None  # Max DINOv2 face identity across frames (0-1, higher=better)
+    adaface_identity_similarity: Optional[float] = None  # AdaFace cosine similarity vs reference face (0-1, higher=better)
     expression_following: Optional[float] = None  # Driver-expression fidelity (0-1, higher=better)
     expression_following_distance: Optional[float] = None  # Mean blendshape L1 distance (0-1, lower=better)
     expression_following_coverage: Optional[float] = None  # Joint valid-face coverage (0-1)
@@ -865,6 +866,19 @@ class QualityMetrics(BaseModel):
 
     # RTMPose pose/gesture plausibility
     rtmpose_score: Optional[float] = None  # RTMPose keypoint-confidence pose plausibility (0-1, higher=better)
+    pose_driver_fidelity: Optional[float] = None  # Body-pose fidelity to a driving video, PCK over normalised skeletons (0-1, higher=better)
+    pose_driver_fidelity_min: Optional[float] = None  # Worst matched moment of the same measure (0-1, higher=better)
+    pose_driver_fidelity_coverage: Optional[float] = None  # Share of compared moments where both skeletons were found (0-1)
+    multi_subject_identity_worst: Optional[float] = None  # Lowest per-subject identity similarity in a multi-person clip (higher=better)
+    multi_subject_identity_mean: Optional[float] = None  # Mean per-subject identity similarity in a multi-person clip (higher=better)
+    multi_subject_identity_coverage: Optional[float] = None  # Share of sampled frames covered by the assigned face tracks (0-1)
+    multi_subject_identity_tracks: Optional[float] = None  # Number of face tracks the assignment was built from
+    active_speaker_margin: Optional[float] = None  # Lip-sync confidence gap between the best-synced face and the runner-up (higher=cleaner)
+    active_speaker_best_lse_c: Optional[float] = None  # Lip-sync confidence of the best-synced face (higher=better)
+    active_speaker_silent_faces: Optional[float] = None  # Faces for which no talking mouth was detected
+    object_permanence_interior_vanish: Optional[float] = None  # Tracks that ended away from the frame border (disappearance, not exit)
+    object_permanence_border_exit: Optional[float] = None  # Tracks that ended at the frame border (a legitimate exit)
+    object_permanence_occlusion_share: Optional[float] = None  # Share of frames with overlapping boxes; how far the two counts above can be trusted
 
     # VMBench Object Integrity Score (human bone-length/joint-angle temporal integrity)
     object_integrity_score: Optional[float] = None  # VMBench OIS (0-1, higher=better)
