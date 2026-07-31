@@ -14,6 +14,19 @@ import pytest
 from ayase.models import Sample
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _registered_modules():
+    """Populate the registry before any per-module test reads it.
+
+    ``QualityMetrics._FIELD_GROUPS`` is empty by design and filled in from each
+    module's ``metric_groups`` at discovery time. Session-scoped discovery
+    initializes field groups before per-module assertions and removes test-order
+    dependence.
+    """
+    from ayase.pipeline import ModuleRegistry
+
+    ModuleRegistry.discover_modules()
+
 @pytest.fixture(scope="session")
 def _shared_tmp_dir():
     with tempfile.TemporaryDirectory() as d:

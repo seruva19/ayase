@@ -122,6 +122,7 @@ _IMPORTS = [
     ("FaceLandmarkQualityModule", ".face_landmark_quality"),
     ("FaceIQAModule", ".face_iqa"),
     ("IdentityLossModule", ".identity_loss"),
+    ("AdaFaceModule", ".adaface"),
     ("ExpressionFollowingModule", ".expression_following"),
     ("FaceCrossSimilarityModule", ".face_cross_similarity"),
     # --- Scene & content ---
@@ -186,9 +187,9 @@ _IMPORTS = [
     ("ChronoMagicModule", ".chronomagic"),
     ("T2VCompBenchModule", ".t2v_compbench"),
     ("VerseBenchModule", ".verse_bench"),
-    ("LOVEResultModule", ".love"),
-    ("Ref4DResultModule", ".ref4d"),
-    ("PhyGroundResultModule", ".phyground"),
+    ("LOVEResultModule", ".love_results"),
+    ("Ref4DResultModule", ".ref4d_results"),
+    ("PhyGroundResultModule", ".phyground_results"),
     # --- Image LPIPS & Concept Presence ---
     ("ImageLPIPSModule", ".image_lpips"),
     ("I2IFidelityModule", ".i2i_fidelity"),

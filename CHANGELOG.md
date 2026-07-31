@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **pose primitive** (`ayase.pose`): per-frame COCO-17 keypoints, boxes and confidences behind the same RTMPose/YOLOX weights as `rtmpose_fidelity`, which reduces them to a single score. Consumers that need the skeletons themselves -- driver comparison, contact, tracking, border-aware disappearance -- previously had no way to obtain them.
+- **face primitive** (`ayase.faces`): `face_tracks` follows every face by box AND embedding together (geometry alone merges two people whenever they cross), and `identity_series` returns the per-frame similarity to a GIVEN target instead of an average over whichever face was found.
+- **pose_driver_fidelity**: body-pose fidelity to a driving video (PCK over skeletons aligned by shoulder width and matched by relative time), complementing `expression_following`, which covers facial expression only.
+- **multi_subject_identity**: per-subject identity in multi-person clips; tracks are assigned to the reference identities as a whole and the WORST subject is reported, since a mean hides the very failure the metric exists to catch.
+- **active_speaker**: lip-sync separation between faces -- how far the best-synced face is ahead of the runner-up. A face with no detected talking mouth scores zero rather than being dropped: that is the answer, not a measurement failure.
+- **object_permanence**: `object_permanence_interior_vanish`, `object_permanence_border_exit` and `object_permanence_occlusion_share` tell a track that left through the frame edge from one that vanished mid-frame; the existing score is unchanged.
+- **adaface**: added `adaface_identity_similarity`, a second face-identity backbone (AdaFace, CVPR 2022) next to the ArcFace-based `identity_loss`, using the author-published CVLface checkpoints pinned by revision and a vendored MIT IResNet backbone.
+
+### Fixed
+
+- **identity_loss**, **dino_face_identity**: tightly cropped face chips (an aligned face filling the frame) were skipped entirely because the detector needs context around the head; detection now retries once on a replicate-padded copy (`pad_retry`, set to `0` for the previous behaviour). `identity_loss` also scores the largest detected face instead of the first one.
+- **cgvqm**: declared the metric group so `cgvqm` is reported under full-reference quality instead of falling through to "other".
+- **love_results**, **phyground_results**, **ref4d_results**: the registry is keyed by module name while the readiness report is keyed by file name, so these three -- the only modules whose file stem differed from their name -- were reported ready yet could not be resolved. The files now match their module names.
+- **help**: asset ids in the models table are folded when the terminal is narrow, so a long checkpoint name was unreadable in captured output; the CLI contract test now pins the console width instead of depending on it.
+
 ## [0.1.68] - 2026-07-28
 
 ### Added
