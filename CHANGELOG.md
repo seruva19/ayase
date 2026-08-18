@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.71] - 2026-08-18
+
+### Added
+
+- **`expression_similarity`**: compares how two videos of a person emote, with no temporal alignment at all. Where `expression_following` asks whether a generation reproduced a driver frame by frame, this asks whether the person emotes in the same manner, so the two clips need not be the same take, the same length, or the same speech. Each clip is reduced to three time-free descriptions of its 52 blendshape coefficients -- the distribution of each coefficient (compared as a 1-D Wasserstein distance), the coefficient correlation matrix, and the rate of change per second -- reported as one composite score plus its three components. A fourth number, the range ratio, exposes a face that stayed still, a failure that expression-invariant identity metrics cannot see by construction. Asked to pick the matching clip out of three, it is right 80.9% of the time against 33.3% for guessing; scores of different pairs sit close together, so it ranks candidates against a shared reference rather than passing a fixed threshold.
+
+### Changed
+
+- **blendshape decoding is now shared**: `expression_following` and `expression_similarity` read the MediaPipe Face Landmarker through one extractor, so a change to decoding cannot reach one metric and not the other. Public names of `expression_following` are unchanged.
+
 ## [0.1.70] - 2026-08-18
 
 ### Fixed
