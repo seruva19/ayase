@@ -1,10 +1,13 @@
 [build-system]
-requires = ["hatchling"]
+# Upper bound is about the wheel, not the API: hatchling 1.32 emits
+# Metadata-Version 2.5, which neither twine nor PyPI accepts yet, so an
+# unpinned build produces a distribution that cannot be uploaded.
+requires = ["hatchling<1.32"]
 build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.69"
+version = "0.1.70"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
