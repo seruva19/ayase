@@ -106,6 +106,46 @@ _PADDLE_GPU_INDEXES = {
 }
 _PADDLE_GPU_VERSION = "3.3.1"
 _PADDLE_GPU_ENSURED = False
+_PADDLE_LOCK_STALE_SECONDS = 3600
+
+
+def _paddle_lock_path() -> Path:
+    """Lock file beside the installed package, i.e. one lock per environment."""
+    return Path(__file__).resolve().parent.parent / ".ayase_paddle_gpu.lock"
+
+
+def _paddle_gpu_installed() -> bool:
+    import importlib.metadata as _md
+    try:
+        _md.distribution("paddlepaddle-gpu")
+        return True
+    except _md.PackageNotFoundError:
+        return False
+
+
+def _verify_paddle_gpu(python: str) -> bool:
+    """Run a real GPU op in a fresh interpreter.
+
+    Probing in this process would prove nothing: paddle may already be imported
+    here, and a freshly installed wheel is not picked up by a running process.
+    """
+    import subprocess
+    probe = (
+        "import paddle;"
+        "assert paddle.device.is_compiled_with_cuda();"
+        "assert paddle.device.cuda.device_count() > 0;"
+        "x = paddle.to_tensor([[1.0, 2.0], [3.0, 4.0]], place=paddle.CUDAPlace(0));"
+        "assert 'gpu' in str((x @ x).place)"
+    )
+    try:
+        return subprocess.run(
+            [python, "-c", probe],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=300,
+        ).returncode == 0
+    except Exception:
+        return False
 
 
 def ensure_paddle_gpu() -> None:
@@ -116,7 +156,27 @@ def ensure_paddle_gpu() -> None:
     On a CUDA host we install the matching GPU build at runtime so OCR modules
     just work.
 
-    No-op on non-CUDA hosts, when paddle is already GPU-compiled, when CUDA
+    The install runs with ``--no-deps`` deliberately. The GPU wheel pins fifteen
+    ``nvidia-*-cu12`` distributions with ``==`` at the CUDA line it was built
+    against, and torch pins those same fifteen distributions, also with ``==``,
+    at its own line. No resolution satisfies both, so whoever installs last
+    wins — and running from an import, that is always paddle. The damage is
+    silent: torch keeps working, merely against older CUDA libraries than it
+    was built for, and nothing ever reports it.
+
+    Dropping the dependencies is safe rather than merely expedient:
+
+    * torch is a hard dependency of ayase, so its CUDA libraries are present in
+      every environment this code can run in, and CUDA minor releases are
+      backward compatible — a cu126 paddle build runs on cu128 libraries;
+    * the GPU wheel's non-CUDA requirements are identical to those of the CPU
+      wheel, which is itself a hard dependency and therefore already installed.
+
+    Several processes may import ayase at once, so the install is serialised by
+    an exclusive lock file: latecomers wait, then find the package installed
+    and return instead of running a second pip into the same environment.
+
+    No-op on non-CUDA hosts, when paddle is already GPU-compiled, when the CUDA
     version is unsupported, or when pip is unavailable.
     """
     global _PADDLE_GPU_ENSURED
@@ -128,11 +188,8 @@ def ensure_paddle_gpu() -> None:
     # build ends up cached in sys.modules and pip-install of the GPU build can't
     # take effect within the same process.
     import importlib.metadata as _md
-    try:
-        _md.distribution("paddlepaddle-gpu")
+    if _paddle_gpu_installed():
         return  # GPU paddle already installed
-    except _md.PackageNotFoundError:
-        pass
     try:
         _md.distribution("paddlepaddle")
     except _md.PackageNotFoundError:
@@ -156,20 +213,60 @@ def ensure_paddle_gpu() -> None:
         cuda_key = max(candidates, key=lambda v: tuple(int(x) for x in v.split(".")))
 
     index = _PADDLE_GPU_INDEXES[cuda_key]
-    import subprocess
+
     import logging
+    import os
+    import subprocess
+    import time
+
     log = logging.getLogger("ayase._compat")
-    log.warning("Installing paddlepaddle-gpu==%s for CUDA %s (one-time, ~600MB)",
-                _PADDLE_GPU_VERSION, cuda_key)
-    cmd = [
-        sys.executable, "-m", "pip", "install",
-        f"paddlepaddle-gpu=={_PADDLE_GPU_VERSION}",
-        "--index-url", index,
-    ]
+    lock = _paddle_lock_path()
+
     try:
+        if lock.exists() and time.time() - lock.stat().st_mtime > _PADDLE_LOCK_STALE_SECONDS:
+            lock.unlink()  # holder died mid-install and is not coming back
+    except OSError:
+        pass
+
+    try:
+        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        deadline = time.time() + _PADDLE_LOCK_STALE_SECONDS
+        while time.time() < deadline:
+            if _paddle_gpu_installed():
+                return
+            if not lock.exists():
+                return
+            time.sleep(2)
+        return
+    except OSError as e:
+        log.warning("paddlepaddle-gpu auto-install skipped, cannot take lock: %s", e)
+        return
+
+    try:
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        log.warning("Installing paddlepaddle-gpu==%s for CUDA %s (one-time, ~600MB)",
+                    _PADDLE_GPU_VERSION, cuda_key)
+        cmd = [
+            sys.executable, "-m", "pip", "install", "--no-deps",
+            f"paddlepaddle-gpu=={_PADDLE_GPU_VERSION}",
+            "--index-url", index,
+        ]
         subprocess.check_call(cmd)
+        if not _verify_paddle_gpu(sys.executable):
+            log.warning(
+                "paddlepaddle-gpu==%s installed but no GPU op succeeded; "
+                "paddle modules fall back to CPU",
+                _PADDLE_GPU_VERSION,
+            )
     except Exception as e:
         log.warning("paddlepaddle-gpu auto-install failed: %s", e)
+    finally:
+        try:
+            lock.unlink()
+        except OSError:
+            pass
 
 
 apply_patches()
