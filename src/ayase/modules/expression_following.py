@@ -12,65 +12,46 @@ read as a difference in expression.
 
 import logging
 import math
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-import cv2
 import numpy as np
 
-from ayase.config import download_model_file
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
+from ._blendshape_utils import (
+    BLENDSHAPE_DIM,
+    CANONICAL_BLENDSHAPES,
+    FPS_TOLERANCE,
+    MODEL_FILENAME,
+    MODEL_REPO_ID,
+    MODEL_REVISION,
+    MODEL_URL,
+    TIME_TOLERANCE,
+    BlendshapeExtractor,
+    BlendshapeTrajectory,
+    categories_to_vector,
+    select_face_index,
+)
+
 logger = logging.getLogger(__name__)
 
-MODEL_REPO_ID = "AkaneTendo25/ayase-runtime-assets"
-MODEL_FILENAME = "expression_following/face_landmarker.task"
-MODEL_REVISION = "409c832ac7a30524a48ab642455bf963c2a95d1f"
-MODEL_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
-    f"{MODEL_REVISION}/{MODEL_FILENAME}"
-)
-BLENDSHAPE_DIM = 52
-FPS_TOLERANCE = 1e-4
-TIME_TOLERANCE = 1e-6
+# Decoding is shared with the other expression metric so the two cannot drift
+# apart. The names below stay importable from this module, which is where
+# callers reach for them.
+_Trajectory = BlendshapeTrajectory
 
-# Exact category names emitted by the pinned Google MediaPipe bundle. The
-# neutral coefficient is part of MediaPipe's documented 52-value output.
-CANONICAL_BLENDSHAPES = (
-    "_neutral", "browDownLeft", "browDownRight", "browInnerUp",
-    "browOuterUpLeft", "browOuterUpRight", "cheekPuff", "cheekSquintLeft",
-    "cheekSquintRight", "eyeBlinkLeft", "eyeBlinkRight", "eyeLookDownLeft",
-    "eyeLookDownRight", "eyeLookInLeft", "eyeLookInRight", "eyeLookOutLeft",
-    "eyeLookOutRight", "eyeLookUpLeft", "eyeLookUpRight", "eyeSquintLeft",
-    "eyeSquintRight", "eyeWideLeft", "eyeWideRight", "jawForward", "jawLeft",
-    "jawOpen", "jawRight", "mouthClose", "mouthDimpleLeft", "mouthDimpleRight",
-    "mouthFrownLeft", "mouthFrownRight", "mouthFunnel", "mouthLeft",
-    "mouthLowerDownLeft", "mouthLowerDownRight", "mouthPressLeft",
-    "mouthPressRight", "mouthPucker", "mouthRight", "mouthRollLower",
-    "mouthRollUpper", "mouthShrugLower", "mouthShrugUpper", "mouthSmileLeft",
-    "mouthSmileRight", "mouthStretchLeft", "mouthStretchRight",
-    "mouthUpperUpLeft", "mouthUpperUpRight", "noseSneerLeft", "noseSneerRight",
-)
-
-
-@dataclass
-class _Trajectory:
-    timestamps_sec: np.ndarray
-    coefficients: np.ndarray
-    valid: np.ndarray
-    frame_indices: np.ndarray
-    fps: float
-    decoded_frames: int
-    face_frames: int
-    multiple_faces: bool = False
-
-    @property
-    def duration_sec(self) -> float:
-        if self.timestamps_sec.size < 2:
-            return 0.0
-        return float(self.timestamps_sec[-1] - self.timestamps_sec[0])
+__all__ = [
+    "BLENDSHAPE_DIM",
+    "CANONICAL_BLENDSHAPES",
+    "MODEL_FILENAME",
+    "MODEL_REPO_ID",
+    "MODEL_REVISION",
+    "MODEL_URL",
+    "ExpressionFollowing",
+    "ExpressionFollowingModule",
+]
 
 
 class ExpressionFollowingModule(PipelineModule):
@@ -130,44 +111,10 @@ class ExpressionFollowingModule(PipelineModule):
         self.low_coverage_threshold = float(self.config.get("low_coverage_threshold", 0.5))
         self.num_faces = max(1, int(self.config.get("num_faces", 5)))
         self.face_index = self.config.get("face_index")
-        self._model_path: Optional[Path] = None
-        self._mp: Any = None
-        self._ml_available = False
-        self._backend = "unavailable"
-
-    def setup(self) -> None:
-        if self._ml_available:
-            return
-        self._ml_available = False
-        self._backend = "unavailable"
-        try:
-            import mediapipe as mp
-
-            required = ("FaceLandmarker", "FaceLandmarkerOptions", "RunningMode")
-            if not all(hasattr(mp.tasks.vision, name) for name in required):
-                raise RuntimeError("installed mediapipe lacks the Face Landmarker Tasks API")
-            path = download_model_file(MODEL_FILENAME, MODEL_URL, self.models_dir)
-            if not path.is_file() or path.stat().st_size <= 0:
-                raise RuntimeError(f"invalid Face Landmarker artifact: {path}")
-            self._model_path = path
-            self._mp = mp
-            self._ml_available = True
-            self._backend = "mediapipe_face_landmarker"
-            logger.info("ExpressionFollowing: Face Landmarker bundle resolved")
-        except ImportError:
-            logger.warning("ExpressionFollowing requires mediapipe")
-        except Exception as e:
-            self._model_path = None
-            self._mp = None
-            logger.warning("ExpressionFollowing setup failed: %s", e)
-
-    def _create_landmarker(self) -> Any:
-        if not self._ml_available or self._mp is None or self._model_path is None:
-            raise RuntimeError("ExpressionFollowing is not initialized")
-        options = self._mp.tasks.vision.FaceLandmarkerOptions(
-            base_options=self._mp.tasks.BaseOptions(model_asset_path=str(self._model_path)),
-            running_mode=self._mp.tasks.vision.RunningMode.VIDEO,
+        self._extractor = BlendshapeExtractor(
+            self.models_dir,
             num_faces=self.num_faces,
+            face_index=self.face_index,
             min_face_detection_confidence=float(
                 self.config.get("min_face_detection_confidence", 0.5)
             ),
@@ -175,10 +122,26 @@ class ExpressionFollowingModule(PipelineModule):
                 self.config.get("min_face_presence_confidence", 0.5)
             ),
             min_tracking_confidence=float(self.config.get("min_tracking_confidence", 0.5)),
-            output_face_blendshapes=True,
-            output_facial_transformation_matrixes=False,
         )
-        return self._mp.tasks.vision.FaceLandmarker.create_from_options(options)
+        self._ml_available = False
+        self._backend = "unavailable"
+
+    @property
+    def _model_path(self) -> Optional[Path]:
+        return self._extractor.model_path
+
+    @property
+    def _mp(self) -> Any:
+        return self._extractor.mediapipe
+
+    def setup(self) -> None:
+        self._ml_available = self._extractor.setup("ExpressionFollowing")
+        self._backend = self._extractor.backend
+
+    def _create_landmarker(self) -> Any:
+        if not self._ml_available:
+            raise RuntimeError("ExpressionFollowing is not initialized")
+        return self._extractor.create_landmarker()
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available or not sample.is_video:
@@ -208,102 +171,14 @@ class ExpressionFollowingModule(PipelineModule):
         )
 
     def _extract_blendshapes(self, video_path: Path) -> _Trajectory:
-        cap = cv2.VideoCapture(str(video_path))
-        if not cap.isOpened():
-            raise ValueError(f"cannot open video: {video_path}")
-        fps = float(cap.get(cv2.CAP_PROP_FPS))
-        if not math.isfinite(fps) or fps <= 0:
-            cap.release()
-            raise ValueError(f"invalid_video_fps: {video_path}")
-
-        timestamps: List[float] = []
-        coefficients: List[np.ndarray] = []
-        valid: List[bool] = []
-        indices: List[int] = []
-        multiple_faces = False
-        previous_ms = -1
-        frame_index = 0
-        try:
-            # A fresh VIDEO-mode instance per decoded video prevents timestamp
-            # state from leaking when the second video starts again at t=0.
-            with self._create_landmarker() as landmarker:
-                while True:
-                    ok, frame = cap.read()
-                    if not ok:
-                        break
-                    time_sec = frame_index / fps
-                    timestamp_ms = max(int(round(time_sec * 1000.0)), previous_ms + 1)
-                    previous_ms = timestamp_ms
-                    rgb = np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                    image = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb)
-                    detected = landmarker.detect_for_video(image, timestamp_ms)
-                    face_count = len(detected.face_blendshapes or [])
-                    multiple_faces = multiple_faces or face_count > 1
-                    vector = None
-                    if face_count:
-                        selected = self._select_face_index(detected)
-                        if selected is not None:
-                            vector = self._categories_to_vector(
-                                detected.face_blendshapes[selected]
-                            )
-                    timestamps.append(float(time_sec))
-                    indices.append(frame_index)
-                    valid.append(vector is not None)
-                    coefficients.append(
-                        vector if vector is not None else np.full(BLENDSHAPE_DIM, np.nan)
-                    )
-                    frame_index += 1
-        finally:
-            cap.release()
-
-        if frame_index == 0:
-            raise ValueError(f"video_decode_failure: {video_path}")
-        valid_array = np.asarray(valid, dtype=bool)
-        return _Trajectory(
-            timestamps_sec=np.asarray(timestamps, dtype=np.float64),
-            coefficients=np.asarray(coefficients, dtype=np.float32),
-            valid=valid_array,
-            frame_indices=np.asarray(indices, dtype=np.int64),
-            fps=fps,
-            decoded_frames=frame_index,
-            face_frames=int(valid_array.sum()),
-            multiple_faces=multiple_faces,
-        )
+        return self._extractor.extract(video_path)
 
     def _select_face_index(self, result: Any) -> Optional[int]:
-        count = len(result.face_blendshapes or [])
-        landmarks = result.face_landmarks or []
-        if count == 0 or len(landmarks) != count:
-            return None
-        if self.face_index is not None:
-            index = int(self.face_index)
-            return index if 0 <= index < count else None
-        # Face selection is deterministic: largest landmark bounding-box area,
-        # lowest index on ties.
-        areas = []
-        for index, face in enumerate(landmarks):
-            xs = np.asarray([point.x for point in face], dtype=np.float64)
-            ys = np.asarray([point.y for point in face], dtype=np.float64)
-            area = float((xs.max() - xs.min()) * (ys.max() - ys.min()))
-            areas.append(area if math.isfinite(area) else -1.0)
-        return max(range(count), key=lambda index: (areas[index], -index))
+        return select_face_index(result, self.face_index)
 
     @staticmethod
     def _categories_to_vector(categories: Sequence[Any]) -> Optional[np.ndarray]:
-        values = {}
-        for category in categories:
-            name = str(category.category_name)
-            if name in values:
-                return None
-            values[name] = float(category.score)
-        if set(values) != set(CANONICAL_BLENDSHAPES):
-            return None
-        vector = np.asarray([values[name] for name in CANONICAL_BLENDSHAPES], dtype=np.float64)
-        if vector.shape != (BLENDSHAPE_DIM,) or not np.isfinite(vector).all():
-            return None
-        if np.any(vector < -1e-5) or np.any(vector > 1.0 + 1e-5):
-            return None
-        return cast(np.ndarray, np.clip(vector, 0.0, 1.0).astype(np.float32))
+        return categories_to_vector(categories)
 
     @staticmethod
     def _normalized_l1(left: np.ndarray, right: np.ndarray) -> float:
