@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.70] - 2026-08-18
+
+### Fixed
+
+- **paddlepaddle-gpu auto-install**: the runtime swap to the GPU paddle build silently downgraded torch's CUDA stack. The GPU wheel pins fifteen `nvidia-*-cu12` distributions with `==` at the CUDA line it was built against, torch pins the same fifteen at its own line, and no resolution satisfies both -- so the import-time install always won and left torch running against older libraries than it was built for, with nothing reporting it. The install now runs with `--no-deps`, which is safe because torch is a hard dependency (its CUDA libraries are always present, and CUDA minor releases are backward compatible) and the GPU wheel's non-CUDA requirements are identical to those of the CPU wheel already installed. The install is also serialised by a lock file, so several worker processes importing ayase at once no longer run several pip installs into one environment, and the result is verified by a real GPU op in a fresh interpreter rather than assumed.
+- **build**: pinned `hatchling<1.32` in `build-system.requires`. Hatchling 1.32 emits `Metadata-Version: 2.5`, which neither twine nor PyPI accepts, so an unpinned build produced a distribution that passed the build step and then failed to upload.
+
 ## [0.1.69] - 2026-07-31
 
 ### Added
