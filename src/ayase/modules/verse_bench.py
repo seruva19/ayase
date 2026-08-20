@@ -74,12 +74,10 @@ class VerseBenchModule(PipelineModule):
         "verse_bench_metrics": "Raw metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, LSE-D, AV-A",
         "verse_bench_breakdown": "Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score",
     }
-    # LSE-C/LSE-D are surfaced on the same lip-sync (temporal) axis as the
-    # lip_sync module, so grouping stays consistent across producers.
-    metric_groups = {
-        "lse_c": "temporal",
-        "lse_d": "temporal",
-    }
+    # NOTE: Verse-Bench only reports aggregate statistics at dataset level
+    # via `pipeline.add_dataset_metric(...)`; it does not populate
+    # sample-level `QualityMetrics` fields.
+    metric_groups = {}
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
