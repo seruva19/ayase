@@ -19,6 +19,31 @@ pip install ayase
 Ayase is distributed as a single install. Runtime dependencies are managed by the
 project itself, and model weights are downloaded and cached on first use.
 
+### Isolated installation
+
+Applications that already have their own PyTorch, NumPy, or media dependency
+constraints can keep Ayase completely outside their environment:
+
+```bash
+pip install ayase --no-deps
+```
+
+```python
+from ayase_client import AyasePipeline
+
+pipeline = AyasePipeline(modules=["basic", "metadata", "motion"])
+results = pipeline.run("./my_dataset")
+pipeline.export("report.json")
+pipeline.close()
+```
+
+This installs the same Ayase wheel without ML dependencies. On first use the
+client creates a private full-runtime venv and starts a loopback worker. Media is
+passed by local path. Regular `pip install ayase` remains unchanged.
+
+Optional check: `ayase-client doctor`. To use an existing runtime, set
+`AYASE_RUNTIME_PYTHON`.
+
 ## CLI
 
 ```bash

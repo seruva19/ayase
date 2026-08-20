@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.1.71"
+version = "0.1.72"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -131,9 +131,10 @@ Changelog = "https://github.com/seruva19/ayase/blob/main/CHANGELOG.md"
 
 [project.scripts]
 ayase = "ayase.cli:app"
+ayase-client = "ayase_client.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ayase"]
+packages = ["src/ayase", "src/ayase_client", "src/ayase_protocol"]
 
 [tool.hatch.build.targets.sdist]
 include = [
