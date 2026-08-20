@@ -694,9 +694,11 @@ class ExecutionScreen(Screen):
         try:
             self.run_pipeline()
         except Exception as exc:  # pragma: no cover - defensive backstop
+            error_message = str(exc)
+
             def _crash() -> None:
                 self.query_one(RichLog).write(
-                    f"[bold red]UNEXPECTED ERROR:[/bold red] {exc}"
+                    f"[bold red]UNEXPECTED ERROR:[/bold red] {error_message}"
                 )
                 self.query_one("#status_title").update("ANALYSIS FAILED")
                 self.query_one("#btn_results").disabled = False
