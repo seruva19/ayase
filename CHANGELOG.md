@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.72] - 2026-08-20
+
+### Added
+
+- **isolated client**: `pip install ayase --no-deps` installs the lightweight client from the regular Ayase wheel; it creates a private version-matched runtime and exposes `run`, `results`, `stats`, and `export` over loopback.
+- **wire protocol**: the Ayase wheel now includes a dependency-free shared contract for endpoints, handshake validation, errors, and result DTOs.
+
+### Changed
+
+- Existing `pip install ayase`, CLI, and in-process Python API remain the default.
+
 ## [0.1.71] - 2026-08-18
 
 ### Added
