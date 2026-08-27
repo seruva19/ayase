@@ -215,6 +215,7 @@ class QualityMetrics(BaseModel):
     dino_face_identity_max: Optional[float] = None  # Max DINOv2 face identity across frames (0-1, higher=better)
     adaface_identity_similarity: Optional[float] = None  # AdaFace cosine similarity vs reference face (0-1, higher=better)
     id_sim_distance: Optional[float] = None  # ID-Sim fine-grained visual identity distance (lower=better)
+    nearid_identity_similarity: Optional[float] = None  # NearID cosine similarity vs reference image (higher=better)
     expression_following: Optional[float] = None  # Driver-expression fidelity (0-1, higher=better)
     expression_following_distance: Optional[float] = None  # Mean blendshape L1 distance (0-1, lower=better)
     expression_following_coverage: Optional[float] = None  # Joint valid-face coverage (0-1)
