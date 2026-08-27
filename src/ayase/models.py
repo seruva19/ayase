@@ -190,6 +190,7 @@ class QualityMetrics(BaseModel):
     ocr_area_ratio: Optional[float] = None  # 0-1
     face_count: Optional[int] = None
     nsfw_score: Optional[float] = None  # 0-1, likelihood of being NSFW
+    temporal_risk_rate: Optional[float] = None  # Risky sampled-frame fraction (0-1)
     auto_caption: Optional[str] = None  # Generated caption
     vqa_a_score: Optional[float] = None
     vqa_t_score: Optional[float] = None
