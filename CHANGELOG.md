@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **silent_lip_stability**: added THEval's Silero-VAD-conditioned silent-mouth lip-opening MAD for detecting involuntary mouth motion during silence.
+- **lip_dynamics**: added THEval's pairwise lip-landmark variation metric for measuring mouth-shape diversity in talking-head video.
 
 ### Changed
 
