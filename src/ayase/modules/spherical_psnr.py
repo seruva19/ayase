@@ -4,12 +4,17 @@ GitHub: https://github.com/Samsung/360tools
 
 s_psnr, ws_psnr, cpp_psnr — all dB, higher = better
 """
-import logging, cv2, numpy as np
+
+import logging
+import cv2
+import numpy as np
 from pathlib import Path
 from typing import Optional
 from ayase.models import Sample, QualityMetrics
 from ayase.base_modules import ReferenceBasedModule
+
 logger = logging.getLogger(__name__)
+
 
 class SphericalPSNRModule(ReferenceBasedModule):
     name = "spherical_psnr"
@@ -29,13 +34,17 @@ class SphericalPSNRModule(ReferenceBasedModule):
 
     def process(self, sample: Sample) -> Sample:
         ref = getattr(sample, "reference_path", None)
-        if ref is None: return sample
-        if not isinstance(ref, Path): ref = Path(ref)
-        if not ref.exists(): return sample
+        if ref is None:
+            return sample
+        if not isinstance(ref, Path):
+            ref = Path(ref)
+        if not ref.exists():
+            return sample
         try:
             scores = self._compute(str(sample.path), str(ref))
             if scores:
-                if sample.quality_metrics is None: sample.quality_metrics = QualityMetrics()
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
                 sample.quality_metrics.s_psnr = scores["s_psnr"]
                 sample.quality_metrics.ws_psnr = scores["ws_psnr"]
                 sample.quality_metrics.cpp_psnr = scores["cpp_psnr"]
@@ -57,7 +66,8 @@ class SphericalPSNRModule(ReferenceBasedModule):
         """
         img = cv2.imread(sample_p, cv2.IMREAD_GRAYSCALE)
         ref = cv2.imread(ref_p, cv2.IMREAD_GRAYSCALE)
-        if img is None or ref is None: return None
+        if img is None or ref is None:
+            return None
         h, w = img.shape
         ref = cv2.resize(ref, (w, h))
         img_f = img.astype(np.float64)
@@ -69,7 +79,7 @@ class SphericalPSNRModule(ReferenceBasedModule):
         s_psnr = 10 * np.log10(255**2 / max(mse, 1e-10))
 
         # WS-PSNR: weight by cos(latitude)
-        lat = np.linspace(-np.pi/2, np.pi/2, h).reshape(-1, 1)
+        lat = np.linspace(-np.pi / 2, np.pi / 2, h).reshape(-1, 1)
         weights = np.cos(lat)
         weights = np.broadcast_to(weights, (h, w))
         ws_mse = np.sum(weights * diff_sq) / np.sum(weights)

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **quality gates**: first-party lint failures are resolved and core pipeline annotations pass strict MyPy checks.
+- **external plugins**: discovery rejects Python file symlinks that resolve outside the configured trusted plugin folder.
+
+### Fixed
+
+- **pc_psnr**: point clouds without reference normals now retain their valid D1 score and leave the unavailable D2 score unset instead of discarding both metrics.
+
 ## [0.1.72] - 2026-08-20
 
 ### Added
