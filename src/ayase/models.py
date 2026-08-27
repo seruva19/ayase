@@ -776,6 +776,7 @@ class QualityMetrics(BaseModel):
     silent_lip_stability: Optional[float] = None  # THEval silent-mouth lip-opening MAD (lower=better)
     lip_dynamics_score: Optional[float] = None  # THEval mouth-shape distance variation (higher=more dynamic)
     eyebrow_dynamics_score: Optional[float] = None  # THEval normalized brow-motion intensity (higher=more dynamic)
+    head_motion_dynamics_score: Optional[float] = None  # THEval pose/translation complexity (higher=more dynamic)
 
     # Video segmentation
     davis_j: Optional[float] = None  # DAVIS J region similarity IoU (higher=better)
