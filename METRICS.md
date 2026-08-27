@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 20:37 · **364 modules** · **486 metrics**
+> **Version 0.1.72** · Generated 2026-08-27 20:49 · **365 modules** · **487 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **354/364 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **355/365 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**364** modules · **572** output fields · **486** metrics · **257** tiered · **169** GPU · **21** categories
+**365** modules · **573** output fields · **487** metrics · **258** tiered · **169** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-83-metrics) (83) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-37-metrics) (37) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-34-metrics) (34) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-83-metrics) (83) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-37-metrics) (37) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -4265,7 +4265,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `mode=audio`
 
 
-## Face & Identity (34 metrics)
+## Face & Identity (35 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
 > AdaFace cosine similarity vs reference face (0-1, higher=better) · ↑ higher=better · 0-1
@@ -4439,6 +4439,16 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: unavailable
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
+
+### `eyebrow_dynamics_score` [↑](#categories)
+> THEval normalized brow-motion intensity (higher=more dynamic) · ↑ higher=better · higher=more dynamic
+
+**[`eyebrow_dynamics`](src/ayase/modules/eyebrow_dynamics.py)** — THEval inter-eye-normalized eyebrow micro-expression intensity
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_eyebrow_dynamics.py`](tests/modules/per_module/test_eyebrow_dynamics.py)
+- **Config**: `num_faces=1`
 
 ### `face_consistency` [↑](#categories)
 > ↑ higher=better

@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 20:38 · **271 models** across **9 sources**
+> **Version 0.1.72** · Generated 2026-08-27 20:50 · **271 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -39,7 +39,7 @@
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
 
-- **Used by**: `expression_following`, `expression_similarity`, `lip_dynamics`, `mj_video`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `lip_dynamics`, `mj_video`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
 
 ### <a href="https://huggingface.co/ByteDance/EvoQuality" target="_blank">`ByteDance/EvoQuality`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
