@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 21:09 · **271 models** across **9 sources**
+> **Version 0.1.72** · Generated 2026-08-27 21:33 · **272 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**271** models · **102** HuggingFace · **54** pyiqa · **9** sources
+**272** models · **102** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (73)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (54)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (73)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
 
-- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `head_motion_dynamics`, `lip_dynamics`, `mj_video`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `head_motion_dynamics`, `lip_dynamics`, `mj_video`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
 
 ### <a href="https://huggingface.co/ByteDance/EvoQuality" target="_blank">`ByteDance/EvoQuality`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
@@ -806,7 +806,7 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Task**: YOLOX person detector (rtmlib backend)
 - **Notes**: Shared with rtmpose_fidelity
 
-## pyiqa Metrics (54)
+## pyiqa Metrics (55)
 
 <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection of image/video quality metrics. Weights auto-download on first `pyiqa.create_metric()` call. `pip install pyiqa`
 
@@ -842,8 +842,9 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 | `mad` | Most apparent distortion FR-IQA | research | — | `mad` |
 | `maniqa` | Multi-dimension attention NR-IQA | Apache-2.0 | Yes | `maniqa` |
 | `mdtvsfa` | Multi-dimensional temporal-spatial VQA | research | — | `mdtvsfa` |
+| `mouth_quality` | IQA | research | — | `mouth_quality` |
 | `msswd` | Multi-scale sliced Wasserstein distance | research | — | `msswd` |
-| `musiq` | Multi-scale image quality transformer | Apache-2.0 (Google) | Yes | `musiq` |
+| `musiq` | Multi-scale image quality transformer | Apache-2.0 (Google) | Yes | `mouth_quality`, `musiq` |
 | `naturalness` | Natural scene statistics | research | — | `naturalness` |
 | `nima` | Neural image assessment (aesthetic + technical) | Apache-2.0 (Google) | Yes | `nima` |
 | `niqe` | Natural image quality evaluator (statistics-based) | BSD-2-Clause (OpenCV) | Yes | `niqe` |
