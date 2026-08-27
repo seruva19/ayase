@@ -40,6 +40,8 @@ def get_superpoint_sampled_pts(
     extent: Tuple[float, ...],
     device: Optional[torch.device] = torch.device("cpu"),
 ):
+    from lightglue import SuperPoint
+
     extractor = SuperPoint(max_num_keypoints=48).eval().cuda()
     points = list()
     for _ in range(8):
@@ -188,7 +190,7 @@ def reduce_masked_mean(input, mask, dim=None, keepdim=False):
     return mean
 
 
-def bilinear_sampler(input, coords, align_corners=True, padding_mode="border"):
+def _bilinear_sampler_legacy(input, coords, align_corners=True, padding_mode="border"):
     r"""Sample a tensor using bilinear interpolation
 
     `bilinear_sampler(input, coords)` samples a tensor :attr:`input` at

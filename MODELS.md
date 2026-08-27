@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 21:33 · **272 models** across **9 sources**
+> **Version 0.1.72** · Generated 2026-08-27 22:12 · **272 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -77,7 +77,7 @@
 ### <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">`GD-ML/VMBench`</a> [↑](#categories)
 > apache-2.0
 
-- **Used by**: `vmbench_cas`, `vmbench_pas`, `vmbench_tcs`
+- **Used by**: `video_edit_motion_fidelity`, `vmbench_cas`, `vmbench_pas`, `vmbench_tcs`
 - **Source**: <a href="https://arxiv.org/abs/2503.10076" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/HuggingFaceM4/Idefics3-8B-Llama3" target="_blank">`HuggingFaceM4/Idefics3-8B-Llama3`</a> [↑](#categories)

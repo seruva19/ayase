@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **eyebrow_dynamics**: added THEval's inter-eye-normalized eyebrow micro-expression intensity metric.
 - **head_motion_dynamics**: added THEval's head-pose, derivative, and face-translation complexity equation using the pinned MediaPipe pose transform.
 - **mouth_quality**: added localized MUSIQ scoring over padded lip-region crops to expose mouth defects hidden by whole-frame quality scores.
+- **video_edit_motion_fidelity**: added MTBench-style dense trajectory matching between a source and edited video using HF-hosted CoTracker3.
 
 ### Changed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **pc_psnr**: point clouds without reference normals now retain their valid D1 score and leave the unavailable D2 score unset instead of discarding both metrics.
+- **CoTracker3**: fixed maintained vendored-code lint defects in the optional SuperPoint sampler, GELU factories, and duplicated bilinear sampler definition.
 
 ## [0.1.72] - 2026-08-20
 
