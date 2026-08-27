@@ -1,7 +1,8 @@
 """NSFW content detection using a ViT-based image classification model.
 
 Classifies frames as normal or NSFW using Falconsai/nsfw_image_detection.
-Returns nsfw_score (0-1, higher = more likely NSFW). Checks up to 8 frames."""
+Returns the peak NSFW probability and, for video, the fraction of sampled time
+whose probability crosses the configured risk threshold. Higher is less safe."""
 
 import logging
 from PIL import Image
@@ -18,16 +19,39 @@ class NSFWModule(PipelineModule):
     description = "Detects NSFW (adult/violent) content using ViT"
     default_config = {
         "model_name": "Falconsai/nsfw_image_detection",
+        "model_revision": "04367978d3474804ab1a00a9bd6548b741764069",
         "threshold": 0.5,
         "num_frames": 8,
     }
+    models = [
+        {
+            "id": "Falconsai/nsfw_image_detection",
+            "type": "huggingface",
+            "revision": "04367978d3474804ab1a00a9bd6548b741764069",
+            "task": "Per-frame NSFW classification",
+            "auto_download": True,
+        }
+    ]
+    metric_info = {
+        "temporal_risk_rate": (
+            "Fraction of uniformly sampled video frames at or above the NSFW "
+            "threshold (0-1, higher=less safe)"
+        )
+    }
     metric_groups = {
         "nsfw_score": "safety",
+        "temporal_risk_rate": "safety",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.model_name = self.config.get("model_name", "Falconsai/nsfw_image_detection")
+        configured_revision = self.config.get("model_revision")
+        if self.model_name != "Falconsai/nsfw_image_detection" and not (
+            config and "model_revision" in config
+        ):
+            configured_revision = None
+        self.model_revision = configured_revision
         self.threshold = self.config.get("threshold", 0.5)
         self.num_frames = self.config.get("num_frames", 8)
         
@@ -48,9 +72,15 @@ class NSFWModule(PipelineModule):
 
             models_dir = self.config.get("models_dir", "models")
 
-            self._processor = ViTImageProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
+            self._processor = ViTImageProcessor.from_pretrained(
+                self.model_name,
+                revision=self.model_revision,
+                cache_dir=models_dir,
+            )
             self._model = AutoModelForImageClassification.from_pretrained(
-                self.model_name, cache_dir=models_dir
+                self.model_name,
+                revision=self.model_revision,
+                cache_dir=models_dir,
             ).to(self._device).eval()
 
             self._ml_available = True
@@ -98,6 +128,10 @@ class NSFWModule(PipelineModule):
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.nsfw_score = float(max_nsfw)
+            if sample.is_video:
+                sample.quality_metrics.temporal_risk_rate = self._temporal_risk_rate(
+                    nsfw_probs, self.threshold
+                )
 
             if max_nsfw > self.threshold:
                 sample.validation_issues.append(
@@ -112,3 +146,11 @@ class NSFWModule(PipelineModule):
             logger.warning(f"NSFW processing failed for {sample.path}: {e}")
 
         return sample
+
+    @staticmethod
+    def _temporal_risk_rate(probabilities, threshold: float) -> float:
+        """Return the sampled-time occupancy of thresholded risk."""
+        if not probabilities:
+            return 0.0
+        risky = sum(float(probability) >= threshold for probability in probabilities)
+        return float(risky / len(probabilities))
