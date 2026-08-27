@@ -368,6 +368,7 @@ class QualityMetrics(BaseModel):
     ai_generated_probability: Optional[float] = None  # AI-generated content likelihood 0-1
     harmful_content_score: Optional[float] = None  # Violence/gore severity 0-1
     watermark_strength: Optional[float] = None  # Invisible watermark strength 0-1
+    watermark_robustness_score: Optional[float] = None  # Attack retention (0-1)
     bias_score: Optional[float] = None  # Representation imbalance indicator 0-1
 
     # 3D and spatial quality
