@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 17:14 · **270 models** across **9 sources**
+> **Version 0.1.72** · Generated 2026-08-27 20:20 · **271 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**270** models · **102** HuggingFace · **54** pyiqa · **9** sources
+**271** models · **102** HuggingFace · **54** pyiqa · **9** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (73)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (54)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (36)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (73)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (54)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
 
-- **Used by**: `expression_following`, `expression_similarity`, `mj_video`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `expression_following`, `expression_similarity`, `mj_video`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
 
 ### <a href="https://huggingface.co/ByteDance/EvoQuality" target="_blank">`ByteDance/EvoQuality`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
@@ -1188,6 +1188,11 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `motion_smoothness`
 - **Install**: `pip install rife-model`
+
+### `silero-vad` [↑](#categories)
+
+- **Used by**: `silent_lip_stability`
+- **Install**: `pip install silero-vad`
 
 ### `stlpips-pytorch` [↑](#categories)
 > ST-LPIPS spatiotemporal perceptual
