@@ -127,6 +127,7 @@ _IMPORTS = [
     ("AdaFaceModule", ".adaface"),
     ("IDSimModule", ".id_sim"),
     ("NearIDModule", ".nearid"),
+    ("MaSCModule", ".masc"),
     ("ExpressionFollowingModule", ".expression_following"),
     ("SilentLipStabilityModule", ".silent_lip_stability"),
     ("LipDynamicsModule", ".lip_dynamics"),

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.72** · Generated 2026-08-28 01:29 · **274 models** across **9 sources**
+> **Version 0.1.72** · Generated 2026-08-28 01:49 · **275 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**274** models · **104** HuggingFace · **55** pyiqa · **9** sources
+**275** models · **105** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~630 GB
+**Estimated total download size (all models):** ~634 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (75)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (76)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -375,6 +375,14 @@
 - **Parameters**: 878M · **Downloads**: 1.5M
 - **Disk**: ~3.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2303.15343" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/google/siglip2-so400m-patch16-naflex" target="_blank">`google/siglip2-so400m-patch16-naflex`</a> [↑](#categories)
+> zero-shot-image-classification · apache-2.0
+
+- **Used by**: `masc`
+- **Parameters**: 1.1B · **Downloads**: 377K
+- **Disk**: ~4.2 GB
+- **Source**: <a href="https://arxiv.org/abs/2502.14786" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/internlm/internlm2-chat-1_8b" target="_blank">`internlm/internlm2-chat-1_8b`</a> [↑](#categories)
 > text-generation · other

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **id_sim**: added the public CVPR 2026 ID-Sim fine-grained visual identity distance with official MIT adapter heads and HF-only model weight loading.
 - **nearid**: added the public ECCV 2026 near-distractor-aware identity similarity using the official Hugging Face model.
+- **masc**: added the public masked-maxcos concept-preservation score with explicit reference-mask support and pinned SigLIP2 NaFlex weights.
 - **silent_lip_stability**: added THEval's Silero-VAD-conditioned silent-mouth lip-opening MAD for detecting involuntary mouth motion during silence.
 - **lip_dynamics**: added THEval's pairwise lip-landmark variation metric for measuring mouth-shape diversity in talking-head video.
 - **eyebrow_dynamics**: added THEval's inter-eye-normalized eyebrow micro-expression intensity metric.
