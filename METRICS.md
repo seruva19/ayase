@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 21:08 · **366 modules** · **488 metrics**
+> **Version 0.1.72** · Generated 2026-08-27 21:32 · **367 modules** · **489 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **356/366 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **357/367 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**366** modules · **574** output fields · **488** metrics · **259** tiered · **169** GPU · **21** categories
+**367** modules · **575** output fields · **489** metrics · **260** tiered · **170** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,11 +35,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-83-metrics) (83) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-38-metrics) (38) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-38-metrics) (38) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-9-metrics) (9) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
-## No-Reference Quality (83 metrics)
+## No-Reference Quality (84 metrics)
 
 ### `afine_score` [↑](#categories)
 > A-FINE fidelity-naturalness (CVPR 2025) · ↑ higher=better
@@ -448,6 +448,18 @@
 - **VRAM**: ~600 MB
 - **Tests**: covered by [`test_modularbvqa.py`](tests/modules/per_module/test_modularbvqa.py)
 - **Config**: `subsample=8`, `frame_size=224`
+
+### `mouth_quality_score` [↑](#categories)
+> THEval MUSIQ on mouth crops (higher=better) · ↑ higher=better
+
+**[`mouth_quality`](src/ayase/modules/mouth_quality.py)** — THEval localized mouth-crop MUSIQ quality
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Packages**: pyiqa, torch
+- **Source**: <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets" target="_blank">HF</a>
+- **Tests**: covered by [`test_mouth_quality.py`](tests/modules/per_module/test_mouth_quality.py)
+- **Config**: `batch_size=64`, `padding=10`, `num_faces=1`
 
 ### `musiq_score` [↑](#categories)
 > MUSIQ multi-scale IQA (higher=better) · ↑ higher=better
@@ -4601,7 +4613,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: unavailable
-- **Tests**: covered by [`test_lip_dynamics.py`](tests/modules/per_module/test_lip_dynamics.py)
+- **Tests**: covered by [`test_lip_dynamics.py`](tests/modules/per_module/test_lip_dynamics.py), [`test_mouth_quality.py`](tests/modules/per_module/test_mouth_quality.py)
 - **Config**: `num_faces=1`, `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`
 
 ### `magface_score` [↑](#categories)

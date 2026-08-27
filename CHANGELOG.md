@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **lip_dynamics**: added THEval's pairwise lip-landmark variation metric for measuring mouth-shape diversity in talking-head video.
 - **eyebrow_dynamics**: added THEval's inter-eye-normalized eyebrow micro-expression intensity metric.
 - **head_motion_dynamics**: added THEval's head-pose, derivative, and face-translation complexity equation using the pinned MediaPipe pose transform.
+- **mouth_quality**: added localized MUSIQ scoring over padded lip-region crops to expose mouth defects hidden by whole-frame quality scores.
 
 ### Changed
 
