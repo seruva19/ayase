@@ -128,6 +128,7 @@ _IMPORTS = [
     ("LipDynamicsModule", ".lip_dynamics"),
     ("EyebrowDynamicsModule", ".eyebrow_dynamics"),
     ("HeadMotionDynamicsModule", ".head_motion_dynamics"),
+    ("MouthQualityModule", ".mouth_quality"),
     ("FaceCrossSimilarityModule", ".face_cross_similarity"),
     # --- Scene & content ---
     ("SceneModule", ".scene"),
