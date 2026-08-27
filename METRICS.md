@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.72** · Generated 2026-08-28 01:28 · **371 modules** · **496 metrics**
+> **Version 0.1.72** · Generated 2026-08-28 01:48 · **372 modules** · **497 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **361/371 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **362/372 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**371** modules · **582** output fields · **496** metrics · **263** tiered · **172** GPU · **21** categories
+**372** modules · **583** output fields · **497** metrics · **264** tiered · **173** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -1935,7 +1935,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (61 metrics)
+## Text-Video Alignment (62 metrics)
 
 ### `aigv_alignment` [↑](#categories)
 > AI video text-video alignment
@@ -2257,6 +2257,17 @@
 - **Backend**: imported_results
 - **Source**: <a href="https://huggingface.co/anonymousdb/LOVE-Perception" target="_blank">HF</a>
 - **Tests**: covered by [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py)
+
+### `masc_concept_preservation` [↑](#categories)
+> MaSC masked-maxcos concept preservation (higher=better) · ↑ higher=better · -1 to 1
+
+**[`masc`](src/ayase/modules/masc.py)** — MaSC masked-maxcos concept preservation similarity
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Packages**: torch, transformers
+- **Tests**: covered by [`test_masc.py`](tests/modules/test_masc.py)
+- **Config**: `model=google/siglip2-so400m-patch16-naflex`, `max_num_patches=1024`, `foreground_threshold=0.5`, `device=auto`
 
 ### `mj_video_alignment_score` [↑](#categories)
 > MJ-Video prompt alignment aspect · ↑ higher=better
