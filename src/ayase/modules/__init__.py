@@ -69,6 +69,7 @@ _IMPORTS = [
     ("UnifiedRewardEditModule", ".unified_reward_edit"),
     ("DICEEditModule", ".dice_edit"),
     ("VEBenchModule", ".vebench"),
+    ("VideoEditMotionFidelityModule", ".video_edit_motion_fidelity"),
     # --- No-reference quality ---
     ("DOVERModule", ".dover"),
     ("UVQModule", ".uvq"),
