@@ -53,13 +53,31 @@ class TCBenchModule(PipelineModule):
         "decomposer": "auto",  # "auto" | "llm" | "regex" | "comma"
         "num_frames": 8,
         "clip_model": "openai/clip-vit-base-patch32",
+        "clip_revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+        "event_similarity_threshold": 0.2,
         "models_dir": "models",
+    }
+    models = [
+        {
+            "id": "openai/clip-vit-base-patch32",
+            "type": "huggingface",
+            "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+            "task": "Frame-to-event semantic grounding",
+            "auto_download": True,
+        }
+    ]
+    metric_info = {
+        "long_form_event_fulfillment": (
+            "Fraction of caption events grounded above the CLIP cosine threshold "
+            "in at least one sampled frame (0-1, higher=better)"
+        )
     }
     metric_groups = {
         "tcbench_attribute_score": "alignment",
         "tcbench_background_score": "alignment",
         "tcbench_object_score": "alignment",
         "tcbench_overall": "alignment",
+        "long_form_event_fulfillment": "alignment",
     }
 
     def __init__(self, config=None):
@@ -67,6 +85,13 @@ class TCBenchModule(PipelineModule):
         self.decomposer_pref = self.config.get("decomposer", "auto")
         self.num_frames = self.config.get("num_frames", 8)
         self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
+        raw_config = config or {}
+        self.clip_revision = self.config.get("clip_revision")
+        if self.clip_model_name != "openai/clip-vit-base-patch32" and "clip_revision" not in raw_config:
+            self.clip_revision = None
+        self.event_similarity_threshold = float(
+            self.config.get("event_similarity_threshold", 0.2)
+        )
         self.models_dir = self.config.get("models_dir", "models")
         self._clip_model = None
         self._clip_processor = None
@@ -101,7 +126,7 @@ class TCBenchModule(PipelineModule):
     def _try_load_clip(self) -> bool:
         try:
             from transformers import CLIPModel, CLIPProcessor
-            from ayase.config import resolve_model_path
+            from ayase.config import download_hf_snapshot, resolve_model_path
             from ayase.runtime import (
                 from_pretrained_with_attention,
                 resolve_torch_device,
@@ -109,7 +134,27 @@ class TCBenchModule(PipelineModule):
             )
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            resolved = resolve_model_path(self.clip_model_name, self.models_dir)
+            resolved_candidate = resolve_model_path(self.clip_model_name, self.models_dir)
+            if resolved_candidate == self.clip_model_name:
+                resolved = str(
+                    download_hf_snapshot(
+                        self.clip_model_name,
+                        self.models_dir,
+                        revision=self.clip_revision,
+                        allow_patterns=[
+                            "config.json",
+                            "preprocessor_config.json",
+                            "pytorch_model.bin",
+                            "tokenizer.json",
+                            "tokenizer_config.json",
+                            "special_tokens_map.json",
+                            "vocab.json",
+                            "merges.txt",
+                        ],
+                    )
+                )
+            else:
+                resolved = resolved_candidate
 
             def load_clip():
                 model = from_pretrained_with_attention(
@@ -176,6 +221,7 @@ class TCBenchModule(PipelineModule):
         background_score = self._score_dimension(sims, events, kind="background")
         overall = float(np.mean([attribute_score, object_score, background_score]))
         self._write(sample, attribute_score, object_score, background_score, overall)
+        self._write_fulfillment(sample, self._event_fulfillment(sims))
         return sample
 
     def process_batch(self, samples: List[Sample]) -> List[Sample]:
@@ -222,6 +268,7 @@ class TCBenchModule(PipelineModule):
                 background_score = self._score_dimension(sims, events, kind="background")
                 overall = float(np.mean([attribute_score, object_score, background_score]))
                 self._write(sample, attribute_score, object_score, background_score, overall)
+                self._write_fulfillment(sample, self._event_fulfillment(sims))
         except Exception as e:
             logger.warning("TC-Bench batch failed: %s", e)
         return samples
@@ -233,6 +280,17 @@ class TCBenchModule(PipelineModule):
         sample.quality_metrics.tcbench_object_score = round(float(obj), 3)
         sample.quality_metrics.tcbench_background_score = round(float(bg), 3)
         sample.quality_metrics.tcbench_overall = round(float(overall), 3)
+
+    def _write_fulfillment(self, sample: Sample, score: float) -> None:
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.long_form_event_fulfillment = round(float(score), 3)
+
+    def _event_fulfillment(self, similarities: np.ndarray) -> float:
+        if similarities.size == 0 or similarities.shape[1] == 0:
+            return 0.0
+        event_peaks = np.max(similarities, axis=0)
+        return float(np.mean(event_peaks >= self.event_similarity_threshold))
 
     def _decompose(self, caption: str) -> List[str]:
         if self.active_decomposer == "llm" and self._llm_endpoint is not None:
@@ -318,12 +376,8 @@ class TCBenchModule(PipelineModule):
             device=self._device,
             cache_key=("tc_bench_events", tuple(events)),
         )
-        scale = getattr(self._clip_model, "logit_scale", None)
-        if scale is not None:
-            logits = (image_features @ text_features.T) * scale.exp()
-        else:
-            logits = image_features @ text_features.T
-        return logits.detach().float().cpu().numpy()
+        similarities = image_features @ text_features.T
+        return similarities.detach().float().cpu().numpy()
 
 
 def _regex_decompose(caption: str) -> List[str]:
