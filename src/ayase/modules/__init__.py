@@ -124,6 +124,7 @@ _IMPORTS = [
     ("IdentityLossModule", ".identity_loss"),
     ("AdaFaceModule", ".adaface"),
     ("ExpressionFollowingModule", ".expression_following"),
+    ("SilentLipStabilityModule", ".silent_lip_stability"),
     ("FaceCrossSimilarityModule", ".face_cross_similarity"),
     # --- Scene & content ---
     ("SceneModule", ".scene"),

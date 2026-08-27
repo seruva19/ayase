@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **silent_lip_stability**: added THEval's Silero-VAD-conditioned silent-mouth lip-opening MAD for detecting involuntary mouth motion during silence.
+
 ### Changed
 
 - **quality gates**: first-party lint failures are resolved and core pipeline annotations pass strict MyPy checks.
