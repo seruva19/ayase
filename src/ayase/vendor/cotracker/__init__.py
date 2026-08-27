@@ -24,6 +24,7 @@ __all__ = ["load_cotracker", "CoTrackerWrapper", "CoTrackerPredictor"]
 # HuggingFace repo hosting the offline CoTracker3 checkpoint used by VMBench.
 _HF_REPO_ID = "GD-ML/VMBench"
 _HF_FILENAME = "scaled_offline.pth"
+_HF_REVISION = "437cf3b7c667cd23e3f1e24e19e0af7868088907"
 
 
 def _resolve_checkpoint(models_dir: str = "models") -> str:
@@ -37,6 +38,7 @@ def _resolve_checkpoint(models_dir: str = "models") -> str:
     return hf_hub_download(
         repo_id=_HF_REPO_ID,
         filename=_HF_FILENAME,
+        revision=_HF_REVISION,
         cache_dir=models_dir,
     )
 
