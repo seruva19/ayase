@@ -27,7 +27,7 @@ def test_metrics_table_matches_quality_metrics():
     documented as ``### `field``` headings in the main body. Fields owned only
     by requires_external_backend (no-backend) modules are NOT in the main body; they are
     listed by name in the "External backend required — pending real backend" section instead.
-    The full schema stays 453; the delivered set is what the doc advertises.
+    The full schema stays explicit; the delivered set is what the doc advertises.
     """
     from ayase.metrics_doc import compute_external_backend_partition
     from ayase.pipeline import ModuleRegistry
@@ -73,5 +73,5 @@ def test_metrics_table_matches_quality_metrics():
     )
 
     # Schema count includes all fields; delivered = schema − requires_external_backend-only.
-    assert len(model_fields) == 531, f"Expected 531 fields, got {len(model_fields)}"
-    assert len(delivered_fields) == 531 - len(external_only_fields)
+    assert len(model_fields) == 532, f"Expected 532 fields, got {len(model_fields)}"
+    assert len(delivered_fields) == 532 - len(external_only_fields)
