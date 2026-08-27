@@ -140,6 +140,7 @@ class BlendshapeExtractor:
         min_face_detection_confidence: float = 0.5,
         min_face_presence_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
+        output_facial_transformation_matrixes: bool = False,
     ) -> None:
         self.models_dir = str(models_dir)
         self.num_faces = max(1, int(num_faces))
@@ -147,6 +148,9 @@ class BlendshapeExtractor:
         self.min_face_detection_confidence = float(min_face_detection_confidence)
         self.min_face_presence_confidence = float(min_face_presence_confidence)
         self.min_tracking_confidence = float(min_tracking_confidence)
+        self.output_facial_transformation_matrixes = bool(
+            output_facial_transformation_matrixes
+        )
         self.available = False
         self.backend = "unavailable"
         self.model_path: Optional[Path] = None
@@ -195,7 +199,7 @@ class BlendshapeExtractor:
             min_face_presence_confidence=self.min_face_presence_confidence,
             min_tracking_confidence=self.min_tracking_confidence,
             output_face_blendshapes=True,
-            output_facial_transformation_matrixes=False,
+            output_facial_transformation_matrixes=self.output_facial_transformation_matrixes,
         )
         return self._mp.tasks.vision.FaceLandmarker.create_from_options(options)
 
