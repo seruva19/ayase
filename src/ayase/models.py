@@ -774,6 +774,7 @@ class QualityMetrics(BaseModel):
     lse_d: Optional[float] = None  # LSE-D lip sync error distance (lower=better)
     lse_c: Optional[float] = None  # LSE-C lip sync error confidence (higher=better)
     silent_lip_stability: Optional[float] = None  # THEval silent-mouth lip-opening MAD (lower=better)
+    lip_dynamics_score: Optional[float] = None  # THEval mouth-shape distance variation (higher=more dynamic)
 
     # Video segmentation
     davis_j: Optional[float] = None  # DAVIS J region similarity IoU (higher=better)
