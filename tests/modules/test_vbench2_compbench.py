@@ -1,5 +1,6 @@
 """Tests for VBench-2.0 upgraded modules, ChronoMagic-Bench, and T2V-CompBench."""
 
+import cv2
 import numpy as np
 import pytest
 
@@ -245,7 +246,3 @@ class TestNewFields:
         ]
         for field in new_fields:
             assert getattr(qm, field) is None, f"{field} should default to None"
-
-
-# Need cv2 import for the chronomagic heuristic test
-import cv2
