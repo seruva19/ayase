@@ -46,8 +46,6 @@ class NaturalnessModule(NoReferenceModule):
 
     def setup(self) -> None:
         try:
-            import pyiqa  # noqa: F401
-
             self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             def _make_brisque():

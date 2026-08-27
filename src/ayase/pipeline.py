@@ -13,7 +13,7 @@ import urllib.request
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Set, Type, Any, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Type, Union, cast
 
 from .models import Sample, DatasetStats, QualityMetrics, ValidationIssue, ValidationSeverity
 from .runtime import clone_frames, pipeline_context, readonly_view, runtime_module_config
@@ -519,7 +519,7 @@ class Pipeline:
 
         if not self._frame_cache_enabled or max_frames <= 0:
             frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
-            return clone_frames(frames)
+            return cast(List[Any], clone_frames(frames))
 
         key = self._frame_cache_key("frames", Path(path))
         entry = self._frame_cache.get(key)
@@ -1379,6 +1379,7 @@ class Pipeline:
                             # otherwise discard them (caching a failed sample as
                             # complete so it is never retried).
                             pre_failed, pre_issues = self._snapshot_failure_state(sample)
+                            restored: Optional[Sample]
                             try:
                                 restored = hooks["after"](sample)
                             except Exception as e:
@@ -1573,6 +1574,7 @@ class Pipeline:
                     # by the default process_batch) would otherwise be dropped,
                     # caching a failed sample as complete so it is never retried.
                     pre_failed, pre_issues = self._snapshot_failure_state(working[pos])
+                    restored: Optional[Sample]
                     try:
                         restored = hooks["after"](working[pos])
                     except Exception as e:
@@ -1815,7 +1817,7 @@ class Pipeline:
         ``metadata`` coerced to JSON-safe types; keep valid metadata intact.
         """
         try:
-            return sample.model_dump(mode="json")
+            return cast(Dict[str, Any], sample.model_dump(mode="json"))
         except Exception as exc:
             logger.warning(
                 "Sample %s has non-serializable metadata; coercing to JSON-safe "
@@ -1825,7 +1827,7 @@ class Pipeline:
             )
         try:
             safe = sample.model_copy(update={"metadata": cls._json_safe(sample.metadata)})
-            return safe.model_dump(mode="json")
+            return cast(Dict[str, Any], safe.model_dump(mode="json"))
         except Exception as exc:
             logger.warning(
                 "Sample %s metadata still non-serializable after coercion; "
@@ -1834,7 +1836,7 @@ class Pipeline:
                 exc,
             )
             dropped = sample.model_copy(update={"metadata": {}})
-            return dropped.model_dump(mode="json")
+            return cast(Dict[str, Any], dropped.model_dump(mode="json"))
 
     def save_state(self, path: Path) -> None:
         """Save current pipeline state to disk for resume."""
@@ -2151,11 +2153,28 @@ class ModuleRegistry:
                     cls._update_external_plugin_labels(folder, current_labels)
                     continue
                 cls._readiness.pop(str(folder), None)
+                resolved_folder = folder.resolve()
                 for file_path in folder.glob("*.py"):
                     if file_path.name.startswith("_"):
                         continue
-                    file_key = str(file_path.resolve())
                     readiness_label = cls._external_plugin_label(file_path)
+                    resolved_file = file_path.resolve()
+                    # Plugin folders are trusted-code roots. Do not let a file
+                    # symlink turn discovery into execution of Python outside
+                    # the explicitly configured root.
+                    if resolved_file.parent != resolved_folder:
+                        cls._record_readiness(
+                            readiness_label,
+                            False,
+                            "Plugin path resolves outside configured folder",
+                        )
+                        current_labels.add(readiness_label)
+                        logger.warning(
+                            "Skipping external plugin outside configured folder: %s",
+                            file_path,
+                        )
+                        continue
+                    file_key = str(resolved_file)
                     current_file_keys.add(file_key)
                     current_labels.add(readiness_label)
                     previous_module_name = cls._external_plugin_modules.get(file_key)

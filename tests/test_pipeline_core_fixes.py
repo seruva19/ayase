@@ -746,6 +746,36 @@ def test_external_plugin_module_name_is_stable_digest(tmp_path: Path):
     assert ModuleRegistry.get_module("corefix_ext_plugin") is None
 
 
+def test_external_plugin_symlink_cannot_escape_configured_folder(tmp_path: Path):
+    plugin_dir = tmp_path / "plugins"
+    plugin_dir.mkdir()
+    outside = tmp_path / "outside_plugin.py"
+    outside.write_text(
+        "from ayase.pipeline import PipelineModule\n"
+        "class EscapedPlugin(PipelineModule):\n"
+        "    name = 'corefix_escaped_plugin'\n"
+        "    def process(self, sample):\n"
+        "        return sample\n",
+        encoding="utf-8",
+    )
+    link = plugin_dir / "escaped.py"
+    try:
+        link.symlink_to(outside)
+    except OSError:
+        pytest.skip("File symlinks are unavailable on this platform")
+
+    try:
+        ModuleRegistry.discover_external_modules([plugin_dir])
+        assert ModuleRegistry.get_module("corefix_escaped_plugin") is None
+        readiness = ModuleRegistry.readiness_report()
+        readiness_key = str(link.resolve())
+        assert readiness[readiness_key]["status"] == "missing"
+        assert "outside configured folder" in readiness[readiness_key]["error"]
+    finally:
+        link.unlink(missing_ok=True)
+        ModuleRegistry.discover_external_modules([plugin_dir])
+
+
 # ---------------------------------------------------------------------------
 # 8. Frame cache: decode once, subsampled views, lazy color, read-only
 # ---------------------------------------------------------------------------
