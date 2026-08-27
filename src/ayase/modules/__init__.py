@@ -51,6 +51,7 @@ _IMPORTS = [
     ("ColorConsistencyModule", ".color_consistency"),
     ("TemporalStyleModule", ".temporal_style"),
     ("StyleConsistencyModule", ".style_consistency"),
+    ("LongFormTransitionStabilityModule", ".long_form_transition_stability"),
     # --- Alignment ---
     ("SemanticAlignmentModule", ".semantic_alignment"),
     ("VideoTextMatchingModule", ".video_text_matching"),

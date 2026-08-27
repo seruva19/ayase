@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 22:57 · **368 modules** · **492 metrics**
+> **Version 0.1.72** · Generated 2026-08-27 23:19 · **369 modules** · **493 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **358/368 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **359/369 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**368** modules · **578** output fields · **492** metrics · **261** tiered · **170** GPU · **21** categories
+**369** modules · **579** output fields · **493** metrics · **261** tiered · **170** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -2648,7 +2648,7 @@
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 
-## Temporal Consistency (33 metrics)
+## Temporal Consistency (34 metrics)
 
 ### `aigv_temporal` [↑](#categories)
 > AI video temporal smoothness
@@ -2820,6 +2820,16 @@
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_jump_cut.py`](tests/modules/per_module/test_jump_cut.py), [`test_curation_metrics.py`](tests/modules/test_curation_metrics.py)
 - **Config**: `threshold=40.0`
+
+### `long_form_transition_stability` [↑](#categories)
+> Boundary stability (0-1) · ↑ higher=better · 0-1
+
+**[`long_form_transition_stability`](src/ayase/modules/long_form_transition_stability.py)** — Boundary-local black-frame, flash, duplicate, and freeze stability
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: algorithmic
+- **Tests**: covered by [`test_long_form_transition_stability.py`](tests/modules/per_module/test_long_form_transition_stability.py)
+- **Config**: `analysis_fps=8.0`, `boundary_margin_sec=2.0`, `boundaries_sec=[]`, `cut_threshold=0.25`, `minimum_boundary_gap_sec=1.0`, `max_frames=2400`
 
 ### `lse_c` [↑](#categories)
 > LSE-C lip sync error confidence (higher=better) · ↑ higher=better
