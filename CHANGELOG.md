@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **installation**: constrained librosa to the range required by the mandatory MS-CLAP backend so a fresh `pip install ayase` resolves successfully.
 - **pc_psnr**: point clouds without reference normals now retain their valid D1 score and leave the unavailable D2 score unset instead of discarding both metrics.
 - **CoTracker3**: fixed maintained vendored-code lint defects in the optional SuperPoint sampler, GELU factories, and duplicated bilinear sampler definition.
 
