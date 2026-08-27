@@ -1,8 +1,9 @@
 """Watermark Robustness module.
 
-Estimates invisible watermark presence and strength:
+Estimates invisible watermark presence, strength, and perturbation robustness:
 
   watermark_strength — 0-1 (higher = stronger watermark detected)
+  watermark_robustness_score — 0-1 (higher = better retention after attacks)
 
 Detection methods:
   1. DCT-domain analysis: invisible watermarks often embed energy
@@ -31,15 +32,32 @@ class WatermarkRobustnessModule(PipelineModule):
     default_config = {
         "subsample": 15,
         "max_frames": 30,
+        "minimum_strength": 0.05,
+        "jpeg_quality": 60,
+        "noise_std": 8.0,
+        "blur_sigma": 1.2,
+        "crop_ratio": 0.8,
+    }
+    metric_info = {
+        "watermark_robustness_score": (
+            "Mean watermark-detector strength retention after JPEG, noise, blur, "
+            "crop-resize, and video frame-averaging attacks (0-1, higher=better)"
+        )
     }
     metric_groups = {
         "watermark_strength": "safety",
+        "watermark_robustness_score": "safety",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.subsample = self.config.get("subsample", 15)
         self.max_frames = self.config.get("max_frames", 30)
+        self.minimum_strength = float(self.config.get("minimum_strength", 0.05))
+        self.jpeg_quality = int(self.config.get("jpeg_quality", 60))
+        self.noise_std = float(self.config.get("noise_std", 8.0))
+        self.blur_sigma = float(self.config.get("blur_sigma", 1.2))
+        self.crop_ratio = float(self.config.get("crop_ratio", 0.8))
         self._decoder = None
         self._decoder_available = False
         # DCT/LSB signal analysis is always available (deterministic algorithm);
@@ -184,10 +202,12 @@ class WatermarkRobustnessModule(PipelineModule):
 
     def process(self, sample: Sample) -> Sample:
         try:
-            if sample.is_video:
-                score = self._process_video(sample.path)
-            else:
-                score = self._process_image(sample.path)
+            frames = self._load_video(sample.path) if sample.is_video else self._load_image(sample.path)
+            if not frames:
+                return sample
+
+            clean_scores = [self._score_frame(frame) for frame in frames]
+            score = float(np.mean(clean_scores))
 
             if score is None:
                 return sample
@@ -196,6 +216,10 @@ class WatermarkRobustnessModule(PipelineModule):
                 sample.quality_metrics = QualityMetrics()
 
             sample.quality_metrics.watermark_strength = score
+            if score >= self.minimum_strength:
+                sample.quality_metrics.watermark_robustness_score = self._robustness_score(
+                    frames, clean_scores, include_temporal=sample.is_video
+                )
 
             logger.debug(f"Watermark strength for {sample.path.name}: {score:.3f}")
 
@@ -204,18 +228,16 @@ class WatermarkRobustnessModule(PipelineModule):
 
         return sample
 
-    def _process_image(self, path: Path) -> Optional[float]:
+    def _load_image(self, path: Path) -> list[np.ndarray]:
         img = cv2.imread(str(path))
-        if img is None:
-            return None
-        return self._score_frame(img)
+        return [img] if img is not None else []
 
-    def _process_video(self, path: Path) -> Optional[float]:
+    def _load_video(self, path: Path) -> list[np.ndarray]:
         cap = cv2.VideoCapture(str(path))
         if not cap.isOpened():
-            return None
+            return []
 
-        scores = []
+        frames = []
         idx = 0
 
         while idx < self.max_frames:
@@ -223,8 +245,85 @@ class WatermarkRobustnessModule(PipelineModule):
             if not ret:
                 break
             if idx % self.subsample == 0:
-                scores.append(self._score_frame(frame))
+                frames.append(frame)
             idx += 1
 
         cap.release()
-        return float(np.mean(scores)) if scores else None
+        return frames
+
+    def _process_image(self, path: Path) -> Optional[float]:
+        """Preserve the pre-robustness private scoring helper."""
+        frames = self._load_image(path)
+        return self._score_frame(frames[0]) if frames else None
+
+    def _process_video(self, path: Path) -> Optional[float]:
+        """Preserve the pre-robustness private scoring helper."""
+        frames = self._load_video(path)
+        return float(np.mean([self._score_frame(frame) for frame in frames])) if frames else None
+
+    @staticmethod
+    def _retention_score(clean_score: float, attacked_scores: list[float]) -> float:
+        """Aggregate attack retention relative to a detected clean signal."""
+        if clean_score <= 0.0 or not attacked_scores:
+            return 0.0
+        ratios = [min(max(score / clean_score, 0.0), 1.0) for score in attacked_scores]
+        return float(np.mean(ratios))
+
+    def _robustness_score(
+        self,
+        frames: list[np.ndarray],
+        clean_scores: list[float],
+        *,
+        include_temporal: bool,
+    ) -> float:
+        """Stress the detected signal with common VideoMarkBench perturbations."""
+        clean = float(np.mean(clean_scores))
+        height, width = frames[0].shape[:2]
+        crop_scale = min(max(self.crop_ratio, 0.1), 1.0) ** 0.5
+        crop_h, crop_w = max(1, int(height * crop_scale)), max(1, int(width * crop_scale))
+        top, left = (height - crop_h) // 2, (width - crop_w) // 2
+        rng = np.random.default_rng(0)
+
+        attacks: list[list[np.ndarray]] = []
+        jpeg_frames = []
+        for frame in frames:
+            ok, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, self.jpeg_quality])
+            jpeg_frames.append(cv2.imdecode(encoded, cv2.IMREAD_COLOR) if ok else frame.copy())
+        attacks.append(jpeg_frames)
+        attacks.append(
+            [
+                np.clip(
+                    frame.astype(np.float32) + rng.normal(0.0, self.noise_std, frame.shape),
+                    0,
+                    255,
+                ).astype(np.uint8)
+                for frame in frames
+            ]
+        )
+        attacks.append(
+            [cv2.GaussianBlur(frame, (0, 0), self.blur_sigma) for frame in frames]
+        )
+        attacks.append(
+            [
+                cv2.resize(
+                    frame[top : top + crop_h, left : left + crop_w],
+                    (width, height),
+                    interpolation=cv2.INTER_LINEAR,
+                )
+                for frame in frames
+            ]
+        )
+        if include_temporal and len(frames) > 1:
+            averaged = []
+            for index in range(len(frames)):
+                start, end = max(0, index - 1), min(len(frames), index + 2)
+                averaged.append(
+                    np.mean(frames[start:end], axis=0).clip(0, 255).astype(np.uint8)
+                )
+            attacks.append(averaged)
+
+        attacked_scores = [
+            float(np.mean([self._score_frame(frame) for frame in attacked]))
+            for attacked in attacks
+        ]
+        return self._retention_score(clean, attacked_scores)

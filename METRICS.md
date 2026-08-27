@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 22:38 · **368 modules** · **491 metrics**
+> **Version 0.1.72** · Generated 2026-08-27 22:57 · **368 modules** · **492 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**368** modules · **577** output fields · **491** metrics · **261** tiered · **170** GPU · **21** categories
+**368** modules · **578** output fields · **492** metrics · **261** tiered · **170** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-33-metrics) (33) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -5292,7 +5292,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`, `edge_threshold=0.15`
 
 
-## Safety & Ethics (10 metrics)
+## Safety & Ethics (11 metrics)
 
 ### `ai_generated_probability` [↑](#categories)
 > AI-generated content likelihood 0-1 · 0-1
@@ -5404,6 +5404,17 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_watermark_classifier.py`](tests/modules/per_module/test_watermark_classifier.py)
 - **Config**: `model_weights_path=`, `hf_model=umm-maybe/AI-image-detector`, `threshold=0.5`
 
+### `watermark_robustness_score` [↑](#categories)
+> Attack retention (0-1) · ↑ higher=better · 0-1
+
+**[`watermark_robustness`](src/ayase/modules/watermark_robustness.py)** — Invisible watermark detection and strength estimation
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Backend**: algorithmic → imwatermark
+- **Packages**: imwatermark
+- **Tests**: covered by [`test_watermark_robustness.py`](tests/modules/per_module/test_watermark_robustness.py), [`test_safety_modules.py`](tests/modules/test_safety_modules.py)
+- **Config**: `subsample=15`, `max_frames=30`, `minimum_strength=0.05`, `jpeg_quality=60`, `noise_std=8.0`, `blur_sigma=1.2`, `crop_ratio=0.8`
+
 ### `watermark_strength` [↑](#categories)
 > Invisible watermark strength 0-1 · 0-1
 
@@ -5413,7 +5424,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: algorithmic → imwatermark
 - **Packages**: imwatermark
 - **Tests**: covered by [`test_watermark_robustness.py`](tests/modules/per_module/test_watermark_robustness.py), [`test_safety_modules.py`](tests/modules/test_safety_modules.py)
-- **Config**: `subsample=15`, `max_frames=30`
+- **Config**: `subsample=15`, `max_frames=30`, `minimum_strength=0.05`, `jpeg_quality=60`, `noise_std=8.0`, `blur_sigma=1.2`, `crop_ratio=0.8`
 
 
 ## Image-to-Video Reference (5 metrics)

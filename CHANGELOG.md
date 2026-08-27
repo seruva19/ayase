@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **mouth_quality**: added localized MUSIQ scoring over padded lip-region crops to expose mouth defects hidden by whole-frame quality scores.
 - **video_edit_motion_fidelity**: added MTBench-style dense trajectory matching between a source and edited video using HF-hosted CoTracker3.
 - **temporal_risk_rate**: added the fraction of sampled video time classified as unsafe, complementing peak-frame `nsfw_score` without changing it.
+- **watermark_robustness_score**: added VideoMarkBench-style watermark-strength retention under five common spatial and temporal perturbations.
 
 ### Changed
 
