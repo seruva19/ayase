@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.72** · Generated 2026-08-27 23:19 · **369 modules** · **493 metrics**
+> **Version 0.1.72** · Generated 2026-08-27 23:30 · **369 modules** · **494 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**369** modules · **579** output fields · **493** metrics · **261** tiered · **170** GPU · **21** categories
+**369** modules · **580** output fields · **494** metrics · **261** tiered · **170** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-60-metrics) (60) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-35-metrics) (35) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -1935,7 +1935,7 @@
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (60 metrics)
+## Text-Video Alignment (61 metrics)
 
 ### `aigv_alignment` [↑](#categories)
 > AI video text-video alignment
@@ -2235,6 +2235,19 @@
 - **Tests**: covered by [`test_image_reward.py`](tests/modules/per_module/test_image_reward.py)
 - **Config**: `model_name=ImageReward-v1.0`, `num_frames=5`, `warning_threshold=0.0`
 
+### `long_form_event_fulfillment` [↑](#categories)
+> Grounded event fraction (0-1) · ↑ higher=better · 0-1
+
+**[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
+
+- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable → clip
+- **Packages**: torch, transformers, urllib
+- **VRAM**: ~600 MB
+- **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
+- **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`, `clip_revision=3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`, `event_similarity_threshold=0.2`
+
 ### `love_correspondence_score` [↑](#categories)
 > LOVE raw prompt correspondence score · ↑ higher=better
 
@@ -2381,7 +2394,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`, `clip_revision=3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`, `event_similarity_threshold=0.2`
 
 ### `tcbench_background_score` [↑](#categories)
 > Time-ordered background changes · ↑ higher=better
@@ -2394,7 +2407,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`, `clip_revision=3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`, `event_similarity_threshold=0.2`
 
 ### `tcbench_object_score` [↑](#categories)
 > Time-ordered object appearance · ↑ higher=better
@@ -2407,7 +2420,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`, `clip_revision=3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`, `event_similarity_threshold=0.2`
 
 ### `tcbench_overall` [↑](#categories)
 > Mean TC-Bench score
@@ -2420,7 +2433,7 @@
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_tc_bench.py`](tests/modules/per_module/test_tc_bench.py)
-- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`
+- **Config**: `decomposer=auto`, `num_frames=8`, `clip_model=openai/clip-vit-base-patch32`, `clip_revision=3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`, `event_similarity_threshold=0.2`
 
 ### `tifa_score` [↑](#categories)
 > VQA faithfulness (0-1, higher=better) · ↑ higher=better · 0-1

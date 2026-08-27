@@ -626,6 +626,7 @@ class QualityMetrics(BaseModel):
     tcbench_object_score: Optional[float] = None  # Time-ordered object appearance
     tcbench_background_score: Optional[float] = None  # Time-ordered background changes
     tcbench_overall: Optional[float] = None  # Mean TC-Bench score
+    long_form_event_fulfillment: Optional[float] = None  # Grounded event fraction (0-1)
 
     # VideoPhy-2 VLM-based physics adherence (0-1, higher=better)
     videophy_pc_score: Optional[float] = None  # Physical commonsense
