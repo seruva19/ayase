@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.73] - 2026-08-28
+
 ### Added
 
 - **id_sim**: added the public CVPR 2026 ID-Sim fine-grained visual identity distance with official MIT adapter heads and HF-only model weight loading.
@@ -25,14 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **quality gates**: first-party lint failures are resolved and core pipeline annotations pass strict MyPy checks.
+- **quality gates**: source validation now enforces clean first-party lint and strict MyPy checks for core pipeline files.
 - **external plugins**: discovery rejects Python file symlinks that resolve outside the configured trusted plugin folder.
 
 ### Fixed
 
 - **installation**: constrained librosa to the range required by the mandatory MS-CLAP backend so a fresh `pip install ayase` resolves successfully.
 - **pc_psnr**: point clouds without reference normals now retain their valid D1 score and leave the unavailable D2 score unset instead of discarding both metrics.
-- **CoTracker3**: fixed maintained vendored-code lint defects in the optional SuperPoint sampler, GELU factories, and duplicated bilinear sampler definition.
+- **CoTracker3**: the maintained vendored runtime now uses a single bilinear sampler and valid SuperPoint/GELU definitions.
 
 ## [0.1.72] - 2026-08-20
 

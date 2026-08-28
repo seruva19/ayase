@@ -90,7 +90,7 @@ ALL_ID_SIM_CONFIGS = {
     },
 }
 
-# Backward-compat alias — default checkpoint is DINOv3 ViT-L/16.
+# Public default configuration alias for DINOv3 ViT-L/16.
 ID_SIM_CONFIG = ALL_ID_SIM_CONFIGS["dinov3_vitl16_cls_patch"]
 
 ID_SIM_WEIGHTS = {

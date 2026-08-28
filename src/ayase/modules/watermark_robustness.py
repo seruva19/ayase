@@ -252,12 +252,12 @@ class WatermarkRobustnessModule(PipelineModule):
         return frames
 
     def _process_image(self, path: Path) -> Optional[float]:
-        """Preserve the pre-robustness private scoring helper."""
+        """Score the clean watermark signal in an image."""
         frames = self._load_image(path)
         return self._score_frame(frames[0]) if frames else None
 
     def _process_video(self, path: Path) -> Optional[float]:
-        """Preserve the pre-robustness private scoring helper."""
+        """Score the mean clean watermark signal across sampled video frames."""
         frames = self._load_video(path)
         return float(np.mean([self._score_frame(frame) for frame in frames])) if frames else None
 
