@@ -263,9 +263,7 @@ class CoTracker2(nn.Module):
                 )
         all_coords_predictions, all_vis_predictions = [], []
 
-        # Pad the video so that an integer number of sliding windows fit into it
-        # TODO: we may drop this requirement because the transformer should not care
-        # TODO: pad the features instead of the video
+        # Pad the video so that an integer number of sliding windows fit into it.
         pad = (
             S - T if is_online else (S - T % S) % S
         )  # We don't want to pad if T % S == 0

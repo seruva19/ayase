@@ -173,7 +173,7 @@ class CoTrackerPredictor(torch.nn.Module):
         # correct query-point predictions
         # see https://github.com/facebookresearch/co-tracker/issues/28
 
-        # TODO: batchify
+        # Restore each query point in its corresponding track.
         for i in range(len(queries)):
             queries_t = queries[i, : tracks.size(2), 0].to(torch.int64)
             arange = torch.arange(0, len(queries_t))

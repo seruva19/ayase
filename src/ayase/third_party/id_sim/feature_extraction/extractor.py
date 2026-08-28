@@ -57,15 +57,15 @@ class ViTExtractor(nn.Module):
         if checkpoint_path.exists():
             return str(checkpoint_path)
 
-        legacy_checkpoint_path = load_path / checkpoint_name
-        if legacy_checkpoint_path.exists():
-            return str(legacy_checkpoint_path)
+        alternate_checkpoint_path = load_path / checkpoint_name
+        if alternate_checkpoint_path.exists():
+            return str(alternate_checkpoint_path)
 
         raise FileNotFoundError(
             f"DINOv3 backbone weights for {model_type!r} were not found locally.\n"
             f"Expected one of:\n"
             f"  - {checkpoint_path}\n"
-            f"  - {legacy_checkpoint_path}\n\n"
+            f"  - {alternate_checkpoint_path}\n\n"
             "ID-Sim does not redistribute the gated DINOv3 weights. Accept the DINOv3 "
             f"license and download {checkpoint_name!r} from:\n"
             f"  {DINOV3_WEIGHTS_ACCESS_URL}\n"

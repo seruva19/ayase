@@ -109,8 +109,7 @@ class NSFWModule(PipelineModule):
                 logits = outputs.logits
                 probs = logits.softmax(dim=-1)
                 
-            # Labels: usually ['normal', 'nsfw']
-            # We need to check the exact mapping
+            # Resolve the NSFW class from the checkpoint's declared label mapping.
             id2label = self._model.config.id2label
             nsfw_idx = -1
             for idx, label in id2label.items():
