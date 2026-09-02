@@ -50,9 +50,11 @@ class PhysicsModule(PipelineModule):
             import torch
 
             device = resolve_torch_device(self.config.get("device", "auto"))
-            self._cotracker = torch.hub.load(
-                "facebookresearch/co-tracker", "cotracker2"
-            ).to(device).eval()
+            from ._cotracker_utils import load_cotracker
+
+            self._cotracker = load_cotracker(
+                device, str(self.config.get("models_dir", "models"))
+            )
             self._device = device
             self._backend = "cotracker"
             self._ml_available = True
