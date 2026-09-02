@@ -198,7 +198,9 @@ def _detect_packages(source: str) -> List[str]:
     pkgs: Set[str] = set()
     for m in re.finditer(r"^\s*(?:from|import)\s+([\w.]+)", source, re.MULTILINE):
         top = m.group(1).split(".")[0]
-        if top in _STDLIB_MODULES or top.startswith("ayase"):
+        # A relative import (``from .sibling import x``) yields an empty top-level
+        # name. It is internal by definition, so it names no pip package.
+        if not top or top in _STDLIB_MODULES or top.startswith("ayase"):
             continue
         pip_name = _IMPORT_TO_PIP.get(top, top)
         pkgs.add(pip_name)
