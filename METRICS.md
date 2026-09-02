@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.73** · Generated 2026-08-28 03:00 · **372 modules** · **497 metrics**
+> **Version 0.1.74** · Generated 2026-09-02 23:36 · **375 modules** · **511 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **362/372 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **365/375 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**372** modules · **583** output fields · **497** metrics · **264** tiered · **173** GPU · **21** categories
+**375** modules · **597** output fields · **511** metrics · **265** tiered · **174** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -29,13 +29,13 @@
 </tr></table>
 
 > [!WARNING]
-> **8 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
+> **2 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
 >
-> `expression_similarity`, `expression_similarity_coactivation`, `expression_similarity_coverage`, `expression_similarity_distribution`, `expression_similarity_dynamics`, `expression_similarity_range_ratio`, `video_memorability`, `vqa_t_score`
+> `video_memorability`, `vqa_t_score`
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-39-metrics) (39) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-47-metrics) (47) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-50-metrics) (50) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -3057,7 +3057,7 @@
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (39 metrics)
+## Motion & Dynamics (50 metrics)
 
 ### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
@@ -3168,7 +3168,6 @@
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: farneback → cotracker
 - **Packages**: torch
-- **Source**: <a href="https://huggingface.co/facebookresearch/co-tracker" target="_blank">HF</a>
 - **Tests**: covered by [`test_dynamics_controllability.py`](tests/modules/per_module/test_dynamics_controllability.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py), +2 more
 - **Config**: `subsample=16`
 
@@ -3202,6 +3201,46 @@
 - **Backend**: unavailable
 - **Tests**: covered by [`test_head_motion_dynamics.py`](tests/modules/per_module/test_head_motion_dynamics.py)
 - **Config**: `num_faces=1`
+
+### `head_pose_angle_agreement` [↑](#categories)
+> Agreement of the head-angle distributions; carries camera placement (0-1) · 0-1, carries camera placement
+
+**[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
+- **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
+
+### `head_pose_rate_agreement` [↑](#categories)
+> Agreement of the angular-rate distributions; survives a change of camera (0-1) · 0-1, survives a change of camera
+
+**[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
+- **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
+
+### `head_pose_similarity` [↑](#categories)
+> Head-motion manner similarity to a reference clip, no time alignment (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
+- **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
+
+### `head_pose_similarity_coverage` [↑](#categories)
+> Lower of the two per-clip shares of sampled frames with a head pose (0-1) · ↓ lower=better · 0-1
+
+**[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
+- **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
 
 ### `kandinsky_camera_motion_score` [↑](#categories)
 > Kandinsky camera motion prediction · ↑ higher=better · higher=more camera motion
@@ -3243,6 +3282,76 @@
 - **Packages**: torch, torchvision
 - **Tests**: covered by [`test_motion_amplitude.py`](tests/modules/per_module/test_motion_amplitude.py), [`test_flow_resolution_cap.py`](tests/modules/test_flow_resolution_cap.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `amplitude_threshold=5.0`, `max_frames=150`, `max_resolution=512`, `scoring_mode=binary`
+
+### `motion_manner_amplitude_ratio` [↑](#categories)
+> Speed spread of the sample over the reference (1.0 = equal)
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
+
+### `motion_manner_arm_agreement` [↑](#categories)
+> Arm-keypoint speed-distribution agreement; unset when the wrists are out of frame (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
+
+### `motion_manner_arm_coverage` [↑](#categories)
+> Lower of the two per-clip shares of moments with a visible wrist (0-1) · ↓ lower=better · 0-1
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
+
+### `motion_manner_coverage` [↑](#categories)
+> Lower of the two per-clip shares of moments with a detected person (0-1) · ↓ lower=better · 0-1
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
+
+### `motion_manner_head_agreement` [↑](#categories)
+> Head-keypoint speed-distribution agreement (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
+
+### `motion_manner_similarity` [↑](#categories)
+> Movement-manner similarity to a reference clip, no time alignment (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
+
+### `motion_manner_speed_agreement` [↑](#categories)
+> Whole-body speed-distribution agreement with the reference (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
+- **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_score` [↑](#categories)
 > Scene motion intensity · ↑ higher=better
@@ -3298,7 +3407,6 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: cotracker → lk → unavailable
 - **Packages**: torch
-- **Source**: <a href="https://huggingface.co/facebookresearch/co-tracker" target="_blank">HF</a>
 - **Tests**: covered by [`test_physics.py`](tests/modules/per_module/test_physics.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
 - **Config**: `subsample=16`, `accel_threshold=50.0`
 
@@ -3812,7 +3920,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (47 metrics)
+## Audio Quality (50 metrics)
 
 ### `active_speaker_best_lse_c` [↑](#categories)
 > Lip-sync confidence of the best-synced face (higher=better) · ↑ higher=better
@@ -4330,6 +4438,36 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://github.com/google/visqol" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_visqol.py`](tests/modules/per_module/test_visqol.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 - **Config**: `mode=audio`
+
+### `voice_identity` [↑](#categories)
+> Mean speaker-embedding cosine similarity to a reference set of the person (higher=better) · ↑ higher=better
+
+**[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Packages**: soundfile, speechbrain, torch
+- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py)
+- **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
+
+### `voice_identity_coverage` [↑](#categories)
+> Share of reference files that yielded a speaker embedding (0-1) · 0-1
+
+**[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Packages**: soundfile, speechbrain, torch
+- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py)
+- **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
+
+### `voice_identity_max` [↑](#categories)
+> Best speaker similarity over the reference set (higher=better) · ↑ higher=better
+
+**[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Packages**: soundfile, speechbrain, torch
+- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py)
+- **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 
 ## Face & Identity (37 metrics)
