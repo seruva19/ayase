@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.74] - 2026-09-02
+
+### Added
+
+- **voice_identity**: added ECAPA-TDNN speaker similarity against a reference set, calibrated on real footage before use: AUC 0.984 over an exhaustive sweep of 4095 clip pairs, 91 of 91 nearest neighbours correct.
+- **head_pose_similarity**: added head-motion manner comparison that reports angle and rate agreement separately, since angles carry camera placement and rates survive a camera change. AUC 0.718, 84 of 89 correct.
+- **motion_manner_similarity**: added per-joint-group speed-distribution comparison. It does NOT separate people on the material it was calibrated on (AUC 0.536 against a 0.32 chance base) and a shuffle test found no temporal signal in the channel; the module documents this and must not be used as an identity discriminator.
+
+### Changed
+
+- **cotracker weights**: CoTracker checkpoints now come from the authors' HuggingFace copy rather than Meta's file server, shared by the three modules that load it instead of repeated in each.
+- **dinov2 weights**: world_consistency takes DINOv2 weights from the same mirror `spectral` uses, so the two modules share one download.
+- **expression_similarity**: output fields are assigned explicitly rather than through a setattr loop, so the docs generator sees them.
+
+### Fixed
+
+- **docs generator**: a relative import produced an empty package name that rendered as a stray comma in the package list of METRICS.md.
+
 ## [0.1.73] - 2026-08-28
 
 ### Added
