@@ -71,9 +71,11 @@ class DynamicsControllabilityModule(PipelineModule):
             import torch
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self._cotracker = torch.hub.load(
-                "facebookresearch/co-tracker", "cotracker2"
-            ).to(device).eval()
+            from ._cotracker_utils import load_cotracker
+
+            self._cotracker = load_cotracker(
+                device, str(self.config.get("models_dir", "models"))
+            )
             self._device = device
             self._backend = "cotracker"
             logger.info("DynamicsControllability loaded CoTracker on %s", device)

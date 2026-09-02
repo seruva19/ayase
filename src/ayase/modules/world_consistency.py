@@ -30,6 +30,14 @@ from ayase.runtime import (
 
 logger = logging.getLogger(__name__)
 
+# DINOv2 weights come from the ayase-models HF mirror rather than the torch.hub
+# entrypoint's fbaipublicfiles original, which is unreliable on some networks and
+# bypasses the mirror the rest of the pipeline already relies on. The architecture
+# still comes from the (reliable, cacheable) torch.hub repo code. Same file as
+# ``spectral`` uses, so the two modules share one download.
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_DINOV2_MIRROR_RELATIVE = "spectral/dinov2_vits14_pretrain.pth"
+
 
 class WorldConsistencyModule(PipelineModule):
     name = "world_consistency"
@@ -68,16 +76,24 @@ class WorldConsistencyModule(PipelineModule):
         self._try_clip_setup()
 
     def _try_dinov2_setup(self) -> bool:
-        """Try DINOv2 via torch.hub for self-supervised feature tracking."""
+        """Try DINOv2 for self-supervised feature tracking."""
         try:
             import torch
             import torchvision.transforms as T
+
+            from ayase.config import download_model_file
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            self._model = torch.hub.load(
-                "facebookresearch/dinov2", "dinov2_vits14", verbose=False
+            checkpoint = download_model_file(
+                _DINOV2_MIRROR_RELATIVE,
+                _DINOV2_MIRROR_BASE + _DINOV2_MIRROR_RELATIVE,
+                str(self.config.get("models_dir", "models")),
             )
+            self._model = torch.hub.load(
+                "facebookresearch/dinov2", "dinov2_vits14", pretrained=False, verbose=False
+            )
+            self._model.load_state_dict(torch.load(str(checkpoint), map_location="cpu"))
             self._model.to(self._device).eval()
             self._transform = T.Compose([
                 T.Resize(224, interpolation=T.InterpolationMode.BICUBIC),
