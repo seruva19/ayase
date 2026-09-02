@@ -707,3 +707,29 @@ class TestGeneratedDocsAreFresh:
                 f"README.md CLI snippet says 'show all {m} modules' but "
                 f"registry has {total}. Run `ayase modules sync-readme`."
             )
+
+
+class TestPackageDetection:
+    """Package names are read off import statements, so odd imports must not leak."""
+
+    def test_relative_import_names_no_package(self) -> None:
+        """``from .sibling import x`` is internal and names no pip package.
+
+        The regex captures a leading dot, so the top-level name comes out empty and
+        used to reach the rendered package list as a stray comma.
+        """
+        from ayase.metrics_doc import _detect_packages
+
+        source = "from ._cotracker_utils import load_cotracker\nimport torch\n"
+        assert _detect_packages(source) == ["torch"]
+
+    def test_deep_relative_import_names_no_package(self) -> None:
+        from ayase.metrics_doc import _detect_packages
+
+        assert _detect_packages("from ..runtime import thing\n") == []
+
+    def test_stdlib_and_own_package_are_skipped(self) -> None:
+        from ayase.metrics_doc import _detect_packages
+
+        source = "import json\nfrom ayase.models import Sample\nimport cv2\n"
+        assert _detect_packages(source) == ["opencv-python"]
