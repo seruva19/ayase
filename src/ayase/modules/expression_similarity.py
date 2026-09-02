@@ -361,15 +361,18 @@ class ExpressionSimilarityModule(PipelineModule):
         sample.metadata.update(result)
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        for field in (
-            "expression_similarity",
-            "expression_similarity_distribution",
-            "expression_similarity_coactivation",
-            "expression_similarity_dynamics",
-            "expression_similarity_range_ratio",
-            "expression_similarity_coverage",
-        ):
-            setattr(sample.quality_metrics, field, result[field])
+        # Written out one by one rather than through ``setattr`` in a loop: the
+        # documentation generator infers a module's output fields by reading
+        # ``quality_metrics.<field> =`` assignments from the source, and the loop
+        # made METRICS.md list all six of these fields as orphaned -- declared
+        # but written by nobody -- while the module was in fact writing them.
+        qm = sample.quality_metrics
+        qm.expression_similarity = result["expression_similarity"]
+        qm.expression_similarity_distribution = result["expression_similarity_distribution"]
+        qm.expression_similarity_coactivation = result["expression_similarity_coactivation"]
+        qm.expression_similarity_dynamics = result["expression_similarity_dynamics"]
+        qm.expression_similarity_range_ratio = result["expression_similarity_range_ratio"]
+        qm.expression_similarity_coverage = result["expression_similarity_coverage"]
 
 
 # Short alias; the registry-facing convention uses *Module.
