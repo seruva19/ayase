@@ -42,6 +42,8 @@ _IMPORTS = [
     ("AdvancedFlowModule", ".advanced_flow"),
     ("CameraMotionModule", ".camera_motion"),
     ("KandinskyMotionModule", ".kandinsky_motion"),
+    ("MotionMannerSimilarityModule", ".motion_manner_similarity"),
+    ("HeadPoseSimilarityModule", ".head_pose_similarity"),
     # --- Temporal consistency ---
     ("TemporalFlickeringModule", ".temporal_flickering"),
     ("CLIPTemporalModule", ".clip_temporal"),
@@ -129,6 +131,7 @@ _IMPORTS = [
     ("NearIDModule", ".nearid"),
     ("MaSCModule", ".masc"),
     ("ExpressionFollowingModule", ".expression_following"),
+    ("ExpressionSimilarityModule", ".expression_similarity"),
     ("SilentLipStabilityModule", ".silent_lip_stability"),
     ("LipDynamicsModule", ".lip_dynamics"),
     ("EyebrowDynamicsModule", ".eyebrow_dynamics"),
@@ -153,6 +156,7 @@ _IMPORTS = [
     ("BiasDetectionModule", ".bias_detection"),
     # --- Audio ---
     ("AudioModule", ".audio"),
+    ("VoiceIdentityModule", ".voice_identity"),
     ("AudioPESQModule", ".audio_pesq"),
     ("AudioUTMOSv2Module", ".audio_utmos_v2"),
     ("AudioISCModule", ".audio_isc"),
