@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.75] - 2026-09-03
+
+### Added
+
+- **licence notice**: metrics that run non-permissive vendored code now declare it and log a notice at setup. Four components impose terms Ayase's MIT does not cover: CoTracker (CC BY-NC 4.0), ImageBind (CC BY-NC-SA 4.0), MJ-Video (no licence file upstream), and VBench 2.0, which carries GPL-3.0 (mmyolo) and CoTracker inside. README and `ayase/vendor/README.md` list which metric is affected by what. This is a disclosure, not a resolution: the plan for 1.0 is to replace these components with implementations the project can license itself.
+
+### Fixed
+
+- **stripped licences**: the vendored trees kept none of their upstream LICENSE and NOTICE files, which Apache-2.0, BSD and MIT all require to be retained on redistribution. Restored.
+
 ### Changed
 
 - **no source-code downloads**: the MJ-Video, VQA2, VILA and s2wrapper runtimes are vendored in-tree (`ayase.vendor`), trimmed to what inference reaches: 126 MB of upstream snapshots become 5.4 MB, with datasets, notebooks, demo media and the training paths left out. Ayase downloads weights, never code.
