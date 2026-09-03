@@ -1,10 +1,10 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.74** · Generated 2026-09-03 04:13 · **375 modules** · **511 metrics**
+> **Version 0.1.75** · Generated 2026-09-03 10:46 · **375 modules** · **511 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **365/375 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **367/375 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
@@ -434,7 +434,7 @@
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
-- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `modularbvqa_score` [↑](#categories)
@@ -2278,7 +2278,7 @@
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
-- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `mj_video_overall_score` [↑](#categories)
@@ -2290,7 +2290,7 @@
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
-- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `phyground_spatial_alignment_score` [↑](#categories)
@@ -2718,7 +2718,7 @@
 - **Backend**: real → unavailable
 - **Packages**: configs, imageio, opencv-python, torch
 - **Source**: <a href="https://huggingface.co/configs/internvideo2_stage2_config.py" target="_blank">HF</a>
-- **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
+- **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `ch_grid_size=30`, `ch_threshold=0.1`, `internvideo2_config=configs/internvideo2_stage2_config.py`, `mt_topk=5`
 
 ### `chronomagic_mt_score` [↑](#categories)
@@ -2730,7 +2730,7 @@
 - **Backend**: real → unavailable
 - **Packages**: configs, imageio, opencv-python, torch
 - **Source**: <a href="https://huggingface.co/configs/internvideo2_stage2_config.py" target="_blank">HF</a>
-- **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
+- **Tests**: covered by [`test_chronomagic.py`](tests/modules/per_module/test_chronomagic.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `ch_grid_size=30`, `ch_threshold=0.1`, `internvideo2_config=configs/internvideo2_stage2_config.py`, `mt_topk=5`
 
 ### `clip_temp` [↑](#categories)
@@ -2886,7 +2886,7 @@
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
-- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `object_permanence_border_exit` [↑](#categories)
@@ -3168,7 +3168,7 @@
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: farneback → cotracker
 - **Packages**: torch
-- **Tests**: covered by [`test_dynamics_controllability.py`](tests/modules/per_module/test_dynamics_controllability.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py), +2 more
+- **Tests**: covered by [`test_dynamics_controllability.py`](tests/modules/per_module/test_dynamics_controllability.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py), +3 more
 - **Config**: `subsample=16`
 
 ### `dynamics_range` [↑](#categories)
@@ -3394,7 +3394,7 @@
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: opencv-python, torch
 - **Source**: <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `device=auto`, `max_frames=60`, `grid_size=30`, `box_threshold=0.3`, `text_threshold=0.25`, `long_side=512`, `query_chunk_size=64`
 
 ### `physics_score` [↑](#categories)
@@ -3407,7 +3407,7 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Backend**: cotracker → lk → unavailable
 - **Packages**: torch
-- **Tests**: covered by [`test_physics.py`](tests/modules/per_module/test_physics.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py)
+- **Tests**: covered by [`test_physics.py`](tests/modules/per_module/test_physics.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `subsample=16`, `accel_threshold=50.0`
 
 ### `playback_speed_score` [↑](#categories)
@@ -3521,7 +3521,7 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
 - **Packages**: opencv-python, torch
 - **Source**: <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `device=auto`, `max_frames=48`, `grid_size=30`, `box_threshold=0.35`, `text_threshold=0.35`, `iou_threshold=0.75`, `long_side=640`, `query_chunk_size=64`
 
 ### `trajan_score` [↑](#categories)
@@ -3543,7 +3543,7 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Input**: vid +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → cotracker3_offline
 - **Packages**: opencv-python
-- **Tests**: covered by [`test_video_edit_motion_fidelity.py`](tests/modules/per_module/test_video_edit_motion_fidelity.py)
+- **Tests**: covered by [`test_video_edit_motion_fidelity.py`](tests/modules/per_module/test_video_edit_motion_fidelity.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `max_frames=60`, `long_side=512`, `grid_size=30`
 
 ### `videophy_pc_score` [↑](#categories)
@@ -5547,7 +5547,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
-- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `mj_video_safety_score` [↑](#categories)
@@ -5559,7 +5559,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
-- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
+- **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `nsfw_score` [↑](#categories)
@@ -6159,7 +6159,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Camera Motion score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_commonsense_score` [↑](#categories)
 > ↑ higher=better · type: float
@@ -6167,7 +6167,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 commonsense aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_complex_landscape` [↑](#categories)
 > type: float
@@ -6175,7 +6175,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Complex Landscape score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_complex_plot` [↑](#categories)
 > type: float
@@ -6183,7 +6183,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Complex Plot score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_composition` [↑](#categories)
 > type: float
@@ -6191,7 +6191,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Composition score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_controllability_score` [↑](#categories)
 > ↑ higher=better · type: float
@@ -6199,7 +6199,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 controllability aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_creativity_score` [↑](#categories)
 > ↑ higher=better · type: float
@@ -6207,7 +6207,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 creativity aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_diversity` [↑](#categories)
 > type: float
@@ -6215,7 +6215,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Diversity score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_dynamic_attribute` [↑](#categories)
 > type: float
@@ -6223,7 +6223,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Dynamic Attribute score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_dynamic_spatial_relationship` [↑](#categories)
 > type: float
@@ -6231,7 +6231,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Dynamic Spatial Relationship score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_human_anatomy` [↑](#categories)
 > type: float
@@ -6239,7 +6239,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Anatomy score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_human_clothes` [↑](#categories)
 > type: float
@@ -6247,7 +6247,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Clothes score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_human_fidelity_score` [↑](#categories)
 > ↑ higher=better · type: float
@@ -6255,7 +6255,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 human-fidelity aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_human_identity` [↑](#categories)
 > type: float
@@ -6263,7 +6263,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Identity score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_human_interaction` [↑](#categories)
 > type: float
@@ -6271,7 +6271,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Interaction score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_instance_preservation` [↑](#categories)
 > type: float
@@ -6279,7 +6279,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Instance Preservation score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_material` [↑](#categories)
 > type: float
@@ -6287,7 +6287,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Material score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_mechanics` [↑](#categories)
 > type: float
@@ -6295,7 +6295,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Mechanics score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_motion_order_understanding` [↑](#categories)
 > type: float
@@ -6303,7 +6303,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Motion Order Understanding score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_motion_rationality` [↑](#categories)
 > type: float
@@ -6311,7 +6311,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Motion Rationality score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_multiview_consistency` [↑](#categories)
 > ↑ higher=better · type: float
@@ -6319,7 +6319,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Multi-View Consistency score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_physics_score` [↑](#categories)
 > ↑ higher=better · type: float
@@ -6327,7 +6327,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 physics aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_thermotics` [↑](#categories)
 > type: float
@@ -6335,7 +6335,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Thermotics score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vbench2_total_score` [↑](#categories)
 > WorldModelBench (CVPR 2025 workshop, dataset-level; higher=better) · ↑ higher=better · type: float
@@ -6343,7 +6343,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — Mean of the five VBench 2.0 category aggregates
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py)
+- **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `vendi` [↑](#categories)
 > Vendi Score diversity (higher=better) · ↑ higher=better · type: float
