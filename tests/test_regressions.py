@@ -1593,3 +1593,42 @@ def test_download_hf_snapshot_uses_stable_models_dir(monkeypatch, tmp_path):
     assert resolved == (tmp_path / "org--model").resolve()
     assert captured["repo_id"] == "org/model"
     assert captured["revision"] == "pinned"
+
+
+class TestNoSourceCodeDownloads:
+    """Ayase downloads weights, never code.
+
+    Source trees live in ``ayase.vendor`` or are supplied by the operator as a
+    local checkout. A module that declares a ``.zip`` of sources, or reaches for a
+    git host at run time, puts unreviewed third-party code on ``sys.path`` on an
+    end user's machine and makes the installed version unreproducible.
+    """
+
+    def test_no_module_declares_a_source_archive(self):
+        from ayase.pipeline import ModuleRegistry
+
+        registry = ModuleRegistry()
+        registry.discover_modules()
+        offenders = []
+        for name, module_cls in registry._modules.items():
+            for entry in getattr(module_cls, "models", []) or []:
+                url = str(entry.get("url", ""))
+                if url.endswith(".zip") and "source" in url.lower():
+                    offenders.append(f"{name}: {url}")
+        assert not offenders, "source archives declared: " + "; ".join(offenders)
+
+    def test_no_module_fetches_code_from_a_git_host(self):
+        import re
+        from pathlib import Path
+
+        import ayase.modules
+
+        pattern = re.compile(r"https?://(github\.com|gitlab\.com)[^\s\"']*\.zip")
+        offenders = []
+        for path in Path(ayase.modules.__file__).parent.glob("*.py"):
+            for number, line in enumerate(
+                path.read_text(encoding="utf-8").splitlines(), 1
+            ):
+                if pattern.search(line):
+                    offenders.append(f"{path.name}:{number}")
+        assert not offenders, "code archive URLs: " + "; ".join(offenders)

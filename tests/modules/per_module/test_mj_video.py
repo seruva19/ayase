@@ -25,9 +25,9 @@ def test_mj_video_uses_native_autodownload_defaults():
     assert MJVideoModule.default_config["models_dir"] == "models"
     assert "results_path" not in MJVideoModule.default_config
     assert "runner_command" not in MJVideoModule.default_config
-    assert MJVideoModule.default_config["source_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
-    )
+    # The reward architecture is vendored, not downloaded: no source URL exists.
+    assert "source_url" not in MJVideoModule.default_config
+    assert MJVideoModule._vendored_source().is_dir()
     assert MJVideoModule.default_config["tokenizer_base_url"] == (
         "https://huggingface.co/internlm/internlm2-chat-1_8b/resolve"
     )
@@ -55,7 +55,7 @@ def test_mj_video_setup_downloads_reference_checkpoint(monkeypatch, tmp_path):
     monkeypatch.setattr(
         ayase.config, "download_model_file", lambda *args, **kwargs: tmp_path / "source.zip"
     )
-    monkeypatch.setattr(MJVideoModule, "_extract_source", staticmethod(lambda *args: source))
+    monkeypatch.setattr(MJVideoModule, "_vendored_source", staticmethod(lambda: source))
     monkeypatch.setattr(MJVideoModule, "_prepare_tokenizer_files", lambda *args: None)
     monkeypatch.setattr(
         MJVideoModule, "_ensure_transformers_doc_compatibility", staticmethod(lambda: None)
@@ -161,3 +161,11 @@ def test_mj_video_metadata_exposes_fields():
     metadata = MJVideoModule.get_metadata()
     assert "mj_video_overall_score" in metadata["output_fields"]
     assert "mj_video_fairness_score" in metadata["output_fields"]
+
+
+def test_mj_video_downloads_no_source_code():
+    """The reward architecture is vendored; only weights may be fetched."""
+    from ayase.modules.mj_video import MJVideoModule
+
+    for entry in MJVideoModule.models:
+        assert not str(entry.get("url", "")).endswith(".zip"), entry["id"]

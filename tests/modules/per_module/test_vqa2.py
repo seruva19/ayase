@@ -1,6 +1,7 @@
 """Tests for the upstream VQA² module."""
 
-import zipfile
+
+from pathlib import Path
 
 import pytest
 
@@ -79,56 +80,37 @@ def test_vqa2_rejects_out_of_range_score(image_sample, monkeypatch):
     assert result.quality_metrics is None
 
 
-def test_vqa2_extracts_pinned_runtime_and_patches_slowfast(tmp_path):
-    from ayase.modules.vqa2 import VQA2Module, VQA2_SOURCE_REVISION
+def test_vqa2_runtime_is_vendored_and_patched():
+    """The scorer runs on the in-tree copy: nothing is fetched at setup time."""
+    from ayase.modules.vqa2 import VQA2Module
 
-    prefix = (
-        "Visual-Question-Answering-for-Video-Quality-Assessment-"
-        f"{VQA2_SOURCE_REVISION}/quality_scoring/"
-    )
-    archive = tmp_path / "source.zip"
-    with zipfile.ZipFile(archive, "w") as bundle:
-        bundle.writestr(prefix + "llava/__init__.py", "")
-        bundle.writestr(
-            prefix + "llava/model/slowfast/builder.py",
-            "import torch\nmodel = torch.load('slowfast.pth',weights_only=False)\n",
-        )
-        bundle.writestr(
-            prefix + "llava/model/llava_arch.py",
-            "size = image_sizes[NUM]\n",
-        )
-        bundle.writestr(prefix + "LICENSE", "Apache License 2.0")
-        bundle.writestr(prefix + "ignored.bin", "not extracted")
+    runtime = VQA2Module._vendored_runtime()
 
-    runtime = VQA2Module._extract_runtime(
-        archive, tmp_path / "runtime", VQA2_SOURCE_REVISION
-    )
-
+    assert (runtime / "llava" / "__init__.py").is_file()
     builder = runtime / "llava" / "model" / "slowfast" / "builder.py"
     source = builder.read_text(encoding="utf-8")
     assert "AYASE_VQA2_SLOWFAST_PATH" in source
     assert "slowfast.pth',weights_only=False" not in source
     architecture = runtime / "llava" / "model" / "llava_arch.py"
     assert "image_sizes[image_idx]" in architecture.read_text(encoding="utf-8")
-    assert not (runtime / "ignored.bin").exists()
 
 
-def test_vqa2_runtime_archive_rejects_path_traversal(tmp_path):
-    from ayase.modules.vqa2 import VQA2Module, VQA2_SOURCE_REVISION
+def test_vqa2_runtime_lives_inside_the_package():
+    """A path outside the installed package would break a wheel install."""
+    import ayase
+    from ayase.modules.vqa2 import VQA2Module
 
-    prefix = (
-        "Visual-Question-Answering-for-Video-Quality-Assessment-"
-        f"{VQA2_SOURCE_REVISION}/quality_scoring/"
-    )
-    archive = tmp_path / "source.zip"
-    with zipfile.ZipFile(archive, "w") as bundle:
-        bundle.writestr(prefix + "llava/__init__.py", "")
-        bundle.writestr(prefix + "llava/../../escape.py", "bad")
+    package_root = Path(ayase.__file__).resolve().parent
+    assert VQA2Module._vendored_runtime().is_relative_to(package_root)
 
-    with pytest.raises(ValueError, match="Unsafe VQA² archive member"):
-        VQA2Module._extract_runtime(
-            archive, tmp_path / "runtime", VQA2_SOURCE_REVISION
-        )
+
+def test_vqa2_downloads_no_source_code():
+    """Weights are fetched, code is not: no source archive may be declared."""
+    from ayase.modules.vqa2 import VQA2Module
+
+    for entry in VQA2Module.models:
+        url = str(entry.get("url", ""))
+        assert not url.endswith(".zip"), entry["id"]
 
 
 def test_vqa2_declares_all_reference_assets():
@@ -141,7 +123,7 @@ def test_vqa2_declares_all_reference_assets():
     model_ids = {entry["id"] for entry in VQA2Module.models}
     assert VQA2_MODEL_ID in model_ids
     assert VQA2_SLOWFAST_ID in model_ids
-    assert any(model_id.startswith("VQA2-source-") for model_id in model_ids)
+    assert not any(model_id.startswith("VQA2-source-") for model_id in model_ids)
 
 
 def test_vqa2_runtime_dependencies_are_declared():
