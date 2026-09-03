@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.74** · Generated 2026-09-02 23:36 · **375 modules** · **511 metrics**
+> **Version 0.1.74** · Generated 2026-09-03 02:58 · **375 modules** · **511 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -435,7 +435,7 @@
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
 - **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
-- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `modularbvqa_score` [↑](#categories)
 > ModularBVQA resolution-aware (higher=better) · ↑ higher=better
@@ -2279,7 +2279,7 @@
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
 - **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
-- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `mj_video_overall_score` [↑](#categories)
 > MJ-Video learned preference reward · ↑ higher=better
@@ -2291,7 +2291,7 @@
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
 - **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
-- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `phyground_spatial_alignment_score` [↑](#categories)
 > SA judge score (1-5) · ↑ higher=better · 1-5
@@ -2887,7 +2887,7 @@
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
 - **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
-- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `object_permanence_border_exit` [↑](#categories)
 > Tracks that ended at the frame border (a legitimate exit)
@@ -5548,7 +5548,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
 - **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
-- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `mj_video_safety_score` [↑](#categories)
 > MJ-Video safety aspect · ↑ higher=better
@@ -5560,7 +5560,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
 - **Tests**: covered by [`test_mj_video.py`](tests/modules/per_module/test_mj_video.py)
-- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `source_url=https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/mj_video/source-cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a.zip`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
+- **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `nsfw_score` [↑](#categories)
 > 0-1, likelihood of being NSFW · ↑ higher=better · 0-1
