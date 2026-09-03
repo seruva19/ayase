@@ -1,7 +1,8 @@
 """Fine-grained video preference scoring with MJ-Video.
 
 Downloads the public MJ-VIDEO-2B checkpoint during setup and runs the reference
-reward architecture in-process. Exposes the learned overall reward and five
+reward architecture, vendored in-tree (``ayase.vendor.mj_video``) at the pinned
+commit, in-process. Ayase downloads weights, never code. Exposes the learned overall reward and five
 aspect rewards; all 28 criterion rewards are retained in sample metadata.
 Higher rewards indicate stronger learned preference.
 """
@@ -11,7 +12,6 @@ import os
 import shutil
 import sys
 import types
-import zipfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,12 +20,9 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+#: Upstream revision the vendored runtime in ``ayase.vendor.mj_video`` was taken from.
 SOURCE_REVISION = "cc1d2c9587a620e9ebd3599ae4cdd21b5fd7c87a"
-MIRROR_REVISION = "main"
-SOURCE_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
-    f"{MIRROR_REVISION}/mj_video/source-{SOURCE_REVISION}.zip"
-)
+SOURCE_HOME = "https://github.com/aiming-lab/MJ-Video"
 TOKENIZER_BASE_URL = (
     "https://huggingface.co/internlm/internlm2-chat-1_8b/resolve"
 )
@@ -54,7 +51,6 @@ class MJVideoModule(PipelineModule):
         "model_name": "MJ-Bench/MJ-VIDEO-2B",
         "model_revision": None,
         "models_dir": "models",
-        "source_url": SOURCE_URL,
         "tokenizer_base_url": TOKENIZER_BASE_URL,
         "tokenizer_revision": "main",
         "num_segments": 8,
@@ -73,14 +69,6 @@ class MJVideoModule(PipelineModule):
             "size": "4.43 GB inference checkpoint",
             "auto_download": True,
             "notes": "Eight uniformly sampled frames by default",
-        },
-        {
-            "id": "AkaneTendo25/ayase-runtime-assets",
-            "type": "huggingface",
-            "url": SOURCE_URL,
-            "task": "Mirrored upstream MJ-Video reward architecture",
-            "auto_download": True,
-            "notes": f"Upstream commit {SOURCE_REVISION}",
         },
         {
             "id": "internlm/internlm2-chat-1_8b",
@@ -119,27 +107,22 @@ class MJVideoModule(PipelineModule):
         self._dtype: Any = None
 
     @staticmethod
-    def _extract_source(archive: Path, destination: Path) -> Path:
-        marker = destination / ".complete"
-        if marker.is_file():
-            roots = [path for path in destination.iterdir() if path.is_dir()]
-            if roots:
-                return roots[0]
-        destination.mkdir(parents=True, exist_ok=True)
-        root = destination.resolve()
-        with zipfile.ZipFile(archive) as bundle:
-            for member in bundle.infolist():
-                target = (root / member.filename).resolve()
-                try:
-                    target.relative_to(root)
-                except ValueError as exc:
-                    raise ValueError(f"Unsafe MJ-Video archive member: {member.filename}") from exc
-            bundle.extractall(root)
-        marker.touch()
-        roots = [path for path in destination.iterdir() if path.is_dir()]
-        if not roots:
-            raise FileNotFoundError("MJ-Video source archive contained no source directory")
-        return roots[0]
+    def _vendored_source() -> Path:
+        """Path of the in-tree MJ-Video runtime.
+
+        Returns:
+            Path: Directory holding the ``scripts`` tree the reward model is
+            imported from.
+
+        Raises:
+            RuntimeError: The vendored tree is missing.
+        """
+        from ayase import vendor
+
+        source_root = Path(vendor.__file__).resolve().parent / "mj_video"
+        if not (source_root / "scripts" / "model").is_dir():
+            raise RuntimeError("MJ-Video runtime is missing from ayase.vendor")
+        return source_root
 
     @staticmethod
     def _ensure_unused_s3_compatibility() -> None:
@@ -234,14 +217,7 @@ class MJVideoModule(PipelineModule):
                 revision=self.config.get("model_revision"),
                 ignore_patterns=["optimizer.pt", "scheduler.pt", "training_args.bin"],
             )
-            archive = download_model_file(
-                f"mj_video/source-{SOURCE_REVISION}.zip",
-                str(self.config.get("source_url", SOURCE_URL)),
-                models_dir,
-            )
-            source_root = self._extract_source(
-                archive, Path(models_dir) / "mj_video" / f"source-{SOURCE_REVISION}"
-            )
+            source_root = self._vendored_source()
             self._prepare_tokenizer_files(checkpoint, models_dir)
             scripts_dir = str((source_root / "scripts").resolve())
             if scripts_dir not in sys.path:
