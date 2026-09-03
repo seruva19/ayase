@@ -4,18 +4,12 @@ Runs the Apache-2.0 VBench 2.0 implementation as an optional dataset-level
 backend. No proxy scores are emitted when the upstream package or checkpoints
 are unavailable. Higher scores indicate better intrinsic faithfulness.
 
-The upstream tree is not vendored and is not downloaded: it is 261 MB, most of it
-prompt suites and assets the runtime reads, which does not belong inside a Python
-distribution, and Ayase downloads weights, never code. The operator points the
-module at a local checkout instead::
-
-    modules:
-      vbench2:
-        source_path: /opt/VBench          # checked out at commit 45e79ec1
-        cotracker_path: /opt/co-tracker   # checked out at commit 82e02e80
-
-Without those paths the module reports itself unavailable rather than fetching
-code behind the operator's back. Checkpoints are still fetched automatically.
+The upstream tree is vendored in-tree (``ayase.vendor.vbench``) at the pinned
+commit: Ayase downloads weights, never code. Only what scoring reaches is kept.
+The snapshot is 261 MB, but 142 MB of that is four copies of one LVIS annotation
+file inside vendored detector repositories, and the rest is assets, notebooks and
+benchmark prompt suites; the evaluator itself needs 14 MB of Python and the
+0.4 MB ``VBench2_full_info.json`` it reads. Checkpoints are still fetched.
 """
 
 import json
@@ -116,8 +110,6 @@ class VBench2Module(PipelineModule):
         "model_revision": None,
         "mirror_revision": MIRROR_REVISION,
         "read_frame": False,
-        "source_path": None,
-        "cotracker_path": None,
     }
     required_packages = ["torch"]
     models = [
@@ -218,38 +210,22 @@ class VBench2Module(PipelineModule):
         roots = [path for path in destination.iterdir() if path.is_dir()]
         return roots[0] if len(roots) == 1 else destination
 
-    def _local_checkout(
-        self, key: str, repository: str, revision: str, marker: str
-    ) -> Path:
-        """Resolve an operator-provided checkout of an upstream repository.
-
-        Args:
-            key (str): Configuration key holding the path.
-            repository (str): Repository the operator is expected to check out.
-            revision (str): Commit the module is pinned to.
-            marker (str): Directory that must exist inside the checkout.
+    @staticmethod
+    def _vendored_source() -> Path:
+        """Path of the in-tree VBench 2.0 evaluator.
 
         Returns:
-            Path: Root of the checkout.
+            Path: Directory placed on ``sys.path`` so ``import vbench2`` resolves
+            to the vendored copy.
 
         Raises:
-            RuntimeError: The path is unset or does not look like the expected
-                checkout. Ayase does not download code, so this is the only way
-                the source can arrive.
+            RuntimeError: The vendored tree is missing.
         """
-        configured = self.config.get(key)
-        if not configured:
-            raise RuntimeError(
-                f"vbench2 needs a local checkout of {repository} at commit "
-                f"{revision}; set modules.vbench2.{key} to it. Ayase does not "
-                "download code."
-            )
-        root = Path(str(configured)).expanduser().resolve()
-        if not (root / marker).is_dir():
-            raise RuntimeError(
-                f"{root} does not look like a {repository} checkout: "
-                f"{marker} is missing"
-            )
+        from ayase import vendor
+
+        root = Path(vendor.__file__).resolve().parent / "vbench"
+        if not (root / "vbench2" / "__init__.py").is_file():
+            raise RuntimeError("VBench 2.0 evaluator is missing from ayase.vendor")
         return root
 
     def _mirror_url(self, path: str) -> str:
@@ -271,9 +247,7 @@ class VBench2Module(PipelineModule):
     def _download_external_artifacts(self, checkpoint_root: Path, models_dir: str) -> Path:
         from ayase.config import download_hf_snapshot, download_model_file
 
-        source_root = self._local_checkout(
-            "source_path", VBENCH_REPOSITORY, VBENCH_REVISION, "VBench-2.0"
-        )
+        source_root = self._vendored_source()
 
         raft_archive = download_model_file(
             "vbench2/raft/models.zip",
@@ -332,9 +306,7 @@ class VBench2Module(PipelineModule):
             except OSError:
                 shutil.copy2(retina, retina_cache)
 
-        cotracker_root = self._local_checkout(
-            "cotracker_path", COTRACKER_REPOSITORY, COTRACKER_REVISION, "cotracker"
-        )
+        cotracker_root = self._vendored_source() / "vbench2" / "third_party"
         self._merge_checkpoint_tree(cotracker_root, hub_dir / "facebookresearch_co-tracker_main")
         download_model_file(
             "torch_hub/checkpoints/cotracker2.pth",
@@ -376,7 +348,7 @@ class VBench2Module(PipelineModule):
             )
             self._prepare_checkpoint_layout(checkpoint_root)
             source_root = self._download_external_artifacts(checkpoint_root, models_dir)
-            package_root = source_root / "VBench-2.0"
+            package_root = source_root
             if str(package_root) not in sys.path:
                 sys.path.insert(0, str(package_root))
             # VBench 2.0 reads this at import time. Point it directly at the
@@ -394,7 +366,7 @@ class VBench2Module(PipelineModule):
 
             self._device = torch.device(resolve_torch_device(self.config.get("device", "auto")))
             self._vbench_cls = VBench2
-            self._default_full_info = package_root / "VBench2_full_info.json"
+            self._default_full_info = package_root / "vbench2" / "VBench2_full_info.json"
             # Some installations imported utils before the environment variable
             # was set. Keep its module-level cache root synchronized, then ask
             # the upstream initializer to resolve every selected dependency now
