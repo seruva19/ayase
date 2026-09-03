@@ -63,7 +63,13 @@ class VideoEditMotionFidelityModule(PipelineModule):
         self._ml_available = False
         self._backend = "unavailable"
 
+    #: Vendored components whose licence differs from Ayase's own.
+    vendor_components = ('cotracker',)
+
     def setup(self) -> None:
+        from ayase.licenses import announce
+
+        announce(self.vendor_components)
         try:
             from ayase.vendor.cotracker import load_cotracker
             device = resolve_torch_device(self.config.get("device", "auto"))

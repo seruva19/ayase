@@ -336,7 +336,13 @@ class VBench2Module(PipelineModule):
             )
         return source_root
 
+    #: Vendored components whose licence differs from Ayase's own.
+    vendor_components = ('vbench',)
+
     def setup(self) -> None:
+        from ayase.licenses import announce
+
+        announce(self.vendor_components)
         try:
             from ayase.config import download_hf_snapshot
 
