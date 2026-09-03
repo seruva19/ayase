@@ -1,14 +1,13 @@
-"""Shared CoTracker loading: architecture from torch.hub, weights from HuggingFace.
+"""Shared CoTracker2 loading: architecture from the in-tree copy, weights from HuggingFace.
 
-Three modules track points with CoTracker. Left to itself, ``torch.hub.load`` pulls
-the checkpoint from Meta's file server, which is slow or unreachable on some
-networks and bypasses the HuggingFace hosting the rest of the pipeline relies on.
-The authors publish the same checkpoint on the Hub, so the weights are fetched from
-there and placed in the torch.hub checkpoint cache under the exact filename the hub
-entrypoint expects; the entrypoint then finds them cached and downloads nothing.
+Three modules track points with CoTracker2. Left to itself, ``torch.hub.load`` would
+fetch both parts over the network: the architecture from the upstream git repository
+and the checkpoint from Meta's file server. Ayase does not download code, and the
+architecture is already vendored (``ayase.vendor.cotracker``), so only the checkpoint
+is fetched, from the copy the authors publish on HuggingFace.
 
-``vbench2`` already loads CoTracker this way. This module exists so the other three
-do not each repeat it.
+The model built here matches the upstream ``cotracker2`` hub entrypoint exactly:
+``CoTracker2(stride=4, window_len=8)`` loaded from ``cotracker2.pth``.
 """
 
 import logging
@@ -17,33 +16,27 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-#: Official checkpoint published by the authors. Weights live on HuggingFace; the
-#: architecture code still comes from the torch.hub repo.
+#: Checkpoint published by the authors. Weights only; the architecture is in-tree.
 COTRACKER_WEIGHTS_URL = "https://huggingface.co/facebook/cotracker/resolve/main/cotracker2.pth"
 COTRACKER_FILENAME = "cotracker2.pth"
-COTRACKER_ENTRYPOINT = "cotracker2"
+#: Temporal window of the second-generation model, per the upstream entrypoint.
+COTRACKER_WINDOW_LEN = 8
 
 
 def ensure_cotracker_weights(models_dir: str = "models") -> Optional[Path]:
-    """Put the CoTracker checkpoint where the torch.hub entrypoint will find it.
+    """Fetch the CoTracker2 checkpoint into ``models_dir``.
 
     Args:
         models_dir (str): Directory the pipeline keeps downloaded weights in.
 
     Returns:
-        Optional[Path]: Path to the cached checkpoint, or ``None`` when the
-        download failed -- in which case the caller may still proceed and let
-        torch.hub fall back to its own source.
+        Optional[Path]: Path to the checkpoint, or ``None`` when the download
+        failed.
     """
-    import torch
-
     from ayase.config import download_model_file
 
-    cache = Path(torch.hub.get_dir()) / "checkpoints" / COTRACKER_FILENAME
-    if cache.exists():
-        return cache
     try:
-        downloaded = Path(
+        return Path(
             download_model_file(
                 f"cotracker/{COTRACKER_FILENAME}", COTRACKER_WEIGHTS_URL, models_dir
             )
@@ -52,32 +45,29 @@ def ensure_cotracker_weights(models_dir: str = "models") -> Optional[Path]:
         logger.warning("cotracker: could not fetch weights from HuggingFace: %s", exc)
         return None
 
-    cache.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        # A hard link keeps one copy on disk; a copy is the fallback when the
-        # models directory and the hub cache sit on different filesystems.
-        import os
-
-        os.link(downloaded, cache)
-    except OSError:
-        import shutil
-
-        shutil.copy2(downloaded, cache)
-    return cache
-
 
 def load_cotracker(device: Any, models_dir: str = "models") -> Any:
-    """Load CoTracker with weights taken from HuggingFace.
+    """Load CoTracker2 from the vendored architecture and the fetched weights.
 
     Args:
         device (Any): Torch device to place the model on.
         models_dir (str): Directory the pipeline keeps downloaded weights in.
 
     Returns:
-        Any: The model in evaluation mode.
-    """
-    import torch
+        Any: The predictor in evaluation mode.
 
-    ensure_cotracker_weights(models_dir)
-    model = torch.hub.load("facebookresearch/co-tracker", COTRACKER_ENTRYPOINT)
-    return model.to(device).eval()
+    Raises:
+        RuntimeError: The checkpoint could not be obtained.
+    """
+    from ayase.vendor.cotracker.predictor import CoTrackerPredictor
+
+    checkpoint = ensure_cotracker_weights(models_dir)
+    if checkpoint is None:
+        raise RuntimeError("CoTracker2 checkpoint is unavailable")
+    predictor = CoTrackerPredictor(
+        checkpoint=str(checkpoint),
+        v2=True,
+        offline=True,
+        window_len=COTRACKER_WINDOW_LEN,
+    )
+    return predictor.to(device).eval()

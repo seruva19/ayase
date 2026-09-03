@@ -3,6 +3,19 @@
 Runs the Apache-2.0 VBench 2.0 implementation as an optional dataset-level
 backend. No proxy scores are emitted when the upstream package or checkpoints
 are unavailable. Higher scores indicate better intrinsic faithfulness.
+
+The upstream tree is not vendored and is not downloaded: it is 261 MB, most of it
+prompt suites and assets the runtime reads, which does not belong inside a Python
+distribution, and Ayase downloads weights, never code. The operator points the
+module at a local checkout instead::
+
+    modules:
+      vbench2:
+        source_path: /opt/VBench          # checked out at commit 45e79ec1
+        cotracker_path: /opt/co-tracker   # checked out at commit 82e02e80
+
+Without those paths the module reports itself unavailable rather than fetching
+code behind the operator's back. Checkpoints are still fetched automatically.
 """
 
 import json
@@ -26,6 +39,9 @@ MIRROR_REVISION = "main"
 MIRROR_RESOLVE_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve"
 VBENCH_REVISION = "45e79ec14e69a2187202c675d2dbce1a71843d53"
 COTRACKER_REVISION = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
+#: Repositories the operator checks out; the mirror above holds only weights.
+VBENCH_REPOSITORY = "https://github.com/Vchitect/VBench"
+COTRACKER_REPOSITORY = "https://github.com/facebookresearch/co-tracker"
 
 
 DIMENSION_FIELDS = {
@@ -100,6 +116,8 @@ class VBench2Module(PipelineModule):
         "model_revision": None,
         "mirror_revision": MIRROR_REVISION,
         "read_frame": False,
+        "source_path": None,
+        "cotracker_path": None,
     }
     required_packages = ["torch"]
     models = [
@@ -200,6 +218,40 @@ class VBench2Module(PipelineModule):
         roots = [path for path in destination.iterdir() if path.is_dir()]
         return roots[0] if len(roots) == 1 else destination
 
+    def _local_checkout(
+        self, key: str, repository: str, revision: str, marker: str
+    ) -> Path:
+        """Resolve an operator-provided checkout of an upstream repository.
+
+        Args:
+            key (str): Configuration key holding the path.
+            repository (str): Repository the operator is expected to check out.
+            revision (str): Commit the module is pinned to.
+            marker (str): Directory that must exist inside the checkout.
+
+        Returns:
+            Path: Root of the checkout.
+
+        Raises:
+            RuntimeError: The path is unset or does not look like the expected
+                checkout. Ayase does not download code, so this is the only way
+                the source can arrive.
+        """
+        configured = self.config.get(key)
+        if not configured:
+            raise RuntimeError(
+                f"vbench2 needs a local checkout of {repository} at commit "
+                f"{revision}; set modules.vbench2.{key} to it. Ayase does not "
+                "download code."
+            )
+        root = Path(str(configured)).expanduser().resolve()
+        if not (root / marker).is_dir():
+            raise RuntimeError(
+                f"{root} does not look like a {repository} checkout: "
+                f"{marker} is missing"
+            )
+        return root
+
     def _mirror_url(self, path: str) -> str:
         revision = quote(str(self.config.get("mirror_revision", MIRROR_REVISION)), safe="")
         return f"{MIRROR_RESOLVE_BASE}/{revision}/{path}"
@@ -219,13 +271,8 @@ class VBench2Module(PipelineModule):
     def _download_external_artifacts(self, checkpoint_root: Path, models_dir: str) -> Path:
         from ayase.config import download_hf_snapshot, download_model_file
 
-        source_archive = download_model_file(
-            f"vbench2/source-{VBENCH_REVISION}.zip",
-            self._mirror_url(f"vbench2/source-{VBENCH_REVISION}.zip"),
-            models_dir,
-        )
-        source_root = self._extract_zip(
-            source_archive, Path(models_dir) / "vbench2" / f"source-{VBENCH_REVISION}"
+        source_root = self._local_checkout(
+            "source_path", VBENCH_REPOSITORY, VBENCH_REVISION, "VBench-2.0"
         )
 
         raft_archive = download_model_file(
@@ -285,14 +332,8 @@ class VBench2Module(PipelineModule):
             except OSError:
                 shutil.copy2(retina, retina_cache)
 
-        cotracker_archive = download_model_file(
-            f"vbench2/cotracker/source-{COTRACKER_REVISION}.zip",
-            self._mirror_url(f"vbench2/cotracker/source-{COTRACKER_REVISION}.zip"),
-            models_dir,
-        )
-        cotracker_root = self._extract_zip(
-            cotracker_archive,
-            Path(models_dir) / "vbench2" / "cotracker" / f"source-{COTRACKER_REVISION}",
+        cotracker_root = self._local_checkout(
+            "cotracker_path", COTRACKER_REPOSITORY, COTRACKER_REVISION, "cotracker"
         )
         self._merge_checkpoint_tree(cotracker_root, hub_dir / "facebookresearch_co-tracker_main")
         download_model_file(

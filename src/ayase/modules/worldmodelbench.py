@@ -121,6 +121,27 @@ class WorldModelBenchModule(PipelineModule):
         self._benchmark: List[Dict[str, Any]] = []
 
     @staticmethod
+    def _vendored(name: str, marker: str) -> Path:
+        """Path of an in-tree runtime the benchmark imports.
+
+        Args:
+            name (str): Directory under ``ayase.vendor``.
+            marker (str): Package that must exist inside it.
+
+        Returns:
+            Path: Root to place on ``sys.path``.
+
+        Raises:
+            RuntimeError: The vendored tree is missing.
+        """
+        from ayase import vendor
+
+        root = Path(vendor.__file__).resolve().parent / name
+        if not (root / marker).is_dir():
+            raise RuntimeError(f"{name} runtime is missing from ayase.vendor")
+        return root
+
+    @staticmethod
     def _extract_source(archive: Path, destination: Path) -> Path:
         marker = destination / ".complete"
         if marker.is_file():
@@ -295,26 +316,8 @@ class WorldModelBenchModule(PipelineModule):
                 str(self.config.get("benchmark_url", BENCHMARK_URL)),
                 models_dir,
             )
-            vila_archive = download_model_file(
-                f"worldmodelbench/vila-llava-{VILA_REVISION}.zip",
-                str(self.config.get("vila_source_url", VILA_SOURCE_URL)),
-                models_dir,
-            )
-            vila_root = self._extract_source(
-                vila_archive,
-                Path(models_dir) / "worldmodelbench" / f"vila-llava-{VILA_REVISION}",
-            )
-            s2wrapper_archive = download_model_file(
-                f"worldmodelbench/s2wrapper-source-{S2WRAPPER_REVISION}.zip",
-                str(self.config.get("s2wrapper_source_url", S2WRAPPER_SOURCE_URL)),
-                models_dir,
-            )
-            s2wrapper_root = self._extract_source(
-                s2wrapper_archive,
-                Path(models_dir)
-                / "worldmodelbench"
-                / f"s2wrapper-source-{S2WRAPPER_REVISION}",
-            )
+            vila_root = self._vendored("vila", "llava")
+            s2wrapper_root = self._vendored("s2wrapper", "s2wrapper")
             if str(s2wrapper_root) not in sys.path:
                 sys.path.insert(0, str(s2wrapper_root))
             if str(vila_root) not in sys.path:
