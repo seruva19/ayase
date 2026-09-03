@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **no source-code downloads**: the MJ-Video, VQA2, VILA and s2wrapper runtimes are vendored in-tree (`ayase.vendor`), trimmed to what inference reaches: 126 MB of upstream snapshots become 5.4 MB, with datasets, notebooks, demo media and the training paths left out. Ayase downloads weights, never code.
+- **cotracker**: the three modules that used CoTracker2 now build it from the already-vendored architecture instead of `torch.hub`, which fetched the upstream repository. Same network, same `cotracker2.pth`, no code download.
+- **vbench2**: the 261 MB upstream tree cannot be vendored (its runtime reads 144 MB of prompt suites), so the module takes an operator-provided checkout through `source_path` and `cotracker_path`, and reports itself unavailable without them.
+
+
 ## [0.1.74] - 2026-09-02
 
 ### Added
