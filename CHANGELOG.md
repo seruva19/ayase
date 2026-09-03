@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **no source-code downloads**: the MJ-Video, VQA2, VILA and s2wrapper runtimes are vendored in-tree (`ayase.vendor`), trimmed to what inference reaches: 126 MB of upstream snapshots become 5.4 MB, with datasets, notebooks, demo media and the training paths left out. Ayase downloads weights, never code.
 - **cotracker**: the three modules that used CoTracker2 now build it from the already-vendored architecture instead of `torch.hub`, which fetched the upstream repository. Same network, same `cotracker2.pth`, no code download.
-- **vbench2**: the 261 MB upstream tree cannot be vendored (its runtime reads 144 MB of prompt suites), so the module takes an operator-provided checkout through `source_path` and `cotracker_path`, and reports itself unavailable without them.
+- **vbench2**: the evaluator is vendored too. The upstream snapshot is 261 MB, but 142 MB of that is four copies of one LVIS annotation file inside vendored detector repositories; scoring needs 14 MB of Python and the 0.4 MB `VBench2_full_info.json`, which is now shipped and used as the default full-info path (it previously pointed at a file that does not exist, so the module always required `full_info_path` to be set by hand).
 
 
 ## [0.1.74] - 2026-09-02
