@@ -134,4 +134,24 @@ pytest tests/ --full      # with ML model loading
 
 ## License
 
-MIT. Model weights downloaded at runtime carry their own licenses - see [MODELS.md](MODELS.md).
+Ayase's own code is MIT. Model weights downloaded at runtime carry their own licenses -
+see [MODELS.md](MODELS.md).
+
+Some metrics run research code vendored under `ayase/vendor` (see
+[the inventory](src/ayase/vendor/README.md)), and four of those components are not
+permissive. **Running one of these metrics places its component's licence on your use
+of the result**, whatever Ayase's own licence says. Each affected module declares what
+it runs and logs a notice at setup:
+
+| Metric | Vendored component | Licence |
+|---|---|---|
+| `chronomagic`, `dynamics_controllability`, `physics`, `video_edit_motion_fidelity`, `vmbench_pas`, `vmbench_tcs` | CoTracker | CC BY-NC 4.0 - non-commercial only |
+| `mj_video` | MJ-Video | no licence file upstream - no grant is stated |
+| `vbench2` | VBench 2.0 with its vendored YOLO-World and CoTracker | Apache-2.0, plus GPL-3.0 and CC BY-NC 4.0 inside |
+
+Every other vendored component is MIT, BSD or Apache-2.0 and imposes nothing beyond
+attribution, which the retained licence files provide.
+
+This is a disclosure, not a resolution. The plan for 1.0 is to replace these
+components with implementations Ayase can license itself, so that the whole
+distribution is MIT in substance and not only in name.

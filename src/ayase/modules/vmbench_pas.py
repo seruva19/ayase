@@ -72,7 +72,13 @@ class VMBenchPerceptibleAmplitudeModule(PipelineModule):
         self._cotracker = None
         self._ml_available = False
 
+    #: Vendored components whose licence differs from Ayase's own.
+    vendor_components = ('cotracker',)
+
     def setup(self) -> None:
+        from ayase.licenses import announce
+
+        announce(self.vendor_components)
         if self.test_mode:
             return
         try:

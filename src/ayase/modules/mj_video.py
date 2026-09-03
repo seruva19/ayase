@@ -205,7 +205,13 @@ class MJVideoModule(PipelineModule):
         modeling_internvl_chat.torch = TorchProxy()
         modeling_internvl_chat._ayase_single_process = True
 
+    #: Vendored components whose licence differs from Ayase's own.
+    vendor_components = ('mj_video',)
+
     def setup(self) -> None:
+        from ayase.licenses import announce
+
+        announce(self.vendor_components)
         try:
             from ayase.config import download_hf_snapshot, download_model_file
             from ayase.runtime import resolve_torch_device
