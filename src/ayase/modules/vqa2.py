@@ -6,9 +6,10 @@ tokens, ``logits[:, -3]`` position, slow/fast video streams, and any-resolution
 image preprocessing. The resulting score is in ``[0.2, 1.0]``; higher is
 better.
 
-The Apache-2.0 runtime source, 7B scorer checkpoint, and SlowFast checkpoint
-are pinned and downloaded automatically into ``models_dir``. No substitute or
-heuristic backend is used.
+The runtime source is vendored in-tree (``ayase.vendor.vqa2``) at the pinned
+commit, with the two compatibility fixes already applied; Ayase downloads weights,
+never code. The 7B scorer checkpoint and the SlowFast checkpoint are pinned and
+fetched into ``models_dir``. No substitute or heuristic backend is used.
 """
 
 from __future__ import annotations
@@ -16,7 +17,6 @@ from __future__ import annotations
 import logging
 import os
 import sys
-import zipfile
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 VQA2_SOURCE_REVISION = "9087c7952052088a6eb01bac4408bff903ab9e41"
 VQA2_MODEL_REVISION = "297de10254d0b4d435db436e1fcaacce5d976fd6"
 VQA2_SLOWFAST_REVISION = "8ab5deb746da9139288cbcbf3d155f1c94ff2a8e"
-VQA2_SOURCE_URL = (
+#: Upstream revision the vendored runtime in ``ayase.vendor.vqa2`` was taken from.
+VQA2_SOURCE_HOME = (
     "https://github.com/Q-Future/"
-    "Visual-Question-Answering-for-Video-Quality-Assessment/archive/"
-    f"{VQA2_SOURCE_REVISION}.zip"
+    "Visual-Question-Answering-for-Video-Quality-Assessment"
 )
 VQA2_MODEL_ID = "q-future/VQA-UGC-Scorer-llava_qwen"
 VQA2_SLOWFAST_ID = "JZHWS/slowfast"
@@ -90,14 +90,6 @@ class VQA2Module(PipelineModule):
             "auto_download": True,
             "notes": f"Apache-2.0; pinned revision {VQA2_SLOWFAST_REVISION}",
         },
-        {
-            "id": f"VQA2-source-{VQA2_SOURCE_REVISION}.zip",
-            "type": "local",
-            "url": VQA2_SOURCE_URL,
-            "task": "Pinned upstream VQA² LLaVA runtime source",
-            "auto_download": True,
-            "notes": "Apache-2.0",
-        },
     ]
     metric_info = {
         "vqa2_score": (
@@ -132,56 +124,24 @@ class VQA2Module(PipelineModule):
         self._runtime_root: Optional[Path] = None
 
     @staticmethod
-    def _extract_runtime(archive: Path, destination: Path, revision: str) -> Path:
-        """Extract only the upstream inference package and apply a path shim."""
-        runtime_root = destination / "quality_scoring"
-        marker = destination / ".complete"
-        if marker.is_file() and (runtime_root / "llava" / "__init__.py").is_file():
-            VQA2Module._patch_runtime(runtime_root)
-            return runtime_root
+    def _vendored_runtime() -> Path:
+        """Path of the in-tree VQA2 runtime, verified to be the patched revision.
 
-        destination.mkdir(parents=True, exist_ok=True)
-        prefix = (
-            "Visual-Question-Answering-for-Video-Quality-Assessment-"
-            f"{revision}/quality_scoring/"
-        )
-        root = destination.resolve()
-        extracted = 0
-        with zipfile.ZipFile(archive) as bundle:
-            for member in bundle.infolist():
-                if not member.filename.startswith(prefix):
-                    continue
-                relative = member.filename[len(prefix):]
-                if not relative or (
-                    not relative.startswith("llava/")
-                    and relative not in {"LICENSE", "README.md"}
-                ):
-                    continue
-                if ".." in Path(relative).parts:
-                    raise ValueError(
-                        f"Unsafe VQA² archive member: {member.filename}"
-                    )
-                target = (runtime_root / relative).resolve()
-                try:
-                    target.relative_to(root)
-                except ValueError as exc:
-                    raise ValueError(
-                        f"Unsafe VQA² archive member: {member.filename}"
-                    ) from exc
-                if member.is_dir():
-                    target.mkdir(parents=True, exist_ok=True)
-                    continue
-                target.parent.mkdir(parents=True, exist_ok=True)
-                with bundle.open(member) as source, target.open("wb") as output:
-                    while chunk := source.read(1024 * 1024):
-                        output.write(chunk)
-                extracted += 1
+        Returns:
+            Path: Directory holding the ``llava`` package the scorer imports.
 
-        if extracted == 0 or not (runtime_root / "llava" / "__init__.py").is_file():
-            raise RuntimeError("VQA² runtime was not found in source archive")
+        Raises:
+            RuntimeError: The vendored tree is missing or is not the pinned
+                revision the module expects.
+        """
+        from ayase import vendor
 
+        runtime_root = Path(vendor.__file__).resolve().parent / "vqa2"
+        if not (runtime_root / "llava" / "__init__.py").is_file():
+            raise RuntimeError("VQA2 runtime is missing from ayase.vendor")
+        # The fixes are baked into the vendored copy; this re-checks them so a
+        # bad vendoring fails here rather than deep inside the scorer.
         VQA2Module._patch_runtime(runtime_root)
-        marker.touch()
         return runtime_root
 
     @staticmethod
@@ -216,20 +176,7 @@ class VQA2Module(PipelineModule):
     def _download_assets(self) -> Tuple[Path, Path, Path]:
         from ayase.config import download_hf_snapshot, download_model_file
 
-        archive = download_model_file(
-            f"vqa2/source-{self.source_revision}.zip",
-            (
-                "https://github.com/Q-Future/"
-                "Visual-Question-Answering-for-Video-Quality-Assessment/archive/"
-                f"{self.source_revision}.zip"
-            ),
-            self.models_dir,
-        )
-        runtime = self._extract_runtime(
-            archive,
-            Path(self.models_dir).resolve() / "vqa2" / f"source-{self.source_revision}",
-            self.source_revision,
-        )
+        runtime = self._vendored_runtime()
         model_path = download_hf_snapshot(
             self.model_id,
             self.models_dir,
