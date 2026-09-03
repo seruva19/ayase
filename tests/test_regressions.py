@@ -1632,3 +1632,82 @@ class TestNoSourceCodeDownloads:
                 if pattern.search(line):
                     offenders.append(f"{path.name}:{number}")
         assert not offenders, "code archive URLs: " + "; ".join(offenders)
+
+
+class TestVendorLicenceNotice:
+    """A metric that runs non-MIT vendored code has to say so.
+
+    Ayase is MIT; four vendored components are not. A user who puts such a number
+    in a commercial report needs to learn the terms from the tool, not from a
+    lawyer afterwards.
+    """
+
+    AFFECTED = {
+        "chronomagic": "cotracker",
+        "dynamics_controllability": "cotracker",
+        "physics": "cotracker",
+        "video_edit_motion_fidelity": "cotracker",
+        "vmbench_pas": "cotracker",
+        "vmbench_tcs": "cotracker",
+        "mj_video": "mj_video",
+        "vbench2": "vbench",
+    }
+
+    def test_every_affected_module_declares_its_components(self):
+        from ayase.pipeline import ModuleRegistry
+
+        registry = ModuleRegistry()
+        registry.discover_modules()
+        missing = []
+        for name, component in self.AFFECTED.items():
+            module_cls = registry._modules.get(name)
+            if module_cls is None:
+                continue
+            declared = getattr(module_cls, "vendor_components", ())
+            if component not in declared:
+                missing.append(f"{name} does not declare {component}")
+        assert not missing, "; ".join(missing)
+
+    def test_notice_names_the_licence_and_fires_once(self, caplog):
+        import logging
+
+        from ayase import licenses
+
+        licenses._announced.clear()
+        with caplog.at_level(logging.WARNING, logger="ayase.licenses"):
+            licenses.announce(["cotracker"])
+            licenses.announce(["cotracker"])
+
+        notices = [r for r in caplog.records if "CC BY-NC 4.0" in r.getMessage()]
+        assert len(notices) == 1
+
+    def test_every_declared_component_is_known(self):
+        from ayase.licenses import PERMISSIVE_COMPONENTS, VENDOR_LICENSES
+        from ayase.pipeline import ModuleRegistry
+
+        registry = ModuleRegistry()
+        registry.discover_modules()
+        known = set(VENDOR_LICENSES) | PERMISSIVE_COMPONENTS
+        unknown = []
+        for name, module_cls in registry._modules.items():
+            for component in getattr(module_cls, "vendor_components", ()) or ():
+                if component not in known:
+                    unknown.append(f"{name}: {component}")
+        assert not unknown, "undeclared licence for: " + "; ".join(unknown)
+
+    def test_vendored_trees_keep_their_licence_files(self):
+        from pathlib import Path
+
+        import ayase
+
+        vendor = Path(ayase.__file__).resolve().parent / "vendor"
+        expected = {
+            "vqa2/LICENSE",
+            "vila/LICENSE",
+            "s2wrapper/LICENSE.md",
+            "vbench/vbench2/third_party/RAFT/LICENSE",
+            "vbench/vbench2/third_party/LLaVA_NeXT/LICENSE",
+            "vbench/vbench2/third_party/YOLO-World/mmyolo/LICENSE",
+        }
+        missing = [p for p in expected if not (vendor / p).is_file()]
+        assert not missing, "licence files stripped from: " + "; ".join(missing)
