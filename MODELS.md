@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.74** · Generated 2026-09-02 23:37 · **275 models** across **9 sources**
+> **Version 0.1.74** · Generated 2026-09-03 02:59 · **274 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**275** models · **106** HuggingFace · **55** pyiqa · **9** sources
+**274** models · **106** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
 *They do not describe the license of Ayase source code or vendored third-party source trees.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (77)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (77)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (38)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
 
-- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `id_sim`, `lip_dynamics`, `mj_video`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `id_sim`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
 
 ### <a href="https://huggingface.co/Aleksandar/nearid-siglip2" target="_blank">`Aleksandar/nearid-siglip2`</a> [↑](#categories)
 > image-feature-extraction · apache-2.0
@@ -675,12 +675,6 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `audio_visual_sync`, `av_desync`, `av_sync`
 - **Task**: Optional learned A/V offset backend when local weights are configured
-
-### <a href="https://github.com/Q-Future/Visual-Question-Answering-for-Video-Quality-Assessment/archive/9087c7952052088a6eb01bac4408bff903ab9e41.zip" target="_blank">`VQA2-source-9087c7952052088a6eb01bac4408bff903ab9e41.zip`</a> [↑](#categories)
-
-- **Used by**: `vqa2`
-- **Task**: Pinned upstream VQA² LLaVA runtime source
-- **Notes**: Apache-2.0
 
 ### `aesthetic_predictor_v2_5.pth` [↑](#categories)
 
