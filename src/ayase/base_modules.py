@@ -175,18 +175,12 @@ class BatchMetricModule(PipelineModule):
                     metric_name = getattr(self, "name", self.__class__.__name__)
                     self.pipeline.add_dataset_metric(metric_name, score)
 
-        except Exception as e:
-            # Graceful failure
-            import logging
-
-            logging.warning(f"Failed to compute batch metric: {e}")
-
         finally:
-            # Clean up cache
+            # Always release resources, but let Pipeline.stop() record failures.
+            # Suppressing an exception here would report an incomplete run as successful.
             self._feature_cache = []
             self._reference_cache = []
-
-        super().on_dispose()
+            super().on_dispose()
 
 
 class NoReferenceModule(PipelineModule):
