@@ -12,7 +12,7 @@ Covers:
 5.  ``cache_enabled`` propagation from global config + sane aggregation.
 6.  ``default_config`` deep copy + recursive merge (no shared nested dicts).
 7.  Stable (process-independent) external plugin module names.
-8.  Frame cache: decode-once per file, subsampled views, lazy color
+8.  Frame cache: exact sampling grids per file, lazy color
     conversion, read-only zero-copy arrays.
 9.  Zero-frame-count videos fall back to bounded sequential reads.
 10. ``issues_by_type`` uses structured issue types, not message parsing.
@@ -777,7 +777,7 @@ def test_external_plugin_symlink_cannot_escape_configured_folder(tmp_path: Path)
 
 
 # ---------------------------------------------------------------------------
-# 8. Frame cache: decode once, subsampled views, lazy color, read-only
+# 8. Frame cache: exact sampling grids, lazy color, read-only
 # ---------------------------------------------------------------------------
 
 
@@ -799,7 +799,7 @@ def _install_fake_decoder(monkeypatch, total_frames: int = 8):
     return calls
 
 
-def test_frame_cache_single_decode_across_max_frames_and_colors(
+def test_frame_cache_shares_decode_across_colors_for_same_grid(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     calls = _install_fake_decoder(monkeypatch)
@@ -807,13 +807,13 @@ def test_frame_cache_single_decode_across_max_frames_and_colors(
     pipeline = Pipeline([])
 
     first = pipeline.sample_frames(media, max_frames=8, color="rgb")
-    gray = pipeline.sample_frames(media, max_frames=3, color="gray")
+    gray = pipeline.sample_frames(media, max_frames=8, color="gray")
     again = pipeline.sample_frames(media, max_frames=8, color="rgb")
 
-    assert len(calls) == 1  # one decode serves all requests
+    assert len(calls) == 1  # one exact grid serves all color requests
     assert calls[0] == (8, "bgr")  # decoded once, native BGR
     assert len(first) == 8
-    assert len(gray) == 3
+    assert len(gray) == 8
     assert gray[0].ndim == 2  # converted to gray lazily
     assert len(again) == 8
     # Same pixel data, fresh view objects.
@@ -850,7 +850,7 @@ def test_frame_cache_redecodes_for_higher_max_frames(
     assert [c[0] for c in calls] == [3, 8]
 
 
-def test_frame_cache_does_not_redecode_exhausted_source(
+def test_frame_cache_keeps_unequal_exhausted_requests_independent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     calls = _install_fake_decoder(monkeypatch, total_frames=2)
@@ -862,7 +862,89 @@ def test_frame_cache_does_not_redecode_exhausted_source(
 
     assert len(first) == 2
     assert len(second) == 2
-    assert len(calls) == 1  # source exhausted; no futile re-decode
+    assert [c[0] for c in calls] == [4, 8]
+
+
+def test_frame_cache_sampling_is_order_independent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A smaller grid has the same pixels standalone or after a larger grid."""
+    import ayase.image as image_utils
+
+    calls = []
+
+    def grid_decode(path, max_frames=8, color="rgb"):
+        calls.append(int(max_frames))
+        indices = np.linspace(0, 99, min(int(max_frames), 100), dtype=int)
+        return [np.full((2, 2, 3), int(i), dtype=np.uint8) for i in indices]
+
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached", grid_decode)
+    media = _media(tmp_path)
+
+    standalone = Pipeline([]).sample_frames(media, max_frames=3, color="bgr")
+    ordered_pipeline = Pipeline([])
+    ordered_pipeline.sample_frames(media, max_frames=8, color="rgb")
+    ordered = ordered_pipeline.sample_frames(media, max_frames=3, color="bgr")
+
+    assert [int(frame[0, 0, 0]) for frame in standalone] == [0, 49, 99]
+    assert [int(frame[0, 0, 0]) for frame in ordered] == [0, 49, 99]
+    assert calls == [3, 8, 3]
+
+
+@pytest.mark.parametrize("unreliable_count", [False, True])
+def test_frame_cache_video_sampling_matches_standalone_with_decoder_edge_cases(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    unreliable_count: bool,
+):
+    """Exercise the real sampler for failed seeks and unknown frame counts."""
+    import ayase.image as image_utils
+
+    class EdgeCaseCapture:
+        def __init__(self, path):
+            self.position = 0
+            self.reads = 0
+
+        def isOpened(self):
+            return True
+
+        def get(self, prop):
+            return 0.0 if unreliable_count else 100.0
+
+        def set(self, prop, value):
+            self.position = int(value)
+            return True
+
+        def read(self):
+            if unreliable_count:
+                if self.reads >= 100:
+                    return False, None
+                value = self.reads
+                self.reads += 1
+            else:
+                value = self.position
+                # Simulate intermittent seek/read failures on the eight-frame
+                # grid while leaving the three-frame grid decodable.
+                if value in {28, 70}:
+                    return False, None
+            return True, np.full((2, 2, 3), value, dtype=np.uint8)
+
+        def release(self):
+            pass
+
+    monkeypatch.setattr(image_utils.cv2, "VideoCapture", EdgeCaseCapture)
+    media = _media(tmp_path)
+
+    standalone = Pipeline([]).sample_frames(media, max_frames=3, color="bgr")
+    ordered_pipeline = Pipeline([])
+    ordered_pipeline.sample_frames(media, max_frames=8, color="rgb")
+    ordered = ordered_pipeline.sample_frames(media, max_frames=3, color="bgr")
+
+    standalone_pixels = [int(frame[0, 0, 0]) for frame in standalone]
+    ordered_pixels = [int(frame[0, 0, 0]) for frame in ordered]
+    expected = [0, 4, 8] if unreliable_count else [0, 49, 99]
+    assert standalone_pixels == expected
+    assert ordered_pixels == expected
 
 
 def test_frame_cache_short_read_not_treated_as_exhausted(

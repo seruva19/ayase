@@ -507,12 +507,12 @@ class Pipeline:
         """Load uniformly spaced frames, reusing a per-sample runtime cache.
 
         Returns a fresh list of zero-copy READ-ONLY numpy views each call. The
-        file is decoded once (in native BGR, at the highest ``max_frames`` seen
-        for it); lower ``max_frames`` requests are served as a uniform subsample
-        of that decode, and each ``color`` is converted-and-cached on first use.
-        Callers must not mutate the returned arrays in place (copy first).
+        exact ``max_frames`` sampling grid is decoded once in native BGR; color
+        conversions for that grid are cached lazily. Keeping separate entries
+        for different frame limits makes the result independent of request
+        order. Callers must not mutate the returned arrays in place (copy first).
         """
-        from .image import _sample_frames_uncached, _sample_frames_uncached_detailed, _convert_frame_color
+        from .image import _convert_frame_color, _sample_frames_uncached
 
         max_frames = max(0, int(max_frames))
         color = str(color)
@@ -521,29 +521,16 @@ class Pipeline:
             frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
             return cast(List[Any], clone_frames(frames))
 
-        key = self._frame_cache_key("frames", Path(path))
+        # A uniform N-frame grid generally is not a subset of a uniform M-frame
+        # grid. Include max_frames so an earlier, denser request cannot change
+        # the pixels returned by a later, smaller request.
+        key = (*self._frame_cache_key("frames", Path(path)), max_frames)
         entry = self._frame_cache.get(key)
-        if entry is None or (
-            entry["decoded_max"] < max_frames and not entry["exhausted"]
-        ):
-            decoded, reliable_total = _sample_frames_uncached_detailed(
-                path, max_frames=max_frames, color="bgr"
-            )
+        if entry is None:
+            decoded = _sample_frames_uncached(path, max_frames=max_frames, color="bgr")
             base = [readonly_view(frame) for frame in decoded]
-            # "Exhausted" must mean the decoder reports the source has no more
-            # frames than we requested — NOT merely that fewer frames came back
-            # (a short read from failed seeks on a long video would otherwise be
-            # cached as exhausted and never re-decoded at a higher max_frames).
-            if reliable_total is not None:
-                exhausted = reliable_total <= max_frames
-            else:
-                # Frame count unreliable (<=0 / undecodable): do not cache an
-                # authoritative "exhausted" so a larger request can re-attempt.
-                exhausted = False
             entry = {
                 "bgr": base,
-                "decoded_max": max_frames,
-                "exhausted": exhausted,
                 "colors": {"bgr": base},
             }
             self._frame_cache[key] = entry
@@ -556,14 +543,7 @@ class Pipeline:
             ]
             entry["colors"][color] = full
 
-        n = len(full)
-        if n == 0:
-            return []
-        import numpy as np
-
-        take = min(max_frames, n)
-        indices = np.linspace(0, n - 1, take, dtype=int)
-        return [readonly_view(full[int(i)]) for i in indices]
+        return [readonly_view(frame) for frame in full]
 
     def load_representative_frame(self, path: Path, color: str = "rgb") -> Optional[Any]:
         """Load one representative frame, reusing a per-sample runtime cache.
@@ -1709,7 +1689,10 @@ class Pipeline:
             path: Output file path
             format: 'json', 'csv', or 'html'
         """
+        if format not in {"json", "csv", "html"}:
+            raise ValueError(f"Unsupported report format: {format!r}")
         path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
         if format == "json":
             with open(path, "w", encoding="utf-8") as f:
                 data = {
