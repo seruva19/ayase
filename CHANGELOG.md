@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.76] - 2026-09-07
+
 ### Fixed
 
 - **pipeline**: frame sampling is independent of module order; failed final batch calculations mark runs incomplete and still release resources.
