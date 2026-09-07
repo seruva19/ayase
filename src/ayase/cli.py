@@ -123,6 +123,10 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
     _discover_all_modules(config)
     modules = []
 
+    if not pipeline_str.strip():
+        console.print("[red]Pipeline must contain at least one module.[/red]")
+        raise typer.Exit(code=1)
+
     # Simple regex to split by comma but ignore commas inside curly braces
     parts = re.split(r",(?![^{]*})", pipeline_str)
 
@@ -166,8 +170,14 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
                 modules.append(module_cls(config=params))
             except Exception as e:
                 console.print(f"[red]Error initializing module '{name}': {e}[/red]")
+                raise typer.Exit(code=1)
         else:
-            console.print(f"[yellow]Warning: Module '{name}' not found.[/yellow]")
+            console.print(f"[red]Unknown module: {name}[/red]")
+            raise typer.Exit(code=1)
+
+    if not modules:
+        console.print("[red]Pipeline must contain at least one module.[/red]")
+        raise typer.Exit(code=1)
 
     return modules
 
@@ -336,17 +346,25 @@ def _export_artifacts(pipeline: Pipeline, config: AyaseConfig, label: str) -> Op
         return None
 
 
-def _instantiate_modules(module_names: List[str], config: AyaseConfig) -> List[PipelineModule]:
+def _instantiate_modules(
+    module_names: List[str], config: AyaseConfig, *, allow_empty: bool = False
+) -> List[PipelineModule]:
+    """Instantiate every requested module, failing rather than silently omitting one."""
     modules = []
+    if not module_names and not allow_empty:
+        console.print("[red]At least one module must be specified.[/red]")
+        raise typer.Exit(code=1)
     for name in module_names:
         module_cls = ModuleRegistry.get_module(name)
         if not module_cls:
-            continue
+            console.print(f"[red]Unknown module: {name}[/red]")
+            raise typer.Exit(code=1)
         params = runtime_module_config(config)
         try:
             modules.append(module_cls(config=params))
         except Exception as e:
             console.print(f"[red]Error initializing module '{name}': {e}[/red]")
+            raise typer.Exit(code=1)
     return modules
 
 
@@ -446,6 +464,12 @@ def scan(
     ] = False,
 ) -> None:
     """Scan a dataset and generate a quality metrics report."""
+    if format not in {"json", "csv", "markdown", "html"}:
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(code=1)
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
     is_quiet = format == "json" and output is None
 
     if not is_quiet:
@@ -468,15 +492,15 @@ def scan(
         console.print("[red]Dataset path is required.[/red]")
         raise typer.Exit(code=1)
 
-    if pipeline:
+    if pipeline is not None:
         modules = _parse_pipeline_str(pipeline, config)
-    elif modules_flag:
+    elif modules_flag is not None:
         _discover_all_modules(config)
         module_names = [n.strip() for n in modules_flag.split(",") if n.strip()]
         modules = _instantiate_modules(module_names, config)
     else:
         module_names = _select_modules(quick, deep, config)
-        modules = _instantiate_modules(module_names, config)
+        modules = _instantiate_modules(module_names, config, allow_empty=True)
 
     p = Pipeline(modules)
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
@@ -553,6 +577,12 @@ def run(
     ] = 0,
 ) -> None:
     """Run a specific quality assessment pipeline on target paths."""
+    if format not in {"json", "csv", "markdown"}:
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(code=1)
+    if output is not None:
+        output.parent.mkdir(parents=True, exist_ok=True)
+
     config = AyaseConfig.load()
     modules = _parse_pipeline_str(pipeline, config)
     p = Pipeline(modules)
@@ -676,7 +706,7 @@ def filter(
 
     config = AyaseConfig.load()
     module_names = _select_modules(quick=False, deep=False, config=config)
-    modules = _instantiate_modules(module_names, config)
+    modules = _instantiate_modules(module_names, config, allow_empty=True)
     pipeline = Pipeline(modules)
 
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
@@ -786,6 +816,10 @@ def stats(
     ] = False,
 ) -> None:
     """Generate statistics and distribution analysis."""
+    if format not in {"text", "json", "html"}:
+        console.print(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(code=1)
+
     console.print(f"[bold cyan]Generating statistics for:[/bold cyan] {dataset_path}")
     console.print(f"[bold]Format:[/bold] {format}")
 
@@ -794,7 +828,7 @@ def stats(
 
     config = AyaseConfig.load()
     module_names = _select_modules(quick=True, deep=False, config=config)
-    modules = _instantiate_modules(module_names, config)
+    modules = _instantiate_modules(module_names, config, allow_empty=True)
     pipeline = Pipeline(modules)
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
     _run_pipeline(pipeline, samples)
@@ -1125,8 +1159,10 @@ def tui() -> None:
         console.print(
             "[yellow]This install is missing required runtime dependencies. Reinstall with: pip install --upgrade --force-reinstall ayase[/yellow]"
         )
+        raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"[red]Unexpected error: {e}[/red]")
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

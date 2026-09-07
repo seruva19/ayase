@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **pipeline**: frame sampling is independent of module order; failed final batch calculations mark runs incomplete and still release resources.
+- **audio**: stereo resampling preserves the time axis and channel layout across decoding backends.
+- **CLI**: reject unknown or uninitializable requested modules and invalid output formats before processing; prepare report directories before execution.
+- **reports**: reject unsupported export formats explicitly and create missing parent directories.
+
 ## [0.1.75] - 2026-09-03
 
 ### Added

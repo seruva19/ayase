@@ -133,9 +133,9 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
     ``max_frames`` caps the number of frames; ``color`` is ``"rgb"`` (default),
     ``"bgr"``, or ``"gray"``. The returned arrays are ALWAYS READ-ONLY
     (``writeable=False``) — both when a pipeline is active (zero-copy views over
-    the shared per-sample cache, decoded once per file at the highest
-    ``max_frames`` requested) and on the uncached fallback path. The returned
-    list is fresh each call, but the pixel buffers may be shared. Do NOT mutate
+    the shared per-sample cache for the exact ``max_frames`` sampling grid) and
+    on the uncached fallback path. The returned list is fresh each call, but
+    the pixel buffers may be shared. Do NOT mutate
     returned frames in place — copy first (``frame.copy()``) if you need to
     write. Returns an empty list when no frames can be decoded.
     """

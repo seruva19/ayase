@@ -83,6 +83,8 @@ def load_audio(
     The function returns float32 samples in roughly ``[-1, 1]``. It first tries
     ``soundfile``/``librosa`` directly, then falls back to ffmpeg extraction for
     containers where the audio stream cannot be decoded as a standalone file.
+    Mono waveforms have shape ``(samples,)``; multichannel waveforms use
+    ``(samples, channels)`` regardless of the decoder backend.
     """
     path = Path(path)
 
@@ -98,7 +100,12 @@ def load_audio(
             try:
                 import librosa
 
-                audio = librosa.resample(audio, orig_sr=sr, target_sr=target_sr)
+                audio = librosa.resample(
+                    audio,
+                    orig_sr=sr,
+                    target_sr=target_sr,
+                    axis=0,
+                )
             except Exception:
                 audio = _linear_resample(audio, sr, target_sr)
         return np.asarray(audio, dtype=np.float32)
@@ -114,6 +121,10 @@ def load_audio(
             mono=mono,
             duration=duration,
         )
+        # librosa represents multichannel audio as (channels, samples), while
+        # soundfile and this module's public contract use (samples, channels).
+        if not mono and getattr(audio, "ndim", 1) > 1:
+            audio = np.moveaxis(audio, 0, -1)
         return np.asarray(audio, dtype=np.float32)
     except Exception:
         pass
@@ -127,7 +138,7 @@ def extract_audio_with_ffmpeg(
     mono: bool = True,
     duration: Optional[float] = None,
 ) -> Optional[np.ndarray]:
-    """Extract an audio stream with ffmpeg and return a mono float32 waveform."""
+    """Extract audio with ffmpeg as mono or time-first stereo float32 samples."""
     tmp = None
     try:
         tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
@@ -259,13 +270,23 @@ def audio_distribution_features(audio: np.ndarray, sr: int = 16000) -> Optional[
 
 
 def _linear_resample(audio: np.ndarray, sr: int, target_sr: int) -> np.ndarray:
+    """Resample mono or time-first multichannel audio along the time axis."""
+    audio = np.asarray(audio, dtype=np.float32)
     if sr <= 0 or sr == target_sr or len(audio) == 0:
-        return np.asarray(audio, dtype=np.float32)
+        return audio
     duration = len(audio) / float(sr)
     n_samples = max(1, int(duration * target_sr))
     source = np.linspace(0.0, duration, num=len(audio), endpoint=False)
     target = np.linspace(0.0, duration, num=n_samples, endpoint=False)
-    return np.interp(target, source, audio).astype(np.float32)
+    if audio.ndim == 1:
+        return np.interp(target, source, audio).astype(np.float32)
+
+    flat_audio = audio.reshape(len(audio), -1)
+    channels = [
+        np.interp(target, source, flat_audio[:, index])
+        for index in range(flat_audio.shape[1])
+    ]
+    return np.stack(channels, axis=1).reshape((n_samples,) + audio.shape[1:]).astype(np.float32)
 
 
 def _empty_audio_summary() -> Dict[str, float]:
