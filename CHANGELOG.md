@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **pose_heat_ssim**: added strict frame-corresponding 133-keypoint pose-heatmap SSIM and coverage using the RTMLib Wholebody backend, with explicit single-actor and reproducibility limits.
 - **fvmd**: replaced the unavailable placeholder with the pinned official Apache-2.0 PIPs++ runtime, released velocity/acceleration histogram features, verified checkpoint hash, and reference-distribution Fréchet calculation.
 - **face_motion_preservation**: added strict frame-corresponding landmark-pair Pearson/CCA and EAR/blink preservation diagnostics as an explicitly non-interchangeable MediaPipe adaptation of the published FaceMotionPreserve evaluation protocol.
 - **prove**: added PROVE RC-S spatial and RC-T temporal removal-coherence metrics using pinned DINOv2-Giant patch features and explicit removal masks.
