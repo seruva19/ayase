@@ -1645,6 +1645,7 @@ class TestVendorLicenceNotice:
     AFFECTED = {
         "chronomagic": "cotracker",
         "dynamics_controllability": "cotracker",
+        "imagebind_score": "imagebind",
         "physics": "cotracker",
         "video_edit_motion_fidelity": "cotracker",
         "vmbench_pas": "cotracker",
@@ -1694,6 +1695,25 @@ class TestVendorLicenceNotice:
                 if component not in known:
                     unknown.append(f"{name}: {component}")
         assert not unknown, "undeclared licence for: " + "; ".join(unknown)
+
+    def test_models_doc_contains_vendor_licence_disclosure(self):
+        from ayase.models_doc import generate_models_doc
+
+        document = generate_models_doc(fetch_licenses=False)
+        assert "## Project and Vendored Runtime Licenses" in document
+        assert "CC BY-NC-SA 4.0" in document
+        assert "`imagebind_score`" in document
+        assert "no licence file in the upstream snapshot" in document
+
+    def test_readme_links_to_models_doc_without_duplicating_details(self):
+        from pathlib import Path
+
+        readme = Path(__file__).resolve().parent.parent / "README.md"
+        document = readme.read_text(encoding="utf-8")
+        assert "## License" in document
+        assert "see [MODELS.md](MODELS.md)" in document
+        assert "CC BY-NC" not in document
+        assert "no licence file" not in document
 
     def test_vendored_trees_keep_their_licence_files(self):
         from pathlib import Path

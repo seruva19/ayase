@@ -49,6 +49,7 @@ class ImageBindScoreModule(PipelineModule):
     metric_groups = {
         "imagebind_score": "audio",
     }
+    vendor_components = ("imagebind",)
 
     def __init__(self, config=None):
         super().__init__(config)
@@ -98,6 +99,9 @@ class ImageBindScoreModule(PipelineModule):
         return os.path.exists(target_path) and os.path.getsize(target_path) > 1_000_000
 
     def setup(self) -> None:
+        from ayase.licenses import announce
+
+        announce(self.vendor_components)
         try:
             import torch
             try:
