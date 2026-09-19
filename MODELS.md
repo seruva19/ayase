@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-19 22:18 · **275 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-19 23:06 · **276 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**275** models · **106** HuggingFace · **55** pyiqa · **9** sources
+**276** models · **107** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~634 GB
+**Estimated total download size (all models):** ~639 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (77)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (38)](#pip-packages) · [Local Weights (38)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (78)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (38)](#pip-packages) · [Local Weights (38)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -331,6 +331,14 @@
 - **Used by**: `entitybench`, `fvd`, `subject_consistency`
 - **Parameters**: 87M · **Downloads**: 3.3M
 - **Disk**: ~330 MB
+- **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/facebook/dinov2-giant" target="_blank">`facebook/dinov2-giant`</a> [↑](#categories)
+> image-feature-extraction · apache-2.0
+
+- **Used by**: `prove`
+- **Parameters**: 1.1B · **Downloads**: 320K
+- **VRAM**: ~4.5 GB · **Disk**: 4.55 GB
 - **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/facebook/dinov2-large" target="_blank">`facebook/dinov2-large`</a> [↑](#categories)
