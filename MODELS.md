@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-19 20:53 · **274 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-19 22:18 · **275 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**274** models · **106** HuggingFace · **55** pyiqa · **9** sources
+**275** models · **106** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (77)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (37)](#pip-packages) · [Local Weights (38)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (77)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (38)](#pip-packages) · [Local Weights (38)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1061,6 +1061,12 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `verse_bench`
 - **Install**: `pip install audiobox_aesthetics`
+
+### `cdpam==0.0.6` [↑](#categories)
+> Official package with bundled scratchJNDdefault_best_model.pth; checkpoint SHA-256 453c8b6edee1a94f0120236156436ff28fe4d8d884485e4a67695c8e8570bdfe; source provenance: pranaymanocha/PerceptualAudio commit 4bd0a842b3d7a196b0e15398b761525482b11640
+
+- **Used by**: `cdpam`
+- **Install**: `pip install cdpam==0.0.6`
 
 ### `cleanfid` [↑](#categories)
 
