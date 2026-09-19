@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 00:03 · **377 modules** · **517 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 01:05 · **377 modules** · **517 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**377** modules · **603** output fields · **517** metrics · **267** tiered · **176** GPU · **21** categories
+**377** modules · **603** output fields · **517** metrics · **268** tiered · **176** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -6030,9 +6030,9 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 ### `fvmd` [↑](#categories)
 > Fréchet Video Motion Distance · ↓ lower=better · type: float
 
-**[`fvmd`](src/ayase/modules/fvmd.py)** — Frechet Video Motion Distance from optical-flow features (lower=better)
+**[`fvmd`](src/ayase/modules/fvmd.py)** — Official FVMD 1.0.0-compatible dataset distance (lower=better)
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: vid · **Speed**: ⏱️ medium
 - **Tests**: covered by [`test_fvmd.py`](tests/modules/per_module/test_fvmd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +1 more
 
 ### `identity_cluster_count` [↑](#categories)

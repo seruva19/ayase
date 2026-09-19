@@ -1,0 +1,15 @@
+FVMD official runtime
+Copyright 2024 Jiahe Liu
+
+This product includes software developed for the official Fréchet Video
+Motion Distance implementation:
+https://github.com/DSL-Lab/FVMD-frechet-video-motion-distance
+
+The Fréchet distance implementation is adapted from pytorch-fid/TTUR and
+retains its upstream attribution:
+Copyright 2018 Institute of Bioinformatics, JKU Linz
+
+Ayase modifications package the inference path as a library, use package-
+relative imports, remove CLI/training/visualization dependencies and stdout
+side effects. The released acceleration behavior is retained for numerical
+compatibility and is documented as differing from FVMD paper Eq. (2).
