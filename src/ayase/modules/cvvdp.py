@@ -9,13 +9,24 @@ may be negative for extremely different content.
 The implementation uses the authors' upstream MIT-licensed ``cvvdp`` package.
 It supports SDR and HDR display models and processes both image and video file
 pairs without substituting a framewise proxy.
+
+``ColorVideoVDPMLTransformerModule`` exposes the upstream experimental
+ColorVideoVDP-ML-Transformer extension (ICME 2025). Its learned pooling was
+calibrated for SDR/HDR streaming-video distortions caused by reduced bitrate
+and resolution. The authors warn that it may not generalize to unseen
+distortions and do not recommend it for optimization because of its irregular
+loss landscape. It retains the full-reference, aligned-input and explicit
+display-model requirements. Both outputs are JOD scores: 10 is reference
+quality and lower is worse; very poor pairs may score below zero.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from pathlib import Path
 from typing import Optional
+from unittest.mock import patch
 
 import numpy as np
 
@@ -239,3 +250,122 @@ class ColorVideoVDPModule(ReferenceBasedModule):
         except ImportError:
             pass
         super().on_dispose()
+
+
+class ColorVideoVDPMLTransformerModule(ColorVideoVDPModule):
+    """Run the official experimental ML-transformer pooling variant."""
+
+    name = "cvvdp_ml_transformer"
+    description = (
+        "Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score"
+    )
+    metric_field = "cvvdp_ml_transformer_score"
+    checkpoint_revision = "b202a7893f6663a6a46f76f7b06c62d1235bc3ab"
+    checkpoint_filename = "cvvdp_ml_transformer" + "/cvvdp.ckpt"
+    checkpoint_sha256 = "26c9d643fe4164b76059dc93777a00f4a1f847fd3179456c2d3ceb2b80904df0"
+    checkpoint_size = 38_075_730
+    upstream_revision = "2a268bce8d56e2f3abde46df3927d8a633707a24"
+    models = [
+        ColorVideoVDPModule.models[0],
+        {
+            "id": "gfxdisp/cvvdp_ml",
+            "type": "huggingface",
+            "task": "ColorVideoVDP-ML-Transformer learned quality pooling",
+            "auto_download": True,
+            "size": "38.1 MB",
+            "url": (
+                "https://huggingface.co/gfxdisp/cvvdp_ml/blob/"
+                "b202a7893f6663a6a46f76f7b06c62d1235bc3ab/"
+                "cvvdp_ml_transformer/cvvdp.ckpt"
+            ),
+            "notes": (
+                "MIT; checkpoint pinned at revision b202a7893f6663a6a46f76f7b06c62d1235bc3ab "
+                "with SHA-256 26c9d643fe4164b76059dc93777a00f4a1f847fd3179456c2d3ceb2b80904df0"
+            ),
+        },
+    ]
+    metric_info = {
+        "cvvdp_ml_transformer_score": (
+            "Experimental ColorVideoVDP-ML-Transformer JOD score "
+            "(10=reference quality, lower=worse; can be negative)"
+        )
+    }
+    metric_groups = {"cvvdp_ml_transformer_score": "fr_quality"}
+
+    def setup(self) -> None:
+        if self.test_mode:
+            return
+
+        try:
+            import pycvvdp
+            import torch
+            from huggingface_hub import hf_hub_download
+
+            if self.device_config == "auto":
+                self.device = torch.device(
+                    "cuda" if torch.cuda.is_available() else "cpu"
+                )
+            elif self.device_config in {"cpu", "cuda"}:
+                if self.device_config == "cuda" and not torch.cuda.is_available():
+                    logger.warning(
+                        "ColorVideoVDP-ML-Transformer requested CUDA but no CUDA GPU is available"
+                    )
+                    return
+                self.device = torch.device(self.device_config)
+            else:
+                logger.warning(
+                    "ColorVideoVDP-ML-Transformer device must be 'auto', 'cpu', or 'cuda', got %r",
+                    self.device_config,
+                )
+                return
+
+            metric_class = getattr(pycvvdp, "cvvdp_ml_transformer", None)
+            if metric_class is None:
+                logger.warning(
+                    "ColorVideoVDP-ML-Transformer requires cvvdp>=0.5.6,<0.6"
+                )
+                return
+            checkpoint_path = Path(
+                hf_hub_download(
+                    repo_id="gfxdisp/cvvdp_ml",
+                    filename=self.checkpoint_filename,
+                    revision=self.checkpoint_revision,
+                )
+            )
+            if checkpoint_path.stat().st_size != self.checkpoint_size:
+                raise RuntimeError("ColorVideoVDP-ML-Transformer checkpoint size mismatch")
+            digest_builder = hashlib.sha256()
+            with checkpoint_path.open("rb") as checkpoint_file:
+                for chunk in iter(lambda: checkpoint_file.read(1024 * 1024), b""):
+                    digest_builder.update(chunk)
+            digest = digest_builder.hexdigest()
+            if digest != self.checkpoint_sha256:
+                raise RuntimeError("ColorVideoVDP-ML-Transformer checkpoint SHA-256 mismatch")
+
+            # The official constructor otherwise resolves the moving HF default
+            # branch. Redirect only that internal lookup to the verified pin.
+            with patch(
+                "pycvvdp.cvvdp_ml_metric.hf_hub_download",
+                return_value=str(checkpoint_path),
+            ):
+                self._metric = metric_class(
+                    display_name=self.display_name,
+                    device=self.device,
+                    heatmap=None,
+                    quiet=True,
+                    gpu_mem=self.gpu_mem_gb,
+                )
+            self._pycvvdp = pycvvdp
+            self._backend = "cvvdp"
+            logger.info(
+                "ColorVideoVDP-ML-Transformer initialised on %s with display model %s",
+                self.device,
+                self.display_name,
+            )
+        except ImportError:
+            logger.warning(
+                "ColorVideoVDP-ML-Transformer unavailable; install cvvdp>=0.5.6,<0.6"
+            )
+        except Exception as exc:
+            logger.warning("ColorVideoVDP-ML-Transformer setup failed: %s", exc)
+            self._backend = None
