@@ -687,6 +687,8 @@ class QualityMetrics(BaseModel):
     aigvqa_score: Optional[float] = None  # AIGVQA multi-dimensional (higher=better)
     t2veval_score: Optional[float] = None  # T2VEval consistency+realness (higher=better)
     world_consistency_score: Optional[float] = None  # WCS object permanence (higher=better)
+    prove_rc_s_score: Optional[float] = None  # PROVE removal spatial coherence (higher=better)
+    prove_rc_t_score: Optional[float] = None  # PROVE temporal discrepancy (lower=better)
 
     # LLM/VLM-based VQA
     vqa2_score: Optional[float] = None  # VQA² LMM quality (higher=better)

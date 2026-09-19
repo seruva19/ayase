@@ -83,6 +83,7 @@ _VRAM_PATTERNS = {
     r"clip-vit-base|ViT-B": "~600 MB",
     r"videomae.*large": "~1.5 GB",
     r"videomae.*base": "~400 MB",
+    r"dinov2[-_/ ]?giant|dino.*giant": "~4.5 GB",
     r"dino.*vitb|dinov2": "~400 MB",
     r"resnet|r3d_18|inception": "~200 MB",
     r"DOVER|dover": "~800 MB",

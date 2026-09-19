@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-19 22:17 · **376 modules** · **512 metrics**
+> **Version 0.1.76** · Generated 2026-09-19 23:05 · **377 modules** · **514 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **368/376 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **369/377 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**376** modules · **598** output fields · **512** metrics · **266** tiered · **175** GPU · **21** categories
+**377** modules · **600** output fields · **514** metrics · **267** tiered · **176** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,11 +35,11 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
-## No-Reference Quality (84 metrics)
+## No-Reference Quality (85 metrics)
 
 ### `afine_score` [↑](#categories)
 > A-FINE fidelity-naturalness (CVPR 2025) · ↑ higher=better
@@ -591,6 +591,18 @@
 - **Packages**: pyiqa, torch
 - **Tests**: covered by [`test_promptiqa.py`](tests/modules/per_module/test_promptiqa.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 - **Config**: `subsample=4`
+
+### `prove_rc_s_score` [↑](#categories)
+> PROVE removal spatial coherence (higher=better) · ↑ higher=better · 0-1
+
+**[`prove`](src/ayase/modules/prove.py)** — PROVE masked object-removal spatial and temporal coherence
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: dinov2_giant
+- **Packages**: torch, transformers
+- **VRAM**: ~4.5 GB
+- **Tests**: covered by [`test_prove.py`](tests/modules/test_prove.py)
+- **Config**: `model=facebook/dinov2-giant`, `revision=611a9d42f2335e0f921f1e313ad3c1b7178d206d`, `target_size=448`, `max_frames=81`, `device=auto`
 
 ### `provqa_score` [↑](#categories)
 > ProVQA progressive 360 (higher=better) · ↑ higher=better
@@ -2672,7 +2684,7 @@
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 
-## Temporal Consistency (34 metrics)
+## Temporal Consistency (35 metrics)
 
 ### `aigv_temporal` [↑](#categories)
 > AI video temporal smoothness
@@ -2952,6 +2964,18 @@
 - **Backend**: imported_results
 - **Source**: <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
 - **Tests**: covered by [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py)
+
+### `prove_rc_t_score` [↑](#categories)
+> PROVE temporal discrepancy (lower=better) · ↓ lower=better
+
+**[`prove`](src/ayase/modules/prove.py)** — PROVE masked object-removal spatial and temporal coherence
+
+- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: dinov2_giant
+- **Packages**: torch, transformers
+- **VRAM**: ~4.5 GB
+- **Tests**: covered by [`test_prove.py`](tests/modules/test_prove.py)
+- **Config**: `model=facebook/dinov2-giant`, `revision=611a9d42f2335e0f921f1e313ad3c1b7178d206d`, `target_size=448`, `max_frames=81`, `device=auto`
 
 ### `ref4d_event_score` [↑](#categories)
 > Ref4D event-temporal score (0-100) · ↑ higher=better · 0-100

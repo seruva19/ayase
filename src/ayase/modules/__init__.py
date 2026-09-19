@@ -120,6 +120,7 @@ _IMPORTS = [
     ("InceptionScoreModule", ".inception_score"),
     ("I2VSimilarityModule", ".i2v_similarity"),
     ("SDReferenceModule", ".sd_reference"),
+    ("PROVEModule", ".prove"),
     # --- Face & human ---
     ("HumanFidelityModule", ".human_fidelity"),
     ("FaceFidelityModule", ".face_fidelity"),
