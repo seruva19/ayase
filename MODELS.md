@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 00:04 · **276 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 01:06 · **277 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**276** models · **107** HuggingFace · **55** pyiqa · **9** sources
+**277** models · **107** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (78)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (38)](#pip-packages) · [Local Weights (38)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (78)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (38)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -713,6 +713,13 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `motion_smoothness`
 - **Task**: Bundled RIFE HD v3 interpolation weights
+
+### <a href="https://github.com/ljh0v0/FVMD-frechet-video-motion-distance/releases/download/pips2_weights/pips2_weights.pth" target="_blank">`fvmd/pips2_weights.pth`</a> [↑](#categories)
+
+- **Used by**: `fvmd`
+- **Task**: Official FVMD PIPs++ point tracker
+- **VRAM**: ~511 MiB measured for two 16-frame windows on H100 · **Disk**: 421,766,633 bytes
+- **Notes**: Official FVMD 1.0.0 release checkpoint; SHA-256 pinned in module
 
 ### <a href="https://zenodo.org/records/3987831/files/Wavegram_Logmel_Cnn14_mAP%3D0.439.pth" target="_blank">`kad/Wavegram_Logmel_Cnn14_mAP=0.439.pth`</a> [↑](#categories)
 

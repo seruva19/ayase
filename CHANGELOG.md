@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **fvmd**: replaced the unavailable placeholder with the pinned official Apache-2.0 PIPs++ runtime, released velocity/acceleration histogram features, verified checkpoint hash, and reference-distribution Fréchet calculation.
 - **face_motion_preservation**: added strict frame-corresponding landmark-pair Pearson/CCA and EAR/blink preservation diagnostics as an explicitly non-interchangeable MediaPipe adaptation of the published FaceMotionPreserve evaluation protocol.
 - **prove**: added PROVE RC-S spatial and RC-T temporal removal-coherence metrics using pinned DINOv2-Giant patch features and explicit removal masks.
 - **cdpam**: added the optional learned full-reference perceptual audio distance with pinned official package/checkpoint provenance and modern PyTorch compatibility.

@@ -12,6 +12,7 @@ paths are left out. Licence and notice files are kept.
 | Tree | Upstream | Pinned commit | Licence |
 |---|---|---|---|
 | `cotracker` | facebookresearch/co-tracker | inference-only CoTracker2 and CoTracker3-offline | **CC BY-NC 4.0** |
+| `fvmd_official` | DSL-Lab/FVMD-frechet-video-motion-distance | `875a86a9` | Apache-2.0 |
 | `imagebind` | facebookresearch/ImageBind | — | **CC BY-NC-SA 4.0** |
 | `mj_video` | aiming-lab/MJ-Video | `cc1d2c95` | **no licence file in the snapshot** |
 | `q_align` | Q-Future/Q-Align | — | see tree |
