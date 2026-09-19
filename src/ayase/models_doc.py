@@ -1101,8 +1101,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     a(f"**{total_models}** models · **{source_counts.get('huggingface', 0)}** HuggingFace "
       f"· **{source_counts.get('pyiqa', 0)}** pyiqa · **{len(source_counts)}** sources")
     a("")
-    a("*License labels in this document cover model weights and runtime assets referenced by Ayase modules.*")
-    a("*They do not describe the license of Ayase source code or vendored third-party source trees.*")
+    a("*License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*")
+    a("*Project and vendored runtime licensing is documented in the final section below.*")
     a("*Resolution order: hardcoded source mappings, HuggingFace metadata when available, then parent-repo inheritance for weight files.*")
 
     # ── Charts (2-per-row) ───────────────────────────────────────────────
@@ -1500,6 +1500,45 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
             if e.install:
                 a(f"- **Install**: `{e.install}`")
             a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: Project and vendored runtime licensing
+    # ══════════════════════════════════════════════════════════════════════
+    from .licenses import PERMISSIVE_COMPONENTS, report as vendor_license_report
+
+    affected_modules: Dict[str, List[str]] = defaultdict(list)
+    for mod_name in sorted(all_modules):
+        cls = ModuleRegistry.get_module(mod_name)
+        if cls is None:
+            continue
+        for component in getattr(cls, "vendor_components", ()) or ():
+            affected_modules[component].append(mod_name)
+
+    a("## Project and Vendored Runtime Licenses")
+    a("")
+    a("Ayase's own source code is MIT. Model weights and runtime assets retain the "
+      "licenses shown in the catalog above.")
+    a("")
+    a("Some metrics execute research code shipped under `ayase/vendor`; see the "
+      "[vendored-source inventory](src/ayase/vendor/README.md). The following "
+      "components are not covered solely by Ayase's MIT license:")
+    a("")
+    a("| Metrics | Vendored component | License | Practical restriction |")
+    a("|---|---|---|---|")
+    for component, entry in vendor_license_report().items():
+        modules = affected_modules.get(component, [])
+        used_by = ", ".join(f"`{name}`" for name in modules) or "Not currently declared"
+        a(f"| {used_by} | {entry.component} | {entry.license} | {entry.note} |")
+    a("")
+    a(f"The remaining {len(PERMISSIVE_COMPONENTS)} registered vendored component "
+      "families use permissive terms or retain their own license notices; consult "
+      "the inventory before redistribution.")
+    a("")
+    a("Running an affected metric may place the component's terms on use of its "
+      "output. Each affected module declares its vendored components and logs a "
+      "notice during setup. The plan for 1.0 is to replace non-permissive components "
+      "with implementations Ayase can license compatibly.")
+    a("")
 
     # ══════════════════════════════════════════════════════════════════════
     # SECTION: Quick Install Guide
