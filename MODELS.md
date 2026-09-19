@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 01:32 · **279 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 02:49 · **280 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**279** models · **108** HuggingFace · **55** pyiqa · **9** sources
+**280** models · **109** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (79)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (39)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (80)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (39)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -367,6 +367,12 @@
 ### `fsmn-vad` [↑](#categories)
 
 - **Used by**: `verse_bench`
+
+### <a href="https://huggingface.co/gfxdisp/cvvdp_ml/blob/b202a7893f6663a6a46f76f7b06c62d1235bc3ab/cvvdp_ml_transformer/cvvdp.ckpt" target="_blank">`gfxdisp/cvvdp_ml`</a> [↑](#categories)
+> mit
+
+- **Used by**: `cvvdp_ml_transformer`
+- **Disk**: 38.1 MB
 
 ### <a href="https://huggingface.co/google/siglip-base-patch16-224" target="_blank">`google/siglip-base-patch16-224`</a> [↑](#categories)
 > zero-shot-image-classification · apache-2.0
@@ -1097,7 +1103,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `cvvdp` [↑](#categories)
 > MIT; calibration and display-model data ship in the package
 
-- **Used by**: `cvvdp`
+- **Used by**: `cvvdp`, `cvvdp_ml_transformer`
 - **Install**: `pip install 'cvvdp>=0.5.6,<0.6'`
 
 ### `cyclereward` [↑](#categories)

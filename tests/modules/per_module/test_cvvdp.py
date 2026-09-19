@@ -1,5 +1,8 @@
 """Tests for the upstream ColorVideoVDP module."""
 
+import hashlib
+import sys
+import types
 from types import SimpleNamespace
 
 import pytest
@@ -12,6 +15,117 @@ def test_cvvdp_basics():
 
     _test_module_basics(ColorVideoVDPModule, "cvvdp")
     assert ColorVideoVDPModule.metric_field == "cvvdp_score"
+
+
+def test_cvvdp_ml_transformer_basics():
+    from ayase.modules.cvvdp import ColorVideoVDPMLTransformerModule
+
+    _test_module_basics(ColorVideoVDPMLTransformerModule, "cvvdp_ml_transformer")
+    assert ColorVideoVDPMLTransformerModule.metric_field == "cvvdp_ml_transformer_score"
+
+
+def test_cvvdp_ml_transformer_stores_separate_score(image_sample, synthetic_image):
+    from ayase.modules.cvvdp import ColorVideoVDPMLTransformerModule
+
+    image_sample.reference_path = synthetic_image
+    module = ColorVideoVDPMLTransformerModule()
+    module._backend = "cvvdp"
+    module._metric = object()
+    module._pycvvdp = object()
+    module.compute_reference_score = lambda _test, _reference: 8.5
+
+    result = module.process(image_sample)
+
+    assert result.quality_metrics.cvvdp_ml_transformer_score == pytest.approx(8.5)
+    assert result.quality_metrics.cvvdp_score is None
+
+
+def _install_fake_cvvdp_ml_runtime(monkeypatch, checkpoint_path):
+    calls = {}
+    fake_torch = types.ModuleType("torch")
+    fake_torch.device = lambda value: f"device:{value}"
+    fake_torch.cuda = SimpleNamespace(is_available=lambda: False, empty_cache=lambda: None)
+
+    fake_metric_module = types.ModuleType("pycvvdp.cvvdp_ml_metric")
+    fake_metric_module.hf_hub_download = lambda **_kwargs: "moving-main"
+    fake_pycvvdp = types.ModuleType("pycvvdp")
+    fake_pycvvdp.__path__ = []
+    fake_pycvvdp.cvvdp_ml_metric = fake_metric_module
+
+    def metric_class(**kwargs):
+        calls["constructor"] = kwargs
+        calls["redirected_path"] = fake_metric_module.hf_hub_download()
+        return object()
+
+    fake_pycvvdp.cvvdp_ml_transformer = metric_class
+    fake_hub = types.ModuleType("huggingface_hub")
+
+    def download(**kwargs):
+        calls["download"] = kwargs
+        return str(checkpoint_path)
+
+    fake_hub.hf_hub_download = download
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setitem(sys.modules, "pycvvdp", fake_pycvvdp)
+    monkeypatch.setitem(sys.modules, "pycvvdp.cvvdp_ml_metric", fake_metric_module)
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub)
+    return calls
+
+
+def test_cvvdp_ml_transformer_setup_uses_verified_pin(monkeypatch, tmp_path):
+    from ayase.modules.cvvdp import ColorVideoVDPMLTransformerModule
+
+    checkpoint = tmp_path / "cvvdp.ckpt"
+    checkpoint.write_bytes(b"verified checkpoint")
+    calls = _install_fake_cvvdp_ml_runtime(monkeypatch, checkpoint)
+    monkeypatch.setattr(ColorVideoVDPMLTransformerModule, "_global_test_mode", False)
+    monkeypatch.setattr(ColorVideoVDPMLTransformerModule, "checkpoint_size", checkpoint.stat().st_size)
+    monkeypatch.setattr(
+        ColorVideoVDPMLTransformerModule,
+        "checkpoint_sha256",
+        hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+    )
+
+    module = ColorVideoVDPMLTransformerModule({"device": "cpu"})
+    module.setup()
+
+    assert module._backend == "cvvdp"
+    assert calls["download"] == {
+        "repo_id": "gfxdisp/cvvdp_ml",
+        "filename": "cvvdp_ml_transformer/cvvdp.ckpt",
+        "revision": "b202a7893f6663a6a46f76f7b06c62d1235bc3ab",
+    }
+    assert calls["redirected_path"] == str(checkpoint)
+    assert calls["constructor"] == {
+        "display_name": "standard_fhd",
+        "device": "device:cpu",
+        "heatmap": None,
+        "quiet": True,
+        "gpu_mem": None,
+    }
+
+
+@pytest.mark.parametrize("failure", ["size", "sha256"])
+def test_cvvdp_ml_transformer_setup_rejects_bad_checkpoint(
+    monkeypatch, tmp_path, failure
+):
+    from ayase.modules.cvvdp import ColorVideoVDPMLTransformerModule
+
+    checkpoint = tmp_path / "cvvdp.ckpt"
+    checkpoint.write_bytes(b"checkpoint")
+    _install_fake_cvvdp_ml_runtime(monkeypatch, checkpoint)
+    monkeypatch.setattr(ColorVideoVDPMLTransformerModule, "_global_test_mode", False)
+    if failure == "size":
+        monkeypatch.setattr(ColorVideoVDPMLTransformerModule, "checkpoint_size", 1)
+    else:
+        monkeypatch.setattr(ColorVideoVDPMLTransformerModule, "checkpoint_size", checkpoint.stat().st_size)
+        monkeypatch.setattr(ColorVideoVDPMLTransformerModule, "checkpoint_sha256", "0" * 64)
+
+    module = ColorVideoVDPMLTransformerModule({"device": "cpu"})
+    module.setup()
+
+    assert module._backend is None
+    assert module._metric is None
 
 
 def test_cvvdp_without_reference_is_graceful(image_sample):
