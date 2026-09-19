@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-07 19:45 · **375 modules** · **511 metrics**
+> **Version 0.1.76** · Generated 2026-09-19 22:17 · **376 modules** · **512 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **367/375 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **368/376 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**375** modules · **597** output fields · **511** metrics · **265** tiered · **174** GPU · **21** categories
+**376** modules · **598** output fields · **512** metrics · **266** tiered · **175** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-50-metrics) (50) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-84-metrics) (84) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-34-metrics) (34) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -3920,7 +3920,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (50 metrics)
+## Audio Quality (51 metrics)
 
 ### `active_speaker_best_lse_c` [↑](#categories)
 > Lip-sync confidence of the best-synced face (higher=better) · ↑ higher=better
@@ -4048,6 +4048,17 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `backend=energy`, `max_frames=600`, `warning_threshold_ms=80.0`
 
+### `cdpam_score` [↑](#categories)
+> CDPAM perceptual audio distance (lower=better) · ↓ lower=better
+
+**[`cdpam`](src/ayase/modules/cdpam.py)** — CDPAM learned perceptual audio distance (full-reference)
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Packages**: cdpam, torch
+- **Tests**: covered by [`test_cdpam.py`](tests/modules/per_module/test_cdpam.py)
+- **Config**: `device=auto`, `target_sr=22050`
+
 ### `clap_score` [↑](#categories)
 > Generic CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1, configurable backbone
 
@@ -4130,7 +4141,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable → imagebind
 - **Packages**: imagebind, soundfile, torch
-- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=imagebind_huge`, `sample_rate=16000`, `device=auto`, `warning_threshold=0.2`
 
 ### `laion_clap_score` [↑](#categories)
@@ -6470,7 +6481,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
 - **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_cdpam.py`](tests/modules/per_module/test_cdpam.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +1 more
 - **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
 - **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py)
 - **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
