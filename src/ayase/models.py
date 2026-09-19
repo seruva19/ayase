@@ -303,6 +303,7 @@ class QualityMetrics(BaseModel):
     mcd_score: Optional[float] = None  # Mel Cepstral Distortion (dB, lower=better)
     si_sdr_score: Optional[float] = None  # Scale-Invariant SDR (dB, higher=better)
     lpdist_score: Optional[float] = None  # Log-Power Spectral Distance (lower=better)
+    cdpam_score: Optional[float] = None  # CDPAM perceptual audio distance (lower=better)
     utmos_score: Optional[float] = None  # UTMOS predicted MOS (1-5, higher=better)
     utmos_v2_score: Optional[float] = None  # UTMOSv2 predicted MOS (1-5, higher=better)
     asr_cer: Optional[float] = None  # ASR character error rate vs reference text (0-1, lower=better)

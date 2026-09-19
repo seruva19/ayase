@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **cdpam**: added the optional learned full-reference perceptual audio distance with pinned official package/checkpoint provenance and modern PyTorch compatibility.
+
 ## [0.1.76] - 2026-09-07
 
 ### Fixed
