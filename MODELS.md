@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 01:06 · **277 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 01:32 · **279 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**277** models · **107** HuggingFace · **55** pyiqa · **9** sources
+**279** models · **108** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~639 GB
+**Estimated total download size (all models):** ~640 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (78)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (38)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (79)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (39)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -582,6 +582,12 @@
 - **Parameters**: 986M · **Downloads**: 308K
 - **Disk**: ~3.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2305.01569" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/yzd-v/DWPose" target="_blank">`yzd-v/DWPose`</a> [↑](#categories)
+> apache-2.0
+
+- **Used by**: `pose_heat_ssim`
+- **Disk**: 351.1 MB total
 
 ### <a href="https://huggingface.co/zhudi2825/MuQ-Eval-A1" target="_blank">`zhudi2825/MuQ-Eval-A1`</a> [↑](#categories)
 > audio-classification · mit
@@ -1229,6 +1235,11 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `motion_smoothness`
 - **Install**: `pip install rife-model`
+
+### `rtmlib>=0.0.13` [↑](#categories)
+
+- **Used by**: `pose_heat_ssim`
+- **Install**: `pip install rtmlib`
 
 ### `silero-vad` [↑](#categories)
 

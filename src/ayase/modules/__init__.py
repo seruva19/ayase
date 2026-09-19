@@ -133,6 +133,7 @@ _IMPORTS = [
     ("MaSCModule", ".masc"),
     ("ExpressionFollowingModule", ".expression_following"),
     ("FaceMotionPreservationModule", ".face_motion_preservation"),
+    ("PoseHeatSSIMModule", ".pose_heat_ssim"),
     ("SilentLipStabilityModule", ".silent_lip_stability"),
     ("LipDynamicsModule", ".lip_dynamics"),
     ("EyebrowDynamicsModule", ".eyebrow_dynamics"),
