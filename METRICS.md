@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 01:05 · **377 modules** · **517 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 01:52 · **378 modules** · **519 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **369/377 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **370/378 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**377** modules · **603** output fields · **517** metrics · **268** tiered · **176** GPU · **21** categories
+**378** modules · **605** output fields · **519** metrics · **269** tiered · **177** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-92-metrics) (92) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -1005,7 +1005,7 @@
 - **Config**: `subsample=16`, `iqa_rsize=512`, `iqa_csize=320`, `vqa_rsize=480`, `vqa_patch_size=6`, `vqa_clip_len=32`, `vqa_num_clips=4`, `vqa_frame_interval=2`, `fusion_iqa_weight=0.5`, `device=auto`
 
 
-## Full-Reference Quality (90 metrics)
+## Full-Reference Quality (92 metrics)
 
 ### `ahiq` [↑](#categories)
 > Attention Hybrid IQA (higher=better) · ↑ higher=better
@@ -1684,6 +1684,26 @@
 - **Backend**: numpy
 - **Packages**: open3d, scipy
 - **Tests**: covered by [`test_pointssim.py`](tests/modules/per_module/test_pointssim.py)
+
+### `pose_heat_ssim` [↑](#categories)
+> Aligned 133-joint pose-heatmap SSIM (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`pose_heat_ssim`](src/ayase/modules/pose_heat_ssim.py)** — PoseHeat-SSIM against an aligned reference (0-1, higher=better)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_pose_heat_ssim.py`](tests/modules/per_module/test_pose_heat_ssim.py)
+- **Config**: `device=auto`, `confidence_threshold=0.3`, `sigma=4.0`, `min_joints=3`, `min_matched_frames=1`, `fps_tolerance=0.001`
+
+### `pose_heat_ssim_coverage` [↑](#categories)
+> Share of corresponding frames with one valid pose in both clips (0-1) · 0-1
+
+**[`pose_heat_ssim`](src/ayase/modules/pose_heat_ssim.py)** — PoseHeat-SSIM against an aligned reference (0-1, higher=better)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_pose_heat_ssim.py`](tests/modules/per_module/test_pose_heat_ssim.py)
+- **Config**: `device=auto`, `confidence_threshold=0.3`, `sigma=4.0`, `min_joints=3`, `min_matched_frames=1`, `fps_tolerance=0.001`
 
 ### `psnr99` [↑](#categories)
 > PSNR99 worst-case region quality (dB, higher=better) · ↑ higher=better · dB

@@ -894,6 +894,8 @@ class QualityMetrics(BaseModel):
     pose_driver_fidelity: Optional[float] = None  # Body-pose fidelity to a driving video, PCK over normalised skeletons (0-1, higher=better)
     pose_driver_fidelity_min: Optional[float] = None  # Worst matched moment of the same measure (0-1, higher=better)
     pose_driver_fidelity_coverage: Optional[float] = None  # Share of compared moments where both skeletons were found (0-1)
+    pose_heat_ssim: Optional[float] = None  # Aligned 133-joint pose-heatmap SSIM (0-1, higher=better)
+    pose_heat_ssim_coverage: Optional[float] = None  # Share of corresponding frames with one valid pose in both clips (0-1)
     motion_manner_similarity: Optional[float] = None  # Movement-manner similarity to a reference clip, no time alignment (0-1, higher=better)
     motion_manner_speed_agreement: Optional[float] = None  # Whole-body speed-distribution agreement with the reference (0-1, higher=better)
     motion_manner_head_agreement: Optional[float] = None  # Head-keypoint speed-distribution agreement (0-1, higher=better)
