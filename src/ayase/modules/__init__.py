@@ -132,7 +132,7 @@ _IMPORTS = [
     ("NearIDModule", ".nearid"),
     ("MaSCModule", ".masc"),
     ("ExpressionFollowingModule", ".expression_following"),
-    ("ExpressionSimilarityModule", ".expression_similarity"),
+    ("FaceMotionPreservationModule", ".face_motion_preservation"),
     ("SilentLipStabilityModule", ".silent_lip_stability"),
     ("LipDynamicsModule", ".lip_dynamics"),
     ("EyebrowDynamicsModule", ".eyebrow_dynamics"),

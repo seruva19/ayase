@@ -9,8 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **face_motion_preservation**: added strict frame-corresponding landmark-pair Pearson/CCA and EAR/blink preservation diagnostics as an explicitly non-interchangeable MediaPipe adaptation of the published FaceMotionPreserve evaluation protocol.
 - **prove**: added PROVE RC-S spatial and RC-T temporal removal-coherence metrics using pinned DINOv2-Giant patch features and explicit removal masks.
 - **cdpam**: added the optional learned full-reference perceptual audio distance with pinned official package/checkpoint provenance and modern PyTorch compatibility.
+
+### Removed
+
+- **expression_similarity**: removed the Ayase-authored time-free blendshape composite and its six fields because its formula and weights lacked published validation as a measure of person-specific expression manner. Use task-specific, sourced metrics instead of treating it as an identity signal.
 
 ## [0.1.76] - 2026-09-07
 

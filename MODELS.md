@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-19 23:06 · **276 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 00:04 · **276 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -39,7 +39,7 @@
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
 
-- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `id_sim`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `expression_following`, `eyebrow_dynamics`, `face_motion_preservation`, `head_motion_dynamics`, `head_pose_similarity`, `id_sim`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
 
 ### <a href="https://huggingface.co/Aleksandar/nearid-siglip2" target="_blank">`Aleksandar/nearid-siglip2`</a> [↑](#categories)
 > image-feature-extraction · apache-2.0
