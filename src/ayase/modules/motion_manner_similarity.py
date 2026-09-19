@@ -42,10 +42,9 @@ different-speaker pairs gives:
 
 **This metric therefore does not identify a person and must not be used as if it
 did.** Two different speakers at a lectern move more alike than one speaker filmed
-on two different occasions. On the same material and the same protocol
-``expression_similarity`` reaches AUC 0.832 and picks the right speaker in 96.5% of
-clips, so the material does carry an individual signal -- it is carried by the face,
-not by the body. What this metric is for is describing how much and how fast a clip
+on two different occasions. An earlier internal expression-statistics heuristic was
+not sufficiently validated and has been removed; it cannot rescue this negative
+result. What this metric is for is describing how much and how fast a clip
 moves relative to a reference, and for ranking generations of *one* person against
 one common reference; it says nothing about whether that person is who they claim.
 

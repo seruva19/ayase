@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-19 23:05 · **377 modules** · **514 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 00:03 · **377 modules** · **517 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**377** modules · **600** output fields · **514** metrics · **267** tiered · **176** GPU · **21** categories
+**377** modules · **603** output fields · **517** metrics · **267** tiered · **176** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-37-metrics) (37) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-90-metrics) (90) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -4505,7 +4505,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 
-## Face & Identity (37 metrics)
+## Face & Identity (40 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
 > AdaFace cosine similarity vs reference face (0-1, higher=better) · ↑ higher=better · 0-1
@@ -4620,66 +4620,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `num_faces=5`
 
-### `expression_similarity` [↑](#categories)
-> Time-free expression-manner similarity (0-1, higher=better) · ↑ higher=better · 0-1
-
-**[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
-- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
-
-### `expression_similarity_coactivation` [↑](#categories)
-> Correlation-structure agreement (0-1) · ↑ higher=better · 0-1
-
-**[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
-- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
-
-### `expression_similarity_coverage` [↑](#categories)
-> Lower per-video valid-face coverage (0-1) · ↓ lower=better · 0-1
-
-**[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
-- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
-
-### `expression_similarity_distribution` [↑](#categories)
-> Expression-repertoire agreement (0-1) · ↑ higher=better · 0-1
-
-**[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
-- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
-
-### `expression_similarity_dynamics` [↑](#categories)
-> Change-rate agreement (0-1) · ↑ higher=better · 0-1
-
-**[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
-- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
-
-### `expression_similarity_range_ratio` [↑](#categories)
-> Expressive spread, sample/reference (1.0=equal) · ↑ higher=better
-
-**[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
-
-- **Input**: vid +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable
-- **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py)
-- **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
-
 ### `eyebrow_dynamics_score` [↑](#categories)
 > THEval normalized brow-motion intensity (higher=more dynamic) · ↑ higher=better · higher=more dynamic
 
@@ -4778,6 +4718,96 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: mediapipe
 - **Tests**: covered by [`test_face_landmark_quality.py`](tests/modules/per_module/test_face_landmark_quality.py), [`test_face_modules.py`](tests/modules/test_face_modules.py)
 - **Config**: `subsample=2`, `max_frames=300`, `jitter_warning=30.0`
+
+### `face_motion_blink_f1` [↑](#categories)
+> Ayase-derived overlapping-blink F1 (0-1) · 0-1; threshold requires MediaPipe calibration
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_blink_precision` [↑](#categories)
+> Adapted overlapping-blink precision (0-1) · 0-1; threshold requires MediaPipe calibration
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_blink_recall` [↑](#categories)
+> Adapted overlapping-blink recall (0-1) · 0-1; threshold requires MediaPipe calibration
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_cca_correlation` [↑](#categories)
+> Adapted 2-D canonical correlation (0-1) · 0-1
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_ear_correlation` [↑](#categories)
+> Synchronized eye-aspect-ratio correlation (-1 to 1)
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_frame_coverage` [↑](#categories)
+> Joint valid-face frame fraction (0-1) · 0-1
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_landmark_pair_coverage` [↑](#categories)
+> Defined pair-correlation fraction (0-1) · 0-1
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_x_correlation` [↑](#categories)
+> Frame-aligned landmark-pair x correlation (-1 to 1)
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
+
+### `face_motion_y_correlation` [↑](#categories)
+> Frame-aligned landmark-pair y correlation (-1 to 1)
+
+**[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
+- **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
 
 ### `face_quality_score` [↑](#categories)
 > Composite face quality 0-100 (higher=better) · ↑ higher=better
