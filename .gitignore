@@ -51,4 +51,5 @@ reports/
 .claude/
 .ayase_sd_cache/
 .artifacts/
+artifacts/
 .tmp/
