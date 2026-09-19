@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-07 19:45 · **274 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-19 20:53 · **274 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -8,8 +8,8 @@
 
 **274** models · **106** HuggingFace · **55** pyiqa · **9** sources
 
-*License labels in this document cover model weights and runtime assets referenced by Ayase modules.*
-*They do not describe the license of Ayase source code or vendored third-party source trees.*
+*License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
+*Project and vendored runtime licensing is documented in the final section below.*
 *Resolution order: hardcoded source mappings, HuggingFace metadata when available, then parent-repo inheritance for weight files.*
 
 <table width="100%"><tr>
@@ -45,7 +45,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `nearid`
-- **Parameters**: 428M · **Downloads**: 127
+- **Parameters**: 428M · **Downloads**: 118
 - **Disk**: ~1.6 GB
 - **Source**: <a href="https://arxiv.org/abs/2604.01973" target="_blank">arXiv</a>
 
@@ -53,7 +53,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 113
+- **Parameters**: 8.3B · **Downloads**: 184
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2509.25787" target="_blank">arXiv</a>
 
@@ -66,13 +66,13 @@
 ### <a href="https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b" target="_blank">`Efficient-Large-Model/vila-ewm-qwen2-1.5b`</a> [↑](#categories)
 
 - **Used by**: `worldmodelbench`
-- **Downloads**: 72
+- **Downloads**: 94
 
 ### <a href="https://huggingface.co/Falconsai/nsfw_image_detection" target="_blank">`Falconsai/nsfw_image_detection`</a> [↑](#categories)
 > image-classification · apache-2.0
 
 - **Used by**: `nsfw`
-- **Parameters**: 86M · **Downloads**: 4.1M
+- **Parameters**: 86M · **Downloads**: 3.4M
 - **Disk**: ~327 MB
 - **Source**: <a href="https://arxiv.org/abs/2010.11929" target="_blank">arXiv</a>
 
@@ -80,7 +80,7 @@
 > automatic-speech-recognition · other
 
 - **Used by**: `verse_bench`
-- **Downloads**: 31K
+- **Downloads**: 25K
 
 ### <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">`GD-ML/VMBench`</a> [↑](#categories)
 > apache-2.0
@@ -92,7 +92,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `dice_edit`
-- **Parameters**: 8.5B · **Downloads**: 80K
+- **Parameters**: 8.5B · **Downloads**: 128K
 - **VRAM**: ~20 GB in bfloat16 · **Disk**: ~17 GB
 - **Source**: <a href="https://arxiv.org/abs/2306.16527" target="_blank">arXiv</a>
 
@@ -100,7 +100,7 @@
 > zero-shot-object-detection · apache-2.0
 
 - **Used by**: `opens2v`
-- **Parameters**: 172M · **Downloads**: 868K
+- **Parameters**: 172M · **Downloads**: 763K
 - **Disk**: ~657 MB
 - **Source**: <a href="https://arxiv.org/abs/2303.05499" target="_blank">arXiv</a>
 
@@ -115,7 +115,7 @@
 > apache-2.0
 
 - **Used by**: `finevq`
-- **Parameters**: 8.2B · **Downloads**: 500
+- **Parameters**: 8.2B · **Downloads**: 349
 - **Disk**: ~30.5 GB
 
 ### <a href="https://huggingface.co/JZHWS/slowfast" target="_blank">`JZHWS/slowfast`</a> [↑](#categories)
@@ -140,21 +140,21 @@
 > video-classification · cc-by-nc-4.0
 
 - **Used by**: `action_recognition`
-- **Parameters**: 304M · **Downloads**: 13K
+- **Parameters**: 304M · **Downloads**: 21K
 - **VRAM**: ~1.5 GB · **Disk**: ~1.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2203.12602" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">`MJ-Bench/MJ-VIDEO-2B`</a> [↑](#categories)
 
 - **Used by**: `mj_video`
-- **Parameters**: 2.2B · **Downloads**: 8
+- **Parameters**: 2.2B · **Downloads**: 13
 - **Disk**: ~8.2 GB
 
 ### <a href="https://huggingface.co/MizzenAI/HPSv3" target="_blank">`MizzenAI/HPSv3`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Downloads**: 192
+- **Downloads**: 270
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">`NU-World-Model-Embodied-AI/phyjudge-9B`</a> [↑](#categories)
@@ -168,7 +168,7 @@
 > audio-classification · cc-by-nc-4.0
 
 - **Used by**: `muq_eval`, `song_eval`
-- **Parameters**: 333M · **Downloads**: 454K
+- **Parameters**: 333M · **Downloads**: 295K
 - **Disk**: ~1.2 GB
 - **Source**: <a href="https://arxiv.org/abs/2501.01108" target="_blank">arXiv</a>
 
@@ -176,7 +176,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `qwen_image_bench`
-- **Parameters**: 27.4B · **Downloads**: 38K
+- **Parameters**: 27.4B · **Downloads**: 32K
 - **Disk**: ~101.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2605.28091" target="_blank">arXiv</a>
 
@@ -184,7 +184,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Parameters**: 8.3B · **Downloads**: 1.3M
+- **Parameters**: 8.3B · **Downloads**: 841K
 - **VRAM**: ~16 GB · **Disk**: ~15 GB
 - **Source**: <a href="https://arxiv.org/abs/2409.12191" target="_blank">arXiv</a>
 
@@ -192,7 +192,7 @@
 > any-to-any · other
 
 - **Used by**: `aqascore`
-- **Parameters**: 10.7B · **Downloads**: 332K
+- **Parameters**: 10.7B · **Downloads**: 338K
 - **Disk**: ~40.0 GB
 - **Source**: <a href="https://arxiv.org/abs/2503.20215" target="_blank">arXiv</a>
 
@@ -200,7 +200,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 7.7M
+- **Parameters**: 8.3B · **Downloads**: 6.9M
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2309.00071" target="_blank">arXiv</a>
 
@@ -208,7 +208,7 @@
 > image-to-text · bsd-3-clause
 
 - **Used by**: `captioning`
-- **Downloads**: 1.8M
+- **Downloads**: 1.7M
 - **VRAM**: ~1 GB · **Disk**: ~990 MB
 - **Source**: <a href="https://arxiv.org/abs/2201.12086" target="_blank">arXiv</a>
 
@@ -228,14 +228,14 @@
 > text-generation · other
 
 - **Used by**: `vision_reward`
-- **Parameters**: 12.5B · **Downloads**: 4K
+- **Parameters**: 12.5B · **Downloads**: 5K
 - **Disk**: ~46.6 GB
 
 ### <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">`TIGER-Lab/VideoScore`</a> [↑](#categories)
 > visual-question-answering · apache-2.0
 
 - **Used by**: `videoscore`
-- **Parameters**: 8.3B · **Downloads**: 54
+- **Parameters**: 8.3B · **Downloads**: 38
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: <a href="https://arxiv.org/abs/2406.15252" target="_blank">arXiv</a>
 
@@ -243,7 +243,7 @@
 > visual-question-answering · apache-2.0
 
 - **Used by**: `videoscore2`
-- **Parameters**: 8.3B · **Downloads**: 2K
+- **Parameters**: 8.3B · **Downloads**: 4K
 - **VRAM**: ~16 GB · **Disk**: ~15 GB
 - **Source**: <a href="https://arxiv.org/abs/2509.22799" target="_blank">arXiv</a>
 
@@ -255,7 +255,7 @@
 ### <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">`ai-forever/kandinsky-video-motion-predictor`</a> [↑](#categories)
 
 - **Used by**: `kandinsky_motion`
-- **Parameters**: 115M · **Downloads**: 70
+- **Parameters**: 115M · **Downloads**: 95
 - **Disk**: ~440 MB
 
 ### <a href="https://huggingface.co/aimagelab/DICE_coherence_Idefics" target="_blank">`aimagelab/DICE_coherence_Idefics`</a> [↑](#categories)
@@ -279,21 +279,21 @@
 > apache-2.0
 
 - **Used by**: `love_results`
-- **Parameters**: 9.2B · **Downloads**: 3
+- **Parameters**: 9.2B · **Downloads**: 9
 - **Disk**: ~34.4 GB
 
 ### <a href="https://huggingface.co/chaenayo/id-sim_dinov2_vitb14_cls_patch" target="_blank">`chaenayo/id-sim_dinov2_vitb14_cls_patch`</a> [↑](#categories)
 > image-feature-extraction · mit
 
 - **Used by**: `id_sim`
-- **Downloads**: 24
+- **Downloads**: 27
 - **Source**: <a href="https://arxiv.org/abs/2604.05039" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/chancharikm/qwen2.5-vl-7b-cam-motion" target="_blank">`chancharikm/qwen2.5-vl-7b-cam-motion`</a> [↑](#categories)
 > video-text-to-text · other
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 427
+- **Parameters**: 8.3B · **Downloads**: 344
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2404.01291" target="_blank">arXiv</a>
 
@@ -305,7 +305,7 @@
 > visual-question-answering · apache-2.0
 
 - **Used by**: `commonsense`, `tifa`
-- **Downloads**: 48K
+- **Downloads**: 68K
 - **VRAM**: ~500 MB · **Disk**: ~450 MB
 - **Source**: <a href="https://arxiv.org/abs/2102.03334" target="_blank">arXiv</a>
 
@@ -313,7 +313,7 @@
 > depth-estimation · apache-2.0
 
 - **Used by**: `depth_anything`
-- **Parameters**: 25M · **Downloads**: 1.7M
+- **Parameters**: 25M · **Downloads**: 2.9M
 - **VRAM**: ~200 MB · **Disk**: ~100 MB
 - **Source**: <a href="https://arxiv.org/abs/2406.09414" target="_blank">arXiv</a>
 
@@ -321,7 +321,7 @@
 > image-to-3d · cc-by-nc-4.0
 
 - **Used by**: `camera_trajectory`
-- **Parameters**: 1.3B · **Downloads**: 429K
+- **Parameters**: 1.3B · **Downloads**: 436K
 - **Disk**: ~4.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2503.11651" target="_blank">arXiv</a>
 
@@ -329,7 +329,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `entitybench`, `fvd`, `subject_consistency`
-- **Parameters**: 87M · **Downloads**: 3.0M
+- **Parameters**: 87M · **Downloads**: 3.3M
 - **Disk**: ~330 MB
 - **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
 
@@ -337,7 +337,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `prdc_dinov2`, `verse_bench`
-- **Parameters**: 304M · **Downloads**: 710K
+- **Parameters**: 304M · **Downloads**: 846K
 - **Disk**: ~1.1 GB
 - **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
 
@@ -345,7 +345,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `i2i_learned`
-- **Parameters**: 22M · **Downloads**: 4.3M
+- **Parameters**: 22M · **Downloads**: 3.1M
 - **Disk**: ~84 MB
 - **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
 
@@ -353,7 +353,7 @@
 > video-classification · apache-2.0
 
 - **Used by**: `jedi`, `jedi_metric`
-- **Parameters**: 1.0B · **Downloads**: 162K
+- **Parameters**: 1.0B · **Downloads**: 128K
 - **Disk**: ~3.9 GB
 
 ### `fsmn-vad` [↑](#categories)
@@ -364,7 +364,7 @@
 > zero-shot-image-classification · apache-2.0
 
 - **Used by**: `i2i_learned`
-- **Parameters**: 203M · **Downloads**: 1.8M
+- **Parameters**: 203M · **Downloads**: 2.0M
 - **Disk**: ~775 MB
 - **Source**: <a href="https://arxiv.org/abs/2303.15343" target="_blank">arXiv</a>
 
@@ -372,7 +372,7 @@
 > zero-shot-image-classification · apache-2.0
 
 - **Used by**: `verse_bench`
-- **Parameters**: 878M · **Downloads**: 1.4M
+- **Parameters**: 878M · **Downloads**: 1.3M
 - **Disk**: ~3.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2303.15343" target="_blank">arXiv</a>
 
@@ -380,7 +380,7 @@
 > zero-shot-image-classification · apache-2.0
 
 - **Used by**: `masc`
-- **Parameters**: 1.1B · **Downloads**: 332K
+- **Parameters**: 1.1B · **Downloads**: 363K
 - **Disk**: ~4.2 GB
 - **Source**: <a href="https://arxiv.org/abs/2502.14786" target="_blank">arXiv</a>
 
@@ -396,7 +396,7 @@
 > zero-shot-image-classification · mit
 
 - **Used by**: `pickscore`
-- **Parameters**: 986M · **Downloads**: 576K
+- **Parameters**: 986M · **Downloads**: 622K
 - **Disk**: ~3.7 GB
 - **Source**: <a href="https://arxiv.org/abs/1910.04867" target="_blank">arXiv</a>
 
@@ -404,7 +404,7 @@
 > audio-classification · apache-2.0
 
 - **Used by**: `audio_text_alignment`, `clap_score`, `human_clap`, `laion_clap_score`, `ms_clap_score`, `pam`
-- **Parameters**: 154M · **Downloads**: 8.5M
+- **Parameters**: 154M · **Downloads**: 8.2M
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2211.06687" target="_blank">arXiv</a>
 
@@ -416,7 +416,7 @@
 > video-text-to-text · llama2
 
 - **Used by**: `videophy`
-- **Parameters**: 7.1B · **Downloads**: 63K
+- **Parameters**: 7.1B · **Downloads**: 109K
 - **Disk**: ~26.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2405.21075" target="_blank">arXiv</a>
 
@@ -424,14 +424,14 @@
 > image-text-to-text · llama2
 
 - **Used by**: `commonsense`, `creativity`, `opens2v`, `vlm_judge`
-- **Parameters**: 7.1B · **Downloads**: 2.0M
+- **Parameters**: 7.1B · **Downloads**: 1.8M
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 
 ### <a href="https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf" target="_blank">`llava-hf/llava-v1.6-mistral-7b-hf`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
 
 - **Used by**: `llm_descriptive_qa`
-- **Parameters**: 7.6B · **Downloads**: 527K
+- **Parameters**: 7.6B · **Downloads**: 533K
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: <a href="https://arxiv.org/abs/2310.03744" target="_blank">arXiv</a>
 
@@ -439,7 +439,7 @@
 > audio-classification · cc-by-nc-4.0
 
 - **Used by**: `mauve_audio_divergence`
-- **Downloads**: 168K
+- **Downloads**: 154K
 - **Source**: <a href="https://arxiv.org/abs/2306.00107" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/microsoft/msclap" target="_blank">`microsoft/msclap`</a> [↑](#categories)
@@ -452,7 +452,7 @@
 > video-classification · mit
 
 - **Used by**: `embedding`, `video_text_matching`
-- **Parameters**: 197M · **Downloads**: 104K
+- **Parameters**: 197M · **Downloads**: 112K
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.02816" target="_blank">arXiv</a>
 
@@ -460,7 +460,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 34
+- **Parameters**: 65M · **Downloads**: 80
 - **Disk**: 261.0 MB
 - **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
@@ -468,7 +468,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 658
+- **Parameters**: 65M · **Downloads**: 946
 - **Disk**: 261.0 MB
 - **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
@@ -476,7 +476,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 392
+- **Parameters**: 65M · **Downloads**: 283
 - **Disk**: 261.0 MB
 - **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
@@ -484,7 +484,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 24M · **Downloads**: 71
+- **Parameters**: 24M · **Downloads**: 116
 - **Disk**: 97.1 MB
 - **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
@@ -492,7 +492,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 44M · **Downloads**: 134
+- **Parameters**: 44M · **Downloads**: 207
 - **Disk**: 175.4 MB
 - **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
@@ -500,7 +500,7 @@
 > apache-2.0
 
 - **Used by**: `nemo_curator`
-- **Parameters**: 184M · **Downloads**: 6K
+- **Parameters**: 184M · **Downloads**: 5K
 - **Disk**: ~701 MB
 - **Source**: <a href="https://arxiv.org/abs/2111.09543" target="_blank">arXiv</a>
 
@@ -508,7 +508,7 @@
 > image-segmentation · other
 
 - **Used by**: `semantic_segmentation_consistency`
-- **Parameters**: 4M · **Downloads**: 329K
+- **Parameters**: 4M · **Downloads**: 357K
 - **Disk**: ~14 MB
 - **Source**: <a href="https://arxiv.org/abs/2105.15203" target="_blank">arXiv</a>
 
@@ -516,7 +516,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `action_recognition`, `background_consistency`, `clifvqa`, `clip_image_similarity`, `clip_temporal`, `concept_presence`, `creativity`, `dataset_analytics`, `deepfake_detection`, `entitybench`, `generative_distribution`, `geneval`, `harmful_content`, `i2i_learned`, `opens2v`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `tc_bench`, `umap_projection`, `video_text_matching`, `video_type_classifier`, `world_consistency`
-- **Downloads**: 20.5M
+- **Downloads**: 21.8M
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2103.00020" target="_blank">arXiv</a>
 
@@ -524,7 +524,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `aesthetic_scoring`
-- **Parameters**: 428M · **Downloads**: 7.2M
+- **Parameters**: 428M · **Downloads**: 8.2M
 - **VRAM**: ~1.5 GB · **Disk**: ~1.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2103.00020" target="_blank">arXiv</a>
 
@@ -532,7 +532,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `cmmd`
-- **Downloads**: 2.5M
+- **Downloads**: 2.3M
 
 ### <a href="https://huggingface.co/q-future/VQA-UGC-Scorer-llava_qwen" target="_blank">`q-future/VQA-UGC-Scorer-llava_qwen`</a> [↑](#categories)
 > apache-2.0
@@ -545,7 +545,7 @@
 > zero-shot-image-classification · mit
 
 - **Used by**: `q_align`, `rqvqa`, `vmbench_mss`
-- **Downloads**: 91K
+- **Downloads**: 29K
 - **Source**: <a href="https://arxiv.org/abs/2312.17090" target="_blank">arXiv</a>
 
 ### `roberta-base` [↑](#categories)
@@ -556,14 +556,14 @@
 > apache-2.0
 
 - **Used by**: `voice_identity`
-- **Downloads**: 2.0M
+- **Downloads**: 2.3M
 - **Source**: <a href="https://arxiv.org/abs/2106.04624" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0" target="_blank">`stabilityai/stable-diffusion-xl-base-1.0`</a> [↑](#categories)
 > text-to-image · openrail++
 
 - **Used by**: `sd_reference`
-- **Parameters**: 2.6B · **Downloads**: 1.8M
+- **Parameters**: 2.6B · **Downloads**: 3.0M
 - **Disk**: ~9.6 GB
 - **Source**: <a href="https://arxiv.org/abs/2307.01952" target="_blank">arXiv</a>
 
@@ -571,7 +571,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `pickscore`
-- **Parameters**: 986M · **Downloads**: 261K
+- **Parameters**: 986M · **Downloads**: 308K
 - **Disk**: ~3.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2305.01569" target="_blank">arXiv</a>
 
@@ -579,7 +579,7 @@
 > audio-classification · mit
 
 - **Used by**: `muq_eval`
-- **Downloads**: 916
+- **Downloads**: 1K
 - **Disk**: 1.34 GB
 - **Source**: <a href="https://arxiv.org/abs/2603.22677" target="_blank">arXiv</a>
 
@@ -1247,6 +1247,23 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `vendi`
 - **Install**: `pip install vendi-score`
+
+## Project and Vendored Runtime Licenses
+
+Ayase's own source code is MIT. Model weights and runtime assets retain the licenses shown in the catalog above.
+
+Some metrics execute research code shipped under `ayase/vendor`; see the [vendored-source inventory](src/ayase/vendor/README.md). The following components are not covered solely by Ayase's MIT license:
+
+| Metrics | Vendored component | License | Practical restriction |
+|---|---|---|---|
+| `chronomagic`, `dynamics_controllability`, `physics`, `video_edit_motion_fidelity`, `vmbench_pas`, `vmbench_tcs` | CoTracker (facebookresearch/co-tracker) | CC BY-NC 4.0 | non-commercial use only |
+| `imagebind_score` | ImageBind (facebookresearch/ImageBind) | CC BY-NC-SA 4.0 | non-commercial use only, share-alike |
+| `mj_video` | MJ-Video (aiming-lab/MJ-Video) | no licence file in the upstream snapshot | no redistribution or use grant is stated upstream |
+| `vbench2` | VBench 2.0 (Vchitect/VBench) with its vendored YOLO-World and CoTracker | Apache-2.0, but includes GPL-3.0 (mmyolo) and CC BY-NC 4.0 (CoTracker) | copyleft and non-commercial terms reach the result |
+
+The remaining 10 registered vendored component families use permissive terms or retain their own license notices; consult the inventory before redistribution.
+
+Running an affected metric may place the component's terms on use of its output. Each affected module declares its vendored components and logs a notice during setup. The plan for 1.0 is to replace non-permissive components with implementations Ayase can license compatibly.
 
 ## Quick Install Guide
 
