@@ -91,6 +91,7 @@ _IMPORTS = [
     ("VMAFModule", ".vmaf"),
     ("ColorVideoVDPModule", ".cvvdp"),
     ("ColorVideoVDPMLTransformerModule", ".cvvdp"),
+    ("ColorVideoVDPMLSaliencyModule", ".cvvdp"),
     ("DISTSModule", ".dists"),
     ("PerceptualFRModule", ".perceptual_fr"),
     # --- Video quality (CVPR/NeurIPS/EMNLP 2024-2025) ---

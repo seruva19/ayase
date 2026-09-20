@@ -16,8 +16,14 @@ calibrated for SDR/HDR streaming-video distortions caused by reduced bitrate
 and resolution. The authors warn that it may not generalize to unseen
 distortions and do not recommend it for optimization because of its irregular
 loss landscape. It retains the full-reference, aligned-input and explicit
-display-model requirements. Both outputs are JOD scores: 10 is reference
+display-model requirements. All variants output JOD scores: 10 is reference
 quality and lower is worse; very poor pairs may score below zero.
+
+``ColorVideoVDPMLSaliencyModule`` exposes the paper's separate learned
+regressor with saliency weighting. It was calibrated on the same streaming
+challenge and ranked third there, slightly behind the transformer variant.
+The same experimental, generalization, optimization, alignment, and display
+model boundaries apply; it is not a generic no-reference quality metric.
 """
 
 from __future__ import annotations
@@ -260,6 +266,8 @@ class ColorVideoVDPMLTransformerModule(ColorVideoVDPModule):
         "Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score"
     )
     metric_field = "cvvdp_ml_transformer_score"
+    metric_class_name = "cvvdp_ml_transformer"
+    display_label = "ColorVideoVDP-ML-Transformer"
     checkpoint_revision = "b202a7893f6663a6a46f76f7b06c62d1235bc3ab"
     checkpoint_filename = "cvvdp_ml_transformer" + "/cvvdp.ckpt"
     checkpoint_sha256 = "26c9d643fe4164b76059dc93777a00f4a1f847fd3179456c2d3ceb2b80904df0"
@@ -319,10 +327,10 @@ class ColorVideoVDPMLTransformerModule(ColorVideoVDPModule):
                 )
                 return
 
-            metric_class = getattr(pycvvdp, "cvvdp_ml_transformer", None)
+            metric_class = getattr(pycvvdp, self.metric_class_name, None)
             if metric_class is None:
                 logger.warning(
-                    "ColorVideoVDP-ML-Transformer requires cvvdp>=0.5.6,<0.6"
+                    "%s requires cvvdp>=0.5.6,<0.6", self.display_label
                 )
                 return
             checkpoint_path = Path(
@@ -333,14 +341,14 @@ class ColorVideoVDPMLTransformerModule(ColorVideoVDPModule):
                 )
             )
             if checkpoint_path.stat().st_size != self.checkpoint_size:
-                raise RuntimeError("ColorVideoVDP-ML-Transformer checkpoint size mismatch")
+                raise RuntimeError(f"{self.display_label} checkpoint size mismatch")
             digest_builder = hashlib.sha256()
             with checkpoint_path.open("rb") as checkpoint_file:
                 for chunk in iter(lambda: checkpoint_file.read(1024 * 1024), b""):
                     digest_builder.update(chunk)
             digest = digest_builder.hexdigest()
             if digest != self.checkpoint_sha256:
-                raise RuntimeError("ColorVideoVDP-ML-Transformer checkpoint SHA-256 mismatch")
+                raise RuntimeError(f"{self.display_label} checkpoint SHA-256 mismatch")
 
             # The official constructor otherwise resolves the moving HF default
             # branch. Redirect only that internal lookup to the verified pin.
@@ -358,14 +366,54 @@ class ColorVideoVDPMLTransformerModule(ColorVideoVDPModule):
             self._pycvvdp = pycvvdp
             self._backend = "cvvdp"
             logger.info(
-                "ColorVideoVDP-ML-Transformer initialised on %s with display model %s",
+                "%s initialised on %s with display model %s",
+                self.display_label,
                 self.device,
                 self.display_name,
             )
         except ImportError:
             logger.warning(
-                "ColorVideoVDP-ML-Transformer unavailable; install cvvdp>=0.5.6,<0.6"
+                "%s unavailable; install cvvdp>=0.5.6,<0.6", self.display_label
             )
         except Exception as exc:
-            logger.warning("ColorVideoVDP-ML-Transformer setup failed: %s", exc)
+            logger.warning("%s setup failed: %s", self.display_label, exc)
             self._backend = None
+
+
+class ColorVideoVDPMLSaliencyModule(ColorVideoVDPMLTransformerModule):
+    """Run the official experimental ML-regressor with saliency weighting."""
+
+    name = "cvvdp_ml_saliency"
+    description = "Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score"
+    metric_field = "cvvdp_ml_saliency_score"
+    metric_class_name = "cvvdp_ml_saliency"
+    display_label = "ColorVideoVDP-ML-Saliency"
+    checkpoint_filename = "cvvdp_ml_saliency" + "/cvvdp.ckpt"
+    checkpoint_sha256 = "cbce3d92e92a0362d73a58afd937cf0f2d0195db87c898a9d2abff10846cf506"
+    checkpoint_size = 168_364
+    models = [
+        ColorVideoVDPModule.models[0],
+        {
+            "id": "gfxdisp/cvvdp_ml",
+            "type": "huggingface",
+            "task": "ColorVideoVDP-ML-Saliency learned quality pooling",
+            "auto_download": True,
+            "size": "168 KB",
+            "url": (
+                "https://huggingface.co/gfxdisp/cvvdp_ml/blob/"
+                "b202a7893f6663a6a46f76f7b06c62d1235bc3ab/"
+                "cvvdp_ml_saliency/cvvdp.ckpt"
+            ),
+            "notes": (
+                "MIT; checkpoint pinned at revision b202a7893f6663a6a46f76f7b06c62d1235bc3ab "
+                "with SHA-256 cbce3d92e92a0362d73a58afd937cf0f2d0195db87c898a9d2abff10846cf506"
+            ),
+        },
+    ]
+    metric_info = {
+        "cvvdp_ml_saliency_score": (
+            "Experimental ColorVideoVDP-ML-Saliency JOD score "
+            "(10=reference quality, lower=worse; can be negative)"
+        )
+    }
+    metric_groups = {"cvvdp_ml_saliency_score": "fr_quality"}
