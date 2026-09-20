@@ -1,12 +1,13 @@
-"""VQAScore text-visual alignment module.
+"""Score per-sample visual agreement with ``sample.caption.text`` using VQAScore.
 
-Uses a VQA model to score "Does this figure show {text}?" probability.
-ECCV 2024, outperforms CLIPScore on compositional text prompts.
-
-This module requires the vendored ``t2v_metrics`` VQAScore model. When it is
-unavailable the metric is left ``None`` — CLIP cosine similarity (i.e.
-CLIPScore, the weaker method VQAScore is designed to beat) is not substituted
-for the published metric.
+The vendored ``t2v_metrics`` backend asks whether the image shows the caption
+and scores the probability of the affirmative answer. Images are scored once;
+videos are sampled to at most four frames by default and their scores are
+averaged. ``vqa_score_alignment`` is expected in [0, 1] and is better when
+higher. The default model is ``clip-flant5-xxl``; language/domain applicability
+follows that model. This is not a reference-image or dataset-level metric, and
+no CLIP/heuristic substitute is emitted when the backend or caption is absent.
+Method and model source: https://github.com/linzhiqiu/t2v_metrics
 """
 
 import logging

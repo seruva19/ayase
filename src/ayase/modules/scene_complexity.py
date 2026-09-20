@@ -1,8 +1,12 @@
-"""Scene Complexity module.
+"""Reference-free spatial and temporal signal-complexity heuristic.
 
-Measures spatial and temporal complexity of video content.
-Higher complexity indicates more detailed/dynamic scenes.
-Range: 0-100 (higher = more complex).
+Images receive a 0--100 blend of edge density, hue entropy, and luminance
+variation. Videos blend the mean sampled spatial score with frame differences
+and Farneback motion from the last ten retained frames; higher means more of
+those signals, not better quality. Camera motion, cuts, noise, compression,
+resolution, and the sampling interval can all change the result.
+
+Method basis: https://docs.opencv.org/4.x/d4/dee/tutorial_optical_flow.html
 """
 
 import logging

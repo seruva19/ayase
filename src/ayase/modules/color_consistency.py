@@ -1,7 +1,12 @@
-"""Color attribute verification between caption mentions and actual HSV color distribution.
+"""Caption-color coverage heuristic on one representative image or video frame.
 
-Parses color keywords from the caption and checks for their presence in the image.
-Returns color_score (0-100). Flags colors mentioned in caption but absent in content."""
+Fixed English color substrings found in the caption are matched to fixed HSV
+ranges. ``color_score`` is 0--100, where higher means more pixel coverage for
+the mentioned colors and each color saturates at two percent coverage. The
+score does not bind a color to the captioned object, parse linguistic context,
+or assess color consistency across a video; samples without recognized color
+words are left unset.
+"""
 
 import logging
 import cv2

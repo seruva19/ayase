@@ -1,7 +1,14 @@
-"""Audio-text semantic alignment verification using CLAP.
+"""Warn on low per-sample CLAP similarity between media audio and its caption.
 
-Computes cosine similarity between audio embeddings and caption text.
-Low alignment scores indicate mismatched audio-description pairs."""
+Requires ``sample.caption`` and decodable audio. The first 10 seconds are mixed
+to mono at 48 kHz and compared with ``sample.caption.text`` using normalized
+embeddings from ``laion/clap-htsat-fused``. Cosine similarity is higher for
+closer audio-text matches, but this module only adds a warning below the
+configured threshold; it does not store a ``QualityMetrics`` score or aggregate
+samples. It uses no reference audio, and performs no language-specific
+preprocessing beyond the checkpoint processor. Model source:
+https://huggingface.co/laion/clap-htsat-fused
+"""
 
 import logging
 import numpy as np

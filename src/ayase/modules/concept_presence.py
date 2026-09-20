@@ -1,22 +1,16 @@
-"""Concept Presence Detection — face/object/style detection in images and video.
+"""Measure configured concept or face evidence in each image/video sample.
 
-Detects the presence of specified concepts in images via face detection and/or
-CLIP-based semantic matching.  In ``"auto"`` mode the module selects face
-detection when concept keywords contain face-related terms, and CLIP-based
-matching otherwise.
-
-Outputs:
-    concept_presence    — max confidence across checked concepts (0-1)
-    concept_count       — number of detected concept instances
-    concept_face_count  — number of faces detected
-
-Tiered backends (face):
-    1. **InsightFace** — face detector and embedder
-    2. **MediaPipe** FaceDetection — lightweight fallback
-    3. **OpenCV Haar cascade** — always available
-
-Tiered backends (CLIP):
-    1. **transformers** CLIPModel — HuggingFace CLIP
+Up to five frames are checked. Concepts come from the ``concepts`` config or,
+when empty, the entire ``sample.caption.text`` as one query. Face mode uses the
+first available InsightFace, MediaPipe, or OpenCV Haar detector; CLIP mode uses
+the configured Transformers CLIP model (default ``openai/clip-vit-base-patch32``).
+``concept_presence`` is clipped to [0, 1] from the maximum CLIP cosine similarity,
+or set to 1 when a face is found. ``concept_face_count`` is the maximum faces in
+one sampled frame; ``concept_count`` adds that value to the number of distinct
+CLIP query indices crossing the threshold across any frame, not object instances.
+Results are per-sample and use no reference media. Automatic face routing uses
+an English keyword list; other text handling follows the CLIP tokenizer/model.
+Default model source: https://huggingface.co/openai/clip-vit-base-patch32
 """
 
 import logging

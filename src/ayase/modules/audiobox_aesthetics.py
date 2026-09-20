@@ -1,21 +1,14 @@
-"""Audiobox Aesthetics — Meta Audio Aesthetics (Tjandra et al., 2025).
+"""Predict four per-sample Meta Audiobox Aesthetics axes for general audio.
 
-Predicts four aesthetic axes for audio:
-  * PQ (Production Quality)
-  * CE (Content Enjoyment)
-  * PC (Production Complexity)
-  * CU (Content Usefulness)
-
-pip install audiobox_aesthetics
-
-Outputs (in ``QualityMetrics``):
-  audiobox_production — PQ
-  audiobox_enjoyment  — CE
-  audiobox_pc         — PC
-  audiobox_cu         — CU
-
-Requires the ``audiobox_aesthetics`` package. When it is unavailable the four
-metrics are left ``None`` — no spectral heuristic is substituted.
+The ``audiobox_aesthetics`` package consumes the sample media path and returns
+raw predictions for production quality (``audiobox_production``/PQ), content
+enjoyment (``audiobox_enjoyment``/CE), production complexity
+(``audiobox_pc``/PC), and content usefulness (``audiobox_cu``/CU). Higher values
+mean more of the named subjective attribute; Ayase does not normalize or clip
+them. The source model targets speech, music, and sound, requires no caption or
+reference audio, and does no dataset aggregation. If the package/model is
+unavailable all four fields remain unset; no heuristic is substituted.
+Source and domain details: https://github.com/facebookresearch/audiobox-aesthetics
 """
 
 import logging

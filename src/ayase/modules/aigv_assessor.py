@@ -1,11 +1,14 @@
-"""AIGV-Assessor — AI-generated video quality assessment.
+"""No-reference assessment of sampled AI-generated video frames with AIGV-Assessor.
 
-Evaluates AI-generated videos across four quality dimensions: static
-quality, temporal smoothness, dynamic degree, and text-video alignment.
+Ayase loads only ``IntMeGroup/AIGV-Assessor-static_quality`` and passes up to
+eight sampled frames without a text prompt. A single returned value therefore
+populates only static quality; four values, if the backend returns them, are
+mapped to static, temporal, dynamic, and alignment fields. Values are clipped
+to 0--1 and treated as higher-is-better. Images are skipped, and unavailable
+models leave all fields unset; there is no proxy. In particular, this adapter
+does not guarantee prompt-conditioned alignment or separate dimension models.
 
-Backend: the real **AIGV-Assessor** InternVL-based models from HuggingFace
-(``IntMeGroup/AIGV-Assessor-*``). When the model cannot be loaded the metrics
-are left unset — there is no proxy/heuristic stand-in.
+Basis: https://github.com/IntMeGroup/AIGV-Assessor
 """
 
 import logging

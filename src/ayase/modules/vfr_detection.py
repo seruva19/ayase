@@ -1,7 +1,15 @@
-"""Variable Frame Rate (VFR) and temporal jitter detection via ffprobe.
+"""Video timestamp-spacing diagnostic using ffprobe.
 
-Analyzes frame timestamp consistency to detect VFR containers that may cause
-inconsistent motion dynamics. Reports max and average jitter in milliseconds."""
+For the first ten seconds, decoded frame intervals are compared with their
+median. Larger absolute deviations mean more timestamp jitter, not lower visual
+quality by themselves. When the maximum exceeds the configured threshold, the
+module adds an issue containing maximum and mean jitter in milliseconds and a
+median-derived FPS; it writes no quality metric. Irregular timestamps can arise
+from legitimate variable-rate capture or edits, so this is not proof of a bad
+container.
+
+Tool basis: https://ffmpeg.org/ffprobe.html
+"""
 
 import logging
 import subprocess

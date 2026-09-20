@@ -1,8 +1,16 @@
-"""LMM (Large Multimodal Model) Descriptive Quality Assessment module.
+"""Ask a multimodal model for per-sample visual-quality ratings and explanations.
 
-Uses large multimodal models (e.g., LLaVA-NeXT, GPT-4V) to generate
-natural language quality explanations. Provides interpretable quality
-assessment with specific issue identification and reasoning.
+The fixed English prompt assesses sharpness/blur, lighting, artifacts, and color
+on one representative image: the input image itself or the middle frame of up to
+four sampled video frames. It does not use the sample caption, prompt, reference
+media, audio, or cross-sample context. The default local backend is
+``llava-hf/llava-v1.6-mistral-7b-hf``; optional API mode calls ``gpt-4o``.
+``llm_qa_score`` is a parsed model rating divided by 100 (nominally [0, 1], higher
+is better), while the unstructured explanation and matched issue keywords are
+stored in an informational validation issue. Scores are not calibrated or
+clipped, and applicability follows the selected model and its generated text.
+Sources: https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf and
+https://platform.openai.com/docs/models/gpt-4o
 """
 
 import logging
