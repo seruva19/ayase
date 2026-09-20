@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 03:02 · **280 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 03:53 · **281 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**280** models · **109** HuggingFace · **55** pyiqa · **9** sources
+**281** models · **109** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (80)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (39)](#pip-packages) · [Local Weights (39)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (80)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (39)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -824,6 +824,13 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `song_eval`
 - **Task**: SongEval Generator aesthetic head weights
+
+### <a href="https://download.pytorch.org/torchaudio/models/squim_objective_dns2020.pth" target="_blank">`squim_objective_dns2020.pth`</a> [↑](#categories)
+
+- **Used by**: `audio_squim_objective`
+- **Task**: Reference-free estimation of STOI, WB-PESQ, and SI-SDR
+- **Disk**: 29,584,237 bytes (28.213727 MiB)
+- **Notes**: DNS 2020 weights; SHA-256 2c54586fea83fb5eb5394d710038ee89f55cab7011a5bf730bebed4c8777e828; license https://github.com/microsoft/DNS-Challenge/blob/interspeech2020/master/LICENSE
 
 ### `syncnet_v2.model` [↑](#categories)
 
