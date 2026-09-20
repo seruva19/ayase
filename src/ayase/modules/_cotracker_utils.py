@@ -1,13 +1,10 @@
-"""Shared CoTracker2 loading: architecture from the in-tree copy, weights from HuggingFace.
+"""Load shared CoTracker2 weights for point-tracking callers.
 
-Three modules track points with CoTracker2. Left to itself, ``torch.hub.load`` would
-fetch both parts over the network: the architecture from the upstream git repository
-and the checkpoint from Meta's file server. Ayase does not download code, and the
-architecture is already vendored (``ayase.vendor.cotracker``), so only the checkpoint
-is fetched, from the copy the authors publish on HuggingFace.
-
-The model built here matches the upstream ``cotracker2`` hub entrypoint exactly:
-``CoTracker2(stride=4, window_len=8)`` loaded from ``cotracker2.pth``.
+The helper combines Ayase's vendored CoTracker architecture with the authors'
+``cotracker2.pth`` checkpoint fetched from HuggingFace and returns an offline
+predictor in evaluation mode. It does not track a ``Sample``, emit
+``QualityMetrics``, or perform validation; callers own point selection, score
+interpretation, and issue semantics.
 """
 
 import logging

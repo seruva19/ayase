@@ -1,11 +1,20 @@
-"""Ayase-native Verse-Bench dataset-level benchmark runner.
+"""Run the upstream Verse-Bench multi-component evaluation at dataset level.
 
-Uses the vendored Verse-Bench inferencers directly and stores the aggregate
-outputs in ``DatasetStats``.
+The module matches candidate files in one ``input_dir`` against the materialized
+Verse-Bench ``set1``/``set2``/``set3`` asset layout and invokes the vendored
+inferencers. It writes the raw AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C,
+LSE-D, and AV-A dictionary, normalized category breakdown, and weighted overall
+score to ``DatasetStats``; it does not populate per-sample ``QualityMetrics``.
+The overall score is 0–1 and higher is better. Raw components have different
+units and directions: AS/ID/CS/CE/CU/PQ/LSE-C are normalized as higher-better,
+whereas FD/KL/PC/WER/LSE-D/AV-A are normalized as lower-better by the benchmark.
 
-Benchmark assets are not bundled. To execute this module, provide a
-materialized Verse-Bench dataset root via ``dataset_root`` or
-``VERSE_BENCH_DATASET_ROOT``.
+Benchmark assets and model weights are not bundled. ``dataset_root`` (or
+``VERSE_BENCH_DATASET_ROOT``) must contain the expected metadata, image, and
+audio files, while candidates must share one directory or set ``input_dir``.
+Missing assets, dependencies, matches, or component results cause the affected
+evaluation to be skipped; component values should not be compared across their
+heterogeneous scales.
 """
 
 import json

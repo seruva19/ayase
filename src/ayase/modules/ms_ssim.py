@@ -1,10 +1,11 @@
-"""MS-SSIM (Multi-Scale Structural Similarity Index) module.
+"""Compute full-reference MS-SSIM for images and videos.
 
-MS-SSIM is an improvement over SSIM that computes similarity at multiple scales.
-It correlates better with human perception than single-scale SSIM.
-Range: 0-1 (higher is better). Typically 0.9+ is good quality.
-
-This is a full-reference metric requiring a reference video for comparison.
+Images are compared once with ``sample.reference_path``. Videos are decoded in
+lockstep with the reference, scored on every ``subsample``-th paired frame, and
+reported as the mean of successful frame scores. The pytorch-msssim backend
+writes ``ms_ssim`` (nominally 0–1, higher means more structurally similar) and
+adds a warning below ``warning_threshold``. Samples without a usable reference
+or backend are skipped.
 """
 
 import logging

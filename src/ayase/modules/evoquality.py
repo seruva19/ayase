@@ -1,9 +1,17 @@
-"""EvoQuality self-evolving VLM no-reference image quality scoring.
+"""Rate no-reference visual quality with the ByteDance EvoQuality VLM.
 
-Scores images with ByteDance EvoQuality (Qwen2.5-VL-7B refined via majority
-voting and GRPO, ICLR 2026). The model rates overall picture quality on a
-1-5 scale and puts the final answer in ``\\boxed{}``. Videos are scored by
-uniformly sampling frames and averaging frame scores.
+The model sees only image pixels and a fixed quality-assessment prompt; sample
+captions and reference media are not used. A still image is scored once. For a
+video, up to ``num_frames`` frames (five by default) are sampled uniformly and
+the successfully parsed frame ratings are averaged.
+
+``evoquality_score`` is clamped to 1-5, with higher values representing better
+quality. Output is generated either by a local Transformers
+``ByteDance/EvoQuality`` model or an explicitly configured OpenAI-compatible
+endpoint, then parsed from ``\\boxed{}`` or a numeric fallback. This is a
+framewise picture-quality judgment, not a temporal metric. There is no
+heuristic backend: unavailable setup, decode failure, or a response with no
+parseable rating leaves the score unset; individual failed frames are skipped.
 """
 
 from __future__ import annotations

@@ -1,8 +1,20 @@
-"""Comprehensive no-reference technical quality assessment using classical CV methods.
+"""Compute single-frame, no-reference technical image-quality heuristics.
 
-Computes blur (Laplacian variance), brightness, contrast, saturation, noise,
-artifacts, and resolution into a weighted composite technical_score (0-100).
-Also outputs gradient_detail."""
+Still images are evaluated directly; videos are represented only by their
+middle frame. No caption or reference media is used. OpenCV measurements write
+``blur_score`` (raw Laplacian variance), ``brightness`` (mean gray level),
+``contrast`` (gray-level standard deviation), ``saturation`` (mean HSV
+saturation), ``noise_score`` and ``artifacts_score`` (0-1 heuristics, higher
+meaning less estimated noise or edge-density "artifact"), and
+``gradient_detail`` (0-100, higher means stronger average gradients).
+
+``technical_score`` is a 0-100 weighted composite of normalized sharpness,
+contrast, centered brightness, saturation, noise, edge density, and resolution;
+higher is better. These are classical pixel proxies rather than learned or
+temporal quality estimates: camera cuts and frame-to-frame defects are ignored,
+and texture may be treated as noise or artifacts. Decode or calculation errors
+leave unavailable fields unset and may add a validation warning.
+"""
 
 import cv2
 import logging
