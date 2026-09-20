@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 15:14 · **388 modules** · **553 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 15:49 · **389 modules** · **561 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **380/388 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **381/389 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**388** modules · **639** output fields · **553** metrics · **278** tiered · **182** GPU · **21** categories
+**389** modules · **647** output fields · **561** metrics · **279** tiered · **182** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -28,14 +28,9 @@
 <td width="50%" valign="top"><h4>Metrics per Category</h4><img src="docs/chart_metrics_per_cat.png" width="100%"/></td>
 </tr></table>
 
-> [!WARNING]
-> **2 orphaned QualityMetrics field(s)** — declared in `QualityMetrics` but never written by any module. Either wire a module to populate them or drop the field from the model:
->
-> `video_memorability`, `vqa_t_score`
-
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-58-metrics) (58) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-69-metrics) (69) · [Face & Identity](#face--identity-46-metrics) (46) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-58-metrics) (58) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-69-metrics) (69) · [Face & Identity](#face--identity-54-metrics) (54) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -570,6 +565,12 @@
 - **Tests**: covered by [`test_pi.py`](tests/modules/per_module/test_pi.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `subsample=3`
 
+**[`pi_metric`](src/ayase/modules/pi_metric.py)** — Perceptual Index (PIRM challenge metric, lower=better)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_pi.py`](tests/modules/per_module/test_pi.py), [`test_pi_metric.py`](tests/modules/per_module/test_pi_metric.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), +1 more
+- **Config**: `subsample=3`
+
 ### `piqe` [↑](#categories)
 > PIQE perception-based NR-IQA (lower=better) · ↓ lower=better
 
@@ -722,6 +723,12 @@
 ### `spectral_entropy` [↑](#categories)
 > DINOv2 spectral entropy
 
+**[`spectral`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py), [`test_spectral.py`](tests/modules/per_module/test_spectral.py), [`test_spectral_complexity.py`](tests/modules/per_module/test_spectral_complexity.py), +1 more
+- **Config**: `model_type=dinov2_vits14`, `sample_rate=8`, `min_rank_ratio=0.05`, `max_entropy_threshold=6.0`
+
 **[`spectral_complexity`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
@@ -734,6 +741,12 @@
 
 ### `spectral_rank` [↑](#categories)
 > DINOv2 effective rank ratio
+
+**[`spectral`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_audio_nisqa.py`](tests/modules/per_module/test_audio_nisqa.py), [`test_spectral.py`](tests/modules/per_module/test_spectral.py), [`test_spectral_complexity.py`](tests/modules/per_module/test_spectral_complexity.py), +1 more
+- **Config**: `model_type=dinov2_vits14`, `sample_rate=8`, `min_rank_ratio=0.05`, `max_entropy_threshold=6.0`
 
 **[`spectral_complexity`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
 
@@ -863,6 +876,12 @@
 - **Backend**: pyiqa → unavailable
 - **Packages**: opencv-python, pyiqa, torch
 - **Tests**: covered by [`test_unique.py`](tests/modules/per_module/test_unique.py), [`test_image_iqa_metrics.py`](tests/modules/test_image_iqa_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Config**: `subsample=4`
+
+**[`unique_iqa`](src/ayase/modules/unique_iqa.py)** — UNIQUE unified NR image quality (TIP 2021)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_unique.py`](tests/modules/per_module/test_unique.py), [`test_unique_iqa.py`](tests/modules/per_module/test_unique_iqa.py), [`test_image_iqa_metrics.py`](tests/modules/test_image_iqa_metrics.py), +1 more
 - **Config**: `subsample=4`
 
 ### `uvq1p5_score` [↑](#categories)
@@ -1098,6 +1117,14 @@
 ### `cvvdp_ml_saliency_score` [↑](#categories)
 > Saliency-weighted ColorVideoVDP JOD (max 10) · ↑ higher=better
 
+**[`cvvdp`](src/ayase/modules/cvvdp.py)** — ColorVideoVDP display-aware color image/video FR quality
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: cvvdp
+- **Packages**: decord, imageio, pycvvdp, torch
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
+
 **[`cvvdp_ml_saliency`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
@@ -1105,8 +1132,32 @@
 - **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
 - **Config**: `display_name=standard_fhd`, `device=auto`
 
+**[`cvvdp_ml_transformer`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: cvvdp
+- **Packages**: huggingface_hub, pycvvdp, torch
+- **Source**: <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">HF</a>
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
+
 ### `cvvdp_ml_transformer_score` [↑](#categories)
 > Learned ColorVideoVDP JOD (max 10) · ↑ higher=better
+
+**[`cvvdp`](src/ayase/modules/cvvdp.py)** — ColorVideoVDP display-aware color image/video FR quality
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: cvvdp
+- **Packages**: decord, imageio, pycvvdp, torch
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
+
+**[`cvvdp_ml_saliency`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">HF</a>
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
 
 **[`cvvdp_ml_transformer`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score
 
@@ -1125,6 +1176,22 @@
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Backend**: cvvdp
 - **Packages**: decord, imageio, pycvvdp, torch
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
+
+**[`cvvdp_ml_saliency`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">HF</a>
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
+
+**[`cvvdp_ml_transformer`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: cvvdp
+- **Packages**: huggingface_hub, pycvvdp, torch
+- **Source**: <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">HF</a>
 - **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
 - **Config**: `display_name=standard_fhd`, `device=auto`
 
@@ -1184,6 +1251,12 @@
 - **Tests**: covered by [`test_dreamsim.py`](tests/modules/per_module/test_dreamsim.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `subsample=8`, `model_type=ensemble`
 
+**[`dreamsim_metric`](src/ayase/modules/dreamsim_metric.py)** — DreamSim foundation model perceptual similarity (CLIP+DINO ensemble)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_dreamsim.py`](tests/modules/per_module/test_dreamsim.py), [`test_dreamsim_metric.py`](tests/modules/per_module/test_dreamsim_metric.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), +1 more
+- **Config**: `subsample=8`, `model_type=ensemble`
+
 ### `erqa_score` [↑](#categories)
 > ERQA edge restoration quality (0-1, higher=better) · ↑ higher=better · 0-1
 
@@ -1204,6 +1277,12 @@
 - **Backend**: flip_evaluator → flip_torch → unavailable
 - **Packages**: flip-evaluator, flip_torch, torch
 - **Tests**: covered by [`test_flip.py`](tests/modules/per_module/test_flip.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Config**: `subsample=5`, `warning_threshold=0.3`
+
+**[`flip_metric`](src/ayase/modules/flip_metric.py)** — NVIDIA FLIP perceptual difference (0-1, lower=better)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_flip.py`](tests/modules/per_module/test_flip.py), [`test_flip_metric.py`](tests/modules/per_module/test_flip_metric.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), +1 more
 - **Config**: `subsample=5`, `warning_threshold=0.3`
 
 ### `flolpips` [↑](#categories)
@@ -1523,6 +1602,12 @@
 - **Tests**: covered by [`test_mad.py`](tests/modules/per_module/test_mad.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `subsample=8`
 
+**[`mad_metric`](src/ayase/modules/mad_metric.py)** — Most Apparent Distortion full-reference metric (lower=better)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_mad.py`](tests/modules/per_module/test_mad.py), [`test_mad_metric.py`](tests/modules/per_module/test_mad_metric.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), +1 more
+- **Config**: `subsample=8`
+
 ### `movie_score` [↑](#categories)
 > MOVIE motion trajectory FR · ↑ higher=better
 
@@ -1554,6 +1639,12 @@
 - **Backend**: pyiqa → unavailable
 - **Packages**: opencv-python, pyiqa, torch
 - **Tests**: covered by [`test_nlpd.py`](tests/modules/per_module/test_nlpd.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Config**: `subsample=8`
+
+**[`nlpd_metric`](src/ayase/modules/nlpd_metric.py)** — Normalized Laplacian Pyramid Distance full-reference (lower=better)
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_nlpd.py`](tests/modules/per_module/test_nlpd.py), [`test_nlpd_metric.py`](tests/modules/per_module/test_nlpd_metric.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), +1 more
 - **Config**: `subsample=8`
 
 ### `pc_d1_psnr` [↑](#categories)
@@ -3746,6 +3837,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 ### `artifacts_score` [↑](#categories)
 > ↑ higher=better
 
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
+
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
@@ -3756,6 +3853,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 ### `blur_score` [↑](#categories)
 > Laplacian variance · ↑ higher=better
 
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
+
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
@@ -3764,6 +3867,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `brightness` [↑](#categories)
+
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
@@ -3783,6 +3892,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 - **Config**: `subsample=3`, `warning_threshold=40.0`
 
 ### `contrast` [↑](#categories)
+
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
@@ -3850,6 +3965,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 ### `noise_score` [↑](#categories)
 > ↑ higher=better
 
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
+
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
@@ -3859,6 +3980,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 
 ### `saturation` [↑](#categories)
 > Advanced metrics
+
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
@@ -3881,6 +4008,12 @@ Used by: [`videophy`](src/ayase/modules/videophy.py)
 > Composite technical score · ↑ higher=better
 
 Used by: [`usability_rate`](src/ayase/modules/usability_rate.py)
+
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
@@ -4266,6 +4399,12 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `av_sync_offset` [↑](#categories)
 > Audio-video sync offset in ms
 
+**[`audio_visual_sync`](src/ayase/modules/audio_visual_sync.py)** — Audio-video synchronisation offset detection
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_audio_visual_sync.py`](tests/modules/per_module/test_audio_visual_sync.py), [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), +1 more
+- **Config**: `backend=energy`, `max_frames=600`, `warning_threshold_ms=80.0`
+
 **[`av_sync`](src/ayase/modules/audio_visual_sync.py)** — Audio-video synchronisation offset detection
 
 - **Input**: audio · **Speed**: ⚡ fast
@@ -4294,6 +4433,22 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 - **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
+**[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
+**[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: msclap → unavailable
+- **Packages**: msclap, soundfile, torch
+- **Source**: <a href="https://huggingface.co/microsoft/msclap" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`, `version=2023`
 
 ### `desync_score` [↑](#categories)
 > Synchformer predicted AV offset (seconds, lower=better) · ↓ lower=better
@@ -4384,12 +4539,28 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `laion_clap_score` [↑](#categories)
 > LAION-CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
 
+**[`clap_score`](src/ayase/modules/clap_score.py)** — Generic CLAP audio-text alignment cosine similarity (configurable backbone)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
 **[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
 
 - **Input**: audio · **Speed**: ⚡ fast
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 - **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
+**[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: msclap → unavailable
+- **Packages**: msclap, soundfile, torch
+- **Source**: <a href="https://huggingface.co/microsoft/msclap" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`, `version=2023`
 
 ### `lpdist_score` [↑](#categories)
 > Log-Power Spectral Distance (lower=better) · ↓ lower=better
@@ -4415,6 +4586,20 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ### `ms_clap_score` [↑](#categories)
 > Microsoft CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`clap_score`](src/ayase/modules/clap_score.py)** — Generic CLAP audio-text alignment cosine similarity (configurable backbone)
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
+
+**[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Config**: `model_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
 
 **[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
 
@@ -4820,7 +5005,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 
-## Face & Identity (46 metrics)
+## Face & Identity (54 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
 > AdaFace cosine similarity vs reference face (0-1, higher=better) · ↑ higher=better · 0-1
@@ -5218,6 +5403,86 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_identity_loss.py`](tests/modules/per_module/test_identity_loss.py), [`test_identity_loss.py`](tests/modules/test_identity_loss.py)
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`, `pad_retry=0.25`
 
+### `gaze_blendshape_binocular_disagreement_difference` [↑](#categories)
+> Median left/right ocular-control disagreement difference (0=equal)
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_horizontal_amplitude_difference` [↑](#categories)
+> Horizontal eye-look P90-P10 span difference (0=equal)
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_horizontal_location_difference` [↑](#categories)
+> Median horizontal eye-look activation difference (0=equal)
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_reference_coverage` [↑](#categories)
+> Reference valid eye-look activation coverage (0-1) · 0-1
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_sample_coverage` [↑](#categories)
+> Sample valid eye-look activation coverage (0-1) · 0-1
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_speed_difference` [↑](#categories)
+> Median 2-D eye-look activation-speed difference per second (0=equal)
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_vertical_amplitude_difference` [↑](#categories)
+> Vertical eye-look P90-P10 span difference (0=equal)
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
+### `gaze_blendshape_vertical_location_difference` [↑](#categories)
+> Median vertical eye-look activation difference (0=equal)
+
+**[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
+- **Config**: `min_samples=8`, `num_faces=1`
+
 ### `grafiqs_score` [↑](#categories)
 > GraFIQs gradient-based (higher=better) · ↑ higher=better
 
@@ -5447,6 +5712,12 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `gradient_detail` [↑](#categories)
 > Sobel gradient detail (0-100) · 0-100
 
+**[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
+
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
@@ -5602,6 +5873,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ### `hdr_quality` [↑](#categories)
 > HDR-specific quality · ↑ higher=better
 
+**[`4k_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — Memory-efficient quality assessment for 4K+ videos
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: algorithmic
+- **Tests**: covered by [`test_4k_vqa.py`](tests/modules/per_module/test_4k_vqa.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Config**: `tile_size=512`, `subsample=10`
+
 **[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
 
 - **Input**: vid · **Speed**: ⚡ fast
@@ -5618,6 +5896,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Backend**: algorithmic
 - **Tests**: covered by [`test_4k_vqa.py`](tests/modules/per_module/test_4k_vqa.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `tile_size=512`, `subsample=10`
+
+**[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: algorithmic
+- **Tests**: covered by [`test_4k_vqa.py`](tests/modules/per_module/test_4k_vqa.py), [`test_hdr_sdr_vqa.py`](tests/modules/per_module/test_hdr_sdr_vqa.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py), +3 more
+- **Config**: `subsample=5`
 
 ### `hdr_vdp` [↑](#categories)
 > HDR-VDP visual difference predictor (higher=better) · ↑ higher=better
@@ -5694,6 +5979,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ### `sdr_quality` [↑](#categories)
 > SDR-specific quality · ↑ higher=better
+
+**[`4k_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — Memory-efficient quality assessment for 4K+ videos
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Backend**: algorithmic
+- **Tests**: covered by [`test_4k_vqa.py`](tests/modules/per_module/test_4k_vqa.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Config**: `tile_size=512`, `subsample=10`
 
 **[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
 
@@ -5874,6 +6166,12 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 ### `ocr_area_ratio` [↑](#categories)
 > 0-1 · 0-1
+
+**[`text`](src/ayase/modules/text.py)** — Detects text/watermarks using OCR (PaddleOCR / Tesseract)
+
+- **Input**: img/vid · **Speed**: ⚡ fast
+- **Tests**: covered by [`test_dice_edit.py`](tests/modules/per_module/test_dice_edit.py), [`test_text.py`](tests/modules/per_module/test_text.py), [`test_text_detection.py`](tests/modules/per_module/test_text_detection.py), +2 more
+- **Config**: `use_paddle=True`, `max_text_area=0.05`, `lang=en`
 
 **[`text_detection`](src/ayase/modules/text.py)** — Detects text/watermarks using OCR (PaddleOCR / Tesseract)
 

@@ -1005,7 +1005,11 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             gpu_count += 1
 
         # Track field writes/reads
-        written = _detect_fields_written(source)
+        # ``get_metadata`` includes explicit ``metric_info`` declarations for
+        # dynamic assignments and local aliases that static regexes cannot
+        # recognize.  Treat those declared QualityMetrics outputs as writes
+        # for ownership, delivered counts, collision checks, and orphan checks.
+        written = set(meta.get("output_fields", {})) | _detect_fields_written(source)
         for f in written:
             field_writers[f].append(name)
         dataset_written = set(meta.get("dataset_output_fields", {})) | _detect_dataset_fields_written(source)
