@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 02:38 · **379 modules** · **520 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 03:01 · **380 modules** · **521 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **371/379 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **372/380 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**379** modules · **606** output fields · **520** metrics · **270** tiered · **178** GPU · **21** categories
+**380** modules · **607** output fields · **521** metrics · **270** tiered · **178** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-93-metrics) (93) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-51-metrics) (51) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -1005,7 +1005,7 @@
 - **Config**: `subsample=16`, `iqa_rsize=512`, `iqa_csize=320`, `vqa_rsize=480`, `vqa_patch_size=6`, `vqa_clip_len=32`, `vqa_num_clips=4`, `vqa_frame_interval=2`, `fusion_iqa_weight=0.5`, `device=auto`
 
 
-## Full-Reference Quality (93 metrics)
+## Full-Reference Quality (94 metrics)
 
 ### `ahiq` [↑](#categories)
 > Attention Hybrid IQA (higher=better) · ↑ higher=better
@@ -1094,6 +1094,16 @@
 - **Backend**: algorithmic
 - **Tests**: covered by [`test_spherical_psnr.py`](tests/modules/per_module/test_spherical_psnr.py)
 - **Config**: `subsample=8`
+
+### `cvvdp_ml_saliency_score` [↑](#categories)
+> Saliency-weighted ColorVideoVDP JOD (max 10) · ↑ higher=better
+
+**[`cvvdp_ml_saliency`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Source**: <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">HF</a>
+- **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
+- **Config**: `display_name=standard_fhd`, `device=auto`
 
 ### `cvvdp_ml_transformer_score` [↑](#categories)
 > Learned ColorVideoVDP JOD (max 10) · ↑ higher=better

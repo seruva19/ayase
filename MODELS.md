@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 02:49 · **280 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 03:02 · **280 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -368,11 +368,11 @@
 
 - **Used by**: `verse_bench`
 
-### <a href="https://huggingface.co/gfxdisp/cvvdp_ml/blob/b202a7893f6663a6a46f76f7b06c62d1235bc3ab/cvvdp_ml_transformer/cvvdp.ckpt" target="_blank">`gfxdisp/cvvdp_ml`</a> [↑](#categories)
+### <a href="https://huggingface.co/gfxdisp/cvvdp_ml/blob/b202a7893f6663a6a46f76f7b06c62d1235bc3ab/cvvdp_ml_saliency/cvvdp.ckpt" target="_blank">`gfxdisp/cvvdp_ml`</a> [↑](#categories)
 > mit
 
-- **Used by**: `cvvdp_ml_transformer`
-- **Disk**: 38.1 MB
+- **Used by**: `cvvdp_ml_saliency`, `cvvdp_ml_transformer`
+- **Disk**: 168 KB
 
 ### <a href="https://huggingface.co/google/siglip-base-patch16-224" target="_blank">`google/siglip-base-patch16-224`</a> [↑](#categories)
 > zero-shot-image-classification · apache-2.0
@@ -1103,7 +1103,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `cvvdp` [↑](#categories)
 > MIT; calibration and display-model data ship in the package
 
-- **Used by**: `cvvdp`, `cvvdp_ml_transformer`
+- **Used by**: `cvvdp`, `cvvdp_ml_saliency`, `cvvdp_ml_transformer`
 - **Install**: `pip install 'cvvdp>=0.5.6,<0.6'`
 
 ### `cyclereward` [↑](#categories)

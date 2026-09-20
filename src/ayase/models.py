@@ -512,6 +512,7 @@ class QualityMetrics(BaseModel):
     st_lpips: Optional[float] = None  # ST-LPIPS spatiotemporal perceptual FR
     cvvdp_score: Optional[float] = None  # ColorVideoVDP quality in JOD units (max 10)
     cvvdp_ml_transformer_score: Optional[float] = None  # Learned ColorVideoVDP JOD (max 10)
+    cvvdp_ml_saliency_score: Optional[float] = None  # Saliency-weighted ColorVideoVDP JOD (max 10)
 
     # Video curation signals
     camera_jitter_score: Optional[float] = None  # Camera stability (0-1, 1=stable)
