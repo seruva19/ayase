@@ -1,7 +1,13 @@
-"""ASR word error rate for speech/text fidelity.
+"""Compute per-sample word error rate between speech and expected text.
 
-Uses the shared ASR transcript cache and compares recognized speech against
-expected text from config, sample caption, or sidecar text. Lower WER is better.
+Expected text is selected in this order: ``expected_text`` config (string or
+list), ``sample.caption.text``, then a same-stem ``.txt`` file. The hypothesis
+comes from explicit ``transcript`` config, ``transcript_path``/``.asr.txt``, or
+shared faster-whisper/OpenAI Whisper ASR (default model ``large-v3``). The
+optional ``language`` config is passed to ASR; otherwise the backend detects it.
+WER is Levenshtein distance over lowercase word/apostrophe tokens, clipped to
+[0, 1], and is better when lower. It is not aggregated across the dataset.
+Sources: https://github.com/SYSTRAN/faster-whisper and https://github.com/openai/whisper
 """
 
 import logging

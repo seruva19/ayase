@@ -1,7 +1,12 @@
-"""Camera jitter / shake detection module.
+"""Reference-free camera-stability heuristic for videos using optical flow.
 
-From Open-Sora 2.0 pipeline. Detects unstable camera movement
-by analysing optical flow variance across consecutive frames.
+Farneback flow is reduced to median global motion on up to sixteen uniformly
+sampled frames, and variation in motion acceleration is mapped to a score in
+(0, 1], where higher means steadier estimated motion. It is sensitive to frame
+spacing and resolution, and dominant foreground motion, cuts, parallax, or flow
+failure can be mistaken for camera shake.
+
+Method basis: https://docs.opencv.org/4.x/d4/dee/tutorial_optical_flow.html
 """
 
 import logging

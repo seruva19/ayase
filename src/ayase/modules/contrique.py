@@ -1,12 +1,12 @@
-"""CONTRIQUE (Contrastive Image Quality Evaluator) module.
+"""No-reference image quality scoring with contrastively learned CONTRIQUE features.
 
-Self-supervised contrastive learning for no-reference IQA.
-Excellent generalisation to unseen distortion types.
+Ayase uses PyIQA's pretrained CONTRIQUE model and dataset-fitted regressor.
+Images are scored once; videos average up to five uniformly sampled frame
+scores, an image-model adaptation that does not measure motion or temporal
+consistency. Higher is better, but the regressor output has no universal
+numeric range. If PyIQA is unavailable the field remains unset, with no proxy.
 
-contrique_score — higher = better quality
-
-Uses ``pyiqa`` for pretrained CONTRIQUE weights. When ``pyiqa`` is not
-installed the metric is left unset (no heuristic fallback).
+Basis: https://github.com/pavancm/CONTRIQUE
 """
 
 import logging

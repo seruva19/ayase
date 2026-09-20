@@ -1,9 +1,12 @@
-"""UTMOSv2 no-reference speech MOS prediction.
+"""Predict per-sample, no-reference speech MOS with UTMOSv2.
 
-Predicts speech Mean Opinion Score on a 1-5 scale using the UTMOSv2 model
-(``utmosv2`` package or the upstream torch.hub checkpoint). When neither real
-backend is available the metric is left ``None`` — no signal-quality proxy is
-substituted for the published UTMOSv2 score.
+Audio is decoded from the sample, mixed to mono, and resampled to 16 kHz by
+default. The ``utmosv2`` package is preferred; the upstream torch.hub model is
+tried only when ``use_torch_hub`` is enabled. ``utmos_v2_score`` is the model's
+predicted 1-5 speech Mean Opinion Score (higher is better), with a warning below
+the configured threshold. This is a speech-quality metric, not a general audio,
+caption-alignment, reference-audio, or dataset-level metric. No proxy is emitted
+when neither backend is available. Source: https://github.com/sarulab-speech/UTMOSv2
 """
 
 import logging

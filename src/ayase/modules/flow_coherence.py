@@ -1,8 +1,12 @@
-"""Optical flow coherence module.
+"""Reference-free forward/backward optical-flow cycle consistency for videos.
 
-From CogVideoX pipeline. Measures bidirectional optical flow
-consistency — forward flow composed with backward flow should
-return to the origin. High coherence = physically plausible motion.
+Farneback flows on up to eight uniformly sampled frames are composed on an
+eight-pixel grid and mapped to ``flow_coherence`` in (0, 1], where higher means
+lower mean cycle error, not necessarily better or physically plausible motion.
+Large displacement, occlusion, cuts, texture loss, and wide sampling gaps can
+lower the score even when the source motion is valid.
+
+Method basis: https://docs.opencv.org/4.x/d4/dee/tutorial_optical_flow.html
 """
 
 import logging

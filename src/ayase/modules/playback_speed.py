@@ -1,8 +1,11 @@
-"""Fast/slow motion (playback speed) detection module.
+"""Reference-free frame-difference heuristic for unusual video playback speed.
 
-From Open-Sora 2.0 pipeline. Detects abnormal playback speeds
-(time-lapse, slow-motion, speed-up artifacts) by analysing
-optical flow magnitude distribution relative to frame rate.
+Mean grayscale differences across up to sixteen uniformly sampled frames are
+compared with an empirical expectation derived from the frame-index gap.
+``playback_speed_score`` is in [0, 1], with 1 nearest that expectation and lower
+values farther away. It does not estimate an actual speed factor and cannot
+separate retiming from static content, fast action, cuts, camera motion, frame
+rate, or compression changes.
 """
 
 import logging

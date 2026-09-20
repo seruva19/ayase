@@ -1,8 +1,12 @@
-"""AQAScore audio question-answering alignment.
+"""Score per-sample audio agreement with its caption using Qwen2.5-Omni.
 
-Heavy Qwen2.5-Omni based audio QA is opt-in by default. AQAScore is computed
-with the real Qwen2.5-Omni backend; when it is unavailable the score is left
-unset (no proxy/heuristic stand-in).
+The opt-in backend prompts ``Qwen/Qwen2.5-Omni-7B`` with the sample media and
+caption text, taken from ``sample.caption.text`` or a same-stem ``.txt`` file.
+The last standalone model response in [0, 1] becomes ``aqascore_score``;
+higher means the model judged the audio more consistent with that description.
+There is no reference audio or dataset aggregation, and no proxy score when the
+backend is disabled or unavailable. Language and audio-domain coverage follow
+the configured model. Model source: https://github.com/QwenLM/Qwen2.5-Omni
 """
 
 import logging

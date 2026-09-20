@@ -1,8 +1,11 @@
-"""A-FINE (Adaptive Fidelity-Naturalness Evaluator) module.
+"""No-reference image quality scoring with PyIQA's A-FINE NR model.
 
-CVPR 2025. Generalized IQA that handles imperfect references.
-Adaptively combines fidelity and naturalness. Both FR and NR variants.
-Computed with the real ``afine_nr`` metric from pyiqa; left unset otherwise.
+The module scores an image or averages up to four sampled video frames;
+higher means greater model-predicted perceptual quality, with no wrapper-defined
+range. It does not use ``sample.reference_path`` or expose A-FINE's full-
+reference variant, and video scores contain no temporal assessment.
+
+Model basis: https://github.com/chaofengc/IQA-PyTorch
 """
 
 import logging

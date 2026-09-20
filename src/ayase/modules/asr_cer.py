@@ -1,7 +1,14 @@
-"""ASR character error rate for speech/text fidelity.
+"""Compute per-sample character error rate between speech and expected text.
 
-Compares a shared cached Whisper transcript against expected text from module
-config, sample caption, or sidecar text. Lower CER is better.
+Expected text is selected in this order: ``expected_text`` config (string or
+list), ``sample.caption.text``, then a same-stem ``.txt`` file. The hypothesis
+comes from explicit ``transcript`` config, ``transcript_path``/``.asr.txt``, or
+shared faster-whisper/OpenAI Whisper ASR (default model ``large-v3``). The
+optional ``language`` config is passed to ASR; otherwise the backend detects it.
+CER uses lowercase word/apostrophe characters with spaces and punctuation
+removed, is clipped to [0, 1], and is better when lower. It is not aggregated
+across the dataset. Sources: https://github.com/SYSTRAN/faster-whisper and
+https://github.com/openai/whisper
 """
 
 import logging

@@ -1,21 +1,14 @@
-"""C3DVQA (3D CNN Video Quality Assessment) module.
+"""Full-reference video quality prediction through an optional C3DVQA backend.
 
-C3DVQA (Xu et al., 2020) is a full-reference video quality metric that uses
-3D convolutions over spatiotemporal video volumes to capture spatial and
-temporal distortions in a single forward pass.
+The published model combines distorted and residual-frame spatial features
+with 3D convolutions to learn spatiotemporal masking. Ayase ships no trained
+implementation or proxy and delegates video paths to external c3dvqa.predict.
+Faithful use requires reference_path; without it the adapter makes a
+one-argument backend call whose meaning is backend-specific. Returned scores
+are not transformed, so no universal direction or range is asserted, and an
+unavailable backend leaves the score unset.
 
-This module requires the trained C3DVQA backend. When that backend is not
-installed the metric is left ``None`` — no proxy network or handcrafted
-approximation is substituted for the published metric.
-
-REVIVAL NOTES (requires_external_backend -- no turnkey backend)
-Metric: C3DVQA (Xu et al. 2020).
-Category: TRAINING-ONLY.
-Why requires_external_backend: No released weights; the 3D-CNN full-reference model must be trained.
-To revive: Reimplement the 3D-CNN FR arch; train on LIVE-VQA + CSIQ (small, public); validate you
-  reproduce the paper's SRCC/PLCC before flipping requires_external_backend=False. Legacy; redundant with ayase's
-  FR suite -- low marginal value.
-Source: C3DVQA, Xu et al. 2020 (no released weights).
+Basis: https://arxiv.org/abs/1910.13646
 """
 
 import logging

@@ -1,22 +1,12 @@
-"""Ada-DQA -- Adaptive Diverse Quality-aware Feature Acquisition (ACM MM 2023).
+"""No-reference video quality prediction through an optional Ada-DQA backend.
 
-Ada-DQA learns adaptive quality-aware feature acquisition from a diverse set of
-pre-trained models and a trained quality regression head. A generic ImageNet
-ResNet-50 backbone paired with an untrained quality head is not Ada-DQA — the
-untrained head produces meaningless weights — so no score is emitted under the
-Ada-DQA name. This module reports itself unavailable until a real Ada-DQA
-backend (with trained weights) is wired in.
+The published method acquires quality-aware features from diverse frozen models
+and distils them into a lighter VQA model. Ayase ships neither trained weights
+nor a proxy: it delegates the whole video path to an external ``adadqa.predict``
+function and otherwise leaves ``adadqa_score`` unset. A returned score is passed
+through unchanged, so its direction and range are properties of that backend.
 
-Output field: ``adadqa_score`` (populated only with a real backend).
-
-REVIVAL NOTES (requires_external_backend — no turnkey backend)
-Metric: Ada-DQA (ACM MM 2023).
-Category: TRAINING-ONLY.
-Why requires_external_backend: No released weights; the adaptive acquisition/fusion quality head must be trained.
-To revive: Reimplement the diverse frozen-model feature acquisition + fusion head; train on
-  public NR-VQA sets (KoNViD-1k / LIVE-VQC / YouTube-UGC); validate you reproduce the paper's
-  SRCC/PLCC before flipping requires_external_backend=False. Effort S-M; largely duplicates ayase's DOVER/FAST-VQA.
-Source: Ada-DQA, ACM MM 2023 (no released weights).
+Basis: https://arxiv.org/abs/2308.00729
 """
 
 import logging
