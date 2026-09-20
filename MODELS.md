@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 15:43 · **284 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 16:08 · **284 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -654,9 +654,10 @@
 ### <a href="https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb" target="_blank">`speechbrain/spkrec-ecapa-voxceleb`</a> [↑](#categories)
 > apache-2.0
 
-- **Used by**: `voice_identity`
+- **Used by**: `voice_identity`, `voice_identity_drift`
 - **Downloads**: 2.3M
-- **Task**: ECAPA-TDNN speaker embedding (VoxCeleb)
+- **Task**: ECAPA-TDNN speaker embeddings trained on VoxCeleb
+- **Notes**: Shared with the voice_identity module; weights are downloaded at runtime.
 - **Source**: <a href="https://arxiv.org/abs/2106.04624" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0" target="_blank">`stabilityai/stable-diffusion-xl-base-1.0`</a> [↑](#categories)
