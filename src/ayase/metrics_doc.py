@@ -1005,11 +1005,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             gpu_count += 1
 
         # Track field writes/reads
-        # ``get_metadata`` includes explicit ``metric_info`` declarations for
-        # dynamic assignments and local aliases that static regexes cannot
-        # recognize.  Treat those declared QualityMetrics outputs as writes
-        # for ownership, delivered counts, collision checks, and orphan checks.
-        written = set(meta.get("output_fields", {})) | _detect_fields_written(source)
+        written = _detect_fields_written(source)
         for f in written:
             field_writers[f].append(name)
         dataset_written = set(meta.get("dataset_output_fields", {})) | _detect_dataset_fields_written(source)
@@ -1064,11 +1060,22 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     tiered_count = sum(1 for r in results if r["tiered"])
 
     written_fields = set(field_writers.keys())
+    declared_output_fields = {
+        field
+        for result in results
+        for field in result.get("output_fields", {})
+        if field in qm_fields
+    }
     all_qm_field_names = set(qm_fields.keys())
     # Fields owned only by requires_external_backend modules are intentionally undocumented in
     # the delivered body (they live in the External backend required section), so they are
     # NOT orphans — don't flag them as declared-but-never-written.
-    orphaned = all_qm_field_names - written_fields - external_only_fields
+    orphaned = (
+        all_qm_field_names
+        - written_fields
+        - declared_output_fields
+        - external_only_fields
+    )
     collisions = {f: writers for f, writers in field_writers.items() if len(writers) > 1}
 
     # Module dependencies (modules that read fields written by other modules)
@@ -1094,7 +1101,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
 
     metrics_per_cat_count: Dict[str, int] = defaultdict(int)
     for field_name, info in qm_fields.items():
-        if field_writers.get(field_name):
+        if field_writers.get(field_name) or field_name in declared_output_fields:
             metrics_per_cat_count[info["group"]] += 1
 
     chart_paths = _generate_charts(
