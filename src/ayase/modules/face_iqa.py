@@ -1,4 +1,9 @@
-"""Face-IQA module using TOPIQ face-specific variant."""
+"""Estimate no-reference quality of faces with the TOPIQ face-specific model.
+
+Scores Haar-detected frontal-face crops from images or sampled video frames and averages
+them; samples with no detected face are left unset. Higher is better; no fixed range is
+assumed. Basis: https://github.com/chaofengc/IQA-PyTorch
+"""
 
 import logging
 from typing import Optional

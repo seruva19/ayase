@@ -1,4 +1,9 @@
-"""HyperIQA adaptive hypernetwork NR-IQA module."""
+"""Estimate no-reference perceptual image quality with HyperIQA.
+
+Accepts images or sampled video frames through the PyIQA model and averages frame scores;
+it does not assess temporal quality. Higher is better, with no fixed range assumed.
+Basis: https://github.com/SSL92/hyperIQA
+"""
 
 import logging
 from typing import Optional

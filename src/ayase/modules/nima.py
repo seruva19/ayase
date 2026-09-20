@@ -1,4 +1,9 @@
-"""NIMA (Neural Image Assessment) quality module."""
+"""Estimate aesthetic and technical image quality with NIMA.
+
+Uses the PyIQA NIMA model on images or sampled video frames and averages frame predictions;
+it does not assess temporal quality. Scores use the model's 1-10 scale, and higher is better.
+Basis: https://github.com/chaofengc/IQA-PyTorch
+"""
 
 import logging
 from typing import Optional

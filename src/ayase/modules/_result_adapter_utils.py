@@ -1,4 +1,11 @@
-"""Shared parsing helpers for benchmark result imports."""
+"""Internal CSV parsing and sample-key matching for benchmark result adapters.
+
+This helper computes no metric. Its scope is reading adapter CSV rows, coercing
+selected fields to floats, and indexing rows by conservative path identifiers;
+the calling adapter owns metric semantics and validation.
+
+Basis: https://github.com/seruva19/ayase
+"""
 
 import csv
 from pathlib import Path

@@ -1,4 +1,9 @@
-"""MAD (Most Apparent Distortion) module."""
+"""Measure full-reference image distortion with Most Apparent Distortion (MAD).
+
+Uses PyIQA on an image pair or aligned sampled video-frame pairs, resizing each pair to a
+common size before averaging. Lower is better; no fixed range is assumed, and videos are
+not temporally aligned beyond uniform sampling. Basis: https://github.com/chaofengc/IQA-PyTorch
+"""
 
 import logging
 from typing import Optional

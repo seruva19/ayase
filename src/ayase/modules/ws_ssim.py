@@ -1,4 +1,12 @@
-"""WS-SSIM — Weighted Spherical SSIM. ws_ssim — 0-1, higher = better"""
+"""Full-reference latitude-weighted SSIM for equirectangular 360-degree media.
+
+Computes grayscale SSIM and averages its map with cosine-latitude weights;
+higher is better and identical inputs score 1. Images require a reference, and
+videos average up to eight index-matched frame pairs. This is an algorithmic
+equirectangular weighting, not spherical reprojection or temporal assessment.
+
+Basis: https://github.com/Samsung/360tools
+"""
 
 import logging
 import cv2

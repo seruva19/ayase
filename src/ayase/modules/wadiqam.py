@@ -1,4 +1,11 @@
-"""WaDIQaM (Weighted Averaging Deep Image Quality Mapper) module."""
+"""No-reference image quality scoring with the WaDIQaM-NR model.
+
+PyIQA's ``wadiqam_nr`` predicts perceptual quality from an image without a
+reference; higher is better. For videos Ayase averages up to eight sampled-frame
+scores, so the result does not measure motion or temporal consistency.
+
+Basis: https://github.com/chaofengc/IQA-PyTorch
+"""
 
 import logging
 from typing import Optional

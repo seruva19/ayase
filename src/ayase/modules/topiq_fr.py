@@ -1,4 +1,12 @@
-"""TOPIQ-FR (Full-Reference TOPIQ) module."""
+"""Full-reference TOPIQ perceptual quality scoring for images and video frames.
+
+PyIQA's ``topiq_fr`` compares each image with a reference; for videos Ayase
+averages up to eight paired sampled-frame scores after resizing both frames to
+common dimensions. Higher is better. The video result does not model motion or
+temporal artifacts and requires ``sample.reference_path``.
+
+Basis: https://github.com/chaofengc/IQA-PyTorch
+"""
 
 import logging
 from typing import Optional
