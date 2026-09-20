@@ -43,6 +43,7 @@ _IMPORTS = [
     ("CameraMotionModule", ".camera_motion"),
     ("KandinskyMotionModule", ".kandinsky_motion"),
     ("MotionMannerSimilarityModule", ".motion_manner_similarity"),
+    ("BodyMotionKinematicsModule", ".body_motion_kinematics"),
     ("HeadPoseSimilarityModule", ".head_pose_similarity"),
     # --- Temporal consistency ---
     ("TemporalFlickeringModule", ".temporal_flickering"),

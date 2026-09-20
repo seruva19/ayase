@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 12:58 · **384 modules** · **529 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 13:37 · **385 modules** · **537 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **376/384 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **377/385 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**384** modules · **615** output fields · **529** metrics · **274** tiered · **181** GPU · **21** categories
+**385** modules · **623** output fields · **537** metrics · **275** tiered · **181** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-59-metrics) (59) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-58-metrics) (58) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-59-metrics) (59) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -3123,7 +3123,7 @@
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (50 metrics)
+## Motion & Dynamics (58 metrics)
 
 ### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
@@ -3147,6 +3147,86 @@
 - **Packages**: librosa
 - **Tests**: covered by [`test_beat_alignment.py`](tests/modules/per_module/test_beat_alignment.py)
 - **Config**: `tolerance=0.1`, `subsample=2`
+
+### `body_motion_acceleration_ratio` [↑](#categories)
+> Median normalized joint acceleration, sample/reference (1.0 = equal)
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_arm_coverage` [↑](#categories)
+> Minimum generated/reference coverage with at least one complete arm chain (0-1, higher=more observable) · 0-1, higher=more observable
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_idle_fraction_difference` [↑](#categories)
+> Absolute low-speed frame-fraction difference (0-1, lower=closer)
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_jerk_ratio` [↑](#categories)
+> Median normalized joint jerk, sample/reference (1.0 = equal)
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_left_right_symmetry_difference` [↑](#categories)
+> Absolute left/right motion-balance difference (0-1, lower=closer)
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_pose_coverage` [↑](#categories)
+> Minimum generated/reference usable-pose coverage (0-1, higher=more observable) · 0-1, higher=more observable
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_range_ratio` [↑](#categories)
+> Median joint trajectory range, sample/reference (1.0 = equal)
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
+
+### `body_motion_speed_ratio` [↑](#categories)
+> Median normalized joint speed, sample/reference (1.0 = equal)
+
+**[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
+
+- **Input**: vid +ref · **Speed**: ⚡ fast
+- **Packages**: opencv-python
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `camera_jitter_score` [↑](#categories)
 > Camera stability (0-1, 1=stable) · ↓ lower=better · 0-1, 1=stable
@@ -3426,7 +3506,7 @@
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
-- **Tests**: covered by [`test_motion.py`](tests/modules/per_module/test_motion.py), [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py), [`test_vbench2_compbench.py`](tests/modules/test_vbench2_compbench.py), +4 more
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py), +5 more
 - **Config**: `sample_rate=5`, `low_motion_threshold=0.5`, `high_motion_threshold=20.0`
 
 ### `motion_smoothness` [↑](#categories)
