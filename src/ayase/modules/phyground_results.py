@@ -1,4 +1,12 @@
-"""Import PhyGround and PhyJudge structured predictions."""
+"""Adapt externally generated PhyGround/PhyJudge video scores into Ayase.
+
+The adapter matches JSON result rows to samples and imports upstream 1-5
+general and physical-law judge scores plus 0-1 physical-law coverage. It does
+not run PhyJudge, compute a metric, or validate score ranges; missing,
+malformed, and out-of-range values remain the result producer's responsibility.
+
+Basis and result schema: https://github.com/NU-World-Model-Embodied-AI/PhyGround
+"""
 
 import json
 import logging

@@ -1,7 +1,12 @@
-"""RAFT optical flow motion scoring module.
+"""Estimate video motion as mean dense-flow magnitude from torchvision RAFT.
 
-From Data-Juicer's video_motion_score_raft_filter.
-Uses torchvision's RAFT model for accurate optical flow estimation.
+The module applies the default pretrained RAFT-Large model to consecutive
+sampled frames and averages final-flow magnitudes. Higher means more estimated
+pixel displacement, not better quality. RAFT flow is unnormalized in pixel
+units, so the unbounded score depends on resolution, frame interval, and
+sampling choices.
+
+Model basis: https://docs.pytorch.org/vision/stable/models/raft.html
 """
 
 import logging

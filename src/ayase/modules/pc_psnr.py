@@ -1,4 +1,14 @@
-"""D1/D2 Point Cloud PSNR (MPEG Standard). pc_d1_psnr, pc_d2_psnr — dB, higher = better"""
+"""Estimate reference-based D1/D2 geometry PSNR for PLY or PCD point clouds.
+
+D1 uses one-way sample-to-reference point distances; D2 projects those errors
+onto reference normals and is unavailable when the reference has no normals.
+Scores are in dB and higher means less geometric error. This implementation
+uses the reference bounding-box diagonal as its peak and is not the symmetric,
+bit-exact MPEG conformance metric.
+
+Basis: MPEG point-cloud distortion metrics,
+https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric
+"""
 
 import logging
 import numpy as np

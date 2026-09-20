@@ -1,4 +1,13 @@
-"""AHIQ (Attention-based Hybrid Image Quality) module."""
+"""Full-reference perceptual image quality using the AHIQ ViT/CNN hybrid.
+
+The PyIQA AHIQ checkpoint compares a distorted image with its reference; higher
+scores mean better quality and PyIQA documents an approximate 0--1 range. For
+videos, Ayase averages up to eight position-paired, resized frame scores, so this
+is frame-wise IQA rather than a temporal metric. AHIQ was developed for
+perceptual, including GAN-based, distortions in the NTIRE 2022 FR-IQA setting.
+
+Basis: https://github.com/IIGROUP/AHIQ
+"""
 
 import logging
 from typing import List, Optional

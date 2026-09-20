@@ -1,7 +1,13 @@
-"""BrightRate module.
+"""No-reference quality prediction for user-generated HDR video with BrightRate.
 
-This module runs the BrightRate inference script from the bundled BrightVQ
-source tree.
+BrightRate combines CONTRIQUE, CLIP, HDR luminance-statistics, and temporal-
+difference features and regresses them toward subjective quality. Ayase runs the
+bundled BrightVQ inference pipeline on MP4 by default, or raw YUV when explicitly
+configured (with dimensions available), sampling 30 frames by default. The raw
+regressor output is higher-is-better; no universal numeric range is asserted,
+and inference requires the bundled source plus all model assets.
+
+Basis: https://brightvqa.github.io/BrightVQ/
 """
 
 import csv

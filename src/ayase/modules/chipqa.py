@@ -1,7 +1,12 @@
-"""ChipQA module.
+"""No-reference SDR video quality prediction using ChipQA space-time chips.
 
-This module runs the ChipQA feature extractor and LIVE-Livestream SVR from the
-bundled source tree.
+Ayase runs the bundled ChipQA feature extractor and its LIVE-APV/Livestream SVR
+on MP4 inputs only. The model describes natural-video deviations using localized
+space-time slices without explicit motion estimation. Its raw MOS-regression
+output is higher-is-better, but is tied to the supplied SVR and has no universal
+range; this adapter does not invoke the separate HDR-ChipQA/YUV pipeline.
+
+Basis: https://github.com/JoshuaEbenezer/ChipQA
 """
 
 import logging

@@ -1,4 +1,12 @@
-"""Compare2Score comparison-based IQA module."""
+"""No-reference image quality scoring with comparison-trained Compare2Score.
+
+PyIQA converts preferences against anchor images into a continuous 0--100
+score, where higher is better. Ayase scores an image or averages up to four
+sampled video frames; this does not assess temporal quality. The method is an
+LMM-based comparator rather than a distortion-specific detector.
+
+Basis: https://github.com/Q-Future/Compare2Score
+"""
 
 import logging
 from typing import List, Optional

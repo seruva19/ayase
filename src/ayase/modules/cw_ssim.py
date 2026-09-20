@@ -1,4 +1,12 @@
-"""CW-SSIM (Complex Wavelet SSIM) module."""
+"""Full-reference structural similarity in the complex-wavelet domain.
+
+CW-SSIM compares a distorted image with a reference using local wavelet-phase
+consistency and is robust to small translations and rotations. PyIQA returns a
+0--1 similarity, where 1 is best. Ayase resizes pairs to common dimensions and
+averages up to eight paired video frames without temporal modeling.
+
+Basis: https://ece.uwaterloo.ca/~z70wang/publications/CW_SSIM.pdf
+"""
 
 import logging
 from typing import Optional

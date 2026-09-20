@@ -1,4 +1,12 @@
-"""CNNIQA (CNN Image Quality Assessment) module."""
+"""Blind image quality prediction with the patch-based CNNIQA architecture.
+
+Ayase uses PyIQA's KonIQ-10k checkpoint; higher scores mean better quality and
+its documented range is only approximately 0--1. Images are scored directly;
+videos average at most four sampled frames and therefore exclude temporal
+artifacts. CNNIQA jointly learns spatial-domain patch features and regression.
+
+Basis: https://openaccess.thecvf.com/content_cvpr_2014/papers/Kang_Convolutional_Neural_Networks_2014_CVPR_paper.pdf
+"""
 
 import logging
 from typing import List, Optional
