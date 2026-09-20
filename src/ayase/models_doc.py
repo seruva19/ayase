@@ -272,6 +272,8 @@ _KNOWN_LICENSES: Dict[str, tuple] = {
     "hub:facebookresearch/dinov2": ("Apache-2.0", True),
     "hub:intel-isl/MiDaS": ("MIT", True),
     "hub:tarepan/SpeechMOS:v1.2.0": ("MIT", True),
+    # The HF card links this exact Microsoft license for WavLM-Large.
+    "hf:microsoft/wavlm-large": ("CC BY-SA 3.0", True),
     # FFmpeg
     "ff:libvmaf": ("BSD-2-Clause (Netflix)", True),
     "ff:vmaf_v0.6.1": ("BSD-2-Clause (Netflix)", True),
@@ -830,7 +832,30 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                     task=decl.get("task"),
                     auto_download=decl.get("auto_download", True),
                     notes=decl.get("notes"),
+                    arxiv=decl.get("arxiv"),
                 )
+            else:
+                # An explicit module declaration is more precise than regex
+                # discovery (for example, it can pin a checkpoint URL, exact
+                # byte size, task, and provenance notes).  Preserve the shared
+                # entry but enrich it with every explicitly supplied value.
+                entry = entries[key]
+                if decl.get("url"):
+                    entry.url = decl["url"]
+                if decl.get("install"):
+                    entry.install = decl["install"]
+                if decl.get("size"):
+                    entry.size_estimate = decl["size"]
+                if decl.get("vram"):
+                    entry.vram_estimate = decl["vram"]
+                if decl.get("task"):
+                    entry.task = decl["task"]
+                if "auto_download" in decl:
+                    entry.auto_download = bool(decl["auto_download"])
+                if decl.get("notes"):
+                    entry.notes = decl["notes"]
+                if decl.get("arxiv"):
+                    entry.arxiv = decl["arxiv"]
             if mod_name not in entries[key].modules:
                 entries[key].modules.append(mod_name)
 
@@ -1017,7 +1042,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                     entry.parameters = data.get("parameters")
                     entry.pipeline_tag = data.get("pipeline_tag")
                     entry.library = data.get("library")
-                    entry.arxiv = data.get("arxiv")
+                    if entry.arxiv is None:
+                        entry.arxiv = data.get("arxiv")
                     # Auto-fill size estimate from parameters if not known
                     if entry.size_estimate is None and entry.parameters:
                         size_mb = entry.parameters * 4 / 1024 / 1024  # FP32
@@ -1283,6 +1309,14 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 size_parts.append(f"**Disk**: {e.size_estimate}")
             if size_parts:
                 a(f"- {' · '.join(size_parts)}")
+
+            # Explicit module declarations carry applicability/provenance that
+            # the HF API cannot infer (checkpoint hashes, pinned revisions,
+            # runtime download policy, and the exact task).
+            if e.task:
+                a(f"- **Task**: {e.task}")
+            if e.notes:
+                a(f"- **Notes**: {e.notes}")
 
             # Source link (arXiv)
             if e.arxiv:

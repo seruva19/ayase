@@ -318,6 +318,7 @@ class QualityMetrics(BaseModel):
     distill_mos_score: Optional[float] = None  # Distill-MOS overall speech quality (1-5, higher=better)
     asr_cer: Optional[float] = None  # ASR character error rate vs reference text (0-1, lower=better)
     asr_wer: Optional[float] = None  # ASR word error rate vs reference text (0-1, lower=better)
+    speech_bert_score: Optional[float] = None  # Matching-content speech similarity (-1..1, higher=better)
     scoreq_score: Optional[float] = None  # SCOREQ speech naturalness score (0-1, higher=better)
     ttsds2_score: Optional[float] = None  # TTSDS2 speech quality score (0-1, higher=better)
     human_clap_score: Optional[float] = None  # Human-CLAP audio-text relevance (0-1, higher=better)
