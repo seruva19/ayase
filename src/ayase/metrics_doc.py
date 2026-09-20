@@ -439,6 +439,11 @@ def _get_module_file_link(cls: type) -> str:
 def _detect_source_links(source: str, cls: type) -> str:
     """Extract source links (paper, GitHub, HF) as compact markdown."""
     links = []
+    declared_non_hf_ids = {
+        str(model.get("id"))
+        for model in (getattr(cls, "models", None) or [])
+        if model.get("id") and model.get("type") != "huggingface"
+    }
     # arXiv
     for m in re.finditer(r"(https?://arxiv\.org/abs/[\w.]+)", source):
         links.append(f'<a href="{m.group(1)}" target="_blank">arXiv</a>')
@@ -450,7 +455,7 @@ def _detect_source_links(source: str, cls: type) -> str:
     # HuggingFace
     for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
         candidate = m.group(1)
-        if _is_likely_hf_model_id(candidate):
+        if candidate not in declared_non_hf_ids and _is_likely_hf_model_id(candidate):
             links.append(f'<a href="https://huggingface.co/{candidate}" target="_blank">HF</a>')
             break
     # Paper citation from docstring

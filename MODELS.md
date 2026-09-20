@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 13:39 · **283 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 14:33 · **284 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**283** models · **110** HuggingFace · **55** pyiqa · **9** sources
+**284** models · **110** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (81)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (40)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (81)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (40)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Other Models (12)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -954,6 +954,80 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Task**: YOLOX person detector (rtmlib backend)
 - **Notes**: Shared with rtmpose_fidelity
 
+## Other Models
+
+Model backends declared by modules that are not distributed through the sources above.
+
+### <a href="https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics" target="_blank">`DiffSynth-Studio/ImageMetrics:HPSv2`</a> [↑](#categories)
+
+- **Used by**: `hpsv2`
+- **Task**: DiffSynth HPSv2 metric weights
+- **Notes**: Used when the optional diffsynth backend is available.
+
+### <a href="https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics" target="_blank">`DiffSynth-Studio/ImageMetrics:UnifiedReward-2.0-qwen35-9b`</a> [↑](#categories)
+
+- **Used by**: `unified_reward_2`
+- **Task**: UnifiedReward 2.0 Qwen3.5-VL reward model
+- **Disk**: 9B
+- **Notes**: Loaded through optional DiffSynth or served through an endpoint.
+
+### <a href="https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics" target="_blank">`DiffSynth-Studio/ImageMetrics:UnifiedReward-Edit-qwen3vl-8b`</a> [↑](#categories)
+
+- **Used by**: `unified_reward_edit`
+- **Task**: UnifiedReward Edit Qwen3-VL reward model
+- **Disk**: 8B
+- **Notes**: Loaded through optional DiffSynth or served through an endpoint.
+
+### <a href="https://github.com/IntelLabs/cgvqm" target="_blank">`IntelLabs/cgvqm`</a> [↑](#categories)
+
+- **Used by**: `cgvqm`
+- **Task**: Vendored upstream CGVQM-2 and CGVQM-5 calibration weights
+
+### <a href="https://github.com/TAILab-W/Ref4D-VideoBench" target="_blank">`TAILab-W/Ref4D-VideoBench@6f79f08b359053f2697e1b91b9e38be29baf4d7e`</a> [↑](#categories)
+
+- **Used by**: `ref4d_results`
+- **Task**: four-dimensional video evaluator
+- **Notes**: Apache-2.0; run its dimension-specific environments separately
+
+### <a href="https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0" target="_blank">`Vchitect/VBench@45e79ec14e69a2187202c675d2dbce1a71843d53`</a> [↑](#categories)
+
+- **Used by**: `vbench2`
+- **Task**: VBench 2.0 evaluator and dimension-specific checkpoints
+- **Notes**: Apache-2.0 source; install the upstream VBench-2.0 package
+
+### <a href="https://github.com/alessandroragano/scoreq" target="_blank">`alessandroragano/scoreq`</a> [↑](#categories)
+
+- **Used by**: `scoreq`
+- **Task**: Supervised speech naturalness scoring
+
+### `buffalo_l` [↑](#categories)
+
+- **Used by**: `face_cross_similarity`
+- **Task**: InsightFace ArcFace face embedding model
+
+### `clip-flant5-xxl` [↑](#categories)
+
+- **Used by**: `vqa_score`
+- **Task**: Vendored t2v_metrics VQAScore model
+
+### `imagebind_huge` [↑](#categories)
+
+- **Used by**: `imagebind_score`
+- **Task**: ImageBind joint multimodal embedding for audio-text alignment
+
+### <a href="https://github.com/deepinsight/insightface/releases/tag/model-zoo" target="_blank">`insightface/buffalo_l`</a> [↑](#categories)
+
+- **Used by**: `face_identity_drift`
+- **Task**: SCRFD face detection and ArcFace identity embeddings
+- **License**: Non-commercial research
+- **Disk**: 326 MB
+- **Notes**: Default public InsightFace model pack; non-commercial research use only. A caller-supplied compatible licensed FaceAnalysis pack may be selected.
+
+### `ttsds-benchmark` [↑](#categories)
+
+- **Used by**: `ttsds2`
+- **Task**: TTSDS2 benchmark implementation
+
 ## pyiqa Metrics (55)
 
 <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection of image/video quality metrics. Weights auto-download on first `pyiqa.create_metric()` call. `pip install pyiqa`
@@ -1255,7 +1329,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `insightface` [↑](#categories)
 > InsightFace (face recognition)
 
-- **Used by**: `active_speaker`, `adaface`, `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `grafiqs`, `identity_loss`, `magface`, `multi_subject_identity`
+- **Used by**: `active_speaker`, `adaface`, `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `face_identity_drift`, `grafiqs`, `identity_loss`, `magface`, `multi_subject_identity`
 - **Install**: `pip install insightface`
 
 ### `joblib` [↑](#categories)
@@ -1305,7 +1379,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `onnxruntime` [↑](#categories)
 > ONNX Runtime (model inference)
 
-- **Used by**: `dover`, `nima_onnx`
+- **Used by**: `dover`, `face_identity_drift`, `nima_onnx`
 - **Install**: `pip install onnxruntime`
 
 ### `openai-whisper` [↑](#categories)

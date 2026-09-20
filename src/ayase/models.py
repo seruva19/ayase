@@ -214,6 +214,12 @@ class QualityMetrics(BaseModel):
     dino_face_identity: Optional[float] = None  # DINOv2 face identity cosine similarity (0-1, higher=better)
     dino_face_identity_max: Optional[float] = None  # Max DINOv2 face identity across frames (0-1, higher=better)
     adaface_identity_similarity: Optional[float] = None  # AdaFace cosine similarity vs reference face (0-1, higher=better)
+    face_identity_detection_coverage: Optional[float] = None  # Detected sampled frames / all sampled frames (0-1)
+    face_identity_similarity_p05: Optional[float] = None  # Fifth-percentile ArcFace similarity (0-1, higher=better)
+    face_identity_similarity_min: Optional[float] = None  # Minimum ArcFace similarity (0-1, higher=better)
+    face_identity_below_threshold_fraction: Optional[float] = None  # Detected frames below caller-supplied threshold (0-1)
+    face_identity_longest_below_threshold_run_fraction: Optional[float] = None  # Longest low-similarity run / sampled frames (0-1)
+    face_identity_drift_slope: Optional[float] = None  # ArcFace similarity slope per normalized sampled sequence
     id_sim_distance: Optional[float] = None  # ID-Sim fine-grained visual identity distance (lower=better)
     nearid_identity_similarity: Optional[float] = None  # NearID cosine similarity vs reference image (higher=better)
     masc_concept_preservation: Optional[float] = None  # MaSC masked-maxcos concept preservation (higher=better)

@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 14:05 · **386 modules** · **542 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 14:42 · **387 modules** · **548 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **378/386 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **379/387 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**386** modules · **628** output fields · **542** metrics · **276** tiered · **181** GPU · **21** categories
+**387** modules · **634** output fields · **548** metrics · **277** tiered · **182** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-58-metrics) (58) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-64-metrics) (64) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-58-metrics) (58) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-64-metrics) (64) · [Face & Identity](#face--identity-46-metrics) (46) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -1049,7 +1049,7 @@
 - **Backend**: unavailable
 - **Packages**: torch
 - **VRAM**: ~200 MB
-- **Source**: <a href="https://github.com/IntelLabs/cgvqm" target="_blank">GitHub</a> · <a href="https://huggingface.co/IntelLabs/cgvqm" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/IntelLabs/cgvqm" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_cgvqm.py`](tests/modules/per_module/test_cgvqm.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 - **Config**: `variant=cgvqm-5`, `patch_pool=mean`, `patch_scale=4`, `device=auto`
 
@@ -4555,7 +4555,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: scoreq → unavailable
 - **Packages**: scoreq
-- **Source**: <a href="https://github.com/alessandroragano/scoreq" target="_blank">GitHub</a> · <a href="https://huggingface.co/alessandroragano/scoreq" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/alessandroragano/scoreq" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `sample_rate=16000`, `data_domain=natural`
 
@@ -4719,7 +4719,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: utmosv2_package → torch_hub → unavailable
 - **Packages**: torch, utmosv2
-- **Source**: <a href="https://huggingface.co/sarulab-speech/UTMOSv2" target="_blank">HF</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`, `use_torch_hub=False`
 
@@ -4766,7 +4765,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 
-## Face & Identity (40 metrics)
+## Face & Identity (46 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
 > AdaFace cosine similarity vs reference face (0-1, higher=better) · ↑ higher=better · 0-1
@@ -4936,6 +4935,18 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_face_landmark_quality.py`](tests/modules/per_module/test_face_landmark_quality.py), [`test_face_modules.py`](tests/modules/test_face_modules.py)
 - **Config**: `subsample=2`, `max_frames=300`, `jitter_warning=30.0`
 
+### `face_identity_below_threshold_fraction` [↑](#categories)
+> Detected frames below caller-supplied threshold (0-1) · 0-1
+
+**[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable
+- **Packages**: insightface, onnxruntime
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
+
 ### `face_identity_consistency` [↑](#categories)
 > Temporal face identity stability (0-1) · ↑ higher=better · 0-1
 
@@ -4957,6 +4968,66 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: Pillow, deepface, insightface
 - **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py)
 - **Config**: `model_name=buffalo_l`, `max_faces_per_image=5`, `similarity_threshold=0.3`, `subsample=8`, `max_cache_size=10000`, `device=auto`
+
+### `face_identity_detection_coverage` [↑](#categories)
+> Detected sampled frames / all sampled frames (0-1) · 0-1, higher=more observable
+
+**[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable
+- **Packages**: insightface, onnxruntime
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
+
+### `face_identity_drift_slope` [↑](#categories)
+> ArcFace similarity slope per normalized sampled sequence
+
+**[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable
+- **Packages**: insightface, onnxruntime
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
+
+### `face_identity_longest_below_threshold_run_fraction` [↑](#categories)
+> Longest low-similarity run / sampled frames (0-1) · 0-1
+
+**[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable
+- **Packages**: insightface, onnxruntime
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
+
+### `face_identity_similarity_min` [↑](#categories)
+> Minimum ArcFace similarity (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable
+- **Packages**: insightface, onnxruntime
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
+
+### `face_identity_similarity_p05` [↑](#categories)
+> Fifth-percentile ArcFace similarity (0-1, higher=better) · ↑ higher=better · 0-1
+
+**[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
+
+- **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Backend**: unavailable
+- **Packages**: insightface, onnxruntime
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_iqa_score` [↑](#categories)
 > TOPIQ-face face quality (higher=better) · ↑ higher=better
