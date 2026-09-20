@@ -1,17 +1,13 @@
-"""World Consistency Score --- Object Permanence + Causal Compliance (2025).
+"""Reference-free frame-embedding stability heuristic for videos.
 
-Paper: https://arxiv.org/abs/2508.00144
+Up to twelve sampled frames are encoded with DINOv2 or CLIP, then consecutive
+similarity, pairwise-similarity variance, and abrupt similarity drops are fused
+into ``world_consistency_score`` in [0, 1]; higher means smoother, more stable
+global embeddings. The method does not track objects, relations, or causes, so
+it cannot establish object permanence or causal compliance and may reward a
+static video. Backend scores can differ.
 
-Uses DINOv2 (preferred) or CLIP to track visual consistency across video
-frames.  Measures embedding drift and object permanence by computing
-how stable deep features remain over time.
-
-Sub-scores:
-  - Object permanence: mean cosine similarity of consecutive frame embeddings
-  - Relation stability: low variance in pairwise embedding similarities
-  - Causal compliance: smooth monotonic drift (not abrupt jumps)
-
-world_consistency_score --- higher = better (0-1 range)
+Concept basis: https://arxiv.org/abs/2508.00144
 """
 
 import logging

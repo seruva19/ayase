@@ -1,9 +1,19 @@
-"""Learned image-to-image similarity with DINOv2, CLIP, SigLIP, and LPIPS.
+"""Compare a generated image with a reference using four learned representations.
 
-All backends use their upstream pretrained weights and download them
-automatically into ``models_dir``. No proxy or heuristic score is emitted when
-a backend is unavailable. Redundant embedding transforms and alternate LPIPS
-trunks are deliberately omitted.
+This image-only module treats ``sample.path`` as the generated/candidate image
+and ``sample.reference_path`` as the corresponding target image; both must be
+files and no prompt is used. It reports DINOv2 CLS cosine similarity, mean
+same-position patch cosine similarity, CLIP and SigLIP image-embedding cosine
+similarities (each -1 to 1, higher is better), plus AlexNet LPIPS distance
+(lower is better; no fixed range is enforced). Each backend loads independently,
+so only its available outputs are set and no proxy scores are substituted.
+
+DINOv2, CLIP, and SigLIP use their Hugging Face processors and configured
+pretrained checkpoints. LPIPS converts RGB to [-1, 1] and resizes both images
+to 256x256. Model bases: https://huggingface.co/facebook/dinov2-small,
+https://huggingface.co/openai/clip-vit-base-patch32,
+https://huggingface.co/google/siglip-base-patch16-224, and
+https://github.com/richzhang/PerceptualSimilarity.
 """
 
 import logging

@@ -1,8 +1,12 @@
-"""Inception Score (IS) — EvalCrafter metric #3.
+"""Reference-free Inception Score over sampled frames from one video.
 
-Computes Inception Score by passing video frames through InceptionV3 and
-measuring the KL divergence between the conditional and marginal class
-distributions.  Higher IS = better visual quality and diversity.
+ImageNet InceptionV3 class distributions from at least two frames define
+``exp(E[KL(p(y|x) || p(y))])``. Higher values indicate confident predictions
+and diversity among sampled ImageNet labels; they do not directly establish
+visual quality, temporal coherence, or prompt fidelity. The score is sensitive
+to frame count and ImageNet domain fit, and still images are normally skipped.
+
+Metric basis: https://arxiv.org/abs/1606.03498
 """
 
 import logging

@@ -1,8 +1,21 @@
-"""Source-to-edited-video motion fidelity using dense CoTracker trajectories.
+"""Measure source-to-edited-video motion fidelity with dense CoTracker trajectories.
 
-Independently implements MTBench's trajectory protocol: positions are normalized
-by frame size, trajectories are aligned in time, converted to initial position
-plus per-step velocity, and matched by mean cosine similarity. Higher is better.
+``sample.reference_path`` is the source-motion video and ``sample.path`` is the
+edited/generated candidate; prompts and masks are not used. Each clip is uniformly
+sampled to at most ``max_frames`` and resized independently. CoTracker3 tracks a
+frame-zero point grid, coordinates are normalized by frame size, and unequal track
+lengths are temporally resampled. Initial positions plus frame-to-frame velocities
+are compared by cosine similarity, choosing the best source track for each candidate
+track and averaging. The mathematical range is -1 to 1 and higher is better.
+
+This MTBench-inspired metric uses the vendored offline CoTracker3 runtime and the
+``GD-ML/VMBench`` ``scaled_offline.pth`` checkpoint. It ignores tracker visibility,
+appearance, instruction fidelity, and edit-region masks; camera motion, sampling,
+resizing, and tracking failures can therefore affect the result.
+
+Metric basis: https://openaccess.thecvf.com/content/ICCV2025/html/Shi_Decouple_and_Track_Benchmarking_and_Improving_Video_Diffusion_Transformers_For_ICCV_2025_paper.html
+Tracker: https://github.com/facebookresearch/co-tracker
+Checkpoint: https://huggingface.co/GD-ML/VMBench
 """
 
 import logging

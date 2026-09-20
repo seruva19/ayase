@@ -1,19 +1,14 @@
-"""ISC-Audio Inception Score for Audio.
+"""Reference-free Inception Score over a dataset of audio samples.
 
-Intrinsic audio-classifier-based score adapted from Salimans et al. 2016. A
-pretrained audio tagger (PANNs CNN14 by default, optionally PaSST) produces a
-softmax distribution ``p(y|x)`` per sample; ``IS = exp( E_x[ KL(p(y|x) || p(y)) ] )``
-where ``p(y) = mean_x p(y|x)`` is the marginal. Reported as mean and std over
-``n_splits`` equal subsets so consumers can plot variance, matching the
-convention used in the original IS paper.
+PANNs CNN14 or PaSST class distributions are used to compute
+``exp(E[KL(p(y|x) || p(y))])``; the dataset outputs are split means and standard
+deviation, and higher values indicate classifier confidence combined with
+label diversity. This is not an audio-quality or prompt-fidelity measure.
+Scores depend on the classifier, sample mix, split count, and configured audio
+duration and are not comparable across backends; fewer than two usable samples
+produce no dataset metric.
 
-Dependency hint::
-
-    pip install panns_inference        # for backend = "panns_cnn14" (default)
-    pip install hear21passt            # for backend = "passt"
-
-Both backends are optional; if neither is installed the module logs a warning
-and becomes a no-op so the rest of the pipeline keeps running.
+Metric basis: https://arxiv.org/abs/1606.03498
 """
 
 import logging
