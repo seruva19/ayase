@@ -1,7 +1,12 @@
-"""VideoAlign reward model module.
+"""VideoReward preference scoring for prompt-conditioned generated videos.
 
-NeurIPS 2025. Human preference alignment scoring for video generation.
-Based on QWen2-VL reward model.
+The Qwen2-VL reward model evaluates sampled video frames and a caption across
+visual quality, motion quality, and text alignment; Ayase stores the sum of the
+three raw reward logits, where higher indicates stronger learned preference.
+Images are skipped, no fixed output range is defined, and a Hugging Face-
+compatible checkpoint with its custom model code is required.
+
+Basis: https://github.com/KwaiVGI/VideoReward
 """
 
 import logging

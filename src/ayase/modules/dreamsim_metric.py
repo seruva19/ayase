@@ -1,4 +1,9 @@
-"""DreamSim foundation model perceptual similarity module."""
+"""Measure perceptual distance with DreamSim on images or sampled video frames.
+
+With a reference, paired frames are averaged; a reference-free video instead compares
+successive sampled frames, while a reference-free image is not scored. Lower is more
+similar; the distance has no fixed range. Basis: https://github.com/ssundaram21/dreamsim
+"""
 
 import logging
 import os

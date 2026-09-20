@@ -1,4 +1,9 @@
-"""MANIQA (Multi-dimension Attention NR-IQA) module."""
+"""Estimate no-reference perceptual image quality with MANIQA.
+
+Uses the PyIQA MANIQA model on images or uniformly sampled video frames and averages frame
+scores; it does not assess temporal quality. Higher is better, with no fixed range assumed.
+Basis: https://github.com/chaofengc/IQA-PyTorch
+"""
 
 import logging
 from typing import Optional

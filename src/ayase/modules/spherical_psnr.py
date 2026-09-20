@@ -1,8 +1,11 @@
-"""Spherical PSNR metrics — S-PSNR, WS-PSNR, CPP-PSNR (MPEG/JVET).
+"""Full-reference PSNR variants for equirectangular 360-degree images.
 
-GitHub: https://github.com/Samsung/360tools
+Compares a grayscale image with a resized reference and reports unweighted,
+cosine-latitude-weighted, and CPP-weighted PSNR in dB; higher is better. The
+``s_psnr`` output is planar equirectangular PSNR, not point-sampled S-PSNR, and
+this implementation does not decode videos or perform spherical reprojection.
 
-s_psnr, ws_psnr, cpp_psnr — all dB, higher = better
+Basis: https://github.com/Samsung/360tools
 """
 
 import logging

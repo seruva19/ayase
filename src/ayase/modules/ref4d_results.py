@@ -1,4 +1,10 @@
-"""Import Ref4D-VideoBench dimension predictions."""
+"""Import externally computed Ref4D-VideoBench dimension results.
+
+Reads semantic, event, motion, and world CSV scores matched to image or video samples and
+averages available dimensions for the overall score. This adapter does not run Ref4D,
+compute the dimension metrics, or validate imported values; upstream 0-100 bounds are only
+declared for semantic, event, and motion. Basis: https://github.com/TAILab-W/Ref4D-VideoBench
+"""
 
 import logging
 from pathlib import Path

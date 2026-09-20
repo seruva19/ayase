@@ -1,6 +1,10 @@
-"""TReS (Transformer for Relative Score) IQA module.
+"""No-reference perceptual quality scoring with the TReS transformer model.
 
-WACV 2022. Vision transformer-based NR-IQA with relative ranking.
+PyIQA's TReS backend scores an image without a reference; higher is better.
+For videos Ayase averages up to four sampled-frame scores, so the result covers
+spatial frame quality rather than motion or temporal consistency.
+
+Basis: https://github.com/isalirezag/TReS
 """
 
 import logging

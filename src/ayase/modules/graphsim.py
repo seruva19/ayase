@@ -1,4 +1,10 @@
-"""GraphSIM — Graph Signal Gradient Quality for Point Clouds (2020). graphsim_score — higher = better"""
+"""Compare a point cloud with a reference using a GraphSIM-inspired gradient proxy.
+
+Only PLY and PCD inputs are supported. This lightweight Open3D/SciPy implementation
+compares local geometry or color-gradient statistics over at most 1,000 points; it is not
+the official GraphSIM algorithm. Scores are in (0, 1], and higher is better.
+Basis: https://arxiv.org/abs/2006.12447
+"""
 
 import logging
 import numpy as np

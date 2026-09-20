@@ -1,7 +1,11 @@
-"""VideoScore2 multi-dimensional generative video evaluation module.
+"""Multi-dimensional VideoScore2 evaluation for prompt-conditioned generated media.
 
-3 dimensions: visual quality, text-to-video alignment, and
-physical/common-sense consistency. arXiv 2025.
+The VLM accepts an image or video plus its caption and reports visual quality,
+text alignment, and physical/common-sense consistency on 1--5 scales; higher
+is better. Video input is sampled at the configured inference FPS. Scores are
+model judgments, and the default sampled decoding can make repeated runs vary.
+
+Basis: https://huggingface.co/TIGER-Lab/VideoScore2
 """
 
 import logging

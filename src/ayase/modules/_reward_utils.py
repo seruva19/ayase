@@ -1,4 +1,11 @@
-"""Shared helpers for prompt-conditioned image reward modules."""
+"""Internal I/O helpers for prompt-conditioned image reward modules.
+
+This helper computes no metric. It resolves prompts, loads and optionally
+resizes RGB images, builds PNG data URLs, and calls an OpenAI-compatible chat
+completions endpoint; parsing and reward semantics remain with each caller.
+
+Protocol basis: https://platform.openai.com/docs/api-reference/chat
+"""
 
 from __future__ import annotations
 
