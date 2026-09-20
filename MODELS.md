@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 14:33 · **284 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 15:15 · **284 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -1425,8 +1425,9 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 - **Install**: `pip install rtmlib`
 
 ### `silero-vad` [↑](#categories)
+> Official package; MIT license
 
-- **Used by**: `silent_lip_stability`
+- **Used by**: `silent_lip_stability`, `speech_pause_rhythm`
 - **Install**: `pip install silero-vad`
 
 ### `stlpips-pytorch` [↑](#categories)

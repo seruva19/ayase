@@ -165,6 +165,7 @@ _IMPORTS = [
     ("VoiceIdentityModule", ".voice_identity"),
     ("AudioLogF0DTWModule", ".audio_log_f0_dtw"),
     ("AudioProsodyDTWModule", ".audio_prosody_dtw"),
+    ("SpeechPauseRhythmModule", ".speech_pause_rhythm"),
     ("AudioPESQModule", ".audio_pesq"),
     ("AudioSQUIMObjectiveModule", ".audio_squim_objective"),
     ("CDPAMModule", ".cdpam"),
