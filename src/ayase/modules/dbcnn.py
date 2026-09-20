@@ -1,4 +1,12 @@
-"""DBCNN (Deep Bilinear CNN) quality module."""
+"""Blind image quality prediction with a deep bilinear CNN (DB-CNN).
+
+DB-CNN combines streams specialized for synthetic and authentic distortions.
+Ayase uses PyIQA's KonIQ checkpoint; higher is better and the documented range
+is only approximately 0--1. Videos average up to eight sampled-frame scores,
+so their motion and temporal artifacts are not assessed.
+
+Basis: https://github.com/zwx8981/DBCNN
+"""
 
 import logging
 from typing import List, Optional

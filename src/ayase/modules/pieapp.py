@@ -1,4 +1,12 @@
-"""PieAPP (Perceptual Image-Error Assessment through Pairwise Preference) module."""
+"""Measure full-reference perceptual image error with the PyIQA PieAPP model.
+
+The sample is compared with reference_path; videos are reduced to matched
+sampled frame pairs, resized to a common size, and averaged. Lower scores mean
+closer perceptual agreement. PyIQA documents a rough 0-5 range, not a guaranteed
+bound. This frame-averaged use does not assess temporal consistency.
+
+Basis: https://openaccess.thecvf.com/content_cvpr_2018/html/Prashnani_PieAPP_Perceptual_Image-Error_CVPR_2018_paper.html
+"""
 
 import logging
 from typing import Optional
