@@ -1,7 +1,15 @@
-"""Spatial relationship verification between caption keywords and detected bounding boxes.
+"""Heuristically check caption spatial keywords against existing detections.
 
-Checks positional constraints (left/right/top/bottom/center/foreground/background)
-mentioned in the caption against object detection coordinates."""
+This sample-level validator requires caption text, image dimensions, and
+precomputed detections whose boxes are interpreted as (x, y, width, height).
+It substring-matches seven region/depth keyword groups and checks whether any
+caption-mentioned object label falls in a fixed box region; it emits INFO issues
+but no score. It does not parse relations between two objects, track objects
+over video, infer depth, or run a detector, so foreground/background are only
+box-height proxies.
+
+Basis: https://github.com/seruva19/ayase
+"""
 
 import logging
 from typing import List, Dict

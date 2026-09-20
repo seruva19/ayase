@@ -1,7 +1,13 @@
-"""HDR-ChipQA module.
+"""No-reference HDR video quality prediction with HDR-ChipQA.
 
-This module runs the HDR-ChipQA feature extractor and LIVE-HDR SVR from the
-bundled source tree. The pipeline expects raw YUV HDR input.
+Ayase runs the bundled HDR-ChipQA feature extractor, fitted scaler, and SVR
+trained on LIVE-HDR. Only raw .yuv videos are accepted; width, height, bit
+depth, and colour space come from configuration (default 3840x2160, 10-bit,
+BT.2020), so mismatched metadata invalidates the result. The raw MOS-regression
+prediction is higher-is-better and has no universal fixed range. Compressed
+containers, SDR content, and still images are not scored.
+
+Basis: https://arxiv.org/abs/2304.13156
 """
 
 import logging

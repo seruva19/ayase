@@ -1,11 +1,13 @@
-"""SSIM-C (Complex Wavelet SSIM variant) module.
+"""Full-reference color SSIM for images and position-paired video frames.
 
-SSIM-C is a variant of SSIM that operates in the complex wavelet domain,
-providing better correlation with human perception than plain SSIM.
+PyIQA's ssimc is ordinary SSIM evaluated on color channels, not complex-wavelet
+SSIM. It requires reference_path and reports a 0--1 similarity where higher is
+better and 1 denotes identical inputs. Images are compared once; videos average
+up to eight independently sampled frame pairs after resizing each pair to common
+dimensions. This frame-wise adaptation does not synchronize streams or measure
+temporal quality.
 
-Range: 0-1 (higher = better quality, 1 = identical).
-
-Uses the ``pyiqa`` package.
+Basis: https://github.com/chaofengc/IQA-PyTorch
 """
 
 import logging

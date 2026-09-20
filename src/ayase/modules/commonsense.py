@@ -1,11 +1,15 @@
-"""Common sense adherence module — VBench-2.0 dimension.
+"""Estimate per-sample visual plausibility from one representative frame.
 
-Checks if generated images/videos follow common sense rules (object
-placement, interaction plausibility, layout consistency).
-
-Backend tiers:
-  1. **VLM** — LLaVA-1.5-7b with structured scoring prompt
-  2. **ViLT** — ViLT VQA with 5 diagnostic questions -> numeric score
+The preferred ``llava-hf/llava-1.5-7b-hf`` backend receives a fixed English
+prompt asking for 1-5 ratings of location plausibility, interaction sense, and
+layout consistency; their sum is divided by 15 and clipped to [0, 1], with
+higher values reflecting the model's plausibility judgment. If LLaVA cannot be
+loaded, ``dandelin/vilt-b32-finetuned-vqa`` answers five fixed questions and the
+fallback score is simply the fraction answered ``yes``. That yes-rate is a
+diagnostic heuristic, not equivalent to the LLaVA rubric or a calibrated
+commonsense probability. The module uses no sample caption, generation prompt,
+reference media, temporal evidence, or dataset aggregation; model and language
+limitations follow the selected checkpoint.
 """
 
 import logging

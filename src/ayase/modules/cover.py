@@ -1,11 +1,14 @@
-"""COVER (Comprehensive Video Quality Evaluator) module.
+"""Run the native COVER semantic, aesthetic, and technical quality evaluator.
 
-3-branch architecture: semantic + aesthetic + technical.
-Winner of AIS 2024 VQA Challenge at CVPR 2024.
-
-The ``cover_*`` fields are produced only by the native COVER model. When
-the COVER package is not installed the metric is left unset (no proxy).
-GitHub: https://github.com/vztu/COVER
+Each image is passed as one frame; each video contributes up to eight uniformly
+sampled RGB frames. The native model's raw ``technical``, ``aesthetic``,
+``semantic``, and ``overall`` outputs populate the corresponding ``cover_*``
+fields, without normalization or an asserted range; larger ``cover_score`` is
+treated as better by the configurable low-quality threshold. This is a
+per-sample, no-reference evaluator and does not consume captions or generation
+prompts. Scores are produced only by the native pretrained COVER package, whose
+training-domain and scale limitations apply; no proxy is used when unavailable.
+Model and method source: https://github.com/vztu/COVER
 """
 
 import logging

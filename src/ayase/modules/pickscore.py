@@ -1,8 +1,13 @@
-"""PickScore module.
+"""Prompt-conditioned image preference scoring with PickScore.
 
-This module loads PickScore through the Hugging Face transformers backend.
-Images are scored directly; videos are scored by uniformly sampling frames
-and averaging frame scores.
+The prompt comes from sample.caption or a same-stem .txt sidecar. Ayase computes
+PickScore's scaled text-image cosine logit for an image, or averages up to five
+sampled video-frame logits. Higher values indicate stronger relative preference
+for candidates under the same prompt, but the raw logit is neither a probability
+nor a bounded absolute quality score. Video averaging is a frame-level extension
+and does not assess motion or temporal consistency.
+
+Basis: https://github.com/yuvalkirstain/PickScore
 """
 
 import logging

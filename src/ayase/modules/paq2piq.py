@@ -1,7 +1,12 @@
-"""PaQ-2-PiQ (Patches to Pictures) quality module.
+"""No-reference perceptual image-quality scoring with PaQ-2-PiQ.
 
-CVPR 2020. Trained on largest subjective database (40K images).
-Maps perceptual space from patches to global quality predictions.
+PyIQA's ``paq2piq`` model scores one image or averages up to four uniformly
+sampled video frames; higher means greater model-predicted perceptual quality
+and the wrapper imposes no range. Video output contains no motion or temporal
+assessment, and predictions inherit the model's image-content, capture, and
+subjective-training-domain limits.
+
+Model basis: https://github.com/baidut/PaQ-2-PiQ
 """
 
 import logging

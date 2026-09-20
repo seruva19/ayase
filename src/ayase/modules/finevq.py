@@ -1,8 +1,13 @@
-"""FineVQ — fine-grained video quality assessment.
+"""No-reference UGC video quality scoring with the FineVQ checkpoint.
 
-Runs the real FineVQ model from HuggingFace (``IntMeGroup/FineVQ_score``).
-When the model cannot be loaded the metric is left unset — there is no
-handcrafted stand-in for the named FineVQ score.
+Ayase loads IntMeGroup/FineVQ_score, samples up to eight video frames, and
+stores the mean logits/tensor output (or a returned score) without clamping;
+higher denotes better predicted quality, but no fixed numeric range is assumed.
+The adapter also accepts one still image, although FineVQ was developed for
+fine-grained video assessment. Missing or incompatible remote-code models leave
+the field unset, and the configured sub-dimension weights are not applied here.
+
+Basis: https://github.com/IntMeGroup/FineVQ
 """
 
 import logging
