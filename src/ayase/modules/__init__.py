@@ -136,6 +136,7 @@ _IMPORTS = [
     ("NearIDModule", ".nearid"),
     ("MaSCModule", ".masc"),
     ("ExpressionFollowingModule", ".expression_following"),
+    ("GazeDynamicsModule", ".gaze_dynamics"),
     ("FaceMotionPreservationModule", ".face_motion_preservation"),
     ("PoseHeatSSIMModule", ".pose_heat_ssim"),
     ("SilentLipStabilityModule", ".silent_lip_stability"),
