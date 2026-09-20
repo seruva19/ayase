@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **voice_identity_drift**: added temporal ECAPA-TDNN speaker-embedding coverage, tail, opt-in threshold-run, and normalized trend diagnostics against a reference voice set.
 - **gaze_dynamics**: added separate MediaPipe eye-look activation location, amplitude, speed, binocular-disagreement, and coverage diagnostics for unaligned reference videos.
 - **speech_pause_rhythm**: added transparent Silero-VAD speech-span, activity, internal-pause, and normalized timing-pattern diagnostics for matching-content reference speech.
 - **cvvdp_ml_saliency**: added the official experimental saliency-weighted ColorVideoVDP learned regressor for aligned full-reference streaming-distortion assessment.

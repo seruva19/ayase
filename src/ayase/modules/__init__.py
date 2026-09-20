@@ -164,6 +164,7 @@ _IMPORTS = [
     # --- Audio ---
     ("AudioModule", ".audio"),
     ("VoiceIdentityModule", ".voice_identity"),
+    ("VoiceIdentityDriftModule", ".voice_identity_drift"),
     ("AudioLogF0DTWModule", ".audio_log_f0_dtw"),
     ("AudioProsodyDTWModule", ".audio_prosody_dtw"),
     ("SpeechPauseRhythmModule", ".speech_pause_rhythm"),

@@ -952,6 +952,13 @@ class QualityMetrics(BaseModel):
     voice_identity: Optional[float] = None  # Mean speaker-embedding cosine similarity to a reference set of the person (higher=better)
     voice_identity_max: Optional[float] = None  # Best speaker similarity over the reference set (higher=better)
     voice_identity_coverage: Optional[float] = None  # Share of reference files that yielded a speaker embedding (0-1)
+    voice_identity_window_coverage: Optional[float] = None  # Valid ECAPA candidate windows / scheduled windows (0-1)
+    voice_identity_reference_coverage: Optional[float] = None  # Valid ECAPA reference embeddings / selected references (0-1)
+    voice_identity_similarity_p05: Optional[float] = None  # Fifth-percentile window cosine similarity to reference centroid (-1 to 1)
+    voice_identity_similarity_min: Optional[float] = None  # Minimum window cosine similarity to reference centroid (-1 to 1)
+    voice_identity_below_threshold_fraction: Optional[float] = None  # Valid windows below caller threshold (0-1)
+    voice_identity_longest_below_threshold_run_fraction: Optional[float] = None  # Longest below-threshold run / scheduled windows (0-1)
+    voice_identity_drift_slope: Optional[float] = None  # Cosine-similarity trend per normalized scheduled sequence
     multi_subject_identity_worst: Optional[float] = None  # Lowest per-subject identity similarity in a multi-person clip (higher=better)
     multi_subject_identity_mean: Optional[float] = None  # Mean per-subject identity similarity in a multi-person clip (higher=better)
     multi_subject_identity_coverage: Optional[float] = None  # Share of sampled frames covered by the assigned face tracks (0-1)
