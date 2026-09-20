@@ -1,4 +1,13 @@
-"""ARNIQA quality assessment module."""
+"""No-reference perceptual image quality using ARNIQA's distortion manifold.
+
+The PyIQA default uses the KonIQ-trained regressor and reports a 0--1 score,
+where higher is better. Ayase scores one image or averages uniformly sampled
+video frames; video results therefore contain no native motion or temporal
+quality assessment. ARNIQA learns its representation self-supervised from
+synthetic degradation sequences before fitting a dataset-specific regressor.
+
+Basis: https://github.com/miccunifi/ARNIQA
+"""
 
 import logging
 from typing import List, Optional

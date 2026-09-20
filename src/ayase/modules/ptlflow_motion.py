@@ -1,7 +1,11 @@
-"""ptlflow optical flow motion module.
+"""Estimate video motion as mean dense-flow magnitude from PTLFlow/DPFlow.
 
-From Data-Juicer's video_motion_score_ptlflow_filter.
-Uses ptlflow library with dpflow model for optical flow estimation.
+The module evaluates consecutive sampled frames and averages the DPFlow vector
+magnitudes. A higher value means more estimated displacement, not better video
+quality. The score has no fixed range and is not normalized for resolution,
+frame interval, or sampling, so comparisons require a consistent pipeline.
+
+Model basis: https://github.com/hmorimitsu/ptlflow/tree/main/ptlflow/models/dpflow
 """
 
 import logging

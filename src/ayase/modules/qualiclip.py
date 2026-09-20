@@ -1,4 +1,12 @@
-"""QualiCLIP opinion-unaware quality assessment module."""
+"""Estimate no-reference frame quality with the PyIQA QualiCLIP model.
+
+QualiCLIP is a quality-aware CLIP method trained without human opinion scores.
+PyIQA defines its output on a 0-1 scale with higher values indicating better
+perceptual quality. Images are scored once; videos are represented by sampled
+frames whose scores are averaged, so temporal consistency is not measured.
+
+Basis: https://github.com/miccunifi/QualiCLIP
+"""
 
 import logging
 from typing import Optional

@@ -1,6 +1,11 @@
-"""CKDN (Degraded-Reference IQA via Knowledge Distillation) module.
+"""Degraded-reference IQA for restored images using CKDN knowledge distillation.
 
-FR-IQA using knowledge distillation from teacher to student network.
+The sample is the restored image and ``reference_path`` should be the degraded
+input to the restoration model, not pristine ground truth. PyIQA reports a 0--1
+score where higher is better. Video support averages up to four position-paired
+frame scores, an adaptation beyond the image-based CKDN evaluation setting.
+
+Basis: https://github.com/researchmm/CKDN
 """
 
 import logging
