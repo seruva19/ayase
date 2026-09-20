@@ -1,22 +1,25 @@
-"""ImageBind audio-text alignment score.
+"""ImageBind audio-text and audio-video semantic correspondence.
 
-Computes cosine similarity between an audio sample and its caption in the
-joint ImageBind embedding space (Girdhar et al., CVPR 2023). Useful as a
-video-to-audio (v2a) generation evaluation metric, since ImageBind aligns
-six modalities (image, text, audio, depth, IMU, thermal) into a single
-1024-dim space.
+``imagebind_av_score`` follows ``calc_imagebind_score(...).sim_av`` from the
+official JavisBench implementation in JavisDiT commit ``6821b8d``: it is the
+raw cosine similarity between the paired ImageBind video and audio embeddings.
+The theoretical cosine range is [-1, 1], and higher means stronger semantic
+audio-video correspondence. It does **not** measure synchronization, event
+timing, perceptual quality, speaker/subject identity, or causal correctness.
 
-The score ``imagebind_score`` is in [0, 1], higher means the generated audio
-better matches the textual prompt.
+The vendored ImageBind preprocessing samples five 2-second video clips (two
+uniformly sampled frames and three spatial crops per clip) and three 2-second
+audio clips across the complete files. ImageBind averages those clip embeddings
+before the cosine is computed. This is file-level sampling, not an aligned or
+sliding audio-video window calculation.
 
-Backend: ``imagebind_huge`` from the vendored ImageBind source
-(https://github.com/facebookresearch/ImageBind).
-
-``QualityMetrics.imagebind_score`` stores the per-sample scalar.
+The existing ``imagebind_score`` remains the remapped [0, 1] audio-text cosine.
+Both fields use the vendored ``imagebind_huge`` research backend. ImageBind is
+licensed CC BY-NC-SA 4.0, so this backend is constrained to non-commercial,
+share-alike research use rather than unrestricted commercial use.
 """
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -29,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class ImageBindScoreModule(PipelineModule):
     name = "imagebind_score"
-    description = "ImageBind audio-text alignment cosine similarity score"
+    description = "ImageBind audio-text and audio-video semantic cosine similarities"
     default_config = {
         "model_name": "imagebind_huge",
         "sample_rate": 16000,
@@ -40,14 +43,24 @@ class ImageBindScoreModule(PipelineModule):
         {
             "id": "imagebind_huge",
             "type": "other",
-            "task": "ImageBind joint multimodal embedding for audio-text alignment",
+            "task": "ImageBind joint multimodal embedding for audio-text and audio-video alignment",
+            "notes": (
+                "Vendored facebookresearch/ImageBind research backend under CC BY-NC-SA 4.0; "
+                "audio-video scoring follows JavisVerse/JavisDiT calc_imagebind_score "
+                "sim_av at commit 6821b8d"
+            ),
         },
     ]
     metric_info = {
         "imagebind_score": "ImageBind audio-text alignment cosine similarity (0-1, higher=better)",
+        "imagebind_av_score": (
+            "Raw ImageBind audio-video embedding cosine similarity (-1 to 1 theoretical; "
+            "higher=greater semantic correspondence, not synchronization)"
+        ),
     }
     metric_groups = {
         "imagebind_score": "audio",
+        "imagebind_av_score": "alignment",
     }
     vendor_components = ("imagebind",)
 
@@ -159,30 +172,36 @@ class ImageBindScoreModule(PipelineModule):
             return sample
 
         caption = _caption_text(sample)
-        if not caption:
+        video_path = sample.path if sample.is_video else None
+        if not caption and video_path is None:
             return sample
 
         try:
-            audio = load_audio(sample.path, target_sr=self.sample_rate, duration=10.0)
+            # Preserve the complete track. The official ImageBind loader then
+            # selects its fixed number of clips across the full duration.
+            audio = load_audio(sample.path, target_sr=self.sample_rate, duration=None)
             if audio is None or len(audio) == 0:
                 return sample
 
-            score = self._score(audio, caption)
-            if score is None:
+            scores = self._score(audio, caption=caption, video_path=video_path)
+            if not scores:
                 return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.imagebind_score = float(score)
+            for field, score in scores.items():
+                setattr(sample.quality_metrics, field, float(score))
+                sample.quality_metrics.metric_backends[field] = str(self._backend)
 
-            if score < self.warning_threshold:
+            text_score = scores.get("imagebind_score")
+            if text_score is not None and text_score < self.warning_threshold:
                 sample.validation_issues.append(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
-                        message=f"Low ImageBind audio-text alignment: {score:.3f}",
+                        message=f"Low ImageBind audio-text alignment: {text_score:.3f}",
                         details={
-                            "imagebind_score": float(score),
-                            "caption": caption[:80],
+                            "imagebind_score": float(text_score),
+                            "caption": caption[:80] if caption else "",
                             "threshold": float(self.warning_threshold),
                         },
                     )
@@ -192,71 +211,128 @@ class ImageBindScoreModule(PipelineModule):
         return sample
 
     # ------------------------------------------------------------------
-    def _score(self, audio, caption: str) -> Optional[float]:
-        """Compute audio-text cosine similarity via ImageBind.
+    def _score(
+        self,
+        audio,
+        caption: Optional[str] = None,
+        video_path: Optional[Path] = None,
+    ) -> dict[str, float]:
+        """Compute requested ImageBind similarities in one model call.
 
-        ``imagebind.data.load_and_transform_audio_data`` operates on file
-        paths (it internally loads with torchaudio and builds mel-spectrogram
-        clips), so we materialise the already-resampled mono PCM array to a
-        temporary WAV file. This keeps the API contract identical to the
-        upstream ImageBind examples.
+        Audio uses the same three 2-second clip sampler, mel transform and
+        normalization as ImageBind's official file loader, applied directly to
+        Ayase's already decoded 16-kHz mono PCM. This avoids Torchaudio's
+        version-dependent optional TorchCodec decoder without changing the
+        embedding input. Video applies the released ImageBind transforms
+        directly, omitting only an obsolete ``EncodedVideo`` keyword rejected
+        by current PyTorchVideo, and matches JavisBench preprocessing.
         """
         try:
             import numpy as np
             import torch
         except ImportError as e:
             logger.debug("ImageBind scoring missing deps: %s", e)
-            return None
+            return {}
 
-        tmp_path: Optional[Path] = None
         try:
-            import soundfile as sf
-
             audio_arr = np.asarray(audio, dtype=np.float32)
             if audio_arr.ndim > 1:
                 audio_arr = audio_arr.mean(axis=1).astype(np.float32)
-
-            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-            tmp.close()
-            tmp_path = Path(tmp.name)
-            sf.write(str(tmp_path), audio_arr, self.sample_rate, subtype="PCM_16")
 
             ModalityType = self._modality_type
             data = self._data_module
 
             inputs = {
-                ModalityType.TEXT: data.load_and_transform_text(
-                    [caption], self._device
-                ),
-                ModalityType.AUDIO: data.load_and_transform_audio_data(
-                    [str(tmp_path)], self._device
-                ),
+                ModalityType.AUDIO: self._transform_audio_array(audio_arr)
             }
+            if caption:
+                inputs[ModalityType.TEXT] = data.load_and_transform_text(
+                    [caption], self._device
+                )
+            if video_path is not None:
+                inputs[ModalityType.VISION] = self._transform_video_path(video_path)
 
             with torch.no_grad():
                 embeddings = self._model(inputs)
                 audio_emb = embeddings[ModalityType.AUDIO]
-                text_emb = embeddings[ModalityType.TEXT]
+                cosine = torch.nn.CosineSimilarity(dim=-1, eps=1e-6)
+                scores: dict[str, float] = {}
 
-                # If audio was chunked into multiple clips, average them.
-                if audio_emb.dim() == 3:
-                    audio_emb = audio_emb.mean(dim=1)
+                if caption:
+                    text_emb = embeddings[ModalityType.TEXT]
+                    text_cosine = cosine(audio_emb, text_emb).item()
+                    # Historical Ayase contract for imagebind_score.
+                    scores["imagebind_score"] = float((text_cosine + 1.0) / 2.0)
 
-                audio_emb = audio_emb / audio_emb.norm(dim=-1, keepdim=True).clamp_min(1e-8)
-                text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True).clamp_min(1e-8)
+                if video_path is not None:
+                    video_emb = embeddings[ModalityType.VISION]
+                    # JavisBench sim_av is the unscaled cosine.
+                    scores["imagebind_av_score"] = float(
+                        cosine(audio_emb, video_emb).item()
+                    )
 
-                sim = (audio_emb @ text_emb.T).item()
-
-            return float((sim + 1.0) / 2.0)
+            return scores
         except Exception as e:
             logger.debug("ImageBind scoring failed: %s", e)
-            return None
-        finally:
-            if tmp_path is not None:
-                try:
-                    tmp_path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+            return {}
+
+    def _transform_audio_array(self, audio) -> object:
+        """Apply ImageBind's released audio preprocessing to decoded mono PCM."""
+        import torch
+
+        data = self._data_module
+        waveform = torch.as_tensor(audio, dtype=torch.float32).reshape(1, -1)
+        sampler = data.ConstantClipsPerVideoSampler(
+            clip_duration=2, clips_per_video=3
+        )
+        points = data.get_clip_timepoints(
+            sampler, waveform.size(1) / float(self.sample_rate)
+        )
+        normalize = data.transforms.Normalize(mean=-4.268, std=9.138)
+        clips = []
+        for start, end in points:
+            clip = waveform[
+                :, int(start * self.sample_rate) : int(end * self.sample_rate)
+            ]
+            mel = data.waveform2melspec(
+                clip,
+                self.sample_rate,
+                num_mel_bins=128,
+                target_length=204,
+            )
+            clips.append(normalize(mel).to(self._device))
+        return torch.stack([torch.stack(clips, dim=0)], dim=0)
+
+    def _transform_video_path(self, video_path: Path) -> object:
+        """Apply ImageBind's released five-clip/three-crop video preprocessing."""
+        import torch
+
+        data = self._data_module
+        video = data.EncodedVideo.from_path(
+            str(video_path), decoder="decord", decode_audio=False
+        )
+        sampler = data.ConstantClipsPerVideoSampler(
+            clip_duration=2, clips_per_video=5
+        )
+        points = data.get_clip_timepoints(sampler, video.duration)
+        frame_sampler = data.pv_transforms.UniformTemporalSubsample(num_samples=2)
+        transform = data.transforms.Compose(
+            [
+                data.pv_transforms.ShortSideScale(224),
+                data.NormalizeVideo(
+                    mean=(0.48145466, 0.4578275, 0.40821073),
+                    std=(0.26862954, 0.26130258, 0.27577711),
+                ),
+            ]
+        )
+        clips = []
+        for start, end in points:
+            decoded = video.get_clip(start, end)
+            if decoded is None:
+                raise ValueError("ImageBind found no decodable video clip")
+            clips.append(transform(frame_sampler(decoded["video"]) / 255.0))
+        crops = data.SpatialCrop(224, num_crops=3)(clips)
+        return torch.stack([torch.stack(crops, dim=0)], dim=0).to(self._device)
 
 
 def _caption_text(sample: Sample) -> Optional[str]:

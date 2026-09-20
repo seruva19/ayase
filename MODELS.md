@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 17:23 · **284 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 20:05 · **284 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -1014,7 +1014,8 @@ Model backends declared by modules that are not distributed through the sources 
 ### `imagebind_huge` [↑](#categories)
 
 - **Used by**: `imagebind_score`
-- **Task**: ImageBind joint multimodal embedding for audio-text alignment
+- **Task**: ImageBind joint multimodal embedding for audio-text and audio-video alignment
+- **Notes**: Vendored facebookresearch/ImageBind research backend under CC BY-NC-SA 4.0; audio-video scoring follows JavisVerse/JavisDiT calc_imagebind_score sim_av at commit 6821b8d
 
 ### <a href="https://github.com/deepinsight/insightface/releases/tag/model-zoo" target="_blank">`insightface/buffalo_l`</a> [↑](#categories)
 
