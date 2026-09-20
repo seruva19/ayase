@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 16:07 · **390 modules** · **568 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 17:13 · **391 modules** · **580 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **382/390 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **383/391 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**390** modules · **654** output fields · **568** metrics · **280** tiered · **183** GPU · **21** categories
+**391** modules · **666** output fields · **580** metrics · **281** tiered · **184** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -30,7 +30,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-58-metrics) (58) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-54-metrics) (54) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-70-metrics) (70) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-54-metrics) (54) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -3118,7 +3118,7 @@
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (58 metrics)
+## Motion & Dynamics (70 metrics)
 
 ### `aigv_dynamic` [↑](#categories)
 > AI video dynamic degree
@@ -3333,6 +3333,126 @@
 - **Tests**: covered by [`test_advanced_flow.py`](tests/modules/per_module/test_advanced_flow.py), [`test_flow_resolution_cap.py`](tests/modules/test_flow_resolution_cap.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `use_large_model=True`, `max_frames=150`, `max_resolution=512`
 
+### `hand_gesture_articulation_amplitude_difference` [↑](#categories)
+> Finger-straightness p90-p10 span difference (0-1, 0=equal) · 0=equal; range 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_articulation_location_difference` [↑](#categories)
+> Median finger-straightness difference (0-1, 0=equal) · 0=equal; range 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_articulation_speed_difference` [↑](#categories)
+> Median normalized hand-shape speed difference per second (0=equal)
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_left_right_asymmetry_difference` [↑](#categories)
+> Normalized left/right shape-speed asymmetry difference (0-1, 0=equal) · 0=equal; range 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_openness_amplitude_difference` [↑](#categories)
+> Palm-normalized openness span difference (0=equal)
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_openness_location_difference` [↑](#categories)
+> Median palm-normalized openness difference (0=equal)
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_pinch_amplitude_difference` [↑](#categories)
+> Palm-normalized pinch span difference (0=equal) · ↓ lower=better
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_pinch_location_difference` [↑](#categories)
+> Median palm-normalized thumb-index distance difference (0=equal) · ↓ lower=better
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_reference_coverage` [↑](#categories)
+> Reference frames with at least one normalizable hand (0-1) · 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_reference_joint_observability` [↑](#categories)
+> Confident reference hand joints among 42 per sampled frame (0-1) · 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_sample_coverage` [↑](#categories)
+> Sample frames with at least one normalizable hand (0-1) · 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
+### `hand_gesture_sample_joint_observability` [↑](#categories)
+> Confident sample hand joints among 42 per sampled frame (0-1) · 0-1
+
+**[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
+
+- **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Packages**: opencv-python, rtmlib
+- **Tests**: covered by [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py)
+- **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
+
 ### `head_motion_dynamics_score` [↑](#categories)
 > THEval pose/translation complexity (higher=more dynamic) · ↑ higher=better · higher=more dynamic
 
@@ -3501,7 +3621,7 @@
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
-- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py), +5 more
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +6 more
 - **Config**: `sample_rate=5`, `low_motion_threshold=0.5`, `high_motion_threshold=20.0`
 
 ### `motion_smoothness` [↑](#categories)
