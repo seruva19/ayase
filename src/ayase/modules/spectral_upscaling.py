@@ -1,7 +1,14 @@
-"""Fake HD / upscaled content detection via FFT high-frequency energy analysis.
+"""Flag possible upscaling from a single frame's high-frequency FFT energy.
 
-Real high-resolution content has significant energy in high frequencies,
-while upscaled content shows a sharp spectral drop-off. Warns on low HF energy ratios."""
+Ayase analyzes one image or the middle video frame and computes the fraction of
+FFT magnitude outside a large central frequency rectangle. A lower 0--1 ratio
+triggers a warning at the configured threshold; no metric field is stored.
+This is a no-reference heuristic, not proof of source resolution: blur,
+denoising, compression, and naturally smooth content can produce the same
+signature. The sample_rate setting is not used by this implementation.
+
+Basis: https://github.com/seruva19/ayase
+"""
 
 import logging
 import cv2

@@ -1,17 +1,14 @@
-"""Depth Map Quality module.
+"""Score heuristic properties of MiDaS depth predicted from each sample.
 
-Evaluates the quality of monocular depth estimation:
-
-  depth_quality — 0-100 (higher = better depth map quality)
-
-Aspects assessed:
-  - Sharpness: depth map edge crispness (Laplacian variance)
-  - Completeness: percentage of valid (non-zero) depth pixels
-  - Discontinuity preservation: edges in RGB should align with
-    depth edges (gradient correlation)
-
-Uses MiDaS (small) for depth estimation, then evaluates the
-quality of the resulting depth map against the RGB image.
+The selected MiDaS model (``MiDaS_small`` by default) predicts depth from an
+image or from every tenth frame among at most the first 30 video frames.
+``depth_quality`` averages a 0-100 weighted heuristic: 40% capped depth-map
+Laplacian variance, 25% nonzero-pixel completeness, and 35% overlap of depth
+edges with edges in the same RGB input. Higher means stronger evidence under
+those rules, not verified depth accuracy. There is no ground-truth/reference
+depth, caption, prompt, temporal-consistency term, or dataset aggregation.
+Results inherit MiDaS domain limitations and can reward sharp RGB-aligned edges
+even when metric depth is wrong. Model basis: https://github.com/isl-org/MiDaS
 """
 
 import logging

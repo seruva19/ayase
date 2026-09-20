@@ -1,8 +1,13 @@
-"""Text overlay detection module.
+"""Estimate overlay-like edge patterns with a no-reference OpenCV heuristic.
 
-From NVIDIA Curator. Detects excessive text overlays, subtitles,
-graphics, and watermarks-as-text in video frames.
-Different from OCR area ratio — focuses on overlay detection.
+Ayase scores one image or averages up to four sampled video frames. The 0--1
+score increases with top/bottom edge density relative to the middle and with
+strong horizontal gradients, so higher means more overlay-like structure, not
+better quality. It performs no OCR or semantic text detection and can confuse
+natural edges, letterboxing, or graphics with subtitles and watermarks. The
+edge_threshold setting is currently unused.
+
+Basis: https://github.com/seruva19/ayase
 """
 
 import logging

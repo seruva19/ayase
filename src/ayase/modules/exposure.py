@@ -1,7 +1,15 @@
-"""Overexposure, underexposure, and low contrast detection via luminance histogram analysis.
+"""Flag exposure and contrast heuristics on one representative frame per sample.
 
-Checks pixel distribution in the grayscale channel for clipped shadows/highlights
-and insufficient dynamic range. No ML dependencies required."""
+The image itself, or a video's middle frame, is converted to OpenCV grayscale.
+Warnings are added when the fraction of pixels below 15 or above 240 exceeds
+the configured under/overexposure ratio; an informational issue is added when
+grayscale standard deviation is below the contrast threshold. Ratios and
+standard deviation are recorded only in issue details: no quality score or
+dataset aggregation is produced. The algorithm uses no learned model, caption,
+reference image, HDR transfer-function awareness, or temporal evidence, so its
+fixed 8-bit thresholds are heuristic and may not suit intentionally stylized,
+linear-light, HDR, or non-photographic content.
+"""
 
 import logging
 import cv2

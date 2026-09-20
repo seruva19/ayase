@@ -1,14 +1,13 @@
-"""TOPIQ (Top-down Image Quality) module.
+"""No-reference image quality scoring with PyIQA's TOPIQ-NR model.
 
-TOPIQ is a transformer-based no-reference image/video quality
-assessment metric with strong cross-dataset generalisation.
+Only topiq_nr is supported; other configured variants fall back to it and
+reference_path is ignored. Images are scored directly, while videos average up
+to num_frames uniformly sampled frame scores (default eight), so motion and
+temporal consistency are not assessed. PyIQA defines higher as better and an
+approximate 0--1 range, but Ayase does not clamp the model output. Missing
+PyIQA weights leave the field unset, with no heuristic fallback.
 
-There are two variants:
-  - topiq_nr:  no-reference (standalone quality)
-  - topiq_fr:  full-reference (needs reference image)
-
-This module uses topiq_nr via the ``pyiqa`` package.
-Score range: 0-1 (higher = better quality).
+Basis: https://github.com/chaofengc/IQA-PyTorch
 """
 
 import logging

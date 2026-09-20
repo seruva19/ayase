@@ -1,8 +1,12 @@
-"""Usability Rate module.
+"""Classify each sample as usable from one existing aggregate quality score.
 
-Post-processing module that computes the percentage of usable frames/samples
-based on quality thresholds. Compares predictions vs MOS if available.
-Range: 0-100 (percentage of usable content).
+This is not a frame- or dataset-level rate. It returns 100 when technical_score
+meets the configured 0--100 threshold, otherwise 0; if technical_score is absent,
+it applies the threshold to aesthetic_score multiplied by ten. It does not
+compare predictions with MOS or combine other metrics. With no supported input
+score, usability_rate remains unset.
+
+Basis: https://github.com/seruva19/ayase
 """
 
 import logging

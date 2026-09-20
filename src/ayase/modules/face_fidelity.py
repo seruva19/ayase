@@ -1,18 +1,16 @@
-"""Face Quality Assessment module.
+"""Detect faces and compute a no-reference face-region quality heuristic.
 
-Detects faces and evaluates per-face quality attributes:
-
-  face_count           — number of faces detected (existing field)
-  face_quality_score   — composite face quality 0-100 (higher=better)
-
-Per-face checks:
-  - Resolution: minimum face size relative to frame
-  - Sharpness:  Laplacian variance of face ROI
-  - Frontalness: rough frontal-pose check via aspect-ratio heuristic
-  - Occlusion:  edge density near face boundary
-
-Uses OpenCV Haar cascades (default) or MediaPipe Face Detection for
-more accurate results.  No heavy ML models required.
+OpenCV Haar is the default detector; MediaPipe may be selected, with Haar as
+fallback. For images, ``face_count`` is the detections in that image and
+``face_quality_score`` is their mean. For videos, frames are sampled every fifth
+frame among at most the first 60; count is the rounded mean detections per
+sampled frame and quality is averaged over all detected face regions. The
+0-100 score (higher is better under this heuristic) weights Laplacian sharpness
+40%, box size 25%, box-aspect-ratio "frontalness" 20%, and mean-luminance
+exposure 15%. It does not measure identity preservation, landmarks, occlusion,
+or similarity to a reference face, and uses no caption/prompt or dataset-level
+context. Detector and score behavior are limited by frontal-face boxes and
+hand-set pixel thresholds, especially for profiles, stylized faces, and crowds.
 """
 
 import logging

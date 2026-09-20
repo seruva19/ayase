@@ -1,11 +1,13 @@
-"""Human fidelity module — VBench-2.0 dimension.
+"""Representative-frame human landmark detectability and anatomy heuristic.
 
-Assesses body, hand, and face quality in generated humans via pose
-detection and landmark analysis.
+DWPose combines body, hand, and face landmark confidences; the MediaPipe
+fallback combines pose visibility with simple limb-ratio and bilateral-symmetry
+checks. ``human_fidelity_score`` is in [0, 1], where higher means stronger
+detections and fewer heuristic proportion penalties. It is not a reference or
+identity metric, uses only one representative frame, and is sensitive to pose,
+occlusion, cropping, multiple people, detector bias, and backend choice.
 
-Backend tiers:
-  1. **DWPose** — Full-body + hand + face landmarks (dwpose / mmpose)
-  2. **MediaPipe** — 33 body landmarks
+Model basis: https://github.com/IDEA-Research/DWPose
 """
 
 import logging

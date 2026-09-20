@@ -1,8 +1,12 @@
-"""HPSv3 module.
+"""Prompt-conditioned HPSv3 preference scoring for images and video frames.
 
-This module loads HPSv3 on top of Qwen2-VL for prompt-conditioned reward
-scoring. Images are scored directly; videos are scored by uniformly sampling
-frames and averaging frame scores.
+An image, or up to five uniformly sampled video frames, is paired with the
+sample caption or sidecar text. Ayase averages the model's first output channel;
+higher raw reward means stronger learned preference and no fixed range is
+enforced. The frame average does not evaluate motion or temporal coherence, and
+results inherit the model's training-domain and prompt-sensitivity limits.
+
+Model basis: https://huggingface.co/MizzenAI/HPSv3
 """
 
 import logging

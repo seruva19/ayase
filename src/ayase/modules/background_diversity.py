@@ -1,7 +1,16 @@
-"""Background complexity and stability analysis using rembg segmentation.
+"""Flag simple or changing segmented backgrounds within each media sample.
 
-Computes Shannon entropy of background HSV histograms to detect concept
-bleeding. Also measures M-PSNR for background stability across frames."""
+The configured/default ``rembg`` model separates foreground from background.
+For an image, or the middle frame of a video, the module averages per-channel
+Shannon entropy of masked HSV histograms and adds an informational issue below
+``min_entropy_threshold``. For videos it also compares the first and last
+sampled frames with ordinary PSNR over pixels classified as background in both,
+flagging values below 30 dB. These values appear only in issue details; no
+``QualityMetrics`` field or dataset aggregation is produced. This heuristic
+uses no caption or reference media, performs no registration or motion
+compensation, and does not itself establish concept bleeding.
+Segmentation basis: https://github.com/danielgatis/rembg
+"""
 
 import logging
 import cv2

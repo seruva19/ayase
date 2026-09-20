@@ -1,13 +1,13 @@
-"""MOVIE (MOtion-based Video Integrity Evaluation) module.
+"""Paper-inspired full-reference video quality approximation of the MOVIE index.
 
-Full-reference video quality metric using spatiotemporal Gabor filter
-decomposition and optical-flow analysis: a spatiotemporal Gabor filter bank
-(5 spatial orientations x 3 spatial frequencies) plus motion-compensated flow
-comparison between the reference and distorted videos (paper reimplementation).
+Ayase position-pairs up to eight sampled distorted/reference frames, compares
+15 OpenCV Gabor-filter responses, and combines their mean similarity with a
+Farneback-flow difference term. The result is clipped to 0--1 with higher being
+better. This is not the authors' multiscale spatiotemporal MOVIE implementation
+or its published score scale, and uniform frame pairing is not synchronization.
+A valid reference_path is mandatory; otherwise movie_score stays unset.
 
-MOVIE is inherently full-reference — it has no meaning without a pristine
-reference — so this module leaves ``movie_score`` unset when no
-``reference_path`` is provided rather than emitting a no-reference proxy.
+Basis: https://www.live.ece.utexas.edu/research/Quality/movie.html
 """
 
 import logging

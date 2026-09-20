@@ -1,8 +1,13 @@
-"""JEDi (JEPA Embedding Distance) distribution metric.
+"""Within-dataset V-JEPA2 embedding self-consistency measured with MMD.
 
-ICLR 2025. Replaces FVD with V-JEPA features + kernel-based MMD.
-Requires 16% of FVD's samples, 34% better human alignment.
-Batch/distribution metric.
+Each video contributes one feature from up to sixteen resized frames, padded by
+repeating the last frame when short. With at least ten videos, insertion order
+splits the evaluated set in half and ``jedi`` is Gaussian-kernel MMD between
+those halves; lower means the halves have more similar embeddings. No real or
+reference dataset is used, so this is not the published two-distribution JEDi
+protocol or a direct video-quality score and is sensitive to ordering and mix.
+
+Model basis: https://huggingface.co/facebook/vjepa2-vitg-fpc64-256
 """
 
 import logging

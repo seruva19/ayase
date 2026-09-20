@@ -1,8 +1,14 @@
-"""PromptIQA — prompt-guided no-reference image quality assessment.
+"""No-reference frame quality through an optional PyIQA PromptIQA backend.
 
-Loads the real PromptIQA metric via ``pyiqa`` (available in
-pyiqa >= 0.1.12). When pyiqa or the PromptIQA weights are unavailable the
-module reports no score rather than substituting a different metric.
+The published image method adapts to assessment requirements using image-score
+pairs as prompts. This adapter passes only each target image tensor: it does not
+use sample.caption or supply prompt examples, so behavior and score calibration
+depend entirely on a PyIQA backend registered as promptiqa. Images are scored
+once and videos average up to four sampled-frame outputs; temporal quality is
+not measured. The raw score is not clipped and no universal range is asserted.
+Unavailable backends leave the field unset rather than using a proxy.
+
+Basis: https://github.com/chencn2020/PromptIQA
 """
 
 import logging

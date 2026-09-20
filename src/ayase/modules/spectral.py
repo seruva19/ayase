@@ -1,8 +1,14 @@
-"""Spectral complexity analysis via DINOv2 feature SVD effective rank.
+"""Describe video-frame diversity with SVD of pretrained DINOv2 embeddings.
 
-Computes effective rank and spectral entropy of frame-level DINOv2 features.
-Low rank indicates static/redundant content; high entropy indicates chaos.
-Returns spectral_entropy and spectral_rank."""
+For videos only, Ayase samples every eighth frame by default (at most 300),
+requires at least four frames, centers their DINOv2 embeddings, and reports
+entropy of normalized singular values plus exp(entropy)/frame-count as the rank
+ratio. These are unbounded-above entropy and nominal 0--1 rank-ratio complexity
+descriptors, not perceptual quality scores: neither direction is universally
+better, and thresholds are heuristic. Images and unavailable weights are skipped.
+
+Basis: https://github.com/facebookresearch/dinov2
+"""
 
 import logging
 import numpy as np

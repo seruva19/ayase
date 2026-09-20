@@ -1,12 +1,13 @@
-"""QCN (Quality-aware Contrastive Network) blind IQA module.
+"""No-reference image quality ordering with the QCN geometric-order model.
 
-Loads the real QCN metric from pyiqa (geometric order learning). Earlier
-revisions fell back to HyperIQA as a proxy; HyperIQA is a different model, so
-that stand-in has been removed. When pyiqa cannot provide QCN the score is
-left ``None``.
+QCN estimates quality by locating an image representation relative to learned
+score pivots. Ayase requests a PyIQA backend named qcn, scores an image once or
+averages up to four sampled video-frame scores, and does not assess motion or
+temporal consistency. Higher is intended to mean better quality, while the
+numeric scale is checkpoint-dependent and is not clipped. If that backend is
+unregistered or unavailable, qcn_score remains unset; no proxy is substituted.
 
-Backend:
-  **pyiqa qcn** — real QCN model
+Basis: https://github.com/nhshin-mcl/QCN
 """
 
 import logging

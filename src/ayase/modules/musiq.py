@@ -1,12 +1,12 @@
-"""MUSIQ (Multi-Scale Image Quality Transformer) module.
+"""No-reference perceptual image-quality scoring with PyIQA MUSIQ variants.
 
-No-reference IQA that handles arbitrary resolutions via a multi-
-scale transformer.  Unlike CNN-based metrics, it doesn't require
-fixed input sizes, making it ideal for diverse datasets.
+Images are scored directly; videos average every Nth decoded frame. Higher
+``musiq_score`` means greater model-predicted perceptual quality, while the
+numeric scale depends on the selected MUSIQ checkpoint. The frame average does
+not measure motion or temporal artifacts, and results inherit the variant's
+training-dataset and distortion-domain limits.
 
-musiq_score — higher = better quality (score range varies by model)
-
-Uses ``pyiqa`` for pretrained MUSIQ weights.
+Model basis: https://github.com/chaofengc/IQA-PyTorch
 """
 
 import logging

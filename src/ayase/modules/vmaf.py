@@ -1,10 +1,14 @@
-"""VMAF (Video Multimethod Assessment Fusion) module.
+"""Full-reference video quality prediction with Netflix VMAF.
 
-VMAF is a perceptual video quality metric developed by Netflix.
-It combines multiple quality models to predict human perception of video quality.
-Range: 0-100 (higher is better). Typically 80+ is excellent quality.
+A valid reference_path is mandatory and still images are skipped. Ayase prefers
+FFmpeg libvmaf, which evaluates the aligned streams and returns their pooled
+score; its subsample option applies only to the secondary Python frame-pair
+fallback. VMAF conventionally reports higher-is-better scores on an approximate
+0--100 scale, but this adapter does not clamp outputs. It performs no temporal
+alignment, resizing, or pixel-format normalization, so reference and distorted
+videos must already be compatible.
 
-This is a full-reference metric requiring a reference video for comparison.
+Basis: https://github.com/Netflix/vmaf
 """
 
 import logging

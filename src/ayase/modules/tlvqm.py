@@ -1,24 +1,15 @@
-"""TLVQM (Two-Level Video Quality Model) module.
+"""No-reference sampled-video quality adapter inspired by CNN-TLVQM.
 
-Two-level NR-VQA: Level 1 extracts per-frame spatial features, Level 2 extracts
-temporal features across frames; a trained SVR regressor maps the features to a
-subjective MOS.
+Ayase requires a custom PyTorch ResNet-18 state dict (cnn_tlvqm.pth) and a
+joblib SVR (tlvqm_svr.pkl); these are not the published repository's MATLAB
+artifacts. It averages up to eight frame embeddings, appends four adjacent-frame
+difference statistics, maps the SVR prediction from configured MOS bounds
+(default 1--5), and clips the result to 0--1, higher-is-better. Consequently,
+results depend on compatibly trained custom artifacts and should not be treated
+as a reproduction of the published CNN-TLVQM pipeline. No proxy is emitted when
+either artifact is absent.
 
-This module implements the CNN-TLVQM variant, which requires BOTH trained
-artefacts from the CNN-TLVQM repository
-(https://github.com/jarikorhonen/cnn-tlvqm) placed under
-``<models_dir>/tlvqm/``:
-
-  * ``cnn_tlvqm.pth`` — CNN feature-extractor weights
-  * ``tlvqm_svr.pkl`` — trained SVR regressor
-
-Without the trained SVR the model cannot predict a calibrated MOS. Earlier
-revisions fell back to ImageNet ResNet-18 features / handcrafted features fed
-through an *uncalibrated* heuristic mapping (``feat_norm / 50``); those proxies
-did not reproduce TLVQM and have been removed. When the trained artefacts are
-absent the metric is reported as unavailable.
-
-Backend: **cnn_svr** — CNN feature extractor + trained SVR regressor.
+Basis: https://github.com/jarikorhonen/cnn-tlvqm
 """
 
 import logging

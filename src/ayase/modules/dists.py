@@ -1,13 +1,15 @@
-"""DISTS (Deep Image Structure and Texture Similarity) module.
+"""Compute full-reference DISTS structure/texture dissimilarity per sample.
 
-DISTS is a full-reference perceptual similarity metric that explicitly
-separates structure and texture.  It correlates better with human
-perception than SSIM/MS-SSIM for texture-rich content.
-
-Range: 0-1 (lower = more similar / better quality).
-Requires a reference video or image.
-
-Uses the ``piq`` package (already an Ayase dependency).
+The distorted sample requires ``sample.reference_path``. Image pairs are
+compared once after resizing the distorted image to the reference dimensions.
+Video pairs are decoded in lockstep, every fifth frame is compared by default,
+and pair scores are averaged until either stream ends; frames are not registered
+or time-aligned beyond decode order. ``dists`` is the raw, unclipped output of
+``piq.DISTS`` and is better when lower. The module asserts no stricter range
+than its backend and adds a warning above the configured threshold. It uses no
+caption, prompt, or cross-sample aggregation and inherits the pretrained DISTS
+feature model's natural-image/perceptual-domain limitations. Backend source:
+https://github.com/photosynthesis-team/piq
 """
 
 import logging
