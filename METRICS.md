@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 03:46 · **381 modules** · **524 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 11:26 · **382 modules** · **527 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **373/381 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **374/382 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**381** modules · **610** output fields · **524** metrics · **271** tiered · **179** GPU · **21** categories
+**382** modules · **613** output fields · **527** metrics · **272** tiered · **179** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -35,7 +35,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-54-metrics) (54) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-62-metrics) (62) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-50-metrics) (50) · [Basic Visual Quality](#basic-visual-quality-16-metrics) (16) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-57-metrics) (57) · [Face & Identity](#face--identity-40-metrics) (40) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-30-modules) (30)
 
 ---
 
@@ -3986,7 +3986,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (54 metrics)
+## Audio Quality (57 metrics)
 
 ### `active_speaker_best_lse_c` [↑](#categories)
 > Lip-sync confidence of the best-synced face (higher=better) · ↑ higher=better
@@ -4047,6 +4047,36 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `model_name=large-v3`, `device=auto`
+
+### `audio_f0_joint_coverage` [↑](#categories)
+> Lower jointly-voiced unique-frame coverage (0-1) · ↑ higher=better · 0-1
+
+**[`audio_log_f0_dtw`](src/ayase/modules/audio_log_f0_dtw.py)** — MFCC-DTW-aligned log-F0 RMSE in cents for paired monophonic audio
+
+- **Input**: audio +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable → librosa_pyin
+- **Packages**: librosa
+- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py)
+
+### `audio_f0_voicing_error` [↑](#categories)
+> DTW-path voiced/unvoiced mismatch rate (0-1, lower=better) · ↓ lower=better · 0-1
+
+**[`audio_log_f0_dtw`](src/ayase/modules/audio_log_f0_dtw.py)** — MFCC-DTW-aligned log-F0 RMSE in cents for paired monophonic audio
+
+- **Input**: audio +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable → librosa_pyin
+- **Packages**: librosa
+- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py)
+
+### `audio_log_f0_rmse_cents` [↑](#categories)
+> DTW-aligned log-F0 RMSE (cents, lower=better) · ↓ lower=better · 0+
+
+**[`audio_log_f0_dtw`](src/ayase/modules/audio_log_f0_dtw.py)** — MFCC-DTW-aligned log-F0 RMSE in cents for paired monophonic audio
+
+- **Input**: audio +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable → librosa_pyin
+- **Packages**: librosa
+- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py)
 
 ### `audiobox_cu` [↑](#categories)
 > Audiobox content usefulness (CU)
