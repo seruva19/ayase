@@ -1,7 +1,13 @@
-"""Motion dynamics analysis via Farneback dense optical flow with effective FPS detection.
+"""Reference-free apparent-motion magnitude and duplicate-frame screening for videos.
 
-Computes mean optical flow magnitude across sampled frame pairs. Also detects
-duplicate frames to estimate effective vs container FPS. Returns motion_score."""
+``motion_score`` is the nonnegative mean Farneback flow magnitude between every
+Nth decoded frame; higher means more pixel displacement, not better quality,
+and no fixed upper range applies. Values depend on resolution and sampling gap
+and include camera motion, cuts, and flow error. A separate middle-window pixel
+difference check may emit an effective-FPS issue but does not change the score.
+
+Method basis: https://docs.opencv.org/4.x/d4/dee/tutorial_optical_flow.html
+"""
 
 import logging
 import cv2

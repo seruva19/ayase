@@ -1,7 +1,14 @@
-"""Camera-stabilized motion scoring using ORB+Homography and Farneback optical flow.
+"""Reference-free estimates of scene and camera motion in videos.
 
-Separates scene motion from camera motion by compensating for homography
-transforms. Returns stabilized_motion_score and stabilized_camera_score."""
+Every second frame is aligned with an ORB/RANSAC homography before Farneback
+flow. ``stabilized_motion_score`` is median residual flow magnitude and
+``stabilized_camera_score`` is median homography corner displacement; higher
+means more estimated motion, not better quality, and neither has a fixed upper
+range. Low texture, parallax, nonplanar motion, cuts, and failed homographies
+limit the camera/scene separation and can leave camera motion at zero.
+
+Method basis: https://docs.opencv.org/4.x/d1/de0/tutorial_py_feature_homography.html
+"""
 
 import cv2
 import numpy as np

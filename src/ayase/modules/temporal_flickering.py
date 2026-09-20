@@ -1,8 +1,14 @@
-"""Temporal flickering detection via RAFT optical flow warping error with occlusion masking.
+"""Reference-free motion-compensated residual error for video frame pairs.
 
-Computes forward-backward flow consistency to detect occlusions, then measures
-MSE in non-occluded regions. Falls back to Farneback when RAFT unavailable.
-Returns warping_error."""
+RAFT-Small computes half-resolution bidirectional flow and occlusion-masked RGB
+warping error; unavailable or failed RAFT falls back to grayscale Farneback
+warping without that mask. Higher ``warping_error`` means more unexplained
+frame change, not better quality, and backend ranges are not directly
+comparable. Motion boundaries, cuts, lighting changes, flow failure, and frame
+striding on long videos can resemble flicker.
+
+Model basis: https://docs.pytorch.org/vision/stable/models/raft.html
+"""
 
 import logging
 import cv2

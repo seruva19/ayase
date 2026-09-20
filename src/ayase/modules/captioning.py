@@ -1,8 +1,16 @@
-"""Captioning module — generates BLIP captions and computes BLEU score.
+"""Generate per-frame BLIP captions and compare them with a sample caption.
 
-Implements EvalCrafter metric #11 (blip_bleu): sample multiple frames, generate
-BLIP captions for each, compute BLEU-1 through BLEU-4 against the original
-prompt, take max per n-gram level, average the 4 maxes.
+For each image/video sample, the configured BLIP or BLIP-2 model captions up to
+five uniformly sampled frames. If ``sample.caption`` is missing, the longest
+generated caption is installed as the sample caption and no BLEU score is set.
+Otherwise, ``blip_bleu`` is the [0, 1] average of the best frame-level BLEU-1,
+BLEU-2, BLEU-3, and BLEU-4 scores against ``sample.caption.text`` (higher means
+more lexical overlap); ``auto_caption`` stores the longest differing output.
+This is per-sample, uses no reference media, and only lowercases/whitespace-splits
+text, so it is not a language-neutral semantic score. The aggregation follows
+EvalCrafter, while the default model is ``Salesforce/blip-image-captioning-base``.
+Sources: https://github.com/evalcrafter/EvalCrafter and
+https://huggingface.co/Salesforce/blip-image-captioning-base
 """
 
 import logging

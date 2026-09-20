@@ -1,8 +1,13 @@
-"""Video type classifier module.
+"""Zero-shot CLIP content-type labeling for images and sampled video frames.
 
-From NVIDIA Curator's video type classification concept.
-Classifies content as real-world, animated, game, abstract, etc.
-Uses CLIP zero-shot classification.
+Up to four frames are compared with six fixed text prompts and their mean
+softmax vote selects ``real``, ``animated``, ``game``, ``abstract``,
+``screen_recording``, or ``text_heavy``. ``video_type_confidence`` is in [0, 1]
+and higher means stronger preference within only that prompt set; it is not a
+calibrated probability or quality score. Mixed, novel, or domain-shifted
+content may not fit any label.
+
+Model basis: https://huggingface.co/openai/clip-vit-base-patch32
 """
 
 import logging

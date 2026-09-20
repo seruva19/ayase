@@ -1,16 +1,13 @@
-"""BVQI — Blind Video Quality Index.
+"""No-reference video quality scoring with the zero-shot BVQI method.
 
-ICME 2023 Oral -> TIP — zero-shot VQA that outperforms supervised
-methods. Uses CLIP features with quality anchor texts for zero-shot
-quality prediction.
+BVQI combines text-prompted semantic affinity with spatial and temporal
+naturalness indices without training on MOS labels. Ayase passes the complete
+sample path to either a native BVQI package or PyIQA; its subsample setting is
+not used by this adapter. The score is higher-is-better, while the numeric
+range is backend-dependent and is not clamped. The published method is
+video-specific; no image-mode interpretation is asserted.
 
-GitHub: https://github.com/VQAssessment/BVQI
-
-Backend tiers:
-  1. **bvqi** — native bvqi package
-  2. **pyiqa** — pyiqa wrapper
-
-bvqi_score — higher = better quality
+Basis: https://github.com/VQAssessment/BVQI
 """
 
 import logging
