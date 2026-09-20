@@ -315,6 +315,7 @@ class QualityMetrics(BaseModel):
     cdpam_score: Optional[float] = None  # CDPAM perceptual audio distance (lower=better)
     utmos_score: Optional[float] = None  # UTMOS predicted MOS (1-5, higher=better)
     utmos_v2_score: Optional[float] = None  # UTMOSv2 predicted MOS (1-5, higher=better)
+    distill_mos_score: Optional[float] = None  # Distill-MOS overall speech quality (1-5, higher=better)
     asr_cer: Optional[float] = None  # ASR character error rate vs reference text (0-1, lower=better)
     asr_wer: Optional[float] = None  # ASR word error rate vs reference text (0-1, lower=better)
     scoreq_score: Optional[float] = None  # SCOREQ speech naturalness score (0-1, higher=better)

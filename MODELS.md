@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 11:27 · **281 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 12:02 · **282 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**281** models · **109** HuggingFace · **55** pyiqa · **9** sources
+**282** models · **109** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (80)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (39)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (80)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (40)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -45,7 +45,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `nearid`
-- **Parameters**: 428M · **Downloads**: 118
+- **Parameters**: 428M · **Downloads**: 112
 - **Disk**: ~1.6 GB
 - **Source**: <a href="https://arxiv.org/abs/2604.01973" target="_blank">arXiv</a>
 
@@ -53,7 +53,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 184
+- **Parameters**: 8.3B · **Downloads**: 179
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2509.25787" target="_blank">arXiv</a>
 
@@ -286,7 +286,7 @@
 > image-feature-extraction · mit
 
 - **Used by**: `id_sim`
-- **Downloads**: 27
+- **Downloads**: 26
 - **Source**: <a href="https://arxiv.org/abs/2604.05039" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/chancharikm/qwen2.5-vl-7b-cam-motion" target="_blank">`chancharikm/qwen2.5-vl-7b-cam-motion`</a> [↑](#categories)
@@ -1200,6 +1200,12 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `anatomy_check`, `concept_presence`, `face_fidelity`, `face_landmark_quality`, `human_fidelity`
 - **Install**: `pip install mediapipe`
+
+### `microsoft/Distill-MOS:distill_mos_v7.pt` [↑](#categories)
+> Bundled in distillmos 0.9.1; release commit b8d46ee2748176155619cda5315ab4d5ef6af28d; SHA-256 b18b3ac60227267cfb91e5d00ce22cc7b73716fd92f269484da1446e27031a40
+
+- **Used by**: `audio_distill_mos`
+- **Install**: `pip install distillmos==0.9.1`
 
 ### `muq` [↑](#categories)
 
