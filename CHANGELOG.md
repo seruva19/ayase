@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **imagebind_score**: added the official JavisBench raw ImageBind audio-video semantic cosine as a separate field, with explicit non-synchronization limits and compatibility preprocessing for current Torchaudio/PyTorchVideo releases.
 - **hand_gesture_dynamics**: added separate DWPose hand/finger observability, articulation, openness, pinch, shape-speed, and left/right asymmetry diagnostics for unaligned single-person reference videos.
 - **voice_identity_drift**: added temporal ECAPA-TDNN speaker-embedding coverage, tail, opt-in threshold-run, and normalized trend diagnostics against a reference voice set.
 - **gaze_dynamics**: added separate MediaPipe eye-look activation location, amplitude, speed, binocular-disagreement, and coverage diagnostics for unaligned reference videos.
