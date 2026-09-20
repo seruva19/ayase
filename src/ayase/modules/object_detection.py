@@ -1,7 +1,15 @@
-"""Object detection using YOLOv8, YOLO-World, or GRiT with caption consistency checks.
+"""Object-detector statistics over up to eight sampled image or video frames.
 
-Detects objects across 8 sampled frames and compares results against the caption.
-Returns detection_score, count_score, and detection_diversity."""
+YOLO, YOLO-World, or configured GRiT detections populate boxes and labels.
+``detection_score`` is mean confidence on a 0--100 scale; ``count_score`` and
+``person_count_score`` saturate at ten detections or people; and
+``detection_diversity`` is the effective number of confidence-weighted labels.
+Higher values mean more detector confidence, count, or label diversity, not
+better quality. Caption substring checks only emit issues, and outputs depend
+on backend vocabulary, thresholds, repeated objects, sampling, and domain.
+
+Model basis: https://docs.ultralytics.com/models/yolov8/
+"""
 
 import logging
 import cv2

@@ -1,8 +1,16 @@
-"""Depth Anything monocular depth estimation module.
+"""Summarize Depth Anything V2 predictions for each image/video sample.
 
-From Data-Juicer's video_depth_estimation_mapper.
-Uses Depth Anything V2 for monocular depth estimation and
-temporal consistency scoring.
+The configured Transformers depth-estimation pipeline (default
+``depth-anything/Depth-Anything-V2-Small-hf``) processes one image or up to eight
+uniformly sampled video frames. ``depth_anything_score`` is the mean raw
+max-minus-min range of the predicted depth arrays; it is model-scale dependent,
+unbounded by this module, and measures predicted depth variation rather than
+accuracy or quality. For videos with usable consecutive maps,
+``depth_anything_consistency`` is their mean flattened Pearson correlation with
+negative correlations floored at zero, so higher [0, 1] values mean more similar
+predicted maps. There is no camera-motion alignment, ground-truth/reference
+depth, caption, prompt, or dataset aggregation. Model basis:
+https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf
 """
 
 import logging

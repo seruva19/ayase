@@ -1,7 +1,12 @@
-"""HPSv2 prompt-conditioned human preference scoring.
+"""Prompt-conditioned HPSv2 preference scoring for images and video frames.
 
-Scores image/prompt pairs with raw HPSv2 preference scores. Videos are scored
-by uniformly sampling frames and averaging frame scores.
+The prompt comes from configuration, the sample caption, or a sidecar text
+file. One image or up to five sampled video frames are scored and averaged;
+higher raw reward means stronger learned image-text preference, with no
+wrapper-defined range. Video scoring does not assess motion or temporal
+coherence, and values may differ between the ``hpsv2`` and DiffSynth backends.
+
+Model basis: https://github.com/tgxs002/HPSv2
 """
 
 from __future__ import annotations

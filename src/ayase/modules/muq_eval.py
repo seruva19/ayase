@@ -1,9 +1,13 @@
-"""Per-sample generated-music quality using the upstream MuQ-Eval A1 metric.
+"""MuQ-Eval A1 Musical Impression prediction for generated music audio.
 
-Predicts Musical Impression (MI) on the MusicEval 1-5 expert-MOS scale.
-The published frozen-MuQ A1 model reaches utterance-level SRCC 0.838 and
-system-level SRCC 0.957. Only MI is exposed: the audio-only checkpoint's
-text-alignment head is not a reliable prompt-alignment metric.
+The model consumes a centered ten-second, 24 kHz mono clip, padding shorter
+audio, and predicts Musical Impression on the training target's 1--5 expert-MOS
+scale; higher means stronger predicted impression, though regression output is
+not clipped. Only the MI head is exposed, so this is not prompt alignment. The
+score is trained for generated music and should not be generalized to arbitrary
+speech, sound effects, or full-track structure outside the sampled segment.
+
+Model basis: https://huggingface.co/zhudi2825/MuQ-Eval-A1
 """
 
 import json

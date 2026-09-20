@@ -1,8 +1,10 @@
-"""Border / letterbox detection module.
+"""Dark edge-bar coverage heuristic for images and sampled video frames.
 
-From Tiger200K and UltraVideo pipelines. Detects black bars
-(letterboxing, pillarboxing) and decorative borders that waste
-resolution in video frames.
+For up to four frames, contiguous rows and columns below a grayscale threshold
+are scanned inward from each edge, limited to one quarter of each dimension.
+``letterbox_ratio`` is the mean estimated border-area fraction in [0, 1]; higher
+means more dark edge area, not worse quality by itself. Dark scene content can
+be counted as a bar, while bright, textured, or decorative borders are missed.
 """
 
 import logging

@@ -1,10 +1,15 @@
-"""Creativity module — VBench-2.0 dimension.
+"""Estimate visual novelty and composition from one representative frame.
 
-Assesses artistic novelty and creative interpretation quality.
-
-Backend tiers:
-  1. **VLM** — LLaVA-1.5-7b with creativity assessment prompt
-  2. **CLIP** — CLIP novelty distance + LAION aesthetic score
+The preferred ``llava-hf/llava-1.5-7b-hf`` backend receives a fixed English
+prompt asking for 1-5 novelty, composition, and imagination ratings; their sum
+is divided by 15 and clipped to [0, 1]. The fallback is a handcrafted heuristic:
+CLIP distance from ten fixed common English prompts, optionally blended 60/40
+with a ``pyiqa`` LAION aesthetic prediction; without that predictor it uses
+CLIP novelty alone. ``creativity_score`` is per-sample and higher means more
+creativity under the selected rubric, but the two backend scales are not
+equivalent or calibrated. No sample caption, generation prompt, reference
+media, temporal evidence, or dataset context is used. Applicability follows the
+LLaVA/CLIP/LAION model domains rather than an objective creativity ground truth.
 """
 
 import logging

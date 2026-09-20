@@ -1,7 +1,15 @@
-"""HDR/SDR Video Quality Assessment module.
+"""No-reference HDR/SDR and 4K technical-quality heuristics for images and videos.
 
-Dynamic range-aware quality assessment that adjusts metrics based on
-whether content is HDR or SDR. Uses tone-mapping aware quality metrics for HDR.
+HDRSDRVQAModule classifies HDR from pixel dtype or video metadata, then reports
+a higher-is-better 0--100 heuristic: histogram entropy penalized by clipping
+for HDR, or mean brightness, contrast, and Laplacian sharpness for SDR. It
+scores one image or averages at most 20 periodically sampled frames. OpenCV
+commonly decodes HDR video to 8-bit, so this is neither luminance-linear nor a
+tone-mapping-aware perceptual metric. FourKVQAModule separately averages capped
+tiled sharpness for 4K-or-larger content on the same 0--100 scale; neither
+algorithm is trained or reference-based.
+
+Basis: https://github.com/seruva19/ayase
 """
 
 import logging

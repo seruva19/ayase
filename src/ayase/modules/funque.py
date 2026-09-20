@@ -1,10 +1,13 @@
-"""FUNQUE (Fused Unified Quality Evaluator) module.
+"""Full-reference quality scoring through the external FUNQUE package.
 
-Full-reference quality metric that fuses SSIM, VIF, and DLM features. This
-module computes FUNQUE only via the real ``funque`` package
-(``pip install funque`` / ``github.com/abhinaukumar/funque``). When the package
-or a reference video is unavailable the metric is left unset — there is no
-handcrafted stand-in.
+The package compares ``sample.path`` with ``sample.reference_path`` and Ayase
+stores its scalar result clipped to [0, 1], where higher represents greater
+reference fidelity under FUNQUE. Input decoding, alignment, supported media,
+and feature computation are delegated entirely to the installed package. A
+missing reference, unavailable package, or backend failure leaves the metric
+unset; no proxy score is produced.
+
+Implementation basis: https://github.com/abhinaukumar/funque
 """
 
 import logging

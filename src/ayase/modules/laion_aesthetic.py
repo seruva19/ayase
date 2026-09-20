@@ -1,8 +1,12 @@
-"""LAION Aesthetics Predictor V2 module.
+"""No-reference learned aesthetic-preference scoring with LAION Aesthetics.
 
-Aesthetic scoring used by NVIDIA Curator,
-Stable Diffusion, and most video curation pipelines.
-Linear classifier on CLIP ViT-L/14 embeddings, scores 0-10.
+PyIQA's ``laion_aes`` model scores an image or up to four sampled video frames;
+Ayase averages raw frame outputs and higher means greater model-predicted
+aesthetic preference. The wrapper does not clamp a numeric range. Video scores
+contain no motion or temporal assessment and inherit the model's training-data,
+style, and cultural-preference biases.
+
+Model basis: https://github.com/chaofengc/IQA-PyTorch
 """
 
 import logging

@@ -1,8 +1,14 @@
-"""Dynamics Range module.
+"""Estimate within-video visual dynamics with a handcrafted OpenCV heuristic.
 
-Measures the extent of variations in video content (DEVIL protocol).
-Assesses how much motion and scene variation occurs in the video.
-Range: 0-100 (higher = more dynamic content).
+For up to the first 300 decoded frames, the module combines three empirically
+normalized components: variance of consecutive grayscale absolute differences,
+the range of mean Farneback-flow magnitudes sampled every fifth frame, and the
+frequency of frame differences above ``scene_change_threshold``. Their equal
+weighted mean becomes ``dynamics_range`` in [0, 100]; higher means more measured
+variation, not necessarily better quality or physically correct motion. Images
+are skipped. The calculation uses no learned model, audio, caption, reference
+video, temporal registration, or dataset aggregation; thresholds and component
+scales are implementation heuristics rather than a reproduced benchmark score.
 """
 
 import logging
