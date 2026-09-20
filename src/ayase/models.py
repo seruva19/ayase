@@ -350,6 +350,7 @@ class QualityMetrics(BaseModel):
     ms_clap_score: Optional[float] = None  # Microsoft CLAP audio-text relevance (0-1, higher=better)
     clap_score: Optional[float] = None  # Generic CLAP audio-text relevance (0-1, higher=better)
     imagebind_score: Optional[float] = None  # ImageBind audio-text relevance (0-1, higher=better)
+    imagebind_av_score: Optional[float] = None  # Raw ImageBind audio-video semantic cosine (-1..1, higher=better)
     pam_score: Optional[float] = None  # PAM anti-prompt perceptual audio quality (0-1, higher=better)
     aqascore_score: Optional[float] = None  # AQAScore audio question-answering alignment (0-1)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
