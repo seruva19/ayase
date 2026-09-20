@@ -24,6 +24,13 @@ def test_cvvdp_ml_transformer_basics():
     assert ColorVideoVDPMLTransformerModule.metric_field == "cvvdp_ml_transformer_score"
 
 
+def test_cvvdp_ml_saliency_basics():
+    from ayase.modules.cvvdp import ColorVideoVDPMLSaliencyModule
+
+    _test_module_basics(ColorVideoVDPMLSaliencyModule, "cvvdp_ml_saliency")
+    assert ColorVideoVDPMLSaliencyModule.metric_field == "cvvdp_ml_saliency_score"
+
+
 def test_cvvdp_ml_transformer_stores_separate_score(image_sample, synthetic_image):
     from ayase.modules.cvvdp import ColorVideoVDPMLTransformerModule
 
@@ -40,7 +47,26 @@ def test_cvvdp_ml_transformer_stores_separate_score(image_sample, synthetic_imag
     assert result.quality_metrics.cvvdp_score is None
 
 
-def _install_fake_cvvdp_ml_runtime(monkeypatch, checkpoint_path):
+def test_cvvdp_ml_saliency_stores_separate_score(image_sample, synthetic_image):
+    from ayase.modules.cvvdp import ColorVideoVDPMLSaliencyModule
+
+    image_sample.reference_path = synthetic_image
+    module = ColorVideoVDPMLSaliencyModule()
+    module._backend = "cvvdp"
+    module._metric = object()
+    module._pycvvdp = object()
+    module.compute_reference_score = lambda _test, _reference: 8.25
+
+    result = module.process(image_sample)
+
+    assert result.quality_metrics.cvvdp_ml_saliency_score == pytest.approx(8.25)
+    assert result.quality_metrics.cvvdp_ml_transformer_score is None
+    assert result.quality_metrics.cvvdp_score is None
+
+
+def _install_fake_cvvdp_ml_runtime(
+    monkeypatch, checkpoint_path, metric_class_name="cvvdp_ml_transformer"
+):
     calls = {}
     fake_torch = types.ModuleType("torch")
     fake_torch.device = lambda value: f"device:{value}"
@@ -57,7 +83,7 @@ def _install_fake_cvvdp_ml_runtime(monkeypatch, checkpoint_path):
         calls["redirected_path"] = fake_metric_module.hf_hub_download()
         return object()
 
-    fake_pycvvdp.cvvdp_ml_transformer = metric_class
+    setattr(fake_pycvvdp, metric_class_name, metric_class)
     fake_hub = types.ModuleType("huggingface_hub")
 
     def download(**kwargs):
@@ -103,6 +129,34 @@ def test_cvvdp_ml_transformer_setup_uses_verified_pin(monkeypatch, tmp_path):
         "quiet": True,
         "gpu_mem": None,
     }
+
+
+def test_cvvdp_ml_saliency_setup_uses_its_verified_pin(monkeypatch, tmp_path):
+    from ayase.modules.cvvdp import ColorVideoVDPMLSaliencyModule
+
+    checkpoint = tmp_path / "cvvdp.ckpt"
+    checkpoint.write_bytes(b"verified saliency checkpoint")
+    calls = _install_fake_cvvdp_ml_runtime(
+        monkeypatch, checkpoint, "cvvdp_ml_saliency"
+    )
+    monkeypatch.setattr(ColorVideoVDPMLSaliencyModule, "_global_test_mode", False)
+    monkeypatch.setattr(ColorVideoVDPMLSaliencyModule, "checkpoint_size", checkpoint.stat().st_size)
+    monkeypatch.setattr(
+        ColorVideoVDPMLSaliencyModule,
+        "checkpoint_sha256",
+        hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+    )
+
+    module = ColorVideoVDPMLSaliencyModule({"device": "cpu"})
+    module.setup()
+
+    assert module._backend == "cvvdp"
+    assert calls["download"] == {
+        "repo_id": "gfxdisp/cvvdp_ml",
+        "filename": "cvvdp_ml_saliency/cvvdp.ckpt",
+        "revision": "b202a7893f6663a6a46f76f7b06c62d1235bc3ab",
+    }
+    assert calls["redirected_path"] == str(checkpoint)
 
 
 @pytest.mark.parametrize("failure", ["size", "sha256"])
