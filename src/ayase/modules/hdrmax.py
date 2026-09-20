@@ -1,7 +1,9 @@
-"""HDRMAX module.
+"""Evaluate full-reference HDR video quality with bundled HDRMAX-family scripts.
 
-This module runs the HDRMAX scripts and model files from the bundled source
-tree.
+Supports HDR-VMAF, SSIM-HDRMAX, and MS-SSIM-HDRMAX modes and reports a higher-is-better
+prediction with no fixed range. It requires a reference video, usable frame-rate metadata,
+FFmpeg, the selected model files, and HDRMAX dependencies; non-YUV inputs are converted to
+3840x2160 10-bit YUV. Basis: https://github.com/utlive/HDRMAX
 """
 
 import csv

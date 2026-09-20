@@ -1,4 +1,10 @@
-"""Import LOVE perception and correspondence predictions."""
+"""Import externally computed LOVE perception and text-video correspondence results.
+
+Reads raw higher-is-better predictions from configured CSV files and matches them to image
+or video samples by path-derived keys. This adapter does not run LOVE, compute scores, or
+validate imported values; their range follows the upstream output.
+Basis: https://huggingface.co/anonymousdb/LOVE-Perception
+"""
 
 import logging
 from pathlib import Path

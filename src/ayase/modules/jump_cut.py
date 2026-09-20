@@ -1,7 +1,9 @@
-"""Jump cut detection module.
+"""Detect abrupt transitions in videos from grayscale histogram changes.
 
-From Open-Sora 2.0 pipeline. Detects abrupt scene transitions
-within a clip that indicate editing cuts.
+The score is 1 / (1 + 5 * detected cuts per second), so it lies in (0, 1] and 1 means no
+detected cuts. It is a threshold heuristic sampled at about 10 Hz, not a semantic edit
+classifier, and leaves undecodable or single-frame clips unset.
+Basis: https://github.com/hpcaitech/Open-Sora
 """
 
 import logging

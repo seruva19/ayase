@@ -1,6 +1,10 @@
-"""UNIQUE (Unified NR-IQA) module.
+"""No-reference perceptual quality scoring with the UNIQUE IQA model.
 
-TIP 2021. Unified no-reference image quality assessment.
+PyIQA's UNIQUE backend scores an image without a reference; higher is better.
+For videos Ayase averages up to four sampled-frame scores, so the result covers
+spatial frame quality rather than motion or temporal consistency.
+
+Basis: https://github.com/zwx8981/UNIQUE
 """
 
 import logging

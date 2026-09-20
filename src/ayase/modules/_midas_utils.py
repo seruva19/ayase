@@ -1,4 +1,12 @@
-"""Shared strict checkpoint loading for MiDaS-based Ayase metrics."""
+"""Internal checkpoint loader for Ayase modules that use MiDaS depth models.
+
+This helper computes no metric. It constructs a requested MiDaS architecture,
+strict-loads an Ayase-mirrored state dictionary, moves it to the caller's
+device, and returns it in evaluation mode; preprocessing and scoring remain the
+responsibility of the calling depth module.
+
+Basis: https://github.com/isl-org/MiDaS
+"""
 
 from pathlib import Path
 

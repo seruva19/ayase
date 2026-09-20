@@ -1,4 +1,13 @@
-"""UnifiedReward 2.0 prompt-image reward with alignment, coherence, and style scores."""
+"""Prompt-conditioned UnifiedReward 2.0 scoring for generated images.
+
+Scores one image against its caption, sidecar text, or configured prompt on
+alignment, visual coherence, and style, each from 1 to 5; their mean is the
+overall 1--5 score and higher is better. Videos and samples without a prompt
+are skipped. Results require either DiffSynth model support or a configured
+OpenAI-compatible endpoint and reflect model judgment rather than a reference.
+
+Basis: https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics
+"""
 
 from __future__ import annotations
 
