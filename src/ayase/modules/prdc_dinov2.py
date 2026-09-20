@@ -1,9 +1,14 @@
-"""PRDC precision/recall/density/coverage in DINOv2 feature space.
+"""Compare generated and reference image sets with PRDC neighbourhood statistics.
 
-Dataset-level metrics decompose generative image quality into fidelity and
-diversity components using k-nearest-neighbour manifolds. DINOv2 ViT-L/14 is
-used when available; otherwise deterministic image-statistics features keep the
-module usable in lightweight environments.
+The dataset-level outputs are precision, recall, density, and coverage; larger
+values mean greater generated-set inclusion or reference-set coverage under the
+corresponding PRDC definition. Each sample contributes one representative image
+or video frame. DINOv2 ViT-L/14 features are used when available; otherwise the
+module switches to image-statistics features, whose values are not comparable
+with DINOv2 results. When no reference set is supplied, the implementation
+splits the input sequence in half, so insertion order then defines the two sets.
+Results require enough samples for the configured k-nearest-neighbour estimate
+and are distribution diagnostics, not per-sample quality or identity scores.
 """
 
 import logging

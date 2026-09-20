@@ -1,8 +1,18 @@
-"""World-model instruction, physics, and commonsense evaluation.
+"""Evaluate the WorldModelBench video set with its released VILA judge prompts.
 
-Loads the upstream human-aligned VILA judge from Hugging Face during setup and
-evaluates matching WorldModelBench videos natively. Scores preserve the raw
-benchmark ranges: instruction 0-3, physics 0-5, commonsense 0-2, total 0-10.
+This dataset-level runner matches input-video stems to entries in the pinned
+WorldModelBench definition and uses each entry's text instruction. Instruction
+following is 0–3; five binary no-violation rates sum to the 0–5 physical score;
+two binary no-finding rates sum to the 0–2 commonsense score; their raw total is
+0–10. Higher is better for all adherence, category, instruction, and total
+outputs. Results are written to ``DatasetStats``, not per-sample metrics.
+
+Only videos whose stems match the benchmark ``first_frame`` identifiers are
+evaluated. The backend decodes each full video through the upstream VILA runtime
+and parses constrained score/yes-no responses; these judge outputs are benchmark
+predictions, not direct physical measurements. Missing assets, unmatched stems,
+model/setup failures, or unparsable evaluations are skipped, so coverage must be
+checked before comparing dataset aggregates.
 """
 
 import json

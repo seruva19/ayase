@@ -1,24 +1,20 @@
-"""TC-Bench — temporal compositionality benchmark for T2V (arXiv:2406.08656).
+"""Score caption-event ordering over uniformly sampled video frames.
 
-Measures whether the events described in a caption actually unfold *in
-the correct temporal order* in the generated video. Complements
-T2V-CompBench (which evaluates spatial composition).
+For a caption decomposed into at least two ordered events, CLIP grounds each
+event in ``num_frames`` frames and the module scores concordance between event
+order and peak-similarity frame order. Attribute and object scores are 0–1;
+background uses the same proxy with a 0.9 multiplier, and ``tcbench_overall`` is
+their mean. ``long_form_event_fulfillment`` is the 0–1 fraction of events whose
+peak CLIP cosine reaches the configured threshold. Higher is better for every
+output. Captions without temporal structure receive 1.0 for the four ordering
+fields and no fulfillment value.
 
-Three dimensions:
-    * attribute  — attribute changes are time-localized correctly
-                   (e.g. "the ball turns red after spinning").
-    * object     — objects appear/disappear at the right time
-                   (e.g. "first a dog, then a cat enters").
-    * background — background transitions occur in order
-                   (e.g. "the scene shifts from day to night").
-
-Plus an overall mean.
-
-Three-tier event decomposition:
-    1. LLM-driven event extraction (vLLM / local-LLM endpoint).
-    2. Regex template matching on temporal connectives
-       (before / after / then / and then / finally / first / next).
-    3. Comma-split fallback — treat each clause as one ordered event.
+Event decomposition uses an optional external LLM endpoint, then temporal-
+connective regexes, then comma splitting. The scores depend on this decomposition,
+CLIP grounding, the threshold, and sparse frame sampling; they are proxies rather
+than dense event-boundary, causal, or physical-correctness measurements. The
+module requires a video and ``sample.caption.text`` and skips scoring when CLIP
+or the requested frames are unavailable.
 """
 
 import logging

@@ -1,11 +1,10 @@
-"""Shared MediaPipe blendshape extraction for the facial-expression metrics.
+"""Extract shared MediaPipe blendshape trajectories for facial-expression callers.
 
-Both expression metrics read the same 52 ARKit-style coefficients from the same
-pinned MediaPipe bundle, and they must keep reading them identically: a score
-computed against a differently-decoded trajectory is not comparable to one that
-is not, and the divergence would be silent. Extraction therefore lives here and
-nowhere else. What differs between the metrics is what they do with the
-trajectory afterwards, not how they obtain it.
+The helper resolves the pinned Face Landmarker bundle, decodes a video, selects
+one face per frame, and returns the bundle's canonical 52 coefficients plus
+timestamps and detection validity. It does not emit ``QualityMetrics`` or perform
+validation; calling metrics own all trajectory interpretation, scoring, and issue
+semantics.
 """
 
 import logging

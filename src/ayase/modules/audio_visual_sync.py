@@ -1,19 +1,13 @@
-"""Audio-Visual Synchronisation Detection module.
+"""Estimate audio/video offset for videos that have audio metadata.
 
-Measures the temporal offset between audio and video streams.
+The default backend cross-correlates frame-difference activity with per-frame
+audio RMS extracted through ffmpeg. It writes ``av_sync_offset`` in milliseconds;
+for this energy backend, negative means audio leads video and positive means audio
+lags video. The optional Synchformer backend stores its native prediction without
+sign conversion; that model's convention is positive for audio leading video.
 
-Algorithm:
-1. Extract per-frame visual activity (mean absolute frame
-   difference in luminance → "visual energy" signal).
-2. Extract per-frame audio energy (RMS of audio samples
-   corresponding to each frame interval).
-3. Cross-correlate the two energy signals.
-4. The lag at maximum correlation is the estimated A/V offset.
-
-Result is in milliseconds — positive means audio leads video.
-|offset| < 40 ms is generally imperceptible; > 100 ms is noticeable.
-
-Requires ffmpeg for audio extraction.
+An absolute offset above ``warning_threshold_ms`` adds a warning. Correlation of
+energy envelopes is a heuristic and does not establish perceptual lip sync.
 """
 
 import logging

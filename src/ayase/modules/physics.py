@@ -1,12 +1,18 @@
-"""Physics plausibility module — VBench-2.0 dimension.
+"""Estimate video motion plausibility from tracked 2-D point trajectories.
 
-Tracks keypoints across video frames and analyzes trajectories for
-physically implausible motion (teleportation, impossible acceleration,
-gravity violations).
+The module uniformly samples up to ``subsample`` frames (16 by default) and
+uses CoTracker when available, otherwise Lucas-Kanade optical flow. It needs at
+least five decoded frames and five usable tracks; captions and reference media
+are ignored. A CoTracker inference failure also falls back to Lucas-Kanade.
 
-Backend tiers:
-  1. **CoTracker** — Facebook's dense point tracking model
-  2. **Lucas-Kanade** — OpenCV sparse optical flow tracking
+``physics_score`` is a 0-1 heuristic (higher is more plausible) averaging three
+pixel-trajectory proxies: vertical acceleration below a threshold, absence of
+large acceleration, and smooth velocity change. This does not reconstruct 3-D
+physics, identify objects, compensate for camera motion, or normalize motion by
+source frame rate; subsampling and tracking errors can therefore affect the
+result. The configured ``accel_threshold`` applies to Lucas-Kanade, while the
+CoTracker path currently uses the 50-pixel default. Backend, decode, or tracking
+failure leaves the score unset; scores below 0.5 add a warning.
 """
 
 import logging
