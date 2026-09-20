@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 20:04 · **391 modules** · **581 metrics**
+> **Version 0.1.76** · Generated 2026-09-20 21:50 · **391 modules** · **581 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -38,7 +38,7 @@
 
 **[`afine`](src/ayase/modules/afine.py)** — A-FINE adaptive fidelity-naturalness IQA (CVPR 2025)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable → pyiqa
 - **Packages**: pyiqa, torch
 - **Tests**: covered by [`test_afine.py`](tests/modules/per_module/test_afine.py), [`test_image_iqa_metrics.py`](tests/modules/test_image_iqa_metrics.py) · live: ✅⏳
@@ -422,7 +422,7 @@
 
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
@@ -578,7 +578,7 @@
 
 **[`promptiqa`](src/ayase/modules/promptiqa.py)** — Prompt-guided NR-IQA (PromptIQA via pyiqa)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable → pyiqa
 - **Packages**: pyiqa, torch
 - **Tests**: covered by [`test_promptiqa.py`](tests/modules/per_module/test_promptiqa.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py) · live: ✅⏳
@@ -787,7 +787,7 @@
 
 **[`topiq`](src/ayase/modules/topiq.py)** — TOPIQ transformer-based no-reference IQA
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
 - **Backend**: pyiqa → unavailable
 - **Packages**: pyiqa, torch
 - **Tests**: covered by [`test_topiq.py`](tests/modules/per_module/test_topiq.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py) · live: ✅⏳
@@ -1862,7 +1862,7 @@
 
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
 - **Backend**: openai → diffsynth
 - **Packages**: diffsynth, torch
 - **Tests**: covered by [`test_unified_reward_edit.py`](tests/modules/per_module/test_unified_reward_edit.py) · live: ✅⏳
@@ -1999,7 +1999,7 @@
 
 **[`captioning`](src/ayase/modules/captioning.py)** — Generates captions using BLIP + computes BLEU score (EvalCrafter blip_bleu)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: blip2 → unavailable
 - **Packages**: Pillow, opencv-python, torch, transformers
 - **Source**: <a href="https://huggingface.co/Salesforce/blip-image-captioning-base" target="_blank">HF</a>
@@ -2145,7 +2145,7 @@
 
 **[`dice_edit`](src/ayase/modules/dice_edit.py)** — DICE object-level instruction-guided image-edit coherence (ICCV 2025)
 
-- **Input**: img/vid +ref · **Speed**: 🐌 slow · GPU
+- **Input**: img/vid +ref +cap · **Speed**: 🐌 slow · GPU
 - **Backend**: dice
 - **Packages**: peft, torch, transformers
 - **Tests**: covered by [`test_dice_edit.py`](tests/modules/per_module/test_dice_edit.py) · live: ✅⏳
@@ -2297,7 +2297,7 @@
 
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
-- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Input**: vid +cap · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → clip
 - **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
@@ -2331,7 +2331,7 @@
 
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
@@ -2343,7 +2343,7 @@
 
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
@@ -2365,7 +2365,7 @@
 
 **[`pickscore`](src/ayase/modules/pickscore.py)** — PickScore prompt-conditioned human preference scoring (frame-averaged on video)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: pickscore
 - **Packages**: torch, transformers
 - **VRAM**: ~2.5 GB
@@ -2456,7 +2456,7 @@
 
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
-- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Input**: vid +cap · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → clip
 - **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
@@ -2469,7 +2469,7 @@
 
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
-- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Input**: vid +cap · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → clip
 - **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
@@ -2482,7 +2482,7 @@
 
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
-- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Input**: vid +cap · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → clip
 - **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
@@ -2495,7 +2495,7 @@
 
 **[`tc_bench`](src/ayase/modules/tc_bench.py)** — TC-Bench temporal compositionality for T2V (arXiv:2406.08656)
 
-- **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Input**: vid +cap · **Speed**: 🐌 slow · GPU
 - **Backend**: unavailable → clip
 - **Packages**: torch, transformers, urllib
 - **VRAM**: ~600 MB
@@ -2544,7 +2544,7 @@
 
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
 - **Backend**: openai → diffsynth
 - **Packages**: diffsynth, torch
 - **Tests**: covered by [`test_unified_reward_edit.py`](tests/modules/per_module/test_unified_reward_edit.py) · live: ✅⏳
@@ -2555,7 +2555,7 @@
 
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
 - **Backend**: openai → diffsynth
 - **Packages**: diffsynth, torch
 - **Tests**: covered by [`test_unified_reward_edit.py`](tests/modules/per_module/test_unified_reward_edit.py) · live: ✅⏳
@@ -2566,7 +2566,7 @@
 
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
 - **Backend**: openai → diffsynth
 - **Packages**: diffsynth, torch
 - **Tests**: covered by [`test_unified_reward_edit.py`](tests/modules/per_module/test_unified_reward_edit.py) · live: ✅⏳
@@ -2577,7 +2577,7 @@
 
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
 - **Backend**: openai → diffsynth
 - **Packages**: diffsynth, torch
 - **Tests**: covered by [`test_unified_reward_edit.py`](tests/modules/per_module/test_unified_reward_edit.py) · live: ✅⏳
@@ -2588,7 +2588,7 @@
 
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
 - **Backend**: openai → diffsynth
 - **Packages**: diffsynth, torch
 - **Tests**: covered by [`test_unified_reward_edit.py`](tests/modules/per_module/test_unified_reward_edit.py) · live: ✅⏳
@@ -2621,7 +2621,7 @@
 
 **[`video_text_matching`](src/ayase/modules/video_text_matching.py)** — ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: xclip → clip → unavailable
 - **Packages**: Pillow, torch, transformers
 - **VRAM**: ~600 MB
@@ -2939,7 +2939,7 @@
 
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
@@ -3081,7 +3081,7 @@
 
 **[`video_text_matching`](src/ayase/modules/video_text_matching.py)** — ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: xclip → clip → unavailable
 - **Packages**: Pillow, torch, transformers
 - **VRAM**: ~600 MB
@@ -4226,7 +4226,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`aqascore`](src/ayase/modules/aqascore.py)** — AQAScore opt-in audio question-answering alignment
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable → qwen_omni
 - **Packages**: torch, transformers
 - **Source**: <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-7B" target="_blank">HF</a>
@@ -4247,7 +4247,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`asr_wer`](src/ayase/modules/asr_wer.py)** — ASR word error rate against expected speech text
 
-- **Input**: img/vid · **Speed**: ⚡ fast
+- **Input**: img/vid +cap · **Speed**: ⚡ fast
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `model_name=large-v3`, `device=auto`
 
@@ -5060,7 +5060,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable
 - **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
@@ -5670,7 +5670,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable
 - **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
@@ -5683,7 +5683,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: unavailable
 - **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
@@ -6145,7 +6145,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`captioning`](src/ayase/modules/captioning.py)** — Generates captions using BLIP + computes BLEU score (EvalCrafter blip_bleu)
 
-- **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: blip2 → unavailable
 - **Packages**: Pillow, opencv-python, torch, transformers
 - **Source**: <a href="https://huggingface.co/Salesforce/blip-image-captioning-base" target="_blank">HF</a>
@@ -6275,7 +6275,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
@@ -6287,7 +6287,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
-- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
 - **Backend**: mj_video → unavailable
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
 - **Source**: <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">HF</a>
