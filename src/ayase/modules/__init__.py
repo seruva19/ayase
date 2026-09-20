@@ -44,6 +44,7 @@ _IMPORTS = [
     ("KandinskyMotionModule", ".kandinsky_motion"),
     ("MotionMannerSimilarityModule", ".motion_manner_similarity"),
     ("BodyMotionKinematicsModule", ".body_motion_kinematics"),
+    ("HandGestureDynamicsModule", ".hand_gesture_dynamics"),
     ("HeadPoseSimilarityModule", ".head_pose_similarity"),
     # --- Temporal consistency ---
     ("TemporalFlickeringModule", ".temporal_flickering"),

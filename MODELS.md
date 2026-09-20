@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 16:08 · **284 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 17:23 · **284 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -679,7 +679,7 @@
 ### <a href="https://huggingface.co/yzd-v/DWPose" target="_blank">`yzd-v/DWPose`</a> [↑](#categories)
 > apache-2.0
 
-- **Used by**: `pose_heat_ssim`
+- **Used by**: `hand_gesture_dynamics`, `pose_heat_ssim`
 - **Disk**: 351.1 MB total
 - **Task**: Official DWPose detector and 133-keypoint COCO-WholeBody estimator
 - **Notes**: SHA-256 yolox_l.onnx=7860ae79de6c89a3c1eb72ae9a2756c0ccfbe04b7791bb5880afabd97855a411; dw-ll_ucoco_384.onnx=724f4ff2439ed61afb86fb8a1951ec39c6220682803b4a8bd4f598cd913b1843
@@ -1422,7 +1422,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 ### `rtmlib>=0.0.13` [↑](#categories)
 
-- **Used by**: `pose_heat_ssim`
+- **Used by**: `hand_gesture_dynamics`, `pose_heat_ssim`
 - **Install**: `pip install rtmlib`
 
 ### `silero-vad` [↑](#categories)
