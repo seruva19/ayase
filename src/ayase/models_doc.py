@@ -274,6 +274,9 @@ _KNOWN_LICENSES: Dict[str, tuple] = {
     "hub:tarepan/SpeechMOS:v1.2.0": ("MIT", True),
     # The HF card links this exact Microsoft license for WavLM-Large.
     "hf:microsoft/wavlm-large": ("CC BY-SA 3.0", True),
+    # InsightFace code is MIT, but its public pretrained model packs have
+    # separate non-commercial research terms.
+    "other:insightface/buffalo_l": ("Non-commercial research", False),
     # FFmpeg
     "ff:libvmaf": ("BSD-2-Clause (Netflix)", True),
     "ff:vmaf_v0.6.1": ("BSD-2-Clause (Netflix)", True),
@@ -1223,6 +1226,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     ff_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "ffmpeg"]
     pip_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pip"]
     local_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "local"]
+    other_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "other"]
 
     # Group weight files by parent repo
     weight_file_repos: Dict[str, List[tuple]] = defaultdict(list)
@@ -1252,6 +1256,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
         nav_sections.append((f"pip Packages ({len(pip_entries)})", "pip-packages"))
     if local_entries:
         nav_sections.append((f"Local Weights ({len(local_entries)})", "local-weight-files"))
+    if other_entries:
+        nav_sections.append((f"Other Models ({len(other_entries)})", "other-models"))
     nav_sections.append(("Quick Install Guide", "quick-install-guide"))
 
     a("")
@@ -1365,6 +1371,38 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
             if e.task:
                 a(f"- **Task**: {e.task}")
 
+            size_parts = []
+            if e.vram_estimate:
+                size_parts.append(f"**VRAM**: {e.vram_estimate}")
+            if e.size_estimate:
+                size_parts.append(f"**Disk**: {e.size_estimate}")
+            if size_parts:
+                a(f"- {' · '.join(size_parts)}")
+            if e.notes:
+                a(f"- **Notes**: {e.notes}")
+            a("")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # SECTION: Other explicitly declared model backends
+    # ══════════════════════════════════════════════════════════════════════
+    if other_entries:
+        a("## Other Models")
+        a("")
+        a("Model backends declared by modules that are not distributed through the sources above.")
+        a("")
+
+        for _key, e in other_entries:
+            if e.url:
+                a(f'### <a href="{e.url}" target="_blank">`{e.name}`</a> [↑](#categories)')
+            else:
+                a(f"### `{e.name}` [↑](#categories)")
+            a("")
+            mods = ", ".join(f"`{m}`" for m in e.modules)
+            a(f"- **Used by**: {mods}")
+            if e.task:
+                a(f"- **Task**: {e.task}")
+            if e.license:
+                a(f"- **License**: {e.license}")
             size_parts = []
             if e.vram_estimate:
                 size_parts.append(f"**VRAM**: {e.vram_estimate}")

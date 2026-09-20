@@ -131,6 +131,7 @@ _IMPORTS = [
     ("FaceIQAModule", ".face_iqa"),
     ("IdentityLossModule", ".identity_loss"),
     ("AdaFaceModule", ".adaface"),
+    ("FaceIdentityDriftModule", ".face_identity_drift"),
     ("IDSimModule", ".id_sim"),
     ("NearIDModule", ".nearid"),
     ("MaSCModule", ".masc"),
