@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.77] - 2026-09-20
+
 ### Added
 
 - **imagebind_score**: added the official JavisBench raw ImageBind audio-video semantic cosine as a separate field, with explicit non-synchronization limits and compatibility preprocessing for current Torchaudio/PyTorchVideo releases.
@@ -21,6 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **face_motion_preservation**: added strict frame-corresponding landmark-pair Pearson/CCA and EAR/blink preservation diagnostics as an explicitly non-interchangeable MediaPipe adaptation of the published FaceMotionPreserve evaluation protocol.
 - **prove**: added PROVE RC-S spatial and RC-T temporal removal-coherence metrics using pinned DINOv2-Giant patch features and explicit removal masks.
 - **cdpam**: added the optional learned full-reference perceptual audio distance with pinned official package/checkpoint provenance and modern PyTorch compatibility.
+- **squim**: added reference-free TorchAudio SQUIM estimates for STOI, wideband PESQ, and SI-SDR with explicit estimator semantics.
+- **audio_log_f0_dtw**: added MFCC-DTW-aligned log-F0 error, voiced/unvoiced disagreement, and alignment coverage for matching-content reference speech.
+- **distill_mos**: added the official Distill-MOS overall speech-quality estimate with bounded windowing and documented English/VoIP domain limits.
+- **speech_bert_score**: added the official WavLM-Large SpeechBERTScore precision metric for matching-content reference speech.
+- **body_motion_kinematics**: added separate pose-normalized speed, acceleration, jerk, range, symmetry, idle-time, and coverage diagnostics for unaligned single-person videos.
+- **audio_prosody_dtw**: added DTW-aligned speech energy, voicing, duration, and path-warp diagnostics without an unsupported aggregate style score.
+- **face_identity_drift**: added temporal ArcFace coverage, lower-tail, trend, and optional threshold-run diagnostics against reference face embeddings.
+
+### Changed
+
+- **metric documentation**: every module header now states its intended input, reference relationship, score semantics, and material applicability limits; helpers and result adapters explicitly delimit what they do not compute or validate.
+- **model catalogue**: consolidated runtime-weight provenance and licence disclosures in `MODELS.md`; Ayase's own code remains MIT while downloaded weights retain their upstream terms.
+
+### Fixed
+
+- **audio_visual_sync**: corrected the documented lag-sign convention and distinguished it from Synchformer's native convention.
+- **hdr_metadata**: corrected MaxFALL/MaxCLL wording so ordinary OpenCV uint8 results are described as code-value proxies rather than verified HDR luminance in nits.
+- **watermark_classifier**: documented that the fallback predicts AI-generated imagery rather than watermark probability.
+- **DWPose assets**: corrected pinned weight URL metadata.
 
 ### Removed
 

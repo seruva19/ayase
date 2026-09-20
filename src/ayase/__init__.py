@@ -3,7 +3,7 @@ Ayase - Modular media quality metrics toolkit
 
 """
 
-__version__ = "0.1.76"
+__version__ = "0.1.77"
 __author__ = "Ayase Contributors"
 __description__ = "Modular media quality metrics toolkit"
 
