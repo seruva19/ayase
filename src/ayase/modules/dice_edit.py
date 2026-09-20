@@ -1,10 +1,20 @@
-"""Object-level coherence evaluation for instruction-guided image edits.
+"""Evaluate whether object-level changes in an edited image follow an instruction.
 
-Implements the two-stage DICE evaluator from ICCV 2025: an Idefics3-based
-difference detector localizes ADD/REMOVE/EDIT operations, then a separately
-trained coherence model decides whether every localized change is requested by
-the edit instruction. The scalar score is the fraction of detected changes
-judged coherent (0-1, higher is better).
+For an image-only sample, ``sample.reference_path`` is the original/source
+image and ``sample.path`` is its edited result. The requested edit comes from
+config ``instruction``, then ``sample.caption.text``, then the edited image's
+``.txt`` sidecar. DICE first detects ADD/REMOVE/EDIT changes from the ordered
+source/edited pair, then judges each localized change against that instruction.
+``dice_edit_coherence_score`` is the coherent-change fraction in [0, 1]
+(higher is better); no detected changes score 0, while incomplete model output
+leaves the metric unset.
+
+The backend uses the official DICE Idefics3-8B difference-detector and
+coherence adapters. Coherence crops each image to its centered square, resizes
+to 512x512, and marks the detected region; setup requires the model snapshots
+and substantial memory.
+
+Primary source: https://github.com/aimagelab/DICE
 """
 
 from __future__ import annotations

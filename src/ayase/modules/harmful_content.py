@@ -1,17 +1,13 @@
-"""Harmful Content Detection module.
+"""Heuristic violence and graphic-content screening for images and videos.
 
-Beyond NSFW — detects potentially harmful visual content:
+``harmful_content_score`` is a 0--1 blend of red-region and inter-frame motion
+heuristics with optional zero-shot CLIP safety/violence prompts; higher means
+more evidence under those signals. The backend is not a dedicated or calibrated
+safety classifier, covers only the configured visual concepts, and can confuse
+red objects or rapid benign motion with harm. It must not be the sole moderation
+or safety decision.
 
-  harmful_content_score — 0-1 (higher = more harmful)
-
-Detection categories:
-  - Violence / fighting (motion + red-channel analysis)
-  - Blood / gore (colour-based heuristic)
-  - Disturbing textures (high-frequency noise patterns)
-
-Uses OpenCV heuristics as baseline.  If ``transformers`` and a
-safety classifier are available, uses zero-shot CLIP classification
-for more accurate results.
+Model basis: https://huggingface.co/openai/clip-vit-base-patch32
 """
 
 import logging

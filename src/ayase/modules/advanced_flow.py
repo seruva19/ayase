@@ -1,7 +1,13 @@
-"""RAFT optical flow magnitude analysis across all consecutive frame pairs.
+"""Reference-free video motion magnitude from torchvision RAFT optical flow.
 
-Uses RAFT-Large or RAFT-Small from torchvision to compute mean flow score.
-Higher flow_score indicates more motion. Low scores flag static content."""
+``flow_score`` is the mean dense-flow magnitude over consecutive loaded frame
+pairs; higher means more pixel displacement, not better quality, and no fixed
+range applies. Long videos are uniformly reduced to ``max_frames`` and frames
+may be downscaled, so values depend on resolution, frame sampling, and frame
+rate and are not directly comparable across unlike inputs.
+
+Model basis: https://docs.pytorch.org/vision/stable/models/raft.html
+"""
 
 import logging
 import numpy as np

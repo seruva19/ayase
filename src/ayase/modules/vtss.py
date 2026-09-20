@@ -1,8 +1,14 @@
-"""VTSS (Video Training Suitability Score) module.
+"""Ayase-defined weighted summary of available per-sample training signals.
 
-Inspired by Koala-36M (CVPR 2025). Meta-metric that combines
-multiple sub-metrics to predict overall training data quality.
-Aggregates existing quality signals into a single suitability score.
+VTSS combines normalized aesthetic, technical, motion, temporal, sharpness,
+noise, and scene-stability fields already present on a sample. Higher values
+mean greater suitability under the configured weights and expected upstream
+ranges, normally 0--1. Missing signals are omitted and remaining weights are
+renormalized, so scores from different metric coverage are not directly
+comparable. This is not a learned or calibrated quality predictor, and the
+configured ``resolution`` weight is currently unused.
+
+Implementation basis: https://github.com/seruva19/ayase
 """
 
 import logging

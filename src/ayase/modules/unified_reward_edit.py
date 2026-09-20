@@ -1,7 +1,24 @@
-"""UnifiedReward Edit scoring for instruction-guided image edits.
+"""Judge instruction-guided image edits with UnifiedReward Edit.
 
-Compares ``sample.reference_path`` as the source image with ``sample.path`` as
-the edited image. The caption or sidecar text is used as the edit instruction.
+``sample.reference_path`` is the unedited source and ``sample.path`` is edited
+image 1. The instruction comes from config ``instruction``, then
+``sample.caption.text``, then the adjacent ``.txt`` sidecar. Pointwise mode uses
+those two images; pairwise modes also require config ``comparison_path`` as edited
+image 2. Masks are not accepted, and video samples are skipped.
+
+Pointwise mode reports editing-success and preservation/overediting components on
+the prompt-defined 0--25 scales and uses their mean as the primary score; higher is
+better. Pairwise-score outputs have no locally enforced range. Pairwise-rank stores
+0 for a tie, 1 for image 1, or 2 for image 2, so that primary value is a category,
+not an ordered quality score.
+
+The backend is either the optional DiffSynth Qwen3-VL-based
+``UnifiedReward-Edit-qwen3vl-8b`` implementation or a configured OpenAI-compatible
+chat endpoint. Outputs are model-generated and parsed, so they are suitable for
+relative edit evaluation, not pixel-exact verification or masked-region scoring.
+
+Implementation: https://github.com/modelscope/DiffSynth-Studio/blob/main/docs/zh/Model_Details/Image-Quality-Metrics.md
+Model assets: https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics
 """
 
 from __future__ import annotations

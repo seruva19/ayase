@@ -1,12 +1,19 @@
-"""PSNR-HVS and PSNR-HVS-M module.
+"""Compare a candidate with a reference using PSNR-HVS and PSNR-HVS-M approximations.
 
-PSNR-HVS is a perceptually weighted PSNR variant that accounts for the
-human visual system's contrast sensitivity function (CSF). PSNR-HVS-M
-adds masking effects.
+``sample.path`` is the distorted/candidate image or video and
+``sample.reference_path`` is its spatially and temporally corresponding reference;
+prompts and masks are not used. Images are resized to their minimum common width
+and height. Videos compare same-index decoded frames every ``subsample`` frames
+until either stream ends, then average the frame scores.
 
-Range: dB (higher = better, typically 25-50 dB).
+The in-tree backend converts frames to grayscale and applies fixed CSF weights to
+8x8 DCT errors; PSNR-HVS-M additionally attenuates errors using reference-block AC
+energy. Values are in dB and higher is better; numerically negligible error is
+reported as 100 dB, while other values have no enforced range. This is a simplified
+implementation, not the authors' reference code, and results depend on registration,
+resizing, frame synchronization, and luma while ignoring chroma.
 
-Available in the ``piq`` package.
+Algorithm basis and reference implementation: https://www.ponomarenko.info/psnrhvsm.htm
 """
 
 import logging
