@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.76** · Generated 2026-09-20 13:10 · **283 models** across **9 sources**
+> **Version 0.1.76** · Generated 2026-09-20 13:39 · **283 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -722,9 +722,9 @@
 - `onnx_dover.onnx` — used by `dover`
 - `raft_large_C_T_SKHT_V2-ff5fadd5.pth` — used by `advanced_flow`
 - `raft_small_C_T_V2-01064c6d.pth` — used by `advanced_flow`
-- `rtmpose_m.onnx` — used by `object_integrity`
+- `rtmpose_m.onnx` — used by `body_motion_kinematics`, `object_integrity`
 - `sac+logos+ava1-l14-linearMSE.pth` — used by `aesthetic_scoring`
-- `yolox_m.onnx` — used by `object_integrity`
+- `yolox_m.onnx` — used by `body_motion_kinematics`, `object_integrity`
 
 ### <a href="https://huggingface.co/cromsc/nima-mobilenet-aesthetic" target="_blank">`cromsc/nima-mobilenet-aesthetic`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
@@ -901,7 +901,7 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx" target="_blank">`rtmpose_m.onnx`</a> [↑](#categories)
 
-- **Used by**: `object_integrity`
+- **Used by**: `body_motion_kinematics`, `object_integrity`
 - **Task**: RTMPose keypoint estimator (rtmlib backend)
 - **Notes**: Shared with rtmpose_fidelity
 
@@ -950,7 +950,7 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx" target="_blank">`yolox_m.onnx`</a> [↑](#categories)
 
-- **Used by**: `object_integrity`
+- **Used by**: `body_motion_kinematics`, `object_integrity`
 - **Task**: YOLOX person detector (rtmlib backend)
 - **Notes**: Shared with rtmpose_fidelity
 
@@ -1375,7 +1375,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `ultralytics` [↑](#categories)
 > YOLOv8 object detection
 
-- **Used by**: `geneval`, `object_detection`, `object_integrity`, `object_permanence`, `opens2v`, `rtmpose_fidelity`, `t2v_compbench`, `vbench2`
+- **Used by**: `body_motion_kinematics`, `geneval`, `object_detection`, `object_integrity`, `object_permanence`, `opens2v`, `rtmpose_fidelity`, `t2v_compbench`, `vbench2`
 - **Install**: `pip install ultralytics`
 
 ### `vebench==1.0.0` [↑](#categories)
