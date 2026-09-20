@@ -41,7 +41,10 @@ logger = logging.getLogger(__name__)
 WHOLEBODY_KEYPOINTS = 133
 DWPose_REVISION = "f7c16a3d45ad3783db41471848c80fbc281cabac"
 DWPose_REPO = "yzd-v/DWPose"
-DWPose_BASE_URL = f"https://huggingface.co/{DWPose_REPO}/resolve/{DWPose_REVISION}/"
+DWPose_BASE_URL = (
+    "https://huggingface.co/yzd-v/DWPose/resolve/"
+    "f7c16a3d45ad3783db41471848c80fbc281cabac/"
+)
 DWPose_DETECTOR = "yolox_l.onnx"
 DWPose_POSE = "dw-ll_ucoco_384.onnx"
 DWPose_DETECTOR_SHA256 = "7860ae79de6c89a3c1eb72ae9a2756c0ccfbe04b7791bb5880afabd97855a411"
