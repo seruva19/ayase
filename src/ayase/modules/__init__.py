@@ -162,6 +162,7 @@ _IMPORTS = [
     ("AudioModule", ".audio"),
     ("VoiceIdentityModule", ".voice_identity"),
     ("AudioPESQModule", ".audio_pesq"),
+    ("AudioSQUIMObjectiveModule", ".audio_squim_objective"),
     ("CDPAMModule", ".cdpam"),
     ("AudioUTMOSv2Module", ".audio_utmos_v2"),
     ("AudioISCModule", ".audio_isc"),
