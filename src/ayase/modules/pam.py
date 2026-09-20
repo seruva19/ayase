@@ -1,9 +1,17 @@
-"""PAM anti-prompt audio quality score.
+"""Score no-reference audio quality by contrasting CLAP prompt similarities.
 
-Scores no-reference audio quality with the PAM method: contrasting CLAP
-similarity to positive quality prompts against anti-prompts such as noisy,
-distorted, or clipped audio. When the CLAP backend is unavailable the module
-reports no score rather than substituting a signal-statistics proxy.
+Audio is decoded from an audio file or video, converted to mono at 48 kHz by
+default, and limited to the first 10 seconds. The module compares its CLAP
+embedding with configurable positive quality prompts and negative anti-prompts;
+it does not use the sample caption or reference media.
+
+``pam_score`` is a sigmoid of the positive-minus-negative mean cosine
+similarity, in 0-1 with higher values favoring the positive quality prompts
+(0.5 indicates equal means). The sole backend is
+``laion/clap-htsat-fused``. If CLAP cannot be loaded, audio cannot be decoded,
+or inference fails, the field remains unset; no signal-statistics proxy is
+substituted. The result is prompt-relative and covers only the loaded excerpt,
+not the remainder of longer media.
 """
 
 import logging

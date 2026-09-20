@@ -1,10 +1,18 @@
-"""CLIP Temporal Consistency + Face Consistency — EvalCrafter metrics #5 and #7.
+"""Measure consecutive-frame similarity with whole-frame CLIP embeddings.
 
-- clip_temp_score: Cosine similarity between CLIP embeddings of consecutive
-  frames, averaged across all pairs.  Measures temporal smoothness.
-- face_consistency_score: Cosine similarity between consecutive frame pairs in
-  CLIP space, averaged across the video.  Measures identity/appearance stability
-  (EvalCrafter face_consistency).
+For videos only, the module uniformly samples at most ``max_frames`` (32 by
+default), embeds each complete RGB frame with CLIP, and averages cosine
+similarity over adjacent pairs. It uses neither captions nor reference media
+and requires at least three decoded frames.
+
+Both output fields, ``clip_temp`` and ``face_consistency``, currently receive
+the same adjacent-pair mean (nominal cosine range -1 to 1; higher means more
+similar). Despite its historical name, ``face_consistency`` does not detect,
+crop, recognize, or track faces, so it is a whole-frame appearance-consistency
+proxy and can be dominated by backgrounds, camera motion, or scene cuts. The
+only backend is ``openai/clip-vit-base-patch32`` by default; model/setup,
+decoding, or inference failure leaves both metrics unset rather than using a
+heuristic fallback.
 """
 
 import logging

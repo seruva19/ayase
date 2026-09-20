@@ -1,7 +1,10 @@
-"""Shared ASR transcription cache for speech metrics.
+"""Provide cached speech transcription for ASR-dependent callers.
 
-Provides a common faster-whisper / Whisper transcription step so CER and WER
-modules do not run ASR twice for the same file.
+Transcripts come from an explicit config value, an ``.asr.txt`` sidecar, or an
+available faster-whisper/OpenAI Whisper backend, and model results are cached by
+file identity and model name. This support module does not emit
+``QualityMetrics`` or perform validation; CER, WER, and other callers own all
+comparison, scoring, and issue semantics.
 """
 
 import logging

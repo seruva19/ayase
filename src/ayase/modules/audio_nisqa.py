@@ -1,22 +1,16 @@
-"""NISQA non-intrusive speech quality module.
+"""Estimate five no-reference speech-quality dimensions with NISQAv2.
 
-Predicts speech quality on five dimensions (overall MOS, noisiness,
-coloration, discontinuity, loudness) without a reference signal. Standard
-in modern TTS evaluation pipelines.
+The module scores a sample's audio alone; it does not use a clean reference,
+caption, or visual content. Standalone audio is decoded with soundfile, while
+video audio is extracted with ffmpeg, then converted to mono at the configured
+48 kHz target rate. The entire decoded waveform is submitted to the model.
 
-Reference: Mittag et al., "NISQA: A Deep CNN-Self-Attention Model for
-Multidimensional Speech Quality Prediction with Crowdsourced Datasets"
-(Interspeech 2021, arXiv:2104.09494).
-
-The upstream PyPI ``nisqa`` package pins old torch/numpy and cascading-
-downgrades half the env on install. To avoid that, the inference code is
-vendored at ``ayase/third_party/nisqa/`` (MIT-licensed, source-identical
-to https://github.com/gabrielmittag/NISQA) and the ~1 MB checkpoint is
-auto-fetched from ``AkaneTendo25/ayase-runtime-assets``.
-
-Backend: the real vendored NISQA model + checkpoint. When it cannot be loaded
-(missing torch, or the checkpoint cannot be downloaded), the NISQA metrics are
-left unset — there is no proxy/heuristic stand-in.
+It writes ``nisqa_mos``, ``nisqa_noisiness``, ``nisqa_coloration``,
+``nisqa_discontinuity``, and ``nisqa_loudness``, rounded to three decimals on
+the model's native, unclamped scale. Inference uses the vendored NISQA source
+and its downloaded ``nisqa.tar`` checkpoint; there is no proxy backend. Missing
+dependencies or weights, decode/extraction failure, fewer than 100 samples, or
+an inference error leave all NISQA fields unset.
 """
 
 import logging

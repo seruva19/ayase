@@ -1,7 +1,11 @@
-"""Zero-shot scene context tagging using CLIP with predefined label candidates.
+"""Attach CLIP zero-shot scene tags to images or a representative video frame.
 
-Classifies images into scene categories (outdoors, nature, urban, etc.) via
-CLIP zero-shot prediction. Returns top-3 tags with confidence scores."""
+The module ranks a fixed list of 13 candidate labels and adds the top three and
+their softmax probabilities as an informational ``ValidationIssue``. For video,
+only the representative frame selected by ``load_representative_frame`` is
+examined; the tags do not summarize all frames. No ``QualityMetrics`` field is
+written and the probabilities are relative only to the configured label set.
+"""
 
 import logging
 import cv2

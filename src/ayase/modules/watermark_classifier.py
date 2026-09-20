@@ -1,7 +1,17 @@
-"""Watermark and AI-generated image detection using ResNet-50 or HuggingFace classifier.
+"""Classify one image or representative video frame with one of two distinct models.
 
-Two-tier detection: custom ResNet-50 weights for watermarks, or HuggingFace
-AI-image-detector as fallback. Returns watermark_probability or ai_generated_probability (0-1)."""
+User-supplied binary ResNet-50 weights emit ``watermark_probability`` in 0–1;
+higher values mean the custom model predicts its positive watermark/artifact
+class. If those weights are absent or fail to load, the configured Hugging Face
+AI-image detector instead emits ``ai_generated_probability`` in 0–1; higher
+values mean an AI/artificial/fake class, not a watermark. The two fields therefore
+have different semantics and must not be substituted for one another.
+
+Images are evaluated once; videos use only their middle decoded frame. Results
+inherit the selected model's training domain and class labels and do not establish
+media provenance or detect marks outside the sampled frame. The module skips the
+sample when dependencies, weights, or decoding are unavailable.
+"""
 
 import logging
 

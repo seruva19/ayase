@@ -1,7 +1,19 @@
-"""Video-text alignment via X-CLIP (temporal) or frame-averaged CLIP similarity.
+"""Estimate sampled visual alignment with ``sample.caption.text``.
 
-Supports X-CLIP for video-native temporal matching or standard CLIP for
-frame-averaged scoring. Returns video_text_score and video_text_temporal consistency."""
+The default CLIP backend averages caption similarity over five sampled frames:
+``video_text_score`` is the mean logit divided by 100, and
+``video_text_temporal`` is ``max(0, 1 - frame-score standard deviation)``; higher
+values indicate stronger sampled alignment or more uniform frame scores. With
+``use_xclip``, eight sampled frames produce one video-level score normalized by
+the largest absolute logit in that one-item batch, and the temporal field is
+left unset because X-CLIP exposes no per-frame signal here.
+
+The module requires a readable image/video and ``sample.caption.text`` (truncated
+to 77 characters). The two backends use different scoring transformations, so
+their values are not interchangeable or calibrated probabilities. Sparse frame
+sampling can miss events, and the temporal field measures consistency of CLIP
+caption scores rather than motion, ordering, or audiovisual synchronization.
+"""
 
 import logging
 import numpy as np

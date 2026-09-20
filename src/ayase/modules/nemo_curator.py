@@ -1,21 +1,18 @@
-"""NeMo Curator Quality module.
+"""Classify the intrinsic text quality of ``sample.caption.text``.
 
-Scores the quality of caption text associated with a sample using a
-tiered backend:
+The media itself and any reference are ignored. The preferred backend is
+NVIDIA's ``nvidia/quality-classifier-deberta``, a Low/Medium/High classifier
+trained on web documents rather than specifically on image or video captions.
+Its class probabilities are mapped to weights 0, 0.5, and 1. If that backend is
+unavailable, auto mode can use FastText only when a configured pretrained model
+file exists; there is no rule-based fallback.
 
-  1. **DeBERTa quality classifier** — ``nvidia/quality-classifier-deberta``
-     from HuggingFace, the same model used inside NeMo Curator's
-     ``QualityClassifier`` pipeline stage.  Trained on 22 828 Common Crawl
-     samples labelled Low / Medium / High.  Note: the model was trained on
-     *web documents*, not image/video captions specifically, but transfers
-     well to caption quality assessment.
-     Requires ``pip install transformers torch huggingface_hub``.
-  2. **FastText** quality filter — ``pip install fasttext``.
-     Requires a pre-trained quality model file (set ``fasttext_model`` in config).
-
-Only processes samples that have ``sample.caption.text``.  Stores
-``nemo_quality_score`` (0–1) and ``nemo_quality_label``
-(Low / Medium / High) on the sample's QualityMetrics.
+The module writes ``nemo_quality_score`` in 0-1 (higher favors the High class)
+and ``nemo_quality_label`` as Low, Medium, or High. DeBERTa truncates at 1,024
+tokens; the configured ``min_length`` and ``max_length`` values are currently
+not applied. Missing/empty captions, unavailable backends, or inference errors
+leave both fields unset. The score describes textual document quality, not
+caption-media alignment or factual correctness.
 """
 
 import logging

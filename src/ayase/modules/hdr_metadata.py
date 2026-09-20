@@ -1,11 +1,12 @@
-"""HDR Metadata (MaxFALL / MaxCLL) module.
+"""Estimate MaxFALL/MaxCLL-named luminance proxies from decoded video frames.
 
-Computes HDR static metadata values:
-  MaxFALL — Maximum Frame-Average Light Level (nits)
-  MaxCLL  — Maximum Content Light Level (nits)
-
-These are critical HDR10 metadata values used for tone-mapping.
-Works on any video by analyzing pixel luminance values.
+Every ``subsample``-th OpenCV frame is reduced with BT.709 luma coefficients;
+``max_fall`` is the largest sampled frame mean and ``max_cll`` the largest sampled
+pixel value. OpenCV's normal decode path supplies uint8 BGR code values, so these
+outputs are usually 0–255 code-value proxies, not luminance in nits. The module
+does not inspect or verify mastering metadata, bit depth, colour primaries, or
+transfer characteristics. A PQ conversion branch is used only if OpenCV supplies
+uint16/float data. No validation issue is emitted.
 """
 
 import logging
