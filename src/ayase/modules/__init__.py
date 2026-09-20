@@ -165,6 +165,7 @@ _IMPORTS = [
     ("AudioPESQModule", ".audio_pesq"),
     ("AudioSQUIMObjectiveModule", ".audio_squim_objective"),
     ("CDPAMModule", ".cdpam"),
+    ("SpeechBERTScoreModule", ".speech_bert_score"),
     ("AudioUTMOSv2Module", ".audio_utmos_v2"),
     ("AudioDistillMOSModule", ".audio_distill_mos"),
     ("AudioISCModule", ".audio_isc"),
