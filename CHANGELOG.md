@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **gaze_dynamics**: added separate MediaPipe eye-look activation location, amplitude, speed, binocular-disagreement, and coverage diagnostics for unaligned reference videos.
 - **speech_pause_rhythm**: added transparent Silero-VAD speech-span, activity, internal-pause, and normalized timing-pattern diagnostics for matching-content reference speech.
 - **cvvdp_ml_saliency**: added the official experimental saliency-weighted ColorVideoVDP learned regressor for aligned full-reference streaming-distortion assessment.
 - **cvvdp_ml_transformer**: added the official experimental learned-pooling ColorVideoVDP variant for aligned full-reference streaming-distortion assessment, with its published generalization and optimization limits documented.

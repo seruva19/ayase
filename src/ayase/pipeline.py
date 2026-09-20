@@ -320,6 +320,12 @@ class PipelineModule(ABC):
                 field = m.group(1)
                 if field not in outputs and field in field_descs:
                     outputs[field] = field_descs[field]
+        # Explicit declarations cover dynamic/local aliases that the source
+        # scanner cannot safely infer.  Only accept actual QualityMetrics
+        # fields so dataset-level declarations remain separate below.
+        for field, description in cls.metric_info.items():
+            if field in field_descs and field not in outputs:
+                outputs[field] = description or field_descs[field]
 
         dataset_outputs: Dict[str, str] = {}
         for m in _re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', src):
