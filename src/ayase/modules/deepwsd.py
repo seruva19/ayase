@@ -1,7 +1,14 @@
-"""DeepWSD (Deep Wasserstein Distance) FR-IQA module.
+"""Measure full-reference image distortion with the DeepWSD distance.
 
-Self-supervised approach using Wasserstein distance in deep feature space.
-No labeled training data needed.
+``sample.path`` is compared as the distorted image with the corresponding
+``sample.reference_path``; no prompt is used. For videos, this wrapper samples
+up to ``subsample`` frames independently from each file, pairs them by sampled
+order, resizes each pair to their minimum common dimensions, and averages the
+frame scores. Inputs are converted to RGB float tensors in [0, 1].
+``deepwsd_score`` is a distance (lower is better; no fixed range is enforced).
+It requires PyIQA's ``deepwsd`` backend and emits no fallback score.
+
+Primary source: https://github.com/Buka-Xing/DeepWSD
 """
 
 import logging

@@ -1,11 +1,13 @@
-"""HDR-VDP (HDR Visual Difference Predictor) module.
+"""Full-reference HDR-VDP-3 quality scoring for images and paired video frames.
 
-HDR-VDP is the gold-standard perceptual quality metric for HDR content.
-It models the human visual system's adaptation to HDR luminance levels.
+When compatible ``hdrvdp`` Python bindings are installed, Ayase requests the Q
+score in ``sRGB-display`` mode and averages every fifth paired video frame;
+higher is better and the backend defines the numeric range. Inputs are decoded
+through OpenCV as ordinary image values rather than calibrated absolute HDR
+luminance, and frame pairs are resized to common dimensions. No proxy or CLI
+fallback is used when the Python backend is unavailable.
 
-Range: Q score (higher = better quality, typically 0-100).
-
-Requires hdrvdp Python bindings or CLI. Falls back to PU-PSNR proxy.
+Method basis: https://github.com/gfxdisp/HDR-VDP-3
 """
 
 import logging

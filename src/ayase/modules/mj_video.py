@@ -1,10 +1,21 @@
-"""Fine-grained video preference scoring with MJ-Video.
+"""Score text-video preference with the MJ-VIDEO-2B reward model.
 
-Downloads the public MJ-VIDEO-2B checkpoint during setup and runs the reference
-reward architecture, vendored in-tree (``ayase.vendor.mj_video``) at the pinned
-commit, in-process. Ayase downloads weights, never code. Exposes the learned overall reward and five
-aspect rewards; all 28 criterion rewards are retained in sample metadata.
-Higher rewards indicate stronger learned preference.
+The candidate is ``sample.path``; its conditioning text is ``sample.caption.text``
+or, if absent, the adjacent ``.txt`` sidecar. ``sample.reference_path`` and masks
+are not used. By default the model sees eight sampled frames. It emits an overall
+reward and rewards for alignment, safety, fineness, coherence/consistency, and
+bias/fairness; 28 criterion rewards are retained in ``sample.metadata``. These are
+uncalibrated learned rewards with no enforced range, and higher means a stronger
+preference according to this model.
+
+The reward runtime is vendored in-tree from a pinned MJ-Video source revision.
+Setup downloads the ``MJ-Bench/MJ-VIDEO-2B`` checkpoint plus the InternLM2 tokenizer
+implementation and assets, which Transformers loads with ``trust_remote_code``.
+This is a sampled-frame, learned assessment of generated video rather than an
+objective or exhaustive safety/fairness determination.
+
+Primary source: https://github.com/aiming-lab/MJ-Video
+Model: https://huggingface.co/MJ-Bench/MJ-VIDEO-2B
 """
 
 import logging

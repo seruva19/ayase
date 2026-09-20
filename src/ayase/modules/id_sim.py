@@ -1,9 +1,18 @@
-"""Fine-grained visual identity distance using the official ID-Sim metric.
+"""Measure fine-grained visual identity distance between two corresponding images.
 
-ID-Sim (CVPR 2026) distinguishes intrinsic object identity from context and
-viewpoint changes. Lower distance means stronger identity preservation. The
-default DINOv2 ViT-B/14 variant uses author-published adapter weights and an
-exact backbone checkpoint mirrored on Hugging Face for reproducible loading.
+``sample.reference_path`` supplies the reference identity and ``sample.path``
+the candidate; no prompt is used. Either path may be an image file or a
+directory, in which case the first sorted PNG/JPEG/WebP/BMP is selected. Images
+are converted to RGB and resized bicubically to 448x448 by the packaged ID-Sim
+preprocessor. ``id_sim_distance`` is non-negative and lower means more similar;
+no fixed upper range is enforced.
+
+The default ``cls`` mode uses the official ID-Sim DINOv2 ViT-B/14 adapter and
+projection head with a pinned, checksum-verified backbone mirror. ``patch`` and
+``joint`` are configurable alternatives; unavailable weights or backend errors
+leave the metric unset.
+
+Primary source: https://github.com/JuliaChae/id_sim
 """
 
 import hashlib

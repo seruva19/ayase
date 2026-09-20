@@ -1,12 +1,14 @@
-"""CompressedVQA-HDR — HDR Compressed Video Quality (ICME 2025 winner).
+"""Score compressed HDR/SDR video quality against a pristine reference video.
 
-GitHub: https://github.com/sunwei925/CompressedVQA-HDR
+``sample.path`` is the distorted/compressed video and ``sample.reference_path``
+is the corresponding reference; no prompt is used. Both paths are passed
+unchanged to the installed ``compressedvqa_hdr.predict`` backend, so this
+wrapper performs no decoding, alignment, transfer-function conversion, or
+subsampling. ``compressed_vqa_hdr`` is the backend's native scalar (higher is
+better; no fixed range is enforced) and remains unset without a reference or
+the real backend.
 
-``compressed_vqa_hdr`` is produced only by the real CompressedVQA-HDR model.
-When the model/package is not installed the metric is left unset (no
-PU/structural-similarity proxy).
-
-compressed_vqa_hdr — higher = better
+Primary source: https://github.com/sunwei925/CompressedVQA-HDR
 """
 import logging
 from pathlib import Path

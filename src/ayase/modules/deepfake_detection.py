@@ -1,16 +1,13 @@
-"""Deepfake / Synthetic Media Detection module.
+"""Heuristic synthetic-media screening for images and sampled video frames.
 
-Estimates the likelihood that a video/image was generated or
-manipulated:
+The 0--1 ``deepfake_probability`` combines FFT spectrum peakiness with optional
+zero-shot CLIP real/CG/deepfake prompts; higher means stronger evidence under
+those heuristics. It is not a calibrated probability, uses no trained deepfake
+or face-manipulation detector, and can confuse stylization, compression, image
+processing, or out-of-domain content with synthesis. Use as a review signal,
+not an authenticity decision.
 
-  deepfake_probability — 0-1 (higher = more likely synthetic)
-
-Detection methods (layered):
-  1. Frequency analysis: GAN-generated images often have spectral
-     artifacts (periodic peaks in the Fourier domain).
-  2. Face inconsistency: blending boundary artifacts around faces.
-  3. CLIP-based classifier: if CLIP is available, uses zero-shot
-     classification with real/fake prompts.
+Model basis: https://huggingface.co/openai/clip-vit-base-patch32
 """
 
 import logging
