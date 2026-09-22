@@ -371,6 +371,8 @@ class QualityMetrics(BaseModel):
     color_grading_score: Optional[float] = None  # Colour consistency 0-100
     white_balance_score: Optional[float] = None  # White balance accuracy 0-100
     exposure_consistency: Optional[float] = None  # Exposure stability 0-100
+    underexposed_pixel_ratio: Optional[float] = None  # Share of gray pixels < 15 (0-1, lower=better)
+    overexposed_pixel_ratio: Optional[float] = None  # Share of gray pixels > 240 (0-1, lower=better)
     focus_quality: Optional[float] = None  # Sharpness/focus quality 0-100
     banding_severity: Optional[float] = None  # Colour banding 0-100 (lower=better)
 

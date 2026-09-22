@@ -1,14 +1,16 @@
-"""Flag exposure and contrast heuristics on one representative frame per sample.
+"""Measure clipped-shadow and blown-highlight pixel shares on one representative frame.
 
 The image itself, or a video's middle frame, is converted to OpenCV grayscale.
-Warnings are added when the fraction of pixels below 15 or above 240 exceeds
-the configured under/overexposure ratio; an informational issue is added when
-grayscale standard deviation is below the contrast threshold. Ratios and
-standard deviation are recorded only in issue details: no quality score or
-dataset aggregation is produced. The algorithm uses no learned model, caption,
-reference image, HDR transfer-function awareness, or temporal evidence, so its
-fixed 8-bit thresholds are heuristic and may not suit intentionally stylized,
-linear-light, HDR, or non-photographic content.
+``underexposed_pixel_ratio`` is the share of pixels below 15 and
+``overexposed_pixel_ratio`` the share above 240 (both 0-1, lower=better). Warnings
+are added when either ratio exceeds the configured under/overexposure threshold;
+an informational issue is added when grayscale standard deviation is below the
+contrast threshold (the standard deviation itself is recorded only in issue
+details). The algorithm uses no learned model, caption, reference image,
+HDR transfer-function awareness, or temporal evidence, so its fixed 8-bit
+cut-offs may not suit intentionally stylized, linear-light, HDR, or
+non-photographic content (e.g. low-key night scenes, white-background product
+shots), where high ratios can be deliberate.
 """
 
 import logging
@@ -17,7 +19,7 @@ import numpy as np
 from typing import Optional
 
 from ayase.image import load_representative_frame
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
+from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
@@ -29,6 +31,10 @@ class ExposureModule(PipelineModule):
         "overexposure_threshold": 0.3,
         "underexposure_threshold": 0.3,
         "contrast_threshold": 30.0,
+    }
+    metric_groups = {
+        "underexposed_pixel_ratio": "basic",
+        "overexposed_pixel_ratio": "basic",
     }
 
     def __init__(self, config=None):
@@ -69,6 +75,11 @@ class ExposureModule(PipelineModule):
             # Count pixels > 240
             bright_pixels = np.count_nonzero(gray > 240)
             bright_ratio = bright_pixels / total_pixels
+
+            if sample.quality_metrics is None:
+                sample.quality_metrics = QualityMetrics()
+            sample.quality_metrics.underexposed_pixel_ratio = float(dark_ratio)
+            sample.quality_metrics.overexposed_pixel_ratio = float(bright_ratio)
             
             if bright_ratio > self.overexposure_threshold:
                  sample.validation_issues.append(
