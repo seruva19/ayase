@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.78** · Generated 2026-09-24 16:39 · **284 models** across **9 sources**
+> **Version 0.1.79** · Generated 2026-09-24 20:32 · **292 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**284** models · **110** HuggingFace · **55** pyiqa · **9** sources
+**292** models · **118** HuggingFace · **55** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~509 GB
+**Estimated total download size (all models):** ~512 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (81)](#huggingface-models) · [Weight Files (29)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (40)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Other Models (12)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (84)](#huggingface-models) · [Weight Files (34)](#weight-file-repos) · [pyiqa (55)](#pyiqa-metrics) · [torchvision (14)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (7)](#ffmpeg) · [pip Packages (40)](#pip-packages) · [Local Weights (40)](#local-weight-files) · [Other Models (12)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -53,6 +53,16 @@
 - **Task**: NearID identity-aware SigLIP2 image embeddings
 - **Notes**: Apache-2.0; pinned to revision 7f69f4a0c753297de708a0217ef32659fe12a008
 - **Source**: <a href="https://arxiv.org/abs/2604.01973" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/face_extractor/models/buffalo_l/w600k_r50.onnx" target="_blank">`BestWishYsh/OpenS2V-Weight`</a> [↑](#categories)
+> text-to-video · apache-2.0
+
+- **Used by**: `facesim`
+- **Downloads**: 10
+- **Disk**: 174 MB
+- **Task**: InsightFace buffalo_l ArcFace R50 embedding (FaceSim-Arc)
+- **Notes**: InsightFace model: non-commercial research use only
+- **Source**: <a href="https://arxiv.org/abs/2505.20292" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/ByteDance/EvoQuality" target="_blank">`ByteDance/EvoQuality`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
@@ -319,6 +329,14 @@
 - **Disk**: ~34.4 GB
 - **Task**: LOVE video perception regressor
 - **Notes**: Run with the upstream LOVE repository; software license not published
+
+### <a href="https://huggingface.co/bezzam/wavlm_large_finetune_seed_tts_eval/resolve/main/wavlm_large_finetune.pth" target="_blank">`bezzam/wavlm_large_finetune_seed_tts_eval`</a> [↑](#categories)
+> cc-by-sa-3.0
+
+- **Used by**: `speaker_sim`
+- **Disk**: 1.3 GB
+- **Task**: WavLM-TDNN speaker verification checkpoint (SIM-o)
+- **Notes**: CC BY-SA 3.0 (UniSpeech); copy of the checkpoint linked by seed-tts-eval / F5-TTS
 
 ### <a href="https://huggingface.co/chaenayo/id-sim_dinov2_vitb14_cls_patch" target="_blank">`chaenayo/id-sim_dinov2_vitb14_cls_patch`</a> [↑](#categories)
 > image-feature-extraction · mit
@@ -651,6 +669,13 @@
 - **Used by**: `verse_bench`
 - **Task**: RoBERTa text encoder (CLAP submodule)
 
+### <a href="https://huggingface.co/s3prl/converted_ckpts/resolve/main/wavlm_large.pt" target="_blank">`s3prl/converted_ckpts`</a> [↑](#categories)
+
+- **Used by**: `speaker_sim`
+- **Disk**: 1.26 GB
+- **Task**: WavLM-Large upstream for the WavLM-TDNN model
+- **Notes**: MIT (WavLM, Microsoft); the file s3prl's wavlm_large entry downloads
+
 ### <a href="https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb" target="_blank">`speechbrain/spkrec-ecapa-voxceleb`</a> [↑](#categories)
 > apache-2.0
 
@@ -727,6 +752,18 @@
 - `sac+logos+ava1-l14-linearMSE.pth` — used by `aesthetic_scoring`
 - `yolox_m.onnx` — used by `body_motion_kinematics`, `object_integrity`
 
+### <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">`BestWishYsh/OpenS2V-Weight`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- `det_10g.onnx` — used by `facesim`
+- `glint360k_curricular_face_r101_backbone.bin` — used by `facesim`
+- `w600k_r50.onnx` — used by `facesim`
+
+### <a href="https://huggingface.co/bezzam/wavlm_large_finetune_seed_tts_eval" target="_blank">`bezzam/wavlm_large_finetune_seed_tts_eval`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- `wavlm_large_finetune.pth` — used by `speaker_sim`
+
 ### <a href="https://huggingface.co/cromsc/nima-mobilenet-aesthetic" target="_blank">`cromsc/nima-mobilenet-aesthetic`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
@@ -736,6 +773,11 @@
 > Pre-trained weight files for ayase modules
 
 - `cotracker2.pth` — used by `vbench2`
+
+### <a href="https://huggingface.co/s3prl/converted_ckpts" target="_blank">`s3prl/converted_ckpts`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- `wavlm_large.pt` — used by `speaker_sim`
 
 ## Local Weight Files
 
@@ -1331,7 +1373,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `insightface` [↑](#categories)
 > InsightFace (face recognition)
 
-- **Used by**: `active_speaker`, `adaface`, `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `face_identity_drift`, `grafiqs`, `identity_loss`, `magface`, `multi_subject_identity`
+- **Used by**: `active_speaker`, `adaface`, `concept_presence`, `dino_face_identity`, `entitybench`, `face_cross_similarity`, `face_identity_drift`, `facesim`, `grafiqs`, `identity_loss`, `magface`, `multi_subject_identity`
 - **Install**: `pip install insightface`
 
 ### `joblib` [↑](#categories)
