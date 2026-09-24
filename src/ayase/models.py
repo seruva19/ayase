@@ -208,6 +208,10 @@ class QualityMetrics(BaseModel):
     celebrity_id_score: Optional[float] = None
     identity_loss: Optional[float] = None  # Face identity cosine distance (0-1, lower=better)
     face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
+    facesim_cur: Optional[float] = None  # FaceSim-Cur, CurricularFace cosine to a reference face (ConsisID; higher=better)
+    facesim_arc: Optional[float] = None  # FaceSim-Arc, ArcFace cosine to a reference face (ConsisID; higher=better)
+    facesim_face_frames: Optional[float] = None  # FaceSim frames with a detected face / sampled frames (0-1)
+    sim_o: Optional[float] = None  # SIM-o, WavLM-TDNN speaker similarity to the original reference audio (-1..1)
     clip_image_similarity: Optional[float] = None  # CLIP image-to-image cosine similarity vs reference (0-1, higher=better)
     face_cross_similarity: Optional[float] = None  # Avg pairwise face similarity (0-1, higher=more consistent)
     face_identity_count: Optional[int] = None  # Number of unique identities detected

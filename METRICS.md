@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.78** · Generated 2026-09-24 16:37 · **391 modules** · **583 metrics**
+> **Version 0.1.79** · Generated 2026-09-24 20:37 · **393 modules** · **587 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **383/391 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **385/393 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
 
 ## Summary
 
-**391** modules · **669** output fields · **583** metrics · **281** tiered · **184** GPU · **21** categories
+**393** modules · **673** output fields · **587** metrics · **283** tiered · **186** GPU · **21** categories
 
 <table width="100%"><tr>
 <td width="50%" valign="top"><h4>Modules by Category</h4><img src="docs/chart_categories.png" width="100%"/></td>
@@ -30,7 +30,7 @@
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-63-metrics) (63) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-70-metrics) (70) · [Basic Visual Quality](#basic-visual-quality-18-metrics) (18) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-54-metrics) (54) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-85-metrics) (85) · [Full-Reference Quality](#full-reference-quality-94-metrics) (94) · [Text-Video Alignment](#text-video-alignment-63-metrics) (63) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-70-metrics) (70) · [Basic Visual Quality](#basic-visual-quality-18-metrics) (18) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-57-metrics) (57) · [Scene & Content](#scene--content-19-metrics) (19) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-13-metrics) (13) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-11-metrics) (11) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-86-fields) (86) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -510,7 +510,7 @@
 - **Packages**: inspect, torch, torchvision, transformers
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://huggingface.co/IDEA-Research/grounding-dino-tiny" target="_blank">HF</a>
-- **Tests**: covered by [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py)
 - **Config**: `device=auto`, `max_frames=16`, `detector_model=IDEA-Research/grounding-dino-tiny`, `box_threshold=0.3`, `text_threshold=0.25`, `keep_box_conf=0.3`, `keep_text_sim=0.2`, `encoder=clip`, `clip_model=openai/clip-vit-base-patch32`, `dino_model=dinov2_vitb14`, `vlm_model=llava-hf/llava-1.5-7b-hf`, `vlm_max_frames=4`, `vlm_max_new_tokens=8`, `warning_threshold=0.0`
 
 ### `paq2piq_score` [↑](#categories)
@@ -4212,7 +4212,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (76 metrics)
+## Audio Quality (77 metrics)
 
 ### `active_speaker_best_lse_c` [↑](#categories)
 > Lip-sync confidence of the best-synced face (higher=better) · ↑ higher=better
@@ -4727,6 +4727,18 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_silent_lip_stability.py`](tests/modules/per_module/test_silent_lip_stability.py)
 - **Config**: `minimum_silence_ms=300.0`, `sample_rate=16000`, `num_faces=1`, `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`
 
+### `sim_o` [↑](#categories)
+> SIM-o, WavLM-TDNN speaker similarity to the original reference audio (-1..1) · ↑ higher=better · -1..1
+
+**[`speaker_sim`](src/ayase/modules/speaker_sim.py)** — SIM-o speaker similarity to a reference recording (WavLM-TDNN, UniSpeech / F5-TTS eval)
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → wavlm_tdnn
+- **Packages**: huggingface_hub, soundfile, torch, torchaudio
+- **Source**: <a href="https://huggingface.co/bezzam/wavlm_large_finetune_seed_tts_eval" target="_blank">HF</a>
+- **Tests**: covered by [`test_speaker_sim.py`](tests/modules/per_module/test_speaker_sim.py)
+- **Config**: `device=auto`
+
 ### `song_eval_clarity` [↑](#categories)
 > SongEval clarity of song structure (1-5, higher=better) · ↑ higher=better · 1-5
 
@@ -5043,7 +5055,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 
-## Face & Identity (54 metrics)
+## Face & Identity (57 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
 > AdaFace cosine similarity vs reference face (0-1, higher=better) · ↑ higher=better · 0-1
@@ -5440,6 +5452,42 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: Pillow, deepface, insightface
 - **Tests**: covered by [`test_identity_loss.py`](tests/modules/per_module/test_identity_loss.py), [`test_identity_loss.py`](tests/modules/test_identity_loss.py)
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`, `pad_retry=0.25`
+
+### `facesim_arc` [↑](#categories)
+> FaceSim-Arc, ArcFace cosine to a reference face (ConsisID; higher=better) · ↑ higher=better
+
+**[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → consisid
+- **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
+- **Source**: <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py)
+- **Config**: `protocol=consisid`, `device=auto`
+
+### `facesim_cur` [↑](#categories)
+> FaceSim-Cur, CurricularFace cosine to a reference face (ConsisID; higher=better) · ↑ higher=better
+
+**[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → consisid
+- **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
+- **Source**: <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py)
+- **Config**: `protocol=consisid`, `device=auto`
+
+### `facesim_face_frames` [↑](#categories)
+> FaceSim frames with a detected face / sampled frames (0-1) · 0-1
+
+**[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
+
+- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → consisid
+- **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
+- **Source**: <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py)
+- **Config**: `protocol=consisid`, `device=auto`
 
 ### `gaze_blendshape_binocular_disagreement_difference` [↑](#categories)
 > Median left/right ocular-control disagreement difference (0=equal)
@@ -6441,7 +6489,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: inspect, torch, torchvision, transformers
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://huggingface.co/IDEA-Research/grounding-dino-tiny" target="_blank">HF</a>
-- **Tests**: covered by [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py)
 - **Config**: `device=auto`, `max_frames=16`, `detector_model=IDEA-Research/grounding-dino-tiny`, `box_threshold=0.3`, `text_threshold=0.25`, `keep_box_conf=0.3`, `keep_text_sim=0.2`, `encoder=clip`, `clip_model=openai/clip-vit-base-patch32`, `dino_model=dinov2_vitb14`, `vlm_model=llava-hf/llava-1.5-7b-hf`, `vlm_max_frames=4`, `vlm_max_new_tokens=8`, `warning_threshold=0.0`
 
 
