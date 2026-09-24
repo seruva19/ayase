@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.79] - 2026-09-24
+
+### Added
+
+- **facesim**: FaceSim-Cur and FaceSim-Arc - face identity of a video against a reference face image in the CurricularFace and ArcFace spaces, ported from the official ConsisID and OpenS2V-Eval evaluation scripts (protocols `consisid` and `opens2v`); reproduces the OpenS2V demo score within the onnxruntime GPU/CPU spread.
+- **speaker_sim**: SIM-o - WavLM-TDNN speaker similarity to the original reference recording, ported from the F5-TTS / seed-tts-eval evaluation code; reproduces the published ground-truth SIM-o on LibriSpeech-PC test-clean (0.695 against 0.69). The WavLM upstream of s3prl is bundled, so the metric no longer downloads s3prl through torch.hub and runs with torchaudio 2.x.
+
 ## [0.1.78] - 2026-09-24
 
 ### Added
