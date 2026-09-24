@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.77** · Generated 2026-09-22 22:56 · **391 modules** · **583 metrics**
+> **Version 0.1.78** · Generated 2026-09-24 16:37 · **391 modules** · **583 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -7114,7 +7114,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
 
 ### `verse_bench_metrics` [↑](#categories)
 > Raw Verse-Bench component metrics · type: float
@@ -7122,7 +7122,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Raw metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, LSE-D, AV-A
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
 
 ### `verse_bench_overall` [↑](#categories)
 > Verse-Bench final score · type: float
@@ -7130,7 +7130,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Weighted aggregate score (0-1, higher=better) from S_joint(50%), S_video(20%), S_audio(20%), S_other(10%)
 
 - **Input**: img/vid · **Speed**: 🐌 slow
-- **Tests**: covered by [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
 
 ### `worldmodelbench_aesthetics_adherence` [↑](#categories)
 > type: float
