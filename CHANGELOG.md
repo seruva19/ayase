@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.78] - 2026-09-24
+
 ### Added
 
 - **exposure**: now records `underexposed_pixel_ratio` and `overexposed_pixel_ratio` (share of gray pixels below 15 / above 240) as metrics, so clipped shadows and blown highlights can be sorted and filtered, not only warned about.
@@ -14,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **deduplication** / **dedup**: detects near-duplicates instead of exact pHash matches only — samples within `hamming_threshold` bits (default 4; 0 restores exact matching) are grouped transitively across the whole dataset, the sample with the best `priority_metric` (default `technical_score`) is kept, and every other member gets a `near_duplicate` warning naming it. Samples restored from a resumed run are included.
+
+### Fixed
+
+- **lip_sync**: videos whose path contains spaces are measured instead of being reported as having no talking face; the bundled SyncNet now calls ffmpeg with an argument list, and a failed frame or audio extraction is raised as an error rather than yielding empty LSE-D / LSE-C.
 
 ## [0.1.77] - 2026-09-20
 
