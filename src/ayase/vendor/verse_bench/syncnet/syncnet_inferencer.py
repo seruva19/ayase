@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import time
 import librosa
 import soundfile
@@ -33,11 +34,19 @@ class SyncnetInferencer:
             os.remove(os.path.join(work_dir, "images", frame))
 
     def video_to_frames_audio(self, video_path, work_dir):
+        # Argument lists, not a shell string: a path with spaces was split by the shell, ffmpeg
+        # failed without a trace, and the clip read as "no talking face".
         os.makedirs(f"{work_dir}/images", exist_ok=True)
-        os.system(
-            f"ffmpeg -y -threads 1 -i {video_path} -q:v 2 -r {self.fps} -filter:v fps={self.fps} {work_dir}/images/frame-%05d.jpg")
-        os.system(
-            f"ffmpeg -y -threads 1 -i {video_path} -q:a 0 -ac 1 -ar {self.sr} -acodec pcm_s16le -threads 1 {work_dir}/audio.wav")
+        commands = (
+            ["ffmpeg", "-y", "-threads", "1", "-i", str(video_path), "-q:v", "2", "-r", str(self.fps),
+             "-filter:v", f"fps={self.fps}", os.path.join(work_dir, "images", "frame-%05d.jpg")],
+            ["ffmpeg", "-y", "-threads", "1", "-i", str(video_path), "-q:a", "0", "-ac", "1", "-ar", str(self.sr),
+             "-acodec", "pcm_s16le", "-threads", "1", os.path.join(work_dir, "audio.wav")],
+        )
+        for command in commands:
+            done = subprocess.run(command, capture_output=True, text=True)
+            if done.returncode != 0:
+                raise RuntimeError(f"ffmpeg failed on {video_path}: {done.stderr.strip()[-300:]}")
 
     def crop_face(self, work_dir):
         frame_files = os.listdir(os.path.join(work_dir, "images"))
