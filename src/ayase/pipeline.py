@@ -97,6 +97,9 @@ class PipelineModule(ABC):
     deprecated: bool = False
 
     _global_test_mode: bool = False
+
+    # Declare a media type when source inference cannot identify the contract.
+    input_type: ClassVar[Optional[str]] = None
     _metadata_field_descriptions: ClassVar[
         tuple[Dict[str, str], Dict[str, str]]
     ]
@@ -287,7 +290,8 @@ class PipelineModule(ABC):
         """Introspect module source to extract metadata without instantiation.
 
         Returns dict with: name, description, input_type, output_fields,
-        default_config.  All inferred from existing code — no duplication.
+        default_config. Media types may be declared explicitly; other metadata
+        is inferred from source and field declarations.
         """
         import re as _re
         from .models import QualityMetrics, DatasetStats
@@ -305,6 +309,7 @@ class PipelineModule(ABC):
             repr(cls.metric_groups),
             cls.requires_external_backend,
             cls.deprecated,
+            cls.input_type,
         )
         if (
             cached_metadata is not None
@@ -369,7 +374,9 @@ class PipelineModule(ABC):
             and "def post_process" in src
         )
 
-        if batch_module:
+        if cls.input_type is not None:
+            input_type = cls.input_type
+        elif batch_module:
             input_type = "batch"
         elif audio_module:
             input_type = "audio"

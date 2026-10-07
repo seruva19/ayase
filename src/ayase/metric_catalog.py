@@ -194,7 +194,10 @@ def _detect_input_type(cls: type, source: str) -> str:
         and "def post_process" in source
     )
 
-    if batch_module:
+    declared_input_type = getattr(cls, "input_type", None)
+    if declared_input_type is not None:
+        input_type = str(declared_input_type)
+    elif batch_module:
         input_type = "batch"
     elif audio_module:
         input_type = "audio"

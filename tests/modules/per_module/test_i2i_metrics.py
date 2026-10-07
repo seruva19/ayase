@@ -82,17 +82,34 @@ def test_i2i_learned_without_setup_degrades_gracefully(tmp_path):
     assert sample.quality_metrics is None
 
 
-def test_i2i_dino_cls_shared_field_is_conservatively_adapted():
+def test_i2i_configurable_and_preprocessed_fields_are_adapted():
     from ayase.modules.i2i_learned import I2ILearnedModule
 
-    assert (
-        I2ILearnedModule.field_provenance()["i2i_dinov2_cls_similarity"]
-        == "adapted"
-    )
+    provenance = I2ILearnedModule.field_provenance()
+    assert provenance["i2i_dinov2_cls_similarity"] == "adapted"
+    assert provenance["i2i_clip_similarity"] == "adapted"
+    assert provenance["i2i_lpips_alex"] == "adapted"
+    assert "configurable" in I2ILearnedModule.deviations["i2i_clip_similarity"]
+    assert "paired-image" in I2ILearnedModule.deviations["i2i_clip_similarity"]
+    assert "256×256" in I2ILearnedModule.deviations["i2i_lpips_alex"]
+    assert "does not prescribe" in I2ILearnedModule.deviations["i2i_lpips_alex"]
+
+
+def test_i2i_learned_requires_adapted_opt_in():
+    from ayase.modules.i2i_learned import I2ILearnedModule
+
     default_module = I2ILearnedModule()
     default_pipeline = Pipeline([default_module])
     assert "adapted" not in default_pipeline._module_allowed_provenance[id(default_module)]
+    assert default_pipeline._provenance_excluded[default_module.name] == "adapted+own"
 
     opted_in_module = I2ILearnedModule()
     opted_in_pipeline = Pipeline([opted_in_module], allow_provenance=["adapted"])
     assert "adapted" in opted_in_pipeline._module_allowed_provenance[id(opted_in_module)]
+    assert opted_in_module.name not in opted_in_pipeline._provenance_excluded
+
+
+def test_i2i_learned_metadata_declares_image_reference_input():
+    from ayase.modules.i2i_learned import I2ILearnedModule
+
+    assert I2ILearnedModule.get_metadata()["input_type"] == "img +ref"

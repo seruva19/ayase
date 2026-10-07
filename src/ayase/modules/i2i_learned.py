@@ -41,11 +41,12 @@ class I2ILearnedModule(PipelineModule):
     """Compute five complementary learned similarities for an image pair."""
 
     name = "i2i_learned"
+    input_type = "img"
     provenance = {
-        "i2i_clip_similarity": "published",
+        "i2i_clip_similarity": "adapted",
         "i2i_dinov2_cls_similarity": "adapted",
         "i2i_dinov2_patch_similarity": "own",
-        "i2i_lpips_alex": "published",
+        "i2i_lpips_alex": "adapted",
         "i2i_siglip_similarity": "own",
     }
     sources = {
@@ -57,6 +58,12 @@ class I2ILearnedModule(PipelineModule):
         "i2i_dinov2_cls_similarity": "The default image protocol uses the DreamBooth "
         "DINO v1 ViT-S/16 encoder. The configurable dinov2_model can substitute another "
         "CLS encoder; the shared configurable field is classified as adapted.",
+        "i2i_clip_similarity": "The CLIP image encoder is configurable, and this module "
+        "reports one paired-image cosine rather than DreamBooth's aggregate evaluation "
+        "over generated and reference image sets.",
+        "i2i_lpips_alex": "Both inputs are resized to 256×256 before LPIPS v0.1 AlexNet; "
+        "the official LPIPS interface accepts equal-sized tensors at their supplied "
+        "resolution and does not prescribe this fixed resize.",
     }
     description = "DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity"
     default_config = {

@@ -31,10 +31,15 @@ is classified as `adapted` with the deviation recorded in `METRICS.md`.
 Values are **not comparable** with what the same field produced before.
 
 `fid`, `sfid`, `is_score`, PRDC precision/recall/density/coverage, `vendi`,
-`p1203_mos`, `i2i_dinov2_cls_similarity`, and `psnr99` are conservatively
+`p1203_mos`, `i2i_dinov2_cls_similarity`, `i2i_clip_similarity`,
+`i2i_lpips_alex`, and `psnr99` are conservatively
 classified as `adapted`. Distribution metrics select or pool video frame
 features through Ayase-defined protocols; P.1203 receives a synthesized video-only session;
-DINO similarity permits a configurable encoder; PSNR99 also supports a custom
+DINO and CLIP similarities permit configurable encoders; CLIP reports a single
+image-pair cosine rather than the cited benchmark's aggregate protocol, and
+LPIPS resizes both images to 256×256. These image-to-image computations retain
+their numerical behavior, but require explicit selection under the corrected
+provenance classification. PSNR99 also supports a custom
 video sampling and aggregation protocol. Source-matching image subprotocols
 remain available, but a shared field cannot promise published equivalence for
 every supported input. Explicit module selection or adapted-provenance opt-in

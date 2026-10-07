@@ -71,3 +71,16 @@ def test_catalog_does_not_instantiate_modules(monkeypatch) -> None:
     assert module is not None
     assert any(metric.name == "rqvqa_score" for metric in module.metrics)
     assert any(model.name == "q-future/one-align" for model in module.models)
+
+
+def test_catalog_honors_declared_image_input_in_fast_and_detailed_modes() -> None:
+    from ayase.modules.i2i_learned import I2ILearnedModule
+
+    ModuleRegistry.discover_modules()
+    assert ModuleRegistry.get_module("i2i_learned") is I2ILearnedModule
+
+    for detailed in (False, True):
+        catalog = build_metric_catalog(["i2i_learned"], detailed=detailed)
+        module = catalog.module("i2i_learned")
+        assert module is not None
+        assert module.input_type == "img +ref"
