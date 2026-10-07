@@ -5,6 +5,7 @@ correct descriptions, valid output fields, reachable model references, and
 consistent metadata.  Run with ``pytest tests/test_docs_integrity.py``.
 """
 
+import ast
 import importlib
 import inspect
 import pkgutil
@@ -540,6 +541,57 @@ class TestNoHeuristicBackends:
                     f"{name} sets _backend='heuristic' outside test_mode "
                     f"at line {i + 1}"
                 )
+
+    _FABRICATED_LITERALS = frozenset({0.0, 1.0, 0.5})
+
+    @classmethod
+    def _is_placeholder_literal(cls, node: ast.AST) -> bool:
+        # Float literals only: int 0/1 returns are commonly sentinels
+        # (counts, feature dims), not fabricated metric values.
+        return (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, float)
+            and node.value in cls._FABRICATED_LITERALS
+        )
+
+    @classmethod
+    def _iter_literal_returns(cls, tree: ast.AST):
+        """Yield ``(lineno, kind)`` for literal returns in failure branches:
+
+        - any ``return 0.0|0.5|1.0`` inside an ``except`` handler;
+        - the same inside ``if not self._ml_available`` bodies or the
+          ``else`` of an availability/back-end guard.
+        """
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ExceptHandler):
+                for sub in ast.walk(node):
+                    if isinstance(sub, ast.Return) and cls._is_placeholder_literal(sub.value):
+                        yield sub.lineno, "except-branch"
+            elif isinstance(node, ast.If):
+                test = ast.unparse(node.test)
+                if "_ml_available" in test or "_backend" in test:
+                    for sub in ast.walk(ast.Module(body=node.body, type_ignores=[])):
+                        if isinstance(sub, ast.Return) and cls._is_placeholder_literal(sub.value):
+                            yield sub.lineno, f"availability-branch ({test})"
+                    for sub in ast.walk(ast.Module(body=node.orelse, type_ignores=[])):
+                        if isinstance(sub, ast.Return) and cls._is_placeholder_literal(sub.value):
+                            yield sub.lineno, f"availability-else ({test})"
+
+    @pytest.mark.parametrize("name", MODULE_NAMES)
+    def test_no_fabricated_literals(self, name: str) -> None:
+        """A metric value must not be fabricated as 0.0/0.5/1.0 in error or
+        unavailable-backend branches — the field stays unset instead."""
+        cls = ALL_MODULES[name]
+        src = _get_full_source(cls)
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            return
+        hits = list(self._iter_literal_returns(tree))
+        assert not hits, (
+            f"{name} returns fabricated constants from failure branches: "
+            + "; ".join(f"line {ln} ({kind})" for ln, kind in hits)
+        )
 
 
 # ═════════════════════════════════════════════════════════════════════════════

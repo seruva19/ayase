@@ -92,8 +92,9 @@ class _StubModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = 75.0
-        sample.quality_metrics.aesthetic_score = 6.5
+        sample.quality_metrics.blur_score = 75.0
+        sample.quality_metrics.aesthetic_v25_score = 6.5
+        sample.quality_metrics.motion_score = 4.0
         return sample
 
 
@@ -113,7 +114,7 @@ class TestMetricCount:
         field_count = len(QualityMetrics.model_fields) - len(
             QualityMetrics._NON_METRIC_FIELDS
         )
-        assert field_count == 624, f"Expected 624, got {field_count}"
+        assert field_count == 612, f"Expected 612, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README's headline "N metrics" claim = the DELIVERED metric count.
@@ -158,7 +159,7 @@ class TestQualityMetricsValidation:
 
     def test_quality_metrics_allows_declared_fields(self):
         """QualityMetrics accepts any known field."""
-        qm = QualityMetrics(blur_score=0.5, vmaf=92.0, aesthetic_score=7.5)
+        qm = QualityMetrics(blur_score=0.5, vmaf=92.0, aesthetic_v25_score=7.5)
         assert qm.blur_score == 0.5
         assert qm.vmaf == 92.0
 
@@ -182,7 +183,7 @@ class TestMetricsTable:
         # SCHEMA field count — every QualityMetrics metric field, delivered and
         # requires_external_backend alike. Unchanged by the requires_external_backend flag (the model keeps
         # all fields); the delivered subset is what the README headline claims.
-        assert len(README_METRICS) == 624
+        assert len(README_METRICS) == 612
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
@@ -227,15 +228,15 @@ class TestPythonAPI:
 
     def test_quality_metrics_summary(self):
         """README: sample.quality_metrics.summary() returns a string."""
-        qm = QualityMetrics(blur_score=120.0, aesthetic_score=7.5, clip_score=0.8)
+        qm = QualityMetrics(blur_score=120.0, aesthetic_v25_score=7.5, clip_score=0.8)
         summary = qm.summary()
         assert isinstance(summary, str)
         assert "3 metrics" in summary
 
     def test_quality_metrics_non_null_metrics(self):
-        qm = QualityMetrics(technical_score=50.0, motion_score=3.2)
+        qm = QualityMetrics(blur_score=50.0, motion_score=3.2)
         result = qm.non_null_metrics()
-        assert result == {"technical_score": 50.0, "motion_score": 3.2}
+        assert result == {"blur_score": 50.0, "motion_score": 3.2}
 
     def test_quality_metrics_to_grouped_dict(self):
         # Field→group mapping is populated by module registration, so ensure
@@ -292,7 +293,7 @@ class TestPipelineAPI:
         result = pipeline.process_sample(sample)
         assert isinstance(result, Sample)
         assert result.quality_metrics is not None
-        assert result.quality_metrics.technical_score == 75.0
+        assert result.quality_metrics.blur_score == 75.0
         pipeline.stop()
 
     def test_pipeline_results_populated(self, synthetic_video):
@@ -320,7 +321,7 @@ class TestPipelineAPI:
         pipeline.start()
         pipeline.process_sample(Sample(path=Path("a.mp4"), is_video=True))
         pipeline.process_sample(Sample(path=Path("b.mp4"), is_video=True))
-        assert pipeline.stats.avg_technical_score == pytest.approx(75.0)
+        assert pipeline.stats.avg_motion_score == pytest.approx(4.0)
         assert pipeline.stats.avg_aesthetic_score == pytest.approx(6.5)
         pipeline.stop()
 
@@ -390,7 +391,7 @@ class TestPipelineReadmePattern:
 
         # Verify something was actually computed
         assert processed.quality_metrics is not None
-        assert processed.quality_metrics.technical_score is not None
+        assert processed.quality_metrics.blur_score is not None
 
 
 # =====================================================================
@@ -601,7 +602,7 @@ class TestPluginSystem:
             def process(self, sample: Sample) -> Sample:
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.aesthetic_score = 9.0
+                sample.quality_metrics.aesthetic_v25_score = 9.0
                 return sample
 
         pipeline = Pipeline([_E2EPlugin()])
@@ -610,7 +611,7 @@ class TestPluginSystem:
         result = pipeline.process_sample(sample)
         pipeline.stop()
 
-        assert result.quality_metrics.aesthetic_score == 9.0
+        assert result.quality_metrics.aesthetic_v25_score == 9.0
 
 
 # =====================================================================
@@ -931,8 +932,11 @@ class TestAyasePipeline:
         """End-to-end: AyasePipeline with a module that has fallback tiers."""
         dataset = _make_dataset(tmp_dir)
 
-        # hdr_sdr_vqa is a good test — no ML deps, always mounts, produces a metric
-        ayase = AyasePipeline(modules=["hdr_sdr_vqa"])
+        # hdr_sdr_vqa is a good test — no ML deps, always mounts, produces a
+        # metric. It is provenance-marked "own", so it needs the explicit
+        # allow_provenance override to run.
+        cfg = AyaseConfig(pipeline=PipelineConfig(allow_provenance=["own"]))
+        ayase = AyasePipeline(config=cfg, modules=["hdr_sdr_vqa"])
         results = ayase.run(dataset)
 
         assert len(results) == 1
@@ -945,7 +949,9 @@ class TestAyasePipeline:
         """End-to-end with multiple modules on an image dataset."""
         dataset = _make_dataset(tmp_dir)
 
-        ayase = AyasePipeline(modules=["basic", "hdr_sdr_vqa"])
+        # hdr_sdr_vqa is provenance "own" — allow it explicitly
+        cfg = AyaseConfig(pipeline=PipelineConfig(allow_provenance=["own"]))
+        ayase = AyasePipeline(config=cfg, modules=["basic", "hdr_sdr_vqa"])
         results = ayase.run(dataset)
 
         assert len(results) == 1

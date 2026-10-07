@@ -89,7 +89,7 @@ class _BatchAwareModule(PipelineModule):
         for sample in samples:
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.technical_score = float(len(sample.path.name))
+            sample.quality_metrics.motion_score = float(len(sample.path.name))
         return samples
 
 
@@ -124,7 +124,7 @@ class _BatchHookModule(PipelineModule):
         for sample in samples:
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.technical_score = (
+            sample.quality_metrics.motion_score = (
                 float(len(sample.caption.text)) if sample.caption else 0.0
             )
         return samples
@@ -150,7 +150,7 @@ def test_pipeline_process_samples_applies_hooks(tmp_path: Path):
 
     assert result.caption == original_caption
     assert result.quality_metrics is not None
-    assert result.quality_metrics.technical_score == 1.0
+    assert result.quality_metrics.motion_score == 1.0
 
 
 class _FakeCLIPInputs(dict):
@@ -512,7 +512,7 @@ class _SparseMetricModule(PipelineModule):
 
     def process(self, sample: Sample) -> Sample:
         if sample.path.name == "second.mp4":
-            sample.quality_metrics = QualityMetrics(technical_score=100.0)
+            sample.quality_metrics = QualityMetrics(motion_score=100.0)
         return sample
 
 
@@ -521,7 +521,7 @@ def test_pipeline_average_ignores_missing_metric_values():
     pipeline.start()
     pipeline.process_sample(Sample(path=Path("first.mp4"), is_video=True))
     pipeline.process_sample(Sample(path=Path("second.mp4"), is_video=True))
-    assert pipeline.stats.avg_technical_score == 100.0
+    assert pipeline.stats.avg_motion_score == 100.0
 
 
 def test_video_memorability_is_clamped(tmp_path: Path):
@@ -635,7 +635,7 @@ class _CaptionScoreModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = float(len(sample.caption.text)) if sample.caption else 0.0
+        sample.quality_metrics.motion_score = float(len(sample.caption.text)) if sample.caption else 0.0
         return sample
 
 
@@ -646,7 +646,7 @@ class _FileSizeScoreModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = float(sample.path.stat().st_size)
+        sample.quality_metrics.motion_score = float(sample.path.stat().st_size)
         return sample
 
 
@@ -658,7 +658,7 @@ class _ReferenceSizeScoreModule(PipelineModule):
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         size = sample.reference_path.stat().st_size if sample.reference_path else 0
-        sample.quality_metrics.technical_score = float(size)
+        sample.quality_metrics.motion_score = float(size)
         return sample
 
 
@@ -669,7 +669,7 @@ class _TestModeAwareScoreModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = 0.0 if self.test_mode else 1.0
+        sample.quality_metrics.motion_score = 0.0 if self.test_mode else 1.0
         return sample
 
 
@@ -680,7 +680,7 @@ class _AyasePipelineRunProbeModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = 1.0
+        sample.quality_metrics.motion_score = 1.0
         return sample
 
 
@@ -691,7 +691,7 @@ class _AyasePipelineConfigProbeModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = float(self.config.get("score", 1.0))
+        sample.quality_metrics.motion_score = float(self.config.get("score", 1.0))
         return sample
 
 
@@ -716,11 +716,11 @@ def test_pipeline_reprocesses_same_path_when_sample_context_changes():
     assert result_1 is not result_2
     assert result_1.quality_metrics is not None
     assert result_2.quality_metrics is not None
-    assert result_1.quality_metrics.technical_score == 1.0
-    assert result_2.quality_metrics.technical_score == 6.0
+    assert result_1.quality_metrics.motion_score == 1.0
+    assert result_2.quality_metrics.motion_score == 6.0
     assert len(pipeline.results) == 1
     assert pipeline.stats.total_samples == 1
-    assert pipeline.stats.avg_technical_score == 6.0
+    assert pipeline.stats.avg_motion_score == 6.0
 
 
 def test_load_state_skips_stale_caption_context_and_rebuilds_stats(tmp_path: Path):
@@ -755,7 +755,7 @@ def test_load_state_skips_stale_caption_context_and_rebuilds_stats(tmp_path: Pat
     assert restored.results == {}
     assert restored.stats.total_samples == 0
     assert restored.stats.valid_samples == 0
-    assert restored.stats.avg_technical_score is None
+    assert restored.stats.avg_motion_score is None
 
 
 def test_load_state_skips_incompatible_pipeline_fingerprint(tmp_path: Path):
@@ -780,7 +780,7 @@ def test_load_state_skips_incompatible_pipeline_fingerprint(tmp_path: Path):
     result = second_pipeline.process_sample(sample)
 
     assert result.quality_metrics is not None
-    assert result.quality_metrics.technical_score == 3.0
+    assert result.quality_metrics.motion_score == 3.0
     assert second_pipeline.stats.total_samples == 1
 
 
@@ -834,7 +834,7 @@ def test_sanitize_cached_sample_drops_unknown_metric_keys(caplog):
         "path": "clip.mp4",
         "is_video": True,
         "quality_metrics": {
-            "technical_score": 3.0,
+            "motion_score": 3.0,
             "perceptual_hash": None,        # since-removed legacy field
             "some_future_metric": 1.5,      # unknown field
         },
@@ -842,7 +842,7 @@ def test_sanitize_cached_sample_drops_unknown_metric_keys(caplog):
     with caplog.at_level(logging.WARNING):
         cleaned = Pipeline._sanitize_cached_sample("clip.mp4", data)
 
-    assert cleaned["quality_metrics"] == {"technical_score": 3.0}
+    assert cleaned["quality_metrics"] == {"motion_score": 3.0}
     assert "unknown metric field" in caplog.text
     assert "perceptual_hash" in caplog.text
     assert "some_future_metric" in caplog.text
@@ -851,7 +851,7 @@ def test_sanitize_cached_sample_drops_unknown_metric_keys(caplog):
 
 
 def test_sanitize_cached_sample_noop_when_all_known():
-    data = {"quality_metrics": {"technical_score": 3.0}}
+    data = {"quality_metrics": {"motion_score": 3.0}}
     assert Pipeline._sanitize_cached_sample("k", data) is data
 
 
@@ -881,7 +881,7 @@ def test_load_state_restores_sample_with_legacy_metric_key(tmp_path: Path, caplo
     # The sample is restored (not discarded) and the legacy key is dropped.
     assert len(restored.results) == 1
     sample = next(iter(restored.results.values()))
-    assert sample.quality_metrics.technical_score == float(media_path.stat().st_size)
+    assert sample.quality_metrics.motion_score == float(media_path.stat().st_size)
     assert "perceptual_hash" in caplog.text
 
 
@@ -943,7 +943,7 @@ def test_load_state_replaces_existing_results_when_state_is_incompatible(tmp_pat
 
     assert pipeline.results == {}
     assert pipeline.stats.total_samples == 0
-    assert pipeline.stats.avg_technical_score is None
+    assert pipeline.stats.avg_motion_score is None
 
 
 def test_load_state_replaces_existing_results_when_state_is_legacy(tmp_path: Path):
@@ -987,7 +987,7 @@ def test_load_state_preserves_existing_results_when_state_file_is_corrupt(tmp_pa
 
     assert sorted(pipeline.results) == [str(media_path)]
     assert pipeline.stats.total_samples == 1
-    assert pipeline.stats.avg_technical_score == 5.0
+    assert pipeline.stats.avg_motion_score == 5.0
 
 
 def test_load_state_rejects_resume_cache_from_different_test_mode(tmp_path: Path):
@@ -1009,7 +1009,7 @@ def test_load_state_rejects_resume_cache_from_different_test_mode(tmp_path: Path
         result = second_pipeline.process_sample(Sample(path=media_path, is_video=True))
 
         assert result.quality_metrics is not None
-        assert result.quality_metrics.technical_score == 1.0
+        assert result.quality_metrics.motion_score == 1.0
         assert second_pipeline.stats.total_samples == 1
     finally:
         PipelineModule._global_test_mode = prev
@@ -1029,10 +1029,10 @@ def test_pipeline_reprocesses_same_path_when_media_file_changes(tmp_path: Path):
     assert first is not second
     assert first.quality_metrics is not None
     assert second.quality_metrics is not None
-    assert first.quality_metrics.technical_score == 4.0
-    assert second.quality_metrics.technical_score == 10.0
+    assert first.quality_metrics.motion_score == 4.0
+    assert second.quality_metrics.motion_score == 10.0
     assert pipeline.stats.total_samples == 1
-    assert pipeline.stats.avg_technical_score == 10.0
+    assert pipeline.stats.avg_motion_score == 10.0
 
 
 def test_pipeline_reprocesses_same_path_when_reference_file_changes(tmp_path: Path):
@@ -1051,10 +1051,10 @@ def test_pipeline_reprocesses_same_path_when_reference_file_changes(tmp_path: Pa
     assert first is not second
     assert first.quality_metrics is not None
     assert second.quality_metrics is not None
-    assert first.quality_metrics.technical_score == 2.0
-    assert second.quality_metrics.technical_score == 6.0
+    assert first.quality_metrics.motion_score == 2.0
+    assert second.quality_metrics.motion_score == 6.0
     assert pipeline.stats.total_samples == 1
-    assert pipeline.stats.avg_technical_score == 6.0
+    assert pipeline.stats.avg_motion_score == 6.0
 
 
 def test_duplicate_module_name_raises():
@@ -1534,7 +1534,7 @@ def test_ayase_pipeline_run_preserves_public_pipeline_hooks(tmp_path: Path):
 
     result = results[str(media_path)]
     assert result.quality_metrics is not None
-    assert result.quality_metrics.technical_score == 0.0
+    assert result.quality_metrics.motion_score == 0.0
 
 
 def test_ayase_pipeline_run_preserves_public_pipeline_module_config(tmp_path: Path):
@@ -1550,7 +1550,7 @@ def test_ayase_pipeline_run_preserves_public_pipeline_module_config(tmp_path: Pa
 
     result = results[str(media_path)]
     assert result.quality_metrics is not None
-    assert result.quality_metrics.technical_score == 7.0
+    assert result.quality_metrics.motion_score == 7.0
 
 
 def test_pipeline_repeated_start_resets_previous_run_state(tmp_path: Path):

@@ -4,6 +4,8 @@ import numpy as np
 import pytest
 import soundfile as sf
 
+from ayase.models import Sample
+
 
 @pytest.fixture
 def synthetic_wav(tmp_path):
@@ -47,30 +49,46 @@ class TestAudioSISDR:
 
 
 class TestAudioMCD:
-    def test_identical_zero(self, synthetic_wav):
+    def test_unavailable_without_pymcd(self, synthetic_wav):
         from ayase.modules.audio_mcd import AudioMCDModule
 
         mod = AudioMCDModule()
-        mod._ml_available = True
-        mfcc = mod._extract_mfcc(synthetic_wav)
-        assert mfcc is not None
-        assert mfcc.shape[0] == 14  # n_mfcc + 1
+        # pymcd is not installed in the test env — score must stay unset.
+        sample = Sample(path=synthetic_wav, is_video=False, reference_path=synthetic_wav)
+        result = mod.process(sample)
+        assert result is sample
+        assert sample.quality_metrics is None or sample.quality_metrics.mcd_score is None
 
-    def test_self_mcd_near_zero(self, synthetic_wav):
+    def test_self_mcd_zero_with_mocked_pymcd(self, synthetic_wav, monkeypatch):
+        import sys
+        import types
+
         from ayase.modules.audio_mcd import AudioMCDModule
 
+        class _Calc:
+            def __init__(self, MCD_mode="dtw"):
+                self.mode = MCD_mode
+
+            def calculate_mcd(self, ref, deg):
+                return 0.0  # identical files
+
+        fake_mod = types.ModuleType("pymcd.mcd")
+        fake_mod.Calculate_MCD = _Calc
+        fake_pkg = types.ModuleType("pymcd")
+        fake_pkg.mcd = fake_mod
+        monkeypatch.setitem(sys.modules, "pymcd", fake_pkg)
+        monkeypatch.setitem(sys.modules, "pymcd.mcd", fake_mod)
+
         mod = AudioMCDModule()
-        mod._ml_available = True
-        mfcc = mod._extract_mfcc(synthetic_wav)
-        diff = mfcc[1:, :] - mfcc[1:, :]
-        frame_dist = np.sqrt(np.sum(diff ** 2, axis=0))
-        mcd = (10.0 * np.sqrt(2.0) / np.log(10.0)) * np.mean(frame_dist)
-        assert mcd == 0.0
+        mod.setup()
+        sample = Sample(path=synthetic_wav, is_video=False, reference_path=synthetic_wav)
+        mod.process(sample)
+        assert sample.quality_metrics.mcd_score == 0.0
 
 
 class TestAudioLPDist:
     def test_self_distance_zero(self, synthetic_wav):
-        from ayase.modules.audio_lpdist import AudioLPDistModule
+        from ayase.modules.audio_logmel_dist import AudioLPDistModule
 
         mod = AudioLPDistModule()
         mod._ml_available = True

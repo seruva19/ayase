@@ -77,7 +77,7 @@ class RemoteModel(Mapping[str, Any]):
 
 
 class QualityMetrics(RemoteModel):
-    _NON_METRIC_FIELDS = frozenset({"metric_backends"})
+    _NON_METRIC_FIELDS = frozenset({"metric_backends", "metric_provenance"})
 
     def non_null_metrics(self) -> Dict[str, Any]:
         return {

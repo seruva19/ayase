@@ -175,7 +175,7 @@ _TASK_DB = {
     "liqe": "Learned image quality evaluator (multi-task)",
     "dover": "Disentangled objective video evaluation",
     "cover": "Comprehensive video evaluation and rating",
-    "finevq": "Fine-grained UGC video quality",
+    "finevq_raw": "Fine-grained UGC video quality",
     "kvq": "Key-frame saliency-guided VQA",
     "rqvqa": "Rich quality-aware VQA",
     "compare2score": "Comparative-to-absolute quality scoring",
@@ -208,7 +208,7 @@ _TASK_DB = {
     "conviqt": "Contrastive NR-VQA",
     "creativity": "Creative quality assessment",
     "face_iqa": "TOPIQ face-specific quality",
-    "naturalness": "Natural scene statistics",
+    "brisque_inverted": "Natural scene statistics",
 }
 
 
