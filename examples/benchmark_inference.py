@@ -2,7 +2,7 @@
 
 Example:
     python examples/benchmark_inference.py ./videos \
-        --modules semantic_alignment,clip_temporal,qclip \
+        --modules semantic_alignment,clip_temporal,clip_score \
         --batch-sizes 1,2,4,8
 """
 

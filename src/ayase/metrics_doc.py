@@ -125,13 +125,13 @@ def _get_group(name: str, input_type: str) -> str:
             "ptlflow", "judder", "vfr",
         ),
         "Video Quality Assessment": (
-            "dover", "fast_vqa", "mdtvsfa", "videval", "tlvqm", "c3dvqa",
-            "cover", "finevq", "kvq", "rqvqa", "funque", "st_greed",
-            "hdr_vqm", "cgvqm", "movie",
+            "dover", "fast_vqa", "mdtvsfa", "svr60_vq", "resnet_svr_vq", "c3dvqa",
+            "cover", "finevq_raw", "kvq", "rqvqa", "funque", "mscn_entropy",
+            "hdr_subband_flicker_score", "cgvqm", "gabor_flow_vq",
         ),
         "Video Generation": (
             "videoscore", "videoscore2", "video_reward", "aigv", "chronomagic",
-            "t2v_comp", "video_type", "video_memor", "t2v_score",
+            "t2v_comp", "video_type", "video_memor", "t2v_generic_score",
         ),
         "Audio-Visual": ("av_sync", "audio_visual"),
         "Full-Reference & Distribution": (
@@ -139,7 +139,7 @@ def _get_group(name: str, input_type: str) -> str:
             "ciede", "pieapp", "cw_ssim", "nlpd", "ahiq", "topiq_fr",
             "dreamsim", "dmm", "wadiqam_fr", "ssimc", "xpsnr", "hdr_vdp",
             "delta_ictcp", "ckdn", "deepwsd", "strred", "flolpips",
-            "st_lpips", "vif", "fvd", "fvmd", "kvd", "mad",
+            "stlpips_selfdist", "vif", "fvd", "fvmd", "kvd", "mad",
         ),
         "HDR & Color": ("hdr_", "pu_metric", "tonal"),
         "Safety & Content": ("nsfw", "harmful", "deepfake", "watermark", "bias"),
@@ -403,6 +403,7 @@ _CATEGORY_DISPLAY = {
     "alignment": "Text-Video Alignment",
     "temporal": "Temporal Consistency",
     "motion": "Motion & Dynamics",
+    "pose": "Pose & Gesture",
     "basic": "Basic Visual Quality",
     "aesthetic": "Aesthetics",
     "audio": "Audio Quality",
@@ -857,6 +858,8 @@ def _get_dataset_stats_fields() -> Dict[str, Dict]:
         pass
 
     for name, field_info in DatasetStats.model_fields.items():
+        if name == "metric_provenance":
+            continue  # bookkeeping, not a metric
         annotation = field_info.annotation
         type_str = "object"
         if annotation is not None:
@@ -1161,6 +1164,23 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
       f"· **{len(delivered_qm_fields)}** metrics · **{tiered_count}** tiered "
       f"· **{gpu_count}** GPU · **{total_categories}** categories")
 
+    a("")
+    a("## Provenance")
+    a("")
+    a("Classification applies to each output field, independently of backend availability.")
+    a("")
+    a("| Class | Meaning |")
+    a("|---|---|")
+    a("| `published` | Implements the cited definition and protocol. |")
+    a("| `adapted` | Uses a published definition with the stated model, preprocessing, sampling or aggregation deviations. |")
+    a("| `own` | Ayase-defined quantity without a matching published definition. |")
+    a("| `utility` | Metadata, coverage, detection or other non-quality output. |")
+    a("")
+    a("Default selections allow `published` and `utility`; explicit module selection opts "
+      "into `adapted` and `own`. A source citation does not establish numerical "
+      "interchangeability. Protocol deviations and backend requirements are listed "
+      "with each metric. Migration changes are documented in [MIGRATION.md](MIGRATION.md).")
+
     # ── 2. Charts ─────────────────────────────────────────────────────
     chart_titles = {
         "categories": "Modules by Category",
@@ -1402,6 +1422,16 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
                 if chain:
                     a(f"- **Backend**: {chain}")
+                prov = (mod.get("provenance") or {}).get(field_name)
+                if prov:
+                    prov_parts = [f"`{prov}`"]
+                    dev = (mod.get("deviations") or {}).get(field_name)
+                    if dev:
+                        prov_parts.append(dev)
+                    cite = (mod.get("sources") or {}).get(field_name)
+                    if cite:
+                        prov_parts.append(f"source: {cite}")
+                    a(f"- **Provenance**: {' — '.join(prov_parts)}")
                 if pkgs:
                     a(f"- **Packages**: {pkgs}")
                 if vram:
@@ -1466,6 +1496,16 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 a(f"**{mod_link}** — {desc}")
                 a("")
                 a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
+                prov = (mod.get("provenance") or {}).get(field_name)
+                if prov:
+                    prov_parts = [f"`{prov}`"]
+                    dev = (mod.get("deviations") or {}).get(field_name)
+                    if dev:
+                        prov_parts.append(dev)
+                    cite = (mod.get("sources") or {}).get(field_name)
+                    if cite:
+                        prov_parts.append(f"source: {cite}")
+                    a(f"- **Provenance**: {' — '.join(prov_parts)}")
                 test_coverage_text = _format_test_coverage(mod_name, test_coverage, test_results)
                 a(f"- **Tests**: {test_coverage_text}")
                 a("")
@@ -1493,7 +1533,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         a("")
 
     # ── External backend required — pending real backend (requires_external_backend modules) ─────
-    # These modules are code-complete and registered (revivable), but have no
+    # These modules are registered placeholders or wrappers, but have no
     # turnkey real backend in a standard install (uninstallable dep, unreleased
     # weights, needs training/native build, or architecturally impossible).
     # They are EXCLUDED from every count above and produce no values today.
@@ -1530,6 +1570,16 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             if pkgs:
                 parts.append("Needs: " + ", ".join(pkgs))
             a(f"- " + " · ".join(parts))
+            meta = cls.get_metadata()
+            for field, classification in sorted(meta.get("provenance", {}).items()):
+                details = [f"`{field}`: `{classification}`", "backend unavailable"]
+                source = meta.get("sources", {}).get(field)
+                deviation = meta.get("deviations", {}).get(field)
+                if source:
+                    details.append(f"source: {source}")
+                if deviation:
+                    details.append(deviation)
+                a("  - " + " — ".join(details))
         a("")
 
     return "\n".join(L)

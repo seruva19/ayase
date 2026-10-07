@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.80] - 2026-10-07
+
+### Added
+
+- Field-level provenance, primary sources and protocol deviations for packaged metrics, exposed in results and generated documentation.
+- **identity and motion**: CSIM, ID-Reveal, 3DMM expression/pose, gesture, lip, head-motion and action-unit measurements with explicit reference and adaptation contracts; unavailable published backends are listed separately.
+- **artfid**: separate `Sample.style_reference_path` for style references.
+- **dnsmos**: P.808 MOS alongside signal, background and overall MOS.
+- **bd_rate**: explicit baseline codec `reference_curve` configuration.
+
+### Changed
+
+- Default selections admit published metrics and utility outputs; explicit module selection opts into adapted and own quantities. Module-specific opt-in no longer enables unrelated modules, and mixed modules cannot emit disallowed metric fields.
+- Renamed quantities that differ from the published metrics they previously resembled. Deprecated module and model-field aliases preserve supported reads and constructor inputs; serialized output uses canonical names. See `MIGRATION.md`.
+- Classified video aggregations of image metrics and materially different models or preprocessing as adaptations, including CSIM, FVD, MCD and EvalCrafter/VBench wrappers. These values must not be compared as reproductions of the cited benchmarks.
+- Distribution metrics require a real reference set; removed self-comparison and substitute backends that measured different quantities. Missing backends leave scores unset.
+- **aesthetic**: native Aesthetic Predictor V2.5 scale replaces the 0–100 rescale; the duplicate compatibility output has the same provenance and aesthetic category.
+- **ocr_fidelity**: mean OCR error replaces best-frame fidelity; lower values are better. Filtering and downstream thresholds must account for the direction change.
+- **motion_amplitude**: binary motion-class agreement replaces a continuous magnitude score; CLIP consistency, flow, reconstruction and audio metrics use corrected sampling and aggregation. Detailed before/after contracts are in `MIGRATION.md`.
+- **i2v_similarity**: declared as an Ayase-defined windowed-median blend, with existing field names retained.
+
+### Fixed
+
+- **provenance**: complete output declarations, traceable source citations, field-level gating and preservation of attribution when a module skips scoring.
+- **compatibility**: legacy input translation preserves caller dictionaries and canonicalizes provenance keys.
+- **motion_smoothness**: constructor now honors the declared all-frame default.
+- **clip_temporal**: valid two-frame clips produce consecutive-frame consistency.
+- **ssimulacra2**: score direction is higher-is-better in validation, filtering and documentation.
+- **audio_mcd**: documentation now identifies the active pymcd MFCC/FastDTW backend rather than claiming SPTK mel cepstra.
+- **published backends**: corrected DNSMOS ordering, UTMOS API, FLIP invocation, VMAF variants, P.1203 schema, DOVER fusion and other source-specific calculations; adaptations remain explicitly labeled.
+- Retained omitted upstream license notices for newly bundled evaluation code and included migration/reference documents in source distributions.
+
+### Removed
+
+- Non-implementable stubs and their score fields: adadqa, aigcvqa, clipvqa, fgd, fmd, presresq, qclip, sqi, t2v_compbench, t2veval, thqa, ugvq, umtscore, unified_vqa, unqa, video_atlas and videoreward. Later declarations requiring external backends are documented as unavailable.
+- Unverified NIMA ONNX implementation; its module and field names now resolve through deprecated aliases to NIMA.
+- Ayase-defined aggregate fields that obscured their components, including technical quality, STREAM spatial, Ref4D overall and mixed edit-reward summaries. Supported component outputs remain available; see `MIGRATION.md`.
+
 ## [0.1.79] - 2026-09-24
 
 ### Added
