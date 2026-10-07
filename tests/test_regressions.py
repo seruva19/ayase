@@ -292,7 +292,7 @@ def test_semantic_alignment_process_batch_batches_clip_images(
             caption=CaptionMetadata(text="second caption", length=14),
         ),
     ]
-    pipeline = Pipeline([module])
+    pipeline = Pipeline([module], allow_provenance=["adapted"])
     pipeline.start()
 
     results = pipeline.process_samples(samples, batch_size=2)
@@ -340,7 +340,7 @@ def test_clip_temporal_process_batch_batches_clip_images(
         Sample(path=first_path, is_video=True),
         Sample(path=second_path, is_video=True),
     ]
-    pipeline = Pipeline([module])
+    pipeline = Pipeline([module], allow_provenance=["adapted"])
     pipeline.start()
 
     results = pipeline.process_samples(samples, batch_size=2)
