@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.80** · Generated 2026-10-07 15:11 · **385 modules** · **566 metrics**
+> **Version 0.1.80** · Generated 2026-10-07 16:09 · **385 modules** · **566 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -1340,8 +1340,8 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
-- **Provenance**: `published` — source: CLIP-I (Ruiz et al., DreamBooth, CVPR 2023) — https://arxiv.org/abs/2208.12242
+- **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Provenance**: `adapted` — The CLIP image encoder is configurable, and this module reports one paired-image cosine rather than DreamBooth's aggregate evaluation over generated and reference image sets. — source: CLIP-I (Ruiz et al., DreamBooth, CVPR 2023) — https://arxiv.org/abs/2208.12242
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
@@ -1353,7 +1353,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Input**: img +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `adapted` — The default image protocol uses the DreamBooth DINO v1 ViT-S/16 encoder. The configurable dinov2_model can substitute another CLS encoder; the shared configurable field is classified as adapted. — source: DINO-score (Ruiz et al., DreamBooth) — https://arxiv.org/abs/2208.12242
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1366,7 +1366,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Input**: img +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `own`
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1389,8 +1389,8 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
-- **Provenance**: `published` — source: LPIPS v0.1 AlexNet (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity
+- **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Provenance**: `adapted` — Both inputs are resized to 256×256 before LPIPS v0.1 AlexNet; the official LPIPS interface accepts equal-sized tensors at their supplied resolution and does not prescribe this fixed resize. — source: LPIPS v0.1 AlexNet (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
@@ -1422,7 +1422,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
-- **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Input**: img +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `own`
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
