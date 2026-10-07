@@ -1,0 +1,58 @@
+[
+  {
+    "directory": "cover",
+    "repository": "taco-group/COVER",
+    "notice_snapshot": "7373bee6bc55fdc2b617e40c8c45c8295c5e6467",
+    "notice": "LICENSE",
+    "sha256": "ff8588494739a1509f8d210cad63f12c3102dda736b596fa4ef04e0c82745f8d",
+    "url": "https://raw.githubusercontent.com/taco-group/COVER/7373bee6bc55fdc2b617e40c8c45c8295c5e6467/LICENSE"
+  },
+  {
+    "directory": "opens2v",
+    "repository": "PKU-YuanGroup/OpenS2V-Nexus",
+    "notice_snapshot": "85d4c3bb7e4ca3297d4e96e581454535b668fb56",
+    "notice": "LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "url": "https://raw.githubusercontent.com/PKU-YuanGroup/OpenS2V-Nexus/85d4c3bb7e4ca3297d4e96e581454535b668fb56/LICENSE"
+  },
+  {
+    "directory": "qwen_image_bench",
+    "repository": "QwenLM/Qwen-Image-Bench",
+    "notice_snapshot": "8ab1fb47df2fba7b0cb046770a87f6323b98ecfc",
+    "notice": "LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "url": "https://raw.githubusercontent.com/QwenLM/Qwen-Image-Bench/8ab1fb47df2fba7b0cb046770a87f6323b98ecfc/LICENSE"
+  },
+  {
+    "directory": "tifascore",
+    "repository": "Yushi-Hu/tifa",
+    "notice_snapshot": "8e37050f44ab4ee681e4251f3c8a9d4cc86e901e",
+    "notice": "LICENSE",
+    "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "url": "https://raw.githubusercontent.com/Yushi-Hu/tifa/8e37050f44ab4ee681e4251f3c8a9d4cc86e901e/LICENSE"
+  },
+  {
+    "directory": "videoalign",
+    "repository": "KlingAIResearch/VideoAlign",
+    "notice_snapshot": "219ab9db64c045e5181a2202d11f686439351292",
+    "notice": "LICENSE",
+    "sha256": "6169d4ae8a09a5cfcb470f46b44a1e669fe41126875de948d16e3c4cd6830c09",
+    "url": "https://raw.githubusercontent.com/KlingAIResearch/VideoAlign/219ab9db64c045e5181a2202d11f686439351292/LICENSE"
+  },
+  {
+    "directory": "panns_notices",
+    "repository": "haoheliu/audioldm_eval",
+    "notice_snapshot": "8dc07ee7c42f9dc6e295460a1034175a0d49b436",
+    "notice": "LICENSE",
+    "sha256": "200e4b85277fad6c8b37385c17fb38e21ae345d3d5ee8ae6ef51db0b122bb079",
+    "url": "https://raw.githubusercontent.com/haoheliu/audioldm_eval/8dc07ee7c42f9dc6e295460a1034175a0d49b436/LICENSE"
+  },
+  {
+    "directory": "panns_notices",
+    "repository": "qiuqiangkong/audioset_tagging_cnn",
+    "notice_snapshot": "d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4",
+    "notice": "LICENSE.MIT",
+    "sha256": "7e540655d851d9737fafaa9f0cbd064c3a29bdfe5e937ee07a09360f85161975",
+    "url": "https://raw.githubusercontent.com/qiuqiangkong/audioset_tagging_cnn/d2f4b8c18eab44737fcc0de1248ae21eb43f6aa4/LICENSE.MIT"
+  }
+]

@@ -142,16 +142,25 @@ class VideoMaeWrapper:
         return self._device
 
     @torch.no_grad()
-    def logits(self, frames_rgb_list: Sequence[np.ndarray]) -> "torch.Tensor":
-        """Return the raw class logits for one clip as a ``[num_classes]`` tensor.
+    def logits(self, frames_rgb_list: Sequence[np.ndarray],
+               segment_index: int = 0, num_segments: int = 1,
+               crop_id: int = 0) -> "torch.Tensor":
+        """Return the raw class logits for one view as a ``[num_classes]`` tensor.
 
         Arguments:
             frames_rgb_list: Sequence of HxWxC uint8 RGB frames (a decoded clip).
+            segment_index/num_segments: temporal-view coordinates (VMBench: 10).
+            crop_id: spatial crop 0/1/2 = start/center/end (VMBench: 3).
 
         Returns:
             A 1-D ``torch.Tensor`` of length ``num_classes`` on CPU (float32).
         """
-        clip = preprocess_frames(frames_rgb_list).to(self._device)
+        clip = preprocess_frames(
+            frames_rgb_list,
+            segment_index=segment_index,
+            num_segments=num_segments,
+            crop_id=crop_id,
+        ).to(self._device)
         out = self._model(clip)  # [1, num_classes]
         return out.float().squeeze(0).cpu()
 
@@ -160,19 +169,44 @@ class VideoMaeWrapper:
         logits = self.logits(frames_rgb_list)
         return torch.softmax(logits, dim=0)
 
+    def probabilities_multiview(self, frames_rgb_list: Sequence[np.ndarray],
+                                num_segments: int = 10,
+                                num_crops: int = 3) -> "torch.Tensor":
+        """Mean softmax over ``num_segments`` temporal x ``num_crops`` spatial views.
+
+        This is the published VMBench CAS protocol (cas_utils.final_test
+        averages softmax outputs over 30 spatio-temporal views).
+        """
+        probs = [
+            torch.softmax(
+                self.logits(frames_rgb_list,
+                            segment_index=s, num_segments=num_segments,
+                            crop_id=c),
+                dim=0,
+            )
+            for s in range(num_segments)
+            for c in range(num_crops)
+        ]
+        return torch.stack(probs).mean(dim=0)
+
     def commonsense_adherence_score(self,
-                                    frames_rgb_list: Sequence[np.ndarray]) -> float:
+                                    frames_rgb_list: Sequence[np.ndarray],
+                                    multiview: bool = True) -> float:
         """Return the VMBench Commonsense Adherence Score in ``[0, 1]``.
 
         Applies the exact VMBench CAS formula (bench_utils/cas_utils.py):
-        softmax the logits, then take the weighted sum with ordinal weights
-        ``[0.0, 0.25, 0.5, 0.75, 1.0]``. This is a single-view estimate.
+        mean softmax over 10 temporal x 3 spatial views, then the weighted sum
+        with ordinal weights ``[0.0, 0.25, 0.5, 0.75, 1.0]``. Pass
+        ``multiview=False`` for a single-view (centre) estimate.
 
         Raises:
             ValueError: if the head is not the 5-way ordinal commonsense head
                 the CAS weights are defined for.
         """
-        probs = self.probabilities(frames_rgb_list).numpy().astype(np.float64)
+        if multiview:
+            probs = self.probabilities_multiview(frames_rgb_list).numpy().astype(np.float64)
+        else:
+            probs = self.probabilities(frames_rgb_list).numpy().astype(np.float64)
         if probs.shape[0] != PROB_WEIGHTS.shape[0]:
             raise ValueError(
                 f"CAS weights expect {PROB_WEIGHTS.shape[0]} ordinal classes "
