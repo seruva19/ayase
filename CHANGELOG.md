@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **provenance**: complete output declarations, traceable source citations, field-level gating and preservation of attribution when a module skips scoring.
 - **compatibility**: legacy input translation preserves caller dictionaries and canonicalizes provenance keys.
+- **tui**: failed modules, failed samples and unavailable requested backends produce a failed analysis status instead of a completion message.
 - **motion_smoothness**: constructor now honors the declared all-frame default.
 - **clip_temporal**: valid two-frame clips produce consecutive-frame consistency.
 - **ssimulacra2**: score direction is higher-is-better in validation, filtering and documentation.

@@ -788,6 +788,7 @@ class ExecutionScreen(Screen):
         started = False
         run_error: Optional[Exception] = None
         stop_error: Optional[Exception] = None
+        run_status = None
 
         try:
             pipeline.start()
@@ -826,7 +827,27 @@ class ExecutionScreen(Screen):
                     stop_error = e
                     ui(log, f"[bold red]STOP FAILED:[/bold red] {e}")
 
+            get_run_status = getattr(pipeline, "get_run_status", None)
+            if callable(get_run_status):
+                try:
+                    run_status = get_run_status()
+                except Exception as e:
+                    run_error = run_error or e
+                    ui(log, f"[bold red]STATUS CHECK FAILED:[/bold red] {e}")
+
         if run_error or stop_error:
+            ui(finish, "ANALYSIS FAILED")
+            return
+
+        if run_status is not None and not run_status.get("complete", False):
+            for name, detail in run_status.get("module_failures", {}).items():
+                ui(log, f"[bold red]MODULE FAILED[/bold red] {name}: {detail}")
+            for path, names in run_status.get("failed_samples", {}).items():
+                ui(log, f"[bold red]SAMPLE FAILED[/bold red] {path}: {', '.join(names)}")
+            for name, reason in run_status.get("availability_excluded", {}).items():
+                ui(log, f"[bold red]MODULE UNAVAILABLE[/bold red] {name}: {reason}")
+            for name, provenance in run_status.get("provenance_excluded", {}).items():
+                ui(log, f"[bold red]MODULE EXCLUDED[/bold red] {name}: {provenance}")
             ui(finish, "ANALYSIS FAILED")
             return
 

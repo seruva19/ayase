@@ -51,10 +51,24 @@ class FakePipelineModule:
     name = "metadata"
     description = "Extract metadata"
     default_config = {"threshold": 0.5, "enabled": True}
+    requires_external_backend = False
 
     def __init__(self, config=None):
         self.config = config or self.default_config.copy()
         self._mounted = False
+        self.pipeline = None
+
+    @classmethod
+    def get_metadata(cls):
+        return {
+            "output_fields": {},
+            "dataset_output_fields": {},
+            "provenance": {},
+        }
+
+    @classmethod
+    def field_provenance(cls):
+        return {}
 
     def on_mount(self):
         self._mounted = True
@@ -621,6 +635,33 @@ class TestExecutionScreen:
                     CaptureModule.seen_configs[0]["models_dir"]
                     == str(app.ayase_config.general.models_dir)
                 )
+        finally:
+            for p in patches:
+                p.stop()
+
+    @pytest.mark.asyncio
+    async def test_execution_reports_pipeline_module_failures(self, tmp_path):
+        """A module failure recorded by Pipeline must not be shown as complete."""
+        (tmp_path / "test.mp4").write_bytes(b"\x00" * 100)
+
+        class FailingModule(FakePipelineModule):
+            def process(self, sample):
+                raise RuntimeError("metric boom")
+
+        app = AyaseApp()
+        patches = _patch_registry_and_config()
+        patches[2] = patch("ayase.tui.ModuleRegistry.get_module", return_value=FailingModule)
+        for p in patches:
+            p.start()
+        try:
+            async with app.run_test() as pilot:
+                app.selected_path = tmp_path
+                app.selected_modules = ["metadata"]
+                app.switch_mode("execution")
+                await pilot.pause(delay=1.0)
+                title = app.screen.query_one("#status_title")
+                assert "FAILED" in str(title.render())
+                assert "COMPLETE" not in str(title.render())
         finally:
             for p in patches:
                 p.stop()
