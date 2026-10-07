@@ -20,7 +20,7 @@ from typing_extensions import Annotated
 from . import __version__
 from .config import AyaseConfig
 from .pipeline import Pipeline, ModuleRegistry, PipelineModule
-from .runtime import runtime_module_config
+from .runtime import opt_in_all_provenance, runtime_module_config
 from .scanner import DatasetScanner, scan_dataset, sample_from_path
 from .models import Sample
 
@@ -40,7 +40,7 @@ LOWER_IS_BETTER_METRICS = frozenset(
         "brisque",
         "lpips",
         "image_lpips",
-        "i2v_lpips",
+        "i2v_lpips_winmed",
         "dists",
         "gmsd",
         "deepwsd",
@@ -51,7 +51,6 @@ LOWER_IS_BETTER_METRICS = frozenset(
         "nlpd",
         "mad",
         "butteraugli",
-        "ssimulacra2",
         "flip_score",
         "dreamsim",
         "ciede2000",
@@ -67,8 +66,11 @@ LOWER_IS_BETTER_METRICS = frozenset(
         "identity_loss",
         "ocr_cer",
         "ocr_wer",
+        "ocr_fidelity",
+        "ocr_score",
         "mcd_score",
-        "lpdist_score",
+        "logmel_rmse_db",
+        "warping_error",
     }
 )
 
@@ -99,11 +101,11 @@ def _select_modules(quick: bool, deep: bool, config: AyaseConfig) -> List[str]:
     _discover_all_modules(config)
     all_modules = list(ModuleRegistry.list_modules().keys())
     if deep:
-        return sorted(all_modules)
+        return sorted(ModuleRegistry.list_modules(include_external_backends=False))
     if quick:
         return [name for name in ["metadata", "basic_quality"] if name in all_modules]
     if config.pipeline.modules:
-        return [name for name in config.pipeline.modules if name in all_modules]
+        return [name for name in config.pipeline.modules if ModuleRegistry.get_module(name)]
     # Default "balanced" set
     preferred = [
         "metadata",
@@ -167,6 +169,9 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
             try:
                 for key, value in runtime_module_config(config).items():
                     params.setdefault(key, value)
+                # A pipeline string is an explicit module choice, which is the
+                # provenance opt-in: adapted/own modules named here may run.
+                opt_in_all_provenance(params)
                 modules.append(module_cls(config=params))
             except Exception as e:
                 console.print(f"[red]Error initializing module '{name}': {e}[/red]")
@@ -347,7 +352,11 @@ def _export_artifacts(pipeline: Pipeline, config: AyaseConfig, label: str) -> Op
 
 
 def _instantiate_modules(
-    module_names: List[str], config: AyaseConfig, *, allow_empty: bool = False
+    module_names: List[str],
+    config: AyaseConfig,
+    *,
+    allow_empty: bool = False,
+    provenance_opt_in: bool = False,
 ) -> List[PipelineModule]:
     """Instantiate every requested module, failing rather than silently omitting one."""
     modules = []
@@ -360,6 +369,8 @@ def _instantiate_modules(
             console.print(f"[red]Unknown module: {name}[/red]")
             raise typer.Exit(code=1)
         params = runtime_module_config(config)
+        if provenance_opt_in:
+            params = opt_in_all_provenance(params)
         try:
             modules.append(module_cls(config=params))
         except Exception as e:
@@ -462,6 +473,14 @@ def scan(
         bool,
         typer.Option("--deep", help="Deep scan (all quality metrics, slower)"),
     ] = False,
+    allow_provenance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--allow-provenance",
+            help="Comma-separated extra provenance classes to run "
+            "(adapted,own). Default runs published+utility only.",
+        ),
+    ] = None,
 ) -> None:
     """Scan a dataset and generate a quality metrics report."""
     if format not in {"json", "csv", "markdown", "html"}:
@@ -486,6 +505,10 @@ def scan(
     config = AyaseConfig.load()
     if jobs is not None:
         config.general.parallel_jobs = jobs
+    if allow_provenance:
+        config.pipeline.allow_provenance = [
+            c.strip() for c in allow_provenance.split(",") if c.strip()
+        ]
     if dataset_path is None:
         dataset_path = config.pipeline.dataset_path
     if dataset_path is None:
@@ -497,10 +520,15 @@ def scan(
     elif modules_flag is not None:
         _discover_all_modules(config)
         module_names = [n.strip() for n in modules_flag.split(",") if n.strip()]
-        modules = _instantiate_modules(module_names, config)
+        modules = _instantiate_modules(module_names, config, provenance_opt_in=True)
     else:
         module_names = _select_modules(quick, deep, config)
-        modules = _instantiate_modules(module_names, config, allow_empty=True)
+        # A module list in the user's config file is an explicit choice (opt-in);
+        # quick/deep/the balanced default stay provenance-gated.
+        opt_in = bool(config.pipeline.modules) and not quick and not deep
+        modules = _instantiate_modules(
+            module_names, config, allow_empty=True, provenance_opt_in=opt_in
+        )
 
     p = Pipeline(modules)
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
@@ -531,7 +559,7 @@ def scan(
                 recs_str = "; ".join(
                     [i.recommendation for i in s.validation_issues if i.recommendation]
                 )
-                score = s.quality_metrics.technical_score if s.quality_metrics else None
+                score = s.quality_metrics.model_dump().get("technical_score") if s.quality_metrics else None
                 score_str = f"{score:.2f}" if score is not None else "NA"
                 writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, score_str])
         elif format == "html":
@@ -575,6 +603,14 @@ def run(
             help="When --format=json with --output, write partial results every N samples (0=only at end). Survives crashes / kills.",
         ),
     ] = 0,
+    allow_provenance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--allow-provenance",
+            help="Comma-separated extra provenance classes to run "
+            "(adapted,own). Default runs published+utility only.",
+        ),
+    ] = None,
 ) -> None:
     """Run a specific quality assessment pipeline on target paths."""
     if format not in {"json", "csv", "markdown"}:
@@ -584,6 +620,10 @@ def run(
         output.parent.mkdir(parents=True, exist_ok=True)
 
     config = AyaseConfig.load()
+    if allow_provenance:
+        config.pipeline.allow_provenance = [
+            c.strip() for c in allow_provenance.split(",") if c.strip()
+        ]
     modules = _parse_pipeline_str(pipeline, config)
     p = Pipeline(modules)
 
@@ -633,7 +673,7 @@ def run(
             writer.writerow(["Path", "Valid", "Issues", "Technical Score"])
             for s in p.results.values():
                 issues = "; ".join([i.message for i in s.validation_issues])
-                score = s.quality_metrics.technical_score if s.quality_metrics else None
+                score = s.quality_metrics.model_dump().get("technical_score") if s.quality_metrics else None
                 score_str = f"{score:.2f}" if score is not None else "NA"
                 writer.writerow([str(s.path), s.is_valid, issues, score_str])
     else:
@@ -659,8 +699,8 @@ def filter(
     ] = None,
     metric: Annotated[
         str,
-        typer.Option("--metric", help="Metric to filter by (default: technical_score)"),
-    ] = "technical_score",
+        typer.Option("--metric", help="Metric to filter by (default: blur_score)"),
+    ] = "blur_score",
     mode: Annotated[
         str,
         typer.Option("--mode", help="Filter mode: symlink|copy|list"),
@@ -740,7 +780,7 @@ def filter(
             # A missing metric is excluded (not treated as 0.0) and reported,
             # so it never silently passes or fails a score threshold.
             score = (
-                getattr(sample.quality_metrics, metric, None)
+                sample.quality_metrics.model_dump().get(metric)
                 if sample.quality_metrics
                 else None
             )
@@ -862,7 +902,16 @@ app.add_typer(modules_app, name="modules")
 
 
 @modules_app.command("list")
-def modules_list() -> None:
+def modules_list(
+    provenance: Annotated[
+        Optional[str],
+        typer.Option(
+            "--provenance",
+            help="Only show modules having at least one output field of this "
+            "provenance class (published|adapted|own|utility).",
+        ),
+    ] = None,
+) -> None:
     """List all discovered pipeline modules (built-in + plugins)."""
     config = AyaseConfig.load()
     _discover_all_modules(config)
@@ -874,11 +923,39 @@ def modules_list() -> None:
 
     table = Table(title="Available Modules")
     table.add_column("Name", style="cyan")
+    table.add_column("Provenance", style="magenta")
+    table.add_column("Availability", style="yellow")
     table.add_column("Description", style="white")
+    shown = 0
     for name in sorted(all_modules):
-        table.add_row(name, all_modules[name])
+        prov_map: Dict[str, str] = {}
+        cls = ModuleRegistry.get_module(name)
+        if cls is not None:
+            try:
+                prov_map = cls.field_provenance()
+            except Exception:
+                prov_map = {}
+        classes = sorted(set(prov_map.values()))
+        if not classes and isinstance(getattr(cls, "provenance", None), str):
+            classes = [cls.provenance]
+        prov_label = ",".join(classes) if classes else "—"
+        if provenance and provenance not in classes:
+            continue
+        availability = (
+            "external backend required"
+            if cls is not None and cls.requires_external_backend
+            else "check dependencies"
+        )
+        table.add_row(name, prov_label, availability, all_modules[name])
+        shown += 1
     console.print(table)
-    console.print(f"\n[dim]{len(all_modules)} module(s) total[/dim]")
+    if provenance:
+        console.print(
+            f"\n[dim]{shown} of {len(all_modules)} module(s) "
+            f"with provenance '{provenance}'[/dim]"
+        )
+    else:
+        console.print(f"\n[dim]{len(all_modules)} module(s) total[/dim]")
 
 
 @modules_app.command("check")

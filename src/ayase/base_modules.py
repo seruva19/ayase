@@ -169,6 +169,8 @@ class BatchMetricModule(PipelineModule):
             )
 
             # Store in pipeline stats (implementation will be added in pipeline.py)
+            if score is None:
+                return
             if hasattr(self, "pipeline") and self.pipeline:
                 # Pipeline will have a method to store dataset-level metrics
                 if hasattr(self.pipeline, "add_dataset_metric"):

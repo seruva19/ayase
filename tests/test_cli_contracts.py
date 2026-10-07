@@ -12,6 +12,40 @@ from ayase.config import AyaseConfig
 from ayase.pipeline import ModuleRegistry
 
 
+@pytest.mark.parametrize(
+    ("metric", "lower_is_better"),
+    [("ssimulacra2", False), ("ocr_fidelity", True), ("ocr_score", True),
+     ("warping_error", True)],
+)
+def test_corrected_metric_filter_direction(metric: str, lower_is_better: bool) -> None:
+    from ayase.cli import LOWER_IS_BETTER_METRICS
+
+    assert (metric in LOWER_IS_BETTER_METRICS) is lower_is_better
+
+
+def test_deep_selection_excludes_external_backend_placeholders(monkeypatch):
+    from ayase.cli import _select_modules
+
+    monkeypatch.setattr("ayase.cli._discover_all_modules", lambda config: None)
+    monkeypatch.setattr(
+        ModuleRegistry, "list_modules",
+        lambda **kwargs: {"ready": "ready"} if kwargs.get("include_external_backends") is False
+        else {"ready": "ready", "external": "external"},
+    )
+    assert _select_modules(False, True, AyaseConfig()) == ["ready"]
+
+
+def test_explicit_config_module_can_resolve_deprecated_alias(monkeypatch):
+    from ayase.cli import _select_modules
+
+    config = AyaseConfig()
+    config.pipeline.modules = ["ttsds2"]
+    monkeypatch.setattr("ayase.cli._discover_all_modules", lambda config: None)
+    monkeypatch.setattr(ModuleRegistry, "list_modules", lambda: {"tts_system_dist": "metric"})
+    monkeypatch.setattr(ModuleRegistry, "get_module", lambda name: object() if name == "ttsds2" else None)
+    assert _select_modules(False, False, config) == ["ttsds2"]
+
+
 def test_parse_pipeline_rejects_empty_explicit_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("ayase.cli._discover_all_modules", lambda config: None)
 

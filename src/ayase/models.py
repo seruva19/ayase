@@ -3,13 +3,91 @@
 from __future__ import annotations
 
 import logging
+import warnings
+from collections.abc import Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, Iterator, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 logger = logging.getLogger(__name__)
+
+_MISSING = object()
+_METRIC_WRITE_OBSERVER: ContextVar[Any] = ContextVar(
+    "ayase_metric_write_observer", default=None
+)
+
+
+@contextmanager
+def observe_metric_writes(observer: Any) -> Iterator[None]:
+    """Observe QualityMetrics field assignments in the current execution context."""
+    token = _METRIC_WRITE_OBSERVER.set(observer)
+    try:
+        yield
+    finally:
+        _METRIC_WRITE_OBSERVER.reset(token)
+
+
+def _resolve_legacy_field(obj: Any, name: str) -> Any:
+    """Resolve a renamed/removed metric field read for legacy consumers.
+
+    Returns ``_MISSING`` when *name* is not a known legacy field so the
+    caller can defer to the normal ``AttributeError`` path.
+    """
+
+    model_cls = type(obj)
+    aliases = getattr(model_cls, "_DEPRECATED_FIELD_ALIASES", {})
+    if name in aliases:
+        new_name = aliases[name]
+        warnings.warn(
+            f"{model_cls.__name__}.{name} was renamed to {new_name} in 0.1.80; "
+            "the alias will be removed in a later release.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return getattr(obj, new_name)
+    if name in getattr(model_cls, "_REMOVED_FIELDS", ()):
+        warnings.warn(
+            f"{model_cls.__name__}.{name} was removed in 0.1.80 — the metric "
+            "that produced it had no published definition or was a "
+            "non-functional stub.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return None
+    return _MISSING
+
+
+def _translate_legacy_fields(model_cls: type, data: Any) -> Any:
+    """Map renamed field keys onto their new names in dict input.
+
+    Lets ``Model(**legacy_dump)`` accept pre-0.1.80 field names; removed
+    stub fields are dropped silently (they never carried real values).
+    """
+
+    if not isinstance(data, Mapping):
+        return data
+    data = dict(data)
+    aliases = getattr(model_cls, "_DEPRECATED_FIELD_ALIASES", {})
+    removed = getattr(model_cls, "_REMOVED_FIELDS", ())
+    for old, new in aliases.items():
+        if old in data:
+            data.setdefault(new, data.pop(old))
+    for name in removed:
+        data.pop(name, None)
+    provenance = data.get("metric_provenance")
+    if isinstance(provenance, Mapping):
+        provenance = dict(provenance)
+        for old, new in aliases.items():
+            if old in provenance:
+                provenance.setdefault(new, provenance.pop(old))
+        for name in removed:
+            provenance.pop(name, None)
+        data["metric_provenance"] = provenance
+    return data
 
 
 class ValidationSeverity(str, Enum):
@@ -97,7 +175,159 @@ class QualityMetrics(BaseModel):
     # Fields that carry provenance/bookkeeping rather than a computed metric.
     # They are excluded from the metric-view helpers (counts, grouping, summary)
     # so adding them does not inflate metric statistics.
-    _NON_METRIC_FIELDS: ClassVar[frozenset] = frozenset({"metric_backends"})
+    _NON_METRIC_FIELDS: ClassVar[frozenset] = frozenset(
+        {"metric_backends", "metric_provenance"}
+    )
+
+    # Metric fields renamed in 0.1.80 (see CHANGELOG). Reading the old name
+    # still resolves to the renamed field, with a DeprecationWarning, so
+    # consumers migrate explicitly instead of breaking; ``extra="forbid"``
+    # still applies to construction, where the before-validator below maps
+    # legacy keys onto the new names.
+    _DEPRECATED_FIELD_ALIASES: ClassVar[Dict[str, str]] = {
+        "aesthetic_score": "aesthetic_v25_score",
+        "vqa_a_score": "aesthetic_v25_dup",
+        "active_speaker_best_lse_c": "active_speaker_best_conf",
+        "lpdist_score": "logmel_rmse_db",
+        "audio_f0_voicing_error": "audio_f0_voiced_mismatch",
+        "aigv_static": "aigv_static_est",
+        "aigv_temporal": "aigv_temporal_est",
+        "aigv_dynamic": "aigv_dynamic_est",
+        "aigv_alignment": "aigv_alignment_est",
+        "celebrity_id_score": "face_id_similarity",
+        "nima_onnx_score": "nima_score",
+        "clifvqa_score": "clip_feel_score",
+        "entitybench_identity_consistency": "entity_identity_cos",
+        "entitybench_appearance_consistency": "entity_appearance_cos",
+        "finevq_score": "finevq_raw_mean",
+        "geneval_single_object": "clipchk_single_object",
+        "geneval_two_object": "clipchk_two_object",
+        "geneval_counting": "clipchk_counting",
+        "geneval_colors": "clipchk_colors",
+        "geneval_position": "clipchk_position",
+        "geneval_color_attribution": "clipchk_color_attribution",
+        "geneval_overall": "clipchk_overall",
+        "graphsim_score": "local_std_uniformity_score",
+        "hdr_vqm": "hdr_subband_flicker_score",
+        "i2v_clip": "i2v_clip_winmed",
+        "i2v_dino": "i2v_dino_winmed",
+        "i2v_lpips": "i2v_lpips_winmed",
+        "i2v_quality": "i2v_quality_blend",
+        "magface_score": "face_emb_norm",
+        "modularbvqa_score": "clip_slowfast_vq_score",
+        "movie_score": "gabor_flow_score",
+        "naturalness_score": "brisque_inverted",
+        "pcqm_score": "mse_color_score",
+        "physics_iq_score": "physics_iq_neutral_score",
+        "pointssim_score": "chamfer_sim_score",
+        "psnr_div": "psnr_grad",
+        "psnr_hvs": "psnr_hvs_approx",
+        "psnr_hvs_m": "psnr_acmask",
+        "pu_psnr": "log_psnr",
+        "pu_ssim": "plain_ssim",
+        "ws_psnr": "ws_psnr_linw",
+        "s_psnr": "psnr_sphw",
+        "cpp_psnr": "psnr_cosw",
+        "st_greed_score": "mscn_entropy_score",
+        "st_lpips": "stlpips_selfdist",
+        "t2v_score": "t2v_generic_score",
+        "t2v_alignment": "t2v_generic_alignment",
+        "t2v_quality": "t2v_generic_quality",
+        "tcbench_object_score": "clipord_object_score",
+        "tcbench_attribute_score": "clipord_attribute_score",
+        "tcbench_background_score": "clipord_background_score",
+        "tcbench_overall": "clipord_overall",
+        "long_form_event_fulfillment": "clipord_event_fulfillment",
+        "tlvqm_score": "resnet_svr_score",
+        "ttsds2_score": "tts_system_dist_score",
+        "unified_reward_2_score": "unified_reward_2_mean",
+        "vader_score": "hpsv2_const_quality",
+        "video_text_score": "video_text_logit",
+        "video_text_temporal": "video_text_consistency",
+        "videophy_pc_score": "vlm_pc_likert",
+        "videophy_sa_score": "vlm_sa_likert",
+        "videval_score": "svr60_score",
+        "dynamics_range": "content_variation",
+    }
+
+    # Fields dropped together with stub modules that never computed them.
+    # Reads return None (the only value those fields ever carried) with a
+    # DeprecationWarning; construction silently drops the keys.
+    _REMOVED_FIELDS: ClassVar[frozenset] = frozenset(
+        {
+            "adadqa_score",
+            "aigcvqa_aesthetic",
+            "aigcvqa_alignment",
+            "aigcvqa_technical",
+            "clipvqa_score",
+            "compbench_action",
+            "compbench_attribute",
+            "compbench_numeracy",
+            "compbench_object_rel",
+            "compbench_overall",
+            "compbench_scene",
+            "compbench_spatial",
+            "confidence_score",
+            "presresq_score",
+            "qclip_score",
+            "sqi_score",
+            "t2veval_score",
+            "thqa_score",
+            "ugvq_score",
+            "umtscore",
+            "unified_vqa_score",
+            "video_atlas_score",
+            "videoreward_mq",
+            "videoreward_ta",
+            "videoreward_vq",
+            # Own constructs without a published definition (appendix F).
+            "artifacts_score",
+            "audio_f0_joint_coverage",
+            "face_motion_blink_f1",
+            "face_motion_ear_correlation",
+            "gradient_detail",
+            "i2i_blue_bias",
+            "i2i_chroma_cb_mae",
+            "i2i_chroma_cr_mae",
+            "i2i_colorfulness_delta",
+            "i2i_edge_f1",
+            "i2i_exact_match_ratio",
+            "i2i_green_bias",
+            "i2i_hist_bhattacharyya_blue",
+            "i2i_hist_bhattacharyya_green",
+            "i2i_hist_bhattacharyya_red",
+            "i2i_hue_mae_degrees",
+            "i2i_luminance_mae",
+            "i2i_mean_bias",
+            "i2i_mutual_information",
+            "i2i_red_bias",
+            "i2i_spectral_cosine",
+            "noise_score",
+            "technical_score",
+            "temporal_risk_rate",
+            "voice_identity_max",
+            # Own composites replaced by their published components (appendix F).
+            "ref4d_overall_score",
+            "unified_reward_edit_score",
+        }
+    )
+
+    def __getattr__(self, name: str) -> Any:
+        resolved = _resolve_legacy_field(self, name)
+        if resolved is not _MISSING:
+            return resolved
+        return super().__getattr__(name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        observer = _METRIC_WRITE_OBSERVER.get()
+        if observer is not None and name in type(self).model_fields:
+            observer(self, name)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _translate_legacy_field_keys(cls, data: Any) -> Any:
+        return _translate_legacy_fields(cls, data)
 
     def non_null_metrics(self) -> dict[str, object]:
         """Return only the metrics that were actually computed (non-None)."""
@@ -165,7 +395,7 @@ class QualityMetrics(BaseModel):
     # -- Fields -----------------------------------------------------------
 
     blur_score: Optional[float] = None  # Laplacian variance
-    aesthetic_score: Optional[float] = None  # 0-100, normalized from aesthetic predictor
+    aesthetic_v25_score: Optional[float] = None  # 0-100, normalized from aesthetic predictor
     clip_score: Optional[float] = None  # Caption-image alignment
     brightness: Optional[float] = None
     contrast: Optional[float] = None
@@ -180,9 +410,6 @@ class QualityMetrics(BaseModel):
     kandinsky_dynamics_score: Optional[float] = None  # Kandinsky dynamics prediction
     stabilized_motion_score: Optional[float] = None  # Stabilized scene motion (camera-invariant)
     stabilized_camera_score: Optional[float] = None  # Stabilized camera motion estimate
-    technical_score: Optional[float] = None  # Composite technical score
-    noise_score: Optional[float] = None
-    artifacts_score: Optional[float] = None
     cpbd_score: Optional[float] = None  # CPBD perceptual blur detection (0-1, higher=sharper)
     imaging_noise_score: Optional[float] = None  # Imaging noise level (0-1, higher=cleaner)
     imaging_artifacts_score: Optional[float] = None  # Imaging edge-density artifacts (0-1, higher=cleaner)
@@ -190,14 +417,12 @@ class QualityMetrics(BaseModel):
     ocr_area_ratio: Optional[float] = None  # 0-1
     face_count: Optional[int] = None
     nsfw_score: Optional[float] = None  # 0-1, likelihood of being NSFW
-    temporal_risk_rate: Optional[float] = None  # Risky sampled-frame fraction (0-1)
     auto_caption: Optional[str] = None  # Generated caption
-    vqa_a_score: Optional[float] = None
+    aesthetic_v25_dup: Optional[float] = None
     vqa_t_score: Optional[float] = None
     is_score: Optional[float] = None
     detection_diversity: Optional[float] = None  # Object detection category entropy
     sd_score: Optional[float] = None  # SD-reference similarity (0-1)
-    gradient_detail: Optional[float] = None  # Sobel gradient detail (0-100)
     blip_score: Optional[float] = None  # BLIP image-text matching score (0-1, higher=better)
     blip_bleu: Optional[float] = None
     detection_score: Optional[float] = None
@@ -205,13 +430,42 @@ class QualityMetrics(BaseModel):
     person_count: Optional[int] = None  # Peak number of 'person' detections in a single frame (crowd size)
     person_count_score: Optional[float] = None  # Normalized crowd/person-count score (0-100, saturates at 10/frame)
     color_score: Optional[float] = None
-    celebrity_id_score: Optional[float] = None
+    face_id_similarity: Optional[float] = None
     identity_loss: Optional[float] = None  # Face identity cosine distance (0-1, lower=better)
     face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
     facesim_cur: Optional[float] = None  # FaceSim-Cur, CurricularFace cosine to a reference face (ConsisID; higher=better)
     facesim_arc: Optional[float] = None  # FaceSim-Arc, ArcFace cosine to a reference face (ConsisID; higher=better)
     facesim_face_frames: Optional[float] = None  # FaceSim frames with a detected face / sampled frames (0-1)
+    csim: Optional[float] = None  # CSIM, mean ArcFace cosine to the reference face (Zakharov 2019 / SadTalker; higher=better)
+    csim_face_frames: Optional[float] = None  # CSIM frames with a detected face / evaluated frames (0-1)
     sim_o: Optional[float] = None  # SIM-o, WavLM-TDNN speaker similarity to the original reference audio (-1..1)
+    id_reveal_distance: Optional[float] = None  # ID-Reveal distance to reference videos (Cozzolino 2021; lower=better)
+    id_reveal_tracks: Optional[float] = None  # ID-Reveal face tracks contributing to the score
+    aed: Optional[float] = None  # AED, mean 3DMM expression-coefficient distance to the driver video (PIRenderer; lower=better)
+    apd: Optional[float] = None  # APD, mean 3DMM pose-coefficient distance to the driver video (PIRenderer; lower=better)
+    head_pose_diversity: Optional[float] = None  # Head-pose diversity, temporal std of pose coefficients (SadTalker; higher=more diverse)
+    head_beat_align: Optional[float] = None  # Head Beat Align, Bailando kernel between audio and head-motion beats (0-1, higher=better)
+    expr_var_3dmm: Optional[float] = None  # Variation of 3DMM expression coefficients over time (higher=more varied)
+    pose_var_3dmm: Optional[float] = None  # Variation of 3DMM pose coefficients over time (higher=more varied)
+    aucon: Optional[float] = None  # AUCON, fraction of frames with coincident active-AU sets vs driver (MarioNETte; 0-1, higher=better)
+    prmse: Optional[float] = None  # PRMSE, RMSE of head-pose angles vs driver (MarioNETte; lower=better)
+    lmd: Optional[float] = None  # LMD, lip-landmark distance to the source video (Chen 2018; lower=better)
+    f_lmd: Optional[float] = None  # F-LMD, full-face landmark distance to the source video (Chen 2018; lower=better)
+    akd: Optional[float] = None  # AKD, average keypoint distance vs source (FOMM; lower=better)
+    mkr: Optional[float] = None  # MKR, missing keypoint rate vs source (FOMM; 0-1, lower=better)
+    mpjpe: Optional[float] = None  # MPJPE, mean per-joint position error vs source (Ginosar 2019; lower=better)
+    pck: Optional[float] = None  # PCK, fraction of joints within threshold of source pose (0-1, higher=better)
+    beat_consistency: Optional[float] = None  # Beat Consistency, audio/gesture beat kernel (BEAT; 0-1, higher=better)
+    lip_reading_wer: Optional[float] = None  # WER of the lip-read transcript vs caption (0-1, lower=better)
+    acc_emo: Optional[float] = None  # Acc_emo, target-emotion accuracy (EAMM/EAT; 0-1, higher=better)
+    fdd: Optional[float] = None  # FDD, upper-face vertex-motion distance vs GT (CodeTalker; lower=better)
+    lve: Optional[float] = None  # LVE, lip-vertex error vs GT (MeshTalk; lower=better)
+    mod: Optional[float] = None  # MOD, mouth-opening distance vs GT (DiffPoseTalk; lower=better)
+    srgr: Optional[float] = None  # SRGR, semantic-weighted gesture PCK (BEAT; 0-1, higher=better)
+    poi_forensics_score: Optional[float] = None  # POI-Forensics AV identity distance vs references (lower=better)
+    manner_correlation: Optional[float] = None  # Mannerism-signature authenticity vs reference person (Agarwal 2019; higher=genuine)
+    face_gesture_correlation: Optional[float] = None  # Face/gesture signature authenticity vs reference person (Bohacek 2022; higher=genuine)
+    behavioral_embedding_distance: Optional[float] = None  # Behavioural embedding distance vs reference recordings (lower=better)
     clip_image_similarity: Optional[float] = None  # CLIP image-to-image cosine similarity vs reference (0-1, higher=better)
     face_cross_similarity: Optional[float] = None  # Avg pairwise face similarity (0-1, higher=more consistent)
     face_identity_count: Optional[int] = None  # Number of unique identities detected
@@ -230,6 +484,12 @@ class QualityMetrics(BaseModel):
     expression_following: Optional[float] = None  # Driver-expression fidelity (0-1, higher=better)
     expression_following_distance: Optional[float] = None  # Mean blendshape L1 distance (0-1, lower=better)
     expression_following_coverage: Optional[float] = None  # Joint valid-face coverage (0-1)
+    expression_similarity: Optional[float] = None  # Time-free expression-manner similarity (0-1, higher=better)
+    expression_similarity_distribution: Optional[float] = None  # Expression-repertoire agreement (0-1)
+    expression_similarity_coactivation: Optional[float] = None  # Correlation-structure agreement (0-1)
+    expression_similarity_dynamics: Optional[float] = None  # Change-rate agreement (0-1)
+    expression_similarity_range_ratio: Optional[float] = None  # Expressive spread, sample/reference (1.0=equal)
+    expression_similarity_coverage: Optional[float] = None  # Lower per-video valid-face coverage (0-1)
     gaze_blendshape_horizontal_location_difference: Optional[float] = None  # Median horizontal eye-look activation difference (0=equal)
     gaze_blendshape_vertical_location_difference: Optional[float] = None  # Median vertical eye-look activation difference (0=equal)
     gaze_blendshape_horizontal_amplitude_difference: Optional[float] = None  # Horizontal eye-look P90-P10 span difference (0=equal)
@@ -241,22 +501,20 @@ class QualityMetrics(BaseModel):
     face_motion_x_correlation: Optional[float] = None  # Frame-aligned landmark-pair x correlation (-1 to 1)
     face_motion_y_correlation: Optional[float] = None  # Frame-aligned landmark-pair y correlation (-1 to 1)
     face_motion_cca_correlation: Optional[float] = None  # Adapted 2-D canonical correlation (0-1)
-    face_motion_ear_correlation: Optional[float] = None  # Synchronized eye-aspect-ratio correlation (-1 to 1)
     face_motion_blink_precision: Optional[float] = None  # Adapted overlapping-blink precision (0-1)
     face_motion_blink_recall: Optional[float] = None  # Adapted overlapping-blink recall (0-1)
-    face_motion_blink_f1: Optional[float] = None  # Ayase-derived overlapping-blink F1 (0-1)
     face_motion_landmark_pair_coverage: Optional[float] = None  # Defined pair-correlation fraction (0-1)
     face_motion_frame_coverage: Optional[float] = None  # Joint valid-face frame fraction (0-1)
     ocr_score: Optional[float] = None
-    ocr_fidelity: Optional[float] = None  # OCR text accuracy vs caption (0-100, higher=better)
+    ocr_fidelity: Optional[float] = None  # OCR error vs expected text (mean of NED/CER/WER, lower=better)
     ocr_cer: Optional[float] = None  # Character Error Rate (0-1, lower=better)
     ocr_wer: Optional[float] = None  # Word Error Rate (0-1, lower=better)
 
     # Image-to-Video reference similarity (sliding-window)
-    i2v_clip: Optional[float] = None  # CLIP image-video similarity (0-1)
-    i2v_dino: Optional[float] = None  # DINOv2 image-video similarity (0-1)
-    i2v_lpips: Optional[float] = None  # LPIPS image-video distance (0-1, lower=better)
-    i2v_quality: Optional[float] = None  # Aggregated I2V quality (0-100)
+    i2v_clip_winmed: Optional[float] = None  # CLIP image-video similarity (0-1)
+    i2v_dino_winmed: Optional[float] = None  # DINOv2 image-video similarity (0-1)
+    i2v_lpips_winmed: Optional[float] = None  # LPIPS image-video distance (0-1, lower=better)
+    i2v_quality_blend: Optional[float] = None  # Aggregated I2V quality (0-100)
 
     action_score: Optional[float] = None  # Caption-action fidelity (0-100)
     action_confidence: Optional[float] = None  # Top-1 action confidence (0-100)
@@ -264,8 +522,8 @@ class QualityMetrics(BaseModel):
     motion_ac_score: Optional[float] = None
     warping_error: Optional[float] = None
     clip_temp: Optional[float] = None
-    video_text_score: Optional[float] = None  # Video-text alignment via X-CLIP/CLIP (0-1)
-    video_text_temporal: Optional[float] = None  # Video-text temporal consistency (0-1)
+    video_text_logit: Optional[float] = None  # Video-text alignment via X-CLIP/CLIP (0-1)
+    video_text_consistency: Optional[float] = None  # Video-text temporal consistency (0-1)
     face_consistency: Optional[float] = None
     spectral_entropy: Optional[float] = None  # DINOv2 spectral entropy
     spectral_rank: Optional[float] = None  # DINOv2 effective rank ratio
@@ -277,23 +535,22 @@ class QualityMetrics(BaseModel):
     niqe: Optional[float] = None  # Natural Image Quality Evaluator (lower=better)
 
     # Text-to-Video alignment
-    t2v_score: Optional[float] = None  # T2VScore alignment + quality
-    t2v_alignment: Optional[float] = None  # Text-video semantic alignment
-    t2v_quality: Optional[float] = None  # Video production quality
+    t2v_generic_score: Optional[float] = None  # T2VScore alignment + quality
+    t2v_generic_alignment: Optional[float] = None  # Text-video semantic alignment
+    t2v_generic_quality: Optional[float] = None  # Video production quality
 
     # Dynamics and motion
-    dynamics_range: Optional[float] = None  # Extent of content variation
+    content_variation: Optional[float] = None  # Extent of content variation
     dynamics_controllability: Optional[float] = None  # Motion control fidelity
 
     # Content quality
     scene_complexity: Optional[float] = None  # Visual complexity score
     compression_artifacts: Optional[float] = None  # Artifact severity (0-100)
-    naturalness_score: Optional[float] = None  # Natural scene statistics
+    brisque_inverted: Optional[float] = None  # Natural scene statistics
     video_memorability: Optional[float] = None  # Memorability prediction
 
     # Meta quality
     usability_rate: Optional[float] = None  # Percentage of usable frames
-    confidence_score: Optional[float] = None  # Prediction confidence
     llm_qa_score: Optional[float] = None  # LMM descriptive quality rating (0-1)
 
     # Format-specific
@@ -323,8 +580,7 @@ class QualityMetrics(BaseModel):
     estoi_score: Optional[float] = None  # ESTOI intelligibility (0-1, higher=better)
     mcd_score: Optional[float] = None  # Mel Cepstral Distortion (dB, lower=better)
     audio_log_f0_rmse_cents: Optional[float] = None  # DTW-aligned log-F0 RMSE (cents, lower=better)
-    audio_f0_voicing_error: Optional[float] = None  # DTW-path voiced/unvoiced mismatch rate (0-1, lower=better)
-    audio_f0_joint_coverage: Optional[float] = None  # Lower jointly-voiced unique-frame coverage (0-1)
+    audio_f0_voiced_mismatch: Optional[float] = None  # DTW-path voiced/unvoiced mismatch rate (0-1, lower=better)
     audio_relative_energy_rmse_db: Optional[float] = None  # MFCC-DTW-aligned mean-centred energy RMSE in dB (0+, lower=better)
     audio_energy_contour_correlation: Optional[float] = None  # MFCC-DTW-aligned relative-energy Pearson correlation (-1..1, higher=better)
     audio_voiced_fraction_difference: Optional[float] = None  # Absolute pYIN voiced-fraction difference (0-1, lower=better)
@@ -339,16 +595,16 @@ class QualityMetrics(BaseModel):
     squim_stoi_score: Optional[float] = None  # SQUIM STOI estimate (0-1, higher=better)
     squim_pesq_score: Optional[float] = None  # SQUIM WB-PESQ estimate (~1-4.64, higher=better)
     squim_si_sdr_score: Optional[float] = None  # SQUIM SI-SDR estimate (dB, higher=better)
-    lpdist_score: Optional[float] = None  # Log-Power Spectral Distance (lower=better)
+    logmel_rmse_db: Optional[float] = None  # Log-Power Spectral Distance (lower=better)
     cdpam_score: Optional[float] = None  # CDPAM perceptual audio distance (lower=better)
     utmos_score: Optional[float] = None  # UTMOS predicted MOS (1-5, higher=better)
     utmos_v2_score: Optional[float] = None  # UTMOSv2 predicted MOS (1-5, higher=better)
     distill_mos_score: Optional[float] = None  # Distill-MOS overall speech quality (1-5, higher=better)
-    asr_cer: Optional[float] = None  # ASR character error rate vs reference text (0-1, lower=better)
-    asr_wer: Optional[float] = None  # ASR word error rate vs reference text (0-1, lower=better)
+    asr_cer: Optional[float] = None  # ASR character error rate vs reference text (unbounded, lower=better)
+    asr_wer: Optional[float] = None  # ASR word error rate vs reference text (unbounded, lower=better)
     speech_bert_score: Optional[float] = None  # Matching-content speech similarity (-1..1, higher=better)
     scoreq_score: Optional[float] = None  # SCOREQ speech naturalness score (0-1, higher=better)
-    ttsds2_score: Optional[float] = None  # TTSDS2 speech quality score (0-1, higher=better)
+    tts_system_dist_score: Optional[float] = None  # TTSDS2 speech quality score (0-1, higher=better)
     human_clap_score: Optional[float] = None  # Human-CLAP audio-text relevance (0-1, higher=better)
     laion_clap_score: Optional[float] = None  # LAION-CLAP audio-text relevance (0-1, higher=better)
     ms_clap_score: Optional[float] = None  # Microsoft CLAP audio-text relevance (0-1, higher=better)
@@ -362,14 +618,12 @@ class QualityMetrics(BaseModel):
     # No-reference VQA
     dover_score: Optional[float] = None  # DOVER overall (higher=better)
     uvq1p5_score: Optional[float] = None  # Google UVQ 1.5 MOS (1-5, higher=better)
-    unified_vqa_score: Optional[float] = None  # Unified-VQA FR/NR quality (0-1, higher=better)
     dover_technical: Optional[float] = None  # DOVER technical quality
     dover_aesthetic: Optional[float] = None  # DOVER aesthetic quality
     internvqa_score: Optional[float] = None  # InternVQA video quality (higher=better)
     topiq_score: Optional[float] = None  # TOPIQ transformer-based IQA (higher=better)
     liqe_score: Optional[float] = None  # LIQE lightweight IQA (higher=better)
     clip_iqa_score: Optional[float] = None  # CLIP-IQA semantic quality (0-1, higher=better)
-    nima_onnx_score: Optional[float] = None  # NIMA ONNX aesthetic score (1-10, higher=better)
 
     # Professional production quality
     color_grading_score: Optional[float] = None  # Colour consistency 0-100
@@ -504,10 +758,10 @@ class QualityMetrics(BaseModel):
     promptiqa_score: Optional[float] = None  # Few-shot NR-IQA score
 
     # AIGV-Assessor (CVPR 2025)
-    aigv_static: Optional[float] = None  # AI video static quality
-    aigv_temporal: Optional[float] = None  # AI video temporal smoothness
-    aigv_dynamic: Optional[float] = None  # AI video dynamic degree
-    aigv_alignment: Optional[float] = None  # AI video text-video alignment
+    aigv_static_est: Optional[float] = None  # AI video static quality
+    aigv_temporal_est: Optional[float] = None  # AI video temporal smoothness
+    aigv_dynamic_est: Optional[float] = None  # AI video dynamic degree
+    aigv_alignment_est: Optional[float] = None  # AI video text-video alignment
 
     # VideoAlign reward (NeurIPS 2025)
     video_reward_score: Optional[float] = None  # Human preference reward
@@ -534,21 +788,21 @@ class QualityMetrics(BaseModel):
     qcn_score: Optional[float] = None  # Geometric order blind IQA
 
     # Video-native VQA
-    finevq_score: Optional[float] = None  # FineVQ fine-grained UGC VQA (CVPR 2025)
+    finevq_raw_mean: Optional[float] = None  # FineVQ fine-grained UGC VQA (CVPR 2025)
     kvq_score: Optional[float] = None  # KVQ saliency-guided VQA (CVPR 2025)
     rqvqa_score: Optional[float] = None  # RQ-VQA raw regression score (higher=better)
-    videval_score: Optional[float] = None  # VIDEVAL 60-feature fusion NR-VQA
-    tlvqm_score: Optional[float] = None  # TLVQM two-level video quality
+    svr60_score: Optional[float] = None  # VIDEVAL 60-feature fusion NR-VQA
+    resnet_svr_score: Optional[float] = None  # TLVQM two-level video quality
     funque_score: Optional[float] = None  # FUNQUE unified quality (beats VMAF)
-    movie_score: Optional[float] = None  # MOVIE motion trajectory FR
-    st_greed_score: Optional[float] = None  # ST-GREED variable frame rate FR
+    gabor_flow_score: Optional[float] = None  # MOVIE motion trajectory FR
+    mscn_entropy_score: Optional[float] = None  # ST-GREED variable frame rate FR
     c3dvqa_score: Optional[float] = None  # C3DVQA 3D CNN spatiotemporal FR
     flolpips: Optional[float] = None  # FloLPIPS flow-based perceptual FR
-    hdr_vqm: Optional[float] = None  # HDR-VQM HDR video quality FR
+    hdr_subband_flicker_score: Optional[float] = None  # HDR-VQM HDR video quality FR
     hdr_chipqa_score: Optional[float] = None  # HDR-ChipQA HDR NR-VQA (higher=better)
     hdrmax_score: Optional[float] = None  # HDRMAX / HDR-VMAF family score (higher=better)
     brightrate_score: Optional[float] = None  # BrightRate HDR UGC NR-VQA (higher=better)
-    st_lpips: Optional[float] = None  # ST-LPIPS spatiotemporal perceptual FR
+    stlpips_selfdist: Optional[float] = None  # ST-LPIPS spatiotemporal perceptual FR
     cvvdp_score: Optional[float] = None  # ColorVideoVDP quality in JOD units (max 10)
     cvvdp_ml_transformer_score: Optional[float] = None  # Learned ColorVideoVDP JOD (max 10)
     cvvdp_ml_saliency_score: Optional[float] = None  # Saliency-weighted ColorVideoVDP JOD (max 10)
@@ -576,7 +830,7 @@ class QualityMetrics(BaseModel):
     deepwsd_score: Optional[float] = None  # DeepWSD Wasserstein distance FR
 
     # Compression/rendering perceptual metrics
-    ssimulacra2: Optional[float] = None  # SSIMULACRA 2 (0-100, lower=better, JPEG XL standard)
+    ssimulacra2: Optional[float] = None  # SSIMULACRA 2 (-inf to 100, higher=better; 100=identical)
     butteraugli: Optional[float] = None  # Butteraugli perceptual distance (lower=better)
     flip_score: Optional[float] = None  # NVIDIA FLIP perceptual metric (0-1, lower=better)
     vmaf_neg: Optional[float] = None  # VMAF NEG (no enhancement gain, 0-100, higher=better)
@@ -604,10 +858,11 @@ class QualityMetrics(BaseModel):
     dnsmos_overall: Optional[float] = None  # DNSMOS overall MOS (1-5, higher=better)
     dnsmos_sig: Optional[float] = None  # DNSMOS signal quality (1-5, higher=better)
     dnsmos_bak: Optional[float] = None  # DNSMOS background quality (1-5, higher=better)
+    dnsmos_p808: Optional[float] = None  # DNSMOS P.808 MOS (1-5, higher=better)
 
     # HDR metrics
-    pu_psnr: Optional[float] = None  # PU-PSNR perceptually uniform HDR (dB, higher=better)
-    pu_ssim: Optional[float] = None  # PU-SSIM perceptually uniform HDR (0-1, higher=better)
+    log_psnr: Optional[float] = None  # PU-PSNR perceptually uniform HDR (dB, higher=better)
+    plain_ssim: Optional[float] = None  # PU-SSIM perceptually uniform HDR (0-1, higher=better)
     max_fall: Optional[float] = None  # MaxFALL frame average light level (nits)
     max_cll: Optional[float] = None  # MaxCLL content light level (nits)
     hdr_vdp: Optional[float] = None  # HDR-VDP visual difference predictor (higher=better)
@@ -616,8 +871,8 @@ class QualityMetrics(BaseModel):
 
     # Color, codec, gaming, streaming
     ciede2000: Optional[float] = None  # CIEDE2000 perceptual color difference (lower=better)
-    psnr_hvs: Optional[float] = None  # PSNR-HVS perceptually weighted (dB, higher=better)
-    psnr_hvs_m: Optional[float] = None  # PSNR-HVS-M with masking (dB, higher=better)
+    psnr_hvs_approx: Optional[float] = None  # PSNR-HVS perceptually weighted (dB, higher=better)
+    psnr_acmask: Optional[float] = None  # PSNR-HVS-M with masking (dB, higher=better)
     cgvqm: Optional[float] = None  # CGVQM gaming quality (higher=better)
     strred: Optional[float] = None  # STRRED reduced-reference temporal (lower=better)
     p1203_mos: Optional[float] = None  # ITU-T P.1203 streaming QoE MOS (1-5)
@@ -637,16 +892,16 @@ class QualityMetrics(BaseModel):
     chronomagic_ch_score: Optional[float] = None  # CHScore = 1/TSI_sum (unbounded, higher=more coherent)
 
     # GenEval T2I compositional (NeurIPS 2024, arXiv:2310.11513) — image-only, 0-1, higher=better
-    geneval_single_object: Optional[float] = None  # Single-object presence
-    geneval_two_object: Optional[float] = None  # Two-object co-presence
-    geneval_counting: Optional[float] = None  # Counting accuracy
-    geneval_colors: Optional[float] = None  # Color attribute match
-    geneval_position: Optional[float] = None  # Spatial position relation
-    geneval_color_attribution: Optional[float] = None  # Color↔object binding
-    geneval_overall: Optional[float] = None  # Mean of activated sub-scores
+    clipchk_single_object: Optional[float] = None  # Single-object presence
+    clipchk_two_object: Optional[float] = None  # Two-object co-presence
+    clipchk_counting: Optional[float] = None  # Counting accuracy
+    clipchk_colors: Optional[float] = None  # Color attribute match
+    clipchk_position: Optional[float] = None  # Spatial position relation
+    clipchk_color_attribution: Optional[float] = None  # Color↔object binding
+    clipchk_overall: Optional[float] = None  # Mean of activated sub-scores
 
     # UnifiedReward 2.0 T2I reward (1-5, higher=better)
-    unified_reward_2_score: Optional[float] = None  # Mean alignment/coherence/style score
+    unified_reward_2_mean: Optional[float] = None  # Mean alignment/coherence/style score
     unified_reward_2_alignment_score: Optional[float] = None  # Prompt-image alignment
     unified_reward_2_coherence_score: Optional[float] = None  # Logical/visual coherence
     unified_reward_2_style_score: Optional[float] = None  # Aesthetic style quality
@@ -660,7 +915,6 @@ class QualityMetrics(BaseModel):
     qwen_image_bench_overall: Optional[float] = None  # Mean of Qwen-Image-Bench L1 scores
 
     # UnifiedReward Edit (instruction-guided image editing)
-    unified_reward_edit_score: Optional[float] = None  # Primary edit quality score
     unified_reward_edit_success_score: Optional[float] = None  # Instruction success (0-25)
     unified_reward_edit_overediting_score: Optional[float] = None  # Edit preservation (0-25)
     unified_reward_edit_image_1_score: Optional[float] = None  # Pairwise edit image 1 score
@@ -670,28 +924,21 @@ class QualityMetrics(BaseModel):
     vebench_score: Optional[float] = None  # Comparative instruction-guided video-edit quality
 
     # TC-Bench temporal compositionality (T2V, 0-1, higher=better)
-    tcbench_attribute_score: Optional[float] = None  # Time-ordered attribute changes
-    tcbench_object_score: Optional[float] = None  # Time-ordered object appearance
-    tcbench_background_score: Optional[float] = None  # Time-ordered background changes
-    tcbench_overall: Optional[float] = None  # Mean TC-Bench score
-    long_form_event_fulfillment: Optional[float] = None  # Grounded event fraction (0-1)
+    clipord_attribute_score: Optional[float] = None  # Time-ordered attribute changes
+    clipord_object_score: Optional[float] = None  # Time-ordered object appearance
+    clipord_background_score: Optional[float] = None  # Time-ordered background changes
+    clipord_overall: Optional[float] = None  # Mean TC-Bench score
+    clipord_event_fulfillment: Optional[float] = None  # Grounded event fraction (0-1)
 
     # VideoPhy-2 VLM-based physics adherence (0-1, higher=better)
-    videophy_pc_score: Optional[float] = None  # Physical commonsense
-    videophy_sa_score: Optional[float] = None  # Semantic adherence
+    vlm_pc_likert: Optional[float] = None  # Physical commonsense
+    vlm_sa_likert: Optional[float] = None  # Semantic adherence
 
     # EntityBench cross-shot identity persistence (0-1, higher=better; batch metric)
-    entitybench_identity_consistency: Optional[float] = None  # Face/identity persistence across shots
-    entitybench_appearance_consistency: Optional[float] = None  # Overall appearance persistence across shots
+    entity_identity_cos: Optional[float] = None  # Face/identity persistence across shots
+    entity_appearance_cos: Optional[float] = None  # Overall appearance persistence across shots
 
     # T2V-CompBench (CVPR 2025)
-    compbench_attribute: Optional[float] = None  # Attribute binding (0-1)
-    compbench_object_rel: Optional[float] = None  # Object relationship (0-1)
-    compbench_action: Optional[float] = None  # Action binding (0-1)
-    compbench_spatial: Optional[float] = None  # Spatial relationship (0-1)
-    compbench_numeracy: Optional[float] = None  # Generative numeracy (0-1)
-    compbench_scene: Optional[float] = None  # Scene composition (0-1)
-    compbench_overall: Optional[float] = None  # Overall composition (0-1)
 
     # NR-VQA (new models, 2023-2025)
     rapique_score: Optional[float] = None  # RAPIQUE bandpass+CNN NR-VQA (higher=better)
@@ -699,18 +946,18 @@ class QualityMetrics(BaseModel):
     stablevqa_score: Optional[float] = None  # StableVQA video stability (higher=better)
     maxvqa_score: Optional[float] = None  # MaxVQA explainable quality (higher=better)
     bvqi_score: Optional[float] = None  # BVQI zero-shot blind VQA (higher=better)
-    modularbvqa_score: Optional[float] = None  # ModularBVQA resolution-aware (higher=better)
+    clip_slowfast_vq_score: Optional[float] = None  # ModularBVQA resolution-aware (higher=better)
     ptmvqa_score: Optional[float] = None  # PTM-VQA multi-PTM fusion (higher=better)
-    clipvqa_score: Optional[float] = None  # CLIPVQA CLIP-based VQA (higher=better)
     discovqa_score: Optional[float] = None  # DisCoVQA distortion-content (higher=better)
     zoomvqa_score: Optional[float] = None  # Zoom-VQA multi-level (higher=better)
+    zoomvqa_iqa_score: Optional[float] = None  # Zoom-VQA IQA (CPNet) branch score
+    zoomvqa_vqa_score: Optional[float] = None  # Zoom-VQA VQA (Swin) branch score
     faver_score: Optional[float] = None  # FAVER variable frame rate (higher=better)
     siamvqa_score: Optional[float] = None  # SiamVQA Siamese high-res (higher=better)
     memoryvqa_score: Optional[float] = None  # Memory-VQA human memory (higher=better)
     sama_score: Optional[float] = None  # SAMA scaling+masking (higher=better)
-    clifvqa_score: Optional[float] = None  # CLiF-VQA human feelings (higher=better)
+    clip_feel_score: Optional[float] = None  # CLiF-VQA human feelings (higher=better)
     simplevqa_score: Optional[float] = None  # SimpleVQA Swin+SlowFast (higher=better)
-    adadqa_score: Optional[float] = None  # Ada-DQA adaptive diverse (higher=better)
     mdvqa_score: Optional[float] = None  # MD-VQA fused quality (0-1, higher=better)
 
     # FR-VQA (new models)
@@ -724,12 +971,7 @@ class QualityMetrics(BaseModel):
 
     # AIGC-specific VQA
     crave_score: Optional[float] = None  # CRAVE next-gen AIGC (higher=better)
-    aigcvqa_technical: Optional[float] = None  # AIGC-VQA technical branch
-    aigcvqa_aesthetic: Optional[float] = None  # AIGC-VQA aesthetic branch
-    aigcvqa_alignment: Optional[float] = None  # AIGC-VQA text-video alignment
-    ugvq_score: Optional[float] = None  # UGVQ unified generated VQ (higher=better)
     aigvqa_score: Optional[float] = None  # AIGVQA multi-dimensional (higher=better)
-    t2veval_score: Optional[float] = None  # T2VEval consistency+realness (higher=better)
     world_consistency_score: Optional[float] = None  # WCS object permanence (higher=better)
     prove_rc_s_score: Optional[float] = None  # PROVE removal spatial coherence (higher=better)
     prove_rc_t_score: Optional[float] = None  # PROVE temporal discrepancy (lower=better)
@@ -738,22 +980,19 @@ class QualityMetrics(BaseModel):
     vqa2_score: Optional[float] = None  # VQA² LMM quality (higher=better)
     lmmvqa_score: Optional[float] = None  # LMM-VQA spatiotemporal (higher=better)
     vqinsight_score: Optional[float] = None  # VQ-Insight ByteDance (higher=better)
+    vqinsight_spatial: Optional[float] = None  # VQ-Insight AIGC spatial dimension
+    vqinsight_temporal: Optional[float] = None  # VQ-Insight AIGC temporal dimension
+    vqinsight_consistency: Optional[float] = None  # VQ-Insight AIGC consistency dim
     vqathinker_score: Optional[float] = None  # VQAThinker GRPO (higher=better)
-    qclip_score: Optional[float] = None  # Q-CLIP VLM-based (higher=better)
-    presresq_score: Optional[float] = None  # PreResQ-R1 rank+score (higher=better)
 
-    umtscore: Optional[float] = None  # UMTScore video-text alignment
 
     # Video reward models
-    videoreward_vq: Optional[float] = None  # VideoReward visual quality
-    videoreward_mq: Optional[float] = None  # VideoReward motion quality
-    videoreward_ta: Optional[float] = None  # VideoReward text alignment
-    vader_score: Optional[float] = None  # VADER reward alignment
+    hpsv2_const_quality: Optional[float] = None  # VADER reward alignment
 
     # 360/VR spherical metrics
-    s_psnr: Optional[float] = None  # Spherical PSNR (dB, higher=better)
-    ws_psnr: Optional[float] = None  # Weighted Spherical PSNR (dB, higher=better)
-    cpp_psnr: Optional[float] = None  # Craster Parabolic PSNR (dB, higher=better)
+    psnr_sphw: Optional[float] = None  # Spherical PSNR (dB, higher=better)
+    ws_psnr_linw: Optional[float] = None  # Weighted Spherical PSNR (dB, higher=better)
+    psnr_cosw: Optional[float] = None  # Craster Parabolic PSNR (dB, higher=better)
     ws_ssim: Optional[float] = None  # Weighted Spherical SSIM (0-1, higher=better)
     mc360iqa_score: Optional[float] = None  # MC360IQA blind 360 (higher=better)
     provqa_score: Optional[float] = None  # ProVQA progressive 360 (higher=better)
@@ -761,21 +1000,19 @@ class QualityMetrics(BaseModel):
     # Point cloud quality
     pc_d1_psnr: Optional[float] = None  # Point-to-point PSNR (dB)
     pc_d2_psnr: Optional[float] = None  # Point-to-plane PSNR (dB)
-    pcqm_score: Optional[float] = None  # PCQM geometry+color (higher=better)
-    graphsim_score: Optional[float] = None  # GraphSIM gradient (higher=better)
-    pointssim_score: Optional[float] = None  # PointSSIM structural (higher=better)
+    mse_color_score: Optional[float] = None  # PCQM geometry+color (higher=better)
+    local_std_uniformity_score: Optional[float] = None  # GraphSIM gradient (higher=better)
+    chamfer_sim_score: Optional[float] = None  # PointSSIM structural (higher=better)
     mm_pcqa_score: Optional[float] = None  # MM-PCQA multi-modal (higher=better)
 
     # Streaming QoE
     p1204_mos: Optional[float] = None  # ITU-T P.1204.3 bitstream MOS (1-5)
-    sqi_score: Optional[float] = None  # SQI streaming quality index
-    video_atlas_score: Optional[float] = None  # Video ATLAS temporal artifacts
 
     # Face quality (recognition-aware)
     serfiq_score: Optional[float] = None  # SER-FIQ embedding robustness (higher=better)
     crfiqa_score: Optional[float] = None  # CR-FIQA classifiability (higher=better)
-    magface_score: Optional[float] = None  # MagFace magnitude quality (higher=better)
-    grafiqs_score: Optional[float] = None  # GraFIQs gradient-based (higher=better)
+    face_emb_norm: Optional[float] = None  # MagFace magnitude quality (higher=better)
+    grafiqs_score: Optional[float] = None  # GraFIQs raw |grad| sum (lower=better)
 
     # Niche domains
     uiqm_score: Optional[float] = None  # UIQM underwater quality (higher=better)
@@ -794,7 +1031,7 @@ class QualityMetrics(BaseModel):
     erqa_score: Optional[float] = None  # ERQA edge restoration quality (0-1, higher=better)
     vfips_score: Optional[float] = None  # VFIPS frame interpolation perceptual (lower=better)
     artfid_score: Optional[float] = None  # ArtFID style transfer quality (lower=better)
-    psnr_div: Optional[float] = None  # PSNR_DIV motion-weighted PSNR (dB, higher=better)
+    psnr_grad: Optional[float] = None  # PSNR_DIV motion-weighted PSNR (dB, higher=better)
     psnr99: Optional[float] = None  # PSNR99 worst-case region quality (dB, higher=better)
 
     # pyiqa built-ins
@@ -824,7 +1061,6 @@ class QualityMetrics(BaseModel):
     muq_eval_mi_score: Optional[float] = None  # MuQ-Eval musical impression MOS (1-5, higher=better)
 
     # Talking head / lip sync
-    thqa_score: Optional[float] = None  # THQA talking head quality (higher=better)
     lse_d: Optional[float] = None  # LSE-D lip sync error distance (lower=better)
     lse_c: Optional[float] = None  # LSE-C lip sync error confidence (higher=better)
     silent_lip_stability: Optional[float] = None  # THEval silent-mouth lip-opening MAD (lower=better)
@@ -859,7 +1095,7 @@ class QualityMetrics(BaseModel):
     vision_reward_score: Optional[float] = None  # VisionReward weighted judgment score (higher=better)
 
     # Physics-IQ reference-based physical understanding (ICCV 2025)
-    physics_iq_score: Optional[float] = None  # Combined Physics-IQ score (0-100, higher=better)
+    physics_iq_neutral_score: Optional[float] = None  # Combined Physics-IQ score (0-100, higher=better)
     physics_iq_spatial_iou: Optional[float] = None  # Spatial IoU vs real continuation (0-1)
     physics_iq_spatiotemporal_iou: Optional[float] = None  # Spatiotemporal IoU vs real continuation (0-1)
     physics_iq_weighted_spatial_iou: Optional[float] = None  # Weighted spatial IoU vs real continuation (0-1)
@@ -877,7 +1113,6 @@ class QualityMetrics(BaseModel):
     ref4d_event_score: Optional[float] = None  # Ref4D event-temporal score (0-100)
     ref4d_motion_score: Optional[float] = None  # Ref4D motion-dynamics score (0-100)
     ref4d_world_score: Optional[float] = None  # Ref4D world-knowledge score
-    ref4d_overall_score: Optional[float] = None  # Mean of available Ref4D dimensions
     phyground_spatial_alignment_score: Optional[float] = None  # SA judge score (1-5)
     phyground_prompt_temporal_validity_score: Optional[float] = None  # PTV judge score (1-5)
     phyground_persistence_score: Optional[float] = None  # Persistence judge score (1-5)
@@ -888,23 +1123,7 @@ class QualityMetrics(BaseModel):
     # Image-to-image fidelity diagnostics
     i2i_mse: Optional[float] = None
     i2i_mae: Optional[float] = None
-    i2i_mean_bias: Optional[float] = None
-    i2i_exact_match_ratio: Optional[float] = None
-    i2i_red_bias: Optional[float] = None
-    i2i_green_bias: Optional[float] = None
-    i2i_blue_bias: Optional[float] = None
-    i2i_luminance_mae: Optional[float] = None
-    i2i_chroma_cr_mae: Optional[float] = None
-    i2i_chroma_cb_mae: Optional[float] = None
-    i2i_hue_mae_degrees: Optional[float] = None
-    i2i_colorfulness_delta: Optional[float] = None
-    i2i_hist_bhattacharyya_red: Optional[float] = None
-    i2i_hist_bhattacharyya_green: Optional[float] = None
-    i2i_hist_bhattacharyya_blue: Optional[float] = None
     i2i_gradient_similarity_mean: Optional[float] = None
-    i2i_edge_f1: Optional[float] = None
-    i2i_spectral_cosine: Optional[float] = None
-    i2i_mutual_information: Optional[float] = None
     i2i_dinov2_cls_similarity: Optional[float] = None
     i2i_dinov2_patch_similarity: Optional[float] = None
     i2i_clip_similarity: Optional[float] = None
@@ -969,7 +1188,6 @@ class QualityMetrics(BaseModel):
     head_pose_rate_agreement: Optional[float] = None  # Agreement of the angular-rate distributions; survives a change of camera (0-1)
     head_pose_similarity_coverage: Optional[float] = None  # Lower of the two per-clip shares of sampled frames with a head pose (0-1)
     voice_identity: Optional[float] = None  # Mean speaker-embedding cosine similarity to a reference set of the person (higher=better)
-    voice_identity_max: Optional[float] = None  # Best speaker similarity over the reference set (higher=better)
     voice_identity_coverage: Optional[float] = None  # Share of reference files that yielded a speaker embedding (0-1)
     voice_identity_window_coverage: Optional[float] = None  # Valid ECAPA candidate windows / scheduled windows (0-1)
     voice_identity_reference_coverage: Optional[float] = None  # Valid ECAPA reference embeddings / selected references (0-1)
@@ -983,7 +1201,7 @@ class QualityMetrics(BaseModel):
     multi_subject_identity_coverage: Optional[float] = None  # Share of sampled frames covered by the assigned face tracks (0-1)
     multi_subject_identity_tracks: Optional[float] = None  # Number of face tracks the assignment was built from
     active_speaker_margin: Optional[float] = None  # Lip-sync confidence gap between the best-synced face and the runner-up (higher=cleaner)
-    active_speaker_best_lse_c: Optional[float] = None  # Lip-sync confidence of the best-synced face (higher=better)
+    active_speaker_best_conf: Optional[float] = None  # Lip-sync confidence of the best-synced face (higher=better)
     active_speaker_silent_faces: Optional[float] = None  # Faces for which no talking mouth was detected
     object_permanence_interior_vanish: Optional[float] = None  # Tracks that ended away from the frame border (disappearance, not exit)
     object_permanence_border_exit: Optional[float] = None  # Tracks that ended at the frame border (a legitimate exit)
@@ -1014,6 +1232,14 @@ class QualityMetrics(BaseModel):
     # not touch it. Excluded from metric counts/grouping via _NON_METRIC_FIELDS.
     metric_backends: Dict[str, str] = Field(default_factory=dict)
 
+    # Maps ``field_name`` -> provenance class ("published" | "adapted" | "own" |
+    # "utility"), populated automatically by the pipeline from each module's
+    # ``provenance`` declaration for every field that holds a value. Every
+    # number in the output can thus be traced to whether it is computed per its
+    # published definition. Excluded from metric counts/grouping via
+    # _NON_METRIC_FIELDS.
+    metric_provenance: Dict[str, str] = Field(default_factory=dict)
+
 
 class Sample(BaseModel):
     """A single sample (video/image) in the dataset."""
@@ -1022,6 +1248,7 @@ class Sample(BaseModel):
     is_video: bool
     reference_path: Optional[Path] = None
     reference_mask_path: Optional[Path] = None
+    style_reference_path: Optional[Path] = None
     video_metadata: Optional[VideoMetadata] = None
     image_metadata: Optional[ImageMetadata] = None
     audio_metadata: Optional[AudioMetadata] = None
@@ -1098,6 +1325,32 @@ class Sample(BaseModel):
 class DatasetStats(BaseModel):
     """Aggregated statistics for the entire dataset."""
 
+    # Dataset-level metric fields renamed in 0.1.80 — reads of the old names
+    # resolve to the renamed fields with a DeprecationWarning (see
+    # QualityMetrics._DEPRECATED_FIELD_ALIASES for the mechanism).
+    _DEPRECATED_FIELD_ALIASES: ClassVar[Dict[str, str]] = {
+        "jedi": "mmd_selfsplit",
+        "verse_bench_breakdown": "verse_bench_breakdown_est",
+        "verse_bench_overall": "verse_bench_overall_est",
+    }
+
+    # Dropped together with stub modules that never computed them, plus the
+    # FVD variants whose values were degenerate or falsely attributed.
+    _REMOVED_FIELDS: ClassVar[frozenset] = frozenset(
+        {"fmd", "fvd_content_debiased", "fvd_dinov2", "stream_spatial"}
+    )
+
+    def __getattr__(self, name: str) -> Any:
+        resolved = _resolve_legacy_field(self, name)
+        if resolved is not _MISSING:
+            return resolved
+        return super().__getattr__(name)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _translate_legacy_field_keys(cls, data: Any) -> Any:
+        return _translate_legacy_fields(cls, data)
+
     total_samples: int
     valid_samples: int
     invalid_samples: int
@@ -1122,13 +1375,11 @@ class DatasetStats(BaseModel):
 
     # Distribution metrics (dataset-level)
     fvd: Optional[float] = None  # Fréchet Video Distance
-    fvd_content_debiased: Optional[float] = None  # Content-Debiased FVD (Ge et al. CVPR 2024, lower=better)
-    fvd_dinov2: Optional[float] = None  # FVD with DINOv2 spatial backbone (rFVD, lower=better)
     kvd: Optional[float] = None  # Kernel Video Distance
     fvmd: Optional[float] = None  # Fréchet Video Motion Distance
     fid: Optional[float] = None  # Fréchet Inception Distance
     cmmd: Optional[float] = None  # CLIP Maximum Mean Discrepancy (lower=better)
-    jedi: Optional[float] = None  # JEDi (V-JEPA + MMD, ICLR 2025)
+    mmd_selfsplit: Optional[float] = None  # JEDi (V-JEPA + MMD, ICLR 2025)
     kid: Optional[float] = None  # Kernel Inception Distance (lower=better)
     kid_std: Optional[float] = None  # KID standard deviation
     prdc_precision: Optional[float] = None  # PRDC precision in DINOv2 space (0-1)
@@ -1172,14 +1423,20 @@ class DatasetStats(BaseModel):
     audio_kl: Optional[float] = None  # Audio classifier distribution KL divergence (lower=better)
     mauve_audio_divergence: Optional[float] = None  # MAD -log(MAUVE), lower=better
     kad: Optional[float] = None  # Kernel Audio Distance (lower=better)
-    fgd: Optional[float] = None  # Frechet Gesture Distance (lower=better)
-    fmd: Optional[float] = None  # Frechet Motion Distance (lower=better)
     msswd: Optional[float] = None  # Multi-Scale Sliced Wasserstein (lower=better)
     sfid: Optional[float] = None  # Spatial FID (lower=better)
     vendi: Optional[float] = None  # Vendi Score diversity (higher=better)
-    stream_spatial: Optional[float] = None  # STREAM spatial fidelity+diversity
+    is_score: Optional[float] = None  # Dataset-level Inception Score (higher=better)
+    stream_F: Optional[float] = None  # STREAM-S spatial fidelity (prdc precision)
+    stream_D: Optional[float] = None  # STREAM-S spatial diversity (prdc recall)
     stream_temporal: Optional[float] = None  # STREAM temporal naturalness
     worldscore: Optional[float] = None  # WorldScore generation quality
+    fd_3dmm_expression: Optional[float] = None  # Frechet distance on 3DMM expression-coefficient distributions vs reference set (lower=better)
+    fd_3dmm_pose: Optional[float] = None  # Frechet distance on 3DMM pose-coefficient distributions vs reference set (lower=better)
+    fd_g: Optional[float] = None  # FD_g, Frechet on body-pose distributions vs reference set (Audio2Photoreal; lower=better)
+    fd_k: Optional[float] = None  # FD_k, Frechet on body-velocity distributions vs reference set (Audio2Photoreal; lower=better)
+    fgd: Optional[float] = None  # FGD, Frechet on gesture-autoencoder latents vs reference set (Yoon 2020; lower=better)
+    l1_diversity: Optional[float] = None  # L1 gesture diversity across the set (EMAGE; higher=more diverse)
 
     # Reference VBench 2.0 intrinsic-faithfulness suite (dataset-level)
     vbench2_human_anatomy: Optional[float] = None
@@ -1228,8 +1485,13 @@ class DatasetStats(BaseModel):
     lpips_diversity: Optional[float] = None  # Average pairwise LPIPS across dataset (higher=more diverse)
 
     # Verse-Bench benchmark (dataset-level)
-    verse_bench_overall: Optional[float] = None  # Verse-Bench final score
+    verse_bench_overall_est: Optional[float] = None  # Verse-Bench final score
     verse_bench_metrics: Optional[Dict[str, float]] = None  # Raw Verse-Bench component metrics
-    verse_bench_breakdown: Optional[Dict[str, float]] = None  # Verse-Bench subscores and overall
+    verse_bench_breakdown_est: Optional[Dict[str, float]] = None  # Verse-Bench subscores and overall
+
+    # Maps dataset-level ``field_name`` -> provenance class, populated by
+    # ``Pipeline.add_dataset_metric()`` from the producing module's
+    # ``provenance`` declaration. Bookkeeping, not a metric.
+    metric_provenance: Dict[str, str] = Field(default_factory=dict)
 
 

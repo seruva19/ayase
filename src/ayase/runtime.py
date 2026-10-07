@@ -75,6 +75,7 @@ def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
         return {}
 
     general = config.general
+    pipeline_cfg = getattr(config, "pipeline", None)
     return {
         "models_dir": str(general.models_dir),
         "parallel_jobs": general.parallel_jobs,
@@ -87,7 +88,34 @@ def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
         "timing_enabled": general.timing_enabled,
         "sample_batch_size": general.sample_batch_size,
         "max_clip_images_per_forward": general.max_clip_images_per_forward,
+        "allow_provenance": list(
+            getattr(pipeline_cfg, "allow_provenance", []) or []
+        ),
     }
+
+
+def opt_in_all_provenance(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Mark a module config as opted in to every provenance class.
+
+    Explicitly selecting a module (by ``--modules``, a pipeline string, a
+    profile, or ``AyasePipeline(modules=[...])``) is itself the opt-in the
+    provenance gate requires, so callers that instantiate an explicitly
+    requested module merge ``adapted`` and ``own`` into the config's
+    ``allow_provenance``. Default module selection passes the same configs
+    through unchanged, so an unrequested ``adapted``/``own`` module still
+    does not run.
+    """
+
+    extra = params.get("allow_provenance")
+    if isinstance(extra, str):
+        merged = {extra}
+    elif isinstance(extra, (list, tuple, set)):
+        merged = {str(c).strip() for c in extra if str(c).strip()}
+    else:
+        merged = set()
+    merged.update({"adapted", "own"})
+    params["allow_provenance"] = sorted(merged)
+    return params
 
 
 def shared_runtime_resource(owner: Any, key: tuple[Any, ...], factory: Any) -> Any:
