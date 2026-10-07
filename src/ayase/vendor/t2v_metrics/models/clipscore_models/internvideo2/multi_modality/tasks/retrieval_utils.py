@@ -267,7 +267,6 @@ def evaluation(model, data_loader, tokenizer, device, config):
         logger.info("Finished vision feature extraction")
         logger.info("Computing ITC scores [dot-product]")
         if config.evaluation.eval_offload:
-            
             pooled_image_feats = pooled_image_feats.to(device, non_blocking=True)
 
         if use_subtitle:
@@ -644,7 +643,6 @@ def evaluation_simple(model, data_loader, tokenizer, device, config):
         logger.info("Finished vision feature extraction")
         logger.info("Computing ITC scores [dot-product]")
         if config.evaluation.eval_offload:
-            
             pooled_image_feats = pooled_image_feats.to(device, non_blocking=True)
 
         i2t_scores, t2i_scores = get_sim(
@@ -937,7 +935,6 @@ def evaluation_qformer(model, data_loader, tokenizer, device, config):
         logger.info("Finished vision feature extraction")
         logger.info("Computing ITC scores [dot-product]")
         if config.evaluation.eval_offload:
-            
             pooled_image_feats = pooled_image_feats.to(device, non_blocking=True)
 
         if hasattr(model, "q_vision_proj"):

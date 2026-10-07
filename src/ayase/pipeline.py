@@ -1792,9 +1792,8 @@ class Pipeline:
                                 written_by_model.get(id(qm)) if qm is not None else None,
                             )
                             process_end_state = self._metric_state(sample)
-                        
-                        
-                        
+                        # Always revert before-hook state so mutations do not
+                        # propagate to later modules or the stored result.
                         if entered and hooks and "after" in hooks:
                             # Snapshot failure markers before the revert; an
                             # after-hook that returns a fresh Sample would

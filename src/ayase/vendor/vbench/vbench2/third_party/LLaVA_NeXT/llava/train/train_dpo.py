@@ -1082,7 +1082,7 @@ class DPODataset(Dataset):
         sources = self.list_data_dict[i]
         if isinstance(i, int):
             sources = [sources]
-        assert len(sources) == 1, "Don't know why it is wrapped to a list"  
+        assert len(sources) == 1, "Don't know why it is wrapped to a list"
 
         suffix = None
         if "image" in sources[0]:

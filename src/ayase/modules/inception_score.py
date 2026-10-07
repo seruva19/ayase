@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class InceptionScoreModule(BatchMetricModule):
     name = "inception_score"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
         "is_score": "Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498",
     }

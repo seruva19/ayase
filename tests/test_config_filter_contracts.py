@@ -265,8 +265,7 @@ def test_scanner_ignores_single_cross_directory_caption(tmp_path: Path):
     media.parent.mkdir(parents=True)
     media.write_bytes(b"not-a-real-video")
 
-    
-    
+    # A same-stem caption in a different directory must be ignored.
     caption = tmp_path / "captions" / "clip.txt"
     caption.parent.mkdir(parents=True)
     caption.write_text("wrong caption from elsewhere", encoding="utf-8")

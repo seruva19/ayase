@@ -43,7 +43,7 @@ class I2ILearnedModule(PipelineModule):
     name = "i2i_learned"
     provenance = {
         "i2i_clip_similarity": "published",
-        "i2i_dinov2_cls_similarity": "published",
+        "i2i_dinov2_cls_similarity": "adapted",
         "i2i_dinov2_patch_similarity": "own",
         "i2i_lpips_alex": "published",
         "i2i_siglip_similarity": "own",
@@ -54,7 +54,9 @@ class I2ILearnedModule(PipelineModule):
         "i2i_lpips_alex": "LPIPS v0.1 AlexNet (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity",
     }
     deviations = {
-        "i2i_dinov2_cls_similarity": "defaults to DINO v1 ViT-S/16 as in DreamBooth; the dinov2_model config can substitute another CLS encoder (then it is no longer the paper's DINO-score)",
+        "i2i_dinov2_cls_similarity": "The default image protocol uses the DreamBooth "
+        "DINO v1 ViT-S/16 encoder. The configurable dinov2_model can substitute another "
+        "CLS encoder; the shared configurable field is classified as adapted.",
     }
     description = "DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity"
     default_config = {

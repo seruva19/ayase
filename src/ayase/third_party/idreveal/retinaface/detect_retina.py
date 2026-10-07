@@ -163,7 +163,7 @@ if __name__ == '__main__':
     import cv2
     parser = argparse.ArgumentParser(description='Retinaface')
 
-    parser.add_argument('-m', '--trained_model', default='models/Resnet50_Final.pth',
+    parser.add_argument('-m', '--trained_model', default=None,
                         type=str, help='Trained state_dict file path to open')
     parser.add_argument('--network', default='resnet50', help='Backbone network mobile0.25 or resnet50')
     parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
@@ -180,6 +180,9 @@ if __name__ == '__main__':
         cfg = cfg_mnet
     elif args.network == "resnet50":
         cfg = cfg_re50
+    if args.trained_model is None:
+        weight_name = 'Mobile0.25_Final.pth' if args.network == "mobile0.25" else 'Resnet50_Final.pth'
+        args.trained_model = os.path.join(os.path.dirname(__file__), 'weights', weight_name)
     # net and model
     device = torch.device("cpu" if args.cpu else "cuda")
     net = RetinaFace(cfg=cfg, phase = 'test')
@@ -276,4 +279,3 @@ if __name__ == '__main__':
 
             name = "test.jpg"
             cv2.imwrite(name, img_raw)
-

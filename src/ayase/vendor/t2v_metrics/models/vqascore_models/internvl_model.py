@@ -285,11 +285,6 @@ class InternVL2Model(VQAScoreModel):
     def load_model(self):
         tokenizer_path = self.model_info['tokenizer']['path']
         
-        
-        
-        
-        
-        
         self.model = AutoModel.from_pretrained(
             **self.model_info['model']
         ).eval()#.to(self.device)
@@ -511,11 +506,8 @@ class InternVL2Model(VQAScoreModel):
             scores = outputs.scores[0]
 
             probs = torch.nn.functional.softmax(scores, dim=-1)
-            yes_token_id = self.tokenizer.encode(answer)[0] 
+            yes_token_id = self.tokenizer.encode(answer)[0]
 
-            
-            
-            
 
             lm_prob = probs[0, yes_token_id].item()
             lm_probs.append(lm_prob)

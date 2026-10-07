@@ -14,3 +14,13 @@ def test_generative_distribution_extract(video_sample):
     feat = m.extract_features(video_sample)
     # May be None for non-video or missing deps
     assert video_sample is not None
+
+
+def test_generative_distribution_all_fields_are_adapted_and_deviations_declared():
+    from ayase.modules.generative_distribution_metrics import GenerativeDistributionModule
+
+    fields = {"precision", "recall", "density", "coverage"}
+    assert GenerativeDistributionModule.field_provenance() == {
+        field: "adapted" for field in fields
+    }
+    assert fields <= GenerativeDistributionModule.deviations.keys()

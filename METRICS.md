@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.80** · Generated 2026-10-07 11:39 · **385 modules** · **566 metrics**
+> **Version 0.1.80** · Generated 2026-10-07 15:11 · **385 modules** · **566 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -1279,7 +1279,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
 - **Backend**: flip_evaluator → flip_torch → unavailable
-- **Provenance**: `adapted` — Backend is the `flip-evaluator` pip package (LDR mode); the `flip_torch` fallback path is unverified against upstream; unequal inputs are resized to shared minimum dimensions and videos report the mean over every fifth paired frame by default. — source: ꟻLIP (Andersson et al., HPG 2020) — https://github.com/NVlabs/flip
+- **Provenance**: `adapted` — Backend is the `flip-evaluator` pip package (LDR mode); the `flip_torch` backend has no established numerical parity with upstream; unequal inputs are resized to shared minimum dimensions and videos report the mean over every fifth paired frame by default. — source: ꟻLIP (Andersson et al., HPG 2020) — https://github.com/NVlabs/flip
 - **Packages**: flip-evaluator, flip_torch, torch
 - **Source**: <a href="https://github.com/NVlabs/flip" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_flip.py`](tests/modules/per_module/test_flip.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
@@ -1354,7 +1354,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
-- **Provenance**: `published` — defaults to DINO v1 ViT-S/16 as in DreamBooth; the dinov2_model config can substitute another CLS encoder (then it is no longer the paper's DINO-score) — source: DINO-score (Ruiz et al., DreamBooth) — https://arxiv.org/abs/2208.12242
+- **Provenance**: `adapted` — The default image protocol uses the DreamBooth DINO v1 ViT-S/16 encoder. The configurable dinov2_model can substitute another CLS encoder; the shared configurable field is classified as adapted. — source: DINO-score (Ruiz et al., DreamBooth) — https://arxiv.org/abs/2208.12242
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
@@ -1707,7 +1707,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
 - **Backend**: numpy
-- **Provenance**: `published` — video aggregation (mean over subsample frames) is own; the per-frame formula follows the paper — source: PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398
+- **Provenance**: `adapted` — Image inputs use the published per-image formula. Video inputs use Ayase-defined uniform frame subsampling and mean aggregation; the shared image/video field is classified as adapted. — source: PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398
 - **Source**: <a href="https://arxiv.org/abs/2509.26398" target="_blank">arXiv</a>
 - **Tests**: covered by [`test_psnr99.py`](tests/modules/per_module/test_psnr99.py)
 - **Config**: `subsample=8`
@@ -1806,7 +1806,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — Backend is the pip `ssimulacra2` package (third-party port); numerical equivalence with the reference libjxl implementation is not verified; unequal inputs are resized to their shared minimum dimensions, and video scores are an Ayase mean over subsampled frame pairs. — source: SSIMULACRA 2 (Cloudinary/libjxl) — https://github.com/cloudinary/ssimulacra2
 - **Packages**: ssimulacra2
 - **Source**: <a href="https://github.com/cloudinary/ssimulacra2" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_ssimulacra2.py`](tests/modules/per_module/test_ssimulacra2.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), [`test_cli_audit_fixes.py`](tests/test_cli_contracts.py)
+- **Tests**: covered by [`test_ssimulacra2.py`](tests/modules/per_module/test_ssimulacra2.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py)
 - **Config**: `subsample=5`, `warning_threshold=50.0`
 
 ### `st_mad` [↑](#categories)
@@ -4852,7 +4852,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: itu_p1203 → unavailable
-- **Provenance**: `published` — Input is a synthesized single-segment mode-0 report built from container metadata (no per-segment representations, no stalling or audio data) — h264 only. — source: ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203
+- **Provenance**: `adapted` — Uses the upstream calculator with a synthesized single-segment mode-0 report built from container metadata. The input has no audio, observed stalling, or representation-switch history, so O46 is an adapted video-only session estimate rather than a complete measured streaming session score. — source: ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203
 - **Packages**: itu_p1203
 - **Source**: <a href="https://github.com/itu-p1203/itu-p1203" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_p1203.py`](tests/modules/per_module/test_p1203.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -4878,8 +4878,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable
-- **Provenance**: `published` — peaqb binary conformance to BS.1387 unverified; -a/-b flag syntax unchecked. — source: ITU-R BS.1387 via the peaqb binary — https://www.itu.int/rec/R-REC-BS.1387
+- **Provenance**: `adapted` — Ayase converts inputs to 48 kHz mono 16-bit PCM; peaqb-fast implements only the BASIC model, performs no Ayase-side time/level alignment, and its BS.1387 conformance is not independently established. — source: PEAQ BASIC via peaqb-fast — https://github.com/akinori-ito/peaqb-fast
 - **Packages**: librosa, soundfile
+- **Source**: <a href="https://github.com/akinori-ito/peaqb-fast" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_audio_peaq.py`](tests/modules/per_module/test_audio_peaq.py)
 - **Config**: `target_sr=48000`, `mode=basic`
 
@@ -4890,8 +4891,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable
-- **Provenance**: `published` — peaqb binary conformance to BS.1387 unverified; -a/-b flag syntax unchecked. — source: ITU-R BS.1387 via the peaqb binary — https://www.itu.int/rec/R-REC-BS.1387
+- **Provenance**: `adapted` — Ayase converts inputs to 48 kHz mono 16-bit PCM; peaqb-fast implements only the BASIC model, performs no Ayase-side time/level alignment, and its BS.1387 conformance is not independently established. — source: PEAQ BASIC via peaqb-fast — https://github.com/akinori-ito/peaqb-fast
 - **Packages**: librosa, soundfile
+- **Source**: <a href="https://github.com/akinori-ito/peaqb-fast" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_audio_peaq.py`](tests/modules/per_module/test_audio_peaq.py)
 - **Config**: `target_sr=48000`, `mode=basic`
 
@@ -5147,7 +5149,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: TTSDS2, Minixhofer et al. 2025 — https://arxiv.org/abs/2506.19441
 - **Packages**: ttsds2
 - **Source**: <a href="https://arxiv.org/abs/2506.19441" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_cli_audit_fixes.py`](tests/test_cli_contracts.py)
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py)
 - **Config**: `enabled=False`, `sample_rate=16000`
 
 ### `utmos_score` [↑](#categories)
@@ -6470,7 +6472,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
 - **Backend**: torch_fidelity → unavailable
-- **Provenance**: `published` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
+- **Provenance**: `adapted` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
 - **Packages**: opencv-python, torch_fidelity
 - **VRAM**: ~200 MB
 - **Source**: <a href="https://arxiv.org/abs/1606.03498" target="_blank">arXiv</a>
@@ -6833,7 +6835,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_audit_fixes.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `num_frames=0`, `lang=en`
 
 ### `ocr_fidelity` [↑](#categories)
@@ -6846,7 +6848,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_audit_fixes.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `num_frames=0`, `lang=en`
 
 ### `ocr_score` [↑](#categories)
@@ -6859,7 +6861,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_audit_fixes.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `num_frames=0`, `lang=en`
 
 ### `ocr_wer` [↑](#categories)
@@ -6872,7 +6874,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_audit_fixes.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Tests**: covered by [`test_ocr_fidelity.py`](tests/modules/per_module/test_ocr_fidelity.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
 - **Config**: `num_frames=0`, `lang=en`
 
 ### `text_overlay_score` [↑](#categories)
@@ -7221,13 +7223,13 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Fraction of real samples covered by generated neighbours (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
-- **Provenance**: `published` — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Fraction of real samples covered by generated neighbours (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
-- **Provenance**: `published` — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
 ### `density` [↑](#categories)
@@ -7236,13 +7238,13 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Average normalized generated-sample density around real samples
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
-- **Provenance**: `published` — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Average normalized generated-sample density around real samples
 
 - **Input**: img/vid · **Speed**: ⚡ fast
-- **Provenance**: `published` — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
 ### `diversity_score` [↑](#categories)
@@ -7386,8 +7388,8 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fid`](src/ayase/modules/fid.py)** — Fréchet Inception Distance between generated and reference image sets (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Provenance**: `published` — one representative frame per video; without a reference the metric is not emitted — source: FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Provenance**: `adapted` — one representative frame per video; without a reference the metric is not emitted — source: FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid
+- **Tests**: covered by [`test_fid.py`](tests/modules/per_module/test_fid.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +1 more
 
 ### `fvd` [↑](#categories)
 > Fréchet Video Distance · ↓ lower=better · type: float
@@ -7422,7 +7424,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`inception_score`](src/ayase/modules/inception_score.py)** — Dataset-level Inception Score via torch-fidelity (higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
-- **Provenance**: `published` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
+- **Provenance**: `adapted` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
 - **Tests**: covered by [`test_inception_score.py`](tests/modules/per_module/test_inception_score.py)
 
 ### `kad` [↑](#categories)
@@ -7554,13 +7556,13 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Generated-sample precision against the real manifold (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
-- **Provenance**: `published` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Generated-sample precision against the real manifold (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
-- **Provenance**: `published` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
 ### `recall` [↑](#categories)
@@ -7569,13 +7571,13 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Real-distribution coverage by generated samples (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
-- **Provenance**: `published` — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Real-distribution coverage by generated samples (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
-- **Provenance**: `published` — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
+- **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
 ### `semantic_coverage` [↑](#categories)
@@ -7593,7 +7595,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`sfid`](src/ayase/modules/sfid.py)** — Spatial Fréchet Inception Distance on FID-Inception pre-pool features (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Provenance**: `published` — 1 frame per sample (video → representative frame); without a reference the metric is not emitted — source: sFID (Nash et al., ICML 2021), guided-diffusion evaluator — FID-Inception via https://github.com/mseitzer/pytorch-fid
+- **Provenance**: `adapted` — 1 frame per sample (video → representative frame); without a reference the metric is not emitted — source: sFID (Nash et al., ICML 2021), guided-diffusion evaluator — FID-Inception via https://github.com/mseitzer/pytorch-fid
 - **Tests**: covered by [`test_sfid.py`](tests/modules/per_module/test_sfid.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
 ### `stream_D` [↑](#categories)
@@ -7863,7 +7865,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vendi`](src/ayase/modules/vendi.py)** — Vendi Score dataset diversity from similarity-matrix entropy (higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
-- **Provenance**: `published` — embeddings are the FID-Inception pool (2048-d) as in published Vendi; for video — mean over up to 8 frames; cosine kernel — source: Vendi Score, Friedman & Dieng TMLR 2023 — https://github.com/vertaix/Vendi-Score (Inception pool embeddings)
+- **Provenance**: `adapted` — embeddings are the FID-Inception pool (2048-d) as in published Vendi; for video — mean over up to 8 frames; cosine kernel — source: Vendi Score, Friedman & Dieng TMLR 2023 — https://github.com/vertaix/Vendi-Score (Inception pool embeddings)
 - **Tests**: covered by [`test_vendi.py`](tests/modules/per_module/test_vendi.py)
 
 ### `verse_bench_breakdown_est` [↑](#categories)
@@ -8101,7 +8103,7 @@ These modules ship in the package and stay registered, but currently have **no t
   - `promptiqa_score`: `adapted` — backend unavailable — source: PromptIQA (Chen et al., ECCV 2024) — https://github.com/chencn2020/PromptIQA — no backend: pyiqa 0.1.14.1 has no promptiqa metric; moreover the image-score prompt pairs that define the method are not passed
 - **[`ptmvqa`](src/ayase/modules/ptmvqa.py)** — PTM-VQA multi-PTM fusion VQA (CVPR 2024) · Metrics: `ptmvqa_score`
   - `ptmvqa_score`: `utility` — backend unavailable
-- **[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100) · Metrics: `pvmaf_score`
+- **[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF via bitstream and pixel-level features (2024, 0-100) · Metrics: `pvmaf_score`
   - `pvmaf_score`: `utility` — backend unavailable
 - **[`qcn`](src/ayase/modules/qcn.py)** — Blind IQA (QCN via pyiqa) · Metrics: `qcn_score` · Needs: pyiqa, torch
   - `qcn_score`: `adapted` — backend unavailable — source: QCN (Shin et al., CVPR 2024) — https://github.com/nhshin-mcl/QCN — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.

@@ -103,7 +103,7 @@ class AIGVQAModule(PipelineModule):
         logger.info(
             "AIGVQA unavailable: IntMeGroup/ICCVW_mos0_8B has no self-contained "
             "loader (custom repo architecture + temporal.pth required); "
-            "aigvqa_score will not be populated. See module REVIVAL NOTES."
+            "aigvqa_score will not be populated. See the module backend requirements."
         )
 
     def process(self, sample: Sample) -> Sample:

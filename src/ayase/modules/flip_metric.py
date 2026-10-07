@@ -35,7 +35,7 @@ class FLIPModule(ReferenceBasedModule):
     }
     deviations = {
         "flip_score": "Backend is the `flip-evaluator` pip package (LDR mode); "
-        "the `flip_torch` fallback path is unverified against upstream; unequal inputs "
+        "the `flip_torch` backend has no established numerical parity with upstream; unequal inputs "
         "are resized to shared minimum dimensions and videos report the mean over every "
         "fifth paired frame by default.",
     }

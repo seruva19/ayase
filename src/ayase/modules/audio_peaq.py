@@ -5,9 +5,11 @@ signal against an original/reference, producing:
     * ODG (Objective Difference Grade) in [-4, 0] (0 = imperceptible)
     * DI  (Distortion Index, higher = better)
 
-Backend: the real ``peaqb`` / ``peaqb-fast`` binary on PATH (an ITU-R BS.1387
-implementation). When the binary is not available the PEAQ metrics are left
-unset — there is no psychoacoustic approximation stand-in.
+Backend: the ``peaqb`` / ``peaqb-fast`` BASIC-model binary on PATH. Ayase
+converts both inputs to 48 kHz mono PCM before invoking the binary. The binary's
+conformance to ITU-R BS.1387 is not established here, so these adapted results
+must not be treated as reference-implementation output. When the binary is not
+available, the PEAQ metrics are left unset.
 """
 
 import logging
@@ -27,14 +29,14 @@ logger = logging.getLogger(__name__)
 
 class AudioPEAQModule(PipelineModule):
     name = "audio_peaq"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
-        "peaq_di": "ITU-R BS.1387 via the peaqb binary — https://www.itu.int/rec/R-REC-BS.1387",
-        "peaq_odg": "ITU-R BS.1387 via the peaqb binary — https://www.itu.int/rec/R-REC-BS.1387",
+        "peaq_di": "PEAQ BASIC via peaqb-fast — https://github.com/akinori-ito/peaqb-fast",
+        "peaq_odg": "PEAQ BASIC via peaqb-fast — https://github.com/akinori-ito/peaqb-fast",
     }
     deviations = {
-        "peaq_di": "peaqb binary conformance to BS.1387 unverified; -a/-b flag syntax unchecked.",
-        "peaq_odg": "peaqb binary conformance to BS.1387 unverified; -a/-b flag syntax unchecked.",
+        "peaq_di": "Ayase converts inputs to 48 kHz mono 16-bit PCM; peaqb-fast implements only the BASIC model, performs no Ayase-side time/level alignment, and its BS.1387 conformance is not independently established.",
+        "peaq_odg": "Ayase converts inputs to 48 kHz mono 16-bit PCM; peaqb-fast implements only the BASIC model, performs no Ayase-side time/level alignment, and its BS.1387 conformance is not independently established.",
     }
     description = "PEAQ reference-based audio codec quality (ITU-R BS.1387)"
     default_config = {
@@ -55,6 +57,20 @@ class AudioPEAQModule(PipelineModule):
         self._backend = "unavailable"
 
     def setup(self) -> None:
+        if self.mode != "basic":
+            logger.warning(
+                "PEAQ unavailable: peaqb-fast supports only mode='basic'; "
+                "requested mode=%r. peaq_odg/peaq_di will be left unset.",
+                self.mode,
+            )
+            return
+        if self.target_sr != 48000:
+            logger.warning(
+                "PEAQ unavailable: peaqb-fast requires 48 kHz input; requested "
+                "target_sr=%r. peaq_odg/peaq_di will be left unset.",
+                self.target_sr,
+            )
+            return
         peaqb = shutil.which("peaqb") or shutil.which("peaqb-fast")
         if peaqb is not None:
             self._peaqb_path = peaqb
@@ -107,6 +123,8 @@ class AudioPEAQModule(PipelineModule):
     def _run_peaqb(
         self, ref_path: Path, dist_path: Path
     ) -> Optional[Tuple[Optional[float], Optional[float]]]:
+        if self.mode != "basic" or self.target_sr != 48000:
+            return None
         # peaqb-fast emits ODG and DI on stdout. Some forks require WAV input;
         # we transcode via ffmpeg for safety.
         ref_wav = self._to_wav(ref_path)
@@ -117,9 +135,14 @@ class AudioPEAQModule(PipelineModule):
                     p.unlink(missing_ok=True)
             return None
         try:
-            mode_arg = "-a" if self.mode == "advanced" else "-b"
-            cmd = [self._peaqb_path, mode_arg, str(ref_wav), str(dist_wav)]
+            cmd = [self._peaqb_path, "-r", str(ref_wav), "-t", str(dist_wav)]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                logger.warning(
+                    "peaqb failed with exit code %s; PEAQ metrics left unset.",
+                    result.returncode,
+                )
+                return None
             return _parse_peaqb_output(result.stdout + "\n" + result.stderr)
         finally:
             for p in (ref_wav, dist_wav):

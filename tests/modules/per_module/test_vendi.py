@@ -14,3 +14,9 @@ def test_vendi_extract(video_sample):
     feat = m.extract_features(video_sample)
     # May be None for non-video or missing deps
     assert video_sample is not None
+
+
+def test_vendi_is_adapted_for_video_mean_pooling():
+    from ayase.modules.vendi import VendiModule
+
+    assert VendiModule.field_provenance() == {"vendi": "adapted"}

@@ -12,6 +12,7 @@ hyperiqa ilniqe image_reward laion_aesthetic liqe maclip mad maniqa mc360iqa
 mouth_quality musiq nima niqe nlpd nrqm paq2piq pickscore pieapp piqe pi qcn
 qualiclip semantic_alignment serfiq ssimc topiq topiq_fr tres uciqe unique
 vfips wadiqam wadiqam_fr
+fid sfid inception_score generative_distribution vendi psnr99
 """.split()
 
 

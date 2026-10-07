@@ -73,6 +73,7 @@ print(len(new_data))
 #             all_conv = ""
 #             for cur_conversation in _["conversations"]:
 #                 all_conv += cur_conversation["value"]
+#         # if not os.path.exists(f'data/playground/data/{_["image"]}'):
 #             import pdb; pdb.set_trace()
 
 # Write new_data to a new JSON file

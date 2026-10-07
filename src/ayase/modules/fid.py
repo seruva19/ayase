@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class FIDModule(BatchMetricModule):
     name = "fid"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
         "fid": "FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid",
     }
@@ -127,7 +127,7 @@ class FIDModule(BatchMetricModule):
             logger.debug("FID Inception extraction failed: %s", e)
             return None
 
-    def _frechet_distance(self, x: np.ndarray, y: np.ndarray) -> float:
+    def _frechet_distance(self, x: np.ndarray, y: np.ndarray) -> Optional[float]:
         mu_x = np.mean(x, axis=0)
         mu_y = np.mean(y, axis=0)
         diff = mu_x - mu_y
@@ -141,9 +141,28 @@ class FIDModule(BatchMetricModule):
             from scipy import linalg
 
             covmean, _ = linalg.sqrtm(cov_x @ cov_y, disp=False)
+            if not np.isfinite(covmean).all():
+                eps = 1e-6
+                offset = np.eye(cov_x.shape[0]) * eps
+                covmean, _ = linalg.sqrtm((cov_x + offset) @ (cov_y + offset), disp=False)
+            if not np.isfinite(covmean).all():
+                logger.warning("FID covariance square root is non-finite; metric left unset")
+                return None
             if np.iscomplexobj(covmean):
+                max_imag = float(np.max(np.abs(np.diag(covmean).imag)))
+                if max_imag > 1e-3:
+                    logger.warning(
+                        "FID covariance square root has significant imaginary residue "
+                        "(%.6g); metric left unset",
+                        max_imag,
+                    )
+                    return None
                 covmean = covmean.real
             score = diff @ diff + np.trace(cov_x + cov_y - 2.0 * covmean)
-        except Exception:
-            score = diff @ diff + np.trace(cov_x) + np.trace(cov_y)
+        except Exception as e:
+            logger.warning("FID covariance square root failed; metric left unset: %s", e)
+            return None
+        if not np.isfinite(score):
+            logger.warning("FID score is non-finite; metric left unset")
+            return None
         return float(max(score, 0.0))

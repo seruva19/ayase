@@ -1,4 +1,4 @@
-"""Contract tests for final computation failures and report export."""
+"""Regression checks for final computation failures and report export."""
 
 import json
 
