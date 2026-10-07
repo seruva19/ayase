@@ -156,6 +156,10 @@ class PipelineConfig(BaseModel):
     dataset_path: Optional[Path] = None
     modules: List[str] = Field(default_factory=list)
     plugin_folders: List[Path] = Field(default_factory=lambda: [Path("plugins")])
+    # Provenance classes a pipeline is allowed to run beyond the defaults
+    # ("published", "utility"). Set e.g. ["adapted", "own"] to opt in to
+    # metrics that deviate from their published source or are Ayase-specific.
+    allow_provenance: List[str] = Field(default_factory=list)
 
 
 class FilterConfig(BaseModel):

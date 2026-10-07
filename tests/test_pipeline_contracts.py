@@ -54,7 +54,7 @@ class _BackendProbeModule(PipelineModule):
         self.calls += 1
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = 1.0
+        sample.quality_metrics.blur_score = 1.0
         return sample
 
 
@@ -100,7 +100,7 @@ class _PostIssueModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.technical_score = 2.0
+        sample.quality_metrics.blur_score = 2.0
         return sample
 
     def post_process(self, all_samples):

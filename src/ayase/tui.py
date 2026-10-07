@@ -29,7 +29,7 @@ from textual.reactive import reactive
 from textual.binding import Binding
 
 from ayase.pipeline import Pipeline, ModuleRegistry
-from ayase.runtime import runtime_module_config
+from ayase.runtime import opt_in_all_provenance, runtime_module_config
 from ayase.models import Sample, ValidationSeverity
 from ayase.scanner import DatasetScanner, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
 
@@ -756,6 +756,9 @@ class ExecutionScreen(Screen):
                     for key, value in runtime_module_config(self.app.ayase_config).items():
                         config.setdefault(key, value)
 
+                # Modules ticked in the module list are an explicit choice,
+                # which is the provenance opt-in.
+                opt_in_all_provenance(config)
                 ui(log, f"  Init [bold]{name}[/bold]")
                 module = cls(config)
                 module.on_mount()
@@ -993,8 +996,8 @@ class ResultsScreen(Screen):
             if sample.quality_metrics:
                 if sample.quality_metrics.fast_vqa_score:
                     score_val = sample.quality_metrics.fast_vqa_score
-                elif sample.quality_metrics.technical_score:
-                    score_val = sample.quality_metrics.technical_score
+                elif sample.quality_metrics.model_dump().get("technical_score"):
+                    score_val = sample.quality_metrics.model_dump()["technical_score"]
             if score_val is not None:
                 score = f"{score_val:.1f}"
                 scores.append(score_val)

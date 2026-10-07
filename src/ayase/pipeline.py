@@ -10,13 +10,27 @@ import sys
 import tempfile
 from time import perf_counter
 import urllib.request
+import warnings
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Type, Union, cast
+from typing import Any, Callable, ClassVar, Dict, Iterable, List, Optional, Set, Type, Union, cast
 
-from .models import Sample, DatasetStats, QualityMetrics, ValidationIssue, ValidationSeverity
-from .runtime import clone_frames, pipeline_context, readonly_view, runtime_module_config
+from .models import (
+    Sample,
+    DatasetStats,
+    QualityMetrics,
+    ValidationIssue,
+    ValidationSeverity,
+    observe_metric_writes,
+)
+from .runtime import (
+    clone_frames,
+    opt_in_all_provenance,
+    pipeline_context,
+    readonly_view,
+    runtime_module_config,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +60,29 @@ class PipelineModule(ABC):
     metric_info: Dict[str, str] = {}
     metric_groups: Dict[str, str] = {}
 
+    # Field-level provenance declarations (see AGENTS.md and METRICS.md):
+    #
+    #   provenance — output field name -> class:
+    #       "published" — computed per the published definition (same model /
+    #                   weights / aggregation / protocol as the source);
+    #       "adapted"   — published metric whose implementation deviates so the
+    #                   numbers will not match (then ``deviations`` is required);
+    #       "own"       — no published definition exists for this quantity;
+    #       "utility"   — not a quality score (metadata, detectors, helpers).
+    #   sources    — field -> primary source (paper citation + URL/DOI);
+    #               required for every "published" field.
+    #   deviations — field -> how the implementation deviates from the source;
+    #               required for every "adapted" field.
+    #
+    # All three accept a ``"*"`` key as the per-module default for fields not
+    # listed explicitly; ``provenance`` also accepts a plain string as shorthand
+    # applying one class to every output field of the module. Modules with no
+    # ``provenance`` at all are treated as unmarked (allowed to run, but the
+    # provenance test suite requires declarations on packaged modules).
+    provenance: Union[Dict[str, str], str] = {}
+    sources: Dict[str, str] = {}
+    deviations: Dict[str, str] = {}
+
     # True = no turnkey real backend in a standard install (uninstallable dep,
     # unreleased weights, needs training, or architecturally impossible). The
     # module stays registered and revivable but is excluded from documented
@@ -54,9 +91,28 @@ class PipelineModule(ABC):
     # moment a reachable real backend lands.
     requires_external_backend: bool = False
 
+    # True = Ayase-defined construct without a published definition, slated for
+    # removal in a future release. Instantiating the module emits a
+    # DeprecationWarning; the module keeps working until removal.
+    deprecated: bool = False
+
     _global_test_mode: bool = False
+    _metadata_field_descriptions: ClassVar[
+        tuple[Dict[str, str], Dict[str, str]]
+    ]
+    _metadata_cache: ClassVar[Dict[str, Any]]
+    _metadata_cache_key: ClassVar[tuple[Any, ...]]
+    _resolved_field_provenance: ClassVar[Dict[str, str]]
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        if getattr(type(self), "deprecated", False):
+            warnings.warn(
+                f"Module '{getattr(type(self), 'name', type(self).__name__)}' is "
+                "an Ayase-defined construct without a published definition and "
+                "is deprecated; it will be removed in a future release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.config = self._merge_config(self.default_config, config)
         self.pipeline: Optional["Pipeline"] = None
         self._mounted = False
@@ -236,11 +292,36 @@ class PipelineModule(ABC):
         import re as _re
         from .models import QualityMetrics, DatasetStats
 
+        cached_metadata = cls.__dict__.get("_metadata_cache")
+        cache_key = (
+            cls.name,
+            cls.description,
+            repr(cls.default_config),
+            repr(cls.models),
+            repr(cls.provenance),
+            repr(cls.sources),
+            repr(cls.deviations),
+            repr(cls.metric_info),
+            repr(cls.metric_groups),
+            cls.requires_external_backend,
+            cls.deprecated,
+        )
+        if (
+            cached_metadata is not None
+            and cls.__dict__.get("_metadata_cache_key") == cache_key
+        ):
+            return deepcopy(cached_metadata)
+
         # Field descriptions from QualityMetrics / DatasetStats
         # (source comments + pydantic fields).
-        field_descs: Dict[str, str] = {}
-        dataset_field_descs: Dict[str, str] = {}
-        try:
+        cached_descriptions = PipelineModule.__dict__.get(
+            "_metadata_field_descriptions"
+        )
+        if cached_descriptions is not None:
+            field_descs, dataset_field_descs = deepcopy(cached_descriptions)
+        else:
+            field_descs = {}
+            dataset_field_descs = {}
             # Use pydantic model_fields for reliable field enumeration
             for fname in QualityMetrics.model_fields:
                 field_descs[fname] = ""
@@ -259,8 +340,9 @@ class PipelineModule(ABC):
             ):
                 if m.group(1) in dataset_field_descs:
                     dataset_field_descs[m.group(1)] = m.group(2).strip()
-        except (TypeError, OSError):
-            pass
+            PipelineModule._metadata_field_descriptions = deepcopy(
+                (field_descs, dataset_field_descs)
+            )
 
         # Source of the entire module file (not just the class)
         try:
@@ -314,9 +396,21 @@ class PipelineModule(ABC):
             field = m.group(1)
             if field not in outputs and field in field_descs:
                 outputs[field] = field_descs[field]
-        # Pattern 3: qm.FIELD = (variable alias for quality_metrics)
-        if _re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", src):
-            for m in _re.finditer(r"\bqm\.(\w+)\s*=", src):
+        # Pattern 3: local aliases explicitly bound to ``quality_metrics``.
+        aliases = set(
+            _re.findall(
+                r"\b(\w+)\s*=\s*(?:\w+\.)?quality_metrics\b", src
+            )
+        )
+        for alias in aliases:
+            for m in _re.finditer(rf"\b{_re.escape(alias)}\.(\w+)\s*=", src):
+                field = m.group(1)
+                if field not in outputs and field in field_descs:
+                    outputs[field] = field_descs[field]
+            for m in _re.finditer(
+                rf"setattr\(\s*{_re.escape(alias)}\s*,\s*[\"'](\w+)[\"']\s*,",
+                src,
+            ):
                 field = m.group(1)
                 if field not in outputs and field in field_descs:
                     outputs[field] = field_descs[field]
@@ -336,7 +430,16 @@ class PipelineModule(ABC):
             if field in dataset_field_descs and field not in dataset_outputs:
                 dataset_outputs[field] = description or dataset_field_descs[field]
 
-        return {
+        # Provenance metadata is always resolved per field (field -> class /
+        # source / deviation), even when the module used a shorthand form.
+        all_fields = list(outputs) + [
+            f for f in dataset_outputs if f not in outputs
+        ]
+        provenance_map = cls._resolve_field_map("provenance", all_fields)
+        sources_map = cls._resolve_field_map("sources", all_fields)
+        deviations_map = cls._resolve_field_map("deviations", all_fields)
+
+        metadata = {
             "name": cls.name,
             "description": cls.description,
             "input_type": input_type,
@@ -345,7 +448,53 @@ class PipelineModule(ABC):
             "default_config": dict(cls.default_config) if cls.default_config else {},
             "models": list(cls.models) if cls.models else [],
             "metric_info": dict(cls.metric_info) if cls.metric_info else {},
+            "provenance": provenance_map,
+            "sources": sources_map,
+            "deviations": deviations_map,
+            "requires_external_backend": bool(cls.requires_external_backend),
+            "deprecated": bool(cls.deprecated),
         }
+        cls._metadata_cache = metadata
+        cls._metadata_cache_key = cache_key
+        return deepcopy(metadata)
+
+    @classmethod
+    def _resolve_field_map(
+        cls, attr: str, fields: Iterable[str]
+    ) -> Dict[str, str]:
+        """Resolve a per-field class attribute to an explicit field->value map.
+
+        A plain string applies to every declared field; a dict may carry a
+        ``"*"`` default for unlisted fields. Entries for undeclared fields are
+        kept too so typos stay visible to the provenance tests.
+        """
+        raw = getattr(cls, attr, None)
+        if isinstance(raw, str):
+            return {f: raw for f in fields}
+        if not isinstance(raw, dict) or not raw:
+            return {}
+        default = raw.get("*")
+        resolved: Dict[str, str] = {}
+        for f in fields:
+            value = raw.get(f, default)
+            if value:
+                resolved[f] = value
+        for key, value in raw.items():
+            if key != "*" and key not in resolved and value:
+                resolved[key] = value
+        return resolved
+
+    @classmethod
+    def field_provenance(cls) -> Dict[str, str]:
+        """Field name -> provenance class for all declared output fields."""
+        cached = cls.__dict__.get("_resolved_field_provenance")
+        if cached is None:
+            try:
+                cached = dict(cls.get_metadata().get("provenance") or {})
+            except Exception:
+                cached = {}
+            cls._resolved_field_provenance = cached
+        return dict(cached)
 
     def _check_required_packages(self) -> List[str]:
         required = []
@@ -428,8 +577,77 @@ class Pipeline:
         "cache_enabled",
     }
 
-    def __init__(self, modules: List[PipelineModule]):
+    def __init__(
+        self,
+        modules: List[PipelineModule],
+        allow_provenance: Optional[Iterable[str]] = None,
+    ):
         self.modules = modules
+        # Provenance gate: by default only "published" and "utility" fields let a
+        # module run. Modules whose declared output fields are exclusively
+        # "adapted"/"own" are excluded unless their classes were explicitly
+        # allowed via the ``allow_provenance`` argument or the injected
+        # ``[pipeline] allow_provenance`` config (a list like
+        # ``["adapted", "own"]``). Modules declaring no provenance at all stay
+        # allowed for backward compatibility (e.g. external plugins).
+        valid_provenance = {"published", "adapted", "own", "utility"}
+        self._allowed_provenance: Set[str] = {"published", "utility"}
+        if isinstance(allow_provenance, str):
+            allow_provenance = [allow_provenance]
+        if allow_provenance:
+            requested = {
+                str(c).strip() for c in allow_provenance if str(c).strip()
+            }
+            unknown = requested - valid_provenance
+            if unknown:
+                raise ValueError(f"Unknown provenance classes: {sorted(unknown)}")
+            self._allowed_provenance |= requested
+        self._module_allowed_provenance: Dict[int, Set[str]] = {}
+        for module in self.modules:
+            module_allowed = set(self._allowed_provenance)
+            extra = module.config.get("allow_provenance")
+            if isinstance(extra, str):
+                extra = [extra]
+            if isinstance(extra, (list, tuple, set)):
+                requested = {
+                    str(c).strip() for c in extra if str(c).strip()
+                }
+                unknown = requested - valid_provenance
+                if unknown:
+                    raise ValueError(
+                        f"Unknown provenance classes for {module.name}: {sorted(unknown)}"
+                    )
+                module_allowed |= requested
+            self._module_allowed_provenance[id(module)] = module_allowed
+        self._provenance_excluded: Dict[str, str] = {}
+        self._availability_excluded: Dict[str, str] = {}
+        # field -> class map for stamping DatasetStats.metric_provenance from
+        # add_dataset_metric() (the metric name is the only identifier there).
+        self._dataset_field_provenance: Dict[str, str] = {}
+        self._active_dataset_module: Optional[PipelineModule] = None
+        for module in self.modules:
+            try:
+                meta = type(module).get_metadata()
+            except Exception:
+                continue
+            declared = set(meta.get("output_fields", {})) | set(
+                meta.get("dataset_output_fields", {})
+            )
+            prov_map = meta.get("provenance") or {}
+            # Consider every marked output — including service side-channels
+            # declared in ``provenance`` (e.g. ``detections`` on Sample) — so a
+            # module with a utility role stays enabled even when its metrics
+            # are own-class.
+            classes = set(prov_map.values())
+            if not classes and isinstance(
+                getattr(type(module), "provenance", None), str
+            ):
+                classes = {type(module).provenance}
+            for f in meta.get("dataset_output_fields", {}):
+                if f in prov_map and f not in self._dataset_field_provenance:
+                    self._dataset_field_provenance[f] = prov_map[f]
+            if classes and not (classes & self._module_allowed_provenance[id(module)]):
+                self._provenance_excluded[module.name] = "+".join(sorted(classes))
         self.results: Dict[str, Sample] = {}
         self._result_signatures: Dict[str, tuple[object, ...]] = {}
         self._result_manifests: Dict[str, Dict[str, Any]] = {}
@@ -471,7 +689,7 @@ class Pipeline:
         # Maps stats field name -> (QualityMetrics field name, count)
         self._AVG_METRIC_MAP: Dict[str, str] = {
             "avg_technical_score": "technical_score",
-            "avg_aesthetic_score": "aesthetic_score",
+            "avg_aesthetic_score": "aesthetic_v25_score",
             "avg_motion_score": "motion_score",
         }
         self._metric_counts: Dict[str, int] = {k: 0 for k in self._AVG_METRIC_MAP}
@@ -656,6 +874,12 @@ class Pipeline:
             caption.text if caption else None,
             str(caption.source_file) if caption and caption.source_file else None,
             context_digest,
+        )
+
+    def _module_is_excluded(self, module_name: str) -> bool:
+        return (
+            module_name in self._provenance_excluded
+            or module_name in self._availability_excluded
         )
 
     @classmethod
@@ -894,8 +1118,11 @@ class Pipeline:
 
         qm = sample.quality_metrics
         if qm:
+            dumped = qm.model_dump()
             for stats_field, qm_field in self._AVG_METRIC_MAP.items():
-                self._update_average_stat(stats_field, getattr(qm, qm_field, None), delta)
+                # model_dump().get() silently yields None for removed fields
+                # instead of emitting a DeprecationWarning per sample.
+                self._update_average_stat(stats_field, dumped.get(qm_field), delta)
 
         for issue in sample.validation_issues:
             sev = issue.severity.value
@@ -1001,9 +1228,27 @@ class Pipeline:
             metric_name: Name of the metric (e.g., "fvd", "kvd")
             value: Metric value
         """
+        prov_class: Optional[str] = None
+        active = self._active_dataset_module
+        if active is not None:
+            prov_class = type(active).field_provenance().get(metric_name)
+            allowed = self._module_allowed_provenance.get(id(active), self._allowed_provenance)
+            if prov_class and prov_class not in allowed:
+                logger.warning(
+                    "Ignoring dataset metric %s from %s: provenance %s is not allowed",
+                    metric_name,
+                    active.name,
+                    prov_class,
+                )
+                return
+        if prov_class is None:
+            prov_class = self._dataset_field_provenance.get(metric_name)
+
         # Store in DatasetStats
         if hasattr(self.stats, metric_name):
             setattr(self.stats, metric_name, value)
+            if prov_class:
+                self.stats.metric_provenance[metric_name] = prov_class
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 logger.info("Dataset metric %s = %.4f", metric_name, value)
             else:
@@ -1019,9 +1264,29 @@ class Pipeline:
         self.module_timings = {}
         self.module_call_counts = {}
         self.module_failures = {}
+        self._availability_excluded = {}
         self._frame_cache = {}
         self._runtime_value_cache = {}
+        if self._provenance_excluded:
+            logger.info(
+                "Provenance filter excluded %d module(s) (allowed: %s): %s. "
+                "Set allow_provenance to run them.",
+                len(self._provenance_excluded),
+                ", ".join(sorted(self._allowed_provenance)),
+                ", ".join(
+                    f"{name} ({classes})"
+                    for name, classes in sorted(self._provenance_excluded.items())
+                ),
+            )
+        if self._availability_excluded:
+            logger.warning(
+                "External backend required for %d module(s): %s",
+                len(self._availability_excluded),
+                ", ".join(sorted(self._availability_excluded)),
+            )
         for module in self.modules:
+            if self._module_is_excluded(module.name):
+                continue
             try:
                 if not getattr(module, "_mounted", False):
                     module.on_mount()
@@ -1034,13 +1299,23 @@ class Pipeline:
             if not getattr(module, "_mounted", False):
                 self.module_failures.setdefault(module.name, "module did not mount")
             elif (
+                type(module).requires_external_backend
+                and not getattr(module, "_backend", None)
+                and not getattr(module, "_ml_available", False)
+                and not getattr(module, "_available", False)
+            ):
+                self._availability_excluded[module.name] = "external_backend_unavailable"
+            elif (
                 getattr(module, "_backend", None) == "unavailable"
                 and not getattr(module, "_ml_available", False)
                 and not getattr(module, "_available", False)
             ):
                 self.module_failures.setdefault(module.name, "backend unavailable")
         for module in self.modules:
-            if module.name in self.module_failures:
+            if (
+                module.name in self.module_failures
+                or self._module_is_excluded(module.name)
+            ):
                 continue
             on_execute = getattr(module, "on_execute", None)
             if not callable(on_execute):
@@ -1063,11 +1338,17 @@ class Pipeline:
             if sample.failed_modules
         }
         return {
-            "complete": not failed and not failed_samples,
+            "complete": not failed and not failed_samples and not self._availability_excluded,
             "requested_modules": requested,
-            "mounted_modules": [name for name in requested if name not in failed],
+            "mounted_modules": [
+                name
+                for name in requested
+                if name not in failed and not self._module_is_excluded(name)
+            ],
             "module_failures": failed,
             "failed_samples": failed_samples,
+            "provenance_excluded": dict(self._provenance_excluded),
+            "availability_excluded": dict(self._availability_excluded),
         }
 
     def _rebuild_sample_stats(self) -> None:
@@ -1100,12 +1381,16 @@ class Pipeline:
 
         # Call post_process on all modules first
         for module in self.modules:
-            if module.name in self.module_failures:
+            if (
+                module.name in self.module_failures
+                or self._module_is_excluded(module.name)
+            ):
                 continue
             post_process = getattr(module, "post_process", None)
             if not callable(post_process):
                 continue
             try:
+                self._active_dataset_module = module
                 post_process(all_samples)
             except Exception as e:
                 logger.error(f"Error in post_process for module {module.name}: {e}")
@@ -1113,6 +1398,8 @@ class Pipeline:
                 self.module_failures[module.name] = detail
                 for sample in all_samples:
                     self._register_module_failure(sample, module.name, detail)
+            finally:
+                self._active_dataset_module = None
 
         # post_process() can append issues / change validity after results were
         # stored; refold those into the sample-derived aggregate stats.
@@ -1120,10 +1407,13 @@ class Pipeline:
 
         # Call on_dispose (this triggers batch metric computation)
         for module in self.modules:
+            if self._module_is_excluded(module.name):
+                continue
             on_dispose = getattr(module, "on_dispose", None)
             if not callable(on_dispose):
                 continue
             try:
+                self._active_dataset_module = module
                 on_dispose()
             except Exception as e:
                 logger.error(f"Error in on_dispose for module {module.name}: {e}")
@@ -1131,6 +1421,8 @@ class Pipeline:
                 self.module_failures[module.name] = detail
                 for sample in all_samples:
                     self._register_module_failure(sample, module.name, detail)
+            finally:
+                self._active_dataset_module = None
 
         # on_dispose() (e.g. dedup batch modules) can flip validity or write
         # metrics onto samples AFTER post_process ran; refold those into the
@@ -1249,6 +1541,130 @@ class Pipeline:
             sample.quality_metrics = QualityMetrics()
         sample.quality_metrics.metric_backends[module.name] = str(backend)
 
+    @staticmethod
+    def _metric_state(sample: Sample) -> Dict[str, Any]:
+        """Snapshot metric values before a module runs."""
+        import copy
+
+        if sample.quality_metrics is None:
+            return {}
+        return copy.deepcopy(sample.quality_metrics.model_dump())
+
+    @staticmethod
+    def _metric_values_equal(left: Any, right: Any) -> bool:
+        """Compare scalar or array-like metric values without ambiguous truth errors."""
+        try:
+            result = left == right
+            if isinstance(result, bool):
+                return result
+            if hasattr(result, "all"):
+                return bool(result.all())
+            return bool(result)
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def _restore_metric_state(
+        sample: Sample, module: "PipelineModule", before: Dict[str, Any]
+    ) -> None:
+        """Roll back declared metric fields after a failed module execution."""
+        qm = sample.quality_metrics
+        if qm is None:
+            return
+        provenance_before = before.get("metric_provenance", {})
+        for field in type(module).field_provenance():
+            if field not in type(qm).model_fields or field in qm._NON_METRIC_FIELDS:
+                continue
+            setattr(qm, field, deepcopy(before.get(field)))
+            if isinstance(provenance_before, dict) and field in provenance_before:
+                qm.metric_provenance[field] = provenance_before[field]
+            else:
+                qm.metric_provenance.pop(field, None)
+
+    @classmethod
+    def _reconcile_after_hook_metrics(
+        cls,
+        sample: Sample,
+        module: "PipelineModule",
+        before: Dict[str, Any],
+        process_end: Dict[str, Any],
+    ) -> None:
+        """Remove module lineage from declared fields changed by an after hook."""
+        qm = sample.quality_metrics
+        if qm is None:
+            return
+        provenance_before = before.get("metric_provenance", {})
+        provenance_process_end = process_end.get("metric_provenance", {})
+        for field in type(module).field_provenance():
+            if field not in type(qm).model_fields or field in qm._NON_METRIC_FIELDS:
+                continue
+            final = getattr(qm, field, None)
+            if cls._metric_values_equal(process_end.get(field), final):
+                if (
+                    isinstance(provenance_process_end, dict)
+                    and field in provenance_process_end
+                ):
+                    qm.metric_provenance[field] = provenance_process_end[field]
+                else:
+                    qm.metric_provenance.pop(field, None)
+                continue
+            if field in before and cls._metric_values_equal(before[field], final):
+                if isinstance(provenance_before, dict) and field in provenance_before:
+                    qm.metric_provenance[field] = provenance_before[field]
+                else:
+                    qm.metric_provenance.pop(field, None)
+            else:
+                qm.metric_provenance.pop(field, None)
+
+    def _persist_provenance(
+        self,
+        sample: Sample,
+        module: "PipelineModule",
+        before: Optional[Dict[str, Any]] = None,
+        written_fields: Optional[Set[str]] = None,
+    ) -> None:
+        """Stamp ``quality_metrics.metric_provenance`` for fields the module wrote.
+
+        Zero per-module code required: after a successful ``process()``, every
+        non-None output field declared by the module gets its provenance class
+        recorded so each number in the output can be traced to published /
+        adapted / own / utility. Skipped entirely for unmarked modules and for
+        modules that failed on this sample.
+        """
+        if module.name in getattr(sample, "failed_modules", ()):
+            return
+        qm = sample.quality_metrics
+        if qm is None:
+            return
+        try:
+            prov = type(module).field_provenance()
+        except Exception:
+            return
+        if not prov:
+            return
+        before = before or {}
+        allowed = self._module_allowed_provenance.get(id(module), self._allowed_provenance)
+        for field, cls_value in prov.items():
+            if field not in type(qm).model_fields or field in qm._NON_METRIC_FIELDS:
+                continue
+            current = getattr(qm, field, None)
+            was_written = written_fields is not None and field in written_fields
+            if not was_written and (
+                field in before and self._metric_values_equal(before[field], current)
+            ):
+                continue
+            if not was_written and field not in before and current is None:
+                continue
+            if cls_value not in allowed:
+                setattr(qm, field, deepcopy(before.get(field)))
+                if field not in before or before.get(field) is None:
+                    qm.metric_provenance.pop(field, None)
+                continue
+            if current is None:
+                qm.metric_provenance.pop(field, None)
+            else:
+                qm.metric_provenance[field] = cls_value
+
     def process_sample(self, sample: Sample) -> Sample:
         """Run all active modules on a sample."""
 
@@ -1277,9 +1693,12 @@ class Pipeline:
                     if (
                         not getattr(module, "_mounted", False)
                         or module.name in self.module_failures
+                        or self._module_is_excluded(module.name)
                     ):
                         continue
                     started_at = perf_counter()
+                    metric_state: Dict[str, Any] = {}
+                    written_by_model: Dict[int, Set[str]] = {}
                     hooks = self._hooks.get(module.name)
                     entered = True
                     succeeded = False
@@ -1328,8 +1747,13 @@ class Pipeline:
                                 continue
                             sample = hooked
 
+                        metric_state = self._metric_state(sample)
+                        def record_write(metrics: QualityMetrics, field: str) -> None:
+                            written_by_model.setdefault(id(metrics), set()).add(field)
+
                         try:
-                            processed = module.process(sample)
+                            with observe_metric_writes(record_write):
+                                processed = module.process(sample)
                         except Exception as e:
                             logger.error(
                                 f"Error in module {module.name} for "
@@ -1338,6 +1762,7 @@ class Pipeline:
                             self._register_module_failure(
                                 sample, module.name, f"{type(e).__name__}: {e}"
                             )
+                            self._restore_metric_state(sample, module, metric_state)
                         else:
                             if isinstance(processed, Sample):
                                 sample = processed
@@ -1354,7 +1779,19 @@ class Pipeline:
                                     module.name,
                                     f"returned {type(processed).__name__}, expected Sample",
                                 )
+                                self._restore_metric_state(sample, module, metric_state)
                     finally:
+                        process_end_state: Dict[str, Any] = {}
+                        if succeeded:
+                            self._persist_backend(sample, module)
+                            qm = sample.quality_metrics
+                            self._persist_provenance(
+                                sample,
+                                module,
+                                metric_state,
+                                written_by_model.get(id(qm)) if qm is not None else None,
+                            )
+                            process_end_state = self._metric_state(sample)
                         
                         
                         
@@ -1400,8 +1837,10 @@ class Pipeline:
                                     f"after hook returned {type(restored).__name__}, "
                                     "expected Sample",
                                 )
-                        if succeeded:
-                            self._persist_backend(sample, module)
+                        if succeeded and process_end_state:
+                            self._reconcile_after_hook_metrics(
+                                sample, module, metric_state, process_end_state
+                            )
                         self._record_module_timing(module.name, perf_counter() - started_at)
         finally:
             self._frame_cache = {}
@@ -1435,6 +1874,8 @@ class Pipeline:
         eligible_samples: List[Sample] = []
         eligible_positions: List[int] = []
         succeeded_positions: List[int] = []
+        metric_states: Dict[int, Dict[str, Any]] = {}
+        written_by_model: Dict[int, Set[str]] = {}
         try:
             for idx, sample in enumerate(working):
                 str_path = str(sample.path)
@@ -1484,10 +1925,15 @@ class Pipeline:
 
                 eligible_samples.append(sample)
                 eligible_positions.append(idx)
+                metric_states[idx] = self._metric_state(sample)
 
             if eligible_samples:
                 try:
-                    processed_batch = module.process_batch(eligible_samples)
+                    def record_write(metrics: QualityMetrics, field: str) -> None:
+                        written_by_model.setdefault(id(metrics), set()).add(field)
+
+                    with observe_metric_writes(record_write):
+                        processed_batch = module.process_batch(eligible_samples)
                 except Exception as e:
                     sample_path = getattr(eligible_samples[0], "path", "<batch>")
                     logger.error(
@@ -1497,6 +1943,9 @@ class Pipeline:
                     for pos in eligible_positions:
                         self._register_module_failure(
                             working[pos], module.name, f"{type(e).__name__}: {e}"
+                        )
+                        self._restore_metric_state(
+                            working[pos], module, metric_states.get(pos, {})
                         )
                 else:
                     if not isinstance(processed_batch, list):
@@ -1512,6 +1961,9 @@ class Pipeline:
                                 f"process_batch returned {type(processed_batch).__name__}, "
                                 "expected list",
                             )
+                            self._restore_metric_state(
+                                working[pos], module, metric_states.get(pos, {})
+                            )
                     elif len(processed_batch) != len(eligible_samples):
                         logger.error(
                             "Module %s returned %d samples for a batch of %d; "
@@ -1526,6 +1978,9 @@ class Pipeline:
                                 module.name,
                                 f"process_batch returned {len(processed_batch)} samples "
                                 f"for a batch of {len(eligible_samples)}",
+                            )
+                            self._restore_metric_state(
+                                working[pos], module, metric_states.get(pos, {})
                             )
                     else:
                         for pos, previous, processed in zip(
@@ -1545,6 +2000,9 @@ class Pipeline:
                                     module.name,
                                     f"returned {type(processed).__name__}, expected Sample",
                                 )
+                                self._restore_metric_state(
+                                    working[pos], module, metric_states.get(pos, {})
+                                )
                                 continue
                             working[pos] = processed
                             succeeded_positions.append(pos)
@@ -1552,6 +2010,17 @@ class Pipeline:
             # Always revert hook state for entered positions (consistent with
             # the single-sample path), then persist backends for the positions
             # that produced valid output, then record timing.
+            process_end_states: Dict[int, Dict[str, Any]] = {}
+            for pos in succeeded_positions:
+                self._persist_backend(working[pos], module)
+                qm = working[pos].quality_metrics
+                self._persist_provenance(
+                    working[pos],
+                    module,
+                    metric_states.get(pos),
+                    written_by_model.get(id(qm)) if qm is not None else None,
+                )
+                process_end_states[pos] = self._metric_state(working[pos])
             if hooks and "after" in hooks:
                 for pos in eligible_positions:
                     # Snapshot failure markers before the revert. An after-hook
@@ -1594,8 +2063,13 @@ class Pipeline:
                             module.name,
                             f"after hook returned {type(restored).__name__}, expected Sample",
                         )
-            for pos in succeeded_positions:
-                self._persist_backend(working[pos], module)
+                    if pos in process_end_states:
+                        self._reconcile_after_hook_metrics(
+                            working[pos],
+                            module,
+                            metric_states.get(pos, {}),
+                            process_end_states[pos],
+                        )
             self._record_module_timing(
                 module.name,
                 perf_counter() - started_at,
@@ -1720,7 +2194,7 @@ class Pipeline:
                     recs_str = "; ".join(
                         [i.recommendation for i in s.validation_issues if i.recommendation]
                     )
-                    score = (s.quality_metrics.technical_score if s.quality_metrics else None) or 0.0
+                    score = (s.quality_metrics.model_dump().get("technical_score") if s.quality_metrics else None) or 0.0
 
                     writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, f"{score:.2f}"])
 
@@ -1964,6 +2438,45 @@ class Pipeline:
             logger.error(f"Failed to load state: {e}")
 
 
+# Renamed module registry names kept resolvable for consumers that still
+# reference the pre-0.1.80 identifiers. Aliases resolve in ``get_module()``
+# only — they are not listed by ``list_modules()`` and emit a
+# DeprecationWarning on use.
+MODULE_ALIASES: Dict[str, str] = {
+    "clifvqa": "clip_feel",
+    "entitybench": "entity_consistency",
+    "geneval": "clip_prompt_check",
+    "graphsim": "local_std_uniformity",
+    "jedi": "mmd_selfsplit",
+    "jedi_metric": "mmd_selfsplit_metric",
+    "magface": "face_emb_norm",
+    "modularbvqa": "clip_slowfast_vq",
+    "movie": "gabor_flow_vq",
+    "multiple_objects": "object_count_check",
+    "naturalness": "brisque_inverted",
+    "pcqm": "mse_color",
+    "pointssim": "chamfer_sim",
+    "psnr_div": "psnr_grad",
+    "psnr_hvs": "psnr_hvs_approx",
+    "pu_metrics": "log_metrics",
+    "spherical_psnr": "erp_psnr",
+    "st_greed": "mscn_entropy",
+    "st_lpips": "stlpips_selfdist",
+    "t2v_score": "t2v_generic_score",
+    "tc_bench": "clip_event_order",
+    "tlvqm": "resnet_svr_vq",
+    "ttsds2": "tts_system_dist",
+    "vader": "hpsv2_const",
+    "videophy": "vlm_phy",
+    "videval": "svr60_vq",
+    "audio_lpdist": "audio_logmel_dist",
+    "finevq": "finevq_raw",
+    "hdr_vqm": "hdr_subband_flicker_score",
+    "dynamics_range": "content_variation",
+    "nima_onnx": "nima",
+}
+
+
 class ModuleRegistry:
     """Registry for discovering and loading modules."""
 
@@ -1985,7 +2498,18 @@ class ModuleRegistry:
 
     @classmethod
     def get_module(cls, name: str) -> Optional[Type[PipelineModule]]:
-        return cls._modules.get(name)
+        module_cls = cls._modules.get(name)
+        if module_cls is None:
+            new_name = MODULE_ALIASES.get(name)
+            if new_name is not None and new_name in cls._modules:
+                warnings.warn(
+                    f"Module name '{name}' was renamed to '{new_name}' in 0.1.80; "
+                    "the alias will be removed in a later release.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                module_cls = cls._modules[new_name]
+        return module_cls
 
     @classmethod
     def is_packaged_module(cls, module_cls: Type[PipelineModule]) -> bool:
@@ -2266,12 +2790,16 @@ class AyasePipeline:
         ]
 
     def _build_modules(self, names: List[str]) -> List[PipelineModule]:
+        # Modules named via ``modules=`` or ``pipeline.modules`` are an explicit
+        # choice, which is the provenance opt-in: adapted/own modules may run.
         result = []
         for name in names:
             cls = ModuleRegistry.get_module(name)
             if cls is None:
                 raise ValueError(f"Unknown module: {name}")
-            result.append(cls(config=runtime_module_config(self.config)))
+            result.append(
+                cls(config=opt_in_all_provenance(runtime_module_config(self.config)))
+            )
         return result
 
     @staticmethod

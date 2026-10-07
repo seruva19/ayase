@@ -29,7 +29,7 @@ from ayase.tui import (
 
 def _make_sample(name: str, tech: float = 75.0, issues: int = 0) -> Sample:
     s = Sample(path=Path(f"/data/{name}"), is_video=name.endswith(".mp4"))
-    s.quality_metrics = QualityMetrics(technical_score=tech)
+    s.quality_metrics = QualityMetrics(fast_vqa_score=tech)
     for i in range(issues):
         s.validation_issues.append(
             ValidationIssue(
