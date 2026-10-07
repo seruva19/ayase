@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 class StereoscopicQualityModule(PipelineModule):
     name = "stereoscopic_quality"
+    deprecated = True
+    provenance = "own"
     description = "Stereo 3D comfort and quality assessment"
     default_config = {
         "stereo_format": "auto",  # "sbs" (side-by-side), "tb" (top-bottom), "auto"

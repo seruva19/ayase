@@ -39,6 +39,8 @@ CAMERA_KEYWORDS = {
 
 class DynamicsControllabilityModule(PipelineModule):
     name = "dynamics_controllability"
+    deprecated = True
+    provenance = "own"
     description = "Assesses motion controllability based on text-motion alignment"
     default_config = {
         "subsample": 16,

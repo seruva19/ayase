@@ -37,6 +37,19 @@ logger = logging.getLogger(__name__)
 
 class FaceCrossSimilarityModule(PipelineModule):
     name = "face_cross_similarity"
+    provenance = {
+        "avg_face_cross_similarity": "own",
+        "face_cross_similarity": "own",
+        "face_identity_count": "utility",
+        "face_similarity_matrix": "own",
+        "identity_cluster_count": "own",
+    }
+    sources = {
+        "avg_face_cross_similarity": "ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface",
+        "face_cross_similarity": "ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface",
+        "face_similarity_matrix": "ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface",
+        "identity_cluster_count": "ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface",
+    }
     description = "Pairwise ArcFace cosine similarity matrix across dataset faces"
     default_config = {
         "model_name": "buffalo_l",

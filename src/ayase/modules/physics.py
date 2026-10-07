@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 class PhysicsModule(PipelineModule):
     name = "physics"
+    deprecated = True
+    provenance = "own"
     description = "Physics plausibility via trajectory analysis (CoTracker / Lucas-Kanade)"
     default_config = {
         "subsample": 16,

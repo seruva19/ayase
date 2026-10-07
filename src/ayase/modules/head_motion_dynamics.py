@@ -74,6 +74,13 @@ def pose_and_center(
 
 class HeadMotionDynamicsModule(PipelineModule):
     name = "head_motion_dynamics"
+    provenance = "adapted"
+    sources = {
+        "head_motion_dynamics_score": "THEval (arXiv 2511.04520), Eq.26 — https://arxiv.org/abs/2511.04520",
+    }
+    deviations = {
+        "head_motion_dynamics_score": "the sqrt(σ̄_angle·V̄_Δangle + V̄_trans) formula matches, but angles come from the MediaPipe Face Landmarker matrix instead of FaceXFormer and translation is the landmark-center shift in frame pixels; numbers will not match",
+    }
     description = "THEval pose/derivative/translation head-motion complexity"
     default_config = {"num_faces": 1, "face_index": None}
     models = [{

@@ -250,6 +250,16 @@ class GazeDynamicsModule(PipelineModule):
     """Compare unaligned MediaPipe ocular-control activation summaries."""
 
     name = "gaze_dynamics"
+    provenance = {
+        "gaze_blendshape_binocular_disagreement_difference": "own",
+        "gaze_blendshape_horizontal_amplitude_difference": "own",
+        "gaze_blendshape_horizontal_location_difference": "own",
+        "gaze_blendshape_reference_coverage": "utility",
+        "gaze_blendshape_sample_coverage": "utility",
+        "gaze_blendshape_speed_difference": "own",
+        "gaze_blendshape_vertical_amplitude_difference": "own",
+        "gaze_blendshape_vertical_location_difference": "own",
+    }
     description = (
         "Reference-relative MediaPipe eye-look activation distributions and dynamics"
     )

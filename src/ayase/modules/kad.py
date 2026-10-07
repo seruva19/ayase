@@ -27,6 +27,10 @@ _PANN_WAVEGRAM_URL = (
 
 class KADModule(BatchMetricModule):
     name = "kad"
+    provenance = "published"
+    sources = {
+        "kad": "KAD (Chung et al. 2025), the kadtk package — https://github.com/YoonjinXD/kadtk",
+    }
     description = "Kernel Audio Distance with KADTK PANNs embeddings (2025)"
     default_config = {
         "sample_rate": 32000,

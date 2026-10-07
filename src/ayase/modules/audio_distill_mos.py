@@ -16,13 +16,12 @@ score must not be treated as a general TTS-naturalness or generic-audio metric.
 Ayase follows the official preprocessing: select the first channel, resample to
 16 kHz, right-pad short inputs to 7.68 seconds, and average predictions from
 overlapping 7.68-second windows.  Official inference uses at most a one-second
-gap between window starts and materializes every window.  To keep long media
-bounded, Ayase deterministically samples at most ``max_windows`` uniformly
-spaced windows while always including the tail (and the beginning when the cap
-permits multiple windows).  This is exactly equivalent to upstream inference
-while the official window count is within the cap, and a documented
-approximation for longer recordings.  Peak normalization is performed inside
-the official model independently for each window.
+gap between window starts and materializes every window — this module does the
+same by default.  Setting ``max_windows`` to a finite value makes Ayase
+deterministically sample that many uniformly spaced windows (always including
+the tail), an explicitly documented approximation for very long recordings.
+Peak normalization is performed inside the official model independently for
+each window.
 
 Primary sources:
     - Stahl and Gamper, "Distillation and Pruning for Scalable Self-Supervised
@@ -83,11 +82,18 @@ class AudioDistillMOSModule(PipelineModule):
     """Predict overall speech MOS with the official Distill-MOS v7 model."""
 
     name = "audio_distill_mos"
+    provenance = "adapted"
+    sources = {
+        "distill_mos_score": "Distill-MOS (Stahl & Gamper, ICASSP 2025), official package — https://github.com/microsoft/Distill-MOS",
+    }
+    deviations = {
+        "distill_mos_score": "Uses the official v7 model and windowing, but Ayase skips clips below min_duration_seconds or silence_rms_threshold; max_windows can additionally limit evaluation to uniformly sampled windows",
+    }
     description = "Microsoft Distill-MOS compact reference-free speech quality (1-5 MOS)"
     required_packages = ["distillmos"]
     default_config = {
         "device": "auto",
-        "max_windows": 12,
+        "max_windows": None,
         "min_duration_seconds": 1.0,
         "silence_rms_threshold": 1e-5,
         "warning_threshold": None,
@@ -119,7 +125,10 @@ class AudioDistillMOSModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.max_windows = max(1, int(self.config.get("max_windows", 12)))
+        # None → evaluate every official window (upstream behaviour).  A finite
+        # value is an explicit approximation guard for very long recordings.
+        _mw = self.config.get("max_windows", None)
+        self.max_windows = None if _mw in (None, 0) else max(1, int(_mw))
         self.min_duration_seconds = max(
             0.0, float(self.config.get("min_duration_seconds", 1.0))
         )
@@ -226,7 +235,11 @@ class AudioDistillMOSModule(PipelineModule):
 
         overlength = waveform.size - _SEGMENT_SAMPLES
         official_count = int(np.ceil(overlength / _MAX_HOP_SAMPLES)) + 1
-        count = min(self.max_windows, official_count)
+        count = (
+            official_count
+            if self.max_windows is None
+            else min(self.max_windows, official_count)
+        )
         if count == 1:
             starts = np.asarray([overlength], dtype=np.int64)
         else:

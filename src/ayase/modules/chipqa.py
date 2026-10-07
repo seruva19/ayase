@@ -79,6 +79,10 @@ def _third_party_path(*parts: str) -> Path:
 
 class ChipQAModule(PipelineModule):
     name = "chipqa"
+    provenance = "published"
+    sources = {
+        "chipqa_score": "ChipQA (Ebenezer et al.) — https://github.com/JoshuaEbenezer/ChipQA",
+    }
     description = "ChipQA no-reference video quality via its feature extractor and LIVE-Livestream SVR"
     default_config = {
         "repo_path": None,

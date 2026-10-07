@@ -48,6 +48,8 @@ _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 
 class RTMPoseFidelityModule(PipelineModule):
     name = "rtmpose_fidelity"
+    deprecated = True
+    provenance = "own"
     description = "RTMPose keypoint-confidence pose/gesture plausibility (rtmlib, local ONNX; 0-1, higher=better)"
     default_config = {
         "subsample": 8,                    # frames sampled per video

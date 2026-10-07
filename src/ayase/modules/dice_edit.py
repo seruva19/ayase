@@ -46,19 +46,49 @@ _DIFFERENCE_MODEL_DIR = (
 _DIFFERENCE_ADAPTER_DIR = "lora_tuned_stage2/checkpoint-15000"
 _COHERENCE_ADAPTER_DIR = "lora_tuned/checkpoint-550"
 
-_DIFFERENCE_PROMPT = """Compare the second image with the first and list every
-distinct object-level change. Each entry must have exactly this form:
-"<COMMAND>: <ELEMENT>, BOUNDING_BOX: [x0, y0, x1, y1]".
-COMMAND is ADD, REMOVE, or EDIT. Coordinates are normalized to [0, 1].
-ADD means newly present, REMOVE means missing, and EDIT means replaced or
-changed at the same location. Return a JSON list of strings and nothing else."""
+# Verbatim prompts from editing-evaluation/editing_evaluation/prompts/prompts.py
+# (aimagelab/DICE, ICCV 2025).
+_DIFFERENCE_PROMPT = """
+     You are a system that detects differences between two images.
+    - You need to extract the elements that are changed in the second image with respect to the first one.   
+	- Create a new entry for each distinct change.
+	- For each entry, use this format: "<CHANGE_COMMAND>: <CHANGED_ELEMENT>, (<BOUNDING_BOX>)".
+	- CHANGE_COMMAND:
+                - ADD: If a new element appears in the second image that was not present in the first.
+                - REMOVE: If an element from the first image is missing in the second.
+                - EDIT: If an element in the second image is different but in the same location of another element of the first image.
+	- CHANGED_ELEMENT: Describe the element that has changed.
+	- BOUNDING_BOX: Use normalized coordinates [x0, y0, x1, y1] for the changed element's position in the second image, where (x0, y0) is the top-left corner, and (x1, y1) is the bottom-right corner. The coordinates should be scaled between 0 and 1, with 0 representing one edge of the image and 1 the opposite edge."""  # PRETRAIN_PROMPT_NOCHANGE
 
-_COHERENCE_SYSTEM_PROMPT = """Judge whether one localized image change is fully
-consistent with the requested edit. The original and edited images follow in
-that order; a colored box marks the detected change. ADD means newly present,
-EDIT means replaced or changed, and REMOVE means missing. Be strict: any
-unrequested modification is incoherent. End with exactly "Answer: YES" or
-"Answer: NO"."""
+_COHERENCE_SYSTEM_PROMPT = """
+You are evaluating if a specific change detected by an AI vision model matches the request in the original edit prompt.
+
+## Task 
+Determine if the detected change, as described and bounded by the provided colored bbox, matches the request in the original edit prompt. 
+A match is valid only if the localized detected change is 100% compatible with the requested prompt. 
+Any unwanted modification of the original image (even small) should avoid a match.
+
+## Context
+- The original image and the edited image are provided, in this order. The edited image is the original with some changes applied. Focus only on the area specified by the bbox in the detected change.
+- Another AI model has detected a change in the image, including its bbox.
+    - ADD means that an object is only added in the edited image (on the background).
+    - EDIT means that an object is substituted with another one in the edited image.
+    - REMOVE means that an object is removed in the edited image.
+- Be strict: An EDIT means that an object has been removed and subsituted with anotherone, ensure nothing was removed unless explicitly stated in the prompt. If an object has been removed unexpectedly then you should say NO.
+
+## Example Response
+- Reasoning: <REASONING>
+- Decision: "YES" or "NO"
+    """  # PROMPT_DIFFERENCE_COHERENCE_SYSTEM
+
+_COHERENCE_USER_TEMPLATE = """
+## Instructions
+1. The original edit prompt is: {SUBTSITUTE_PROMPT}
+2. The detected change to evaluate is: {SUBTSITUTE_CHANGE}
+3. Use only the text and the observations from the specified bbox area (colored) in both the original and edited images to decide if the specific detected change aligns with the original edit prompt.
+
+Images will follow.
+"""  # PROMPT_DIFFERENCE_COHERENCE
 
 _CHANGE_RE = re.compile(
     r"\b(ADD|REMOVE|EDIT)\s*:\s*"
@@ -74,6 +104,13 @@ class DICEEditModule(PipelineModule):
     """Evaluate whether localized source-to-edited changes follow an instruction."""
 
     name = "dice_edit"
+    provenance = "adapted"
+    sources = {
+        "dice_edit_coherence_score": "DICE (ICCV 2025), official aimagelab/DICE_*_Idefics weights and prompts — https://github.com/aimagelab/DICE",
+    }
+    deviations = {
+        "dice_edit_coherence_score": "official weights and verbatim prompts; the final fraction of coherent edits (and 0 when no edits) is own aggregation — the official example emits no single number; box markup via PIL instead of upstream's matplotlib render",
+    }
     description = "DICE object-level instruction-guided image-edit coherence (ICCV 2025)"
     default_config = {
         "models_dir": "models",
@@ -223,10 +260,11 @@ class DICEEditModule(PipelineModule):
                 )
                 for change in changes:
                     marked_source, marked_edited = render_dice_change(source, edited, change)
-                    prompt = (
-                        f"Requested edit: {instruction}\n"
-                        f"Detected change: {change['operation']}: {change['subject']}\n"
-                        "Does this localized change match the requested edit?"
+                    prompt = _COHERENCE_USER_TEMPLATE.replace(
+                        "{SUBTSITUTE_PROMPT}", instruction
+                    ).replace(
+                        "{SUBTSITUTE_CHANGE}",
+                        f"{change['operation']}: {change['subject']}",
                     )
                     output = self._generate(
                         coherence_model,
@@ -245,6 +283,7 @@ class DICEEditModule(PipelineModule):
                             },
                         ],
                         [marked_source, marked_edited],
+                        add_generation_prompt=False,  # upstream mode="coherence" behavior
                     )
                     decision = parse_dice_decision(output)
                     if decision is not None:
@@ -320,10 +359,11 @@ class DICEEditModule(PipelineModule):
         messages: Sequence[Dict[str, Any]],
         images: Sequence[Image.Image],
         repetition_penalty: Optional[float] = None,
+        add_generation_prompt: bool = True,
     ) -> str:
         prompt = self._processor.apply_chat_template(
             list(messages),
-            add_generation_prompt=True,
+            add_generation_prompt=add_generation_prompt,
         )
         inputs = self._processor(text=prompt, images=list(images), return_tensors="pt")
         inputs = {key: value.to(self._device) for key, value in inputs.items()}

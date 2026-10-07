@@ -24,6 +24,10 @@ _R3D_18_URL = "https://download.pytorch.org/models/r3d_18-b3b3357e.pth"
 
 class CGVQMModule(ReferenceBasedModule):
     name = "cgvqm"
+    provenance = "published"
+    sources = {
+        "cgvqm": "CGVQM (Intel Labs) — https://github.com/IntelLabs/cgvqm",
+    }
     description = "Intel CGVQM full-reference rendered-video quality"
     default_config = {
         "variant": "cgvqm-5",

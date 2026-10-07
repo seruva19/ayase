@@ -56,6 +56,11 @@ def _compute_uciqe(img: np.ndarray, c1: float, c2: float, c3: float) -> float:
 
 class UCIQEModule(PipelineModule):
     name = "uciqe"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "uciqe_score": "UCIQE, Yang & Sowmya TIP 2015 — https://github.com/paulwong16/UCIQE",
+    }
     description = "UCIQE underwater color image quality evaluation (2015)"
     default_config = {
         "c1": 0.4680,

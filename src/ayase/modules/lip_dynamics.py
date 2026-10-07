@@ -74,6 +74,10 @@ class LipDynamicsModule(PipelineModule):
     """Measure talking-head mouth-shape diversity across a video."""
 
     name = "lip_dynamics"
+    provenance = "published"
+    sources = {
+        "lip_dynamics_score": "THEval (arXiv 2511.04520), Eq.12–13 — https://arxiv.org/abs/2511.04520",
+    }
     description = "THEval temporal variation of all pairwise lip-landmark distances"
     default_config = {
         "num_faces": 1,

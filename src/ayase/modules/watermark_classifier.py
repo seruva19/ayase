@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 class WatermarkClassificationModule(PipelineModule):
     name = "watermark_classifier"
+    provenance = "utility"
+    sources = {
+        "ai_generated_probability": "custom ResNet-50 / HF umm-maybe/AI-image-detector — https://huggingface.co/umm-maybe/AI-image-detector",
+        "watermark_probability": "custom ResNet-50 / HF umm-maybe/AI-image-detector — https://huggingface.co/umm-maybe/AI-image-detector",
+    }
     description = "Classifies video for watermarks using a pretrained model or custom ResNet-50 weights"
     default_config = {
         "model_weights_path": "",  # Path to custom .pth watermark classifier (optional)

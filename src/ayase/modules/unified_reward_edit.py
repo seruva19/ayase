@@ -245,6 +245,21 @@ def build_unified_reward_edit_prompt(instruction: str, task: str) -> str:
 
 class UnifiedRewardEditModule(PipelineModule):
     name = "unified_reward_edit"
+    provenance = {
+        "unified_reward_edit_image_1_score": "published",
+        "unified_reward_edit_image_2_score": "published",
+        "unified_reward_edit_overediting_score": "published",
+
+        "unified_reward_edit_success_score": "published",
+        "unified_reward_edit_winner": "published",
+    }
+    sources = {
+        "unified_reward_edit_image_1_score": "UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio",
+        "unified_reward_edit_image_2_score": "UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio",
+        "unified_reward_edit_overediting_score": "UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio",
+        "unified_reward_edit_success_score": "UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio",
+        "unified_reward_edit_winner": "UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio",
+    }
     description = "UnifiedReward Edit instruction-guided image editing quality scoring"
     default_config = {
         "backend": "auto",  # auto | diffsynth | openai
@@ -276,7 +291,7 @@ class UnifiedRewardEditModule(PipelineModule):
         },
     ]
     metric_info = {
-        "unified_reward_edit_score": "UnifiedReward Edit primary score (higher=better)",
+
         "unified_reward_edit_success_score": "Edit instruction success score (0-25)",
         "unified_reward_edit_overediting_score": "Edit preservation/overediting score (0-25)",
         "unified_reward_edit_image_1_score": "Pairwise edit image 1 score",
@@ -284,7 +299,7 @@ class UnifiedRewardEditModule(PipelineModule):
         "unified_reward_edit_winner": "Pairwise edit winner code (0=tie, 1=image1, 2=image2)",
     }
     metric_groups = {
-        "unified_reward_edit_score": "alignment",
+
         "unified_reward_edit_success_score": "alignment",
         "unified_reward_edit_overediting_score": "fr_quality",
         "unified_reward_edit_image_1_score": "alignment",
@@ -473,7 +488,6 @@ class UnifiedRewardEditModule(PipelineModule):
         qm.unified_reward_edit_image_1_score = _coerce_float(parsed.get("image_1_score"))
         qm.unified_reward_edit_image_2_score = _coerce_float(parsed.get("image_2_score"))
         qm.unified_reward_edit_winner = _winner_to_number(parsed.get("winner"))
-        qm.unified_reward_edit_score = _coerce_float(parsed.get("score"))
 
     def _store_details(
         self,

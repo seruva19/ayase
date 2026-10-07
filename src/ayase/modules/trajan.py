@@ -840,11 +840,20 @@ def _build_backend():
 
 class TRAJANModule(PipelineModule):
     name = "trajan"
+    provenance = "adapted"
+    sources = {
+        "trajan_score": "TRAJAN, Allen et al. arXiv:2505.00209 — https://github.com/google-deepmind/tapnet",
+    }
+    deviations = {
+        "trajan_score": "Torch port verified against JAX; takes the first <=150 consecutive frames (the autoencoder's episode length), fixed seed for query points and the support/target split",
+    }
     description = "TRAJAN point-track autoencoder motion realism (ICLR 2025, pure-torch)"
     default_config = {
         # Frames actually fed through the tracker/autoencoder. The autoencoder's
         # episode length is 150; more frames = longer trajectories (and cost).
-        "max_frames": 60,
+        # Upstream feeds consecutive video frames, so these are the FIRST
+        # ``max_frames`` decoded frames, not a uniform subsample.
+        "max_frames": 150,
         # Spatial resolution the tracker runs at (square, per the demo).
         "resize": 256,
         # Total query points tracked by BootsTAPIR; split into support+target.
@@ -852,6 +861,9 @@ class TRAJANModule(PipelineModule):
         "num_support_tracks": 2048,
         "num_target_tracks": 2048,
         "query_chunk_size": 32,
+        # Fixed seed for query-point sampling and the support/target split —
+        # upstream samples randomly; determinism is required for a metric.
+        "seed": 0,
         "models_dir": "models",
     }
     metric_groups = {
@@ -950,14 +962,26 @@ class TRAJANModule(PipelineModule):
         torch = self._torch
         backend = _build_backend()
 
-        max_frames = int(self.config.get("max_frames", 60))
+        max_frames = int(self.config.get("max_frames", 150))
         resize = int(self.config.get("resize", 256))
         num_points = int(self.config.get("num_points", 4096))
         num_support = int(self.config.get("num_support_tracks", 2048))
         num_target = int(self.config.get("num_target_tracks", 2048))
         chunk_size = int(self.config.get("query_chunk_size", 32))
+        seed = int(self.config.get("seed", 0))
 
-        raw = sample_frames(sample.path, max_frames=max_frames, color="rgb")
+        # Upstream feeds consecutive video frames: decode the first
+        # ``max_frames`` sequentially (no uniform subsampling).
+        cap = cv2.VideoCapture(str(sample.path))
+        if not cap.isOpened():
+            return None
+        raw = []
+        while len(raw) < max_frames:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            raw.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        cap.release()
         if len(raw) < 4:
             return None
         video = np.stack([np.ascontiguousarray(f) for f in raw]).astype(np.uint8)
@@ -968,7 +992,7 @@ class TRAJANModule(PipelineModule):
         with torch.no_grad():
             feature_grids = self._tapir.get_feature_grids(frames)
 
-            rng = np.random.default_rng()
+            rng = np.random.default_rng(seed)
             qt = rng.integers(0, n_frames, (num_points, 1))
             qy = rng.integers(0, resize, (num_points, 1))
             qx = rng.integers(0, resize, (num_points, 1))
@@ -997,7 +1021,7 @@ class TRAJANModule(PipelineModule):
         if num_support + num_target > num_points:
             num_support = num_points // 2
             num_target = num_points - num_support
-        batch = self._preprocess_tracks(batch, num_support, num_target)
+        batch = self._preprocess_tracks(batch, num_support, num_target, rng)
         batch.pop("tracks", None)
 
         with torch.no_grad():
@@ -1028,7 +1052,7 @@ class TRAJANModule(PipelineModule):
         )
         return float(np.mean([metrics[f"jaccard_{d}"] for d in (1, 2, 4, 8, 16)]))
 
-    def _preprocess_tracks(self, features: dict, num_support: int, num_target: int) -> dict:
+    def _preprocess_tracks(self, features: dict, num_support: int, num_target: int, rng) -> dict:
         """Sample support/target tracks + query points (TRAJAN colab preprocessor).
 
         Pads to the autoencoder's 150-frame episode length, selects disjoint
@@ -1053,7 +1077,7 @@ class TRAJANModule(PipelineModule):
             raise ValueError(
                 f"TRAJAN needs >= {num_support + num_target} tracks, got {num_input}")
         idx = np.arange(num_input)
-        np.random.shuffle(idx)
+        rng.shuffle(idx)
         idx_support = idx[-num_support:]
         idx_target = idx[:num_target]
 
@@ -1068,7 +1092,7 @@ class TRAJANModule(PipelineModule):
         random_frame = np.zeros(n_tgt, dtype=np.int64)
         for i in range(n_tgt):
             vis_idx = np.where(target_tracks_visible[i] > 0)[0]
-            random_frame[i] = np.random.choice(vis_idx) if len(vis_idx) else 0
+            random_frame[i] = rng.choice(vis_idx) if len(vis_idx) else 0
         onehot = np.eye(n_frames, dtype=np.float32)[random_frame]
         target_queries_xy = np.sum(target_tracks * onehot[..., np.newaxis], axis=1)
         target_queries = np.stack(

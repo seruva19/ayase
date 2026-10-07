@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 class PaQ2PiQModule(PipelineModule):
     name = "paq2piq"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "paq2piq_score": "PaQ-2-PiQ (Ying et al., CVPR 2020) via pyiqa — https://github.com/baidut/PaQ-2-PiQ",
+    }
     description = "PaQ-2-PiQ patch-to-picture NR quality (CVPR 2020)"
     default_config = {"subsample": 4}
     metric_groups = {

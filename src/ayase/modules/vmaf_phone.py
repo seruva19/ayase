@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 
 class VMAFPhoneModule(ReferenceBasedModule):
     name = "vmaf_phone"
+    provenance = "published"
+    sources = {
+        "vmaf_phone": "VMAF phone model; libvmaf — https://github.com/Netflix/vmaf",
+    }
     description = "VMAF phone model for mobile viewing (0-100, higher=better)"
     default_config = {}
     metric_groups = {
@@ -62,7 +66,9 @@ class VMAFPhoneModule(ReferenceBasedModule):
                 out = tmp.name
             cmd = [
                 "ffmpeg", "-i", str(sample_path), "-i", str(reference_path),
-                "-lavfi", f"[0:v][1:v]libvmaf=model=version=vmaf_v0.6.1:phone_model=1:log_path={out}:log_fmt=json",
+                # libvmaf v2 removed the `phone_model` flag; the phone
+                # viewing transform is `enable_transform` on the model.
+                "-lavfi", f"[0:v][1:v]libvmaf=model=version=vmaf_v0.6.1:enable_transform=true:log_path={out}:log_fmt=json",
                 "-f", "null", "-",
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)

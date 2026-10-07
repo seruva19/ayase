@@ -114,7 +114,8 @@ def test_adaface_scores_reference_pair(tmp_dir, monkeypatch):
     assert result.quality_metrics.adaface_identity_similarity == pytest.approx(0.6, abs=1e-6)
 
 
-def test_adaface_negative_cosine_clipped_to_zero(tmp_dir, monkeypatch):
+def test_adaface_negative_cosine_reported_raw(tmp_dir, monkeypatch):
+    """Published AdaFace emits raw cosine — negative values are not clipped."""
     import cv2
 
     from ayase.modules.adaface import AdaFaceModule
@@ -133,7 +134,7 @@ def test_adaface_negative_cosine_clipped_to_zero(tmp_dir, monkeypatch):
 
     sample = Sample(path=gen_path, is_video=False, reference_path=ref_path)
     result = m.process(sample)
-    assert result.quality_metrics.adaface_identity_similarity == 0.0
+    assert result.quality_metrics.adaface_identity_similarity == pytest.approx(-1.0)
     assert any("Low AdaFace identity similarity" in i.message for i in result.validation_issues)
 
 

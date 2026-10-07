@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 
 class TextDetectionModule(PipelineModule):
     name = "text_detection"
+    provenance = "utility"
+    sources = {
+        "ocr_area_ratio": "PaddleOCR / Tesseract — https://github.com/PaddlePaddle/PaddleOCR",
+    }
     description = "Detects text/watermarks using OCR (PaddleOCR / Tesseract)"
     default_config = {
         "use_paddle": True,

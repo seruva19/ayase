@@ -44,6 +44,10 @@ def resize_frame_maintain_aspect(frame, min_dim):
 
 class FastVQAModule(PipelineModule):
     name = "fast_vqa"
+    provenance = "published"
+    sources = {
+        "fast_vqa_score": "FAST-VQA / FasterVQA (Wu et al., ECCV 2022 / TPAMI) — https://github.com/VQAssessment/FAST-VQA-and-FasterVQA",
+    }
     description = "Deep Learning Video Quality Assessment (FAST-VQA)"
     default_config = {"model_type": "FasterVQA"}
     models = [

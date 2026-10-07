@@ -1,29 +1,31 @@
-"""FAD — Frechet Audio Distance (2019).
+"""FAD — Frechet Audio Distance (Kilgour et al., Interspeech 2019).
 
-Dataset-level metric that measures the distance between distributions of
-audio features, analogous to FID for images. Computes the Frechet distance
-between embeddings of generated and reference audio.
+Dataset-level metric measuring the distance between generated and reference
+audio distributions, computed over *frame-level* embeddings of the chosen
+backbone — the published FAD convention. Three backbones are supported,
+routed through the fadtk framework (Gui et al., ICASSP 2024):
 
-Three backbones are supported:
+* ``vggish`` (default): 128-dim frame embeddings via fadtk's ``VGGishModel``
+  (torchvggish, 16 kHz). ``frechet_audio_distance`` is accepted as an
+  alternative VGGish package when fadtk is absent.
+* ``panns_cnn14``: 2048-dim embeddings per 10 s window via ``panns_inference``,
+  wrapped in a fadtk ``ModelLoader``.
+* ``passt``: 768-dim embeddings per 10 s window via ``hear21passt``, wrapped
+  in a fadtk ``ModelLoader``.
 
-* ``vggish`` (default, ICASSP 2019): 128-dim embeddings via the
-  ``frechet_audio_distance`` package. Preserves the legacy behaviour and
-  publishes both the canonical ``fad_vggish`` metric and a backward-compatible
-  ``fad`` alias.
-* ``panns_cnn14`` (Kong et al. 2020, AudioSet-pretrained): 2048-dim penultimate
-  embeddings via ``panns_inference``. Published as ``fad_panns``.
-* ``passt`` (Koutini et al. 2022, AudioSet-pretrained): 768-dim penultimate
-  features via ``hear21passt``. Published as ``fad_passt``.
+``infinity=True`` computes FAD-inf per the fadtk protocol: FAD measured at
+multiple eval-set sizes n (with-replacement frame resampling), then linear
+regression of FAD against 1/n — the intercept is FAD-inf.
 
 Dependency hints::
 
-    pip install frechet_audio_distance   # for backbone = "vggish" (default)
-    pip install panns_inference          # for backbone = "panns_cnn14"
-    pip install hear21passt              # for backbone = "passt"
+    pip install fadtk                  # VGGish + FAD-inf framework (canonical)
+    pip install frechet_audio_distance # alternative VGGish package
+    pip install fadtk panns_inference  # for backbone = "panns_cnn14"
+    pip install fadtk hear21passt      # for backbone = "passt"
 
-All three backbones extract *real* neural audio embeddings. If the selected
-backbone's package is unavailable the metric is left unset — there is no
-heuristic spectral fallback, so a reported FAD always reflects a real backbone.
+A genuine reference set is required: without ``reference_path`` inputs the
+metric is left unset (the sample set is never split as its own reference).
 
 fad_* — lower is better (closer audio distributions).
 """
@@ -41,18 +43,190 @@ from ayase.base_modules import BatchMetricModule
 
 logger = logging.getLogger(__name__)
 
+# fadtk conventions: PANNs and PaSST are AudioSet models trained/evaluated on
+# ~10 s clips; embeddings are therefore extracted per non-overlapping window.
+_PANNS_WINDOW_SEC = 10.0
+_PASST_WINDOW_SEC = 10.0
+
+try:
+    from fadtk.model_loader import ModelLoader as _FadtkModelLoader
+except ImportError:
+    _FadtkModelLoader = None
+
+
+class _PANNLoader(_FadtkModelLoader or object):
+    """fadtk ModelLoader for PANNs CNN14 (panns_inference).
+
+    Emits (n_windows, 2048) frame-level embeddings — one 2048-d penultimate
+    vector per non-overlapping ``_PANNS_WINDOW_SEC`` window.
+    """
+
+    def __init__(self, checkpoint_path: Optional[str] = None):
+        if _FadtkModelLoader is None:
+            raise RuntimeError("fadtk is required for the panns_cnn14 backbone")
+        super().__init__("panns-cnn14", 2048, 32000)
+        self._checkpoint_path = checkpoint_path
+        self._tagging = None
+
+    def load_model(self) -> None:
+        from panns_inference import AudioTagging
+
+        kwargs = {}
+        if self._checkpoint_path:
+            kwargs["checkpoint_path"] = str(self._checkpoint_path)
+        self._tagging = AudioTagging(**kwargs)
+
+    def _get_embedding(self, audio):
+        import torch
+
+        audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+        win = int(round(self.sr * _PANNS_WINDOW_SEC))
+        if len(audio) == 0:
+            return torch.zeros((0, self.num_features))
+        if len(audio) < win:
+            audio = np.pad(audio, (0, win - len(audio)))
+        n_win = len(audio) // win
+        embs = []
+        for i in range(n_win):
+            clip = audio[i * win:(i + 1) * win][None, :]
+            try:
+                result = self._tagging.inference(clip, return_embedding=True)
+                emb = result[1] if isinstance(result, (tuple, list)) else result
+            except TypeError:
+                # Older panns_inference without return_embedding — the 2048-d
+                # penultimate activation is not exposed; skip the window.
+                continue
+            emb = np.asarray(emb, dtype=np.float32).reshape(-1)
+            if emb.shape[0] == self.num_features:
+                embs.append(torch.from_numpy(emb))
+        if not embs:
+            return torch.zeros((0, self.num_features))
+        return torch.stack(embs, dim=0)
+
+
+class _PaSSTLoader(_FadtkModelLoader or object):
+    """fadtk ModelLoader for PaSST (hear21passt).
+
+    Emits (n_windows, 768) frame-level embeddings — one penultimate vector per
+    non-overlapping ``_PASST_WINDOW_SEC`` window.
+    """
+
+    def __init__(self, model_name: Optional[str] = None):
+        if _FadtkModelLoader is None:
+            raise RuntimeError("fadtk is required for the passt backbone")
+        super().__init__("passt", 768, 32000)
+        self._model_name = model_name
+
+    def load_model(self) -> None:
+        import torch
+        from hear21passt.base import get_basic_model
+
+        kwargs = {"mode": "embed_only"}
+        if self._model_name:
+            kwargs["model_name"] = self._model_name
+        try:
+            model = get_basic_model(**kwargs)
+        except TypeError:
+            model = get_basic_model(mode="embed_only")
+        except Exception:
+            kwargs["mode"] = "logits"
+            try:
+                model = get_basic_model(**kwargs)
+            except TypeError:
+                model = get_basic_model(mode="logits")
+        self.model = model.eval().to(self.device)
+
+    def _get_embedding(self, audio):
+        import torch
+
+        audio = np.asarray(audio, dtype=np.float32).reshape(-1)
+        win = int(round(self.sr * _PASST_WINDOW_SEC))
+        if len(audio) == 0:
+            return torch.zeros((0, self.num_features))
+        if len(audio) < win:
+            audio = np.pad(audio, (0, win - len(audio)))
+        n_win = len(audio) // win
+        embs = []
+        with torch.no_grad():
+            for i in range(n_win):
+                clip = audio[i * win:(i + 1) * win]
+                tensor = torch.from_numpy(clip).unsqueeze(0).to(self.device)
+                try:
+                    out = self.model(tensor)
+                except Exception:
+                    continue
+                candidate = out[0] if isinstance(out, (tuple, list)) else out
+                # 527-dim logits are classifier outputs, not embeddings —
+                # route through the base encoder instead of accepting them.
+                if candidate.ndim >= 2 and candidate.shape[-1] == 527:
+                    net = getattr(self.model, "net", None)
+                    if net is not None and hasattr(net, "forward_features"):
+                        candidate = net.forward_features(tensor)
+                    else:
+                        continue
+                emb = candidate.detach().reshape(-1)
+                if emb.shape[0] == self.num_features:
+                    embs.append(emb.float().cpu())
+        if not embs:
+            return torch.zeros((0, self.num_features))
+        return torch.stack(embs, dim=0)
+
+
+class _FadPackageVGGish:
+    """fadtk-style adapter over the frechet_audio_distance package."""
+
+    name = "vggish"
+    num_features = 128
+    sr = 16000
+    min_len = 1
+
+    def __init__(self):
+        self._fad = None
+
+    def load_model(self) -> None:
+        from frechet_audio_distance import FrechetAudioDistance
+
+        self._fad = FrechetAudioDistance()
+
+    def get_embedding(self, audio: np.ndarray) -> np.ndarray:
+        try:
+            embd = self._fad.get_embeddings(
+                [np.asarray(audio, dtype=np.float32)], sr=self.sr
+            )
+        except TypeError:
+            embd = self._fad.get_embeddings([np.asarray(audio, dtype=np.float32)])
+        arr = np.asarray(embd, dtype=np.float32)
+        if arr.ndim >= 2:
+            arr = arr.reshape(-1, arr.shape[-1])
+        return arr
+
 
 class FADModule(BatchMetricModule):
     name = "fad"
+    provenance = "adapted"
+    sources = {
+        k: "FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK"
+        for k in (
+            "fad", "fad_infinity", "fad_vggish", "fad_vggish_infinity",
+            "fad_panns", "fad_panns_infinity", "fad_passt", "fad_passt_infinity",
+        )
+    }
+    deviations = {
+        k: "Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required"
+        for k in (
+            "fad", "fad_infinity", "fad_vggish", "fad_vggish_infinity",
+            "fad_panns", "fad_panns_infinity", "fad_passt", "fad_passt_infinity",
+        )
+    }
     description = "Frechet Audio Distance for audio generation (batch metric, 2019)"
     default_config = {
         "subsample_videos": None,
-        "sample_rate": 16000,
         "infinity": False,
-        "infinity_subsample_sizes": [4, 8, 16, 32],
-        "infinity_repeats": 8,
+        # FAD-inf protocol parameters (fadtk score_inf conventions).
+        "infinity_min_n": 500,
+        "infinity_steps": 25,
         "random_seed": 1234,
-        # Backbone selection: "vggish" (default, legacy), "panns_cnn14", "passt".
+        # Backbone selection: "vggish" (default), "panns_cnn14", "passt".
         "backbone": "vggish",
         "panns_checkpoint_path": None,
         "passt_model_name": "passt_s_kd_p16_128_ap486",
@@ -60,22 +234,28 @@ class FADModule(BatchMetricModule):
     }
     models = [
         {
+            "id": "fadtk",
+            "type": "pip_package",
+            "install": "pip install fadtk",
+            "task": "Canonical FAD framework (VGGish loader + FAD-inf protocol)",
+        },
+        {
             "id": "frechet_audio_distance",
             "type": "pip_package",
             "install": "pip install frechet_audio_distance",
-            "task": "VGGish backbone for FAD audio embeddings",
+            "task": "Alternative VGGish backend when fadtk is absent",
         },
         {
             "id": "panns_inference",
             "type": "pip_package",
             "install": "pip install panns_inference",
-            "task": "Optional PANNs CNN14 backbone (2048-dim penultimate embeddings) for FAD",
+            "task": "PANNs CNN14 backbone (2048-dim per-window embeddings) for FAD",
         },
         {
             "id": "hear21passt",
             "type": "pip_package",
             "install": "pip install hear21passt",
-            "task": "Optional PaSST backbone (768-dim penultimate features) for FAD",
+            "task": "PaSST backbone (768-dim per-window embeddings) for FAD",
         },
     ]
     metric_info = {
@@ -91,23 +271,16 @@ class FADModule(BatchMetricModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._model = None
         self._ml_available = False
         self._backend = "unavailable"
         # Resolved backbone identity: "vggish" | "panns_cnn14" | "passt" | "unavailable".
         self._backend_kind = "unavailable"
-        # Optional torch handle and inference device, bound at setup() when applicable.
-        self._torch = None
-        self._device = "cpu"
-        # Optional PANNs penultimate-feature hook state.
-        self._panns_embedding_hook = None
-        self._panns_last_embedding = None
+        self._loader = None  # fadtk ModelLoader (or compatible adapter)
 
         self.subsample_videos = self.config.get("subsample_videos", None)
-        self.sample_rate = self.config.get("sample_rate", 16000)
         self.infinity = self.config.get("infinity", False)
-        self.infinity_subsample_sizes = self.config.get("infinity_subsample_sizes", [4, 8, 16, 32])
-        self.infinity_repeats = self.config.get("infinity_repeats", 8)
+        self.infinity_min_n = self.config.get("infinity_min_n", 500)
+        self.infinity_steps = self.config.get("infinity_steps", 25)
         self.random_seed = self.config.get("random_seed", 1234)
         self.backbone = str(self.config.get("backbone", "vggish")).lower()
         self.panns_checkpoint_path = self.config.get("panns_checkpoint_path", None)
@@ -135,388 +308,182 @@ class FADModule(BatchMetricModule):
         elif self.backbone == "passt":
             self._setup_passt()
 
-        # No heuristic fallback: if no real backbone bound, the metric is unset.
         if self._backend_kind == "unavailable":
             self._backend = "unavailable"
             logger.warning(
-                "FAD unavailable: install a real backbone package "
-                "(frechet_audio_distance / panns_inference / hear21passt). "
-                "fad_* left unset."
+                "FAD unavailable: install fadtk plus the backbone package "
+                "(panns_inference / hear21passt). fad_* left unset."
             )
+
+    def _bind_loader(self, loader, kind: str, backend: str) -> None:
+        try:
+            loader.load_model()
+        except Exception as e:
+            logger.warning("FAD %s loader failed: %s", kind, e)
+            return
+        self._loader = loader
+        self._backend = backend
+        self._backend_kind = kind
+        self._ml_available = True
+        logger.info("FAD module initialised (%s, sr=%d)", loader.name, loader.sr)
 
     def _setup_vggish(self) -> None:
-        # Real backend: frechet_audio_distance package (VGGish embeddings).
+        # Canonical: fadtk's VGGishModel (torchvggish, frame embeddings).
         try:
-            from frechet_audio_distance import FrechetAudioDistance
-            self._model = FrechetAudioDistance()
-            self._ml_available = True
-            self._backend = "fad_package"
-            self._backend_kind = "vggish"
-            logger.info("FAD module initialised (frechet_audio_distance / VGGish)")
-            return
-        except ImportError:
-            logger.warning("FAD backbone vggish requires `pip install frechet_audio_distance`")
-        except Exception as e:
-            logger.warning("FAD VGGish package init failed: %s", e)
+            from fadtk.model_loader import VGGishModel
 
-    def _resolve_torch_device(self):
+            self._bind_loader(VGGishModel(), "vggish", "fadtk")
+            if self._ml_available:
+                return
+        except ImportError:
+            pass
+
+        # Alternative published backend: frechet_audio_distance (also VGGish,
+        # frame-level embeddings — we no longer mean-pool them).
+        try:
+            self._bind_loader(_FadPackageVGGish(), "vggish", "fad_package")
+        except Exception:
+            pass
+
+    def _resolve_torch_device(self) -> str:
+        if self._device_cfg not in ("auto", "", "none"):
+            return self._device_cfg
         try:
             import torch
+            return "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:
-            return None, "cpu"
-        if self._device_cfg in ("auto", "", "none"):
-            dev = "cuda" if torch.cuda.is_available() else "cpu"
-        else:
-            dev = self._device_cfg
-        return torch, dev
+            return "cpu"
 
     def _setup_panns(self) -> None:
-        torch, device = self._resolve_torch_device()
-        if torch is None:
-            logger.warning(
-                "FAD backbone panns_cnn14 requires `pip install torch`; "
-                "falling back to spectral proxy"
-            )
-            return
         try:
-            from panns_inference import AudioTagging
-        except ImportError:
+            import fadtk  # noqa: F401
+            import panns_inference  # noqa: F401
+        except ImportError as e:
             logger.warning(
-                "FAD backbone panns_cnn14 requires `pip install panns_inference`; "
-                "falling back to spectral proxy"
+                "FAD backbone panns_cnn14 requires fadtk and panns_inference: %s", e
             )
             return
-        except Exception as e:
-            logger.warning("FAD panns_cnn14 import failed: %s; falling back to spectral proxy", e)
-            return
-
-        try:
-            kwargs = {"device": device}
-            if self.panns_checkpoint_path:
-                kwargs["checkpoint_path"] = str(self.panns_checkpoint_path)
-            model = AudioTagging(**kwargs)
-
-            inner = getattr(model, "model", None)
-            if inner is not None and hasattr(inner, "eval"):
-                inner.eval()
-
-            # PANNs CNN14 exposes a penultimate fully-connected layer named
-            # ``fc1`` producing a 2048-dim embedding. Install a forward hook
-            # so we can recover the embedding regardless of whether the
-            # installed panns_inference version exposes ``return_embedding``.
-            self._panns_last_embedding = None
-            if inner is not None and hasattr(inner, "fc1"):
-                def _hook(_module, _inp, out):
-                    try:
-                        self._panns_last_embedding = (
-                            out.detach().cpu().numpy().astype(np.float32)
-                        )
-                    except Exception:
-                        self._panns_last_embedding = None
-
-                try:
-                    self._panns_embedding_hook = inner.fc1.register_forward_hook(_hook)
-                except Exception as e:
-                    logger.debug("FAD panns_cnn14: could not register fc1 hook: %s", e)
-
-            self._torch = torch
-            self._device = device
-            self._model = model
-            self._ml_available = True
-            self._backend = "panns_cnn14"
-            self._backend_kind = "panns_cnn14"
-            logger.info(
-                "FAD module initialised (panns_cnn14) on %s; native sr=32000, "
-                "resampling from %d as needed",
-                device,
-                self.sample_rate,
-            )
-        except Exception as e:
-            logger.warning("FAD panns_cnn14 setup failed: %s; falling back to spectral proxy", e)
-            self._model = None
-            self._ml_available = False
+        self._bind_loader(
+            _PANNLoader(checkpoint_path=self.panns_checkpoint_path),
+            "panns_cnn14",
+            "fadtk_panns",
+        )
 
     def _setup_passt(self) -> None:
-        torch, device = self._resolve_torch_device()
-        if torch is None:
-            logger.warning(
-                "FAD backbone passt requires `pip install torch`; "
-                "falling back to spectral proxy"
-            )
-            return
         try:
-            from hear21passt.base import get_basic_model
-        except ImportError:
+            import fadtk  # noqa: F401
+            import hear21passt  # noqa: F401
+        except ImportError as e:
             logger.warning(
-                "FAD backbone passt requires `pip install hear21passt`; "
-                "falling back to spectral proxy"
+                "FAD backbone passt requires fadtk and hear21passt: %s", e
             )
             return
-        except Exception as e:
-            logger.warning("FAD passt import failed: %s; falling back to spectral proxy", e)
-            return
-
-        try:
-            # mode="embed_only" returns the 768-dim penultimate features when
-            # supported; fall back to logits-mode + base-encoder forward.
-            model = None
-            try:
-                model = get_basic_model(mode="embed_only")
-            except Exception:
-                model = get_basic_model(mode="logits")
-
-            model = model.eval().to(device)
-            self._torch = torch
-            self._device = device
-            self._model = model
-            self._ml_available = True
-            self._backend = "passt"
-            self._backend_kind = "passt"
-            logger.info(
-                "FAD module initialised (passt:%s) on %s; native sr=32000, "
-                "resampling from %d as needed",
-                self.passt_model_name,
-                device,
-                self.sample_rate,
-            )
-        except Exception as e:
-            logger.warning("FAD passt setup failed: %s; falling back to spectral proxy", e)
-            self._model = None
-            self._ml_available = False
+        self._bind_loader(
+            _PaSSTLoader(model_name=self.passt_model_name), "passt", "fadtk_passt"
+        )
 
     # ---------------------------------------------------------- per-sample
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract audio features for distribution comparison."""
+        """Extract *frame-level* embeddings: (n_frames, D), one row per window."""
         if self.subsample_videos is not None and self._processed_count >= self.subsample_videos:
             return None
 
-        if self._backend_kind == "unavailable":
+        if self._backend_kind == "unavailable" or self._loader is None:
             return None
 
         try:
-            audio = self._load_audio(sample.path)
+            audio = self._load_audio(sample.path, self._loader.sr)
             if audio is None:
                 return None
 
-            if self._backend_kind == "panns_cnn14":
-                features = self._embed_panns(audio)
-            elif self._backend_kind == "passt":
-                features = self._embed_passt(audio)
-            elif self._backend_kind == "vggish":
-                features = self._embed_vggish(audio)
-            else:
+            emb = np.asarray(self._loader.get_embedding(audio), dtype=np.float64)
+            if emb.ndim == 1:
+                emb = emb[None, :]
+            if emb.shape[0] == 0:
                 return None
 
-            if features is not None:
-                self._processed_count += 1
-            return features
+            self._processed_count += 1
+            return emb
         except Exception as e:
             logger.debug(f"FAD feature extraction failed for {sample.path}: {e}")
             return None
 
-    def _embed_vggish(self, audio: np.ndarray) -> Optional[np.ndarray]:
-        """Real VGGish embedding for one clip via the frechet_audio_distance model.
+    def _load_audio(self, path: Path, target_sr: int) -> Optional[np.ndarray]:
+        """Load audio resampled to the loader's native rate.
 
-        The package's VGGish model yields frame-level 128-d embeddings; we mean-
-        pool them into a single per-sample vector so the batch Frechet distance
-        is computed over real VGGish features (no spectral proxy).
+        Resampling uses torchaudio's sinc-kaiser resampler (the fadtk
+        convention) — never linear interpolation. Video inputs are decoded to
+        a temporary WAV via ffmpeg first.
         """
-        if self._model is None:
-            return None
+        import soundfile as sf
+
+        audio = None
+        sr = None
         try:
-            embd = self._model.get_embeddings([np.asarray(audio, dtype=np.float32)], sr=self.sample_rate)
-        except TypeError:
-            # Older signature: get_embeddings(x) without a sr kwarg.
-            try:
-                embd = self._model.get_embeddings([np.asarray(audio, dtype=np.float32)])
-            except Exception as e:
-                logger.debug("FAD vggish embedding failed: %s", e)
-                return None
-        except Exception as e:
-            logger.debug("FAD vggish embedding failed: %s", e)
-            return None
-
-        arr = np.asarray(embd, dtype=np.float64)
-        if arr.size == 0:
-            return None
-        if arr.ndim == 1:
-            return arr
-        # Collapse all leading dims, then mean-pool frame embeddings → (D,).
-        arr = arr.reshape(-1, arr.shape[-1])
-        return arr.mean(axis=0)
-
-    def _embed_panns(self, audio: np.ndarray) -> Optional[np.ndarray]:
-        if self._model is None:
-            return None
-        x = _resample_linear(audio, self.sample_rate, 32000)
-        if len(x) == 0:
-            return None
-        batch = np.asarray(x, dtype=np.float32)[None, :]
-        self._panns_last_embedding = None
-        embedding = None
-        # Tier 1: explicit return_embedding kwarg if the installed panns_inference exposes it.
-        try:
-            result = self._model.inference(batch, return_embedding=True)
-            if isinstance(result, (tuple, list)):
-                # API shape: (clipwise, embedding) or (clipwise, ..., embedding)
-                for item in result:
-                    arr = np.asarray(item)
-                    if arr.ndim >= 2 and arr.shape[-1] >= 512:
-                        # Heuristic: embedding has larger last-dim than 527 classes.
-                        if arr.shape[-1] != 527:
-                            embedding = arr
-                            break
-                if embedding is None and len(result) >= 2:
-                    embedding = np.asarray(result[1])
-            else:
-                embedding = np.asarray(result)
-        except TypeError:
-            # Older API: no return_embedding kwarg. Use the registered fc1 hook.
-            try:
-                _ = self._model.inference(batch)
-            except Exception as e:
-                logger.debug("FAD panns inference failed: %s", e)
-                return None
-            if self._panns_last_embedding is not None:
-                embedding = self._panns_last_embedding
-        except Exception as e:
-            logger.debug("FAD panns inference (return_embedding) failed: %s", e)
-            # Last resort: rerun without the kwarg and rely on the hook.
-            try:
-                _ = self._model.inference(batch)
-            except Exception as e2:
-                logger.debug("FAD panns inference fallback failed: %s", e2)
-                return None
-            if self._panns_last_embedding is not None:
-                embedding = self._panns_last_embedding
-
-        if embedding is None:
-            return None
-        emb = np.asarray(embedding, dtype=np.float64).reshape(-1)
-        return emb
-
-    def _embed_passt(self, audio: np.ndarray) -> Optional[np.ndarray]:
-        if self._model is None or self._torch is None:
-            return None
-        torch = self._torch
-        x = _resample_linear(audio, self.sample_rate, 32000)
-        if len(x) == 0:
-            return None
-        tensor = torch.from_numpy(np.asarray(x, dtype=np.float32)).unsqueeze(0).to(self._device)
-        try:
-            with torch.no_grad():
-                out = self._model(tensor)
-        except Exception as e:
-            logger.debug("FAD passt forward failed: %s", e)
-            return None
-
-        # ``get_basic_model(mode="embed_only")`` returns the penultimate features
-        # directly. ``mode="logits"`` returns logits (and possibly a tuple). We
-        # try to detect a non-527-dim tensor (which would be the 768-dim
-        # embedding) and otherwise fall back to a base-encoder forward.
-        candidate = out
-        if isinstance(candidate, (tuple, list)):
-            # Prefer the tuple element that is *not* shaped like a 527-class logit.
-            picked = None
-            for item in candidate:
-                try:
-                    shape = tuple(item.shape)
-                except Exception:
-                    continue
-                if len(shape) >= 2 and shape[-1] != 527:
-                    picked = item
-                    break
-            candidate = picked if picked is not None else candidate[0]
-
-        try:
-            arr = candidate.detach().cpu().numpy()
-        except Exception as e:
-            logger.debug("FAD passt: could not move output to CPU: %s", e)
-            return None
-
-        # If the model returned 527-dim logits despite our best efforts, route
-        # through the base encoder for an embedding.
-        if arr.ndim >= 2 and arr.shape[-1] == 527:
-            try:
-                net = getattr(self._model, "net", None)
-                if net is not None and hasattr(net, "forward_features"):
-                    with torch.no_grad():
-                        feats = net.forward_features(tensor)
-                    arr = feats.detach().cpu().numpy()
-                else:
-                    # No clean way to extract embeddings — accept the logits as
-                    # a behavioural fallback so the pipeline keeps producing a
-                    # number. Frechet distance is well-defined either way.
-                    pass
-            except Exception as e:
-                logger.debug("FAD passt: base-encoder forward failed: %s", e)
-
-        emb = np.asarray(arr, dtype=np.float64).reshape(-1)
-        return emb
-
-    def _load_audio(self, path: Path) -> Optional[np.ndarray]:
-        """Load audio from file, extracting from video if necessary."""
-        # Try direct audio loading
-        try:
-            import soundfile as sf
             audio, sr = sf.read(str(path))
             if audio.ndim > 1:
                 audio = audio.mean(axis=1)
-            if sr != self.sample_rate:
-                # Simple resampling via linear interpolation
-                duration = len(audio) / sr
-                n_samples = int(duration * self.sample_rate)
-                indices = np.linspace(0, len(audio) - 1, n_samples)
-                audio = np.interp(indices, np.arange(len(audio)), audio)
-            return audio.astype(np.float32)
         except Exception:
             pass
 
-        # Try extracting audio from video via ffmpeg
-        try:
-            tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-            tmp.close()
-            cmd = [
-                "ffmpeg", "-y", "-i", str(path),
-                "-vn", "-ac", "1", "-ar", str(self.sample_rate),
-                "-sample_fmt", "s16", tmp.name,
-            ]
-            result = subprocess.run(cmd, capture_output=True, timeout=30)
-            if result.returncode != 0:
-                Path(tmp.name).unlink(missing_ok=True)
+        if audio is None:
+            try:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    tmp = Path(tmpdir) / "audio.wav"
+                    cmd = [
+                        "ffmpeg", "-y", "-i", str(path),
+                        "-vn", "-ac", "1", "-sample_fmt", "s16", str(tmp),
+                    ]
+                    result = subprocess.run(cmd, capture_output=True, timeout=30)
+                    if result.returncode != 0:
+                        return None
+                    audio, sr = sf.read(tmp, dtype="float32")
+                    if audio.ndim > 1:
+                        audio = audio.mean(axis=1)
+            except Exception:
                 return None
 
-            import soundfile as sf
-            audio, _ = sf.read(tmp.name, dtype="float32")
-            Path(tmp.name).unlink(missing_ok=True)
-            if audio.ndim > 1:
-                audio = audio.mean(axis=1)
-            return audio
-        except Exception:
-            pass
+        audio = np.asarray(audio, dtype=np.float32)
+        if sr != target_sr:
+            try:
+                import torch
+                import torchaudio
 
-        return None
+                x = torch.from_numpy(audio).unsqueeze(0)
+                resampler = torchaudio.transforms.Resample(
+                    sr, target_sr, resampling_method="sinc_interp_kaiser"
+                )
+                audio = resampler(x).squeeze(0).numpy()
+            except ImportError:
+                import librosa
+
+                audio = librosa.resample(
+                    audio, orig_sr=sr, target_sr=target_sr, res_type="soxr_hq"
+                ).astype(np.float32)
+        return audio
+
+    # ---------------------------------------------------------- scoring
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
-    ) -> float:
-        """Compute Frechet distance between audio feature distributions."""
+    ) -> Optional[float]:
+        """FAD between frame-level embedding distributions."""
         try:
-            features_array = _stack_features(features)
+            features_array = _concat_features(features)
             if features_array is None:
                 return float("inf")
 
             if reference_features is not None and len(reference_features) > 0:
-                ref_array = _stack_features(reference_features)
+                ref_array = _concat_features(reference_features)
                 if ref_array is None:
                     return float("inf")
             else:
-                mid = len(features_array) // 2
-                if mid < 1:
-                    return 0.0
-                ref_array = features_array[:mid]
-                features_array = features_array[mid:]
+                logger.info(
+                    "FAD: no reference features provided; "
+                    "metric is undefined without a reference set"
+                )
+                return None
 
             if self.infinity:
                 return self._compute_fad_infinity(features_array, ref_array)
@@ -526,66 +493,39 @@ class FADModule(BatchMetricModule):
             return float("inf")
 
     def _compute_fad_infinity(self, gen: np.ndarray, ref: np.ndarray) -> float:
-        """Estimate FAD∞ by extrapolating FAD scores against 1 / sample_size."""
-        n_max = min(len(gen), len(ref))
-        sizes = sorted({
-            int(s)
-            for s in self.infinity_subsample_sizes
-            if isinstance(s, (int, float)) and 2 <= int(s) <= n_max
-        })
-        if not sizes:
+        """FAD-inf per fadtk ``score_inf``: FAD at sizes n (with-replacement
+        frame resampling) linearly extrapolated on the 1/n axis."""
+        mu_ref, cov_ref = _stats(ref)
+        if mu_ref is None:
+            return float("inf")
+
+        n_max = gen.shape[0]
+        min_n = min(int(self.infinity_min_n), n_max)
+        ns = sorted({int(n) for n in np.linspace(min_n, n_max, int(self.infinity_steps)) if n >= 2})
+        if not ns:
             return self._frechet_distance(gen, ref)
 
         rng = np.random.default_rng(int(self.random_seed))
-        xs = []
-        ys = []
-        for size in sizes:
-            repeats = max(1, int(self.infinity_repeats))
-            for _ in range(repeats):
-                g_idx = rng.choice(len(gen), size=size, replace=False)
-                r_idx = rng.choice(len(ref), size=size, replace=False)
-                ys.append(self._frechet_distance(gen[g_idx], ref[r_idx]))
-                xs.append(1.0 / size)
-        if len(ys) < 2:
-            return float(ys[0]) if ys else self._frechet_distance(gen, ref)
+        xs, ys = [], []
+        for n in ns:
+            idx = rng.choice(n_max, size=n, replace=True)
+            mu_e, cov_e = _stats(gen[idx])
+            ys.append(_frechet(mu_ref, cov_ref, mu_e, cov_e))
+            xs.append(1.0 / n)
         slope, intercept = np.polyfit(np.asarray(xs), np.asarray(ys), deg=1)
         return float(max(intercept, 0.0))
 
     def _frechet_distance(self, feat1: np.ndarray, feat2: np.ndarray) -> float:
-        mu1 = np.mean(feat1, axis=0)
-        mu2 = np.mean(feat2, axis=0)
-
-        if feat1.shape[0] < 2 or feat2.shape[0] < 2:
-            return float(np.sum((mu1 - mu2) ** 2))
-
-        sigma1 = np.cov(feat1, rowvar=False)
-        sigma2 = np.cov(feat2, rowvar=False)
-
-        if sigma1.ndim == 0:
-            sigma1 = np.array([[sigma1]])
-        if sigma2.ndim == 0:
-            sigma2 = np.array([[sigma2]])
-
-        diff = mu1 - mu2
-
-        try:
-            from scipy import linalg
-            covmean, _ = linalg.sqrtm(sigma1 @ sigma2, disp=False)
-            if np.iscomplexobj(covmean):
-                covmean = covmean.real
-            fd = diff @ diff + np.trace(sigma1 + sigma2 - 2 * covmean)
-        except ImportError:
-            fd = float(diff @ diff + np.trace(sigma1) + np.trace(sigma2))
-
-        return float(fd)
+        mu1, cov1 = _stats(feat1)
+        mu2, cov2 = _stats(feat2)
+        return _frechet(mu1, cov1, mu2, cov2)
 
     def on_dispose(self) -> None:
-        if len(self._feature_cache) < 2:
+        if len(self._feature_cache) < 1:
             logger.info(f"FAD: Not enough samples ({len(self._feature_cache)})")
             self._feature_cache = []
             self._reference_cache = []
             self._processed_count = 0
-            self._release_panns_hook()
             return
 
         try:
@@ -593,6 +533,8 @@ class FADModule(BatchMetricModule):
                 self._feature_cache,
                 self._reference_cache if self._reference_cache else None,
             )
+            if score is None:
+                return
             logger.info(
                 "FAD: %.4f (%d samples, backbone=%s%s)",
                 score,
@@ -612,10 +554,8 @@ class FADModule(BatchMetricModule):
                     canonical_name = f"fad_{backbone_suffix}{inf_suffix}"
                     self.pipeline.add_dataset_metric(canonical_name, score)
 
-                    # Backward-compat alias: the legacy VGGish path and the
-                    # spectral-proxy fallback (which was historically the
-                    # "fad" producer) keep emitting the un-suffixed name so
-                    # existing consumers see no behavioural change.
+                    # Backward-compat alias: the VGGish backbone keeps emitting
+                    # the un-suffixed name so existing consumers see no change.
                     if backbone_suffix == "vggish":
                         alias = "fad_infinity" if self.infinity else "fad"
                         self.pipeline.add_dataset_metric(alias, score)
@@ -625,54 +565,57 @@ class FADModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._processed_count = 0
-            self._release_panns_hook()
-
-    def _release_panns_hook(self) -> None:
-        hook = self._panns_embedding_hook
-        if hook is not None:
-            try:
-                hook.remove()
-            except Exception:
-                pass
-            self._panns_embedding_hook = None
-        self._panns_last_embedding = None
 
 
 # ----------------------------------------------------------------- helpers
 
 
-def _stack_features(features: List[np.ndarray]) -> Optional[np.ndarray]:
-    """Stack a list of 1-D feature vectors into a 2-D array.
-
-    Returns ``None`` if the shapes are incompatible. Embeddings of different
-    dimensionality cannot be combined into a single Frechet computation, so we
-    short-circuit instead of raising.
-    """
+def _concat_features(features: List[np.ndarray]) -> Optional[np.ndarray]:
+    """Concatenate per-sample (n_frames, D) embeddings into one (N, D) array."""
     if not features:
         return None
     try:
-        arrs = [np.asarray(f, dtype=np.float64).reshape(-1) for f in features]
+        arrs = [np.atleast_2d(np.asarray(f, dtype=np.float64)) for f in features]
     except Exception:
         return None
     if not arrs:
         return None
-    dim = arrs[0].shape[0]
-    if any(a.shape[0] != dim for a in arrs):
+    dim = arrs[0].shape[1]
+    if any(a.shape[1] != dim for a in arrs):
         logger.debug("FAD: inconsistent embedding dimensionality in feature cache")
         return None
-    return np.stack(arrs, axis=0)
+    return np.concatenate(arrs, axis=0)
 
 
-def _resample_linear(audio: np.ndarray, src_sr: int, dst_sr: int) -> np.ndarray:
-    """Cheap linear-interpolation resampler.
+def _stats(feat: np.ndarray):
+    """Mean/covariance of an embedding cloud (fadtk calc_embd_statistics)."""
+    feat = np.atleast_2d(feat)
+    mu = np.mean(feat, axis=0)
+    if feat.shape[0] < 2:
+        cov = np.zeros((feat.shape[1], feat.shape[1]), dtype=np.float64)
+    else:
+        cov = np.cov(feat, rowvar=False)
+    return mu, np.atleast_2d(cov)
 
-    Matches the strategy used in ``_load_audio`` for sample-rate mismatches —
-    avoids pulling in librosa just to feed PANNs/PaSST at their native 32 kHz.
-    """
-    audio = np.asarray(audio, dtype=np.float32)
-    if src_sr == dst_sr or len(audio) == 0:
-        return audio
-    duration = len(audio) / float(src_sr)
-    n_target = max(1, int(round(duration * dst_sr)))
-    indices = np.linspace(0, len(audio) - 1, n_target)
-    return np.interp(indices, np.arange(len(audio)), audio).astype(np.float32)
+
+def _frechet(mu1, cov1, mu2, cov2, eps: float = 1e-6) -> float:
+    """Frechet distance — the fadtk/pytorch-fid numerically-stable variant."""
+    try:
+        from scipy import linalg
+        from numpy.lib.scimath import sqrt as scisqrt
+
+        diff = mu1 - mu2
+        D, V = linalg.eig(cov1.dot(cov2))
+        covmean = (V * scisqrt(D)) @ linalg.inv(V)
+
+        if not np.isfinite(covmean).all():
+            offset = np.eye(cov1.shape[0]) * eps
+            covmean = linalg.sqrtm((cov1 + offset).dot(cov2 + offset))
+
+        if np.iscomplexobj(covmean):
+            covmean = covmean.real
+
+        return float(diff.dot(diff) + np.trace(cov1) + np.trace(cov2) - 2 * np.trace(covmean))
+    except ImportError:
+        diff = mu1 - mu2
+        return float(diff @ diff + np.trace(cov1) + np.trace(cov2))

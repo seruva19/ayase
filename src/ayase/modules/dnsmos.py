@@ -37,12 +37,20 @@ _IMAGE_SUFFIXES = {
 
 class DNSMOSModule(PipelineModule):
     name = "dnsmos"
+    provenance = "published"
+    sources = {
+        "dnsmos_bak": "DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge",
+        "dnsmos_overall": "DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge",
+        "dnsmos_sig": "DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge",
+        "dnsmos_p808": "DNSMOS P.808 MOS (official model_v8.onnx via torchmetrics) — https://github.com/microsoft/DNS-Challenge",
+    }
     description = "DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)"
     default_config = {}
     metric_groups = {
         "dnsmos_bak": "audio",
         "dnsmos_overall": "audio",
         "dnsmos_sig": "audio",
+        "dnsmos_p808": "audio",
     }
 
     def __init__(self, config=None):
@@ -144,26 +152,32 @@ class DNSMOSModule(PipelineModule):
                 result = metric(audio)
 
             if isinstance(result, dict):
+                def _get(*keys):
+                    for k in keys:
+                        if k in result and result[k] is not None:
+                            return float(result[k])
+                    return None
+
                 return {
-                    "sig": float(result.get("SIG", result.get("sig", 0))),
-                    "bak": float(result.get("BAK", result.get("bak", 0))),
-                    "ovrl": float(result.get("OVRL", result.get("ovrl", 0))),
+                    "p808": _get("p808_mos", "P808_MOS", "p808"),
+                    "sig": _get("mos_sig", "SIG", "sig"),
+                    "bak": _get("mos_bak", "BAK", "bak"),
+                    "ovrl": _get("mos_ovr", "OVRL", "ovrl", "mos_ovrl"),
                 }
             if hasattr(result, "detach"):
                 values = result.detach().cpu().reshape(-1).tolist()
             elif isinstance(result, (list, tuple)):
                 values = list(result)
             else:
-                values = [result]
-            if len(values) >= 3:
+                return None
+            # torchmetrics order: [p808_mos, mos_sig, mos_bak, mos_ovr]
+            if len(values) == 4:
                 return {
-                    "sig": float(values[0]),
-                    "bak": float(values[1]),
-                    "ovrl": float(values[2]),
+                    "p808": float(values[0]),
+                    "sig": float(values[1]),
+                    "bak": float(values[2]),
+                    "ovrl": float(values[3]),
                 }
-            if len(values) == 1:
-                value = float(values[0])
-                return {"sig": value, "bak": value, "ovrl": value}
             return None
         except Exception as e:
             logger.debug(f"DNSMOS torchmetrics failed: {e}")
@@ -199,6 +213,7 @@ class DNSMOSModule(PipelineModule):
             sample.quality_metrics.dnsmos_overall = scores.get("ovrl")
             sample.quality_metrics.dnsmos_sig = scores.get("sig")
             sample.quality_metrics.dnsmos_bak = scores.get("bak")
+            sample.quality_metrics.dnsmos_p808 = scores.get("p808")
             logger.debug(
                 f"DNSMOS for {sample.path.name}: "
                 f"SIG={scores.get('sig', 0.0):.2f} BAK={scores.get('bak', 0.0):.2f} OVRL={scores.get('ovrl', 0.0):.2f}"

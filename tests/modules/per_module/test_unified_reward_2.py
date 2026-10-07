@@ -18,7 +18,7 @@ def test_unified_reward_2_no_backend_is_noop(image_sample):
 
     assert result is image_sample
     if result.quality_metrics is not None:
-        assert result.quality_metrics.unified_reward_2_score is None
+        assert result.quality_metrics.unified_reward_2_mean is None
 
 
 def test_unified_reward_2_parse_labeled_output():
@@ -59,5 +59,5 @@ def test_unified_reward_2_store_scores(image_sample):
     assert qm.unified_reward_2_alignment_score == 5.0
     assert qm.unified_reward_2_coherence_score == 4.0
     assert qm.unified_reward_2_style_score == 3.0
-    assert qm.unified_reward_2_score == 4.0
+    assert qm.unified_reward_2_mean == 4.0
 

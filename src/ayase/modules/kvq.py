@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class KVQModule(PipelineModule):
     name = "kvq"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "kvq_score": "KVQ (Qu et al., CVPR 2025) — per the paper's design — https://huggingface.co/lero233/KVQ",
+    }
     description = "Saliency-guided video quality (real KVQ model only)"
     default_config = {"subsample": 8, "trust_remote_code": True, "model_revision": None}
     metric_groups = {

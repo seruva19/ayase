@@ -1,14 +1,17 @@
 """Reference-free Inception Score over a dataset of audio samples.
 
-PANNs CNN14 or PaSST class distributions are used to compute
-``exp(E[KL(p(y|x) || p(y))])``; the dataset outputs are split means and standard
-deviation, and higher values indicate classifier confidence combined with
-label diversity. This is not an audio-quality or prompt-fidelity measure.
-Scores depend on the classifier, sample mix, split count, and configured audio
-duration and are not comparable across backends; fewer than two usable samples
+Follows the audioldm_eval protocol: the vendored PANNs Cnn14 (16 kHz,
+``Cnn14_16k_mAP=0.438.pth`` AudioSet weights) produces per-sample logits,
+softmaxed into ``p(y|x)`` and scored as ``exp(E[KL(p(y|x) || p(y))])`` over
+``n_splits`` contiguous splits (mean and std are emitted). An optional
+``backend='passt'`` swaps in the PaSST-32k classifier — a valid ISC backbone
+but not the audioldm_eval one. This is not an audio-quality or prompt-fidelity
+measure; scores depend on the classifier, sample mix, split count, and audio
+duration and are not comparable across backends. Fewer than two usable samples
 produce no dataset metric.
 
 Metric basis: https://arxiv.org/abs/1606.03498
+Protocol reference: https://github.com/haoheliu/audioldm_eval (eval.py, metrics/isc.py)
 """
 
 import logging
@@ -27,10 +30,18 @@ _EPS = 1e-16
 
 class AudioISCModule(BatchMetricModule):
     name = "audio_isc"
-    description = "Inception Score for Audio (PANNs/PaSST softmax-based intrinsic score, batch metric)"
+    provenance = "adapted"
+    sources = {
+        "audio_isc_mean": "Inception Score (Salimans 2016) via audioldm_eval protocol (Cnn14_16k logits → softmax) — https://github.com/haoheliu/audioldm_eval",
+        "audio_isc_std": "Inception Score (Salimans 2016) via audioldm_eval protocol (Cnn14_16k logits → softmax) — https://github.com/haoheliu/audioldm_eval",
+    }
+    deviations = {
+        "audio_isc_mean": "backend='passt' swaps the classifier for PaSST-32k — a valid ISC backbone but not the audioldm_eval one",
+        "audio_isc_std": "backend='passt' swaps the classifier for PaSST-32k — a valid ISC backbone but not the audioldm_eval one",
+    }
+    description = "Inception Score for Audio (Cnn14_16k logits → softmax, audioldm_eval protocol)"
     default_config = {
         "backend": "panns_cnn14",
-        "sample_rate": 16000,
         "panns_checkpoint_path": None,
         "passt_model_name": "passt_s_kd_p16_128_ap486",
         "n_splits": 10,
@@ -39,21 +50,23 @@ class AudioISCModule(BatchMetricModule):
     }
     models = [
         {
-            "id": "panns_inference",
-            "type": "pip_package",
-            "install": "pip install panns_inference",
-            "task": "PANNs CNN14 audio tagger (527-class AudioSet softmax) backbone for ISC",
+            "id": "Cnn14_16k_mAP=0.438.pth",
+            "type": "local",
+            "url": "https://zenodo.org/records/3987831/files/Cnn14_16k_mAP%3D0.438.pth",
+            "task": "PANNs Cnn14-16k AudioSet classifier — the audioldm_eval ISC backbone",
+            "auto_download": True,
         },
         {
-            "id": "Cnn14_mAP=0.431.pth",
-            "type": "local",
-            "task": "PANNs CNN14 pretrained weights, auto-downloaded by panns_inference on first use",
+            "id": "torchlibrosa",
+            "type": "pip_package",
+            "install": "pip install torchlibrosa",
+            "task": "Log-mel front-end for the vendored Cnn14_16k",
         },
         {
             "id": "hear21passt",
             "type": "pip_package",
             "install": "pip install hear21passt",
-            "task": "Optional PaSST AudioSet classifier backbone for ISC",
+            "task": "Optional PaSST AudioSet classifier backbone for ISC (non-default)",
         },
     ]
     metric_info = {
@@ -64,7 +77,9 @@ class AudioISCModule(BatchMetricModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.backend = str(self.config.get("backend", "panns_cnn14")).lower()
-        self.sample_rate = int(self.config.get("sample_rate", 16000))
+        # Each classifier consumes audio at its native rate (audioldm_eval uses
+        # Cnn14_16k @ 16 kHz; PaSST is a 32 kHz model).
+        self.sample_rate = 32000 if self.backend == "passt" else 16000
         self.panns_checkpoint_path = self.config.get("panns_checkpoint_path", None)
         self.passt_model_name = self.config.get("passt_model_name", "passt_s_kd_p16_128_ap486")
         self.n_splits = max(1, int(self.config.get("n_splits", 10)))
@@ -106,31 +121,48 @@ class AudioISCModule(BatchMetricModule):
 
     def _setup_panns(self) -> None:
         try:
-            from panns_inference import AudioTagging
+            import torch
+            import torchlibrosa  # noqa: F401
+            from ayase.third_party.panns_cnn14 import Cnn14
+            from ayase.config import download_model_file
         except ImportError:
             logger.warning(
-                "audio_isc backend panns_cnn14 requires `pip install panns_inference`; "
-                "module will be a no-op"
+                "audio_isc backend panns_cnn14 requires torch + torchlibrosa "
+                "(pip install torchlibrosa); module will be a no-op"
             )
             return
         except Exception as e:  # pragma: no cover - defensive
-            logger.warning("audio_isc: failed to import panns_inference: %s", e)
+            logger.warning("audio_isc: failed to import Cnn14_16k deps: %s", e)
             return
 
         try:
             ckpt = self.panns_checkpoint_path
-            self._tagger = AudioTagging(
-                checkpoint_path=str(ckpt) if ckpt else None,
-                device=self._device,
+            if not ckpt:
+                ckpt = download_model_file(
+                    "panns/Cnn14_16k_mAP=0.438.pth",
+                    "https://zenodo.org/records/3987831/files/Cnn14_16k_mAP%3D0.438.pth",
+                    self.config.get("models_dir", "models"),
+                )
+            # audioldm_eval's 16 kHz configuration (eval.py).
+            model = Cnn14(
+                features_list=["2048", "logits"],
+                sample_rate=16000,
+                window_size=512,
+                hop_size=160,
+                mel_bins=64,
+                fmin=50,
+                fmax=8000,
+                classes_num=527,
             )
+            model.load_checkpoint(str(ckpt))
+            self._tagger = model.to(self._device).eval()
             self._ml_available = True
             logger.info(
-                "audio_isc initialised with PANNs CNN14 on %s (sr=%d)",
+                "audio_isc initialised with PANNs Cnn14_16k on %s",
                 self._device,
-                self.sample_rate,
             )
         except Exception as e:
-            logger.warning("audio_isc: PANNs CNN14 load failed: %s", e)
+            logger.warning("audio_isc: PANNs Cnn14_16k load failed: %s", e)
             self._tagger = None
 
     def _setup_passt(self) -> None:
@@ -185,14 +217,16 @@ class AudioISCModule(BatchMetricModule):
     def _probs_panns(self, audio: np.ndarray) -> Optional[np.ndarray]:
         if self._tagger is None:
             return None
-        # panns_inference expects shape [batch, samples], float32 in [-1, 1].
-        batch = np.asarray(audio, dtype=np.float32)[None, :]
-        clipwise_output, _ = self._tagger.inference(batch)
-        # panns_inference already returns sigmoid (multi-label) scores; for IS we
-        # need a proper softmax distribution so the KL is well-defined. We re-
-        # normalise the per-class scores into a probability simplex with softmax.
-        scores = np.asarray(clipwise_output, dtype=np.float64)[0]
-        return _softmax(scores)
+        # audioldm_eval protocol: softmax over raw Cnn14_16k logits.
+        import torch
+
+        batch = torch.as_tensor(
+            np.asarray(audio, dtype=np.float32)[None, :], device=self._device
+        )
+        with torch.no_grad():
+            out = self._tagger(batch)
+        logits = out["logits"] if isinstance(out, dict) else out[0]
+        return torch.softmax(logits, dim=-1).detach().cpu().numpy().astype(np.float64)[0]
 
     def _probs_passt(self, audio: np.ndarray) -> Optional[np.ndarray]:
         if self._passt_model is None or self._torch is None:
@@ -249,14 +283,11 @@ class AudioISCModule(BatchMetricModule):
             )
             return _inception_score(probs), 0.0
 
-        # Match the canonical IS protocol: equal-size contiguous splits, leftover
-        # samples dropped from the tail so every split has the same N.
-        split_size = n // n_splits
+        # audioldm_eval/metrics/isc.py slicing: contiguous chunks with the tail
+        # remainder folded into the last split.
         scores = np.empty(n_splits, dtype=np.float64)
         for i in range(n_splits):
-            start = i * split_size
-            end = start + split_size
-            scores[i] = _inception_score(probs[start:end])
+            scores[i] = _inception_score(probs[(i * n) // n_splits : ((i + 1) * n) // n_splits])
         return float(np.mean(scores)), float(np.std(scores))
 
     # -------------------------------------------------------------- dispose
@@ -298,16 +329,6 @@ class AudioISCModule(BatchMetricModule):
 
 
 # ----------------------------------------------------------------- helpers
-
-
-def _softmax(x: np.ndarray) -> np.ndarray:
-    x = np.asarray(x, dtype=np.float64)
-    x = x - np.max(x)
-    ex = np.exp(x)
-    s = ex.sum()
-    if s <= 0 or not np.isfinite(s):
-        return np.full_like(ex, 1.0 / ex.size)
-    return ex / s
 
 
 def _inception_score(p_yx: np.ndarray) -> float:

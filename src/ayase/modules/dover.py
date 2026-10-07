@@ -7,7 +7,7 @@ that disentangles *technical* quality (noise, blur, compression) from
 Supports two backends:
 1. Native DOVER — loads the original model directly (``pip install dover``
    or ``pip install git+https://github.com/VQAssessment/DOVER.git``).
-2. pyiqa wrapper — ``pip install pyiqa`` (if pyiqa ships DOVER).
+2. ONNX port of the same weights (``onnx_dover.onnx``).
 
 dover_score    — fused overall quality (higher = better, 0-1 sigmoid)
 dover_technical — technical sub-score (0-1 sigmoid)
@@ -27,9 +27,10 @@ logger = logging.getLogger(__name__)
 
 
 def _fuse_results(results):
-    """Sigmoid rescaling from raw DOVER outputs (matches the original repo)."""
-    t = (results[1] + 0.0758) / 0.0129
-    a = (results[0] - 0.1253) / 0.0318
+    """Sigmoid rescaling from raw DOVER outputs (official constants from
+    DOVER's evaluate_a_set_of_videos.py)."""
+    t = (results[1] - 0.1107) / 0.07355
+    a = (results[0] + 0.08285) / 0.03774
     x = t * 0.6104 + a * 0.3896
     return {
         "aesthetic": 1.0 / (1.0 + np.exp(-a)),
@@ -40,11 +41,31 @@ def _fuse_results(results):
 
 class DOVERModule(PipelineModule):
     name = "dover"
+    provenance = {
+        "dover_aesthetic": "published",
+        "dover_score": "published",
+        "dover_technical": "published",
+    }
+    sources = {
+        "dover_aesthetic": "DOVER (Wu et al., ICCV 2023) — https://github.com/VQAssessment/DOVER/blob/master/evaluate_a_set_of_videos.py",
+        "dover_score": "DOVER (Wu et al., ICCV 2023) — https://github.com/VQAssessment/DOVER/blob/master/evaluate_a_set_of_videos.py",
+        "dover_technical": "DOVER (Wu et al., ICCV 2023) — https://github.com/VQAssessment/DOVER/blob/master/evaluate_a_set_of_videos.py",
+    }
+    deviations = {
+        "dover_aesthetic": "Sigmoid rescaling now uses the official fuse_results "
+        "constants; backends are a vendored port (native) or ONNX export of the "
+        "same weights — minor numerical differences vs the upstream repo are possible.",
+        "dover_technical": "Sigmoid rescaling now uses the official fuse_results "
+        "constants; backends are a vendored port (native) or ONNX export of the "
+        "same weights — minor numerical differences vs the upstream repo are possible.",
+        "dover_score": "Overall fusion weights (0.6104/0.3896) are official; "
+        "computed over the ported sub-scores above.",
+    }
     description = "DOVER disentangled technical + aesthetic VQA (ICCV 2023)"
     default_config = {
         "warning_threshold": 0.4,
         "weights_path": None,  # Explicit path to DOVER.pth (optional)
-        "preferred_backend": None,  # "native", "onnx", or "pyiqa" — None = auto (native first)
+        "preferred_backend": None,  # "native" or "onnx" — None = auto (native first)
     }
     models = [
         {
@@ -66,12 +87,6 @@ class DOVERModule(PipelineModule):
             "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth",
             "task": "ConvNeXt-Tiny aesthetic backbone",
         },
-        {
-            "id": "dover",
-            "type": "pyiqa",
-            "task": "pyiqa DOVER fallback metric",
-            "install": "pip install pyiqa",
-        },
     ]
     metric_info = {
         "dover_score": "DOVER fused overall quality (0-1 sigmoid, higher=better)",
@@ -90,7 +105,7 @@ class DOVERModule(PipelineModule):
         self.weights_path = self.config.get("weights_path", None)
         self._device = "cpu"
         self._ml_available = False
-        self._backend = None  # "native" or "pyiqa"
+        self._backend = None  # "native" | "onnx" | "unavailable"
 
         # Native backend state
         self._model = None
@@ -111,26 +126,22 @@ class DOVERModule(PipelineModule):
         if preferred == "onnx":
             if self._try_onnx_setup():
                 return
-        elif preferred == "pyiqa":
-            if self._try_pyiqa_setup():
-                return
         elif preferred == "native":
             if self._try_native_setup():
                 return
 
-        # Auto fallback: native → ONNX → pyiqa
+        # Auto fallback: native → ONNX (pyiqa has no 'dover' metric — that
+        # path was removed; a single pyiqa score can never fill all three
+        # published sub-fields).
         if not self._ml_available and self._try_native_setup():
             return
         if not self._ml_available and self._try_onnx_setup():
-            return
-        if not self._ml_available and self._try_pyiqa_setup():
             return
 
         self._backend = "unavailable"
         logger.warning(
             "DOVER unavailable. Install with: "
-            "pip install git+https://github.com/VQAssessment/DOVER.git  "
-            "OR  pip install pyiqa"
+            "pip install git+https://github.com/VQAssessment/DOVER.git"
         )
 
     # ------------------------------------------------------------------ #
@@ -195,7 +206,7 @@ class DOVERModule(PipelineModule):
             return True
 
         except ImportError:
-            logger.debug("dover package not installed, trying pyiqa fallback.")
+            logger.debug("dover package not installed.")
             return False
         except Exception as e:
             logger.debug(f"Native DOVER setup failed: {e}")
@@ -320,41 +331,6 @@ class DOVERModule(PipelineModule):
             return False
 
     # ------------------------------------------------------------------ #
-    #  Backend 3: pyiqa                                                   #
-    # ------------------------------------------------------------------ #
-
-    def _try_pyiqa_setup(self) -> bool:
-        try:
-            import pyiqa
-            import torch  # noqa: F401
-            from ayase.runtime import resolve_torch_device
-
-            self._device = resolve_torch_device(self.config.get("device", "auto"))
-
-            models_dir = self.config.get("models_dir", None)
-            old_torch_home = os.environ.get("TORCH_HOME")
-            if models_dir:
-                os.environ["TORCH_HOME"] = str(models_dir)
-
-            try:
-                self._model = pyiqa.create_metric("dover", device=self._device, as_loss=False)
-                self._ml_available = True
-                self._backend = "pyiqa"
-                logger.info(f"DOVER (pyiqa) initialised on {self._device}")
-                return True
-            finally:
-                if old_torch_home is not None:
-                    os.environ["TORCH_HOME"] = old_torch_home
-                else:
-                    os.environ.pop("TORCH_HOME", None)
-
-        except ImportError:
-            return False
-        except Exception as e:
-            logger.debug(f"pyiqa DOVER setup failed: {e}")
-            return False
-
-    # ------------------------------------------------------------------ #
     #  Processing                                                         #
     # ------------------------------------------------------------------ #
 
@@ -368,7 +344,7 @@ class DOVERModule(PipelineModule):
             elif self._backend == "onnx":
                 aesthetic, technical, overall = self._process_onnx(sample)
             else:
-                aesthetic, technical, overall = self._process_pyiqa(sample)
+                return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -497,24 +473,4 @@ class DOVERModule(PipelineModule):
         rescaled = _fuse_results(results)
         return rescaled["aesthetic"], rescaled["technical"], rescaled["overall"]
 
-    def _process_pyiqa(self, sample: Sample):
-        """Run inference using pyiqa's DOVER wrapper."""
-        import torch
 
-        with torch.no_grad():
-            result = self._model(str(sample.path))
-
-        if isinstance(result, torch.Tensor):
-            result = result.squeeze().cpu().tolist()
-
-        if isinstance(result, (list, tuple)):
-            if len(result) >= 2:
-                aesthetic = float(result[0])
-                technical = float(result[1])
-                overall = (aesthetic + technical) / 2.0
-            else:
-                aesthetic = technical = overall = float(result[0])
-        else:
-            aesthetic = technical = overall = float(result)
-
-        return aesthetic, technical, overall

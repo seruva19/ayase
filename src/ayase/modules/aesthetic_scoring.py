@@ -26,6 +26,11 @@ AESTHETIC_MLP_FILENAME = "sac+logos+ava1-l14-linearMSE.pth"
 
 class AestheticScoringModule(PipelineModule):
     name = "aesthetic_scoring"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "aesthetic_mlp_score": "LAION improved-aesthetic-predictor (sac+logos+ava1-l14-linearMSE) — https://github.com/christophschuhmann/improved-aesthetic-predictor",
+    }
     description = "Calculates aesthetic score (1-10) using LAION-Aesthetics MLP"
     default_config = {"models_dir": "models"}
     metric_groups = {

@@ -80,6 +80,14 @@ class SongEvalModule(PipelineModule):
     """Song aesthetic evaluation across 5 perceptual dimensions."""
 
     name = "song_eval"
+    provenance = "published"
+    sources = {
+        "song_eval_clarity": "SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval",
+        "song_eval_coherence": "SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval",
+        "song_eval_memorability": "SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval",
+        "song_eval_musicality": "SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval",
+        "song_eval_naturalness": "SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval",
+    }
     description = "SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)"
     default_config = {
         "sample_rate": 24000,

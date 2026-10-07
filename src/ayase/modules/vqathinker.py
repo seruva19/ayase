@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class VQAThinkerModule(PipelineModule):
     name = "vqathinker"
+    provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "VQAThinker RL-based explainable VQA (2025)"
     default_config = {

@@ -32,6 +32,11 @@ def _get_caption_text(sample: Sample) -> Optional[str]:
 
 class DSGModule(PipelineModule):
     name = "dsg"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "dsg_score": "DSG (Cho et al., ICLR 2024) — per the paper's design — https://github.com/j-min/DSG",
+    }
     description = "DSG Davidsonian Scene Graph faithfulness (ICLR 2024, Google)"
     default_config = {
         "subsample": 4,     # frames to sample for video

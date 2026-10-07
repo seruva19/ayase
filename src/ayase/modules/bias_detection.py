@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 class BiasDetectionModule(PipelineModule):
     name = "bias_detection"
+    deprecated = True
+    provenance = "own"
     description = "Demographic representation analysis (face count, age distribution)"
     default_config = {
         "subsample": 10,

@@ -22,6 +22,10 @@ _MODEL_REVISION = "cc24074f717b612951c2dead130904ab9b65a81e"
 
 class MaSCModule(PipelineModule):
     name = "masc"
+    provenance = "published"
+    sources = {
+        "masc_concept_preservation": "MaSC (arXiv 2605.22469) — https://arxiv.org/abs/2605.22469",
+    }
     description = "MaSC masked-maxcos concept preservation similarity"
     default_config = {
         "model": _MODEL_ID,

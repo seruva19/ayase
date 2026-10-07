@@ -41,6 +41,10 @@ class SpeechBERTScoreModule(PipelineModule):
     """Compute official WavLM-Large SpeechBERTScore precision."""
 
     name = "speech_bert_score"
+    provenance = "published"
+    sources = {
+        "speech_bert_score": "Saeki et al., Interspeech 2024; DiscreteSpeechMetrics v1.0.1 — https://github.com/Takaaki-Saeki/DiscreteSpeechMetrics",
+    }
     description = "SpeechBERTScore similarity for matching-content reference speech"
     default_config = {
         "device": "auto",

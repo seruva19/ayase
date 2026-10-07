@@ -1,7 +1,8 @@
 """Aesthetic quality estimation using Aesthetic Predictor V2.5 (SigLIP-based).
 
-Scores images/video frames on a 0-100 normalized scale. Higher scores indicate
-better perceptual aesthetic quality. Processes up to 5 uniformly sampled frames."""
+Scores images/video frames on the model's native 1-10 scale. Higher scores
+indicate better perceptual aesthetic quality. Processes up to 5 uniformly
+sampled frames for video input."""
 
 import logging
 import numpy as np
@@ -17,6 +18,16 @@ logger = logging.getLogger(__name__)
 
 class AestheticModule(PipelineModule):
     name = "aesthetic"
+    provenance = {
+        "aesthetic_v25_score": "adapted",
+        "aesthetic_v25_dup": "adapted",
+    }
+    sources = {
+        "*": "Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5",
+    }
+    deviations = {
+        "*": "The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric.",
+    }
     description = "Estimates aesthetic quality using Aesthetic Predictor V2.5"
     default_config = {
         "num_frames": 5,
@@ -24,8 +35,8 @@ class AestheticModule(PipelineModule):
         "model_revision": None,
     }
     metric_groups = {
-        "aesthetic_score": "aesthetic",
-        "vqa_a_score": "alignment",
+        "aesthetic_v25_score": "aesthetic",
+        "aesthetic_v25_dup": "aesthetic",
     }
 
     def __init__(self, config=None):
@@ -81,20 +92,17 @@ class AestheticModule(PipelineModule):
                     logits = self._model(pixel_values).logits.squeeze()
                     score = logits.float().cpu().item()
 
-                # Normalize 1-10 to 0-100
-                normalized_score = ((score - 1.0) / 9.0) * 100.0
-                normalized_score = max(0.0, min(100.0, normalized_score))
-                scores.append(normalized_score)
+                scores.append(score)
 
             avg_score = float(np.mean(scores))
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
 
-            sample.quality_metrics.aesthetic_score = avg_score
-            sample.quality_metrics.vqa_a_score = avg_score
+            sample.quality_metrics.aesthetic_v25_score = avg_score
+            sample.quality_metrics.aesthetic_v25_dup = avg_score
 
-            if avg_score < 50.0:
+            if avg_score < 5.0:
                 sample.validation_issues.append(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,

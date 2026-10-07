@@ -347,6 +347,30 @@ class HandGestureDynamicsModule(PipelineModule):
     """Compare transparent hand-shape distributions and dynamics."""
 
     name = "hand_gesture_dynamics"
+    provenance = {
+        "hand_gesture_articulation_amplitude_difference": "own",
+        "hand_gesture_articulation_location_difference": "own",
+        "hand_gesture_articulation_speed_difference": "own",
+        "hand_gesture_left_right_asymmetry_difference": "own",
+        "hand_gesture_openness_amplitude_difference": "own",
+        "hand_gesture_openness_location_difference": "own",
+        "hand_gesture_pinch_amplitude_difference": "own",
+        "hand_gesture_pinch_location_difference": "own",
+        "hand_gesture_reference_coverage": "utility",
+        "hand_gesture_reference_joint_observability": "utility",
+        "hand_gesture_sample_coverage": "utility",
+        "hand_gesture_sample_joint_observability": "utility",
+    }
+    sources = {
+        "hand_gesture_articulation_amplitude_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_articulation_location_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_articulation_speed_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_left_right_asymmetry_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_openness_amplitude_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_openness_location_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_pinch_amplitude_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+        "hand_gesture_pinch_location_difference": "DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880",
+    }
     description = "Reference-relative 2D hand/finger distribution and dynamics diagnostics"
     default_config = {
         "device": "auto",

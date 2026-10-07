@@ -1,7 +1,8 @@
 """FVD (Fréchet Video Distance) module.
 
 FVD measures the distance between distributions of real and generated videos.
-It uses R3D-18 (3D ResNet-18) features and computes the Fréchet distance.
+This implementation uses a Kinetics-400 I3D TorchScript feature extractor and
+computes the Fréchet distance.
 Lower FVD = better video generation quality. Typical ranges: 50-500 (lower is better).
 
 This is a dataset-level metric that compares two distributions of videos.
@@ -22,61 +23,52 @@ logger = logging.getLogger(__name__)
 
 class FVDModule(BatchMetricModule):
     name = "fvd"
+    provenance = "adapted"
+    sources = {
+        "fvd": "FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py",
+    }
+    deviations = {
+        "fvd": "Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted",
+    }
     description = "Fréchet Video Distance for video generation evaluation (batch metric)"
     default_config = {
-        "i3d_weights": "kinetics400",  # Pretrained on Kinetics-400
         "num_frames": 16,  # I3D expects 16-frame clips
         "batch_size": 8,
         "device": "auto",
         "subsample_videos": None,  # Max videos to process (None = all)
-        # Backbone selection — controls both feature extractor and which
-        # dataset-level field receives the score. "r3d18" preserves legacy
-        # behavior (writes ``fvd``). "content_debiased" applies the Ge et al.
-        # CVPR 2024 bias correction (writes ``fvd_content_debiased``).
-        # "dinov2" swaps the spatial backbone for DINOv2 per
-        # arXiv:2402.01717 (writes ``fvd_dinov2``).
-        "backbone": "r3d18",
+        "models_dir": "models",
     }
     models = [
         {
-            "id": "torchvision/r3d_18",
-            "type": "torchvision",
-            "task": "Kinetics-400 R3D-18 video feature extractor",
+            "id": "i3d_torchscript.pt",
+            "type": "local",
+            "url": "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt",
+            "task": "I3D Kinetics-400 video feature extractor (StyleGAN-V FVD)",
         },
     ]
     metric_info = {
         "fvd": "Frechet Video Distance between generated and reference video distributions (lower=better)",
-        "fvd_content_debiased": "Content-Debiased FVD (Ge et al. CVPR 2024, lower=better)",
-        "fvd_dinov2": "FVD with DINOv2 spatial backbone (rFVD, lower=better)",
-    }
-
-    _VALID_BACKBONES = ("r3d18", "content_debiased", "dinov2")
-    _BACKBONE_TO_METRIC = {
-        "r3d18": "fvd",
-        "content_debiased": "fvd_content_debiased",
-        "dinov2": "fvd_dinov2",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.i3d_weights = self.config.get("i3d_weights", "kinetics400")
         self.num_frames = self.config.get("num_frames", 16)
         self.batch_size = self.config.get("batch_size", 8)
         self.device_config = self.config.get("device", "auto")
         self.subsample_videos = self.config.get("subsample_videos", None)
-        backbone = self.config.get("backbone", "r3d18")
-        if backbone not in self._VALID_BACKBONES:
+        # Legacy configs may pass backbone="r3d18" (or the removed
+        # "content_debiased"/"dinov2"); the published metric is I3D-only.
+        backbone = self.config.get("backbone", "i3d")
+        if backbone != "i3d":
             logger.warning(
-                f"FVD: unknown backbone '{backbone}', falling back to r3d18"
+                f"FVD: backbone '{backbone}' is not the published configuration; "
+                "using I3D (the StyleGAN-V/cd-fvd convention)"
             )
-            backbone = "r3d18"
-        self.backbone = backbone
-        self.metric_name = self._BACKBONE_TO_METRIC[self.backbone]
+        self.backbone = "i3d"
+        self.metric_name = "fvd"
         self.device = None
         self._ml_available = False
         self._r3d_model = None
-        self._dinov2_model = None
-        self._dinov2_processor = None
         self._processed_count = 0
         self._backend = "unavailable"
 
@@ -86,64 +78,43 @@ class FVDModule(BatchMetricModule):
             from ayase.runtime import resolve_torch_device
 
             self.device = torch.device(resolve_torch_device(self.device_config))
-
-            if self.backbone in ("r3d18", "content_debiased"):
-                self._setup_r3d18()
-            elif self.backbone == "dinov2":
-                self._setup_dinov2()
+            self._setup_i3d()
 
             if self._ml_available:
-                # Records which real backbone produced the score (content_debiased
-                # applies the Ge et al. CVPR 2024 correction on r3d18 features).
-                self._backend = self.backbone
+                self._backend = "i3d"
 
         except ImportError as e:
             logger.warning(f"Missing dependencies for FVD (torch required): {e}")
         except Exception as e:
-            logger.warning(f"Failed to setup FVD ({self.backbone}): {e}")
+            logger.warning(f"Failed to setup FVD: {e}")
 
-    def _setup_r3d18(self) -> None:
-        import torch.nn as nn
-        from torchvision.models.video import r3d_18, R3D_18_Weights
+    def _setup_i3d(self) -> None:
+        import torch
         from ayase.runtime import shared_runtime_resource
+        from ayase.config import download_model_file
 
-        def load_r3d18():
-            weights = R3D_18_Weights.KINETICS400_V1
-            model = r3d_18(weights=weights)
-            model.fc = nn.Identity()
-            return model.to(self.device).eval()
+        models_dir = self.config.get("models_dir", "models")
+        ckpt = download_model_file(
+            "fvd/i3d_torchscript.pt",
+            "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt",
+            models_dir,
+        )
+
+        def load_i3d():
+            return torch.jit.load(str(ckpt), map_location="cpu").to(self.device).eval()
 
         self._r3d_model = shared_runtime_resource(
             self,
-            ("fvd_r3d18_kinetics400", str(self.device)),
-            load_r3d18,
+            ("fvd_i3d_torchscript", str(self.device)),
+            load_i3d,
         )
         self._ml_available = True
         logger.info(
-            f"FVD module initialized with R3D-18 on {self.device} (backbone={self.backbone})"
+            f"FVD module initialized with I3D torchscript on {self.device}"
         )
-
-    def _setup_dinov2(self) -> None:
-        from transformers import AutoModel, AutoImageProcessor
-        from ayase.runtime import shared_runtime_resource
-
-        model_id = "facebook/dinov2-base"
-
-        def load_dinov2():
-            processor = AutoImageProcessor.from_pretrained(model_id)
-            model = AutoModel.from_pretrained(model_id).to(self.device).eval()
-            return model, processor
-
-        self._dinov2_model, self._dinov2_processor = shared_runtime_resource(
-            self,
-            ("fvd_dinov2", model_id, str(self.device)),
-            load_dinov2,
-        )
-        self._ml_available = True
-        logger.info(f"FVD module initialized with DINOv2 on {self.device}")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract features from a video sample using the configured backbone."""
+        """Extract I3D features from a video sample."""
         if not sample.is_video:
             return None
 
@@ -155,10 +126,7 @@ class FVDModule(BatchMetricModule):
             if frames is None or len(frames) != self.num_frames:
                 return None
 
-            if self.backbone == "dinov2":
-                features = self._extract_dinov2_features(frames)
-            else:
-                features = self._extract_r3d18_features(frames)
+            features = self._extract_i3d_features(frames)
 
             if features is None:
                 return None
@@ -170,36 +138,16 @@ class FVDModule(BatchMetricModule):
             logger.debug(f"Failed to extract features from {sample.path}: {e}")
             return None
 
-    def _extract_r3d18_features(self, frames: np.ndarray) -> Optional[np.ndarray]:
+    def _extract_i3d_features(self, frames: np.ndarray) -> Optional[np.ndarray]:
         import torch
 
-        # (T, H, W, C) → (1, C, T, H, W)
+        # StyleGAN-V/cd-fvd protocol: (T,H,W,C) uint8 → (1,C,T,H,W) in [-1, 1].
         frames_tensor = torch.from_numpy(frames).permute(3, 0, 1, 2).unsqueeze(0)
-        frames_tensor = frames_tensor.float().to(self.device)
-        mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1, 1).to(self.device)
-        std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1, 1).to(self.device)
-        frames_tensor = (frames_tensor / 255.0 - mean) / std
+        frames_tensor = frames_tensor.float().to(self.device) / 127.5 - 1.0
 
         with torch.no_grad():
             features = self._r3d_model(frames_tensor)
             return features.cpu().numpy().flatten()
-
-    def _extract_dinov2_features(self, frames: np.ndarray) -> Optional[np.ndarray]:
-        import torch
-
-        # DINOv2 is a per-frame ViT. Pool the [CLS] token per frame then
-        # concatenate mean+std across the time axis to keep temporal signal
-        # (this matches the rFVD construction in arXiv:2402.01717).
-        with torch.no_grad():
-            inputs = self._dinov2_processor(
-                images=[frames[t] for t in range(frames.shape[0])],
-                return_tensors="pt",
-            )
-            pixel_values = inputs["pixel_values"].to(self.device)
-            outputs = self._dinov2_model(pixel_values=pixel_values)
-            cls = outputs.last_hidden_state[:, 0, :]  # (T, D)
-            cls_np = cls.cpu().numpy()
-            return np.concatenate([cls_np.mean(axis=0), cls_np.std(axis=0)], axis=0)
 
     def extract_reference_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract reference features without consuming subsample budget."""
@@ -253,7 +201,7 @@ class FVDModule(BatchMetricModule):
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
-    ) -> float:
+    ) -> Optional[float]:
         """Compute Fréchet distance between feature distributions.
 
         Args:
@@ -261,7 +209,7 @@ class FVDModule(BatchMetricModule):
             reference_features: Optional list of features from real/reference videos
 
         Returns:
-            FVD score (lower is better)
+            FVD score (lower is better), or None without a reference set
         """
         try:
             from scipy import linalg
@@ -272,23 +220,11 @@ class FVDModule(BatchMetricModule):
             if reference_features is not None and len(reference_features) > 0:
                 ref_array = np.stack(reference_features, axis=0)
             else:
-                # If no reference provided, split features in half for comparison
-                mid = len(features_array) // 2
-                ref_array = features_array[:mid]
-                features_array = features_array[mid:]
-
-            # Content-debiased FVD (Ge et al. CVPR 2024): subtract the joint
-            # feature-distribution mean so that content shifts shared between
-            # generated and reference distributions cancel out, leaving the
-            # generation-specific component. This is the per-dimension
-            # equivalent of the per-class debiasing in the original paper
-            # when content classes are not known a priori.
-            if self.backbone == "content_debiased":
-                joint_mean = np.mean(
-                    np.concatenate([features_array, ref_array], axis=0), axis=0
+                logger.info(
+                    "FVD: no reference features provided; "
+                    "metric is undefined without a reference set"
                 )
-                features_array = features_array - joint_mean
-                ref_array = ref_array - joint_mean
+                return None
 
             # Compute statistics
             mu1 = np.mean(features_array, axis=0)
@@ -356,16 +292,16 @@ class FVDModule(BatchMetricModule):
                 self._feature_cache,
                 self._reference_cache if self._reference_cache else None
             )
+            if fvd_score is None:
+                return
 
             logger.info(
                 f"{self.metric_name} computed: {fvd_score:.2f} "
                 f"(generated: {len(self._feature_cache)}, "
-                f"reference: {len(self._reference_cache)}, "
-                f"backbone={self.backbone})"
+                f"reference: {len(self._reference_cache)})"
             )
 
-            # Store in pipeline stats if available — metric name is backbone-aware
-            # so legacy callers using backbone="r3d18" still see ``fvd``.
+            # Store in pipeline stats if available
             if hasattr(self, "pipeline") and self.pipeline:
                 if hasattr(self.pipeline, "add_dataset_metric"):
                     self.pipeline.add_dataset_metric(self.metric_name, fvd_score)

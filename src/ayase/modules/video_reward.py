@@ -1,137 +1,139 @@
 """VideoReward preference scoring for prompt-conditioned generated videos.
 
-The Qwen2-VL reward model evaluates sampled video frames and a caption across
-visual quality, motion quality, and text alignment; Ayase stores the sum of the
-three raw reward logits, where higher indicates stronger learned preference.
-Images are skipped, no fixed output range is defined, and a Hugging Face-
-compatible checkpoint with its custom model code is required.
+Runs the official VideoAlign ``VideoVLMRewardInference``: a Qwen2-VL-2B reward
+model with a reward head read at the <|VQ_reward|>/<|MQ_reward|>/<|TA_reward|>
+special tokens, the checkpoint's ``detailed_special`` prompt template, uniform
+video sampling at the configured fps/max_pixels from ``model_config.json``, and
+per-dimension normalization by the checkpoint's ``inference_config`` means/stds.
+``video_reward_score`` is the normalized Overall (VQ+MQ+TA); higher indicates
+stronger learned preference. Images are skipped. Scores are produced only by
+the official model; no proxy is used when unavailable.
 
-Basis: https://github.com/KwaiVGI/VideoReward
+Source: https://github.com/KlingAIResearch/VideoAlign (VideoReward)
 """
 
 import logging
+import os
 from typing import Optional
-
-import numpy as np
 
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+_HF_BASE = "https://huggingface.co/KlingTeam/VideoReward/resolve/main"
+
 
 class VideoRewardModule(PipelineModule):
     name = "video_reward"
+    provenance = "published"
+    sources = {
+        "video_reward_score": "VideoAlign/VideoReward, Liu et al. NeurIPS 2025 — https://github.com/KlingAIResearch/VideoAlign",
+    }
     description = "VideoAlign human preference reward model (NeurIPS 2025)"
     default_config = {
         "model_name": "KlingTeam/VideoReward",
-        "subsample": 8,
-        "trust_remote_code": True,
-        "model_revision": None,
+        "checkpoint_step": -1,
+        "use_norm": True,
     }
     metric_groups = {
         "video_reward_score": "alignment",
     }
+    models = [
+        {
+            "id": "KlingTeam/VideoReward",
+            "type": "huggingface",
+            "task": "Qwen2-VL-2B video reward model (VQ/MQ/TA)",
+        },
+    ]
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self._ml_available = False
         self._backend = None
-        self._model = None
-        self._processor = None
+        self._inferencer = None
         self._device = "cpu"
 
     def setup(self) -> None:
-        # VideoReward (KwaiVGI/VideoReward) is a Qwen2-VL-based multi-dimensional
-        # preference reward model (VQ/MQ/TA). Its custom reward-head class is not a
-        # standard transformers Auto class, so we load it generically via AutoModel
-        # + trust_remote_code (resolved through the checkpoint's auto_map, when the
-        # checkpoint ships HF-compatible config/remote code). Real-or-none: any
-        # failure (including the public raw-.pth checkpoint that has no HF config)
-        # leaves the metric None with backend "unavailable".
         try:
-            from transformers import AutoModel, AutoProcessor
+            import torch
+
             from ayase.runtime import resolve_torch_device
+            from ayase.third_party.videoalign import VideoVLMRewardInference
 
-            model_name = self.config.get("model_name", "KwaiVGI/VideoReward")
-            device = resolve_torch_device(self.config.get("device", "auto"))
+            self._device = resolve_torch_device(self.config.get("device", "auto"))
+            ckpt_dir = self._resolve_checkpoint()
+            if ckpt_dir is None:
+                logger.warning("VideoReward checkpoint not found; metric skipped.")
+                return
 
-            trc = self.config.get("trust_remote_code", True)
-            rev = self.config.get("model_revision", None)
-            self._processor = AutoProcessor.from_pretrained(
-                model_name, trust_remote_code=trc, revision=rev
+            self._inferencer = VideoVLMRewardInference(
+                ckpt_dir,
+                load_from_pretrained_step=int(self.config.get("checkpoint_step", -1)),
+                device=self._device,
+                dtype=torch.bfloat16,
             )
-            self._model = AutoModel.from_pretrained(
-                model_name, trust_remote_code=trc, revision=rev
-            ).to(device)
-            self._model.eval()
-            self._device = device
             self._ml_available = True
-            self._backend = "videoreward_hf"
-            logger.info("VideoAlign reward model loaded on %s", device)
+            self._backend = "videoreward_official"
+            logger.info("VideoAlign reward model loaded on %s", self._device)
         except Exception as e:
             self._backend = "unavailable"
             logger.warning("VideoAlign unavailable: %s", e)
 
+    def _resolve_checkpoint(self) -> Optional[str]:
+        """Return a local dir holding model_config.json + checkpoint-*/model.pth."""
+        explicit = self.config.get("checkpoint_dir")
+        if explicit and os.path.exists(os.path.join(explicit, "model_config.json")):
+            return explicit
+
+        models_dir = self.config.get("models_dir", "models")
+        local = os.path.join(models_dir, "videoreward")
+        if os.path.exists(os.path.join(local, "model_config.json")):
+            return local
+
+        # Download the official checkpoint layout (model_config.json at root,
+        # weights under checkpoint-*/model.pth).
+        from ayase.config import download_model_file
+
+        files = [
+            ("model_config.json",),
+            ("checkpoint-11352", "model.pth"),
+            ("checkpoint-11352", "tokenizer", "added_tokens.json"),
+            ("checkpoint-11352", "tokenizer", "merges.txt"),
+            ("checkpoint-11352", "tokenizer", "special_tokens_map.json"),
+            ("checkpoint-11352", "tokenizer", "tokenizer.json"),
+            ("checkpoint-11352", "tokenizer", "tokenizer_config.json"),
+            ("checkpoint-11352", "tokenizer", "vocab.json"),
+        ]
+        try:
+            for rel in files:
+                rel_path = os.path.join("videoreward", *rel)
+                url = f"{_HF_BASE}/{'/'.join(rel)}"
+                download_model_file(rel_path, url, models_dir)
+        except Exception as e:
+            logger.warning("VideoReward checkpoint download failed: %s", e)
+            return None
+        return local
+
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        if not self._ml_available or self._model is None:
+        if not self._ml_available or self._inferencer is None:
             return sample
-        # VideoReward is a video model (Qwen2-VL video path); images have no
-        # defined reward, so leave the metric None for non-video samples.
+        # VideoReward is a video model; images have no defined reward.
         if not sample.is_video:
             return sample
 
         try:
-            import torch
-            from qwen_vl_utils import process_vision_info
-
             caption = sample.caption.text if sample.caption else ""
-            prompt = caption if caption else "the video"
-            nframes = int(self.config.get("subsample", 8))
-            max_pixels = int(self.config.get("max_pixels", 448 * 448))
-
-            messages = [
-                [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "video",
-                                "video": f"file://{sample.path}",
-                                "max_pixels": max_pixels,
-                                "nframes": nframes,
-                            },
-                            {"type": "text", "text": prompt},
-                        ],
-                    }
-                ]
-            ]
-
-            text = self._processor.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
+            rewards = self._inferencer.reward(
+                [str(sample.path)],
+                [caption if caption else "the video"],
+                use_norm=bool(self.config.get("use_norm", True)),
             )
-            image_inputs, video_inputs = process_vision_info(messages)
-            batch = self._processor(
-                text=text,
-                images=image_inputs,
-                videos=video_inputs,
-                padding=True,
-                return_tensors="pt",
-                videos_kwargs={"do_rescale": True},
-            ).to(self._device)
-
-            with torch.no_grad():
-                rewards = self._model(return_dict=True, **batch)["logits"]
-
-            # Each row holds the three dimensions: VQ, MQ, TA. The module declares a
-            # single overall reward, defined (per the reference inference) as the sum.
-            reward = rewards[0]
-            vq = float(reward[0].item())
-            mq = float(reward[1].item())
-            ta = float(reward[2].item())
-            sample.quality_metrics.video_reward_score = vq + mq + ta
+            r = rewards[0]
+            if r.get("Overall") is not None:
+                sample.quality_metrics.video_reward_score = float(r["Overall"])
         except Exception as e:
             logger.warning("VideoAlign processing failed: %s", e)
         return sample

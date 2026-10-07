@@ -294,6 +294,8 @@ def _persons_from_dwpose(result: dict) -> List[Person]:
 
 class AnatomyCheckModule(PipelineModule):
     name = "anatomy_check"
+    deprecated = True
+    provenance = "own"
     description = "Human anatomy plausibility (extra/duplicated limbs) via DWPose/MediaPipe (0-1, higher=better)"
     default_config = {
         "subsample": 8,        # frames sampled per video

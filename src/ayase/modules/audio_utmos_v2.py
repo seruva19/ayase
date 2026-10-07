@@ -1,16 +1,19 @@
 """Predict per-sample, no-reference speech MOS with UTMOSv2.
 
 Audio is decoded from the sample, mixed to mono, and resampled to 16 kHz by
-default. The ``utmosv2`` package is preferred; the upstream torch.hub model is
-tried only when ``use_torch_hub`` is enabled. ``utmos_v2_score`` is the model's
-predicted 1-5 speech Mean Opinion Score (higher is better), with a warning below
-the configured threshold. This is a speech-quality metric, not a general audio,
-caption-alignment, reference-audio, or dataset-level metric. No proxy is emitted
-when neither backend is available. Source: https://github.com/sarulab-speech/UTMOSv2
+default. The ``utmosv2`` package provides the official model
+(``utmosv2.create_model(pretrained=True)`` → ``model.predict(data=, sr=)``).
+``utmos_v2_score`` is the model's predicted 1-5 speech Mean Opinion Score
+(higher is better), with a warning below the configured threshold. This is a
+speech-quality metric, not a general audio, caption-alignment, reference-audio,
+or dataset-level metric. No proxy is emitted when the package is unavailable.
+Source: https://github.com/sarulab-speech/UTMOSv2
 """
 
 import logging
 from typing import Optional
+
+import numpy as np
 
 from ayase.audio import load_audio
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
@@ -21,16 +24,20 @@ logger = logging.getLogger(__name__)
 
 class AudioUTMOSv2Module(PipelineModule):
     name = "audio_utmos_v2"
+    provenance = "published"
+    sources = {
+        "utmos_v2_score": "UTMOSv2 (sarulab-speech) — https://github.com/sarulab-speech/UTMOSv2",
+    }
     description = "UTMOSv2 no-reference MOS prediction for speech quality"
     default_config = {
         "target_sr": 16000,
         "warning_threshold": 3.0,
-        "use_torch_hub": False,
     }
     models = [
         {
             "id": "sarulab-speech/UTMOSv2",
-            "type": "torch_hub",
+            "type": "pip_package",
+            "install": "pip install git+https://github.com/sarulab-speech/UTMOSv2.git",
             "task": "UTMOSv2 speech MOS predictor",
         },
     ]
@@ -45,16 +52,14 @@ class AudioUTMOSv2Module(PipelineModule):
         super().__init__(config)
         self.target_sr = self.config.get("target_sr", 16000)
         self.warning_threshold = self.config.get("warning_threshold", 3.0)
-        self.use_torch_hub = self.config.get("use_torch_hub", False)
         self._backend = None
         self._model = None
-        self._device = "cpu"
 
     def setup(self) -> None:
         try:
             import utmosv2
 
-            self._model = utmosv2
+            self._model = utmosv2.create_model(pretrained=True)
             self._backend = "utmosv2_package"
             logger.info("UTMOSv2 initialised with utmosv2 package")
             return
@@ -63,28 +68,14 @@ class AudioUTMOSv2Module(PipelineModule):
         except Exception as e:
             logger.debug("UTMOSv2 package setup failed: %s", e)
 
-        if self.use_torch_hub:
-            try:
-                import torch
-
-                self._device = "cuda" if torch.cuda.is_available() else "cpu"
-                self._model = torch.hub.load(
-                    "sarulab-speech/UTMOSv2", "utmosv2", trust_repo=True
-                )
-                self._model = self._model.to(self._device).eval()
-                self._backend = "torch_hub"
-                logger.info("UTMOSv2 initialised from torch.hub on %s", self._device)
-                return
-            except Exception as e:
-                logger.warning("UTMOSv2 torch.hub setup failed: %s", e)
-
         self._backend = "unavailable"
         logger.warning(
-            "UTMOSv2 unavailable: install the `utmosv2` package or enable `use_torch_hub`"
+            "UTMOSv2 unavailable: install the `utmosv2` package "
+            "(pip install git+https://github.com/sarulab-speech/UTMOSv2.git)"
         )
 
     def process(self, sample: Sample) -> Sample:
-        if self._backend not in ("utmosv2_package", "torch_hub"):
+        if self._backend != "utmosv2_package":
             return sample
         try:
             audio = load_audio(sample.path, target_sr=self.target_sr)
@@ -113,17 +104,8 @@ class AudioUTMOSv2Module(PipelineModule):
 
     def _score_model(self, audio) -> Optional[float]:
         try:
-            if self._backend == "utmosv2_package":
-                if hasattr(self._model, "predict"):
-                    return float(self._model.predict(audio, self.target_sr))
-                if hasattr(self._model, "score"):
-                    return float(self._model.score(audio, self.target_sr))
-            if self._backend == "torch_hub":
-                import torch
-
-                waveform = torch.from_numpy(audio).float().unsqueeze(0).to(self._device)
-                with torch.no_grad():
-                    return float(self._model(waveform, self.target_sr).reshape(-1)[0].item())
+            pred = self._model.predict(data=audio, sr=self.target_sr)
+            return float(np.asarray(pred).reshape(-1)[0])
         except Exception as e:
             logger.debug("UTMOSv2 model scoring failed: %s", e)
         return None

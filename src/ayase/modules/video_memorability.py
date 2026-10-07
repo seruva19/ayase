@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class VideoMemorabilityModule(PipelineModule):
     name = "video_memorability"
+    provenance = "utility"
     description = "Content memorability approximation (CLIP/DINOv2 feature statistics)"
     default_config = {
         "subsample": 5,

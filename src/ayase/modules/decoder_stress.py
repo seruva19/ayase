@@ -19,6 +19,7 @@ class DecoderStressModule(PipelineModule):
     This verifies the integrity of the seek table and B-frame reconstruction.
     """
     name = "decoder_stress"
+    provenance = "utility"
     description = "Random access decoder stress test"
     default_config = {
         "num_probes": 5,      # Number of random positions to check

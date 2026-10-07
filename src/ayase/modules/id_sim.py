@@ -34,6 +34,10 @@ _ADAPTER_REVISION = "bcd3f388bec7db42e75b165e235196833111c4ae"
 
 class IDSimModule(PipelineModule):
     name = "id_sim"
+    provenance = "published"
+    sources = {
+        "id_sim_distance": "ID-Sim (Chae et al.) — https://github.com/JuliaChae/id_sim",
+    }
     description = "ID-Sim fine-grained visual identity distance (CVPR 2026)"
     default_config = {
         "checkpoint": "dinov2_vitb14_cls_patch",

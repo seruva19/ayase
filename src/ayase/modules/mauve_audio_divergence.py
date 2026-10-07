@@ -22,6 +22,10 @@ class MAUVEAudioDivergenceModule(BatchMetricModule):
     """MAD formulation with an Ayase-managed MERT model cache."""
 
     name = "mauve_audio_divergence"
+    provenance = "published"
+    sources = {
+        "mauve_audio_divergence": "MAD: Huang et al., Aligning Text-to-Music Evaluation with Human Preferences (ISMIR 2025) — https://arxiv.org/abs/2503.16669",
+    }
     description = "MAUVE Audio Divergence with MERT embeddings (ISMIR 2025)"
     default_config = {
         "model_name": "m-a-p/MERT-v1-330M",

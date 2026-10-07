@@ -9,8 +9,11 @@ As a dataset-level batch metric this module aggregates the real per-pair MS-SWD
 distance:
   * when paired references are provided, distorted-vs-reference distances are
     averaged;
-  * otherwise the mean MS-SWD between consecutive samples is reported as an
-    inter-sample colour-divergence signal.
+  * without paired references the metric is left unset.
+
+Ayase selects one representative frame per sample, caps its long side, resizes
+the paired reference to match, and averages pair distances. This is an adapted
+dataset protocol; its values are not the source metric's per-image output.
 
 Backend: **pyiqa** ``msswd`` metric (real pretrained weights).
 
@@ -33,6 +36,18 @@ logger = logging.getLogger(__name__)
 
 class MSSWDModule(BatchMetricModule):
     name = "msswd"
+    provenance = {
+        "msswd": "adapted",
+    }
+    sources = {
+        "msswd": "MS-SWD (He et al., ECCV 2024) via pyiqa — https://github.com/real-hjq/MS-SWD",
+    }
+    deviations = {
+        "msswd": "Ayase selects one representative frame per sample, caps the long side "
+        "to 512 pixels by default, resizes each reference to the candidate dimensions, "
+        "then reports the mean learned MS-SWD distance across dataset pairs rather than "
+        "the source metric's per-image value",
+    }
     description = "MS-SWD multiscale sliced Wasserstein colour distance via pyiqa (batch, lower=better)"
     default_config = {
         "device": "auto",
@@ -119,18 +134,17 @@ class MSSWDModule(BatchMetricModule):
         if not self._ml_available or not features:
             return None
 
+        # MS-SWD is full-reference: without paired references there is no score
+        # (self-comparison against adjacent dataset frames is not the metric).
+        if not reference_features:
+            return None
+
         distances: List[float] = []
-        if reference_features:
-            n = min(len(features), len(reference_features))
-            for i in range(n):
-                d = self._pair_distance(features[i], reference_features[i])
-                if d is not None:
-                    distances.append(d)
-        else:
-            for i in range(len(features) - 1):
-                d = self._pair_distance(features[i], features[i + 1])
-                if d is not None:
-                    distances.append(d)
+        n = min(len(features), len(reference_features))
+        for i in range(n):
+            d = self._pair_distance(features[i], reference_features[i])
+            if d is not None:
+                distances.append(d)
 
         if not distances:
             return None

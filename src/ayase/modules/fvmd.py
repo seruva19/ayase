@@ -46,6 +46,10 @@ class FVMDModule(BatchMetricModule):
     """Compare generated/reference motion distributions with official FVMD."""
 
     name = "fvmd"
+    provenance = "published"
+    sources = {
+        "fvmd": "FVMD (Liu et al., arXiv 2407.16124), official evaluator — https://github.com/ljh0v0/FVMD-frechet-video-motion-distance",
+    }
     description = "Official PIPs++ velocity/acceleration-histogram Fréchet distance"
     default_config = {
         "models_dir": "models",

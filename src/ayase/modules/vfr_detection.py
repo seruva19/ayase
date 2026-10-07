@@ -29,6 +29,7 @@ class VFRDetectionModule(PipelineModule):
     VFR can cause inconsistent motion dynamics training.
     """
     name = "vfr_detection"
+    provenance = "utility"
     description = "Variable Frame Rate (VFR) and jitter detection"
     default_config = {
         "jitter_threshold_ms": 2.0,  # Max allowed variance in frame duration

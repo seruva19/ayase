@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 class VIFModule(ReferenceBasedModule):
     name = "vif"
+    provenance = "published"
+    sources = {
+        "vif": "VIF, Sheikh & Bovik TIP 2006; piq.vif_p — https://github.com/photosynthesis-team/piq",
+    }
     description = "Visual Information Fidelity metric (full-reference)"
     default_config = {
         "subsample": 1,  # Process every Nth frame

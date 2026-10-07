@@ -74,6 +74,12 @@ class ExpressionFollowingModule(PipelineModule):
     """
 
     name = "expression_following"
+    provenance = "own"
+    sources = {
+        "expression_following": "MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker",
+        "expression_following_coverage": "MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker",
+        "expression_following_distance": "MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker",
+    }
     description = "Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)"
     default_config = {
         "models_dir": "models",

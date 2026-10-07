@@ -17,12 +17,11 @@ skips (no field written) when no reference is provided, when the file cannot
 be loaded, or when the backend cannot be initialised.
 
 Backends:
-    1. open_clip (default) — ViT-B/32 with laion2b_s34b_b79k weights, matches
-       the legacy ``clip_similarity_i2i`` numerical regime used by downstream
-       image-to-image pipelines.
-    2. transformers (CLIPModel + CLIPProcessor) — fallback when open_clip is
-       unavailable; auto-selected if ``model_name`` does not start with
-       ``open_clip:``.
+    1. transformers (default) — ``openai/clip-vit-base-patch32``, the canonical
+       CLIP-I backbone (DreamBooth evaluation protocol).
+    2. open_clip — ViT-B-32 with the same OpenAI weights (``pretrained=openai``),
+       used when transformers is unavailable, or explicitly via
+       ``model_name="open_clip:<arch>"`` + ``pretrained``.
 
 Aliases for backwards compatibility: pipelines that previously consumed
 ``qm.clip_score`` for image-image similarity can still read the same value
@@ -46,13 +45,20 @@ logger = logging.getLogger(__name__)
 
 class CLIPImageSimilarityModule(PipelineModule):
     name = "clip_image_similarity"
+    provenance = "adapted"
+    sources = {
+        "clip_image_similarity": "CLIP-I (DreamBooth, Ruiz et al. 2023; OpenAI CLIP ViT-B/32) — https://arxiv.org/abs/2208.12242",
+    }
+    deviations = {
+        "clip_image_similarity": "video extension: mean over frames (CLIP-I is defined for images)",
+    }
     description = (
         "CLIP image-to-image cosine similarity vs reference image (CLIP-I)"
     )
     default_config = {
-        "backend": "auto",  # auto | open_clip | transformers
-        "model_name": "open_clip:ViT-B-32",
-        "pretrained": "laion2b_s34b_b79k",
+        "backend": "auto",  # auto | transformers | open_clip
+        "model_name": "openai/clip-vit-base-patch32",
+        "pretrained": "openai",  # open_clip weight tag when backend=open_clip
         "device": "auto",
         "subsample": 8,  # frames sampled per video, averaged for CLIP-I
         "warning_threshold": 0.5,
@@ -70,8 +76,8 @@ class CLIPImageSimilarityModule(PipelineModule):
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
         self.backend = self.config.get("backend", "auto")
-        self.model_name = self.config.get("model_name", "open_clip:ViT-B-32")
-        self.pretrained = self.config.get("pretrained", "laion2b_s34b_b79k")
+        self.model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
+        self.pretrained = self.config.get("pretrained", "openai")
         self.device_config = self.config.get("device", "auto")
         self.warning_threshold = float(self.config.get("warning_threshold", 0.5))
 
@@ -84,15 +90,17 @@ class CLIPImageSimilarityModule(PipelineModule):
         self._processor = None
 
     def setup(self) -> None:
-        if self.backend in ("auto", "open_clip") or (
-            self.backend == "auto" and str(self.model_name).startswith("open_clip:")
-        ):
-            if self._setup_open_clip():
-                return
-            if self.backend == "open_clip":
-                return
+        model_name = str(self.model_name)
+        if self.backend == "open_clip" or model_name.startswith("open_clip:"):
+            self._setup_open_clip()
+            return
 
-        self._setup_transformers()
+        if self.backend in ("auto", "transformers"):
+            self._setup_transformers()
+            if self._ml_available or self.backend == "transformers":
+                return
+            # transformers unavailable: open_clip with the same OpenAI weights.
+            self._setup_open_clip()
 
     def _setup_open_clip(self) -> bool:
         try:
@@ -111,6 +119,8 @@ class CLIPImageSimilarityModule(PipelineModule):
             model_name = str(self.model_name)
             if model_name.startswith("open_clip:"):
                 model_name = model_name.split(":", 1)[1]
+            elif model_name == "openai/clip-vit-base-patch32":
+                model_name = "ViT-B-32"  # same OpenAI weights via open_clip
             self._model, _, self._preprocess = open_clip.create_model_and_transforms(
                 model_name,
                 pretrained=self.pretrained,
@@ -145,9 +155,6 @@ class CLIPImageSimilarityModule(PipelineModule):
         try:
             self._device = resolve_torch_device(self.device_config)
             model_id = str(self.model_name)
-            if model_id.startswith("open_clip:"):
-                # Reasonable HF fallback when open_clip is not available
-                model_id = "openai/clip-vit-base-patch32"
             self._model = CLIPModel.from_pretrained(model_id).to(self._device).eval()
             self._processor = CLIPProcessor.from_pretrained(model_id)
             self._ml_available = True

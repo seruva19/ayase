@@ -71,6 +71,15 @@ _IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
 
 class FaceSimModule(PipelineModule):
     name = "facesim"
+    provenance = {
+        "facesim_arc": "published",
+        "facesim_cur": "published",
+        "facesim_face_frames": "utility",
+    }
+    sources = {
+        "facesim_arc": "ConsisID (arXiv:2411.17440); OpenS2V-Eval (arXiv:2505.20292); ports of the official eval scripts — https://github.com/PKU-YuanGroup/ConsisID",
+        "facesim_cur": "ConsisID (arXiv:2411.17440); OpenS2V-Eval (arXiv:2505.20292); ports of the official eval scripts — https://github.com/PKU-YuanGroup/ConsisID",
+    }
     description = "FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)"
     default_config = {
         "protocol": "consisid",   # "consisid" (16 frames, OpenCV) or "opens2v" (32 frames, decord)

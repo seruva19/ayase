@@ -132,11 +132,20 @@ def _downsample(img: np.ndarray, times: int) -> np.ndarray:
 
 class SpEEDQAModule(PipelineModule):
     name = "speedqa"
+    provenance = "adapted"
+    sources = {
+        "speedqa_score": "Bampis et al., IEEE SPL 2017; SpEED-QA_release (MATLAB) — https://github.com/christosbampis/SpEED-QA_release",
+    }
+    deviations = {
+        "speedqa_score": "port of the formulas and protocol (all consecutive frames, fixed down_size); cv2 INTER_AREA is area averaging, not MATLAB imresize's antialiased cubic — small numerical differences; luma via BGR2GRAY",
+    }
     description = "SpEED-QA spatial+temporal entropic differencing (deterministic port; distortion index, higher=worse)"
     default_config = {
-        "subsample": 8,
+        # Cap on decoded video frames; 0 = whole video (upstream protocol).
+        "max_frames": 0,
         "blk": 5,
         "sigma_nsq": 0.1,
+        # Fixed number of halvings (upstream SpEED_Video_Demo uses 4).
         "down_size": 4,
         "gaussian_size": 7,
     }
@@ -146,7 +155,7 @@ class SpEEDQAModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.subsample = int(self.config.get("subsample", 8))
+        self.max_frames = int(self.config.get("max_frames", 0))
         self.blk = int(self.config.get("blk", 5))
         self.sigma_nsq = float(self.config.get("sigma_nsq", 0.1))
         self.down_size = int(self.config.get("down_size", 4))
@@ -160,16 +169,6 @@ class SpEEDQAModule(PipelineModule):
         self._backend = "port"
 
     # ------------------------------------------------------------------ core
-
-    def _adaptive_down_size(self, min_dim: int) -> int:
-        """Cap downsampling so the coarsest band still holds >= 2 blocks."""
-        need = 2 * self.blk
-        n = 0
-        d = min_dim
-        while n < self.down_size and d // 2 >= need:
-            d //= 2
-            n += 1
-        return n
 
     def _single_scale_video(
         self,
@@ -219,8 +218,7 @@ class SpEEDQAModule(PipelineModule):
         n = min(len(ref_frames), len(dis_frames))
         if n == 0:
             return None
-        min_dim = min(ref_frames[0].shape[0], ref_frames[0].shape[1])
-        times = self._adaptive_down_size(min_dim)
+        times = self.down_size
 
         if n == 1:
             return self._single_scale_spatial(ref_frames[0], dis_frames[0], times)
@@ -248,16 +246,15 @@ class SpEEDQAModule(PipelineModule):
 
         frames: List[np.ndarray] = []
         if is_video:
+            # Upstream uses every adjacent frame pair of the whole video —
+            # decode sequentially (temporal SpEED needs consecutive frames).
             cap = cv2.VideoCapture(path)
             try:
-                total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-                step = max(1, total // self.subsample) if total else 1
-                indices = list(range(0, total, step))[: self.subsample] if total else []
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                while self.max_frames <= 0 or len(frames) < self.max_frames:
                     ret, frame = cap.read()
-                    if ret:
-                        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64))
+                    if not ret:
+                        break
+                    frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64))
             finally:
                 cap.release()
         else:

@@ -110,16 +110,16 @@ def test_verse_bench_post_process(monkeypatch, tmp_path):
     sample = Sample(path=video_path, is_video=True)
     module.post_process([sample])
 
-    assert module.pipeline.stats.verse_bench_overall == 0.72
+    assert module.pipeline.stats.verse_bench_overall_est == 0.72
     assert module.pipeline.stats.verse_bench_metrics is not None
-    assert module.pipeline.stats.verse_bench_breakdown is not None
+    assert module.pipeline.stats.verse_bench_breakdown_est is not None
 
 
 def test_verse_bench_dataset_stats_fields():
     stats = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
-    assert hasattr(stats, "verse_bench_overall")
+    assert hasattr(stats, "verse_bench_overall_est")
     assert hasattr(stats, "verse_bench_metrics")
-    assert hasattr(stats, "verse_bench_breakdown")
+    assert hasattr(stats, "verse_bench_breakdown_est")
 
 
 def test_verse_bench_validate_missing_materialized_assets(tmp_path):

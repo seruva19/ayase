@@ -105,6 +105,13 @@ class VisionRewardModule(PipelineModule):
     """Fine-grained QA-decomposed preference reward (VisionReward, AAAI 2026)."""
 
     name = "vision_reward"
+    provenance = "adapted"
+    sources = {
+        "vision_reward_score": "VisionReward, zai-org (AAAI 2026) — https://github.com/zai-org/VisionReward",
+    }
+    deviations = {
+        "vision_reward_score": "29 questions and weights verbatim; images are skipped (VisionReward-Image is a separate sat checkpoint, not implemented); frames uniformly <=24 via sample_frames",
+    }
     description = (
         "VisionReward fine-grained QA-decomposed human preference reward "
         "(CogVLM2-Video judgment questions, linearly weighted) — AAAI 2026"
@@ -225,6 +232,10 @@ class VisionRewardModule(PipelineModule):
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         if not self._ml_available or self._model is None:
+            return sample
+        if not sample.is_video:
+            # VisionReward-Image is a separate sat-only checkpoint — the video
+            # model + video question set does not apply to stills.
             return sample
 
         try:

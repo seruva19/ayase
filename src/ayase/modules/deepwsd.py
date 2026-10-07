@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 class DeepWSDModule(PipelineModule):
     name = "deepwsd"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "deepwsd_score": "DeepWSD (Liao et al., ACM MM 2022) — per the paper's design — https://github.com/Buka-Xing/DeepWSD",
+    }
     description = "DeepWSD Wasserstein distance FR image quality"
     default_config = {"subsample": 4}
     metric_groups = {

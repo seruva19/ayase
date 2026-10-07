@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class LIQEModule(PipelineModule):
     name = "liqe"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "liqe_score": "LIQE (Zhang et al., CVPR 2023) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "LIQE lightweight no-reference IQA"
     default_config = {
         "subsample": 5,

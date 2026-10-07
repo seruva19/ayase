@@ -1,9 +1,10 @@
-"""No-reference image quality scoring with PyIQA's A-FINE NR model.
+"""Full-reference image quality scoring with PyIQA's A-FINE model.
 
-The module scores an image or averages up to four sampled video frames;
-higher means greater model-predicted perceptual quality, with no wrapper-defined
-range. It does not use ``sample.reference_path`` or expose A-FINE's full-
-reference variant, and video scores contain no temporal assessment.
+A-FINE (Chen et al., CVPR 2025) is a full-reference metric blending fidelity
+and naturalness branches; the published ``afine`` model requires a reference
+image (``sample.reference_path``) and emits a higher-is-better quality score.
+``afine`` is available from the PyIQA main branch rather than a released
+PyIQA package; package versions without it leave the module unavailable.
 
 Model basis: https://github.com/chaofengc/IQA-PyTorch
 """
@@ -22,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class AFINEModule(PipelineModule):
     name = "afine"
+    provenance = "published"
+    requires_external_backend = True  # afine ships only in pyiqa main, not released pyiqa
+    sources = {
+        "afine_score": "A-FINE (Chen et al., CVPR 2025), pyiqa ``afine`` FR model — https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/default_model_configs.py",
+    }
     description = "A-FINE adaptive fidelity-naturalness IQA (CVPR 2025)"
     default_config = {"subsample": 4}
     metric_groups = {
@@ -42,8 +48,8 @@ class AFINEModule(PipelineModule):
             from ayase.runtime import resolve_torch_device
 
             device = resolve_torch_device(self.config.get("device", "auto"))
-            # Use NR variant by default (no reference needed)
-            self._model = pyiqa.create_metric("afine_nr", device=device)
+            # Published A-FINE is the full-reference blend.
+            self._model = pyiqa.create_metric("afine", device=device)
             try:
                 self._device = next(self._model.parameters()).device
             except StopIteration:
@@ -61,8 +67,26 @@ class AFINEModule(PipelineModule):
             sample.quality_metrics = QualityMetrics()
         if not self._ml_available:
             return sample
+
+        # Published A-FINE is full-reference — nothing to score without one.
+        reference = getattr(sample, "reference_path", None)
+        if reference is None:
+            return sample
+
         try:
+            import cv2
             import torch
+
+            ref = cv2.imread(str(reference), cv2.IMREAD_COLOR)
+            if ref is None:
+                return sample
+            ref_tensor = (
+                torch.from_numpy(np.ascontiguousarray(ref[..., ::-1]))
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                / 255.0
+            ).to(self._device)
 
             frames = self._load_frames(sample)
             if not frames:
@@ -70,7 +94,6 @@ class AFINEModule(PipelineModule):
 
             scores = []
             for frame in frames:
-                # frames are RGB read-only views; copy before torch.from_numpy.
                 tensor = (
                     torch.from_numpy(np.ascontiguousarray(frame))
                     .permute(2, 0, 1)
@@ -79,8 +102,14 @@ class AFINEModule(PipelineModule):
                     / 255.0
                 )
                 tensor = tensor.to(self._device)
+                # Match the reference height/width when they differ — pyiqa
+                # FR metrics require aligned inputs.
+                if tensor.shape[-2:] != ref_tensor.shape[-2:]:
+                    tensor = torch.nn.functional.interpolate(
+                        tensor, size=ref_tensor.shape[-2:], mode="area"
+                    )
                 with torch.no_grad():
-                    score = self._model(tensor).item()
+                    score = self._model(tensor, ref_tensor).item()
                 scores.append(score)
 
             sample.quality_metrics.afine_score = float(np.mean(scores))

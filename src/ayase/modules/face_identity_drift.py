@@ -69,6 +69,15 @@ class FaceIdentityDriftModule(PipelineModule):
     """Expose chronological ArcFace identity diagnostics without aggregating them."""
 
     name = "face_identity_drift"
+    provenance = "own"
+    sources = {
+        "face_identity_below_threshold_fraction": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",
+        "face_identity_detection_coverage": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",
+        "face_identity_drift_slope": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",
+        "face_identity_longest_below_threshold_run_fraction": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",
+        "face_identity_similarity_min": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",
+        "face_identity_similarity_p05": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",
+    }
     description = "Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics"
     default_config = {
         "face_model": "buffalo_l",

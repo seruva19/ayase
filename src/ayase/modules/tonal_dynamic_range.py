@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 class TonalDynamicRangeModule(PipelineModule):
     name = "tonal_dynamic_range"
+    deprecated = True
+    provenance = "own"
     description = "Luminance histogram tonal range (0-100)"
     default_config = {
         "low_percentile": 1,

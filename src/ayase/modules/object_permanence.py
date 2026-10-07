@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 class ObjectPermanenceModule(PipelineModule):
     name = "object_permanence"
+    deprecated = True
+    provenance = "own"
     description = "Object tracking consistency (ID switches, disappearances)"
     default_config = {
         "backend": "auto",  # "yolo", "contour", or "auto"

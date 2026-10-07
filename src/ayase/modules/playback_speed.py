@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 class PlaybackSpeedModule(PipelineModule):
     name = "playback_speed"
+    deprecated = True
+    provenance = "own"
     description = "Playback speed normality detection (1.0=normal)"
     default_config = {"subsample": 16}
     metric_groups = {

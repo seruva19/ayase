@@ -7,6 +7,7 @@ Range: 0-100 (lower = fewer artifacts, higher = more severe artifacts).
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -19,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 class CompressionArtifactsModule(PipelineModule):
     name = "compression_artifacts"
+    deprecated = True
+    provenance = "own"
     description = "Detects compression artifacts (blocking, ringing, mosquito noise)"
     default_config = {
         # Pure OpenCV/NumPy
@@ -38,7 +41,7 @@ class CompressionArtifactsModule(PipelineModule):
     def setup(self) -> None:
         pass  # No setup needed
 
-    def _detect_blocking(self, frame: np.ndarray) -> float:
+    def _detect_blocking(self, frame: np.ndarray) -> Optional[float]:
         """Detect blocking artifacts (8x8 block boundaries).
 
         Args:
@@ -74,9 +77,9 @@ class CompressionArtifactsModule(PipelineModule):
 
         except Exception as e:
             logger.debug(f"Blocking detection failed: {e}")
-            return 0.0
+            return None
 
-    def _detect_ringing(self, frame: np.ndarray) -> float:
+    def _detect_ringing(self, frame: np.ndarray) -> Optional[float]:
         """Detect ringing artifacts (high-frequency oscillations near edges).
 
         Args:
@@ -109,9 +112,9 @@ class CompressionArtifactsModule(PipelineModule):
 
         except Exception as e:
             logger.debug(f"Ringing detection failed: {e}")
-            return 0.0
+            return None
 
-    def _detect_mosquito_noise(self, frame: np.ndarray) -> float:
+    def _detect_mosquito_noise(self, frame: np.ndarray) -> Optional[float]:
         """Detect mosquito noise (temporal flickering near edges).
 
         Note: Requires multiple frames for proper detection.
@@ -147,25 +150,30 @@ class CompressionArtifactsModule(PipelineModule):
 
         except Exception as e:
             logger.debug(f"Mosquito noise detection failed: {e}")
-            return 0.0
+            return None
 
-    def _compute_artifacts_score(self, frame: np.ndarray) -> float:
+    def _compute_artifacts_score(self, frame: np.ndarray) -> Optional[float]:
         """Compute overall compression artifacts score.
 
         Args:
             frame: Input frame
 
         Returns:
-            Artifacts score (0-100, higher = more artifacts)
+            Artifacts score (0-100, higher = more artifacts), or None if no
+            component detector produced a value.
         """
         blocking = self._detect_blocking(frame)
         ringing = self._detect_ringing(frame)
         mosquito = self._detect_mosquito_noise(frame)
 
-        # Weighted combination
-        artifacts = (blocking * 0.4 + ringing * 0.4 + mosquito * 0.2) * 100.0
-
-        return float(artifacts)
+        # Weighted combination over the components that actually ran; a
+        # failed detector stays out of the blend rather than counting as 0.
+        parts = [(blocking, 0.4), (ringing, 0.4), (mosquito, 0.2)]
+        avail = [(v, w) for v, w in parts if v is not None]
+        if not avail:
+            return None
+        total_w = sum(w for _, w in avail)
+        return float(sum(v * w for v, w in avail) / total_w * 100.0)
 
     def process(self, sample: Sample) -> Sample:
         """Process sample to detect compression artifacts."""
@@ -175,6 +183,8 @@ class CompressionArtifactsModule(PipelineModule):
                 img = cv2.imread(str(sample.path))
                 if img is not None:
                     artifacts_score = self._compute_artifacts_score(img)
+                    if artifacts_score is None:
+                        return sample
 
                     if sample.quality_metrics is None:
                         sample.quality_metrics = QualityMetrics()
@@ -213,7 +223,8 @@ class CompressionArtifactsModule(PipelineModule):
 
                     if frame_idx % self.subsample == 0:
                         score = self._compute_artifacts_score(frame)
-                        artifacts_scores.append(score)
+                        if score is not None:
+                            artifacts_scores.append(score)
                         if len(artifacts_scores) >= max_frames:
                             break
 

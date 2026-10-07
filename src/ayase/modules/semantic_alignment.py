@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 class SemanticAlignmentModule(PipelineModule):
     name = "semantic_alignment"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "clip_score": "CLIPSIM (Wu et al., GODIVA 2021) — https://arxiv.org/abs/2104.14806",
+    }
     description = "Checks alignment between video and caption (CLIP Score)"
 
     default_config = {

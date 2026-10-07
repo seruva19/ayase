@@ -11,9 +11,10 @@ Outputs:
 Requires ``sample.reference_path`` pointing to a reference face image.
 Gracefully skips when no reference is provided.
 
-Backends (real ArcFace face-recognition embeddings only):
-    1. InsightFace (buffalo_l ArcFace)
-    2. DeepFace (ArcFace) — fallback
+Backend: InsightFace (buffalo_l — RetinaFace detection + ArcFace embedding),
+the canonical implementation used by identity-preserving generation papers.
+A single backend is required: different detector/alignment stacks produce
+incomparable distances, so there is no second implementation.
 
 The largest detected face is used. Pre-cropped face chips (an aligned face filling
 the frame) are invisible to RetinaFace, so detection is retried once on a
@@ -39,6 +40,15 @@ logger = logging.getLogger(__name__)
 
 class IdentityLossModule(PipelineModule):
     name = "identity_loss"
+    provenance = "adapted"
+    sources = {
+        "face_recognition_score": "ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface",
+        "identity_loss": "ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface",
+    }
+    deviations = {
+        "face_recognition_score": "mean cosine similarity over subsampled video frames — the video aggregation is an extension of the image metric",
+        "identity_loss": "mean 1-cos over subsampled video frames — the video aggregation is an extension of the image metric",
+    }
     description = "Face identity preservation metric (ArcFace cosine distance/similarity vs reference)"
     default_config = {
         "model_name": "buffalo_l",
@@ -59,12 +69,10 @@ class IdentityLossModule(PipelineModule):
         self.subsample = self.config.get("subsample", 8)
         self.warning_threshold = self.config.get("warning_threshold", 0.5)
         self.pad_retry = max(0.0, float(self.config.get("pad_retry", 0.25)))
-        self._backend = None  # "insightface" | "deepface" | "unavailable"
+        self._backend = None  # "insightface" | "unavailable"
         self._app = None  # InsightFace FaceAnalysis
-        self._deepface = None
 
     def setup(self):
-        # Tier 1: InsightFace (ArcFace)
         try:
             from insightface.app import FaceAnalysis
             self._app = FaceAnalysis(name=self.model_name, providers=["CPUExecutionProvider"])
@@ -75,24 +83,14 @@ class IdentityLossModule(PipelineModule):
         except Exception:
             pass
 
-        # Tier 2: DeepFace (ArcFace)
-        try:
-            from deepface import DeepFace
-            self._deepface = DeepFace
-            self._backend = "deepface"
-            logger.info("IdentityLoss: using DeepFace (ArcFace) backend.")
-            return
-        except Exception:
-            pass
-
         self._backend = "unavailable"
         logger.warning(
-            "IdentityLoss: no ArcFace face-recognition backend available "
-            "(install insightface+onnxruntime or deepface); identity_loss left unset."
+            "IdentityLoss: InsightFace not available "
+            "(install insightface+onnxruntime); identity_loss left unset."
         )
 
     def process(self, sample: Sample) -> Sample:
-        if self._backend not in ("insightface", "deepface"):
+        if self._backend != "insightface":
             return sample
 
         ref_path = getattr(sample, "reference_path", None)
@@ -108,12 +106,7 @@ class IdentityLossModule(PipelineModule):
             if not frames:
                 return sample
 
-            if self._backend == "insightface":
-                distance = self._compute_insightface(ref_rgb, frames)
-            elif self._backend == "deepface":
-                distance = self._compute_deepface(ref_path, sample, frames)
-            else:
-                distance = None
+            distance = self._compute_insightface(ref_rgb, frames)
 
             if distance is None:
                 return sample
@@ -155,31 +148,6 @@ class IdentityLossModule(PipelineModule):
             if emb is None:
                 continue
             distances.append(1.0 - float(np.dot(ref_emb, emb)))
-
-        return float(np.mean(distances)) if distances else None
-
-    def _compute_deepface(self, ref_path, sample, frames):
-        import tempfile
-        import os
-        from PIL import Image
-
-        distances = []
-        for frame in frames:
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-                tmp_path = tmp.name
-                Image.fromarray(np.ascontiguousarray(frame)).save(tmp_path)
-            try:
-                result = self._deepface.verify(
-                    img1_path=str(ref_path),
-                    img2_path=tmp_path,
-                    model_name="ArcFace",
-                    enforce_detection=False,
-                )
-                distances.append(result["distance"])
-            except Exception:
-                pass
-            finally:
-                os.unlink(tmp_path)
 
         return float(np.mean(distances)) if distances else None
 

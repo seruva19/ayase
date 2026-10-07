@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class ILNIQEModule(PipelineModule):
     name = "ilniqe"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "ilniqe": "IL-NIQE (Zhang et al., TIP 2015) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "IL-NIQE integrated local no-reference quality (lower=better)"
     default_config = {
         "subsample": 3,

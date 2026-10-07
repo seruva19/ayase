@@ -39,6 +39,8 @@ CODEC_BPP_TARGETS = {
 
 class CodecSpecificQualityModule(PipelineModule):
     name = "codec_specific_quality"
+    deprecated = True
+    provenance = "own"
     description = "Codec-level efficiency, GOP quality, and artifact detection"
     default_config = {
         "max_frames": 100,  # For artifact detection

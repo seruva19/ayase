@@ -63,6 +63,14 @@ def _get_quality_model_class():
 
 class NemoCuratorModule(PipelineModule):
     name = "nemo_curator"
+    deprecated = True
+    provenance = {
+        "nemo_quality_label": "published",
+        "nemo_quality_score": "own",
+    }
+    sources = {
+        "nemo_quality_label": "NVIDIA quality-classifier-deberta (NeMo Curator) — https://huggingface.co/nvidia/quality-classifier-deberta",
+    }
     description = "Caption text quality scoring (DeBERTa/FastText)"
     default_config = {
         "backend": "auto",  # auto | deberta | fasttext

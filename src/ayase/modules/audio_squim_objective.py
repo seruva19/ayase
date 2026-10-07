@@ -9,10 +9,8 @@ reference is available.
 
 The released model was trained on five-second, 16 kHz DNS 2020 speech signals.
 Ayase decodes mono float32 audio at exactly 16 kHz without amplitude or loudness
-normalization. Inputs longer than five seconds are covered by deterministic,
-uniformly spaced five-second windows, including a tail-aligned final window;
-at most ``max_windows`` are evaluated and their three predictions are averaged.
-Shorter non-silent speech is evaluated at its native length. Missing audio,
+normalization and evaluates the whole waveform in a single pass, matching the
+official ``SQUIM_OBJECTIVE.get_model()(waveform)`` usage. Missing audio,
 near-silence, and audio shorter than ``min_duration_seconds`` are left unset.
 
 Use this module for monaural speech, especially noisy or enhanced speech. Music,
@@ -36,7 +34,7 @@ Official checkpoint:
 """
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -47,7 +45,6 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 _SAMPLE_RATE = 16000
-_WINDOW_SECONDS = 5.0
 _WEIGHTS_URL = (
     "https://download.pytorch.org/torchaudio/models/squim_objective_dns2020.pth"
 )
@@ -71,12 +68,17 @@ class AudioSQUIMObjectiveModule(PipelineModule):
     """Estimate STOI, WB-PESQ, and SI-SDR from speech without a reference."""
 
     name = "audio_squim_objective"
+    provenance = "published"
+    sources = {
+        "squim_pesq_score": "TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html",
+        "squim_si_sdr_score": "TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html",
+        "squim_stoi_score": "TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html",
+    }
     description = (
         "TorchAudio-SQUIM reference-free estimates of STOI, WB-PESQ, and SI-SDR"
     )
     default_config = {
         "device": "auto",
-        "max_windows": 12,
         "min_duration_seconds": 1.0,
         "silence_rms_threshold": 1e-5,
     }
@@ -118,7 +120,6 @@ class AudioSQUIMObjectiveModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.max_windows = max(1, int(self.config.get("max_windows", 12)))
         self.min_duration_seconds = max(
             0.0, float(self.config.get("min_duration_seconds", 1.0))
         )
@@ -156,30 +157,29 @@ class AudioSQUIMObjectiveModule(PipelineModule):
 
         try:
             audio = load_audio(sample.path, target_sr=_SAMPLE_RATE, mono=True)
-            windows = self._select_windows(audio)
-            if not windows:
+            waveform = self._prepare_waveform(audio)
+            if waveform is None:
                 return sample
 
-            scores = [self._score_window(window) for window in windows]
-            mean_scores = np.mean(np.asarray(scores, dtype=np.float64), axis=0)
-            if not np.all(np.isfinite(mean_scores)):
+            values = self._score_waveform(waveform)
+            if not all(np.isfinite(value) for value in values):
                 logger.warning("SQUIM returned non-finite scores for %s", sample.path)
                 return sample
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.squim_stoi_score = round(float(mean_scores[0]), 4)
-            sample.quality_metrics.squim_pesq_score = round(float(mean_scores[1]), 4)
-            sample.quality_metrics.squim_si_sdr_score = round(float(mean_scores[2]), 4)
+            sample.quality_metrics.squim_stoi_score = round(values[0], 4)
+            sample.quality_metrics.squim_pesq_score = round(values[1], 4)
+            sample.quality_metrics.squim_si_sdr_score = round(values[2], 4)
         except Exception as e:
             logger.warning("TorchAudio-SQUIM Objective failed for %s: %s", sample.path, e)
 
         return sample
 
-    def _select_windows(self, audio: Optional[np.ndarray]) -> List[np.ndarray]:
-        """Return deterministic speech windows without changing sample amplitudes."""
+    def _prepare_waveform(self, audio: Optional[np.ndarray]) -> Optional[np.ndarray]:
+        """Return the whole mono waveform, or None when the input is unusable."""
         if audio is None:
-            return []
+            return None
 
         waveform = np.asarray(audio, dtype=np.float32)
         if waveform.ndim > 1:
@@ -188,25 +188,10 @@ class AudioSQUIMObjectiveModule(PipelineModule):
 
         min_samples = int(round(self.min_duration_seconds * _SAMPLE_RATE))
         if waveform.size < max(1, min_samples):
-            return []
-
-        window_samples = int(round(_WINDOW_SECONDS * _SAMPLE_RATE))
-        if waveform.size <= window_samples:
-            candidates = [waveform]
-        else:
-            available_windows = int(np.ceil(waveform.size / window_samples))
-            count = min(self.max_windows, available_windows)
-            last_start = waveform.size - window_samples
-            if count == 1:
-                starts = np.asarray([last_start], dtype=np.int64)
-            else:
-                starts = np.linspace(0, last_start, num=count, dtype=np.int64)
-            candidates = [
-                waveform[int(start) : int(start) + window_samples]
-                for start in starts
-            ]
-
-        return [window for window in candidates if not self._is_near_silent(window)]
+            return None
+        if self._is_near_silent(waveform):
+            return None
+        return waveform
 
     def _is_near_silent(self, waveform: np.ndarray) -> bool:
         if waveform.size == 0:
@@ -214,7 +199,7 @@ class AudioSQUIMObjectiveModule(PipelineModule):
         rms = float(np.sqrt(np.mean(np.square(waveform, dtype=np.float64))))
         return not np.isfinite(rms) or rms <= self.silence_rms_threshold
 
-    def _score_window(self, waveform: np.ndarray) -> Tuple[float, float, float]:
+    def _score_waveform(self, waveform: np.ndarray) -> Tuple[float, float, float]:
         import torch
 
         tensor = torch.from_numpy(np.ascontiguousarray(waveform)).float()

@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import cv2
 import numpy as np
+import pytest
 
 from ayase.models import QualityMetrics, Sample, VideoMetadata
 
@@ -139,22 +140,22 @@ def test_dnsmos_no_backend(video_sample):
 
 
 def test_pu_metrics_basics():
-    from ayase.modules.pu_metrics import PUMetricsModule
+    from ayase.modules.log_metrics import PUMetricsModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(PUMetricsModule, "pu_metrics")
+    _test_module_basics(PUMetricsModule, "log_metrics")
 
 
 def test_pu_metrics_no_reference(image_sample):
-    from ayase.modules.pu_metrics import PUMetricsModule
+    from ayase.modules.log_metrics import PUMetricsModule
 
     m = PUMetricsModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is None or result.quality_metrics.pu_psnr is None
+    assert result.quality_metrics is None or result.quality_metrics.log_psnr is None
 
 
 def test_pu_metrics_setup():
-    from ayase.modules.pu_metrics import PUMetricsModule
+    from ayase.modules.log_metrics import PUMetricsModule
 
     m = PUMetricsModule()
     m.setup()
@@ -162,7 +163,7 @@ def test_pu_metrics_setup():
 
 
 def test_pu21_encode():
-    from ayase.modules.pu_metrics import _pu21_encode
+    from ayase.modules.log_metrics import _pu21_encode
 
     linear = np.array([0.0, 0.5, 1.0])
     encoded = _pu21_encode(linear)
@@ -171,7 +172,7 @@ def test_pu21_encode():
 
 
 def test_pu_metrics_compute():
-    from ayase.modules.pu_metrics import PUMetricsModule
+    from ayase.modules.log_metrics import PUMetricsModule
 
     m = PUMetricsModule()
     m.setup()
@@ -185,7 +186,7 @@ def test_pu_metrics_compute():
 
 
 def test_pu_metrics_identical():
-    from ayase.modules.pu_metrics import PUMetricsModule
+    from ayase.modules.log_metrics import PUMetricsModule
 
     m = PUMetricsModule()
     ref = np.full((64, 64, 3), 5000.0, dtype=np.float32)
@@ -209,23 +210,23 @@ def test_hdr_metadata_image(image_sample):
 
 
 def test_hdr_metadata_video(video_sample):
+    # CTA-861.3 MaxCLL/MaxFALL are defined only for PQ (smpte2084) content;
+    # a synthetic SDR clip leaves the fields unset.
     from ayase.modules.hdr_metadata import HDRMetadataModule
 
     m = HDRMetadataModule()
     result = m.process(video_sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.max_fall is not None
-    assert result.quality_metrics.max_fall >= 0
-    assert result.quality_metrics.max_cll is not None
-    assert result.quality_metrics.max_cll >= 0
+    qm = result.quality_metrics
+    assert qm is None or (qm.max_fall is None and qm.max_cll is None)
 
 
-def test_bt709_luminance():
-    from ayase.modules.hdr_metadata import _bt709_luminance
+def test_pq_eotf_endpoints():
+    from ayase.modules.hdr_metadata import _pq_eotf
 
-    white = np.array([[[255, 255, 255]]], dtype=np.float32)
-    lum = _bt709_luminance(white)
-    assert abs(lum[0, 0] - 255.0) < 1.0
+    assert _pq_eotf(np.array([0.0]))[0] == pytest.approx(0.0)
+    assert _pq_eotf(np.array([1.0]))[0] == pytest.approx(10000.0)
+    mid = _pq_eotf(np.array([0.5]))[0]
+    assert 0.0 < mid < 10000.0
 
 
 def test_hdr_vdp_basics():
@@ -459,22 +460,22 @@ def test_ciede2000_vectorized():
 
 
 def test_psnr_hvs_basics():
-    from ayase.modules.psnr_hvs import PSNRHVSModule
+    from ayase.modules.psnr_hvs_approx import PSNRHVSModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(PSNRHVSModule, "psnr_hvs")
+    _test_module_basics(PSNRHVSModule, "psnr_hvs_approx")
 
 
 def test_psnr_hvs_no_reference(image_sample):
-    from ayase.modules.psnr_hvs import PSNRHVSModule
+    from ayase.modules.psnr_hvs_approx import PSNRHVSModule
 
     m = PSNRHVSModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is None or result.quality_metrics.psnr_hvs is None
+    assert result.quality_metrics is None or result.quality_metrics.psnr_hvs_approx is None
 
 
 def test_psnr_hvs_setup():
-    from ayase.modules.psnr_hvs import PSNRHVSModule
+    from ayase.modules.psnr_hvs_approx import PSNRHVSModule
 
     m = PSNRHVSModule()
     m.setup()
@@ -482,7 +483,7 @@ def test_psnr_hvs_setup():
 
 
 def test_psnr_hvs_identical(tmp_dir):
-    from ayase.modules.psnr_hvs import PSNRHVSModule
+    from ayase.modules.psnr_hvs_approx import PSNRHVSModule
 
     m = PSNRHVSModule()
     m.setup()
@@ -497,7 +498,7 @@ def test_psnr_hvs_identical(tmp_dir):
 
 
 def test_psnr_hvs_different(tmp_dir):
-    from ayase.modules.psnr_hvs import PSNRHVSModule
+    from ayase.modules.psnr_hvs_approx import PSNRHVSModule
 
     m = PSNRHVSModule()
     m.setup()
@@ -659,9 +660,9 @@ def test_industry_fields():
         assert hasattr(qm, field)
     for field in ["visqol", "dnsmos_overall", "dnsmos_sig", "dnsmos_bak"]:
         assert hasattr(qm, field)
-    for field in ["pu_psnr", "pu_ssim", "max_fall", "max_cll", "hdr_vdp", "delta_ictcp"]:
+    for field in ["log_psnr", "plain_ssim", "max_fall", "max_cll", "hdr_vdp", "delta_ictcp"]:
         assert hasattr(qm, field)
-    for field in ["ciede2000", "psnr_hvs", "psnr_hvs_m", "cgvqm", "strred", "p1203_mos"]:
+    for field in ["ciede2000", "psnr_hvs_approx", "psnr_acmask", "cgvqm", "strred", "p1203_mos"]:
         assert hasattr(qm, field)
 
 
@@ -675,7 +676,7 @@ def test_industry_dataset_stats_fields():
 
 def test_psnr_hvs_differs_from_plain_psnr(tmp_dir):
     """PSNR-HVS (CSF-weighted DCT) should produce different values than plain PSNR."""
-    from ayase.modules.psnr_hvs import PSNRHVSModule
+    from ayase.modules.psnr_hvs_approx import PSNRHVSModule
 
     # Create two similar images with known difference
     ref = np.full((64, 64, 3), 128, dtype=np.uint8)
@@ -712,7 +713,7 @@ def test_p1203_dispatches_to_itu_p1203_when_loaded():
 
     mock_cls = MagicMock()
     mock_instance = MagicMock()
-    mock_instance.calculate.return_value = {"O46": 3.5}
+    mock_instance.calculate_complete.return_value = {"O46": 3.5}
     mock_cls.return_value = mock_instance
     module._p1203_cls = mock_cls
 

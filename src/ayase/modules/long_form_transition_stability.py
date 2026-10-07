@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 class LongFormTransitionStabilityModule(PipelineModule):
     name = "long_form_transition_stability"
+    deprecated = True
+    provenance = "own"
     description = "Boundary-local black-frame, flash, duplicate, and freeze stability"
     default_config = {
         "analysis_fps": 8.0,

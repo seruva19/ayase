@@ -41,15 +41,12 @@ def test_i2i_fidelity_identical_pair_populates_compact_fields(tmp_path):
 
     assert result is sample
     assert metrics is not None
-    assert len(ALL_FIELDS) == 19
+    assert len(ALL_FIELDS) == 3
     values = {field: getattr(metrics, field) for field in ALL_FIELDS}
     assert all(value is not None and np.isfinite(value) for value in values.values())
     assert values["i2i_mse"] == pytest.approx(0.0)
     assert values["i2i_mae"] == pytest.approx(0.0)
-    assert values["i2i_exact_match_ratio"] == pytest.approx(1.0)
-    assert values["i2i_edge_f1"] == pytest.approx(1.0)
-    assert values["i2i_spectral_cosine"] == pytest.approx(1.0)
-    assert values["i2i_mutual_information"] > 0
+    assert values["i2i_gradient_similarity_mean"] == pytest.approx(1.0)
 
 
 def test_i2i_fidelity_detects_changed_pair(tmp_path):
@@ -62,8 +59,7 @@ def test_i2i_fidelity_detects_changed_pair(tmp_path):
 
     assert metrics.i2i_mse > 0
     assert metrics.i2i_mae > 0
-    assert metrics.i2i_exact_match_ratio < 1
-    assert metrics.i2i_hist_bhattacharyya_red > 0
+    assert metrics.i2i_gradient_similarity_mean < 1
     assert metrics.i2i_dinov2_cls_similarity is None
 
 

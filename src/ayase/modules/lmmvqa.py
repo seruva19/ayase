@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 class LMMVQAModule(PipelineModule):
     name = "lmmvqa"
+    provenance = "utility"
+    sources = {
+        "lmmvqa_score": "LMM-VQA (2024) — stub — https://github.com/Sueqk/LMM-VQA",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "LMM-VQA spatiotemporal quality (real model only; disabled if unavailable)"
     default_config = {

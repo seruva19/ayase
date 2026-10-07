@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 class HyperIQAModule(PipelineModule):
     name = "hyperiqa"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "hyperiqa_score": "HyperIQA (Su et al., CVPR 2020) via pyiqa — https://github.com/SSL92/hyperIQA",
+    }
     description = "HyperIQA adaptive hypernetwork NR image quality"
     default_config = {"subsample": 4}
     metric_groups = {

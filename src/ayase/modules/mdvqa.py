@@ -440,10 +440,18 @@ def _build_motion(device):
 
 class MDVQAModule(PipelineModule):
     name = "mdvqa"
+    provenance = "adapted"
+    sources = {
+        "mdvqa_score": "MD-VQA (Zhang et al., CVPR 2023) — https://github.com/kunyou99/MD-VQA_cvpr2023",
+    }
+    deviations = {
+        "mdvqa_score": "model and head vendored verbatim; upstream protocol: the whole video is read, int(seconds*16) frames sampled uniformly; max_seconds is an optional time limit (upstream time_limit)",
+    }
     description = "MD-VQA multi-dimensional UGC live VQA (CVPR 2023; real model only, disabled if unavailable)"
     default_config = {
         "clip_len": 16,     # frames per motion clip (upstream fixed at 16)
-        "max_clips": 8,     # cap on sampled clips (bounds compute); N = clips * 16
+        # Cap on video seconds decoded (upstream time_limit); 0 = whole video.
+        "max_seconds": 0,
         "device": "auto",
     }
     metric_groups = {
@@ -453,7 +461,7 @@ class MDVQAModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.clip_len = int(self.config.get("clip_len", 16))
-        self.max_clips = int(self.config.get("max_clips", 8))
+        self.max_seconds = float(self.config.get("max_seconds", 0))
         self._ml_available = False
         self._backend = None
         self._device = "cpu"
@@ -516,10 +524,15 @@ class MDVQAModule(PipelineModule):
     def _score_video(self, sample: Sample) -> Optional[float]:
         import torch
 
-        frames = self._decode_frames(sample)
-        if len(frames) < self.clip_len:
+        frames, fps = self._decode_frames(sample)
+        if len(frames) < self.clip_len or fps <= 0:
             return None
-        n_clips = min(self.max_clips, len(frames) // self.clip_len)
+        # Upstream: sample_num = int(int(seconds) * 16) frames uniform over the
+        # whole video, then consecutive 16-frame motion clips on the sample.
+        seconds = len(frames) / fps
+        sample_num = max(self.clip_len, int(int(seconds) * 16))
+        sample_num = min(sample_num, len(frames))
+        n_clips = sample_num // self.clip_len
         if n_clips < 1:
             return None
         n = n_clips * self.clip_len  # multiple of clip_len, even, >= 16
@@ -535,9 +548,8 @@ class MDVQAModule(PipelineModule):
                 semantic.unsqueeze(0), metric.unsqueeze(0), motion.unsqueeze(0)
             )
         score_ori = float(out.item())
-        # Upstream affine calibration to a 0-100 MOS, then normalise to 0-1.
-        mos = max(0.0, min(99.99, score_ori * 0.8313 + 21.0112))
-        return mos / 100.0
+        # Upstream affine calibration to the native 0-100 MOS scale.
+        return round(max(0.0, min(99.99, score_ori * 0.8313 + 21.0112)), 2)
 
     def _normalize_clip(self, frames_rgb: List[np.ndarray]):
         """(len, 3, H, W) ImageNet-normalised float tensor from RGB uint8 frames."""
@@ -576,16 +588,22 @@ class MDVQAModule(PipelineModule):
                 feats.append(self._motion(clip))
         return torch.cat(feats, dim=0)
 
-    def _decode_frames(self, sample: Sample) -> List[np.ndarray]:
-        """Decode a bounded, contiguous run of RGB frames."""
+    def _decode_frames(self, sample: Sample):
+        """Decode the whole video (or ``max_seconds``) as contiguous RGB frames.
+
+        Returns ``(frames, fps)``.
+        """
         import cv2
 
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
-            return []
+            return [], 0.0
+        fps = float(cap.get(cv2.CAP_PROP_FPS)) or 0.0
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
-        cap_frames = self.max_clips * self.clip_len * 4  # oversample, then linspace-subsample
-        limit = min(total, cap_frames) if total > 0 else cap_frames
+        if self.max_seconds > 0 and fps > 0:
+            limit = min(total, int(round(self.max_seconds * fps))) if total > 0 else int(round(self.max_seconds * fps))
+        else:
+            limit = total if total > 0 else 1 << 30
         frames: List[np.ndarray] = []
         while len(frames) < limit:
             ok, frame = cap.read()
@@ -593,4 +611,4 @@ class MDVQAModule(PipelineModule):
                 break
             frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         cap.release()
-        return frames
+        return frames, fps

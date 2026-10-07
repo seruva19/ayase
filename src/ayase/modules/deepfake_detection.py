@@ -1,8 +1,10 @@
 """Heuristic synthetic-media screening for images and sampled video frames.
 
-The 0--1 ``deepfake_probability`` combines FFT spectrum peakiness with optional
-zero-shot CLIP real/CG/deepfake prompts; higher means stronger evidence under
-those heuristics. It is not a calibrated probability, uses no trained deepfake
+The 0--1 ``deepfake_probability`` combines FFT spectrum peakiness with
+zero-shot CLIP real/CG/deepfake prompts (0.4 spectral + 0.6 CLIP); higher
+means stronger evidence under those heuristics. Without CLIP the module emits
+no score — the spectral term alone is a different quantity and is not
+substituted. It is not a calibrated probability, uses no trained deepfake
 or face-manipulation detector, and can confuse stylization, compression, image
 processing, or out-of-domain content with synthesis. Use as a review signal,
 not an authenticity decision.
@@ -27,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 class DeepfakeDetectionModule(PipelineModule):
     name = "deepfake_detection"
+    deprecated = True
+    provenance = "own"
     description = "Synthetic media / deepfake likelihood estimation"
     default_config = {
         "subsample": 10,
@@ -48,8 +52,8 @@ class DeepfakeDetectionModule(PipelineModule):
         self._clip_model = None
         self._clip_processor = None
         self._clip_device = "cpu"
-        self._clip_available = False
-        self._backend = "spectral"
+        self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         # Try to load CLIP for zero-shot classification
@@ -88,13 +92,12 @@ class DeepfakeDetectionModule(PipelineModule):
                 load_clip,
             )
             self._clip_device = device
-            self._clip_available = True
+            self._ml_available = True
             self._backend = "clip+spectral"
             logger.info(f"Deepfake detection: CLIP classifier on {device}")
-        except ImportError:
-            logger.info("CLIP not available, using frequency analysis only")
         except Exception as e:
-            logger.warning(f"CLIP init failed: {e}")
+            self._backend = "unavailable"
+            logger.warning(f"Deepfake detection unavailable — CLIP init failed: {e}")
 
     # ------------------------------------------------------------------
     # Frequency analysis
@@ -146,50 +149,8 @@ class DeepfakeDetectionModule(PipelineModule):
         # Map: peak_ratio ~0 → real, ~0.3+ → synthetic
         return float(np.clip(peak_ratio * 3.0, 0, 1))
 
-    @staticmethod
-    def _spectral_artifact_score_simple(gray: np.ndarray) -> float:
-        """Simplified spectral analysis without scipy dependency."""
-        h, w = gray.shape
-        s = min(h, w)
-        crop = gray[:s, :s].astype(np.float32)
-
-        f = np.fft.fft2(crop)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.log1p(np.abs(fshift))
-
-        # Check for unnatural symmetry in spectrum
-        cy, cx = s // 2, s // 2
-        # Compare quadrants — natural images have irregular spectra
-        q1 = magnitude[:cy, :cx]
-        q2 = magnitude[:cy, cx:]
-        q3 = magnitude[cy:, :cx]
-        q4 = magnitude[cy:, cx:]
-
-        min_s = min(q1.shape[0], q2.shape[0], q3.shape[0], q4.shape[0])
-        min_w = min(q1.shape[1], q2.shape[1], q3.shape[1], q4.shape[1])
-        q1 = q1[:min_s, :min_w]
-        q2 = q2[:min_s, :min_w]
-        q3 = q3[:min_s, :min_w]
-        q4 = q4[:min_s, :min_w]
-
-        # High symmetry between adjacent quadrants → suspicious
-        # (Diagonal quadrants are always symmetric due to Hermitian property of real FFT)
-        sym_12 = float(np.corrcoef(q1.flatten(), q2.flatten())[0, 1])
-        sym_34 = float(np.corrcoef(q3.flatten(), q4.flatten())[0, 1])
-
-        if np.isnan(sym_12) or np.isnan(sym_34):
-            return 0.0
-
-        avg_sym = (sym_12 + sym_34) / 2
-        # Very high symmetry (>0.95) is suspicious
-        return float(np.clip((avg_sym - 0.85) * 6.67, 0, 1))
-
     def _spectral_score(self, gray: np.ndarray) -> float:
-        """Choose spectral method based on available dependencies."""
-        try:
-            return self._spectral_artifact_score(gray)
-        except ImportError:
-            return self._spectral_artifact_score_simple(gray)
+        return self._spectral_artifact_score(gray)
 
     # ------------------------------------------------------------------
     # CLIP-based zero-shot classification
@@ -206,7 +167,7 @@ class DeepfakeDetectionModule(PipelineModule):
         cache_key: Optional[tuple] = None,
     ) -> list[Optional[float]]:
         """Zero-shot real/fake classification via CLIP for multiple frames."""
-        if not self._clip_available or not frames_bgr:
+        if not self._ml_available or not frames_bgr:
             return [None] * len(frames_bgr)
         try:
             texts = [
@@ -253,20 +214,19 @@ class DeepfakeDetectionModule(PipelineModule):
     # Process
     # ------------------------------------------------------------------
 
-    def _score_frame(self, frame_bgr: np.ndarray, clip_score: Optional[float] = None) -> float:
-        """Combined deepfake score for one frame."""
-        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-
-        spectral = self._spectral_score(gray)
+    def _score_frame(self, frame_bgr: np.ndarray, clip_score: Optional[float] = None) -> Optional[float]:
+        """Combined deepfake score for one frame; None without a CLIP score."""
         if clip_score is None:
             clip_score = self._clip_fake_score(frame_bgr)
-
-        if clip_score is not None:
-            # Weighted combination
-            return 0.4 * spectral + 0.6 * clip_score
-        return spectral
+        if clip_score is None:
+            return None
+        gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+        spectral = self._spectral_score(gray)
+        return 0.4 * spectral + 0.6 * clip_score
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
         try:
             if sample.is_video:
                 score = self._process_video(sample.path)
@@ -332,7 +292,11 @@ class DeepfakeDetectionModule(PipelineModule):
             cache_key=("deepfake_video", self.subsample, self.max_frames, media_state_key(path)),
         )
         scores = [
-            self._score_frame(frame, clip_score)
-            for frame, clip_score in zip(frames, clip_scores)
+            s
+            for s in (
+                self._score_frame(frame, clip_score)
+                for frame, clip_score in zip(frames, clip_scores)
+            )
+            if s is not None
         ]
         return float(np.mean(scores)) if scores else None

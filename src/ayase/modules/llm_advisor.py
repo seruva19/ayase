@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class LLMAdvisorModule(PipelineModule):
     name = "llm_advisor"
+    provenance = "utility"
     description = "Rule-based improvement recommendations derived from quality metrics (no LLM used)"
     default_config = {
         "severity_level": "INFO",
@@ -62,15 +63,15 @@ class LLMAdvisorModule(PipelineModule):
             )
 
         # --- Aesthetic score ---
-        if m.aesthetic_score is not None:
-            if m.aesthetic_score < 3.0:
+        if m.aesthetic_v25_score is not None:
+            if m.aesthetic_v25_score < 3.0:
                 recommendations.append(
-                    f"Low aesthetic quality ({m.aesthetic_score:.1f}/10). "
+                    f"Low aesthetic quality ({m.aesthetic_v25_score:.1f}/10). "
                     "Consider excluding from training to avoid degrading generation style."
                 )
-            elif m.aesthetic_score >= 7.0:
+            elif m.aesthetic_v25_score >= 7.0:
                 recommendations.append(
-                    f"High aesthetic quality ({m.aesthetic_score:.1f}/10). "
+                    f"High aesthetic quality ({m.aesthetic_v25_score:.1f}/10). "
                     "Good candidate for priority inclusion or upweighting."
                 )
 

@@ -31,7 +31,6 @@ from typing import List, Optional
 
 import numpy as np
 
-from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -40,17 +39,23 @@ logger = logging.getLogger(__name__)
 
 class VMBenchTemporalCoherenceModule(PipelineModule):
     name = "vmbench_tcs"
+    provenance = "adapted"
+    sources = {
+        "temporal_coherence_score": "VMBench TCS — https://github.com/AMAP-ML/VMBench",
+    }
+    deviations = {
+        "temporal_coherence_score": "the subject comes from metadata/prompt (upstream reads the benchmark's structured prompt); without it, falls back to 'person'",
+    }
     description = "VMBench Temporal Coherence — implausible object vanish/emerge over tracked masks (0-1, higher=better)"
     default_config = {
         "device": "auto",
-        "max_frames": 48,          # frames read (VMBench clips ~49f)
         "keyframe_step": None,     # grounding interval; None -> derived from fps (fps-1)
         "grid_size": 30,           # VMBench grid density per axis
         "box_threshold": 0.35,     # VMBench TCS grounding thresholds
         "text_threshold": 0.35,
         "iou_threshold": 0.75,     # cross-keyframe object-id IoU match
-        "subject_noun": None,      # override; else sample.metadata['subject_noun'] or 'person'
-        "long_side": 640,          # cap resolution (aspect preserved)
+        "subject_noun": None,      # override; else metadata/caption subject, else 'person'
+        "long_side": 0,            # 0 = native resolution (VMBench); >0 = opt-in cap
         "query_chunk_size": 64,    # TAPIR query points per forward
         "models_dir": "models",
     }
@@ -112,40 +117,55 @@ class VMBenchTemporalCoherenceModule(PipelineModule):
             logger.warning("Failed to setup VMBench TCS: %s", e)
 
     # --------------------------------------------------------------- helpers
+    _SUBJECT_KEYS = ("subject_noun", "subject", "object", "main_subject")
+
     def _resolve_subject_noun(self, sample: Sample) -> str:
         noun = self.config.get("subject_noun")
         if noun:
             return str(noun)
-        meta_noun = (sample.metadata or {}).get("subject_noun")
-        if meta_noun:
-            return str(meta_noun)
+        meta = sample.metadata or {}
+        for key in self._SUBJECT_KEYS:
+            if meta.get(key):
+                return str(meta[key])
+        caption = getattr(getattr(sample, "caption", None), "text", None)
+        if caption:
+            import re
+            m = re.search(
+                r"\b(?:a|an|the)\s+((?:[a-zA-Z-]+\s){0,2}[a-zA-Z-]+)\b",
+                caption.lower(),
+            )
+            if m:
+                return m.group(1).strip()
         return "person"
 
     def _load_frames(self, sample: Sample):
-        """Sampled RGB frames, long side capped (aspect preserved). Returns
+        """All RGB frames (native res unless ``long_side`` cap set). Returns
         (frames uint8 [T,H,W,3], width, height, fps)."""
         import cv2
 
-        raw = sample_frames(sample.path, max_frames=int(self.config.get("max_frames", 48)),
-                            color="rgb")
+        cap = cv2.VideoCapture(str(sample.path))
+        raw = []
+        fps = 0.0
+        try:
+            fps = float(cap.get(cv2.CAP_PROP_FPS))
+            while True:
+                ok, frame = cap.read()
+                if not ok:
+                    break
+                raw.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        finally:
+            cap.release()
         if len(raw) < 4:
             return None, 0, 0, 0.0
         h0, w0 = raw[0].shape[:2]
-        long_side = int(self.config.get("long_side", 640))
-        scale = min(1.0, long_side / float(max(h0, w0)))
+        long_side = int(self.config.get("long_side", 0))
+        scale = min(1.0, long_side / float(max(h0, w0))) if long_side > 0 else 1.0
         if scale < 1.0:
             w, h = int(round(w0 * scale)), int(round(h0 * scale))
             frames = [cv2.resize(f, (w, h), interpolation=cv2.INTER_AREA) for f in raw]
         else:
             w, h = w0, h0
             frames = list(raw)
-        fps = 0.0
-        try:
-            cap = cv2.VideoCapture(str(sample.path))
-            fps = float(cap.get(cv2.CAP_PROP_FPS))
-            cap.release()
-        except Exception:
-            fps = 0.0
         return np.stack([np.ascontiguousarray(f) for f in frames]).astype(np.uint8), w, h, fps
 
     def _track_masked_grid(self, frames_u8, segm_mask, grid_query_frame, width, height):

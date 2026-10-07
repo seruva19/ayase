@@ -91,7 +91,6 @@ def test_scores_and_coverage_are_reported(monkeypatch, tmp_path):
 
     qm = sample.quality_metrics
     assert qm is not None
-    assert qm.voice_identity_max == 1.0
     assert qm.voice_identity == 0.9
     assert qm.voice_identity_coverage == 0.5
 

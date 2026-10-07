@@ -1,17 +1,14 @@
-"""Score no-reference audio quality by contrasting CLAP prompt similarities.
+"""PAM — no-reference perceptual audio quality via MS-CLAP anti-prompt softmax.
 
-Audio is decoded from an audio file or video, converted to mono at 48 kHz by
-default, and limited to the first 10 seconds. The module compares its CLAP
-embedding with configurable positive quality prompts and negative anti-prompts;
-it does not use the sample caption or reference media.
+Implements PAM (Deshmukh et al., Interspeech 2024): the audio is embedded with
+Microsoft CLAP (``msclap`` package, ``CLAP(version='2023')``), and
+``pam_score`` is the softmax probability of the published positive prompt
+"the sound is clear and clean" against the anti-prompt "the sound is noisy
+and with artifacts". The whole audio file is used.
 
-``pam_score`` is a sigmoid of the positive-minus-negative mean cosine
-similarity, in 0-1 with higher values favoring the positive quality prompts
-(0.5 indicates equal means). The sole backend is
-``laion/clap-htsat-fused``. If CLAP cannot be loaded, audio cannot be decoded,
-or inference fails, the field remains unset; no signal-statistics proxy is
-substituted. The result is prompt-relative and covers only the loaded excerpt,
-not the remainder of longer media.
+MS-CLAP is the paper's backend; without the ``msclap`` package the module
+emits no score rather than substituting a different CLAP embedding space
+(LAION CLAP similarities are not the published quantity).
 """
 
 import logging
@@ -25,28 +22,27 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
+POSITIVE_PROMPT = "the sound is clear and clean"
+NEGATIVE_PROMPT = "the sound is noisy and with artifacts"
+
 
 class PAMModule(PipelineModule):
     name = "pam"
-    description = "PAM anti-prompt no-reference perceptual audio quality"
+    provenance = "published"
+    sources = {
+        "pam_score": "PAM (Deshmukh et al., Interspeech 2024) — https://arxiv.org/abs/2402.00282",
+    }
+    description = "PAM anti-prompt no-reference perceptual audio quality (MS-CLAP)"
     default_config = {
-        "model_name": "laion/clap-htsat-fused",
-        "sample_rate": 48000,
         "device": "auto",
-        "positive_prompts": [
-            "clear high quality natural audio",
-            "clean intelligible speech or music",
-        ],
-        "negative_prompts": [
-            "noisy distorted clipped low quality audio",
-            "muffled corrupted unpleasant sound",
-        ],
+        "msclap_version": "2023",
     }
     models = [
         {
-            "id": "laion/clap-htsat-fused",
-            "type": "huggingface",
-            "task": "CLAP encoder for PAM anti-prompt scoring",
+            "id": "msclap",
+            "type": "pip_package",
+            "install": "pip install msclap",
+            "task": "Microsoft CLAP encoder — the PAM backend",
         },
     ]
     metric_info = {
@@ -58,45 +54,44 @@ class PAMModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.model_name = self.config.get("model_name", "laion/clap-htsat-fused")
-        self.sample_rate = self.config.get("sample_rate", 48000)
         self.device_config = self.config.get("device", "auto")
-        self.positive_prompts = self.config.get("positive_prompts", self.default_config["positive_prompts"])
-        self.negative_prompts = self.config.get("negative_prompts", self.default_config["negative_prompts"])
+        self.msclap_version = self.config.get("msclap_version", "2023")
         self._backend = "unavailable"
         self._model = None
-        self._processor = None
         self._device = "cpu"
 
     def setup(self) -> None:
         try:
-            from transformers import ClapModel, ClapProcessor
+            from msclap import CLAP
+        except ImportError:
+            logger.warning(
+                "PAM unavailable: msclap package not installed "
+                "(pip install msclap); pam_score left unset."
+            )
+            return
 
+        try:
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.device_config)
-            models_dir = self.config.get("models_dir", "models")
-            self._model = ClapModel.from_pretrained(self.model_name, cache_dir=models_dir).to(self._device)
-            self._processor = ClapProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
-            self._model.eval()
-            self._backend = "clap"
-            logger.info("PAM initialised with %s on %s", self.model_name, self._device)
-        except ImportError:
-            self._backend = "unavailable"
-            logger.warning("PAM unavailable: CLAP backend requires torch and transformers")
+            self._model = CLAP(
+                version=self.msclap_version,
+                use_cuda=self._device == "cuda",
+            )
+            self._backend = "msclap"
+            logger.info("PAM initialised with MS-CLAP %s on %s", self.msclap_version, self._device)
         except Exception as e:
-            self._backend = "unavailable"
             logger.warning("PAM unavailable: setup failed (%s)", e)
 
     def process(self, sample: Sample) -> Sample:
-        if self._backend != "clap":
+        if self._backend != "msclap":
             return sample
         try:
-            audio = load_audio(sample.path, target_sr=self.sample_rate, duration=10.0)
+            audio = load_audio(sample.path, target_sr=48000, duration=None)
             if audio is None or len(audio) == 0:
                 return sample
 
-            score = self._score_clap(audio)
+            score = self._score_msclap(sample.path, audio, sample.is_video)
             if score is None:
                 return sample
 
@@ -107,29 +102,32 @@ class PAMModule(PipelineModule):
             logger.warning("PAM failed for %s: %s", sample.path, e)
         return sample
 
-    def _score_clap(self, audio) -> Optional[float]:
+    def _score_msclap(self, path, audio, is_video: bool) -> Optional[float]:
         try:
+            import tempfile
             import torch
 
-            prompts = list(self.positive_prompts) + list(self.negative_prompts)
-            inputs = self._processor(
-                text=prompts,
-                audios=[audio],
-                return_tensors="pt",
-                padding=True,
-                sampling_rate=self.sample_rate,
-            ).to(self._device)
-            with torch.no_grad():
-                outputs = self._model(**inputs)
-                audio_emb = outputs.audio_embeds
-                text_emb = outputs.text_embeds
-                audio_emb = audio_emb / audio_emb.norm(dim=-1, keepdim=True)
-                text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True)
-                sims = (audio_emb @ text_emb.T).detach().cpu().numpy().reshape(-1)
-            n_pos = len(self.positive_prompts)
-            pos = float(np.mean(sims[:n_pos]))
-            neg = float(np.mean(sims[n_pos:]))
-            return float(1.0 / (1.0 + np.exp(-(pos - neg) * 8.0)))
+            # MS-CLAP's embedding API consumes file paths; video containers get
+            # the decoded mono waveform written to a temp WAV first.
+            if is_video:
+                import os
+                import soundfile as sf
+
+                fd, tmp_path = tempfile.mkstemp(suffix=".wav")
+                try:
+                    os.close(fd)
+                    sf.write(tmp_path, np.asarray(audio, dtype=np.float32), 48000)
+                    audio_emb = self._model.get_audio_embeddings([tmp_path])
+                finally:
+                    os.unlink(tmp_path)
+            else:
+                audio_emb = self._model.get_audio_embeddings([str(path)])
+            text_emb = self._model.get_text_embeddings([POSITIVE_PROMPT, NEGATIVE_PROMPT])
+
+            # compute_similarity normalizes and applies MS-CLAP's learned
+            # logit scale internally.
+            sims = self._model.compute_similarity(audio_emb, text_emb).reshape(-1)
+            return float(torch.softmax(sims, dim=0)[0].item())
         except Exception as e:
-            logger.debug("PAM CLAP scoring failed: %s", e)
+            logger.debug("PAM MS-CLAP scoring failed: %s", e)
             return None

@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 class PIModule(PipelineModule):
     name = "pi"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "pi_score": "Perceptual Index, PIRM 2018 (Blau et al.) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "Perceptual Index (PIRM challenge metric, lower=better)"
     default_config = {
         "subsample": 3,

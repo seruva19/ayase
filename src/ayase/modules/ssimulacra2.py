@@ -4,11 +4,11 @@ SSIMULACRA 2 is Google's perceptual image quality metric developed for
 the JPEG XL codec. It is based on a multi-scale structural similarity
 computation with psychovisual error modeling.
 
-Range: roughly -inf to 100 (lower = better perceptual quality).
-  Score < 0: high quality (distortions not likely visible)
-  0-30: good quality (minor distortion)
-  30-70: medium quality (noticeable distortion)
-  70-100: low quality (significant distortion)
+Range: roughly -100 to 100 (higher = better perceptual quality).
+  Score 100: identical / excellent (distortions imperceptible)
+  70-90: good quality (minor distortion)
+  50-70: medium quality (noticeable distortion)
+  < 50: low quality (significant distortion)
 
 This is a full-reference metric.
 
@@ -31,7 +31,17 @@ logger = logging.getLogger(__name__)
 
 class SSIMULACRA2Module(ReferenceBasedModule):
     name = "ssimulacra2"
-    description = "SSIMULACRA 2 perceptual distance (JPEG XL standard, lower=better)"
+    provenance = "adapted"
+    sources = {
+        "ssimulacra2": "SSIMULACRA 2 (Cloudinary/libjxl) — https://github.com/cloudinary/ssimulacra2",
+    }
+    deviations = {
+        "ssimulacra2": "Backend is the pip `ssimulacra2` package (third-party port); "
+        "numerical equivalence with the reference libjxl implementation is not verified; "
+        "unequal inputs are resized to their shared minimum dimensions, and video scores "
+        "are an Ayase mean over subsampled frame pairs.",
+    }
+    description = "SSIMULACRA 2 perceptual similarity (JPEG XL standard, 100=identical, higher=better)"
     default_config = {
         "subsample": 5,
         "warning_threshold": 50.0,
@@ -115,11 +125,11 @@ class SSIMULACRA2Module(ReferenceBasedModule):
 
             sample.quality_metrics.ssimulacra2 = score
 
-            if score > self.warning_threshold:
+            if score < self.warning_threshold:
                 sample.validation_issues.append(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
-                        message=f"High SSIMULACRA 2 (visible distortion): {score:.1f}",
+                        message=f"Low SSIMULACRA 2 (visible distortion): {score:.1f}",
                         details={"ssimulacra2": score, "threshold": self.warning_threshold},
                         recommendation="Significant perceptual distortion vs reference.",
                     )

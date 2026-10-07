@@ -1,31 +1,30 @@
-"""Estimate MaxFALL/MaxCLL-named luminance proxies from decoded video frames.
+"""MaxCLL/MaxFALL per CTA-861.3, measured on true HDR code values.
 
-Every ``subsample``-th OpenCV frame is reduced with BT.709 luma coefficients;
-``max_fall`` is the largest sampled frame mean and ``max_cll`` the largest sampled
-pixel value. OpenCV's normal decode path supplies uint8 BGR code values, so these
-outputs are usually 0–255 code-value proxies, not luminance in nits. The module
-does not inspect or verify mastering metadata, bit depth, colour primaries, or
-transfer characteristics. A PQ conversion branch is used only if OpenCV supplies
-uint16/float data. No validation issue is emitted.
+Per CTA-861.3 both statistics are computed on the per-pixel maximum of the
+linear-light R/G/B channels expressed in cd/m². Frames are decoded through
+FFmpeg as 16-bit-per-channel RGB (``rgb48le``), which preserves the PQ signal
+encoding; the ST.2084 EOTF then maps code values to absolute luminance.
+
+``max_cll`` — largest pixel value of max(R,G,B) across the video, in nits.
+``max_fall`` — largest frame-average of max(R,G,B), in nits.
+
+Only PQ (smpte2084) content produces values; SDR and HLG inputs are skipped —
+MaxCLL/MaxFALL are not defined for them without display assumptions.
 """
 
+import json
 import logging
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Optional
 
-import cv2
 import numpy as np
 
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
-
-
-def _bt709_luminance(bgr: np.ndarray) -> np.ndarray:
-    """Convert BGR to relative luminance using BT.709 coefficients."""
-    b, g, r = bgr[:, :, 0], bgr[:, :, 1], bgr[:, :, 2]
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
 def _pq_eotf(signal: np.ndarray) -> np.ndarray:
@@ -48,13 +47,38 @@ def _pq_eotf(signal: np.ndarray) -> np.ndarray:
     return linear * 10000.0  # nits
 
 
+def _color_transfer(path: Path) -> Optional[str]:
+    """Probe the video's color transfer characteristic via ffprobe."""
+    try:
+        out = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-show_entries", "stream=color_transfer,pix_fmt",
+                "-of", "json", str(path),
+            ],
+            capture_output=True, text=True, timeout=30,
+        )
+        streams = json.loads(out.stdout).get("streams") or []
+        if streams:
+            return streams[0].get("color_transfer")
+    except Exception as e:
+        logger.debug("ffprobe color_transfer failed for %s: %s", path, e)
+    return None
+
+
 class HDRMetadataModule(PipelineModule):
     name = "hdr_metadata"
-    description = "MaxFALL + MaxCLL HDR static metadata analysis"
-    default_config = {
-        "subsample": 3,
-        "peak_nits": 10000.0,  # Assumed peak luminance for 10-bit PQ
+    provenance = "published"
+    sources = {
+        "max_cll": "MaxCLL/MaxFALL (CTA-861.3; https://shop.cta.tech/products/cta-861-3; ST.2084 PQ decode via FFmpeg)",
+        "max_fall": "MaxCLL/MaxFALL (CTA-861.3; https://shop.cta.tech/products/cta-861-3; ST.2084 PQ decode via FFmpeg)",
     }
+    deviations = {
+        "max_cll": "values only for PQ content (color_transfer=smpte2084); SDR/HLG are skipped — CTA-861.3 is undefined for them without display assumptions",
+        "max_fall": "values only for PQ content (color_transfer=smpte2084); SDR/HLG are skipped — CTA-861.3 is undefined for them without display assumptions",
+    }
+    description = "MaxFALL + MaxCLL per CTA-861.3 (PQ nits)"
+    default_config = {}
     metric_groups = {
         "max_cll": "hdr",
         "max_fall": "hdr",
@@ -62,17 +86,22 @@ class HDRMetadataModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.subsample = self.config.get("subsample", 3)
-        self.peak_nits = self.config.get("peak_nits", 10000.0)
-        self._ml_available = True  # Pure OpenCV
-        # MaxFALL/MaxCLL are computed directly from pixel luminance (ST.2084 PQ).
+        self._ml_available = shutil.which("ffmpeg") is not None
         self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
-        if not sample.is_video:
+        if not sample.is_video or not self._ml_available:
             return sample
 
         try:
+            transfer = _color_transfer(sample.path)
+            if transfer != "smpte2084":
+                logger.debug(
+                    "hdr_metadata: %s transfer=%r — not PQ, skipping",
+                    sample.path.name, transfer,
+                )
+                return sample
+
             max_fall, max_cll = self._analyze_video(sample.path)
             if max_fall is None:
                 return sample
@@ -82,50 +111,51 @@ class HDRMetadataModule(PipelineModule):
 
             sample.quality_metrics.max_fall = max_fall
             sample.quality_metrics.max_cll = max_cll
-            logger.debug(f"HDR metadata for {sample.path.name}: MaxFALL={max_fall:.1f} MaxCLL={max_cll:.1f}")
+            logger.debug(f"HDR metadata for {sample.path.name}: MaxFALL={max_fall:.1f} MaxCLL={max_cll:.1f} nits")
         except Exception as e:
             logger.error(f"HDR metadata failed: {e}")
         return sample
 
     def _analyze_video(self, path: Path):
-        cap = cv2.VideoCapture(str(path))
-        if not cap.isOpened():
+        """Stream every frame as rgb48le and accumulate CTA-861.3 statistics."""
+        probe = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-show_entries", "stream=width,height", "-of", "json", str(path),
+            ],
+            capture_output=True, text=True, timeout=30,
+        )
+        streams = json.loads(probe.stdout).get("streams") or []
+        if not streams:
             return None, None
+        width = int(streams[0]["width"])
+        height = int(streams[0]["height"])
+        frame_bytes = width * height * 3 * 2  # rgb48le
 
+        proc = subprocess.Popen(
+            [
+                "ffmpeg", "-v", "error", "-i", str(path),
+                "-f", "rawvideo", "-pix_fmt", "rgb48le", "-",
+            ],
+            stdout=subprocess.PIPE,
+        )
         frame_averages = []
         pixel_max = 0.0
-        idx = 0
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            if idx % self.subsample == 0:
-                frame_f = frame.astype(np.float32)
-                lum = _bt709_luminance(frame_f)
-
-                # Detect HDR: uint16/float32 source or high dynamic range values
-                is_hdr = frame.dtype in (np.uint16, np.float32, np.float64) or frame.max() > 255
-
-                if is_hdr:
-                    # Apply PQ EOTF for proper HDR10 luminance mapping
-                    signal = lum / (65535.0 if frame.dtype == np.uint16 else max(float(lum.max()), 1.0))
-                    lum_nits = _pq_eotf(signal)
-                else:
-                    # SDR content: use raw luminance values directly (cd/m^2 proxy)
-                    lum_nits = lum
-
-                frame_avg = float(np.mean(lum_nits))
-                frame_max = float(np.max(lum_nits))
-                frame_averages.append(frame_avg)
-                pixel_max = max(pixel_max, frame_max)
-            idx += 1
-
-        cap.release()
+        try:
+            while True:
+                buf = proc.stdout.read(frame_bytes)
+                if len(buf) < frame_bytes:
+                    break
+                rgb = np.frombuffer(buf, dtype="<u2").reshape(height, width, 3)
+                # CTA-861.3: per-pixel max of the three channels, then EOTF.
+                signal = rgb.max(axis=2).astype(np.float64) / 65535.0
+                lum_nits = _pq_eotf(signal)
+                frame_averages.append(float(lum_nits.mean()))
+                pixel_max = max(pixel_max, float(lum_nits.max()))
+        finally:
+            proc.stdout.close()
+            proc.wait()
 
         if not frame_averages:
             return None, None
-
-        max_fall = float(max(frame_averages))
-        max_cll = pixel_max
-        return max_fall, max_cll
+        return float(max(frame_averages)), float(pixel_max)

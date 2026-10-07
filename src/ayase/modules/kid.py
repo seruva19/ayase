@@ -10,9 +10,8 @@ This is a dataset-level metric that compares two distributions of images/videos.
 
 import logging
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List
 
-import cv2
 import numpy as np
 
 from ayase.models import Sample, QualityMetrics
@@ -23,36 +22,31 @@ logger = logging.getLogger(__name__)
 
 class KIDModule(BatchMetricModule):
     name = "kid"
+    provenance = "published"
+    sources = {
+        "kid": "KID (Bińkowski et al., ICLR 2018) — clean-fid https://github.com/GaParmar/clean-fid or torch-fidelity",
+        "kid_std": "KID (Bińkowski et al., ICLR 2018) — clean-fid https://github.com/GaParmar/clean-fid or torch-fidelity",
+    }
+    deviations = {
+        "kid": "only the official clean-fid/torch-fidelity backends; without a reference the metric is not emitted; kid_std only via torch-fidelity",
+    }
     description = "Kernel Inception Distance for image generation evaluation (batch metric)"
     default_config = {
-        "feature_layer": "2048",  # Inception feature layer
         "subset_size": 100,  # Subset size for KID estimation
         "num_subsets": 100,  # Number of subsets for averaging
-        "degree": 3,  # Polynomial kernel degree
-        "gamma": None,  # Kernel gamma (None = auto: 1/feature_dim)
-        "coef0": 1.0,  # Polynomial kernel coefficient
-        "device": "auto",
-        "batch_size": 32,
-        "resize": 299,  # Input size for InceptionV3
-        "seed": 42,  # Seed for reproducible KID subset sampling
     }
     models = [
-        {
-            "id": "torchvision/inception_v3",
-            "type": "torchvision",
-            "task": "InceptionV3 feature extractor for native KID",
-        },
         {
             "id": "cleanfid",
             "type": "pip_package",
             "install": "pip install clean-fid",
-            "task": "Optional KID backend",
+            "task": "KID backend",
         },
         {
             "id": "torch-fidelity",
             "type": "pip_package",
             "install": "pip install torch-fidelity",
-            "task": "Optional KID backend",
+            "task": "KID backend",
         },
     ]
     metric_info = {
@@ -64,20 +58,11 @@ class KIDModule(BatchMetricModule):
         super().__init__(config)
         self.subset_size = self.config.get("subset_size", 100)
         self.num_subsets = self.config.get("num_subsets", 100)
-        self.degree = self.config.get("degree", 3)
-        self.gamma = self.config.get("gamma", None)
-        self.coef0 = self.config.get("coef0", 1.0)
-        self.device_config = self.config.get("device", "auto")
-        self.batch_size = self.config.get("batch_size", 32)
-        self.resize = self.config.get("resize", 299)
-        self.device = None
         self._ml_available = False
-        self._backend = None  # "cleanfid", "torch_fidelity", or "native"
-        self._inception_model = None
-        self._transform = None
+        self._backend = None  # "cleanfid" or "torch_fidelity"
 
     def setup(self) -> None:
-        # Tier 1: clean-fid
+        # Only the published backends — there is no native substitute.
         try:
             import cleanfid  # noqa: F401
             self._backend = "cleanfid"
@@ -87,7 +72,6 @@ class KIDModule(BatchMetricModule):
         except ImportError:
             pass
 
-        # Tier 2: torch-fidelity
         try:
             import torch_fidelity  # noqa: F401
             self._backend = "torch_fidelity"
@@ -97,190 +81,31 @@ class KIDModule(BatchMetricModule):
         except ImportError:
             pass
 
-        # Tier 3: Native InceptionV3 + polynomial kernel MMD
-        try:
-            import torch
-            from torchvision import models, transforms
-            from torchvision.models import Inception_V3_Weights
-            from ayase.runtime import resolve_torch_device, shared_runtime_resource
-
-            self.device = resolve_torch_device(self.device_config)
-
-            def load_inception():
-                # InceptionV3 truncated to 2048-d pooled features (fc removed).
-                m = models.inception_v3(
-                    weights=Inception_V3_Weights.IMAGENET1K_V1,
-                    transform_input=False,
-                )
-                m.fc = torch.nn.Identity()
-                return m.to(self.device).eval()
-
-            # Share the InceptionV3 feature backbone across modules/samples.
-            self._inception_model = shared_runtime_resource(
-                self,
-                ("inception_v3_features_2048", str(self.device)),
-                load_inception,
-            )
-
-            self._transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.Resize((self.resize, self.resize)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225],
-                ),
-            ])
-
-            self._backend = "native"
-            self._ml_available = True
-            logger.info(f"KID module initialized with native InceptionV3 on {self.device}")
-            return
-
-        except ImportError as e:
-            logger.warning(f"Missing dependencies for KID (torch/torchvision required): {e}")
-        except Exception as e:
-            logger.warning(f"Failed to setup KID: {e}")
-
         self._backend = "unavailable"
+        logger.info(
+            "KID unavailable: requires clean-fid or torch-fidelity "
+            "(pip install clean-fid / torch-fidelity)"
+        )
 
-    def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract InceptionV3 features from a sample image or video frame.
-
-        Args:
-            sample: Sample to extract features from
-
-        Returns:
-            Feature vector (numpy array of shape (2048,)), or None if failed
-        """
-        if not self._ml_available or self._backend != "native":
-            # For cleanfid/torch-fidelity backends, features are computed in bulk
-            # at on_dispose time. Cache the path instead.
-            return str(sample.path) if self._ml_available else None
-
-        try:
-            import torch
-
-            # Load representative frame
-            frame = self._load_frame(sample)
-            if frame is None:
-                return None
-
-            # Convert BGR to RGB
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            # Transform and extract features
-            tensor = self._transform(frame_rgb).unsqueeze(0).to(self.device)
-
-            with torch.no_grad():
-                features = self._inception_model(tensor)
-                # inception_v3 may return InceptionOutputs during eval
-                if hasattr(features, "logits"):
-                    features = features.logits
-                features = features.cpu().numpy().flatten()
-
-            return features
-
-        except Exception as e:
-            logger.debug(f"Failed to extract Inception features from {sample.path}: {e}")
-            return None
-
-    def _load_frame(self, sample: Sample) -> Optional[np.ndarray]:
-        """Load a representative frame (image, or middle frame of a video).
-
-        Returns a BGR frame (read-only shared-cache view) or None. The caller
-        only reads it (cvtColor), so no copy is required here.
-        """
-        from ayase.image import load_representative_frame
-
-        try:
-            return load_representative_frame(sample.path, color="bgr")
-        except Exception as e:
-            logger.debug(f"Failed to load frame: {e}")
-            return None
-
-    def _polynomial_kernel(self, x: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Compute polynomial kernel K(x, y) = (gamma * x.y + coef0)^degree.
-
-        Args:
-            x: Features array (n, d)
-            y: Features array (m, d)
-
-        Returns:
-            Kernel matrix (n, m)
-        """
-        d = x.shape[1]
-        gamma = self.gamma if self.gamma is not None else 1.0 / d
-        return (gamma * (x @ y.T) + self.coef0) ** self.degree
-
-    def _compute_kid_mmd(
-        self, features: np.ndarray, ref_features: np.ndarray
-    ) -> Tuple[float, float]:
-        """Compute KID via polynomial kernel MMD with subsampling.
-
-        Args:
-            features: Generated features (N, d)
-            ref_features: Reference features (M, d)
-
-        Returns:
-            Tuple of (mean KID, std KID) across subsets
-        """
-        n = min(len(features), len(ref_features), self.subset_size)
-        if n < 2:
-            return float("inf"), 0.0
-
-        # Locally-seeded RNG so KID subsets are reproducible without disturbing
-        # the global numpy RNG state.
-        rng = np.random.default_rng(int(self.config.get("seed", 42)))
-
-        kid_values = []
-        for _ in range(self.num_subsets):
-            # Random subsets
-            idx_x = rng.choice(len(features), size=n, replace=False)
-            idx_y = rng.choice(len(ref_features), size=n, replace=False)
-
-            x = features[idx_x]
-            y = ref_features[idx_y]
-
-            # MMD^2 = E[k(x,x')] + E[k(y,y')] - 2*E[k(x,y)]
-            kxx = self._polynomial_kernel(x, x)
-            kyy = self._polynomial_kernel(y, y)
-            kxy = self._polynomial_kernel(x, y)
-
-            # Unbiased estimator: exclude diagonal
-            np.fill_diagonal(kxx, 0)
-            np.fill_diagonal(kyy, 0)
-
-            m = n  # subset size
-            mmd2 = (
-                kxx.sum() / (m * (m - 1))
-                + kyy.sum() / (m * (m - 1))
-                - 2.0 * kxy.sum() / (m * m)
-            )
-            kid_values.append(float(mmd2))
-
-        return float(np.mean(kid_values)), float(np.std(kid_values))
+    def extract_features(self, sample: Sample):
+        """Cache the sample path — backends compute features in bulk."""
+        return str(sample.path) if self._ml_available else None
 
     def compute_distribution_metric(
         self, features: List, reference_features: Optional[List] = None
-    ) -> float:
+    ) -> Optional[float]:
         """Compute KID between feature distributions.
 
-        Args:
-            features: List of feature vectors (or paths for cleanfid/torch-fidelity)
-            reference_features: Optional list of reference features
-
-        Returns:
-            KID score (lower is better)
+        ``features`` / ``reference_features`` are lists of image paths.
+        Returns KID (lower=better), or None without a reference set.
         """
         if self._backend == "cleanfid":
             return self._compute_cleanfid(features, reference_features)
         elif self._backend == "torch_fidelity":
             return self._compute_torch_fidelity(features, reference_features)
-        else:
-            return self._compute_native(features, reference_features)
+        return None
 
-    def _compute_cleanfid(self, features: List, reference_features: Optional[List]) -> float:
+    def _compute_cleanfid(self, features: List, reference_features: Optional[List]) -> Optional[float]:
         """Compute KID using clean-fid library."""
         try:
             from cleanfid import fid as cleanfid_module
@@ -319,15 +144,15 @@ class KIDModule(BatchMetricModule):
                     return float(score)
 
             logger.warning("KID (clean-fid): no reference features, cannot compute")
-            return float("inf")
+            return None
 
         except Exception as e:
             logger.error(f"Failed to compute KID via clean-fid: {e}")
-            return float("inf")
+            return None
 
     def _compute_torch_fidelity(
         self, features: List, reference_features: Optional[List]
-    ) -> float:
+    ) -> Optional[float]:
         """Compute KID using torch-fidelity library."""
         try:
             import torch_fidelity
@@ -366,46 +191,22 @@ class KIDModule(BatchMetricModule):
                         kid_subset_size=self.subset_size,
                         kid_subsets=self.num_subsets,
                     )
+                    kid_std = metrics.get("kernel_inception_distance_std")
+                    if (
+                        kid_std is not None
+                        and hasattr(self, "pipeline")
+                        and self.pipeline
+                        and hasattr(self.pipeline, "add_dataset_metric")
+                    ):
+                        self.pipeline.add_dataset_metric("kid_std", float(kid_std))
                     return float(metrics.get("kernel_inception_distance_mean", float("inf")))
 
             logger.warning("KID (torch-fidelity): no reference features, cannot compute")
-            return float("inf")
+            return None
 
         except Exception as e:
             logger.error(f"Failed to compute KID via torch-fidelity: {e}")
-            return float("inf")
-
-    def _compute_native(
-        self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]]
-    ) -> float:
-        """Compute KID using native InceptionV3 + polynomial kernel MMD."""
-        try:
-            features_array = np.stack(features, axis=0)
-
-            if reference_features is not None and len(reference_features) > 0:
-                ref_array = np.stack(reference_features, axis=0)
-            else:
-                # Split features in half for self-comparison
-                mid = len(features_array) // 2
-                if mid < 2:
-                    return float("inf")
-                ref_array = features_array[:mid]
-                features_array = features_array[mid:]
-
-            kid_mean, kid_std = self._compute_kid_mmd(features_array, ref_array)
-
-            logger.info(f"KID computed: {kid_mean:.6f} +/- {kid_std:.6f}")
-
-            # Store std via pipeline if available
-            if hasattr(self, "pipeline") and self.pipeline:
-                if hasattr(self.pipeline, "add_dataset_metric"):
-                    self.pipeline.add_dataset_metric("kid_std", kid_std)
-
-            return kid_mean
-
-        except Exception as e:
-            logger.error(f"Failed to compute KID (native): {e}")
-            return float("inf")
+            return None
 
     def process(self, sample: Sample) -> Sample:
         """Extract and cache features from sample.
@@ -453,6 +254,8 @@ class KIDModule(BatchMetricModule):
                 self._feature_cache,
                 self._reference_cache if self._reference_cache else None,
             )
+            if kid_score is None:
+                return
 
             logger.info(
                 f"KID computed: {kid_score:.6f} "

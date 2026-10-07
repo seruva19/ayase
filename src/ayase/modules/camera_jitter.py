@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 class CameraJitterModule(PipelineModule):
     name = "camera_jitter"
+    deprecated = True
+    provenance = "own"
     description = "Camera jitter/shake detection (0-1, 1=stable)"
     default_config = {"subsample": 16}
     metric_groups = {

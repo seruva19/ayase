@@ -11,9 +11,11 @@ def test_module_basics():
     _test_module_basics(EyebrowDynamicsModule, "eyebrow_dynamics")
 
 
-def test_eyebrow_dynamics_matches_mean_absolute_transition():
+def test_eyebrow_dynamics_matches_across_frame_std():
+    # THEval Eq.28: mean over sides of the across-frame std of normalized
+    # brow-eye distance. std([0.1,0.3])=0.1, std([0.2,0.6])=0.2 -> 0.15.
     from ayase.modules.eyebrow_dynamics import eyebrow_dynamics
-    assert eyebrow_dynamics([(0.1, 0.2), (0.3, 0.6)]) == pytest.approx(0.3)
+    assert eyebrow_dynamics([(0.1, 0.2), (0.3, 0.6)]) == pytest.approx(0.15)
     assert eyebrow_dynamics([(0.1, 0.2)]) is None
 
 

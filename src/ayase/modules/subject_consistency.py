@@ -1,7 +1,9 @@
-"""Subject consistency via DINOv2-base pairwise frame similarity (VBench-style).
+"""VBench Subject Consistency over DINO ViT-B/16 CLS embeddings.
 
-Computes all-pairs cosine similarity of CLS-token embeddings across frames.
-Returns subject_consistency (0-1, higher = more consistent). Warns below 0.6."""
+Per frame i>=1 the score is ``(max(0, cos(f_i, f_{i-1})) + max(0, cos(f_i,
+f_0))) / 2``; the reported value is the mean over all frames (VBench
+protocol — every frame is embedded, no sampling). Returns
+``subject_consistency`` (0-1, higher = more consistent). Warns below 0.6."""
 
 import logging
 import cv2
@@ -18,11 +20,18 @@ logger = logging.getLogger(__name__)
 
 class SubjectConsistencyModule(PipelineModule):
     name = "subject_consistency"
-    description = "Subject consistency using DINOv2-base (all pairwise frame similarity)"
+    provenance = "adapted"
+    sources = {
+        "subject_consistency": "VBench subject consistency (Huang et al. CVPR 2024) — https://github.com/Vchitect/VBench",
+    }
+    deviations = {
+        "subject_consistency": "Preprocessor is HF AutoImageProcessor (resize shortest edge 256 + center crop 224); upstream dino_transform resizes the shortest edge to 224 without cropping — embeddings differ at the ~0.003 level",
+    }
+    description = "Subject consistency using DINO ViT-B/16 (VBench per-frame protocol)"
 
     default_config = {
-        "model_name": "facebook/dinov2-base",
-        "max_frames": 16,
+        "model_name": "facebook/dino-vitb16",
+        "max_frames": 0,
         "warning_threshold": 0.6,
     }
     metric_groups = {
@@ -31,7 +40,9 @@ class SubjectConsistencyModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.max_frames = self.config.get("max_frames", 16)
+        # VBench embeds every frame; max_frames <= 0 keeps that, a positive
+        # value is an explicit non-default sampling cap.
+        self.max_frames = self.config.get("max_frames", 0)
         self.warning_threshold = self.config.get("warning_threshold", 0.6)
         self._model = None
         self._processor = None
@@ -49,7 +60,7 @@ class SubjectConsistencyModule(PipelineModule):
             )
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            model_name = self.config.get("model_name", "facebook/dinov2-base")
+            model_name = self.config.get("model_name", "facebook/dino-vitb16")
             models_dir = self.config.get("models_dir", "models")
             logger.info(f"Loading {model_name} on {self._device}...")
 
@@ -81,7 +92,7 @@ class SubjectConsistencyModule(PipelineModule):
         except ImportError:
             logger.warning("Transformers/Torch not installed. DINO checks disabled.")
         except Exception as e:
-            logger.error(f"Failed to load DINOv2: {e}")
+            logger.error(f"Failed to load DINO ViT-B/16: {e}")
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available or not sample.is_video:
@@ -103,15 +114,20 @@ class SubjectConsistencyModule(PipelineModule):
                 outputs = self._model(**inputs)
                 embeddings = F.normalize(outputs.last_hidden_state[:, 0, :], p=2, dim=-1)
 
-            # All pairwise cosine similarities (VBench style)
-            sim_matrix = embeddings @ embeddings.T
-            pair_indices = torch.triu_indices(
-                embeddings.size(0),
-                embeddings.size(0),
-                offset=1,
-                device=sim_matrix.device,
-            )
-            avg_consistency = float(sim_matrix[pair_indices[0], pair_indices[1]].mean().item())
+            # VBench: for each frame i>=1, (max(0, sim to previous) +
+            # max(0, sim to first)) / 2; the metric is the mean over frames.
+            first = embeddings[0]
+            prev = embeddings[0]
+            frame_sims = []
+            for i in range(1, embeddings.size(0)):
+                cur = embeddings[i]
+                sim_pre = max(0.0, (prev @ cur).item())
+                sim_fir = max(0.0, (first @ cur).item())
+                frame_sims.append((sim_pre + sim_fir) / 2)
+                prev = cur
+            if not frame_sims:
+                return sample
+            avg_consistency = float(np.mean(frame_sims))
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -133,7 +149,8 @@ class SubjectConsistencyModule(PipelineModule):
 
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
         try:
-            frames = sample_frames(sample.path, max_frames=self.max_frames, color="bgr")
+            limit = self.max_frames if self.max_frames > 0 else 1_000_000
+            frames = sample_frames(sample.path, max_frames=limit, color="bgr")
         except Exception as e:
             logger.debug(f"Failed to load frames for subject consistency: {e}")
             frames = []

@@ -5,10 +5,11 @@ list), ``sample.caption.text``, then a same-stem ``.txt`` file. The hypothesis
 comes from explicit ``transcript`` config, ``transcript_path``/``.asr.txt``, or
 shared faster-whisper/OpenAI Whisper ASR (default model ``large-v3``). The
 optional ``language`` config is passed to ASR; otherwise the backend detects it.
-CER uses lowercase word/apostrophe characters with spaces and punctuation
-removed, is clipped to [0, 1], and is better when lower. It is not aggregated
-across the dataset. Sources: https://github.com/SYSTRAN/faster-whisper and
-https://github.com/openai/whisper
+CER is character-level Levenshtein distance over Whisper-normalized text
+(``whisper.normalizers`` — EnglishTextNormalizer for English,
+BasicTextNormalizer otherwise), unbounded and better when lower. It is not
+aggregated across the dataset.
+Sources: https://github.com/SYSTRAN/faster-whisper and https://github.com/openai/whisper
 """
 
 import logging
@@ -16,13 +17,17 @@ from typing import Optional
 
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
-from ayase.modules.asr_transcribe import char_error_rate, transcribe_sample
+from ayase.modules.asr_transcribe import _asr_normalizer, char_error_rate, transcribe_sample
 
 logger = logging.getLogger(__name__)
 
 
 class ASRCERModule(PipelineModule):
     name = "asr_cer"
+    provenance = "published"
+    sources = {
+        "asr_cer": "CER (char-level Levenshtein / reference length), Whisper eval normalization — https://github.com/openai/whisper",
+    }
     description = "ASR character error rate against expected speech text"
     default_config = {
         "model_name": "large-v3",
@@ -32,7 +37,7 @@ class ASRCERModule(PipelineModule):
         "transcript": None,
     }
     metric_info = {
-        "asr_cer": "ASR character error rate versus expected text (0-1, lower=better)",
+        "asr_cer": "ASR character error rate versus expected text (unbounded, lower=better)",
     }
     metric_groups = {
         "asr_cer": "audio",
@@ -46,7 +51,9 @@ class ASRCERModule(PipelineModule):
             transcript = transcribe_sample(sample.path, self.config)
             if not transcript:
                 return sample
-            cer = char_error_rate(expected, transcript)
+            cer = char_error_rate(
+                expected, transcript, _asr_normalizer(self.config.get("language"))
+            )
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.asr_cer = round(float(cer), 4)

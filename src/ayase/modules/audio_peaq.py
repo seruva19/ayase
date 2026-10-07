@@ -27,6 +27,15 @@ logger = logging.getLogger(__name__)
 
 class AudioPEAQModule(PipelineModule):
     name = "audio_peaq"
+    provenance = "published"
+    sources = {
+        "peaq_di": "ITU-R BS.1387 via the peaqb binary — https://www.itu.int/rec/R-REC-BS.1387",
+        "peaq_odg": "ITU-R BS.1387 via the peaqb binary — https://www.itu.int/rec/R-REC-BS.1387",
+    }
+    deviations = {
+        "peaq_di": "peaqb binary conformance to BS.1387 unverified; -a/-b flag syntax unchecked.",
+        "peaq_odg": "peaqb binary conformance to BS.1387 unverified; -a/-b flag syntax unchecked.",
+    }
     description = "PEAQ reference-based audio codec quality (ITU-R BS.1387)"
     default_config = {
         "target_sr": 48000,  # PEAQ is defined for 48 kHz
@@ -89,11 +98,15 @@ class AudioPEAQModule(PipelineModule):
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.peaq_odg = round(float(odg), 3)
-        sample.quality_metrics.peaq_di = round(float(di), 3)
+        if odg is not None:
+            sample.quality_metrics.peaq_odg = round(float(odg), 3)
+        if di is not None:
+            sample.quality_metrics.peaq_di = round(float(di), 3)
         return sample
 
-    def _run_peaqb(self, ref_path: Path, dist_path: Path) -> Optional[Tuple[float, float]]:
+    def _run_peaqb(
+        self, ref_path: Path, dist_path: Path
+    ) -> Optional[Tuple[Optional[float], Optional[float]]]:
         # peaqb-fast emits ODG and DI on stdout. Some forks require WAV input;
         # we transcode via ffmpeg for safety.
         ref_wav = self._to_wav(ref_path)
@@ -148,7 +161,9 @@ class AudioPEAQModule(PipelineModule):
             return None
 
 
-def _parse_peaqb_output(text: str) -> Optional[Tuple[float, float]]:
+def _parse_peaqb_output(
+    text: str,
+) -> Optional[Tuple[Optional[float], Optional[float]]]:
     odg: Optional[float] = None
     di: Optional[float] = None
     for line in text.splitlines():
@@ -169,4 +184,4 @@ def _parse_peaqb_output(text: str) -> Optional[Tuple[float, float]]:
                     continue
     if odg is None and di is None:
         return None
-    return (odg if odg is not None else 0.0, di if di is not None else 0.0)
+    return (odg, di)

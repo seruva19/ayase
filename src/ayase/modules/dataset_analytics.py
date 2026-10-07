@@ -10,8 +10,9 @@ statistics across the entire dataset:
   duplicate_pairs     — count of near-duplicate sample pairs
 
 Uses perceptual hashes (dHash) for duplicate detection and CLIP
-embeddings for diversity / coverage analysis.  Falls back to
-simpler colour histograms if CLIP is unavailable.
+embeddings for diversity / coverage analysis.  Without CLIP the
+embedding-based metrics are skipped — colour histograms measure a
+different distribution and are not substituted.
 """
 
 import logging
@@ -31,6 +32,14 @@ logger = logging.getLogger(__name__)
 
 class DatasetAnalyticsModule(BatchMetricModule):
     name = "dataset_analytics"
+    deprecated = True
+    provenance = {
+        "class_balance_score": "own",
+        "diversity_score": "own",
+        "duplicate_pairs": "utility",
+        "outlier_count": "own",
+        "semantic_coverage": "own",
+    }
     description = "Dataset-level diversity, coverage, outliers, duplicates"
     default_config = {
         "duplicate_threshold": 5,  # Hamming distance for dHash match
@@ -54,11 +63,12 @@ class DatasetAnalyticsModule(BatchMetricModule):
         self._clip_model = None
         self._clip_processor = None
         self._clip_available = False
-        self._backend = "histogram"
+        # dHash duplicate detection always runs (utility); embedding
+        # statistics require the CLIP backend.
+        self._backend = "algorithmic"
 
         # Accumulation buffers (beyond _feature_cache in base class)
         self._hashes: List[Tuple[str, int]] = []  # (sample_name, hash_value)
-        self._histograms: List[np.ndarray] = []
 
     def setup(self) -> None:
         try:
@@ -101,10 +111,8 @@ class DatasetAnalyticsModule(BatchMetricModule):
             self._clip_available = True
             self._backend = "clip"
             logger.info(f"Dataset analytics: CLIP embeddings on {device}")
-        except ImportError:
-            logger.info("CLIP unavailable, using histogram-based analytics")
         except Exception as e:
-            logger.warning(f"CLIP init failed: {e}")
+            logger.warning(f"CLIP init failed — embedding analytics disabled: {e}")
 
     # ------------------------------------------------------------------
     # Feature extraction
@@ -120,19 +128,6 @@ class DatasetAnalyticsModule(BatchMetricModule):
         for bit in bits:
             h = (h << 1) | int(bit)
         return h
-
-    @staticmethod
-    def _colour_histogram(frame_bgr: np.ndarray) -> np.ndarray:
-        """Compute normalised HSV colour histogram."""
-        hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
-        hist = cv2.calcHist(
-            [hsv], [0, 1], None, [16, 16], [0, 180, 0, 256]
-        )
-        hist = hist.flatten().astype(np.float32)
-        total = hist.sum()
-        if total > 0:
-            hist /= total
-        return hist
 
     def _clip_embedding(
         self,
@@ -170,10 +165,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
             h = self._dhash(gray)
             self._hashes.append((str(sample.path), h))
 
-            # Colour histogram fallback
-            self._histograms.append(self._colour_histogram(frame))
-
-            # CLIP embedding (primary features for diversity/coverage)
+            # CLIP embedding (features for diversity/coverage)
             emb = self._clip_embedding(
                 frame,
                 cache_key=("dataset_analytics", media_state_key(sample.path)),
@@ -190,20 +182,24 @@ class DatasetAnalyticsModule(BatchMetricModule):
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
-    ) -> float:
+    ) -> Optional[float]:
         """Compute all dataset-level analytics.  Returns diversity_score."""
 
-        # Use CLIP features if available, else histograms
-        if features and len(features) > 0 and features[0] is not None:
-            matrix = np.stack(features)
-        elif self._histograms:
-            matrix = np.stack(self._histograms)
-        else:
-            return 0.0
+        # Near-duplicate detection works without CLIP (dHash only)
+        duplicate_pairs = self._detect_duplicates()
+        if hasattr(self, "pipeline") and self.pipeline:
+            if hasattr(self.pipeline, "add_dataset_metric"):
+                self.pipeline.add_dataset_metric("duplicate_pairs", duplicate_pairs)
+
+        # Embedding statistics require real CLIP features — no substitute.
+        if not features or features[0] is None:
+            logger.info("Dataset analytics: no CLIP features — embedding metrics skipped")
+            return None
+        matrix = np.stack(features)
 
         n = len(matrix)
-        if n < 3:
-            return 0.0
+        if n < 4:
+            return None
 
         # 1. Diversity score
         diversity = self._compute_diversity(matrix)
@@ -214,10 +210,7 @@ class DatasetAnalyticsModule(BatchMetricModule):
         # 3. Outlier detection
         outlier_count = self._detect_outliers(matrix)
 
-        # 4. Near-duplicate detection
-        duplicate_pairs = self._detect_duplicates()
-
-        # 5. Class balance (based on k-means clustering)
+        # 4. Class balance (based on k-means clustering)
         balance = self._compute_class_balance(matrix)
 
         # Store in pipeline stats (skip metrics that could not be computed)
@@ -227,7 +220,6 @@ class DatasetAnalyticsModule(BatchMetricModule):
                 if coverage is not None:
                     self.pipeline.add_dataset_metric("semantic_coverage", coverage)
                 self.pipeline.add_dataset_metric("outlier_count", outlier_count)
-                self.pipeline.add_dataset_metric("duplicate_pairs", duplicate_pairs)
                 if balance is not None:
                     self.pipeline.add_dataset_metric("class_balance_score", balance)
 
@@ -362,18 +354,6 @@ class DatasetAnalyticsModule(BatchMetricModule):
 
     def on_dispose(self) -> None:
         """Override to also clean up extra buffers."""
-        # Run parent computation first
-        if len(self._feature_cache) < 4 and len(self._histograms) < 4:
-            logger.info(
-                f"Dataset analytics: not enough samples "
-                f"({max(len(self._feature_cache), len(self._histograms))})"
-            )
-            self._feature_cache = []
-            self._reference_cache = []
-            self._hashes = []
-            self._histograms = []
-            return
-
         try:
             self.compute_distribution_metric(
                 self._feature_cache,
@@ -385,4 +365,3 @@ class DatasetAnalyticsModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._hashes = []
-            self._histograms = []

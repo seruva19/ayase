@@ -52,6 +52,14 @@ ROUND_DIGIT = 3
 
 class VideoScoreModule(PipelineModule):
     name = "videoscore"
+    provenance = "published"
+    sources = {
+        "videoscore_alignment": "VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore",
+        "videoscore_dynamic": "VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore",
+        "videoscore_factual": "VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore",
+        "videoscore_temporal": "VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore",
+        "videoscore_visual": "VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore",
+    }
     description = "VideoScore 5-dimensional video quality assessment (1-4 scale)"
     default_config = {
         "model_name": "TIGER-Lab/VideoScore",

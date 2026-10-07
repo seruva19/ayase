@@ -28,42 +28,30 @@ def test_kid_feature_extraction(image_sample):
     m = KIDModule()
     m.setup()
     if not m._ml_available:
-        pytest.skip("ML dependencies not available")
+        pytest.skip("clean-fid / torch-fidelity not installed")
     feat = m.extract_features(image_sample)
-    # For native backend, should return a numpy array
-    if m._backend == "native":
-        assert isinstance(feat, np.ndarray)
-        assert feat.shape == (2048,)
-    else:
-        # For cleanfid/torch-fidelity, returns path string
-        assert feat is not None
+    # Published backends work on file paths; features come back at batch time.
+    assert isinstance(feat, str)
 
 
-def test_kid_compute_same_distribution():
-    """KID between two identical feature sets should be approximately 0."""
+def test_kid_unavailable_without_backends():
+    """Without a published backend the module stays unavailable (no substitute)."""
+    import sys
+    from unittest import mock
     from ayase.modules.kid import KIDModule
 
-    m = KIDModule({"subset_size": 10, "num_subsets": 10})
-    # Synthetic features
-    np.random.seed(42)
-    features = np.random.randn(50, 2048).astype(np.float32)
+    real_import = __builtins__["__import__"] if isinstance(__builtins__, dict) else __import__
 
-    kid_mean, kid_std = m._compute_kid_mmd(features, features)
-    # KID of same distribution should be close to 0
-    assert abs(kid_mean) < 0.5, f"KID of same distribution too large: {kid_mean}"
+    def blocked(name, *args, **kwargs):
+        if name.split(".")[0] in ("cleanfid", "torch_fidelity"):
+            raise ImportError(name)
+        return real_import(name, *args, **kwargs)
 
-
-def test_kid_compute_different_distributions():
-    """KID between different distributions should be > 0."""
-    from ayase.modules.kid import KIDModule
-
-    m = KIDModule({"subset_size": 10, "num_subsets": 10})
-    np.random.seed(42)
-    features_a = np.random.randn(50, 2048).astype(np.float32)
-    features_b = np.random.randn(50, 2048).astype(np.float32) + 5.0  # Shifted
-
-    kid_mean, _ = m._compute_kid_mmd(features_a, features_b)
-    assert kid_mean > 0, f"KID should be > 0 for different distributions, got {kid_mean}"
+    with mock.patch("builtins.__import__", side_effect=blocked):
+        m = KIDModule()
+        m.setup()
+    assert m._backend == "unavailable"
+    assert not m._ml_available
 
 
 def test_kid_dataset_stats_field():

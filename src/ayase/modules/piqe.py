@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 class PIQEModule(PipelineModule):
     name = "piqe"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "piqe": "PIQE (Venkatanath et al., 2015) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "PIQE perception-based no-reference quality (lower=better)"
     default_config = {
         "subsample": 3,

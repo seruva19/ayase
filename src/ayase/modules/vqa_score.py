@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 class VQAScoreModule(PipelineModule):
     name = "vqa_score"
+    provenance = "published"
+    sources = {
+        "vqa_score_alignment": "VQAScore, Lin et al. ECCV 2024; t2v_metrics — https://github.com/linzhiqiu/t2v_metrics",
+    }
     description = "VQAScore text-visual alignment via VQA probability (0-1, higher=better)"
     default_config = {
         "model": "clip-flant5-xxl",

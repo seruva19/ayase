@@ -1,7 +1,8 @@
 """Eyebrow micro-expression intensity using the THEval landmark protocol.
 
-The score averages frame-to-frame absolute changes in each brow-to-eye-center
-distance after normalization by inter-eye distance. Higher is more dynamic.
+Per THEval Eq.28, the score is the across-frame standard deviation of the
+vertical brow-to-eye distance normalized by inter-eye distance (averaged over
+both brows). Higher is more dynamic.
 """
 
 import logging
@@ -36,7 +37,7 @@ def _center(landmarks: Sequence[Any], indices: Sequence[int]) -> np.ndarray:
 
 
 def normalized_brow_distances(landmarks: Sequence[Any]) -> Optional[Tuple[float, float]]:
-    """Return left/right brow-to-eye distances normalized by inter-eye scale."""
+    """Return left/right vertical brow-to-eye distances (inter-eye normalized)."""
     if len(landmarks) <= max(*LEFT_BROW, *LEFT_EYE, *RIGHT_BROW, *RIGHT_EYE):
         return None
     left_eye = _center(landmarks, LEFT_EYE)
@@ -44,25 +45,33 @@ def normalized_brow_distances(landmarks: Sequence[Any]) -> Optional[Tuple[float,
     scale = float(np.linalg.norm(left_eye - right_eye))
     if not math.isfinite(scale) or scale < 1e-6:
         return None
-    left = float(np.linalg.norm(_center(landmarks, LEFT_BROW) - left_eye) / scale)
-    right = float(np.linalg.norm(_center(landmarks, RIGHT_BROW) - right_eye) / scale)
+    # Eq.28 uses the vertical component of the brow–eye distance.
+    left = float((_center(landmarks, LEFT_BROW)[1] - left_eye[1]) / scale)
+    right = float((_center(landmarks, RIGHT_BROW)[1] - right_eye[1]) / scale)
     if not math.isfinite(left) or not math.isfinite(right):
         return None
     return left, right
 
 
 def eyebrow_dynamics(distances: Sequence[Tuple[float, float]]) -> Optional[float]:
-    """Compute THEval's mean absolute consecutive change over both brows."""
+    """Compute THEval Eq.28: across-frame std of normalized brow distance."""
     if len(distances) < 2:
         return None
     values = np.asarray(distances, dtype=np.float64)
     if values.ndim != 2 or values.shape[1] != 2 or not np.isfinite(values).all():
         return None
-    return float(np.mean(np.abs(np.diff(values, axis=0))))
+    return float(np.mean(np.std(values, axis=0)))
 
 
 class EyebrowDynamicsModule(PipelineModule):
     name = "eyebrow_dynamics"
+    provenance = "adapted"
+    sources = {
+        "eyebrow_dynamics_score": "THEval (Quignon et al., arXiv 2511.04520), Eq.28 — https://arxiv.org/abs/2511.04520",
+    }
+    deviations = {
+        "eyebrow_dynamics_score": "the Eq.28 statistic is reproduced (across-frame std of the vertical brow–eye distance normalized by interocular distance); the detector is MediaPipe Face Landmarker instead of THEval's",
+    }
     description = "THEval inter-eye-normalized eyebrow micro-expression intensity"
     default_config = {"num_faces": 1, "face_index": None}
     models = [{

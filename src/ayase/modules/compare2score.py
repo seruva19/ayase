@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 class Compare2ScoreModule(PipelineModule):
     name = "compare2score"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "compare2score": "Compare2Score (Zhu et al., NeurIPS 2024) via pyiqa — https://github.com/Q-Future/Compare2Score",
+    }
     description = "Compare2Score comparison-based NR image quality"
     default_config = {"subsample": 4}
     metric_groups = {

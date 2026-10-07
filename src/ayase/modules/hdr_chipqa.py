@@ -93,6 +93,10 @@ def _third_party_path(*parts: str) -> Path:
 
 class HDRChipQAModule(PipelineModule):
     name = "hdr_chipqa"
+    provenance = "published"
+    sources = {
+        "hdr_chipqa_score": "HDR-ChipQA (Ebenezer et al., arXiv 2304.13156) — https://arxiv.org/abs/2304.13156",
+    }
     description = "HDR-ChipQA no-reference HDR video quality via its feature extractor and LIVE-HDR SVR"
     default_config = {
         "repo_path": None,

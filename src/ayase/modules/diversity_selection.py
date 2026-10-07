@@ -17,10 +17,11 @@ class DiversitySelectionModule(PipelineModule):
     This module performs cross-sample analysis after the main pipeline run.
     """
     name = "diversity"
+    provenance = "utility"
     description = "Flags redundant samples using embedding similarity (Deduplication)"
     default_config = {
         "similarity_threshold": 0.95,
-        "priority_metric": "aesthetic_score" # aesthetic_score, fast_vqa_score, technical_score
+        "priority_metric": "aesthetic_v25_score" # aesthetic_v25_score, fast_vqa_score, technical_score
     }
 
     def __init__(self, config=None):
@@ -47,7 +48,7 @@ class DiversitySelectionModule(PipelineModule):
             return
 
         # 2. Sort samples by quality (to keep the best ones when duplicates are found)
-        metric = self.config.get("priority_metric", "aesthetic_score")
+        metric = self.config.get("priority_metric", "aesthetic_v25_score")
 
         def get_score(s):
             if s.quality_metrics:

@@ -20,6 +20,11 @@ class LOVEResultModule(PipelineModule):
     """Import raw predictions produced by the LOVE inference scripts."""
 
     name = "love_results"
+    provenance = "utility"
+    sources = {
+        "love_correspondence_score": "imports LOVE results — https://huggingface.co/anonymousdb/LOVE-Perception",
+        "love_perception_score": "imports LOVE results — https://huggingface.co/anonymousdb/LOVE-Perception",
+    }
     description = "LOVE perception and text-video correspondence result adapter"
     default_config = {
         "perception_results_path": None,

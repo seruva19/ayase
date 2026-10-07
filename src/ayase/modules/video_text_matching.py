@@ -1,12 +1,12 @@
 """Estimate sampled visual alignment with ``sample.caption.text``.
 
 The default CLIP backend averages caption similarity over five sampled frames:
-``video_text_score`` is the mean logit divided by 100, and
-``video_text_temporal`` is ``max(0, 1 - frame-score standard deviation)``; higher
+``video_text_logit`` is the mean logit divided by 100, and
+``video_text_consistency`` is ``max(0, 1 - frame-score standard deviation)``; higher
 values indicate stronger sampled alignment or more uniform frame scores. With
-``use_xclip``, eight sampled frames produce one video-level score normalized by
-the largest absolute logit in that one-item batch, and the temporal field is
-left unset because X-CLIP exposes no per-frame signal here.
+``use_xclip``, eight sampled frames produce one raw X-CLIP video-level logit
+(cosine similarity scaled by temperature, unbounded), and the temporal field
+is left unset because X-CLIP exposes no per-frame signal here.
 
 The module requires a readable image/video and ``sample.caption.text`` (truncated
 to 77 characters). The two backends use different scoring transformations, so
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class VideoTextMatchingModule(PipelineModule):
     name = "video_text_matching"
+    provenance = "own"
     description = "ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP"
     default_config = {
         "use_xclip": False, # Use heavy video-native model
@@ -37,8 +38,8 @@ class VideoTextMatchingModule(PipelineModule):
         "consistency_std_threshold": 0.1,
     }
     metric_groups = {
-        "video_text_score": "alignment",
-        "video_text_temporal": "temporal",
+        "video_text_logit": "alignment",
+        "video_text_consistency": "temporal",
     }
 
     def __init__(self, config=None):
@@ -177,27 +178,27 @@ class VideoTextMatchingModule(PipelineModule):
         with torch.no_grad():
             outputs = self._model(**inputs)
             logits = outputs.logits_per_video  # [B_video, B_text]
-            # X-CLIP logits are already cosine similarities scaled by temperature
+            # X-CLIP logits are cosine similarities scaled by temperature
+            # (unbounded, typically ~0-30). Written raw — normalizing by the
+            # max of a single-element batch collapses every result to ±1.0.
             score = logits[0][0].item()
-            # Normalize to approximate 0-1 range (logits are typically ~0-30)
-            normalized = score / logits.abs().max().clamp(min=1.0).item()
 
             if not sample.quality_metrics:
                 from ayase.models import QualityMetrics
                 sample.quality_metrics = QualityMetrics()
 
-            sample.quality_metrics.video_text_score = float(normalized)
+            sample.quality_metrics.video_text_logit = float(score)
             # X-CLIP emits a single video-level alignment logit and carries no
             # per-frame consistency signal, so temporal consistency is left
             # unset rather than fabricated as a perfect 1.0.
-            sample.quality_metrics.video_text_temporal = None
+            sample.quality_metrics.video_text_consistency = None
 
-            if normalized < self.min_score_threshold:
+            if score < self.min_score_threshold:
                 sample.validation_issues.append(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
-                        message=f"Low Video-Text Alignment (X-CLIP): {normalized:.2f}",
-                        details={"xclip_score": float(score), "xclip_normalized": float(normalized)},
+                        message=f"Low Video-Text Alignment (X-CLIP): {score:.2f}",
+                        details={"xclip_score": float(score)},
                     )
                 )
 
@@ -230,8 +231,8 @@ class VideoTextMatchingModule(PipelineModule):
                     from ayase.models import QualityMetrics
                     sample.quality_metrics = QualityMetrics()
 
-                sample.quality_metrics.video_text_score = avg_score
-                sample.quality_metrics.video_text_temporal = max(0.0, 1.0 - score_std)
+                sample.quality_metrics.video_text_logit = avg_score
+                sample.quality_metrics.video_text_consistency = max(0.0, 1.0 - score_std)
 
                 if avg_score < self.min_score_threshold:
                      sample.validation_issues.append(

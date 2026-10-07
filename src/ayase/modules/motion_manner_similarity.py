@@ -128,6 +128,7 @@ def _distribution_agreement(left: np.ndarray, right: np.ndarray) -> float:
 
 class MotionMannerSimilarityModule(PipelineModule):
     name = "motion_manner_similarity"
+    provenance = "own"
     description = "Similarity of movement manner to a reference clip, compared as distributions"
     default_config = {
         "device": "auto",

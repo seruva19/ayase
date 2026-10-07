@@ -2,15 +2,16 @@
 
 This image-only module treats ``sample.path`` as the generated/candidate image
 and ``sample.reference_path`` as the corresponding target image; both must be
-files and no prompt is used. It reports DINOv2 CLS cosine similarity, mean
-same-position patch cosine similarity, CLIP and SigLIP image-embedding cosine
-similarities (each -1 to 1, higher is better), plus AlexNet LPIPS distance
-(lower is better; no fixed range is enforced). Each backend loads independently,
-so only its available outputs are set and no proxy scores are substituted.
+files and no prompt is used. It reports DINO CLS cosine similarity (the
+DreamBooth DINO-score backbone, DINO v1 ViT-S/16), mean same-position patch
+cosine similarity, CLIP and SigLIP image-embedding cosine similarities (each
+-1 to 1, higher is better), plus AlexNet LPIPS distance (lower is better; no
+fixed range is enforced). Each backend loads independently, so only its
+available outputs are set and no proxy scores are substituted.
 
-DINOv2, CLIP, and SigLIP use their Hugging Face processors and configured
+DINO, CLIP, and SigLIP use their Hugging Face processors and configured
 pretrained checkpoints. LPIPS converts RGB to [-1, 1] and resizes both images
-to 256x256. Model bases: https://huggingface.co/facebook/dinov2-small,
+to 256x256. Model bases: https://huggingface.co/facebook/dino-vits16,
 https://huggingface.co/openai/clip-vit-base-patch32,
 https://huggingface.co/google/siglip-base-patch16-224, and
 https://github.com/richzhang/PerceptualSimilarity.
@@ -40,9 +41,24 @@ class I2ILearnedModule(PipelineModule):
     """Compute five complementary learned similarities for an image pair."""
 
     name = "i2i_learned"
-    description = "DINOv2, CLIP, SigLIP, and LPIPS image-to-image fidelity"
+    provenance = {
+        "i2i_clip_similarity": "published",
+        "i2i_dinov2_cls_similarity": "published",
+        "i2i_dinov2_patch_similarity": "own",
+        "i2i_lpips_alex": "published",
+        "i2i_siglip_similarity": "own",
+    }
+    sources = {
+        "i2i_clip_similarity": "CLIP-I (Ruiz et al., DreamBooth, CVPR 2023) — https://arxiv.org/abs/2208.12242",
+        "i2i_dinov2_cls_similarity": "DINO-score (Ruiz et al., DreamBooth) — https://arxiv.org/abs/2208.12242",
+        "i2i_lpips_alex": "LPIPS v0.1 AlexNet (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity",
+    }
+    deviations = {
+        "i2i_dinov2_cls_similarity": "defaults to DINO v1 ViT-S/16 as in DreamBooth; the dinov2_model config can substitute another CLS encoder (then it is no longer the paper's DINO-score)",
+    }
+    description = "DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity"
     default_config = {
-        "dinov2_model": "facebook/dinov2-small",
+        "dinov2_model": "facebook/dino-vits16",
         "clip_model": "openai/clip-vit-base-patch32",
         "siglip_model": "google/siglip-base-patch16-224",
         "models_dir": "models",
@@ -51,9 +67,9 @@ class I2ILearnedModule(PipelineModule):
     required_packages = ["torch", "transformers", "lpips"]
     models = [
         {
-            "id": "facebook/dinov2-small",
+            "id": "facebook/dino-vits16",
             "type": "huggingface",
-            "task": "Global and patch-level I2I representation fidelity",
+            "task": "DINO v1 ViT-S/16 — the DreamBooth DINO-score backbone",
             "auto_download": True,
         },
         {
@@ -77,8 +93,8 @@ class I2ILearnedModule(PipelineModule):
         },
     ]
     metric_info = {
-        "i2i_dinov2_cls_similarity": "Cosine similarity of DINOv2 CLS embeddings (-1 to 1)",
-        "i2i_dinov2_patch_similarity": "Mean aligned-patch DINOv2 cosine similarity (-1 to 1)",
+        "i2i_dinov2_cls_similarity": "Cosine similarity of DINO CLS embeddings (-1 to 1)",
+        "i2i_dinov2_patch_similarity": "Mean aligned-patch DINO cosine similarity (-1 to 1)",
         "i2i_clip_similarity": "Cosine similarity of CLIP image embeddings (-1 to 1)",
         "i2i_siglip_similarity": "Cosine similarity of SigLIP image embeddings (-1 to 1)",
         "i2i_lpips_alex": "LPIPS distance with AlexNet trunk (lower=better)",
@@ -123,7 +139,7 @@ class I2ILearnedModule(PipelineModule):
         try:
             from transformers import AutoImageProcessor, AutoModel
 
-            model_id = self.config.get("dinov2_model", "facebook/dinov2-small")
+            model_id = self.config.get("dinov2_model", "facebook/dino-vits16")
             self._dinov2_processor = AutoImageProcessor.from_pretrained(
                 model_id, cache_dir=cache_dir
             )

@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 class C3DVQAModule(PipelineModule):
     name = "c3dvqa"
+    provenance = "utility"
+    sources = {
+        "c3dvqa_score": "C3DVQA (Xu et al. 2020) — https://arxiv.org/abs/1910.13646",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020)"
     default_config = {

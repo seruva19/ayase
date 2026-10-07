@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 class StyleConsistencyModule(PipelineModule):
     name = "style_consistency"
+    deprecated = True
+    provenance = "own"
     description = "Appearance/color style consistency (HSV histogram correlation over time)"
     default_config = {}
 

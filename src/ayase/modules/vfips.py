@@ -549,6 +549,11 @@ def _build_arch():
 
 class VFIPSModule(ReferenceBasedModule):
     name = "vfips"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "vfips_score": "VFIPS, Hou et al. ECCV 2022 — https://github.com/hqqxyy/VFIPS",
+    }
     description = "VFIPS frame interpolation perceptual similarity (ECCV 2022, FR)"
     metric_field = "vfips_score"
     default_config = {"max_clips": 8, "device": "auto"}

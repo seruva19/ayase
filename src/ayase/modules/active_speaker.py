@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 class ActiveSpeakerModule(PipelineModule):
     name = "active_speaker"
+    provenance = "own"
     description = "Lip-sync separation between faces: is exactly one mouth in sync"
     default_config = {
         "model_name": "buffalo_l",
@@ -46,7 +47,7 @@ class ActiveSpeakerModule(PipelineModule):
     }
     metric_groups = {
         "active_speaker_margin": "audio",
-        "active_speaker_best_lse_c": "audio",
+        "active_speaker_best_conf": "audio",
         "active_speaker_silent_faces": "audio",
     }
 
@@ -100,7 +101,7 @@ class ActiveSpeakerModule(PipelineModule):
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.active_speaker_best_lse_c = result["best"]
+        sample.quality_metrics.active_speaker_best_conf = result["best"]
         sample.quality_metrics.active_speaker_margin = result["margin"]
         sample.quality_metrics.active_speaker_silent_faces = result["silent"]
         return sample

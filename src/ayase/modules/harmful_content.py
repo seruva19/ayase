@@ -1,8 +1,10 @@
 """Heuristic violence and graphic-content screening for images and videos.
 
 ``harmful_content_score`` is a 0--1 blend of red-region and inter-frame motion
-heuristics with optional zero-shot CLIP safety/violence prompts; higher means
-more evidence under those signals. The backend is not a dedicated or calibrated
+heuristics with zero-shot CLIP safety/violence prompts (0.2 blood + 0.1 motion
++ 0.7 CLIP); higher means more evidence under those signals. Without CLIP the
+module emits no score — the heuristic-only blend is a different quantity and
+is not substituted. The backend is not a dedicated or calibrated
 safety classifier, covers only the configured visual concepts, and can confuse
 red objects or rapid benign motion with harm. It must not be the sole moderation
 or safety decision.
@@ -27,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 class HarmfulContentModule(PipelineModule):
     name = "harmful_content"
+    provenance = "own"
+    sources = {
+        "harmful_content_score": "CLIP ViT-B/32 model; the screening is own (docstring: 'ayase-defined, not a published metric') — https://huggingface.co/openai/clip-vit-base-patch32",
+    }
     description = "Violence, gore, and disturbing content detection"
     default_config = {
         "subsample": 10,
@@ -48,10 +54,10 @@ class HarmfulContentModule(PipelineModule):
         self._clip_model = None
         self._clip_processor = None
         self._clip_device = "cpu"
-        self._clip_available = False
         # Safety screen (ayase-defined, not a published metric): CLIP zero-shot
-        # classification when available, otherwise colour/motion image statistics.
-        self._backend = "algorithmic"
+        # classification blended with colour/motion image statistics.
+        self._ml_available = False
+        self._backend = None
 
     def setup(self) -> None:
         try:
@@ -89,13 +95,12 @@ class HarmfulContentModule(PipelineModule):
                 load_clip,
             )
             self._clip_device = device
-            self._clip_available = True
+            self._ml_available = True
             self._backend = "clip_zeroshot"
             logger.info(f"Harmful content: CLIP classifier on {device}")
-        except ImportError:
-            logger.info("CLIP unavailable, using heuristic-only detection")
         except Exception as e:
-            logger.warning(f"CLIP init failed: {e}")
+            self._backend = "unavailable"
+            logger.warning(f"Harmful content unavailable — CLIP init failed: {e}")
 
     # ------------------------------------------------------------------
     # Heuristic detectors
@@ -146,16 +151,12 @@ class HarmfulContentModule(PipelineModule):
     # CLIP zero-shot classification
     # ------------------------------------------------------------------
 
-    def _clip_harm_score(self, frame_bgr: np.ndarray) -> Optional[float]:
-        scores = self._clip_harm_scores([frame_bgr])
-        return scores[0] if scores else None
-
     def _clip_harm_scores(
         self,
         frames_bgr: list[np.ndarray],
         cache_key: Optional[tuple] = None,
     ) -> list[Optional[float]]:
-        if not self._clip_available or not frames_bgr:
+        if not self._ml_available or not frames_bgr:
             return [None] * len(frames_bgr)
         try:
             safe_texts = [
@@ -213,7 +214,9 @@ class HarmfulContentModule(PipelineModule):
         frame_bgr: np.ndarray,
         prev_gray: Optional[np.ndarray] = None,
         clip_score: Optional[float] = None,
-    ) -> float:
+    ) -> Optional[float]:
+        if clip_score is None:
+            return None
         blood = self._blood_gore_score(frame_bgr)
 
         motion = 0.0
@@ -221,14 +224,11 @@ class HarmfulContentModule(PipelineModule):
             curr_gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
             motion = self._violence_motion_score(prev_gray, curr_gray)
 
-        if clip_score is None:
-            clip_score = self._clip_harm_score(frame_bgr)
-
-        if clip_score is not None:
-            return 0.2 * blood + 0.1 * motion + 0.7 * clip_score
-        return 0.6 * blood + 0.4 * motion
+        return 0.2 * blood + 0.1 * motion + 0.7 * clip_score
 
     def process(self, sample: Sample) -> Sample:
+        if not self._ml_available:
+            return sample
         try:
             if sample.is_video:
                 score = self._process_video(sample.path)
@@ -296,6 +296,8 @@ class HarmfulContentModule(PipelineModule):
         scores = []
         prev_gray = None
         for frame, clip_score in zip(frames, clip_scores):
-            scores.append(self._score_frame(frame, prev_gray, clip_score=clip_score))
+            s = self._score_frame(frame, prev_gray, clip_score=clip_score)
+            if s is not None:
+                scores.append(s)
             prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         return float(np.mean(scores)) if scores else None

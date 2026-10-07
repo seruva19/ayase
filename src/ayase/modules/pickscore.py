@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 class PickScoreModule(PipelineModule):
     name = "pickscore"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "pickscore_score": "PickScore (Kirstain et al., NeurIPS 2023) — https://github.com/yuvalkirstain/PickScore",
+    }
     description = "PickScore prompt-conditioned human preference scoring (frame-averaged on video)"
     default_config = {
         "model_name": "yuvalkirstain/PickScore_v1",

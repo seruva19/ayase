@@ -1,27 +1,34 @@
 """PoseHeat-SSIM for pose fidelity against a frame-corresponding reference.
 
 This reference-based metric is intended for paired images or strictly aligned
-single-actor videos. Video inputs must have the same frame count, frame rate,
-and resolution; frames are compared by index without temporal resampling.
-RTMLib Wholebody supplies 133 COCO-WholeBody keypoints. Frames with zero or
-multiple detected people are excluded because DanceTogether's actor-association
-procedure is unavailable here.
+videos. Video inputs must have the same frame count, frame rate, and resolution;
+frames are compared by index without temporal resampling. RTMLib Wholebody
+supplies 133 COCO-WholeBody keypoints per detected person — the same DWPose
+keypoint set the paper uses.
 
-For each usable frame, jointly confident joints are fitted with one positive
-isotropic scale and a translation (no rotation), rendered as sigma=4 Gaussian
-heatmaps at the original frame size using max composition, and compared with
-SSIM. ``pose_heat_ssim`` and ``pose_heat_ssim_coverage`` are in [0, 1], higher
-is better; coverage is the fraction of scanned frames that were scored.
-It is not an identity, handedness, or actor-association metric. The aggregate
-heatmap also gives the 68 face landmarks more samples than any other body part,
-and sparse-map SSIM can remain high after a mirror flip; use joint-level error
-metrics when those distinctions are material.
+Published definition (DanceTogether, arXiv:2505.18078, Track-2 metrics):
+keypoints are "isotropically scale–shift aligned via a similarity transform",
+then each frame's keypoint arrays ``X_t, X̂_t ∈ R^{P×J×2}`` are rasterised into
+Gaussian heatmaps of size H×W with σ=4 px, and the score is the mean over frames
+of ``SSIM(H(X̂_t), H(X_t))``. The published protocol covers P persons per frame;
+no reference implementation was released, so the correspondence and fit details
+below are documented local choices:
 
-Primary source: DanceTogether (arXiv:2505.18078). This is a clean-room,
-method-faithful implementation of the paper's described PoseHeat metric, not a
-benchmark-numeric replica: the paper states isotropic scale-shift alignment but
-does not specify its fit, so this implementation uses least squares, and max
-heatmap composition is an explicit local choice.
+  * persons are matched across the two frames greedily by confident-joint
+    centroid distance (gated at ``person_match_frac`` of the frame diagonal);
+  * the similarity transform (proper rotation + isotropic scale + translation,
+    Umeyama least-squares) is fitted on the union of jointly confident joints
+    of matched person pairs, aligning the reference into the generated frame;
+  * heatmaps rasterise each side's own confident joints of ALL detected
+    persons (missing confident joints penalise the score — as published);
+  * heatmap composition is pixelwise max.
+
+``pose_heat_ssim`` and ``pose_heat_ssim_coverage`` are in [0, 1], higher is
+better; coverage is the fraction of scanned frames that were scored. Frames
+with no detected person on either side, or too few corresponding confident
+joints to fit the transform, are excluded. It is not an identity or handedness
+metric: the aggregate heatmap gives the 68 face landmarks more samples than any
+other body part, and sparse-map SSIM can remain high after a mirror flip.
 """
 
 from __future__ import annotations
@@ -29,7 +36,7 @@ from __future__ import annotations
 import logging
 import hashlib
 from pathlib import Path
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -171,6 +178,166 @@ def render_pose_heatmap(
     return heatmap
 
 
+def _confident_joints(
+    points: np.ndarray, scores: np.ndarray, confidence_threshold: float
+) -> np.ndarray:
+    """One person's joints that are confident and finite."""
+    points = np.asarray(points, dtype=np.float64)
+    scores = np.asarray(scores, dtype=np.float64).reshape(-1)
+    count = min(len(points), len(scores), WHOLEBODY_KEYPOINTS)
+    if count == 0 or points.ndim != 2 or points.shape[1] != 2:
+        return np.empty((0, 2))
+    mask = (scores[:count] >= confidence_threshold) & np.isfinite(points[:count]).all(axis=1)
+    return points[:count][mask]
+
+
+def fit_similarity_2d(
+    source: np.ndarray, target: np.ndarray
+) -> Optional[Tuple[np.ndarray, float, np.ndarray]]:
+    """Umeyama least-squares similarity fit ``target ~= s * R @ source + t``.
+
+    Returns ``(R, s, t)`` with ``R`` a proper rotation (det=+1, no reflection)
+    and ``s > 0``, or ``None`` for degenerate input. This is the SIM3 alignment
+    the paper applies to all Track-2 keypoints.
+    """
+
+    source = np.asarray(source, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    if source.shape != target.shape or source.ndim != 2 or source.shape[1] != 2:
+        return None
+    n = len(source)
+    if n < 2 or not np.isfinite(source).all() or not np.isfinite(target).all():
+        return None
+
+    src_c = source.mean(axis=0)
+    tgt_c = target.mean(axis=0)
+    x = (source - src_c).T  # (2, N)
+    y = (target - tgt_c).T  # (2, N)
+    var = float((x * x).sum())
+    if var <= np.finfo(np.float64).eps:
+        return None
+
+    cov = (y @ x.T) / n  # (2, 2)
+    try:
+        u, svals, vt = np.linalg.svd(cov)
+    except np.linalg.LinAlgError:
+        return None
+    d = np.diag([1.0, 1.0 if np.linalg.det(u @ vt) >= 0 else -1.0])
+    rotation = u @ d @ vt
+    # Umeyama: s = tr(Σ D) / var_normalized, with var_normalized = var / n.
+    scale = float((svals * np.diag(d)).sum() * n / var)
+    if not np.isfinite(scale) or scale <= 0.0:
+        return None
+    translation = tgt_c - scale * (rotation @ src_c)
+    return rotation, scale, translation
+
+
+def match_persons(
+    reference_conf: Sequence[np.ndarray],
+    generated_conf: Sequence[np.ndarray],
+    frame_shape: Sequence[int],
+    match_frac: float = 0.25,
+) -> List[Tuple[int, int]]:
+    """Greedy centroid matching of detected persons across the two frames.
+
+    Returns ``[(ref_index, gen_index), ...]`` — each generated person paired
+    with the nearest unused reference person within ``match_frac`` of the
+    frame diagonal. The paper's association procedure is unpublished; centroid
+    matching is the documented local choice for the alignment fit only (the
+    heatmap rasterises all persons regardless of matching).
+    """
+
+    def centroid(joints: np.ndarray) -> Optional[np.ndarray]:
+        return joints.mean(axis=0) if len(joints) else None
+
+    diag = float(np.hypot(*frame_shape[:2])) + 1e-9
+    gate = diag * float(match_frac)
+    gen_centroids = [centroid(p) for p in generated_conf]
+    used: set = set()
+    pairs: List[Tuple[int, int]] = []
+    for gi, gc in enumerate(gen_centroids):
+        if gc is None:
+            continue
+        best_i, best_d = -1, gate
+        for ri, rp in enumerate(reference_conf):
+            if ri in used:
+                continue
+            rc = centroid(rp)
+            if rc is None:
+                continue
+            d = float(np.linalg.norm(gc - rc))
+            if d <= best_d:
+                best_i, best_d = ri, d
+        if best_i >= 0:
+            used.add(best_i)
+            pairs.append((best_i, gi))
+    return pairs
+
+
+def pose_heat_ssim_frame(
+    reference_persons: Sequence[Tuple[np.ndarray, np.ndarray]],
+    generated_persons: Sequence[Tuple[np.ndarray, np.ndarray]],
+    frame_shape: Sequence[int],
+    *,
+    confidence_threshold: float = 0.3,
+    sigma: float = 4.0,
+    min_joints: int = 3,
+    match_frac: float = 0.25,
+) -> Optional[float]:
+    """Published PoseHeat-SSIM for one frame over P detected persons.
+
+    ``reference_persons`` / ``generated_persons`` are lists of
+    ``(keypoints, scores)`` — one ``(133, 2)``/``(133,)`` pair per detected
+    person. Returns ``None`` when no person or no alignment correspondence
+    exists on either side.
+    """
+
+    ref_conf = [
+        _confident_joints(p, s, confidence_threshold) for p, s in reference_persons
+    ]
+    gen_conf = [
+        _confident_joints(p, s, confidence_threshold) for p, s in generated_persons
+    ]
+    if not any(len(p) for p in ref_conf) or not any(len(p) for p in gen_conf):
+        return None
+
+    pairs = match_persons(ref_conf, gen_conf, frame_shape, match_frac)
+    corr_ref: List[np.ndarray] = []
+    corr_gen: List[np.ndarray] = []
+    for ri, gi in pairs:
+        both_ref, both_gen = jointly_valid_keypoints(
+            reference_persons[ri][0],
+            reference_persons[ri][1],
+            generated_persons[gi][0],
+            generated_persons[gi][1],
+            confidence_threshold,
+        )
+        corr_ref.append(both_ref)
+        corr_gen.append(both_gen)
+    if not corr_ref:
+        return None
+    source = np.concatenate(corr_ref)
+    target = np.concatenate(corr_gen)
+    if len(source) < max(2, int(min_joints)):
+        return None
+    fit = fit_similarity_2d(source, target)
+    if fit is None:
+        return None
+    rotation, scale, translation = fit
+
+    ref_all = np.concatenate([p for p in ref_conf if len(p)])
+    gen_all = np.concatenate([p for p in gen_conf if len(p)])
+    aligned_ref = scale * (ref_all @ rotation.T) + translation
+
+    reference_heatmap = render_pose_heatmap(aligned_ref, frame_shape, sigma)
+    generated_heatmap = render_pose_heatmap(gen_all, frame_shape, sigma)
+
+    from skimage.metrics import structural_similarity
+
+    score = structural_similarity(reference_heatmap, generated_heatmap, data_range=1.0)
+    return float(np.clip(score, 0.0, 1.0))
+
+
 def pose_heat_ssim_score(
     reference_points: np.ndarray,
     reference_scores: np.ndarray,
@@ -182,41 +349,29 @@ def pose_heat_ssim_score(
     sigma: float = 4.0,
     min_joints: int = 3,
 ) -> Optional[float]:
-    """Compute one aligned PoseHeat-SSIM frame score, or ``None`` if invalid."""
+    """Compute one aligned PoseHeat-SSIM frame score, or ``None`` if invalid.
 
-    reference, generated = jointly_valid_keypoints(
-        reference_points,
-        reference_scores,
-        generated_points,
-        generated_scores,
-        confidence_threshold,
+    Single-person convenience wrapper over :func:`pose_heat_ssim_frame`.
+    """
+
+    return pose_heat_ssim_frame(
+        [(reference_points, reference_scores)],
+        [(generated_points, generated_scores)],
+        frame_shape,
+        confidence_threshold=confidence_threshold,
+        sigma=sigma,
+        min_joints=min_joints,
     )
-    if len(reference) < max(2, int(min_joints)):
-        return None
-    fit = fit_isotropic_scale_translation(reference, generated)
-    if fit is None:
-        return None
-    scale, translation = fit
-    aligned_reference = scale * reference + translation
-    reference_heatmap = render_pose_heatmap(aligned_reference, frame_shape, sigma)
-    generated_heatmap = render_pose_heatmap(generated, frame_shape, sigma)
-
-    from skimage.metrics import structural_similarity
-
-    score = structural_similarity(reference_heatmap, generated_heatmap, data_range=1.0)
-    return float(np.clip(score, 0.0, 1.0))
 
 
-def single_wholebody_pose(output: Any) -> Optional[Tuple[np.ndarray, np.ndarray]]:
-    """Normalize RTMLib output and accept exactly one 133-joint person.
+def all_wholebody_poses(output: Any) -> List[Tuple[np.ndarray, np.ndarray]]:
+    """Normalize RTMLib Wholebody output into ``[(keypoints, scores), ...]``.
 
-    Rejecting multi-person frames avoids silently switching actors. A sole
-    person is necessarily the largest (and only) candidate; no association or
-    tracking heuristic is substituted for the source method.
+    Returns every detected 133-joint person (empty list on malformed output).
     """
 
     if not isinstance(output, (tuple, list)) or len(output) < 2:
-        return None
+        return []
     keypoints = np.asarray(output[0], dtype=np.float64)
     scores = np.asarray(output[1], dtype=np.float64)
     if keypoints.ndim == 2:
@@ -224,26 +379,49 @@ def single_wholebody_pose(output: Any) -> Optional[Tuple[np.ndarray, np.ndarray]
     if scores.ndim == 1:
         scores = scores[None, ...]
     if keypoints.ndim != 3 or scores.ndim != 2:
-        return None
-    if keypoints.shape[0] != 1 or scores.shape[0] != 1:
-        return None
+        return []
+    if keypoints.shape[0] != scores.shape[0]:
+        return []
     if keypoints.shape[1:] != (WHOLEBODY_KEYPOINTS, 2):
-        return None
+        return []
     if scores.shape[1] != WHOLEBODY_KEYPOINTS:
+        return []
+    return [(keypoints[i], scores[i]) for i in range(keypoints.shape[0])]
+
+
+def single_wholebody_pose(output: Any) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+    """Normalize RTMLib output and accept exactly one 133-joint person.
+
+    Kept for compatibility; the published P-person protocol scores every
+    detected person via :func:`all_wholebody_poses`.
+    """
+
+    poses = all_wholebody_poses(output)
+    if len(poses) != 1:
         return None
-    return keypoints[0], scores[0]
+    return poses[0]
 
 
 class PoseHeatSSIMModule(PipelineModule):
-    """Frame-corresponding pose heatmap similarity for single-person media."""
+    """Frame-corresponding pose heatmap similarity over all detected persons."""
 
     name = "pose_heat_ssim"
+    provenance = "adapted"
+    sources = {
+        "pose_heat_ssim": "DanceTogether PoseHeat (arXiv 2505.18078) — https://arxiv.org/abs/2505.18078",
+        "pose_heat_ssim_coverage": "DanceTogether PoseHeat (arXiv 2505.18078) — https://arxiv.org/abs/2505.18078",
+    }
+    deviations = {
+        "pose_heat_ssim": "clean-room from the paper's description (no official code released): Umeyama SIM3 alignment and max heatmap composition are local choices; person correspondence is greedy by centroid",
+        "pose_heat_ssim_coverage": "clean-room from the paper's description (no official code released): fraction of frames that could be scored",
+    }
     description = "PoseHeat-SSIM against an aligned reference (0-1, higher=better)"
     default_config = {
         "device": "auto",
         "confidence_threshold": 0.3,
         "sigma": 4.0,
         "min_joints": 3,
+        "person_match_frac": 0.25,  # centroid gate as a fraction of frame diagonal
         "min_matched_frames": 1,
         "models_dir": "models",
         # Container FPS values may differ by tiny floating-point roundoff only.
@@ -286,6 +464,7 @@ class PoseHeatSSIMModule(PipelineModule):
         self.sigma = float(self.config.get("sigma", 4.0))
         self.min_joints = max(2, int(self.config.get("min_joints", 3)))
         self.min_matched_frames = max(1, int(self.config.get("min_matched_frames", 1)))
+        self.person_match_frac = float(self.config.get("person_match_frac", 0.25))
         self.fps_tolerance = max(0.0, float(self.config.get("fps_tolerance", 1e-3)))
         self._backend_available = False
         self._wholebody = None
@@ -354,19 +533,18 @@ class PoseHeatSSIMModule(PipelineModule):
     def _score_pair(self, reference_frame: np.ndarray, generated_frame: np.ndarray, backend) -> Optional[float]:
         if reference_frame.shape[:2] != generated_frame.shape[:2]:
             return None
-        reference_pose = single_wholebody_pose(backend(np.ascontiguousarray(reference_frame)))
-        generated_pose = single_wholebody_pose(backend(np.ascontiguousarray(generated_frame)))
-        if reference_pose is None or generated_pose is None:
+        reference_persons = all_wholebody_poses(backend(np.ascontiguousarray(reference_frame)))
+        generated_persons = all_wholebody_poses(backend(np.ascontiguousarray(generated_frame)))
+        if not reference_persons or not generated_persons:
             return None
-        return pose_heat_ssim_score(
-            reference_pose[0],
-            reference_pose[1],
-            generated_pose[0],
-            generated_pose[1],
+        return pose_heat_ssim_frame(
+            reference_persons,
+            generated_persons,
             generated_frame.shape[:2],
             confidence_threshold=self.confidence_threshold,
             sigma=self.sigma,
             min_joints=self.min_joints,
+            match_frac=self.person_match_frac,
         )
 
     def _compare_images(self, generated: Path, reference: Path, backend) -> Optional[dict[str, float]]:

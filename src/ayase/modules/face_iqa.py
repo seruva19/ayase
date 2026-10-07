@@ -1,8 +1,10 @@
 """Estimate no-reference quality of faces with the TOPIQ face-specific model.
 
-Scores Haar-detected frontal-face crops from images or sampled video frames and averages
-them; samples with no detected face are left unset. Higher is better; no fixed range is
-assumed. Basis: https://github.com/chaofengc/IQA-PyTorch
+Faces are detected with RetinaFace (facexlib) and aligned by the canonical
+5-landmark similarity warp to 512x512 — the alignment protocol of the GFIQA
+training data — then scored with ``topiq_nr-face`` and averaged per sample.
+Samples with no detected face are left unset. Higher is better; no fixed
+range is assumed. Basis: https://github.com/chaofengc/IQA-PyTorch
 """
 
 import logging
@@ -19,6 +21,13 @@ logger = logging.getLogger(__name__)
 
 class FaceIQAModule(PipelineModule):
     name = "face_iqa"
+    provenance = "adapted"
+    sources = {
+        "face_iqa_score": "TOPIQ-face (pyiqa topiq_nr-face, Chen et al.) — https://github.com/chaofengc/IQA-PyTorch",
+    }
+    deviations = {
+        "face_iqa_score": "input is a 5-landmark-aligned face as in the training data (GFIQA); the video extension (mean over frames) is not from the source",
+    }
     description = "Face-specific IQA via TOPIQ-face (GFIQA-trained, higher=better)"
     default_config = {"subsample": 8}
     metric_groups = {
@@ -30,7 +39,7 @@ class FaceIQAModule(PipelineModule):
         self._ml_available = False
         self._model = None
         self._device = None
-        self._face_cascade = None
+        self._detector = None
         self._backend = "unavailable"
 
     def setup(self) -> None:
@@ -52,12 +61,18 @@ class FaceIQAModule(PipelineModule):
             logger.warning("Face-IQA unavailable: %s", e)
 
         try:
-            import cv2
+            from facexlib.detection import init_detection_model
 
-            cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-            self._face_cascade = cv2.CascadeClassifier(cascade_path)
-        except Exception:
-            pass
+            self._detector = init_detection_model(
+                "retinaface_resnet50", device=self._device
+            )
+        except Exception as e:
+            self._ml_available = False
+            self._backend = "unavailable"
+            logger.warning(
+                "Face-IQA unavailable: facexlib retinaface detector failed (%s). "
+                "Aligned-face input is required by the GFIQA protocol.", e
+            )
 
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
@@ -76,23 +91,12 @@ class FaceIQAModule(PipelineModule):
             device = self._device
 
             for frame in frames:
-                faces = self._detect_faces(frame)
+                faces = self._aligned_faces(frame)
                 if not faces:
                     continue
 
-                for (x, y, w, h) in faces:
-                    # Pad face region by 20%
-                    pad = int(max(w, h) * 0.2)
-                    fy = max(0, y - pad)
-                    fx = max(0, x - pad)
-                    fh = min(frame.shape[0], y + h + pad) - fy
-                    fw = min(frame.shape[1], x + w + pad) - fx
-                    face_crop = frame[fy : fy + fh, fx : fx + fw]
-
-                    if face_crop.size == 0:
-                        continue
-
-                    rgb = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
+                for aligned_bgr in faces:
+                    rgb = cv2.cvtColor(aligned_bgr, cv2.COLOR_BGR2RGB)
                     tensor = (
                         torch.from_numpy(rgb)
                         .permute(2, 0, 1)
@@ -111,14 +115,29 @@ class FaceIQAModule(PipelineModule):
             logger.warning("Face-IQA processing failed: %s", e)
         return sample
 
-    def _detect_faces(self, frame) -> list:
-        if self._face_cascade is None:
+    def _aligned_faces(self, frame) -> list:
+        """RetinaFace detect + 5-landmark alignment to 512x512 (GFIQA-style)."""
+        if self._detector is None:
             return []
         import cv2
+        from facexlib.utils import align_crop_face_landmarks
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = self._face_cascade.detectMultiScale(gray, 1.1, 4, minSize=(30, 30))
-        return list(faces) if len(faces) > 0 else []
+        try:
+            bboxes = self._detector.detect_faces(frame)
+        except Exception:
+            return []
+        if bboxes is None or len(bboxes) == 0:
+            return []
+        faces = []
+        for det in bboxes:
+            landmarks = np.asarray(det[5:15], dtype=np.float32).reshape(5, 2)
+            try:
+                aligned = align_crop_face_landmarks(frame, landmarks, output_size=512)
+            except Exception:
+                continue
+            if aligned is not None and aligned.size:
+                faces.append(aligned)
+        return faces
 
     def _load_frames(self, sample: Sample) -> list:
         # Uniformly sampled BGR frames served from the shared per-sample cache.

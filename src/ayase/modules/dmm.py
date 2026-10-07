@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 class DMMModule(PipelineModule):
     name = "dmm"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "dmm": "DMM — FR-IQA with debiased mapping (the pyiqa 'dmm' implementation, added Dec 2025) — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "DMM detail model metric full-reference (higher=better)"
     default_config = {"subsample": 8}
     metric_groups = {

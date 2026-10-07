@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 class HDRVDPModule(ReferenceBasedModule):
     name = "hdr_vdp"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "hdr_vdp": "HDR-VDP-3 (Mantiuk et al.) — per the paper's design — https://github.com/gfxdisp/HDR-VDP-3",
+    }
     description = "HDR-VDP visual difference predictor (higher=better)"
     default_config = {
         "subsample": 5,

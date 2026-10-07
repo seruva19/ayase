@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class SSIMCModule(PipelineModule):
     name = "ssimc"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "ssimc": "SSIM (Wang et al. 2004) on color channels, pyiqa 'ssimc' — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "SSIM-C complex wavelet structural similarity FR (higher=better)"
     default_config = {"subsample": 8}
     metric_groups = {

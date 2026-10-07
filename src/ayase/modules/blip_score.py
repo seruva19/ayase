@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 
 class BLIPScoreModule(PipelineModule):
     name = "blip_score"
+    provenance = "adapted"
+    sources = {
+        "blip_score": "BLIP ITM head probability (Li et al. 2022), blip-itm-large-coco — https://huggingface.co/Salesforce/blip-itm-large-coco",
+    }
+    deviations = {
+        "blip_score": "the published quantity is the official checkpoint's ITM probability on an image; the video extension (mean over frames) is not from the source",
+    }
     description = "BLIP image-text matching alignment score"
     default_config = {
         "model_name": "Salesforce/blip-itm-large-coco",

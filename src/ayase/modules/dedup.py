@@ -10,7 +10,7 @@ found with pigeonhole block indexing, so the dataset is never compared all
 pairs against all pairs.
 
 In each group one representative is kept: the sample with the highest
-``priority_metric`` value (default ``technical_score`` from ``basic``), ties
+``priority_metric`` value (default ``blur_score`` from ``basic``), ties
 and missing values falling back to processing order. Every other member gets a
 ``near_duplicate`` WARNING naming the representative and its Hamming distance to it.
 Because grouping is transitive, a member can be farther than the threshold from
@@ -107,18 +107,19 @@ def find_duplicate_groups(hashes: List[int], n_bits: int, threshold: int) -> Lis
 
 class DeduplicationModule(PipelineModule):
     name = "deduplication"
+    provenance = "utility"
     description = "Groups near-duplicate samples by pHash Hamming distance and flags all but the best one"
     default_config = {
         "hamming_threshold": 4,  # max differing bits (of hash_size**2) to count as duplicate
         "hash_size": 8,  # pHash grid side; 8 -> 64-bit hash
-        "priority_metric": "technical_score",  # QualityMetrics field; highest is kept
+        "priority_metric": "blur_score",  # QualityMetrics field; highest is kept
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.hamming_threshold = int(self.config.get("hamming_threshold", 4))
         self.hash_size = int(self.config.get("hash_size", 8))
-        self.priority_metric = self.config.get("priority_metric", "technical_score")
+        self.priority_metric = self.config.get("priority_metric", "blur_score")
         self._hashes: Dict[str, int] = {}  # sample path -> pHash as int
         self._imagehash_available = False
 
@@ -205,7 +206,7 @@ class DeduplicationModule(PipelineModule):
     def _priority(self, sample: Sample) -> float:
         if not self.priority_metric or sample.quality_metrics is None:
             return float("-inf")
-        value = getattr(sample.quality_metrics, self.priority_metric, None)
+        value = sample.quality_metrics.model_dump().get(self.priority_metric)
         if not isinstance(value, (int, float)) or value != value:  # None / non-numeric / NaN
             return float("-inf")
         return float(value)

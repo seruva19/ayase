@@ -5,8 +5,9 @@ at multiple granularities using attention mechanisms.
 
 mdtvsfa_score — higher = better quality
 
-Falls back to FAST-VQA via ``pyiqa`` if the native model is
-unavailable.
+Requires a pyiqa release that ships ``mdtvsfa``; currently unavailable
+(requires_external_backend) — no score is emitted when the metric is
+absent, and no substitute model is run in its place.
 """
 
 import logging
@@ -25,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 class MDTVSFAModule(PipelineModule):
     name = "mdtvsfa"
+    requires_external_backend = True
+    provenance = "published"
+    sources = {
+        "mdtvsfa_score": "MDTVSFA (Li, Yang, Ma, IJCV 2021) — https://github.com/lidq92/MDTVSFA",
+    }
     description = "Multi-Dimensional fragment-based VQA"
     default_config = {
         "subsample": 5,

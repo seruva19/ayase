@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class LAIONAestheticModule(PipelineModule):
     name = "laion_aesthetic"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "laion_aesthetic": "LAION Aesthetics Predictor V2 via pyiqa 'laion_aes' — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "LAION Aesthetics V2 predictor (0-10)"
     default_config = {"subsample": 4}
     metric_groups = {

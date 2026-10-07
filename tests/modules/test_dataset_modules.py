@@ -65,15 +65,17 @@ def test_kvd_is_batch_metric():
     assert issubclass(KVDModule, BatchMetricModule)
 
 
-def test_kvd_rbf_kernel():
+def test_kvd_poly_kernel():
+    """Published KVD uses the polynomial kernel K(x,y) = (x·y/d + 1)^3."""
     from ayase.modules.kvd import KVDModule
 
     m = KVDModule()
     x = np.random.randn(5, 10)
     y = np.random.randn(3, 10)
-    k = m._rbf_kernel(x, y)
+    k = m._poly_kernel(x, y)
     assert k.shape == (5, 3)
-    assert np.all(k >= 0) and np.all(k <= 1)
+    expected = (x @ y.T / 10 + 1.0) ** 3
+    np.testing.assert_allclose(k, expected)
 
 
 def test_kvd_compute_mmd():

@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 class TextOverlayModule(PipelineModule):
     name = "text_overlay"
+    deprecated = True
+    provenance = "own"
     description = "Text overlay / subtitle detection in video frames"
     default_config = {"subsample": 4, "edge_threshold": 0.15}
     metric_groups = {

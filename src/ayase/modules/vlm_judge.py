@@ -45,6 +45,7 @@ class VLMJudgeModule(PipelineModule):
     Supports three modes: 'verify', 'traits', and 'presets'.
     """
     name = "vlm_judge"
+    provenance = "utility"
     description = "Advanced semantic verification using VLM (e.g. LLaVA)"
     default_config = {
         "model_name": "llava-hf/llava-1.5-7b-hf",

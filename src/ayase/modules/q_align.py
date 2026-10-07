@@ -43,6 +43,15 @@ QUALITY_LEVELS = {
 
 class QAlignModule(PipelineModule):
     name = "q_align"
+    provenance = "adapted"
+    sources = {
+        "qalign_aesthetic": "Q-Align / OneAlign (Wu et al., ICML 2024) — https://github.com/Q-Future/Q-Align",
+        "qalign_quality": "Q-Align / OneAlign (Wu et al., ICML 2024) — https://github.com/Q-Future/Q-Align",
+    }
+    deviations = {
+        "qalign_quality": "video mode input_='video', but on a subset of frames (every subsample-th, <= max_frames) instead of all video frames",
+        "qalign_aesthetic": "same frame subset as qalign_quality; OneAlign's aesthetic branch is used unchanged",
+    }
     description = "Q-Align unified quality + aesthetic assessment (ICML 2024)"
     default_config = {
         "model_name": "q-future/one-align",
@@ -345,27 +354,22 @@ class QAlignModule(PipelineModule):
         if not cap.isOpened():
             return None, None
 
-        quality_scores: List[float] = []
-        aesthetic_scores: List[float] = []
+        frames: List[np.ndarray] = []
         idx = 0
-        scored = 0
 
         try:
-            while scored < self.max_frames:
+            while len(frames) < self.max_frames:
                 ret, frame = cap.read()
                 if not ret:
                     break
                 if idx % self.subsample == 0:
-                    q, a = self._score_frame(frame)
-                    if q is not None:
-                        quality_scores.append(q)
-                    if a is not None:
-                        aesthetic_scores.append(a)
-                    scored += 1
+                    frames.append(frame)
                 idx += 1
         finally:
             cap.release()
 
-        quality = float(np.mean(quality_scores)) if quality_scores else None
-        aesthetic = float(np.mean(aesthetic_scores)) if aesthetic_scores else None
-        return quality, aesthetic
+        if not frames:
+            return None, None
+
+        # Official video protocol: a single input_="video" call per task.
+        return self.score_frames(frames, "quality"), self.score_frames(frames, "aesthetics")

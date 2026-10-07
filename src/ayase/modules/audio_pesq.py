@@ -33,6 +33,10 @@ _PESQ_RATES = {8000, 16000}
 
 class AudioPESQModule(PipelineModule):
     name = "audio_pesq"
+    provenance = "published"
+    sources = {
+        "pesq_score": "ITU-T P.862 (the pesq package), WB at 16 kHz — https://github.com/ludlows/PESQ",
+    }
     description = "PESQ speech quality (full-reference, ITU-T P.862)"
     default_config = {
         "target_sr": 16000,  # Resample to 16 kHz (wide-band PESQ)

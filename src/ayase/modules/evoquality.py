@@ -60,6 +60,11 @@ def parse_evoquality_output(text: str) -> Optional[float]:
 
 class EvoQualityModule(PipelineModule):
     name = "evoquality"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "evoquality_score": "EvoQuality (ByteDance), HF model — https://huggingface.co/ByteDance/EvoQuality",
+    }
     description = "EvoQuality self-evolving VLM no-reference quality rating"
     default_config = {
         "backend": "auto",  # auto | transformers | openai

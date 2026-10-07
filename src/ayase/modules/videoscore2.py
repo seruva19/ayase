@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 
 class VideoScore2Module(PipelineModule):
     name = "videoscore2"
+    provenance = "published"
+    sources = {
+        "videoscore2_alignment": "VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2",
+        "videoscore2_physical": "VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2",
+        "videoscore2_visual": "VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2",
+    }
     description = "VideoScore2 3-dimensional generative video evaluation"
     default_config = {
         "model_name": "TIGER-Lab/VideoScore2",

@@ -23,13 +23,25 @@ logger = logging.getLogger(__name__)
 
 class VendiModule(BatchMetricModule):
     name = "vendi"
+    provenance = "published"
+    sources = {
+        "vendi": "Vendi Score, Friedman & Dieng TMLR 2023 — https://github.com/vertaix/Vendi-Score (Inception pool embeddings)",
+    }
+    deviations = {
+        "vendi": "embeddings are the FID-Inception pool (2048-d) as in published Vendi; for video — mean over up to 8 frames; cosine kernel",
+    }
     description = "Vendi Score dataset diversity (NeurIPS 2022, batch metric)"
     default_config = {
-        "feature_dim": 512,
         "max_samples": 1000,
-        "resize": 224,
+        "num_frames": 8,  # frames mean-pooled per video
+        "device": "auto",
     }
     models = [
+        {
+            "id": "mseitzer/pytorch-fid:fid_inception_v3",
+            "type": "torch_hub",
+            "task": "FID-Inception pool embeddings (shared with FID)",
+        },
         {
             "id": "vendi_score",
             "type": "pip_package",
@@ -43,100 +55,111 @@ class VendiModule(BatchMetricModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self._model = None
+        self._model = None  # vendi_score entropy backend (optional)
+        self._embedder = None
+        self._transform = None
+        self._device = "cpu"
         self._ml_available = False
         self._backend = None
-        self.feature_dim = self.config.get("feature_dim", 512)
         self.max_samples = self.config.get("max_samples", 1000)
-        self.resize = self.config.get("resize", 224)
+        self.num_frames = self.config.get("num_frames", 8)
+        self.device_config = self.config.get("device", "auto")
         self._processed_count = 0
 
     def setup(self) -> None:
-        # Tier 1: vendi_score package
+        # Embeddings must come from a published extractor — Inception pool3
+        # (the same fid_inception_v3 shared with the FID module). The Vendi
+        # formula itself is exact in numpy; the package is an optional speed-up.
+        try:
+            import torch
+            from torchvision import transforms
+            from ayase.runtime import resolve_torch_device, shared_runtime_resource
+
+            self._device = resolve_torch_device(self.device_config)
+
+            def load_inception():
+                return torch.hub.load(
+                    "mseitzer/pytorch-fid", "fid_inception_v3"
+                ).to(self._device).eval()
+
+            self._embedder = shared_runtime_resource(
+                self,
+                ("fid_inception_v3_pt_inception", str(self._device)),
+                load_inception,
+            )
+            self._transform = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.Resize(
+                    (299, 299),
+                    interpolation=transforms.InterpolationMode.BICUBIC,
+                ),
+                transforms.ToTensor(),
+            ])
+        except ImportError:
+            logger.info("Vendi unavailable: torch/torchvision required for Inception embeddings")
+            self._backend = "unavailable"
+            return
+        except Exception as e:
+            logger.warning(f"Vendi Inception setup failed: {e}")
+            self._backend = "unavailable"
+            return
+
         try:
             import vendi_score
             self._model = vendi_score
-            self._ml_available = True
             self._backend = "vendi_score"
-            logger.info("Vendi Score module initialised (vendi_score package)")
-            return
+            logger.info("Vendi Score module initialised (vendi_score package, Inception embeddings)")
         except ImportError:
-            pass
-        except Exception as e:
-            logger.debug(f"vendi_score init failed: {e}")
-
-        # Tier 2: exact Vendi Score formula in numpy (matrix entropy of the
-        # normalised cosine-similarity kernel). This is a faithful port of the
-        # published definition, not a heuristic approximation.
-        self._backend = "numpy"
-        logger.info("Vendi Score module initialised (numpy matrix-entropy port)")
+            self._backend = "numpy"
+            logger.info("Vendi Score module initialised (numpy matrix-entropy, Inception embeddings)")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract a feature vector from a sample (histogram-based)."""
+        """Extract the Inception pool embedding for a sample."""
+        if self._embedder is None:
+            return None
         if self.max_samples and self._processed_count >= self.max_samples:
             return None
 
         try:
-            if sample.is_video:
-                feat = self._extract_video_features(sample.path)
+            from ayase.image import sample_frames, load_representative_frame
+
+            if sample.is_video and self.num_frames > 1:
+                frames = list(
+                    sample_frames(sample.path, max_frames=self.num_frames, color="rgb")
+                )
+                feats = [self._embed_frame(f) for f in frames]
+                feats = [f for f in feats if f is not None]
+                feat = np.mean(feats, axis=0) if feats else None
             else:
-                feat = self._extract_image_features(sample.path)
+                frame = load_representative_frame(sample.path, color="rgb")
+                feat = self._embed_frame(frame) if frame is not None else None
 
             if feat is not None:
                 self._processed_count += 1
+                # L2-normalise the published embedding.
+                feat = feat / (np.linalg.norm(feat) + 1e-8)
             return feat
         except Exception as e:
             logger.debug(f"Vendi feature extraction failed for {sample.path}: {e}")
             return None
 
-    def _extract_image_features(self, path: Path) -> Optional[np.ndarray]:
-        img = cv2.imread(str(path))
-        if img is None:
-            return None
-        img = cv2.resize(img, (self.resize, self.resize))
-        return self._compute_feature_vector(img)
-
-    def _extract_video_features(self, path: Path) -> Optional[np.ndarray]:
-        cap = cv2.VideoCapture(str(path))
+    def _embed_frame(self, frame: np.ndarray) -> Optional[np.ndarray]:
         try:
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                return None
-            frame = cv2.resize(frame, (self.resize, self.resize))
-            return self._compute_feature_vector(frame)
-        finally:
-            cap.release()
+            import torch
 
-    def _compute_feature_vector(self, img: np.ndarray) -> np.ndarray:
-        """Compute a feature vector from colour and edge histograms."""
-        features = []
-
-        # Colour histogram (per channel, 64 bins each = 192)
-        for c in range(3):
-            hist = cv2.calcHist([img], [c], None, [64], [0, 256])
-            hist = hist.flatten() / (hist.sum() + 1e-8)
-            features.append(hist)
-
-        # Edge histogram (128 bins)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 50, 150).astype(np.float32)
-        edge_hist = cv2.calcHist([edges], [0], None, [128], [0, 256])
-        edge_hist = edge_hist.flatten() / (edge_hist.sum() + 1e-8)
-        features.append(edge_hist)
-
-        feat = np.concatenate(features)
-        # Pad or truncate to feature_dim
-        if len(feat) < self.feature_dim:
-            feat = np.pad(feat, (0, self.feature_dim - len(feat)))
-        else:
-            feat = feat[:self.feature_dim]
-        # L2 normalise
-        norm = np.linalg.norm(feat) + 1e-8
-        return feat / norm
+            tensor = self._transform(
+                np.ascontiguousarray(frame, dtype=np.uint8)
+            ).unsqueeze(0).to(self._device)
+            with torch.no_grad():
+                feat = self._embedder(tensor)
+            return feat.detach().cpu().numpy().reshape(-1).astype(np.float64)
+        except Exception as e:
+            logger.debug(f"Vendi Inception embedding failed: {e}")
+            return None
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
-    ) -> float:
+    ) -> Optional[float]:
         """Compute Vendi Score from feature set."""
         try:
             feat_matrix = np.stack(features, axis=0)  # (N, D)
@@ -146,7 +169,7 @@ class VendiModule(BatchMetricModule):
             return self._compute_vendi_numpy(feat_matrix)
         except Exception as e:
             logger.error(f"Vendi Score computation failed: {e}")
-            return 0.0
+            return None
 
     def _compute_vendi_package(self, features: np.ndarray) -> float:
         try:
@@ -196,6 +219,9 @@ class VendiModule(BatchMetricModule):
 
         try:
             score = self.compute_distribution_metric(self._feature_cache)
+            if score is None:
+                logger.warning("Vendi Score could not be computed")
+                return
             logger.info(f"Vendi Score: {score:.4f} ({len(self._feature_cache)} samples)")
 
             if hasattr(self, "pipeline") and self.pipeline:

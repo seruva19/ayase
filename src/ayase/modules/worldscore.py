@@ -25,6 +25,12 @@ logger = logging.getLogger(__name__)
 
 class WorldScoreModule(BatchMetricModule):
     name = "worldscore"
+    provenance = {
+        "worldscore": "utility",
+    }
+    sources = {
+        "worldscore": "WorldScore, ICCV 2025 — https://github.com/haoyi-duan/WorldScore",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "WorldScore world generation evaluation (ICCV 2025)"
     default_config = {"subsample": 8}

@@ -25,6 +25,19 @@ logger = logging.getLogger(__name__)
 
 class AIGVAssessorModule(PipelineModule):
     name = "aigv_assessor"
+    deprecated = True
+    provenance = {
+        "aigv_alignment_est": "own",
+        "aigv_dynamic_est": "own",
+        "aigv_static_est": "adapted",
+        "aigv_temporal_est": "own",
+    }
+    sources = {
+        "aigv_static_est": "AIGV-Assessor (Wang et al., CVPR 2025) — https://github.com/IntMeGroup/AIGV-Assessor",
+    }
+    deviations = {
+        "aigv_static_est": "only static_quality is loaded via AutoModel with no prompt and no official preprocessing; logits are clipped to [0,1]. Official inference is a custom InternVL with a regressor",
+    }
     description = "AI-generated video quality (AIGV-Assessor InternVL model)"
     default_config = {
         "subsample": 8,
@@ -32,10 +45,10 @@ class AIGVAssessorModule(PipelineModule):
         "model_revision": None,
     }
     metric_groups = {
-        "aigv_alignment": "alignment",
-        "aigv_dynamic": "motion",
-        "aigv_static": "nr_quality",
-        "aigv_temporal": "temporal",
+        "aigv_alignment_est": "alignment",
+        "aigv_dynamic_est": "motion",
+        "aigv_static_est": "nr_quality",
+        "aigv_temporal_est": "temporal",
     }
 
     def __init__(self, config: Optional[dict] = None) -> None:
@@ -121,9 +134,9 @@ class AIGVAssessorModule(PipelineModule):
 
         # Map to dimensions (model may output 4 dimension scores)
         if len(scores) >= 4:
-            sample.quality_metrics.aigv_static = float(np.clip(scores[0], 0.0, 1.0))
-            sample.quality_metrics.aigv_temporal = float(np.clip(scores[1], 0.0, 1.0))
-            sample.quality_metrics.aigv_dynamic = float(np.clip(scores[2], 0.0, 1.0))
-            sample.quality_metrics.aigv_alignment = float(np.clip(scores[3], 0.0, 1.0))
+            sample.quality_metrics.aigv_static_est = float(np.clip(scores[0], 0.0, 1.0))
+            sample.quality_metrics.aigv_temporal_est = float(np.clip(scores[1], 0.0, 1.0))
+            sample.quality_metrics.aigv_dynamic_est = float(np.clip(scores[2], 0.0, 1.0))
+            sample.quality_metrics.aigv_alignment_est = float(np.clip(scores[3], 0.0, 1.0))
         elif len(scores) >= 1:
-            sample.quality_metrics.aigv_static = float(np.clip(scores[0], 0.0, 1.0))
+            sample.quality_metrics.aigv_static_est = float(np.clip(scores[0], 0.0, 1.0))

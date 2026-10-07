@@ -93,14 +93,14 @@ def test_video_type_classifier_disabled(video_sample):
 
 
 def test_jedi_basics():
-    from ayase.modules.jedi_metric import JEDiModule
+    from ayase.modules.mmd_selfsplit import JEDiModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(JEDiModule, "jedi")
+    _test_module_basics(JEDiModule, "mmd_selfsplit")
 
 
 def test_jedi_disabled(video_sample):
-    from ayase.modules.jedi_metric import JEDiModule
+    from ayase.modules.mmd_selfsplit import JEDiModule
 
     m = JEDiModule({})
     result = m.process(video_sample)
@@ -175,12 +175,12 @@ def test_aigv_assessor_video(video_sample):
     assert qm is not None
     # Without ML backend, module skips and metrics stay None
     if not m._ml_available:
-        assert qm.aigv_static is None
+        assert qm.aigv_static_est is None
     else:
-        assert qm.aigv_static is not None
-        assert 0 <= qm.aigv_static <= 1
-        assert qm.aigv_temporal is not None
-        assert qm.aigv_dynamic is not None
+        assert qm.aigv_static_est is not None
+        assert 0 <= qm.aigv_static_est <= 1
+        assert qm.aigv_temporal_est is not None
+        assert qm.aigv_dynamic_est is not None
 
 
 def test_aigv_assessor_image(image_sample):
@@ -189,7 +189,7 @@ def test_aigv_assessor_image(image_sample):
     m = AIGVAssessorModule()
     m.setup()
     result = m.process(image_sample)
-    assert result.quality_metrics is None or result.quality_metrics.aigv_static is None
+    assert result.quality_metrics is None or result.quality_metrics.aigv_static_est is None
 
 
 def test_video_reward_basics():
@@ -285,10 +285,10 @@ def test_motion_scene_qualitymetrics_fields():
         "trajan_score",
         "promptiqa_score",
         "qcn_score",
-        "aigv_static",
-        "aigv_temporal",
-        "aigv_dynamic",
-        "aigv_alignment",
+        "aigv_static_est",
+        "aigv_temporal_est",
+        "aigv_dynamic_est",
+        "aigv_alignment_est",
         "video_reward_score",
         "text_overlay_score",
     ]
@@ -304,8 +304,8 @@ def test_jedi_dataset_stats_field():
         valid_samples=10,
         invalid_samples=0,
         total_size=1000)
-    assert hasattr(stats, "jedi")
-    assert stats.jedi is None
+    assert hasattr(stats, "mmd_selfsplit")
+    assert stats.mmd_selfsplit is None
 
 
 def test_temporal_flickering_pair_batches_respect_max_frames(tmp_path):

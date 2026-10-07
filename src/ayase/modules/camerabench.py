@@ -1,9 +1,8 @@
 """CameraBench camera-motion taxonomy classification (arXiv 2504.15376).
 
-Classifies the dominant camera motion of a clip into the CameraBench
-cinematographer taxonomy (static, pan left/right, tilt up/down, roll, zoom
-in/out, dolly in/out, truck, pedestal, follow) using the fine-tuned Qwen2.5-VL
-model released by the CameraBench authors:
+Classifies the camera motion of a clip over the 15 official CameraBench
+motion primitives (move/tilt/pan/roll/zoom/static) using the fine-tuned
+Qwen2.5-VL model released by the CameraBench authors:
 
   * checkpoint: ``chancharikm/qwen2.5-vl-7b-cam-motion``
     (32B / 72B variants exist: ``chancharikm/qwen2.5-vl-32b-cam-motion``,
@@ -16,14 +15,16 @@ Real backend only — there is no optical-flow heuristic classifier tier. If the
 VLM cannot be loaded the module sets ``_backend = "unavailable"`` and leaves both
 outputs unset.
 
-On success the predicted label is stored in ``sample.metadata["camera_motion_class"]``
-and the confidence in ``quality_metrics.camera_motion_class_confidence``.
+On success the argmax primitive is stored in
+``sample.metadata["camera_motion_class"]``, its probability in
+``quality_metrics.camera_motion_class_confidence``, and the full per-primitive
+probability map in ``sample.metadata["camera_motion_primitives"]``.
 
-Classification uses the model's generative yes/no scoring (per the model card):
-for each taxonomy label it asks ``Does this video show "<description>"?`` and reads
-the softmax probability of the ``Yes`` token from the next-token distribution; the
-label with the highest probability is the prediction and that probability is the
-reported confidence.
+Classification follows the benchmark's binary-classification protocol: each of
+the 15 verbatim primitive questions (``camerabench/data/binary_classification``
+in ``linzhiqiu/t2v_metrics``) is asked independently as ``"{question} Please
+only answer Yes or No."`` and scored by the softmax probability of the ``Yes``
+token in the next-token distribution.
 """
 
 from __future__ import annotations
@@ -39,22 +40,25 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
-# CameraBench camera-motion taxonomy: {label: natural-language description used
-# in the yes/no classification prompt}.
+# Official CameraBench binary-classification primitives: {label: verbatim
+# question from the benchmark data (camerabench/data/binary_classification in
+# linzhiqiu/t2v_metrics)}. Each is asked independently and scored as P("Yes").
 CAMERA_MOTION_LABELS = {
-    "static": "the camera is static and not moving",
-    "pan_left": "the camera pans left",
-    "pan_right": "the camera pans right",
-    "tilt_up": "the camera tilts upward",
-    "tilt_down": "the camera tilts downward",
-    "roll": "the camera rolls around its optical axis",
-    "zoom_in": "the camera zooms in",
-    "zoom_out": "the camera zooms out",
-    "dolly_in": "the camera moves forward (dolly in)",
-    "dolly_out": "the camera moves backward (dolly out)",
-    "truck": "the camera trucks sideways (moves left or right)",
-    "pedestal": "the camera pedestals vertically (moves up or down)",
-    "follow": "the camera follows or tracks the subject",
+    "move_down": "Does the camera move downward (not tilting down) with respect to the initial frame?",
+    "move_in": "Does the camera move forward (not zooming in) with respect to the initial frame?",
+    "move_left": "Does the camera move leftward in the scene?",
+    "move_out": "Does the camera move backward (not zooming out) with respect to the initial frame?",
+    "move_right": "Does the camera move rightward in the scene?",
+    "move_up": "Does the camera move upward (not tilting up) with respect to the initial frame?",
+    "pan_left": "Does the camera pan to the left?",
+    "pan_right": "Does the camera pan to the right?",
+    "roll_clockwise": "Does the camera roll clockwise?",
+    "roll_counterclockwise": "Does the camera roll counterclockwise?",
+    "static": "Is the camera completely still without any motion or shaking?",
+    "tilt_down": "Does the camera tilt downward?",
+    "tilt_up": "Does the camera tilt upward?",
+    "zoom_in": "Does the camera zoom in?",
+    "zoom_out": "Does the camera zoom out?",
 }
 
 
@@ -65,6 +69,13 @@ def _store_camera_motion_class(sample: Sample, label: str) -> None:
 
 class CameraBenchModule(PipelineModule):
     name = "camerabench"
+    provenance = "adapted"
+    sources = {
+        "camera_motion_class_confidence": "CameraBench (Lin et al. 2025), chancharikm/qwen2.5-vl-7b-cam-motion model — https://github.com/sy77777en/CameraBench",
+    }
+    deviations = {
+        "camera_motion_class_confidence": "the official 15 per-primitive binary questions (verbatim); the field keeps argmax P(Yes) for compatibility, all primitive probabilities in metadata['camera_motion_primitives']",
+    }
     description = (
         "CameraBench camera-motion taxonomy classification via the fine-tuned "
         "Qwen2.5-VL model (chancharikm/qwen2.5-vl-7b-cam-motion)"
@@ -164,9 +175,11 @@ class CameraBenchModule(PipelineModule):
             return sample
 
         try:
-            label, confidence = self._classify(sample)
+            label, confidence, primitives = self._classify(sample)
             if label is not None and confidence is not None:
                 _store_camera_motion_class(sample, label)
+                if primitives:
+                    sample.metadata["camera_motion_primitives"] = primitives
                 sample.quality_metrics.camera_motion_class_confidence = round(
                     float(confidence), 6
                 )
@@ -175,7 +188,7 @@ class CameraBenchModule(PipelineModule):
 
         return sample
 
-    def _classify(self, sample: Sample) -> Tuple[Optional[str], Optional[float]]:
+    def _classify(self, sample: Sample) -> Tuple[Optional[str], Optional[float], dict]:
         from PIL import Image
 
         from ayase.image import sample_frames
@@ -184,26 +197,32 @@ class CameraBenchModule(PipelineModule):
             sample.path, max_frames=self.config.get("num_frames", 16), color="rgb"
         )
         if len(frames) < 2:
-            return None, None
+            return None, None, None
         # Read-only cache views -> contiguous copies before PIL/torch use.
         pil_frames = [Image.fromarray(np.ascontiguousarray(f)) for f in frames]
 
         best_label: Optional[str] = None
         best_prob = -1.0
-        for label, description in CAMERA_MOTION_LABELS.items():
-            prob = self._score_yes(pil_frames, description)
-            if prob is not None and prob > best_prob:
+        primitives = {}
+        for label, question in CAMERA_MOTION_LABELS.items():
+            prob = self._score_yes(pil_frames, question)
+            if prob is None:
+                continue
+            primitives[label] = round(prob, 6)
+            if prob > best_prob:
                 best_prob = prob
                 best_label = label
 
         if best_label is None:
-            return None, None
-        return best_label, best_prob
+            return None, None, None
+        return best_label, best_prob, primitives
 
-    def _score_yes(self, pil_frames: List, description: str) -> Optional[float]:
-        """Return P('Yes') for 'Does this video show "<description>"?'.
+    def _score_yes(self, pil_frames: List, question: str) -> Optional[float]:
+        """Return P('Yes') for an official CameraBench primitive question.
 
-        Builds the video input via the canonical Qwen2.5-VL path
+        The prompt follows the benchmark's VQAScore template
+        (``"{question} Please only answer Yes or No."``) and builds the video
+        input via the canonical Qwen2.5-VL path
         (``qwen_vl_utils.process_vision_info``) so the frames and fps are
         packed exactly as the model expects, then reads the next-token
         distribution and sums the probability mass on the ``Yes`` token(s).
@@ -212,7 +231,7 @@ class CameraBenchModule(PipelineModule):
         from qwen_vl_utils import process_vision_info
 
         processor = self._processor
-        question = f'Does this video show "{description}"?'
+        prompt = f"{question} Please only answer Yes or No."
         messages = [
             {
                 "role": "user",
@@ -222,7 +241,7 @@ class CameraBenchModule(PipelineModule):
                         "video": pil_frames,
                         "fps": self.config.get("fps", 8.0),
                     },
-                    {"type": "text", "text": question},
+                    {"type": "text", "text": prompt},
                 ],
             }
         ]

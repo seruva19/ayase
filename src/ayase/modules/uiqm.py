@@ -22,79 +22,110 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
+def _mu_a(x: np.ndarray, alpha_l: float = 0.1, alpha_r: float = 0.1) -> float:
+    """Asymmetric alpha-trimmed mean (Panetta et al. UICM convention)."""
+    xs = np.sort(x)
+    k = xs.size
+    t_l = int(np.ceil(alpha_l * k))
+    t_r = int(np.floor(alpha_r * k))
+    weight = 1.0 / (k - t_l - t_r)
+    return float(weight * xs[t_l + 1 : k - t_r].sum())
+
+
+def _s_a(x: np.ndarray, mu: float) -> float:
+    return float(np.mean((x - mu) ** 2))
+
+
 def _uicm(img: np.ndarray) -> float:
-    """Underwater Image Colorfulness Measure (UICM)."""
-    r, g, b = img[:, :, 2].astype(float), img[:, :, 1].astype(float), img[:, :, 0].astype(float)
+    """UICM with asymmetric alpha-trimmed statistics (reference protocol)."""
+    # Input is BGR; the reference implementation indexes RGB.
+    r = img[:, :, 2].astype(np.float64).ravel()
+    g = img[:, :, 1].astype(np.float64).ravel()
+    b = img[:, :, 0].astype(np.float64).ravel()
     rg = r - g
-    yb = 0.5 * (r + g) - b
+    yb = (r + g) / 2.0 - b
+    mu_rg = _mu_a(rg)
+    mu_yb = _mu_a(yb)
+    mean_magnitude = np.sqrt(mu_rg ** 2 + mu_yb ** 2)
+    r = np.sqrt(_s_a(rg, mu_rg) + _s_a(yb, mu_yb))
+    return float(-0.0268 * mean_magnitude + 0.1586 * r)
 
-    mu_rg = np.mean(rg)
-    mu_yb = np.mean(yb)
-    sigma_rg = np.sqrt(np.var(rg))
-    sigma_yb = np.sqrt(np.var(yb))
 
-    return -0.0268 * np.sqrt(mu_rg ** 2 + mu_yb ** 2) + 0.1586 * np.sqrt(sigma_rg ** 2 + sigma_yb ** 2)
+def _sobel_edge_map(ch: np.ndarray) -> np.ndarray:
+    dx = cv2.Sobel(ch, cv2.CV_64F, 1, 0)
+    dy = cv2.Sobel(ch, cv2.CV_64F, 0, 1)
+    mag = np.hypot(dx, dy)
+    m = mag.max()
+    if m > 0:
+        mag = mag * (255.0 / m)
+    return mag
+
+
+def _eme(x: np.ndarray, window_size: int = 10) -> float:
+    """Enhancement Measure Estimation over 10x10 blocks (reference protocol)."""
+    k1 = x.shape[1] // window_size
+    k2 = x.shape[0] // window_size
+    if k1 == 0 or k2 == 0:
+        return 0.0
+    w = 2.0 / (k1 * k2)
+    x = x[: k2 * window_size, : k1 * window_size]
+    val = 0.0
+    for column in range(k1):
+        for k in range(k2):
+            block = x[k * window_size : window_size * (k + 1), column * window_size : window_size * (column + 1)]
+            bmax = float(block.max())
+            bmin = float(block.min())
+            if bmin == 0.0 or bmax == 0.0:
+                continue
+            val += np.log(bmax / bmin)
+    return float(w * val)
 
 
 def _uism(img: np.ndarray) -> float:
-    """Underwater Image Sharpness Measure (UISM) via Sobel edge detector."""
-    # Compute edge maps per channel using Sobel
-    channels = cv2.split(img)
-    eme_vals = []
-
-    for ch in channels:
-        ch = ch.astype(np.float64)
-        sobel_x = cv2.Sobel(ch, cv2.CV_64F, 1, 0, ksize=3)
-        sobel_y = cv2.Sobel(ch, cv2.CV_64F, 0, 1, ksize=3)
-        edge_map = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
-
-        # Block-based EME (Measure of Enhancement)
-        h, w = edge_map.shape
-        block_h, block_w = max(h // 8, 1), max(w // 8, 1)
-        eme = 0.0
-        count = 0
-        for i in range(0, h - block_h + 1, block_h):
-            for j in range(0, w - block_w + 1, block_w):
-                block = edge_map[i : i + block_h, j : j + block_w]
-                bmax = block.max()
-                bmin = block.min()
-                if bmin > 0 and bmax > 0:
-                    eme += 20.0 * np.log(bmax / bmin + 1e-8)
-                    count += 1
-
-        eme_vals.append(eme / max(count, 1))
-
-    # Weighted sum (lambda_r=0.299, lambda_g=0.587, lambda_b=0.114)
-    return 0.299 * eme_vals[2] + 0.587 * eme_vals[1] + 0.114 * eme_vals[0]
+    """UISM: EME of (channel-normalized Sobel edges x channel), 10x10 blocks."""
+    # RGB order per the reference implementation.
+    chans = (
+        img[:, :, 2].astype(np.float64),
+        img[:, :, 1].astype(np.float64),
+        img[:, :, 0].astype(np.float64),
+    )
+    emes = [_eme(_sobel_edge_map(c) * c, 10) for c in chans]
+    # Reference constants (lambda_r, lambda_g, lambda_b).
+    return 0.299 * emes[0] + 0.587 * emes[1] + 0.144 * emes[2]
 
 
-def _uiconm(img: np.ndarray) -> float:
-    """Underwater Image Contrast Measure (UIConM) via logAMEE."""
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float64)
-    h, w = gray.shape
-    block_h, block_w = max(h // 8, 1), max(w // 8, 1)
-
-    logamee = 0.0
-    count = 0
-
-    for i in range(0, h - block_h + 1, block_h):
-        for j in range(0, w - block_w + 1, block_w):
-            block = gray[i : i + block_h, j : j + block_w]
-            bmax = block.max()
-            bmin = block.min()
-            if bmin > 0 and bmax > bmin:
-                alpha = (bmax + bmin) / 2.0
-                plip_add = bmax + bmin - bmax * bmin / alpha if alpha > 0 else 0
-                plip_sub = abs(bmax - bmin)
-                if plip_add > 0 and plip_sub > 0:
-                    logamee += np.log(plip_sub / plip_add + 1e-8)
-                    count += 1
-
-    return logamee / max(count, 1)
+def _uiconm(img: np.ndarray, window_size: int = 10) -> float:
+    """UIConM: logAMEE over 10x10 blocks on the RGB image (reference protocol)."""
+    x = img.astype(np.float64)
+    k1 = x.shape[1] // window_size
+    k2 = x.shape[0] // window_size
+    if k1 == 0 or k2 == 0:
+        return 0.0
+    w = -1.0 / (k1 * k2)
+    x = x[: k2 * window_size, : k1 * window_size]
+    val = 0.0
+    for column in range(k1):
+        for k in range(k2):
+            block = x[k * window_size : window_size * (k + 1), column * window_size : window_size * (column + 1), :]
+            bmax = float(block.max())
+            bmin = float(block.min())
+            top = bmax - bmin
+            bot = bmax + bmin
+            if bot == 0.0 or top == 0.0:
+                continue
+            val += (top / bot) * np.log(top / bot)
+    return float(w * val)
 
 
 class UIQMModule(PipelineModule):
     name = "uiqm"
+    provenance = "adapted"
+    sources = {
+        "uiqm_score": "UIQM, Panetta et al. IEEE JOE 2016 (FUnIE-GAN uqim_utils port) — https://ieeexplore.ieee.org/document/7305804",
+    }
+    deviations = {
+        "uiqm_score": "The published metric is image-level; Ayase additionally averages uniformly sampled video frames, and configurable component weights can differ from the published defaults",
+    }
     description = "UIQM underwater image quality measure (Panetta et al. 2016)"
     default_config = {
         "c1": 0.0282,

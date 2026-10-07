@@ -53,6 +53,11 @@ _DINOV2_WEIGHTS = {
 
 class DINOFaceIdentityModule(PipelineModule):
     name = "dino_face_identity"
+    provenance = "own"
+    sources = {
+        "dino_face_identity": "DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2",
+        "dino_face_identity_max": "DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2",
+    }
     description = "Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)"
     default_config = {
         "model_name": "dinov2_vitb14",

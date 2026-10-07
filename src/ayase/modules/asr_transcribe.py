@@ -21,6 +21,7 @@ _TRANSCRIPT_CACHE: Dict[Tuple[str, int, int, str], str] = {}
 
 class ASRTranscribeModule(PipelineModule):
     name = "asr_transcribe"
+    provenance = "utility"
     description = "Shared Whisper ASR transcription cache"
     default_config = {
         "model_name": "large-v3",
@@ -159,26 +160,42 @@ def _run_backend(holder: ASRTranscribeModule, path: Path) -> Optional[str]:
     return None
 
 
-def normalized_tokens(text: str) -> list[str]:
-    import re
+def _asr_normalizer(language: Optional[str]):
+    """Whisper eval normalization — EnglishTextNormalizer for English,
+    BasicTextNormalizer otherwise (openai/whisper standard pipeline)."""
+    from whisper.normalizers import BasicTextNormalizer, EnglishTextNormalizer
 
-    return re.findall(r"[\w']+", text.lower())
+    if language and str(language).strip().lower().startswith("en"):
+        return EnglishTextNormalizer()
+    return BasicTextNormalizer()
 
 
-def char_error_rate(reference: str, hypothesis: str) -> float:
-    ref = "".join(normalized_tokens(reference))
-    hyp = "".join(normalized_tokens(hypothesis))
+def normalized_tokens(text: str, normalizer=None) -> list[str]:
+    if normalizer is None:
+        normalizer = _asr_normalizer("en")
+    return normalizer(text).split()
+
+
+def char_error_rate(reference: str, hypothesis: str, normalizer=None) -> float:
+    if normalizer is None:
+        normalizer = _asr_normalizer("en")
+    ref = normalizer(reference)
+    hyp = normalizer(hypothesis)
     if not ref:
         return 0.0 if not hyp else 1.0
-    return min(_edit_distance(ref, hyp) / len(ref), 1.0)
+    # CER is unbounded — no clipping (canonical definition).
+    return _edit_distance(ref, hyp) / len(ref)
 
 
-def word_error_rate(reference: str, hypothesis: str) -> float:
-    ref = normalized_tokens(reference)
-    hyp = normalized_tokens(hypothesis)
+def word_error_rate(reference: str, hypothesis: str, normalizer=None) -> float:
+    if normalizer is None:
+        normalizer = _asr_normalizer("en")
+    ref = normalized_tokens(reference, normalizer)
+    hyp = normalized_tokens(hypothesis, normalizer)
     if not ref:
         return 0.0 if not hyp else 1.0
-    return min(_edit_distance(ref, hyp) / len(ref), 1.0)
+    # WER is unbounded — no clipping (canonical definition).
+    return _edit_distance(ref, hyp) / len(ref)
 
 
 def _edit_distance(a, b) -> int:

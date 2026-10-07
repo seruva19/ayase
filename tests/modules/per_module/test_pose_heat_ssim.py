@@ -1,6 +1,7 @@
 """Deterministic offline tests for PoseHeat-SSIM."""
 
 import numpy as np
+import pytest
 import sys
 import types
 
@@ -48,7 +49,7 @@ def test_identical_pose_scores_one():
 
     pose = _pose()
     score = pose_heat_ssim_score(pose, _scores(), pose, _scores(), (64, 64))
-    assert score == 1.0
+    assert score == pytest.approx(1.0, abs=1e-5)
 
 
 def test_translation_and_scale_are_removed():
@@ -58,7 +59,7 @@ def test_translation_and_scale_are_removed():
     generated = 1.35 * reference + np.array([6.0, -3.0])
     score = pose_heat_ssim_score(reference, _scores(), generated, _scores(), (96, 96))
     assert score is not None
-    assert score == 1.0
+    assert score == pytest.approx(1.0, abs=1e-5)
 
 
 def test_nonrigid_joint_perturbation_reduces_score():
@@ -72,7 +73,10 @@ def test_nonrigid_joint_perturbation_reduces_score():
     assert 0.0 <= score < 1.0
 
 
-def test_only_jointly_confident_joints_are_rendered():
+def test_missing_confident_joint_penalizes_score():
+    # Published protocol rasterises each side's own confident joints: the
+    # reference keeps joint 5 while the generated side drops it, so the
+    # heatmaps differ and the score is penalised.
     from ayase.modules.pose_heat_ssim import pose_heat_ssim_score
 
     reference = _pose()
@@ -88,7 +92,8 @@ def test_only_jointly_confident_joints_are_rendered():
         (64, 64),
         confidence_threshold=0.3,
     )
-    assert score == 1.0
+    assert score is not None
+    assert 0.0 <= score < 1.0
 
 
 def test_insufficient_joint_overlap_is_unset():

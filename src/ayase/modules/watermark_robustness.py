@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 class WatermarkRobustnessModule(PipelineModule):
     name = "watermark_robustness"
+    deprecated = True
+    provenance = "own"
     description = "Invisible watermark detection and strength estimation"
     default_config = {
         "subsample": 15,

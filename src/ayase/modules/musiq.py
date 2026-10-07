@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 class MUSIQModule(PipelineModule):
     name = "musiq"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "musiq_score": "MUSIQ (Ke et al., ICCV 2021) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "Multi-Scale Image Quality Transformer (no-reference)"
     default_config = {
         "variant": "musiq",  # or "musiq-koniq" / "musiq-spaq"

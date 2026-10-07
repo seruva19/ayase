@@ -31,6 +31,7 @@ DEFAULT_BUCKETS: List[Tuple[int, int]] = [
 
 class ResolutionBucketingModule(PipelineModule):
     name = "resolution_bucketing"
+    provenance = "utility"
     description = "Validates resolution/aspect-ratio fit for training buckets"
     default_config = {
         "max_crop_ratio": 0.15,   # Max fraction of pixels lost to crop

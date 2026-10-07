@@ -62,7 +62,7 @@ def test_physics_iq_identical_pair(tmp_path):
     assert qm.physics_iq_spatiotemporal_iou == pytest.approx(1.0, abs=1e-6)
     assert qm.physics_iq_weighted_spatial_iou == pytest.approx(1.0, abs=1e-6)
     assert qm.physics_iq_mse == pytest.approx(0.0, abs=1e-6)
-    assert qm.physics_iq_score == pytest.approx(100.0, abs=1e-6)
+    assert qm.physics_iq_neutral_score == pytest.approx(100.0, abs=1e-6)
     # Deterministic port actually computed -> backend recorded.
     assert m._backend == "port"
 
@@ -83,7 +83,7 @@ def test_physics_iq_motion_mismatch(tmp_path):
         qm.physics_iq_spatiotemporal_iou,
         qm.physics_iq_weighted_spatial_iou,
         qm.physics_iq_mse,
-        qm.physics_iq_score,
+        qm.physics_iq_neutral_score,
     ):
         assert val is not None
 
@@ -97,7 +97,7 @@ def test_physics_iq_motion_mismatch(tmp_path):
     ident_qm = _new_module().process(ident).quality_metrics
     assert qm.physics_iq_spatial_iou < ident_qm.physics_iq_spatial_iou
     assert qm.physics_iq_spatiotemporal_iou < ident_qm.physics_iq_spatiotemporal_iou
-    assert qm.physics_iq_score < ident_qm.physics_iq_score
+    assert qm.physics_iq_neutral_score < ident_qm.physics_iq_neutral_score
 
 
 def test_physics_iq_verified_formula_matches_reference_stable_score():
@@ -154,7 +154,7 @@ def test_physics_iq_no_reference(tmp_path):
     result = m.process(sample)
 
     if result.quality_metrics is not None:
-        assert result.quality_metrics.physics_iq_score is None
+        assert result.quality_metrics.physics_iq_neutral_score is None
         assert result.quality_metrics.physics_iq_spatial_iou is None
         assert result.quality_metrics.physics_iq_spatiotemporal_iou is None
         assert result.quality_metrics.physics_iq_weighted_spatial_iou is None

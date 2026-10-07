@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 
 class VMAFNEGModule(ReferenceBasedModule):
     name = "vmaf_neg"
+    provenance = "published"
+    sources = {
+        "vmaf_neg": "VMAF NEG v0.6.1neg; libvmaf — https://github.com/Netflix/vmaf",
+    }
     description = "VMAF NEG no-enhancement-gain variant (0-100, higher=better)"
     default_config = {
         "subsample": 1,
@@ -83,8 +87,9 @@ class VMAFNEGModule(ReferenceBasedModule):
             ) as tmp_file:
                 output_path = tmp_file.name
 
-            # Use vmaf_neg model via libvmaf
-            # The NEG model is available as "vmaf_v0.6.1neg" or via neg=true flag
+            # The NEG variant is its own model file shipped with libvmaf.
+            # No fallback to the plain model: a normal VMAF score must never
+            # be written under the vmaf_neg field.
             cmd = [
                 "ffmpeg",
                 "-i", str(sample_path),
@@ -100,35 +105,22 @@ class VMAFNEGModule(ReferenceBasedModule):
             )
 
             if result.returncode != 0:
-                # Try alternative: model=path with neg model
-                cmd_alt = [
-                    "ffmpeg",
-                    "-i", str(sample_path),
-                    "-i", str(reference_path),
-                    "-lavfi",
-                    f"[0:v][1:v]libvmaf=model=version=vmaf_v0.6.1:neg=true:log_path={output_path}:log_fmt=json",
-                    "-f", "null",
-                    "-",
-                ]
-                result = subprocess.run(
-                    cmd_alt, capture_output=True, text=True, timeout=300
-                )
-                if result.returncode != 0:
-                    logger.warning(f"VMAF NEG FFmpeg failed: {result.stderr[:200]}")
-                    return None
+                logger.warning(f"VMAF NEG FFmpeg failed: {result.stderr[:200]}")
+                return None
 
             with open(output_path, "r") as f:
                 vmaf_data = json.load(f)
 
             if "pooled_metrics" in vmaf_data:
-                # Look for vmaf_neg or vmaf key
+                # libvmaf reports the pooled model score under "vmaf" even
+                # when the loaded model is the NEG variant.
                 metrics = vmaf_data["pooled_metrics"]
                 if "vmaf_neg" in metrics:
                     score = metrics["vmaf_neg"]["mean"]
                 elif "vmaf" in metrics:
                     score = metrics["vmaf"]["mean"]
                 else:
-                    score = list(metrics.values())[0]["mean"]
+                    return None
             elif "frames" in vmaf_data:
                 frame_scores = []
                 for frame in vmaf_data["frames"]:

@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 
 class CompressedVQAHDRModule(ReferenceBasedModule):
     name = "compressed_vqa_hdr"
+    provenance = "utility"
+    sources = {
+        "compressed_vqa_hdr": "CompressedVQA-HDR — https://github.com/sunwei925/CompressedVQA-HDR",
+    }
     description = "CompressedVQA-HDR FR quality (ICME 2025)"
     metric_field = "compressed_vqa_hdr"
     default_config = {"subsample": 8}

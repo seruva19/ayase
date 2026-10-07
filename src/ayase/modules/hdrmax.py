@@ -36,6 +36,10 @@ def _third_party_path(*parts: str) -> Path:
 
 class HDRMAXModule(PipelineModule):
     name = "hdrmax"
+    provenance = "published"
+    sources = {
+        "hdrmax_score": "HDRMAX: HDR-VMAF / SSIM-HDRMAX / MS-SSIM-HDRMAX (Ebenezer et al.) — https://github.com/utlive/HDRMAX",
+    }
     description = "HDRMAX full-reference HDR video quality via its feature and prediction scripts"
     default_config = {
         "repo_path": None,

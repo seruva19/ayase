@@ -77,14 +77,14 @@ def test_translation_error_is_scale_invariant():
     assert errs["trans_err"] == pytest.approx(0.0, abs=1e-6)
 
 
-def test_known_rotation_error_in_degrees():
+def test_known_rotation_error_in_radians():
     from ayase.modules.camera_trajectory import compute_trajectory_errors
 
     target = np.stack([np.eye(4), np.eye(4), np.eye(4)])
     # 30-degree rotation on the middle relative pose only.
     estimated = np.stack([np.eye(4), _rot_z(np.radians(30.0)), np.eye(4)])
     errs = compute_trajectory_errors(estimated, target)
-    assert errs["rot_err"] == pytest.approx(30.0, abs=1e-3)
+    assert errs["rot_err"] == pytest.approx(np.radians(30.0), abs=1e-6)
     assert errs["trans_err"] == pytest.approx(0.0, abs=1e-9)
 
 
@@ -160,7 +160,7 @@ def test_process_with_mocked_pose_estimator(tmp_path):
     m._ml_available = True
     m._backend = "vggt"
     # Pose estimator returns exactly the target -> all errors ~0.
-    m._estimate_poses = lambda sample, n: traj.copy()
+    m._estimate_poses = lambda sample, n: (traj.copy(), None)
 
     sample.quality_metrics = QualityMetrics()
     result = m.process(sample)

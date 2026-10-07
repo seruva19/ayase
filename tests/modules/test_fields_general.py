@@ -7,9 +7,7 @@ def test_quality_metrics_fields():
     qm = QualityMetrics()
     basic_fields = [
         "blur_score",
-        "noise_score",
-        "aesthetic_score",
-        "technical_score",
+        "aesthetic_v25_score",
         "motion_score",
         "camera_motion_score",
         "contrast",
@@ -24,9 +22,7 @@ def test_quality_metrics_fields():
 def test_quality_metrics_default_values():
     qm = QualityMetrics()
     assert qm.blur_score is None
-    assert qm.noise_score is None
-    assert qm.aesthetic_score is None
-    assert qm.technical_score is None
+    assert qm.aesthetic_v25_score is None
     assert qm.motion_score is None
 
 
@@ -49,17 +45,16 @@ def test_quality_metrics_new_fields_exist():
         "ms_ssim",
         "vif",
         "niqe",
-        "t2v_score",
-        "t2v_alignment",
-        "t2v_quality",
-        "dynamics_range",
+        "t2v_generic_score",
+        "t2v_generic_alignment",
+        "t2v_generic_quality",
+        "content_variation",
         "dynamics_controllability",
         "scene_complexity",
         "compression_artifacts",
-        "naturalness_score",
+        "brisque_inverted",
         "video_memorability",
         "usability_rate",
-        "confidence_score",
         "hdr_quality",
         "sdr_quality",
         "temporal_information",
@@ -153,9 +148,9 @@ def test_dataset_stats_new_fields():
         "outlier_count",
         "class_balance_score",
         "duplicate_pairs",
-        "verse_bench_overall",
+        "verse_bench_overall_est",
         "verse_bench_metrics",
-        "verse_bench_breakdown",
+        "verse_bench_breakdown_est",
     ]
     for field in new_fields:
         assert hasattr(stats, field)

@@ -1,13 +1,11 @@
-"""Reference-free motion-compensated residual error for video frame pairs.
+"""EvalCrafter warping error — motion-compensated residual error for frame pairs.
 
-RAFT-Small computes half-resolution bidirectional flow and occlusion-masked RGB
-warping error; unavailable or failed RAFT falls back to grayscale Farneback
-warping without that mask. Higher ``warping_error`` means more unexplained
-frame change, not better quality, and backend ranges are not directly
-comparable. Motion boundaries, cuts, lighting changes, flow failure, and frame
-striding on long videos can resemble flicker.
-
-Model basis: https://docs.pytorch.org/vision/stable/models/raft.html
+RAFT (raft-things weights, iters=20) computes bidirectional flow on
+half-resolution frames and the score is the mean occlusion-masked RGB
+residual after warping. Every frame pair is used (no striding). If RAFT is
+unavailable the module emits no score. Higher ``warping_error`` means more
+unexplained frame change, not better quality. Motion boundaries, cuts,
+lighting changes, and flow failure can resemble flicker.
 """
 
 import logging
@@ -23,11 +21,18 @@ logger = logging.getLogger(__name__)
 
 class TemporalFlickeringModule(PipelineModule):
     name = "temporal_flickering"
-    description = "Warping Error using RAFT optical flow with occlusion masking"
+    provenance = "adapted"
+    sources = {
+        "warping_error": "Warping error, EvalCrafter (Liu et al. CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py",
+    }
+    deviations = {
+        "warping_error": "RAFT input normalization is correct here; upstream optical_flow_scores.py divides frames by 255 before the vendored RAFT (which itself expects [0,255]) — their released values are computed on degenerate ~constant input",
+    }
+    description = "Warping Error using RAFT optical flow with occlusion masking (EvalCrafter)"
 
     default_config = {
         "warning_threshold": 0.02,
-        "max_frames": 300,
+        "max_frames": 0,
         "pair_chunk": 8,
     }
     metric_groups = {
@@ -37,12 +42,13 @@ class TemporalFlickeringModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.warning_threshold = self.config.get("warning_threshold", 0.02)
-        self.max_frames = self.config.get("max_frames", 300)
+        # EvalCrafter evaluates every consecutive pair; max_frames <= 0 keeps
+        # that, a positive value is an explicit non-default stride cap.
+        self.max_frames = self.config.get("max_frames", 0)
         self.pair_chunk = self.config.get("pair_chunk", 8)
         self._model = None
         self._device = "cpu"
         self._ml_available = False
-        self._transforms = None
         self._backend = None
 
     def setup(self) -> None:
@@ -58,38 +64,33 @@ class TemporalFlickeringModule(PipelineModule):
             self._device = resolve_torch_device(self.config.get("device", "auto"))
 
             def load_raft():
-                from torchvision.models.optical_flow import raft_small, Raft_Small_Weights
+                from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
 
-                weights = Raft_Small_Weights.DEFAULT
-                model = raft_small(weights=weights, progress=False).to(self._device)
+                # C_T_V1 is torchvision's port of the official raft-things.pth
+                # (Chairs -> FlyingThings3D) — the EvalCrafter checkpoint.
+                weights = Raft_Large_Weights.C_T_V1
+                model = raft_large(weights=weights, progress=False).to(self._device)
                 model.eval()
-                return model, weights.transforms()
+                return model
 
-            logger.info("Setting up RAFT-Small for warping error on %s...", self._device)
-            self._model, self._transforms = shared_runtime_resource(
+            logger.info("Setting up RAFT (things weights) for warping error on %s...", self._device)
+            self._model = shared_runtime_resource(
                 self,
-                ("raft", "raft_small", str(self._device)),
+                ("raft", "raft_large_things", str(self._device)),
                 load_raft,
             )
             self._ml_available = True
-            self._backend = "raft_small"
+            self._backend = "raft_large"
 
-        except ImportError:
-            self._backend = "farneback"
-            logger.warning("torchvision >= 0.13 required for RAFT; using Farneback fallback.")
         except Exception as e:
-            self._backend = "farneback"
-            logger.warning(f"Failed to setup RAFT: {e}")
+            self._backend = "unavailable"
+            logger.warning(f"RAFT unavailable — warping_error disabled: {e}")
 
     def process(self, sample: Sample) -> Sample:
-        if not sample.is_video:
+        if not sample.is_video or not self._ml_available:
             return sample
 
-        if self._ml_available:
-            self._analyze_raft(sample)
-        else:
-            self._analyze_farneback_fallback(sample)
-
+        self._analyze_raft(sample)
         return sample
 
     def _analyze_raft(self, sample: Sample) -> None:
@@ -132,7 +133,6 @@ class TemporalFlickeringModule(PipelineModule):
 
         except Exception as e:
             logger.warning(f"RAFT warping error failed: {e}")
-            self._analyze_farneback_fallback(sample)
 
     def _iter_pair_batches(self, sample: Sample):
         """Yield (img1_batch, img2_batch) tensors of consecutive frame pairs.
@@ -152,7 +152,7 @@ class TemporalFlickeringModule(PipelineModule):
                 return
             total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             stride = 1
-            if total > self.max_frames and self.max_frames > 0:
+            if self.max_frames > 0 and total > self.max_frames:
                 stride = max(1, total // self.max_frames)
 
             prev_t = None
@@ -169,7 +169,7 @@ class TemporalFlickeringModule(PipelineModule):
                     continue
                 idx += 1
                 kept += 1
-                if kept > self.max_frames:
+                if self.max_frames > 0 and kept > self.max_frames:
                     break
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -207,24 +207,24 @@ class TemporalFlickeringModule(PipelineModule):
 
         try:
             _, _, h, w = img1.shape
-            pad_h = (8 - h % 8) % 8
-            pad_w = (8 - w % 8) % 8
+            # RAFT InputPadder pads replicated borders to multiples of 8;
+            # torchvision RAFT additionally requires >=128px inputs, so small
+            # frames get padded up to that floor (flows are cropped back).
+            pad_h = max((8 - h % 8) % 8, 128 - h)
+            pad_w = max((8 - w % 8) % 8, 128 - w)
             if pad_h > 0 or pad_w > 0:
-                img1p = F.pad(img1, (0, pad_w, 0, pad_h), mode="reflect")
-                img2p = F.pad(img2, (0, pad_w, 0, pad_h), mode="reflect")
+                img1p = F.pad(img1, (0, pad_w, 0, pad_h), mode="replicate")
+                img2p = F.pad(img2, (0, pad_w, 0, pad_h), mode="replicate")
             else:
                 img1p, img2p = img1, img2
 
-            # RAFT weight transforms expect images in [0,1] (their
-            # convert_image_dtype does NOT rescale already-float inputs); feed
-            # the [0,1] tensors directly rather than pre-scaling to [0,255].
-            if self._transforms:
-                img1_t, img2_t = self._transforms(img1p, img2p)
-            else:
-                img1_t, img2_t = img1p, img2p
+            # torchvision RAFT expects [-1,1] inputs; EvalCrafter feeds [0,1]
+            # to the original RAFT, which normalizes identically inside.
+            img1_t = img1p * 2.0 - 1.0
+            img2_t = img2p * 2.0 - 1.0
 
-            fw_flow = self._model(img1_t, img2_t)[-1]
-            bw_flow = self._model(img2_t, img1_t)[-1]
+            fw_flow = self._model(img1_t, img2_t, num_flow_updates=20)[-1]
+            bw_flow = self._model(img2_t, img1_t, num_flow_updates=20)[-1]
 
             if pad_h > 0 or pad_w > 0:
                 fw_flow = fw_flow[:, :, :h, :w]
@@ -280,8 +280,14 @@ class TemporalFlickeringModule(PipelineModule):
 
         return F.grid_sample(img, grid, mode="bilinear", padding_mode="zeros", align_corners=True)
 
-    def _detect_occlusion(self, fw_flow, bw_flow, threshold=1.0):
-        """Detect occlusions via forward-backward flow consistency (batched)."""
+    def _detect_occlusion(self, fw_flow, bw_flow):
+        """EvalCrafter occlusion mask (batched): forward-backward flow
+        inconsistency OR motion boundary, per warp_utils.detect_occlusion.
+
+        mask1: |fw + warp(bw)|² > 0.01·(|warp(bw)|² + |fw|²) + 0.5
+        mask2: |∇fw|² > 0.01·|fw|² + 0.002 (forward finite differences)
+        All magnitudes are squared norms, matching the upstream code.
+        """
         import torch
         import torch.nn.functional as F
 
@@ -299,56 +305,26 @@ class TemporalFlickeringModule(PipelineModule):
 
         warped_bw = F.grid_sample(bw_flow, grid, mode="bilinear", padding_mode="zeros", align_corners=True)
 
-        consistency = fw_flow + warped_bw
-        mag = torch.sqrt(consistency[:, 0] ** 2 + consistency[:, 1] ** 2)  # [N,H,W]
-        occ = (mag > threshold).float().unsqueeze(1)  # [N,1,H,W]
+        # mask1: forward-backward consistency, relative + absolute threshold
+        fb = fw_flow + warped_bw
+        fb_mag_sq = fb[:, 0] ** 2 + fb[:, 1] ** 2
+        ref_mag_sq = (warped_bw[:, 0] ** 2 + warped_bw[:, 1] ** 2) + (
+            fw_flow[:, 0] ** 2 + fw_flow[:, 1] ** 2
+        )
+        mask1 = fb_mag_sq > 0.01 * ref_mag_sq + 0.5
 
+        # mask2: motion boundary — squared gradient magnitude of fw_flow
+        u, v = fw_flow[:, 0], fw_flow[:, 1]
+        du_dx = torch.zeros_like(u)
+        du_dx[:, :, :-1] = u[:, :, :-1] - u[:, :, 1:]
+        du_dy = torch.zeros_like(u)
+        du_dy[:, :-1, :] = u[:, :-1, :] - u[:, 1:, :]
+        dv_dx = torch.zeros_like(v)
+        dv_dx[:, :, :-1] = v[:, :, :-1] - v[:, :, 1:]
+        dv_dy = torch.zeros_like(v)
+        dv_dy[:, :-1, :] = v[:, :-1, :] - v[:, 1:, :]
+        grad_sq = du_dx**2 + du_dy**2 + dv_dx**2 + dv_dy**2
+        mask2 = grad_sq > 0.01 * (u**2 + v**2) + 0.002
+
+        occ = (mask1 | mask2).float().unsqueeze(1)  # [N,1,H,W]
         return occ
-
-    def _analyze_farneback_fallback(self, sample: Sample) -> None:
-        """Fallback: Farneback-based warping error when RAFT is unavailable."""
-        cap = cv2.VideoCapture(str(sample.path))
-        if not cap.isOpened():
-            return
-
-        prev_gray = None
-        warping_errors = []
-
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            if prev_gray is not None:
-                flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-                h, w = gray.shape
-                grid_x, grid_y = np.meshgrid(np.arange(w), np.arange(h))
-                map_x = (grid_x + flow[..., 0]).astype(np.float32)
-                map_y = (grid_y + flow[..., 1]).astype(np.float32)
-                warped_prev = cv2.remap(prev_gray, map_x, map_y, cv2.INTER_LINEAR)
-
-                diff = (gray.astype(np.float32) / 255.0 - warped_prev.astype(np.float32) / 255.0) ** 2
-                warping_errors.append(np.mean(diff))
-
-            prev_gray = gray
-
-        cap.release()
-
-        if not warping_errors:
-            return
-
-        avg_error = float(np.mean(warping_errors))
-        if sample.quality_metrics is None:
-            sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.warping_error = avg_error
-
-        if avg_error > self.warning_threshold:
-            sample.validation_issues.append(
-                ValidationIssue(
-                    severity=ValidationSeverity.WARNING,
-                    message=f"High flickering detected (Warping Error, Farneback fallback): {avg_error:.4f}",
-                    details={"warping_error": avg_error},
-                )
-            )

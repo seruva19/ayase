@@ -5,9 +5,9 @@ and coverage analysis.  Stores per-sample coordinates in
 ``sample.detections`` and dataset-level ``umap_spread`` /
 ``umap_coverage`` via ``pipeline.add_dataset_metric()``.
 
-Feature extraction tiers:
-  1. CLIP image embeddings (primary)
-  2. HSV colour histogram (fallback)
+Feature extraction: CLIP image embeddings. Without CLIP no features are
+produced — a colour-histogram projection measures a different quantity and
+is not substituted.
 
 Dimensionality reduction tiers:
   1. ``umap-learn``  (``pip install umap-learn``)
@@ -32,6 +32,12 @@ logger = logging.getLogger(__name__)
 
 class UMAPProjectionModule(BatchMetricModule):
     name = "umap_projection"
+    deprecated = True
+    provenance = {
+        "detections": "utility",
+        "umap_coverage": "own",
+        "umap_spread": "own",
+    }
     description = "UMAP/t-SNE/PCA 2-D projection with spread & coverage"
     default_config = {
         "device": "auto",
@@ -61,8 +67,8 @@ class UMAPProjectionModule(BatchMetricModule):
         self._clip_device = "cpu"
         self._clip_available = False
         # Projection/coverage are computed by real dimensionality-reduction
-        # algorithms (UMAP/t-SNE/PCA); this is an honest algorithmic metric.
-        self._backend = "algorithmic"
+        # algorithms (UMAP/t-SNE/PCA) over CLIP embeddings.
+        self._backend = "unavailable"
 
         self._sample_refs: List[Sample] = []
 
@@ -103,24 +109,26 @@ class UMAPProjectionModule(BatchMetricModule):
             )
             self._clip_device = device
             self._clip_available = True
+            self._backend = "algorithmic"
             logger.info(f"UMAP projection: CLIP on {device}")
-        except ImportError:
-            logger.info("CLIP unavailable, using histogram features")
         except Exception as e:
-            logger.warning(f"CLIP init failed: {e}")
+            logger.warning(f"UMAP projection unavailable — CLIP init failed: {e}")
 
     # ------------------------------------------------------------------
     # Feature extraction (overrides BatchMetricModule.extract_features)
     # ------------------------------------------------------------------
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
+        if not self._clip_available:
+            return None
         try:
             frame = self._read_frame(sample)
             if frame is None:
                 return None
 
-            emb = self._clip_embedding(frame, cache_key=("umap_projection", media_state_key(sample.path)))
-            feature = emb if emb is not None else self._colour_histogram(frame)
+            feature = self._clip_embedding(frame, cache_key=("umap_projection", media_state_key(sample.path)))
+            if feature is None:
+                return None
 
             # Only track the sample ref when we actually return a feature,
             # so _sample_refs stays in sync with _feature_cache.
@@ -157,16 +165,6 @@ class UMAPProjectionModule(BatchMetricModule):
             logger.debug(f"CLIP embedding failed: {e}")
             return None
 
-    @staticmethod
-    def _colour_histogram(frame_bgr: np.ndarray) -> np.ndarray:
-        hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
-        hist = cv2.calcHist([hsv], [0, 1], None, [16, 16], [0, 180, 0, 256])
-        hist = hist.flatten().astype(np.float32)
-        total = hist.sum()
-        if total > 0:
-            hist /= total
-        return hist
-
     # ------------------------------------------------------------------
     # Batch computation
     # ------------------------------------------------------------------
@@ -175,9 +173,9 @@ class UMAPProjectionModule(BatchMetricModule):
         self,
         features: List[np.ndarray],
         reference_features: Optional[List[np.ndarray]] = None,
-    ) -> float:
+    ) -> Optional[float]:
         if len(features) < self.min_samples:
-            return 0.0
+            return None
 
         matrix = np.stack(features)
         coords = self._reduce_2d(matrix)
@@ -199,9 +197,11 @@ class UMAPProjectionModule(BatchMetricModule):
         if hasattr(self, "pipeline") and self.pipeline:
             if hasattr(self.pipeline, "add_dataset_metric"):
                 self.pipeline.add_dataset_metric("umap_spread", spread)
-                self.pipeline.add_dataset_metric("umap_coverage", coverage)
+                if coverage is not None:
+                    self.pipeline.add_dataset_metric("umap_coverage", coverage)
 
-        logger.info(f"UMAP projection: spread={spread:.4f} coverage={coverage:.4f}")
+        cov_str = f"{coverage:.4f}" if coverage is not None else "n/a"
+        logger.info(f"UMAP projection: spread={spread:.4f} coverage={cov_str}")
         return spread
 
     @staticmethod
@@ -249,9 +249,9 @@ class UMAPProjectionModule(BatchMetricModule):
         return matrix_c @ top2
 
     @staticmethod
-    def _hull_coverage(coords: np.ndarray) -> float:
+    def _hull_coverage(coords: np.ndarray) -> Optional[float]:
         if len(coords) < 3:
-            return 0.0
+            return None
 
         try:
             from scipy.spatial import ConvexHull
@@ -260,14 +260,9 @@ class UMAPProjectionModule(BatchMetricModule):
             ranges = coords.max(axis=0) - coords.min(axis=0)
             bbox_area = float(np.prod(ranges + 1e-6))
             return float(np.clip(hull.volume / max(bbox_area, 1e-6), 0, 1))
-        except ImportError:
-            pass
         except Exception:
-            pass
-
-        # Fallback: std-based proxy
-        stds = np.std(coords, axis=0)
-        return float(np.clip(np.mean(stds) / (np.max(stds) + 1e-6), 0, 1))
+            # No substitute: a std-based proxy is a different quantity.
+            return None
 
     def on_dispose(self) -> None:
         if len(self._feature_cache) < self.min_samples:

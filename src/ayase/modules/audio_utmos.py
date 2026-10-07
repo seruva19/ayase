@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 
 class AudioUTMOSModule(PipelineModule):
     name = "audio_utmos"
+    provenance = "published"
+    sources = {
+        "utmos_score": "UTMOS22 strong (Saeki et al. 2022) via the SpeechMOS port (tarepan) — https://github.com/tarepan/SpeechMOS",
+    }
     description = "UTMOS no-reference MOS prediction for speech quality"
     default_config = {
         "target_sr": 16000,

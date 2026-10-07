@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 class VTSSModule(PipelineModule):
     name = "vtss"
+    deprecated = True
+    provenance = "own"
     description = "Video Training Suitability Score (0-1, meta-metric)"
     default_config = {
         "weights": {
@@ -87,8 +89,9 @@ class VTSSModule(PipelineModule):
                 total_weight += weights.get("blur", 0.10)
 
             # Low noise
-            if qm.noise_score is not None:
-                low_noise = max(0.0, 1.0 - qm.noise_score / 50.0)
+            noise = qm.model_dump().get("noise_score")
+            if noise is not None:
+                low_noise = max(0.0, 1.0 - noise / 50.0)
                 scores.append(weights.get("noise", 0.10) * low_noise)
                 total_weight += weights.get("noise", 0.10)
 
@@ -107,8 +110,8 @@ class VTSSModule(PipelineModule):
         """Get best available aesthetic score, normalized to 0-1."""
         if qm.laion_aesthetic is not None:
             return min(1.0, qm.laion_aesthetic / 10.0)
-        if qm.aesthetic_score is not None:
-            return min(1.0, qm.aesthetic_score / 10.0)
+        if qm.aesthetic_v25_score is not None:
+            return min(1.0, qm.aesthetic_v25_score / 10.0)
         if qm.dover_aesthetic is not None:
             return min(1.0, max(0.0, qm.dover_aesthetic))
         return None
@@ -117,8 +120,9 @@ class VTSSModule(PipelineModule):
         """Get best available technical quality, normalized to 0-1."""
         if qm.dover_technical is not None:
             return min(1.0, max(0.0, qm.dover_technical))
-        if qm.technical_score is not None:
-            return min(1.0, qm.technical_score / 100.0)
+        technical = qm.model_dump().get("technical_score")
+        if technical is not None:
+            return min(1.0, technical / 100.0)
         return None
 
     def _get_motion_quality(self, qm) -> Optional[float]:

@@ -126,6 +126,18 @@ def build_unified_reward_2_prompt(prompt: Optional[str]) -> str:
 
 class UnifiedReward2Module(PipelineModule):
     name = "unified_reward_2"
+    provenance = {
+        "unified_reward_2_alignment_score": "published",
+        "unified_reward_2_coherence_score": "published",
+        "unified_reward_2_mean": "published",
+        "unified_reward_2_style_score": "published",
+    }
+    sources = {
+        "unified_reward_2_alignment_score": "UnifiedReward-2.0; DiffSynth-Studio ImageMetrics — https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics",
+        "unified_reward_2_coherence_score": "UnifiedReward-2.0; DiffSynth-Studio ImageMetrics — https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics",
+        "unified_reward_2_style_score": "UnifiedReward-2.0; DiffSynth-Studio ImageMetrics — https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics",
+        "unified_reward_2_mean": "Upstream _primary_score: mean of the parsed dimension scores — https://github.com/modelscope/DiffSynth-Studio",
+    }
     description = "UnifiedReward 2.0 multi-dimensional prompt-image reward scoring"
     default_config = {
         "backend": "auto",  # auto | diffsynth | openai
@@ -155,13 +167,13 @@ class UnifiedReward2Module(PipelineModule):
         },
     ]
     metric_info = {
-        "unified_reward_2_score": "UnifiedReward 2.0 mean score (1-5, higher=better)",
+        "unified_reward_2_mean": "UnifiedReward 2.0 mean score (1-5, higher=better)",
         "unified_reward_2_alignment_score": "UnifiedReward 2.0 alignment score (1-5)",
         "unified_reward_2_coherence_score": "UnifiedReward 2.0 coherence score (1-5)",
         "unified_reward_2_style_score": "UnifiedReward 2.0 style score (1-5)",
     }
     metric_groups = {
-        "unified_reward_2_score": "nr_quality",
+        "unified_reward_2_mean": "nr_quality",
         "unified_reward_2_alignment_score": "alignment",
         "unified_reward_2_coherence_score": "nr_quality",
         "unified_reward_2_style_score": "aesthetic",
@@ -230,7 +242,7 @@ class UnifiedReward2Module(PipelineModule):
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
                         message=f"Low UnifiedReward 2.0 score: {score:.3f}",
-                        details={"unified_reward_2_score": score},
+                        details={"unified_reward_2_mean": score},
                     )
                 )
         except Exception as e:
@@ -308,7 +320,7 @@ class UnifiedReward2Module(PipelineModule):
         qm.unified_reward_2_alignment_score = parsed.get("alignment")
         qm.unified_reward_2_coherence_score = parsed.get("coherence")
         qm.unified_reward_2_style_score = parsed.get("style")
-        qm.unified_reward_2_score = parsed.get("score")
+        qm.unified_reward_2_mean = parsed.get("score")
 
     def _store_details(
         self,

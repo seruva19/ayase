@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 class SpatialRelationshipModule(PipelineModule):
     name = "spatial_relationship"
+    deprecated = True
+    provenance = "own"
     description = "Verifies spatial relations (left/right/top/bottom) in prompt vs detections"
     default_config = {}
 

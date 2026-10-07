@@ -1,12 +1,11 @@
-"""Reference-free video motion magnitude from torchvision RAFT optical flow.
+"""EvalCrafter Flow Score — mean RAFT optical-flow magnitude.
 
-``flow_score`` is the mean dense-flow magnitude over consecutive loaded frame
-pairs; higher means more pixel displacement, not better quality, and no fixed
-range applies. Long videos are uniformly reduced to ``max_frames`` and frames
-may be downscaled, so values depend on resolution, frame sampling, and frame
-rate and are not directly comparable across unlike inputs.
-
-Model basis: https://docs.pytorch.org/vision/stable/models/raft.html
+``flow_score`` is the mean dense-flow magnitude over every consecutive frame
+pair, computed by RAFT (raft-things weights, iters=20, native resolution).
+Higher means more pixel displacement, not better quality; values depend on
+resolution and frame rate and are not directly comparable across unlike
+inputs. ``max_frames``/``max_resolution`` above zero are explicit non-default
+caps for memory-constrained runs.
 """
 
 import logging
@@ -19,27 +18,36 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_RAFT_MIRRORS = {
-    "raft_large": (
-        "raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
-        "advanced_flow/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-    ),
-    "raft_small": (
-        "raft_small_C_T_V2-01064c6d.pth",
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
-        "advanced_flow/raft_small_C_T_V2-01064c6d.pth",
-    ),
-}
+_RAFT_CTV1_FILE = "raft_large_C_T_V1-22a6c225.pth"
+_RAFT_CTV1_MIRROR = (
+    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+    f"advanced_flow/{_RAFT_CTV1_FILE}"
+)
+
+
+def _pad_to_multiple_of_8(img: "object") -> "object":
+    """Replicate-pad a CHW float tensor so H and W are multiples of 8.
+
+    Same role as RAFT's ``InputPadder`` — EvalCrafter pads rather than
+    downscales, so flow magnitude keeps its native scale.
+    """
+    import torch.nn.functional as F
+
+    h, w = img.shape[-2:]
+    pad_h = (8 - h % 8) % 8
+    pad_w = (8 - w % 8) % 8
+    if not pad_h and not pad_w:
+        return img
+    return F.pad(img, (0, pad_w, 0, pad_h), mode="replicate")
 
 
 def _cap_frame_resolution(frame: np.ndarray, max_side: int) -> np.ndarray:
-    """Downscale a frame so its longer side <= max_side, keeping dims divisible by 8.
+    """Optionally downscale a frame so its longer side <= max_side.
 
-    RAFT's correlation volume grows ~O((H*W)^2); on HD frames this exhausts GPU
-    memory (observed: a single 1080p pair tried to allocate 62 GiB). Only oversized
-    frames are downscaled; smaller frames pass through unchanged. RAFT requires the
-    spatial dims to be multiples of 8, so the resized dimensions are floored to /8.
+    Disabled when ``max_side <= 0`` (the default — EvalCrafter evaluates at
+    native resolution). An explicit positive value is a caller-side memory
+    guard for very large frames where the RAFT correlation volume would OOM;
+    the output is rounded to multiples of 8 like the RAFT input padder.
     """
     if max_side <= 0:
         return frame
@@ -55,12 +63,15 @@ def _cap_frame_resolution(frame: np.ndarray, max_side: int) -> np.ndarray:
 
 class AdvancedFlowModule(PipelineModule):
     name = "advanced_flow"
-    description = "RAFT optical flow: flow_score (all consecutive pairs)"
+    provenance = "published"
+    sources = {
+        "flow_score": "EvalCrafter Flow Score (RAFT) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py",
+    }
+    description = "RAFT optical flow: flow_score, mean magnitude over all consecutive pairs (EvalCrafter)"
 
     default_config = {
-        "use_large_model": True,
-        "max_frames": 150,
-        "max_resolution": 512,
+        "max_frames": 0,
+        "max_resolution": 0,
     }
     metric_groups = {
         "flow_score": "motion",
@@ -68,13 +79,13 @@ class AdvancedFlowModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.use_large_model = self.config.get("use_large_model", True)
-        self.max_frames = self.config.get("max_frames", 150)
-        self.max_resolution = self.config.get("max_resolution", 512)
+        # EvalCrafter evaluates every consecutive pair at native resolution;
+        # positive values are explicit non-default memory caps.
+        self.max_frames = self.config.get("max_frames", 0)
+        self.max_resolution = self.config.get("max_resolution", 0)
         self._model = None
         self._device = "cpu"
         self._ml_available = False
-        self._transforms = None
         self._backend = "unavailable"
 
     def setup(self) -> None:
@@ -88,29 +99,28 @@ class AdvancedFlowModule(PipelineModule):
             os.environ["TORCH_HOME"] = models_dir
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            variant = "raft_large" if self.use_large_model else "raft_small"
-            filename, url = _RAFT_MIRRORS[variant]
-            download_torch_hub_checkpoint(filename, url, models_dir)
+            try:
+                download_torch_hub_checkpoint(_RAFT_CTV1_FILE, _RAFT_CTV1_MIRROR, models_dir)
+            except Exception:
+                pass  # torchvision falls back to download.pytorch.org
 
             def load_raft():
-                if self.use_large_model:
-                    from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
-                    weights = Raft_Large_Weights.DEFAULT
-                    model = raft_large(weights=weights, progress=False).to(self._device)
-                else:
-                    from torchvision.models.optical_flow import raft_small, Raft_Small_Weights
-                    weights = Raft_Small_Weights.DEFAULT
-                    model = raft_small(weights=weights, progress=False).to(self._device)
-                model.eval()
-                return model, weights.transforms()
+                from torchvision.models.optical_flow import raft_large, Raft_Large_Weights
 
-            logger.info("Setting up RAFT (%s) on %s...", variant, self._device)
-            self._model, self._transforms = shared_runtime_resource(
+                # C_T_V1 is torchvision's port of the official raft-things.pth
+                # (Chairs -> FlyingThings3D) — the EvalCrafter checkpoint.
+                weights = Raft_Large_Weights.C_T_V1
+                model = raft_large(weights=weights, progress=False).to(self._device)
+                model.eval()
+                return model
+
+            logger.info("Setting up RAFT (things weights) on %s...", self._device)
+            self._model = shared_runtime_resource(
                 self,
-                ("raft", variant, str(self._device)),
+                ("raft", "raft_large_things", str(self._device)),
                 load_raft,
             )
-            self._backend = variant
+            self._backend = "raft_large"
             self._ml_available = True
 
         except ImportError:
@@ -134,14 +144,15 @@ class AdvancedFlowModule(PipelineModule):
 
             with torch.no_grad():
                 for i in range(len(frames) - 1):
-                    img1 = torch.from_numpy(frames[i]).permute(2, 0, 1).unsqueeze(0).to(self._device)
-                    img2 = torch.from_numpy(frames[i + 1]).permute(2, 0, 1).unsqueeze(0).to(self._device)
+                    img1 = torch.from_numpy(frames[i]).permute(2, 0, 1).float().unsqueeze(0).to(self._device)
+                    img2 = torch.from_numpy(frames[i + 1]).permute(2, 0, 1).float().unsqueeze(0).to(self._device)
 
-                    if self._transforms:
-                        img1, img2 = self._transforms(img1, img2)
+                    # EvalCrafter: InputPadder (replicate pad to x8), no resize;
+                    # torchvision RAFT expects inputs normalized to [-1, 1].
+                    img1 = _pad_to_multiple_of_8(img1 / 255.0 * 2.0 - 1.0)
+                    img2 = _pad_to_multiple_of_8(img2 / 255.0 * 2.0 - 1.0)
 
-                    list_of_flows = self._model(img1, img2)
-                    predicted_flow = list_of_flows[-1]
+                    predicted_flow = self._model(img1, img2, num_flow_updates=20)[-1]
 
                     flow_magnitude = torch.norm(predicted_flow.squeeze(0), dim=0)
                     mean_flow = flow_magnitude.mean().item()
@@ -179,8 +190,8 @@ class AdvancedFlowModule(PipelineModule):
             cap = cv2.VideoCapture(str(sample.path))
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-            if total_frames > 0 and total_frames > self.max_frames:
-                # Subsample uniformly to stay within max_frames
+            if self.max_frames > 0 and total_frames > self.max_frames:
+                # Explicit non-default cap: uniform subsample.
                 indices = set(np.linspace(0, total_frames - 1, self.max_frames, dtype=int))
                 frame_idx = 0
                 while cap.isOpened():
@@ -198,7 +209,7 @@ class AdvancedFlowModule(PipelineModule):
                         break
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     frames.append(_cap_frame_resolution(frame, self.max_resolution))
-                    if len(frames) >= self.max_frames:
+                    if self.max_frames > 0 and len(frames) >= self.max_frames:
                         break
         except Exception as e:
             logger.debug(f"Failed to load frames for advanced flow: {e}")

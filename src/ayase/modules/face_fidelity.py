@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 
 class FaceFidelityModule(PipelineModule):
     name = "face_fidelity"
+    deprecated = True
+    provenance = {
+        "face_count": "utility",
+        "face_quality_score": "own",
+    }
     description = "Face detection and per-face quality assessment"
     default_config = {
         "backend": "haar",  # "haar" or "mediapipe"

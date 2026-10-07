@@ -8,10 +8,10 @@ same model-agnostic CLAP wrapper but differ only in:
 * the ``metric_info`` advertised to leaderboards, and
 * the ``quality_metrics`` field they write into (``metric_field_name``).
 
-CLAP-Score is the cosine similarity between an audio embedding and a text
-embedding in a Contrastive Language-Audio Pretraining space, rescaled to
-``[0, 1]``. It is widely used as an audio-text alignment metric for v2a
-(video-to-audio) generation.
+CLAP-Score is the raw cosine similarity between an audio embedding and a text
+embedding in a Contrastive Language-Audio Pretraining space (−1..1). It is
+widely used as an audio-text alignment metric for v2a (video-to-audio)
+generation.
 
 ``QualityMetrics`` declares ``laion_clap_score``, ``ms_clap_score`` and
 ``clap_score`` as first-class fields. They are written through the inherited
@@ -42,6 +42,12 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
     """
 
     name = "laion_clap_score"
+    provenance = "published"
+    sources = {
+        "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "ms_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+    }
     description = "LAION-CLAP audio-text alignment cosine similarity"
     default_config = {
         **HumanCLAPModule.default_config,
@@ -55,7 +61,7 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
         },
     ]
     metric_info = {
-        "laion_clap_score": "LAION-CLAP audio-text alignment (0-1, higher=better)",
+        "laion_clap_score": "LAION-CLAP audio-text cosine (−1..1, higher=better)",
     }
     metric_groups = {
         "laion_clap_score": "audio",
@@ -67,11 +73,16 @@ class MSCLAPScoreModule(HumanCLAPModule):
     """Microsoft CLAP audio-text alignment cosine similarity.
 
     Uses the upstream ``msclap`` package and upstream ``microsoft/msclap``
-    HuggingFace weights. The module still writes a 0-1 cosine score to keep the
-    metric scale aligned with ``human_clap_score`` and ``laion_clap_score``.
+    HuggingFace weights and emits the raw cosine score.
     """
 
     name = "ms_clap_score"
+    provenance = "published"
+    sources = {
+        "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "ms_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+    }
     description = "Microsoft CLAP audio-text alignment cosine similarity"
     default_config = {
         **HumanCLAPModule.default_config,
@@ -85,7 +96,7 @@ class MSCLAPScoreModule(HumanCLAPModule):
         },
     ]
     metric_info = {
-        "ms_clap_score": "Microsoft CLAP audio-text alignment (0-1, higher=better)",
+        "ms_clap_score": "Microsoft CLAP audio-text cosine (−1..1, higher=better)",
     }
     metric_groups = {
         "ms_clap_score": "audio",
@@ -132,7 +143,7 @@ class MSCLAPScoreModule(HumanCLAPModule):
                 audio_embeds = audio_embeds / audio_embeds.norm(dim=-1, keepdim=True)
                 text_embeds = text_embeds / text_embeds.norm(dim=-1, keepdim=True)
                 sim = (audio_embeds * text_embeds).sum(dim=-1).item()
-            return float(max(0.0, min(1.0, (sim + 1.0) / 2.0)))
+            return float(sim)
         except Exception as e:
             logger.debug("MS-CLAP scoring failed: %s", e)
             return None
@@ -150,6 +161,12 @@ class GenericCLAPScoreModule(HumanCLAPModule):
     """
 
     name = "clap_score"
+    provenance = "published"
+    sources = {
+        "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "ms_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+    }
     description = "Generic CLAP audio-text alignment cosine similarity (configurable backbone)"
     default_config = {
         **HumanCLAPModule.default_config,
@@ -163,7 +180,7 @@ class GenericCLAPScoreModule(HumanCLAPModule):
         },
     ]
     metric_info = {
-        "clap_score": "CLAP audio-text alignment (0-1, configurable backbone)",
+        "clap_score": "CLAP audio-text cosine (−1..1, configurable backbone)",
     }
     metric_groups = {
         "clap_score": "audio",

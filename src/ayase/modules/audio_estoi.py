@@ -35,6 +35,10 @@ logger = logging.getLogger(__name__)
 
 class AudioESTOIModule(PipelineModule):
     name = "audio_estoi"
+    provenance = "published"
+    sources = {
+        "estoi_score": "ESTOI (Jensen & Taal 2016), pystoi extended=True — https://github.com/mpariente/pystoi",
+    }
     description = "ESTOI speech intelligibility (full-reference)"
     default_config = {
         "target_sr": 10000,  # ESTOI standard sample rate

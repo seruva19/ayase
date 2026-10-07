@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class RankDVQAModule(ReferenceBasedModule):
     name = "rankdvqa"
+    provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "RankDVQA ranking-based FR VQA (real model only)"
     metric_field = "rankdvqa_score"

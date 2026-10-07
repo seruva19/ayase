@@ -49,10 +49,10 @@ def test_umap_projection_hull_coverage_square():
 def test_umap_projection_hull_coverage_collinear():
     from ayase.modules.umap_projection import UMAPProjectionModule
 
-    # Collinear points → degenerate hull
+    # Collinear points → degenerate hull → coverage is unmeasurable
     coords = np.array([[0, 0], [1, 0], [2, 0]], dtype=float)
     cov = UMAPProjectionModule._hull_coverage(coords)
-    assert 0.0 <= cov <= 1.0
+    assert cov is None
 
 
 def test_umap_projection_too_few_samples():
@@ -62,7 +62,8 @@ def test_umap_projection_too_few_samples():
     rng = np.random.default_rng(42)
     features = [rng.standard_normal(8) for _ in range(2)]
     score = m.compute_distribution_metric(features)
-    assert score == 0.0
+    # Below min_samples the metric is undefined, not 0.0
+    assert score is None
 
 
 def test_umap_projection_sample_refs_sync(image_sample):

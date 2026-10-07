@@ -13,9 +13,10 @@ audio clips across the complete files. ImageBind averages those clip embeddings
 before the cosine is computed. This is file-level sampling, not an aligned or
 sliding audio-video window calculation.
 
-The existing ``imagebind_score`` remains the remapped [0, 1] audio-text cosine.
-Both fields use the vendored ``imagebind_huge`` research backend. ImageBind is
-licensed CC BY-NC-SA 4.0, so this backend is constrained to non-commercial,
+``imagebind_score`` is the raw audio-text cosine similarity (theoretical
+range [-1, 1]); the historical (cos+1)/2 remap was removed. Both fields use
+the vendored ``imagebind_huge`` research backend. ImageBind is licensed
+CC BY-NC-SA 4.0, so this backend is constrained to non-commercial,
 share-alike research use rather than unrestricted commercial use.
 """
 
@@ -32,6 +33,11 @@ logger = logging.getLogger(__name__)
 
 class ImageBindScoreModule(PipelineModule):
     name = "imagebind_score"
+    provenance = "published"
+    sources = {
+        "imagebind_av_score": "JavisBench sim_av (JavisDiT), ImageBind (Girdhar et al., CVPR 2023) — https://github.com/JavisVerse/JavisDiT",
+        "imagebind_score": "ImageBind audio–text cosine — https://github.com/facebookresearch/ImageBind",
+    }
     description = "ImageBind audio-text and audio-video semantic cosine similarities"
     default_config = {
         "model_name": "imagebind_huge",
@@ -52,7 +58,7 @@ class ImageBindScoreModule(PipelineModule):
         },
     ]
     metric_info = {
-        "imagebind_score": "ImageBind audio-text alignment cosine similarity (0-1, higher=better)",
+        "imagebind_score": "ImageBind audio-text alignment cosine similarity (-1 to 1 theoretical, higher=better)",
         "imagebind_av_score": (
             "Raw ImageBind audio-video embedding cosine similarity (-1 to 1 theoretical; "
             "higher=greater semantic correspondence, not synchronization)"
@@ -260,9 +266,8 @@ class ImageBindScoreModule(PipelineModule):
 
                 if caption:
                     text_emb = embeddings[ModalityType.TEXT]
-                    text_cosine = cosine(audio_emb, text_emb).item()
-                    # Historical Ayase contract for imagebind_score.
-                    scores["imagebind_score"] = float((text_cosine + 1.0) / 2.0)
+                    # Raw cosine, as in the published ImageBind usage.
+                    scores["imagebind_score"] = float(cosine(audio_emb, text_emb).item())
 
                 if video_path is not None:
                     video_emb = embeddings[ModalityType.VISION]

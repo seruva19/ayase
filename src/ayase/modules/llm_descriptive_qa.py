@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 
 class LLMDescriptiveQAModule(PipelineModule):
     name = "llm_descriptive_qa"
+    provenance = "own"
+    sources = {
+        "llm_qa_score": "LLaVA-NeXT / GPT-4o models; the metric is own — https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf",
+    }
     description = "LMM-based interpretable quality assessment with explanations"
     default_config = {
         "model_name": "llava-hf/llava-v1.6-mistral-7b-hf",  # LLaVA-NeXT

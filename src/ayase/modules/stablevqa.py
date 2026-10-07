@@ -1014,6 +1014,10 @@ def _load_model_definitions():
 
 class StableVQAModule(PipelineModule):
     name = "stablevqa"
+    provenance = "published"
+    sources = {
+        "stablevqa_score": "Kou et al., ACM MM 2023 — https://github.com/QMME/StableVQA",
+    }
     description = "StableVQA video stability quality assessment (ACM MM 2023)"
     default_config = {
         "device": "auto",

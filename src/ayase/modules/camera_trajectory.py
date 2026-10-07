@@ -1,11 +1,10 @@
-"""CamI2V-style camera-trajectory adherence for camera-controlled video generation.
+"""CamI2V camera-trajectory adherence for camera-controlled video generation.
 
-Re-estimates camera poses from a generated video with a *real* pose estimator and
-compares them against a target camera trajectory using the three metrics defined
-by CamI2V (arXiv 2410.15957, https://github.com/ZGCTroy/CamI2V, file
-``evaluation/glomap_evaluation.py``):
+Re-estimates camera poses from a generated video and compares them against a
+target camera trajectory using the metrics defined by CamI2V (arXiv 2410.15957,
+https://github.com/ZGCTroy/CamI2V, file ``evaluation/glomap_evaluation.py``):
 
-  * **RotErr**  — summed relative-rotation geodesic angle error (degrees).
+  * **RotErr**  — summed relative-rotation geodesic angle error (radians).
   * **TransErr** — summed relative-translation L2 error after scale alignment.
   * **CamMC**   — camera-motion consistency: summed L2 difference of the 3x4
                   relative pose matrices (rotation + translation combined).
@@ -16,39 +15,49 @@ The error definitions are taken verbatim from CamI2V (do not re-derive):
     calc_transerr(t1, t2) = || t2 - t1 ||_2                                       # per pose
     calc_cammc(RT1, RT2)  = || (RT2 - RT1).reshape(12) ||_2                        # per pose, 3x4
 
-Relative poses follow CamI2V's ``relative_pose(c2w, mode="left")``: frame 0 is the
-identity and frame i is ``inv(P_0) @ P_i``. Translations are scale-normalised with
-CamI2V's ``normalize_t`` (divide each trajectory's translations by its own maximum
+Relative poses follow CamI2V's ``relative_pose(c2w, mode="left")``: frame 0 is
+the identity and frame i is ``inv(P_0) @ P_i``. Translations are scale-normalised
+with CamI2V's ``normalize_t`` (each trajectory divided by its own maximum
 per-frame translation norm) before TransErr / CamMC, which removes the global
 monocular scale ambiguity of the estimated trajectory. The per-pose errors are
-summed over the relative poses. CamI2V's ``calc_roterr`` returns radians; this
-module converts the summed rotation error to degrees to match the documented unit
-of the ``camera_rot_error`` field.
+summed over the relative poses, in radians for RotErr exactly as upstream.
 
-Pose-estimation backends (a real model or nothing — the repo policy forbids
-heuristic/homography proxy stand-ins):
+Pose estimation follows the upstream ``run_glomap`` pipeline — COLMAP
+``feature_extractor`` + ``sequential_matcher`` feeding the ``glomap`` binary as
+the global mapper — when both binaries are on PATH (upstream stage options are
+reproduced verbatim). A plain COLMAP incremental ``mapper`` is used when only
+``colmap`` is present (documented deviation: upstream always runs glomap).
+``pose_backend="vggt"`` is an explicitly opt-in learned estimator
+(facebook/VGGT-1B) — a documented deviation from upstream SfM; it is never
+selected automatically unless ``pose_backend="auto"`` and no SfM binaries exist.
 
-  * **VGGT** — facebook/VGGT-1B (CVPR 2025), loaded via the ``vggt`` package;
-    predicts OpenCV world-to-camera extrinsics that are inverted to camera-to-world.
-  * **COLMAP / GLOMAP** — classical structure-from-motion via the ``colmap``
-    (and optionally ``glomap``) command-line binaries, when they are on PATH.
+Upstream passes the ground-truth SIMPLE_PINHOLE intrinsics ``f,cx,cy`` into the
+reconstruction. Ayase takes optional per-sample intrinsics from the trajectory
+payload (``"intrinsics": [f, cx, cy]`` or ``{"fx","fy","cx","cy"}``); without
+them COLMAP's default focal-length heuristic is used (documented deviation).
+When SfM drops frames, the registered image names are mapped back to their frame
+indices and only those target poses are compared — no prefix truncation.
 
-If neither backend is available the module sets ``_backend = "unavailable"`` and
-leaves the three metrics unset.
+Upstream additionally reports TransErr_abs/CamMC_abs between two re-estimated
+videos with DepthAnything-V2 metric scaling; Ayase's input is a target
+trajectory rather than a second video, so only the trajectory metrics are
+computed.
 
 Target-trajectory convention: a per-sample JSON list of camera-to-world (c2w)
 4x4 (or 3x4) matrices, one per sampled frame. It is read from either
 ``getattr(sample, "metadata", {})[trajectory_key]`` or a sidecar file next to the
 video named ``<stem>.camera.json`` (suffix configurable via ``trajectory_suffix``;
 ``<name>.camera.json`` is also accepted). The JSON may be a bare list of matrices
-or a dict whose ``trajectory_key`` (default ``"camera_trajectory"``) holds the list.
-When no trajectory is found the metrics are left unset.
+or a dict whose ``trajectory_key`` (default ``"camera_trajectory"``) holds the
+list, optionally alongside an ``"intrinsics"`` entry. When no trajectory is
+found the metrics are left unset.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import List, Optional
+import re
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -112,7 +121,7 @@ def compute_trajectory_errors(
     target_c2w: np.ndarray,
     eps: float = 1e-9,
 ) -> Optional[dict]:
-    """Compute CamI2V RotErr (deg) / TransErr / CamMC between two c2w trajectories.
+    """Compute CamI2V RotErr (rad) / TransErr / CamMC between two c2w trajectories.
 
     ``estimated_c2w`` and ``target_c2w`` are ``(T, 4, 4)`` camera-to-world stacks.
     Identical trajectories yield errors of ~0. Returns ``None`` if fewer than two
@@ -138,7 +147,7 @@ def compute_trajectory_errors(
         cammc += float(np.linalg.norm((tgt_rel[i, :3, :4] - est_rel[i, :3, :4]).reshape(-1)))
 
     return {
-        "rot_err": float(np.degrees(rot_err)),  # radians -> degrees (camera_rot_error is documented in deg)
+        "rot_err": float(rot_err),  # radians, summed over poses — upstream unit
         "trans_err": float(trans_err),
         "cammc": float(cammc),
     }
@@ -152,7 +161,7 @@ def _quat_to_rot(qw: float, qx: float, qy: float, qz: float) -> np.ndarray:
         [
             [1 - 2 * (qy * qy + qz * qz), 2 * (qx * qy - qz * qw), 2 * (qx * qz + qy * qw)],
             [2 * (qx * qy + qz * qw), 1 - 2 * (qx * qx + qz * qz), 2 * (qy * qz - qx * qw)],
-            [2 * (qx * qz - qy * qw), 2 * (qy * qz + qx * qw), 1 - 2 * (qx * qx + qy * qy)],
+            [2 * (qx * qz + qy * qw), 2 * (qy * qz + qx * qw), 1 - 2 * (qx * qx + qy * qy)],
         ],
         dtype=np.float64,
     )
@@ -167,7 +176,7 @@ def _parse_colmap_images_txt(path: str) -> dict:
     """
     poses: dict = {}
     with open(path, "r", encoding="utf-8") as handle:
-        lines = [ln for ln in handle if ln.strip() and not ln.startswith("#")]
+        lines = [ln for ln in handle.readlines() if ln.strip() and not ln.startswith("#")]
     i = 0
     while i < len(lines):
         parts = lines[i].split()
@@ -184,16 +193,27 @@ def _parse_colmap_images_txt(path: str) -> dict:
 
 class CameraTrajectoryModule(PipelineModule):
     name = "camera_trajectory"
+    provenance = "adapted"
+    sources = {
+        "camera_rot_error": "CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py",
+        "camera_traj_consistency": "CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py",
+        "camera_trans_error": "CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py",
+    }
+    deviations = {
+        "camera_rot_error": "CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs (depth-scale from the second video) do not apply to the target trajectory",
+        "camera_traj_consistency": "CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs do not apply to the target trajectory",
+        "camera_trans_error": "CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs do not apply to the target trajectory",
+    }
     description = (
-        "CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via real pose "
-        "re-estimation (VGGT or COLMAP/GLOMAP) against a target trajectory"
+        "CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP "
+        "pose re-estimation against a target trajectory"
     )
     default_config = {
-        "num_frames": 16,
+        "num_frames": 0,  # 0 = all frames (upstream reads the whole video)
         "trajectory_key": "camera_trajectory",
         "trajectory_suffix": ".camera.json",
+        "pose_backend": "auto",  # "auto" | "glomap" | "colmap" | "vggt"
         "model_id": "facebook/VGGT-1B",
-        "colmap_matcher": "sequential",  # or "exhaustive"
         "sfm_timeout": 600,
     }
     metric_groups = {
@@ -203,8 +223,8 @@ class CameraTrajectoryModule(PipelineModule):
     }
     metric_info = {
         "camera_rot_error": (
-            "CamI2V RotErr: summed relative-rotation geodesic error (deg) between the "
-            "re-estimated and target camera trajectories (lower is better)"
+            "CamI2V RotErr: summed relative-rotation geodesic error (radians) between "
+            "the re-estimated and target camera trajectories (lower is better)"
         ),
         "camera_trans_error": (
             "CamI2V TransErr: summed relative-translation L2 error after scale alignment "
@@ -215,6 +235,23 @@ class CameraTrajectoryModule(PipelineModule):
             "(lower is better)"
         ),
     }
+    models = [
+        {
+            "id": "facebook/VGGT-1B",
+            "type": "huggingface",
+            "task": "Learned camera pose estimation (pose_backend='vggt' opt-in)",
+        },
+        {
+            "id": "glomap",
+            "type": "other",
+            "task": "Global structure-from-motion mapper (upstream backend, external binary)",
+        },
+        {
+            "id": "colmap",
+            "type": "other",
+            "task": "SfM feature extraction/matching frontend (external binary)",
+        },
+    ]
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
@@ -223,6 +260,7 @@ class CameraTrajectoryModule(PipelineModule):
         self._vggt = None
         self._sfm_bin: Optional[dict] = None
         self._device = "cpu"
+        self._intrinsics: Optional[Tuple[float, float, float]] = None
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -230,40 +268,55 @@ class CameraTrajectoryModule(PipelineModule):
         from ayase.runtime import resolve_torch_device
 
         self._device = resolve_torch_device(self.config.get("device", "auto"))
+        backend = str(self.config.get("pose_backend", "auto")).lower()
 
-        # Tier 1: VGGT (learned feed-forward pose estimator).
-        try:
-            model = self._load_vggt()
-            if model is not None:
-                self._vggt = model
-                self._backend = "vggt"
-                self._ml_available = True
-                logger.info(
-                    "camera_trajectory: loaded VGGT (%s) on %s",
-                    self.config.get("model_id"),
-                    self._device,
-                )
-                return
-        except ImportError as exc:
-            logger.info("camera_trajectory: VGGT unavailable (missing dependency): %s", exc)
-        except Exception as exc:  # pragma: no cover - depends on optional weights
-            logger.info("camera_trajectory: VGGT load failed: %s", exc)
-
-        # Tier 2: COLMAP / GLOMAP command-line structure-from-motion.
+        # Canonical tier: upstream's colmap feature/match + glomap mapper.
         sfm = self._detect_sfm_binaries()
-        if sfm is not None:
+        if backend in ("auto", "glomap") and sfm and sfm.get("glomap"):
+            self._sfm_bin = sfm
+            self._backend = "glomap"
+            self._ml_available = True
+            logger.info("camera_trajectory: using upstream GLOMAP pipeline %s", sfm)
+            return
+        if backend in ("auto", "colmap") and sfm:
             self._sfm_bin = sfm
             self._backend = "colmap"
             self._ml_available = True
-            logger.info("camera_trajectory: using SfM binaries %s", sfm)
+            logger.info("camera_trajectory: glomap absent; using colmap mapper %s", sfm)
             return
+        if backend in ("glomap", "colmap"):
+            logger.info(
+                "camera_trajectory: requested backend %r unavailable (missing binaries)",
+                backend,
+            )
+            self._backend = "unavailable"
+            return
+
+        # Opt-in learned backend: VGGT (documented deviation from upstream SfM).
+        if backend in ("auto", "vggt"):
+            try:
+                model = self._load_vggt()
+                if model is not None:
+                    self._vggt = model
+                    self._backend = "vggt"
+                    self._ml_available = True
+                    logger.info(
+                        "camera_trajectory: loaded VGGT (%s) on %s",
+                        self.config.get("model_id"),
+                        self._device,
+                    )
+                    return
+            except ImportError as exc:
+                logger.info("camera_trajectory: VGGT unavailable (missing dependency): %s", exc)
+            except Exception as exc:  # pragma: no cover - depends on optional weights
+                logger.info("camera_trajectory: VGGT load failed: %s", exc)
 
         self._backend = "unavailable"
         self._ml_available = False
         logger.info(
-            "camera_trajectory unavailable: neither VGGT nor a COLMAP/GLOMAP binary "
-            "was found; camera_rot_error / camera_trans_error / camera_traj_consistency "
-            "will not be populated by this module."
+            "camera_trajectory unavailable: no GLOMAP/COLMAP binaries on PATH and VGGT "
+            "not installed; camera_rot_error / camera_trans_error / "
+            "camera_traj_consistency will not be populated by this module."
         )
 
     def _load_vggt(self):
@@ -303,26 +356,28 @@ class CameraTrajectoryModule(PipelineModule):
             if target is None or len(target) < 2:
                 return sample
 
-            # ``num_frames`` caps how many frames are compared. Estimated and
-            # target poses are aligned by uniform sampling to the SAME count at
-            # matched fractional positions, so estimated[i] <-> target[i] refer
-            # to the same fraction of each sequence.
-            cap = int(self.config.get("num_frames", 16))
+            # Upstream scores every frame of the video; ``num_frames`` caps how
+            # many positions are compared. Estimated and target poses are aligned
+            # by uniform sampling to the SAME count at matched fractional
+            # positions, so estimated[i] <-> target[i] refer to the same fraction
+            # of each sequence.
+            cap = int(self.config.get("num_frames", 0))
             n_compare = len(target) if cap <= 1 else min(len(target), cap)
             if n_compare < len(target):
                 idx = np.linspace(0, len(target) - 1, n_compare).round().astype(int)
                 target = target[idx]
 
-            estimated = self._estimate_poses(sample, n_compare)
+            estimated, reg_idx = self._estimate_poses(sample, n_compare)
             if estimated is None or len(estimated) < 2:
                 return sample
 
-            # Guard a count mismatch (e.g. SfM dropped un-registered frames):
-            # keep positional correspondence by truncating both to the common
-            # prefix length before scoring.
-            common = min(len(estimated), len(target))
-            estimated = estimated[:common]
-            target = target[:common]
+            # SfM may fail to register some frames; align by the registered
+            # frame indices instead of truncating a prefix (upstream compares
+            # the same positional indices of the GT trajectory).
+            if reg_idx is not None and len(reg_idx) != len(target):
+                target = target[reg_idx]
+                if len(target) < 2:
+                    return sample
 
             errs = compute_trajectory_errors(estimated, target)
             if errs is None:
@@ -342,9 +397,11 @@ class CameraTrajectoryModule(PipelineModule):
         key = self.config.get("trajectory_key", "camera_trajectory")
 
         raw = None
+        self._intrinsics = None
         meta = getattr(sample, "metadata", None)
         if isinstance(meta, dict) and key in meta:
             raw = meta[key]
+            self._intrinsics = self._parse_intrinsics(meta.get("intrinsics"))
         if raw is None:
             raw = self._read_trajectory_sidecar(sample, key)
         if raw is None:
@@ -366,10 +423,32 @@ class CameraTrajectoryModule(PipelineModule):
                 if candidate.is_file():
                     data = json.loads(candidate.read_text(encoding="utf-8"))
                     if isinstance(data, dict):
+                        self._intrinsics = self._parse_intrinsics(data.get("intrinsics"))
                         return data.get(key, data.get("trajectory"))
                     return data
             except Exception as exc:  # pragma: no cover - malformed sidecar
                 logger.debug("camera_trajectory: failed to read sidecar %s: %s", candidate, exc)
+        return None
+
+    @staticmethod
+    def _parse_intrinsics(raw) -> Optional[Tuple[float, float, float]]:
+        """Coerce ``[f, cx, cy]`` / ``{"f","cx","cy"}`` / ``{"fx","fy","cx","cy"}``
+        into the ``(f, cx, cy)`` triple upstream feeds SIMPLE_PINHOLE."""
+        if raw is None:
+            return None
+        try:
+            if isinstance(raw, dict):
+                f = float(raw.get("f", raw.get("fx")))
+                cx = float(raw["cx"])
+                cy = float(raw["cy"])
+                if f <= 0:
+                    return None
+                return (f, cx, cy)
+            arr = np.asarray(raw, dtype=np.float64).reshape(-1)
+            if arr.size == 3 and arr[0] > 0:
+                return (float(arr[0]), float(arr[1]), float(arr[2]))
+        except Exception:
+            return None
         return None
 
     @staticmethod
@@ -395,21 +474,34 @@ class CameraTrajectoryModule(PipelineModule):
 
     # -- pose estimation ----------------------------------------------------
 
-    def _estimate_poses(self, sample: Sample, num_frames: int) -> Optional[np.ndarray]:
+    def _estimate_poses(
+        self, sample: Sample, num_frames: int
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        """Return ``(c2w_poses, registered_frame_indices)``.
+
+        ``registered_frame_indices`` is ``None`` when every sampled frame has a
+        pose (dense estimators like VGGT); for SfM it lists the frame indices
+        that were successfully registered.
+        """
         from ayase.image import sample_frames
 
-        frames = sample_frames(sample.path, max_frames=num_frames, color="rgb")
+        # ``num_frames`` is already the decided compare count (>= 2): every
+        # sampled position maps 1:1 onto a target pose.
+        frames = sample_frames(sample.path, max_frames=max(2, num_frames), color="rgb")
         if len(frames) < 2:
-            return None
+            return None, None
         # sample_frames returns read-only views over the shared cache; make
         # writable contiguous copies before handing them to torch / cv2.
         frames = [np.ascontiguousarray(f) for f in frames]
 
         if self._backend == "vggt":
-            return self._estimate_poses_vggt(frames)
-        if self._backend == "colmap":
-            return self._estimate_poses_colmap(frames)
-        return None
+            poses = self._estimate_poses_vggt(frames)
+            if poses is None:
+                return None, None
+            return poses, None
+        if self._backend in ("glomap", "colmap"):
+            return self._estimate_poses_sfm(frames)
+        return None, None
 
     def _estimate_poses_vggt(self, frames: List[np.ndarray]) -> Optional[np.ndarray]:
         import os
@@ -442,7 +534,11 @@ class CameraTrajectoryModule(PipelineModule):
         c2w = [np.linalg.inv(_pad_to_44(e)) for e in extr]
         return np.stack(c2w) if len(c2w) >= 2 else None
 
-    def _estimate_poses_colmap(self, frames: List[np.ndarray]) -> Optional[np.ndarray]:
+    def _estimate_poses_sfm(
+        self, frames: List[np.ndarray]
+    ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+        """Upstream ``run_glomap``: colmap feature_extractor + sequential_matcher
+        + glomap mapper with CamI2V's verbatim stage options."""
         import os
         import subprocess
         import tempfile
@@ -453,7 +549,7 @@ class CameraTrajectoryModule(PipelineModule):
         colmap = bins.get("colmap")
         glomap = bins.get("glomap")
         if not colmap:
-            return None
+            return None, None
         timeout = int(self.config.get("sfm_timeout", 600))
 
         def run(cmd: List[str]) -> None:
@@ -472,27 +568,78 @@ class CameraTrajectoryModule(PipelineModule):
             sparse = os.path.join(tmp, "sparse")
             os.makedirs(sparse)
 
-            run([colmap, "feature_extractor", "--database_path", db,
-                 "--image_path", img_dir, "--ImageReader.single_camera", "1"])
-            matcher = (
-                "sequential_matcher"
-                if self.config.get("colmap_matcher", "sequential") == "sequential"
-                else "exhaustive_matcher"
+            # Upstream feature_extractor options (CamI2V evaluation): single
+            # SIMPLE_PINHOLE camera + affine-shape/domain-size-pooled SIFT.
+            feat_cmd = [
+                colmap,
+                "feature_extractor",
+                "--database_path", db,
+                "--image_path", img_dir,
+                "--ImageReader.single_camera", "1",
+                "--ImageReader.camera_model", "SIMPLE_PINHOLE",
+                "--SiftExtraction.estimate_affine_shape", "1",
+                "--SiftExtraction.domain_size_pooling", "1",
+            ]
+            if self._intrinsics is not None:
+                f, cx, cy = self._intrinsics
+                feat_cmd += ["--ImageReader.camera_params", f"{f},{cx},{cy}"]
+            run(feat_cmd)
+            run(
+                [
+                    colmap,
+                    "sequential_matcher",
+                    "--database_path", db,
+                    "--SiftMatching.guided_matching", "1",
+                    "--SiftMatching.max_num_matches", "65536",
+                ]
             )
-            run([colmap, matcher, "--database_path", db])
-            if glomap:
-                run([glomap, "mapper", "--database_path", db,
-                     "--image_path", img_dir, "--output_path", sparse])
+            if glomap and self._backend == "glomap":
+                run(
+                    [
+                        glomap,
+                        "mapper",
+                        "--database_path", db,
+                        "--image_path", img_dir,
+                        "--output_path", sparse,
+                        "--output_format", "txt",
+                        "--RelPoseEstimation.max_epipolar_error", "4",
+                        "--BundleAdjustment.optimize_intrinsics", "0",
+                    ]
+                )
             else:
-                run([colmap, "mapper", "--database_path", db,
-                     "--image_path", img_dir, "--output_path", sparse])
+                run(
+                    [
+                        colmap,
+                        "mapper",
+                        "--database_path", db,
+                        "--image_path", img_dir,
+                        "--output_path", sparse,
+                    ]
+                )
 
             model_dir = os.path.join(sparse, "0")
             if not os.path.isdir(model_dir):
-                return None
-            run([colmap, "model_converter", "--input_path", model_dir,
-                 "--output_path", model_dir, "--output_type", "TXT"])
+                return None, None
+            if self._backend == "colmap" or not os.path.isfile(
+                os.path.join(model_dir, "images.txt")
+            ):
+                run(
+                    [
+                        colmap,
+                        "model_converter",
+                        "--input_path", model_dir,
+                        "--output_path", model_dir,
+                        "--output_type", "TXT",
+                    ]
+                )
             poses_by_name = _parse_colmap_images_txt(os.path.join(model_dir, "images.txt"))
 
-        ordered = [poses_by_name[n] for n in names if n in poses_by_name]
-        return np.stack(ordered) if len(ordered) >= 2 else None
+        ordered = []
+        reg_idx = []
+        for i, name in enumerate(names):
+            if name in poses_by_name:
+                ordered.append(poses_by_name[name])
+                reg_idx.append(i)
+        if len(ordered) < 2:
+            return None, None
+        return np.stack(ordered), np.asarray(reg_idx, dtype=np.int64)

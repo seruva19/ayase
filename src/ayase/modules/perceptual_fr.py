@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 
 class PerceptualFRModule(PipelineModule):
     name = "perceptual_fr"
+    provenance = "published"
+    sources = {
+        "fsim": "FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq",
+        "gmsd": "FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq",
+        "vsi_score": "FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq",
+    }
     description = "FSIM + GMSD + VSI full-reference perceptual metrics"
     default_config = {
         "subsample": 5,  # Every Nth video frame

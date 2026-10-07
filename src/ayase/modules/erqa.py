@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 class ERQAModule(ReferenceBasedModule):
     name = "erqa"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "erqa_score": "ERQA (MSU, 2022), the erqa package — https://github.com/msu-video-group/ERQA",
+    }
     description = "ERQA edge restoration quality assessment (FR, 2022)"
     metric_field = "erqa_score"
     default_config = {"subsample": 8}

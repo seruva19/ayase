@@ -65,26 +65,26 @@ def test_ms_ssim_config():
 
 
 def test_t2v_score_basics():
-    from ayase.modules.t2v_score import T2VScoreModule
+    from ayase.modules.t2v_generic_score import T2VScoreModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(T2VScoreModule, "t2v_score")
+    _test_module_basics(T2VScoreModule, "t2v_generic_score")
 
 
 def test_t2v_score_no_caption(video_sample):
-    from ayase.modules.t2v_score import T2VScoreModule
+    from ayase.modules.t2v_generic_score import T2VScoreModule
 
     m = T2VScoreModule()
     result = m.process(video_sample)
-    assert result.quality_metrics is None or result.quality_metrics.t2v_score is None
+    assert result.quality_metrics is None or result.quality_metrics.t2v_generic_score is None
 
 
 def test_t2v_score_image(image_sample):
-    from ayase.modules.t2v_score import T2VScoreModule
+    from ayase.modules.t2v_generic_score import T2VScoreModule
 
     m = T2VScoreModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is None or result.quality_metrics.t2v_score is None
+    assert result.quality_metrics is None or result.quality_metrics.t2v_generic_score is None
 
 
 # test_t2v_score_quality_simple was removed: its subject
@@ -138,14 +138,14 @@ def test_niqe_no_setup(image_sample):
 
 
 def test_naturalness_basics():
-    from ayase.modules.naturalness import NaturalnessModule
+    from ayase.modules.brisque_inverted import NaturalnessModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(NaturalnessModule, "naturalness")
+    _test_module_basics(NaturalnessModule, "brisque_inverted")
 
 
 def test_naturalness_is_no_reference():
-    from ayase.modules.naturalness import NaturalnessModule
+    from ayase.modules.brisque_inverted import NaturalnessModule
     from ayase.base_modules import NoReferenceModule
 
     assert issubclass(NaturalnessModule, NoReferenceModule)
@@ -154,7 +154,7 @@ def test_naturalness_is_no_reference():
 def test_naturalness_brisque_mapping():
     """The handcrafted NSS/MSCN heuristic was removed; naturalness is now a
     mapping of the real (pyiqa) BRISQUE score into [0, 1]."""
-    from ayase.modules.naturalness import NaturalnessModule
+    from ayase.modules.brisque_inverted import NaturalnessModule
 
     f = NaturalnessModule._brisque_to_naturalness
     assert f(0.0) == 1.0
@@ -164,21 +164,21 @@ def test_naturalness_brisque_mapping():
 
 
 def test_naturalness_real_backend_or_unset(image_sample):
-    from ayase.modules.naturalness import NaturalnessModule
+    from ayase.modules.brisque_inverted import NaturalnessModule
 
     m = NaturalnessModule()
     m.setup()
     result = m.process(image_sample)
     if m._backend == "pyiqa_brisque":
         assert result.quality_metrics is not None
-        score = result.quality_metrics.naturalness_score
+        score = result.quality_metrics.brisque_inverted
         assert score is not None
         assert 0 <= score <= 1
     else:
         # Honest state: pyiqa missing → no fabricated naturalness
         assert m._backend == "unavailable"
         assert (result.quality_metrics is None
-                or result.quality_metrics.naturalness_score is None)
+                or result.quality_metrics.brisque_inverted is None)
 
 
 def test_hdr_sdr_vqa_basics():
@@ -281,7 +281,7 @@ def test_usability_rate_with_metrics(image_sample):
     from ayase.modules.usability_rate import UsabilityRateModule
 
     m = UsabilityRateModule()
-    image_sample.quality_metrics = QualityMetrics(technical_score=80.0)
+    image_sample.quality_metrics = QualityMetrics(aesthetic_v25_score=8.0)
     result = m.process(image_sample)
     assert result.quality_metrics.usability_rate == 100.0
 
@@ -290,7 +290,7 @@ def test_usability_rate_below_threshold(image_sample):
     from ayase.modules.usability_rate import UsabilityRateModule
 
     m = UsabilityRateModule()
-    image_sample.quality_metrics = QualityMetrics(technical_score=30.0)
+    image_sample.quality_metrics = QualityMetrics(aesthetic_v25_score=3.0)
     result = m.process(image_sample)
     assert result.quality_metrics.usability_rate == 0.0
 
@@ -307,7 +307,7 @@ def test_llm_descriptive_qa_no_setup(image_sample):
 
     m = LLMDescriptiveQAModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is None or result.quality_metrics.confidence_score is None
+    assert result.quality_metrics is None or result.quality_metrics.llm_qa_score is None
 
 
 def test_llm_descriptive_qa_extract_issues():
@@ -336,17 +336,17 @@ def test_reference_and_meta_fields():
         "niqe",
         "scene_complexity",
         "compression_artifacts",
-        "naturalness_score",
+        "brisque_inverted",
         "video_memorability",
     ]:
         assert hasattr(qm, field)
-    for field in ["t2v_score", "t2v_alignment", "t2v_quality"]:
+    for field in ["t2v_generic_score", "t2v_generic_alignment", "t2v_generic_quality"]:
         assert hasattr(qm, field)
-    for field in ["dynamics_range", "dynamics_controllability"]:
+    for field in ["content_variation", "dynamics_controllability"]:
         assert hasattr(qm, field)
     for field in ["hdr_quality", "sdr_quality"]:
         assert hasattr(qm, field)
-    for field in ["usability_rate", "confidence_score"]:
+    for field in ["usability_rate"]:
         assert hasattr(qm, field)
 
 

@@ -3,11 +3,10 @@
 The preferred ``llava-hf/llava-1.5-7b-hf`` backend receives a fixed English
 prompt asking for 1-5 ratings of location plausibility, interaction sense, and
 layout consistency; their sum is divided by 15 and clipped to [0, 1], with
-higher values reflecting the model's plausibility judgment. If LLaVA cannot be
-loaded, ``dandelin/vilt-b32-finetuned-vqa`` answers five fixed questions and the
-fallback score is simply the fraction answered ``yes``. That yes-rate is a
-diagnostic heuristic, not equivalent to the LLaVA rubric or a calibrated
-commonsense probability. The module uses no sample caption, generation prompt,
+higher values reflecting the model's plausibility judgment. When LLaVA cannot
+be loaded the module emits no score — a different-quantity fallback
+(a yes/no-answer fraction from a fixed question set) is not a substitute for
+the rubric. The module uses no sample caption, generation prompt,
 reference media, temporal evidence, or dataset aggregation; model and language
 limitations follow the selected checkpoint.
 """
@@ -27,9 +26,10 @@ logger = logging.getLogger(__name__)
 
 class CommonsenseModule(PipelineModule):
     name = "commonsense"
-    description = "Common sense adherence (VLM / ViLT VQA)"
+    deprecated = True
+    provenance = "own"
+    description = "Common sense adherence (LLaVA VLM rubric)"
     default_config = {
-        "model_name": "dandelin/vilt-b32-finetuned-vqa",
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
     }
     metric_groups = {
@@ -42,8 +42,6 @@ class CommonsenseModule(PipelineModule):
         self._backend = None
         self._vlm_model = None
         self._vlm_processor = None
-        self._vilt_model = None
-        self._vilt_processor = None
         self._device = "cpu"
 
     def setup(self) -> None:
@@ -79,34 +77,8 @@ class CommonsenseModule(PipelineModule):
         except Exception as e:
             logger.info("VLM unavailable for commonsense: %s", e)
 
-        # Tier 2: ViLT VQA
-        try:
-            import torch
-            from transformers import ViltProcessor, ViltForQuestionAnswering
-            from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
-
-            vilt_name = self.config.get("model_name", "dandelin/vilt-b32-finetuned-vqa")
-            self._device = resolve_torch_device(self.config.get("device", "auto"))
-            models_dir = self.config.get("models_dir", "models")
-
-            self._vilt_processor = ViltProcessor.from_pretrained(vilt_name, cache_dir=models_dir)
-            self._vilt_model = from_pretrained_with_attention(
-                ViltForQuestionAnswering,
-                vilt_name,
-                self.config,
-                device=self._device,
-                cache_dir=models_dir,
-                use_safetensors=True,
-            ).to(self._device)
-            self._backend = "vilt"
-            self._ml_available = True
-            logger.info("Commonsense loaded ViLT VQA on %s", self._device)
-            return
-        except Exception as e:
-            logger.info("ViLT unavailable for commonsense: %s", e)
-
         self._backend = "unavailable"
-        logger.warning("Commonsense unavailable: install transformers")
+        logger.warning("Commonsense unavailable: LLaVA VLM could not be loaded")
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -122,8 +94,6 @@ class CommonsenseModule(PipelineModule):
         try:
             if self._backend == "vlm":
                 score, issues = self._compute_vlm(image)
-            elif self._backend == "vilt":
-                score, issues = self._compute_vilt(image)
             else:
                 return sample
 
@@ -183,65 +153,6 @@ class CommonsenseModule(PipelineModule):
 
         # Unparseable model response — do not fabricate a score.
         return None, issues
-
-    # ------------------------------------------------------------------ #
-    # Tier 2: ViLT VQA                                                     #
-    # ------------------------------------------------------------------ #
-
-    def _compute_vilt(self, image: np.ndarray) -> tuple:
-        from PIL import Image
-
-        issues = []
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(image_rgb)
-
-        questions = [
-            ("Is this a real photo?", "yes", "Model thinks this is NOT a real photo"),
-            ("Is this a cartoon?", "yes", "Model classifies this as cartoon/animated content"),
-            ("Is there a person in the image?", None, None),
-            ("Is this image blurry?", "yes", "Model thinks this image is blurry"),
-            ("Is there text in the image?", "yes", "Model detected text/overlay in the image"),
-        ]
-
-        correct_count = 0
-        answers = {}
-        for q, flag_answer, flag_msg in questions:
-            encoding = self._vilt_processor(pil_image, q, return_tensors="pt").to(self._device)
-            outputs = self._vilt_model(**encoding)
-            logits = outputs.logits
-            idx = logits.argmax(-1).item()
-            answer = self._vilt_model.config.id2label[idx]
-            answers[q] = answer
-
-            # Score: "correct" answers contribute positively
-            if flag_answer is not None:
-                if answer.lower() == flag_answer:
-                    correct_count += 1
-                else:
-                    issues.append(
-                        ValidationIssue(
-                            severity=ValidationSeverity.INFO,
-                            message=f"Commonsense: {flag_msg} (answer='{answer}')",
-                            details={"question": q, "answer": answer},
-                        )
-                    )
-            else:
-                if answer.lower() == "yes":
-                    correct_count += 1
-
-        # Cross-question reasoning
-        if (answers.get("Is this a real photo?", "").lower() == "yes" and
-                answers.get("Is this image blurry?", "").lower() == "yes"):
-            issues.append(
-                ValidationIssue(
-                    severity=ValidationSeverity.WARNING,
-                    message="Commonsense: Real photo that is blurry — likely poor quality capture",
-                    details={"answers": answers},
-                )
-            )
-
-        score = correct_count / len(questions)
-        return float(score), issues
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #

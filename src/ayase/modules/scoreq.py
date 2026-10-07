@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 class SCOREQModule(PipelineModule):
     name = "scoreq"
+    provenance = "published"
+    sources = {
+        "scoreq_score": "SCOREQ (Ragano et al., NeurIPS 2024) — https://github.com/alessandroragano/scoreq",
+    }
     description = "SCOREQ no-reference speech naturalness score"
     default_config = {
         "sample_rate": 16000,

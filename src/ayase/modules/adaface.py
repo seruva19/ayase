@@ -13,8 +13,8 @@ AdaFace comes from a different training objective and is reported alongside ArcF
 in that literature for exactly this reason.
 
 Output:
-    adaface_identity_similarity — cosine similarity to the reference face,
-                                  clipped to 0-1 (higher = better preservation)
+    adaface_identity_similarity — mean cosine similarity to the reference face
+                                  (raw cosine, −1..1; higher = better preservation)
 
 Requires ``sample.reference_path`` (a face image or a directory of face images);
 gracefully skips when no reference is provided.
@@ -93,6 +93,13 @@ def _weight_url(entry: dict) -> str:
 
 class AdaFaceModule(PipelineModule):
     name = "adaface"
+    provenance = "adapted"
+    sources = {
+        "adaface_identity_similarity": "AdaFace (Kim et al., CVPR 2022), official CVLface weights — https://github.com/mk-minchul/AdaFace",
+    }
+    deviations = {
+        "adaface_identity_similarity": "AdaFace is a model for single aligned faces; here it averages over video frames and uses InsightFace norm_crop (the same 112x112 template as the authors' MTCNN pipeline)",
+    }
     description = "AdaFace identity similarity vs reference face (CVPR 2022, quality-adaptive margin)"
     default_config = {
         "checkpoint": "ir101_webface12m",
@@ -119,7 +126,7 @@ class AdaFaceModule(PipelineModule):
     ]
     metric_info = {
         "adaface_identity_similarity": (
-            "AdaFace cosine similarity to the reference face (0-1, higher=better)"
+            "AdaFace cosine similarity to the reference face (−1..1, higher=better)"
         ),
     }
     metric_groups = {"adaface_identity_similarity": "face"}
@@ -254,7 +261,7 @@ class AdaFaceModule(PipelineModule):
                 )
                 return sample
 
-            score = float(np.clip(np.mean(similarities), 0.0, 1.0))
+            score = float(np.mean(similarities))
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()

@@ -3,12 +3,12 @@
 The dataset-level outputs are precision, recall, density, and coverage; larger
 values mean greater generated-set inclusion or reference-set coverage under the
 corresponding PRDC definition. Each sample contributes one representative image
-or video frame. DINOv2 ViT-L/14 features are used when available; otherwise the
-module switches to image-statistics features, whose values are not comparable
-with DINOv2 results. When no reference set is supplied, the implementation
-splits the input sequence in half, so insertion order then defines the two sets.
-Results require enough samples for the configured k-nearest-neighbour estimate
-and are distribution diagnostics, not per-sample quality or identity scores.
+or video frame. DINOv2 ViT-L/14 features are required — without the encoder or
+without a reference set the module emits no metrics: image-statistics features
+are not comparable with DINOv2 results, and splitting one input set in half is
+self-comparison, not PRDC. Results require enough samples for the configured
+k-nearest-neighbour estimate and are distribution diagnostics, not per-sample
+quality or identity scores.
 """
 
 import logging
@@ -17,7 +17,7 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 from ayase.base_modules import BatchMetricModule
-from ayase.image import image_stats_features, load_representative_frame
+from ayase.image import load_representative_frame
 from ayase.models import Sample
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 
 class PRDCDINOv2Module(BatchMetricModule):
     name = "prdc_dinov2"
+    provenance = "published"
+    sources = {
+        "prdc_coverage": "PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc",
+        "prdc_density": "PRDC density (Naeem et al., ICML 2020) — https://github.com/clovaai/generative-evaluation-prdc",
+        "prdc_precision": "PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc",
+        "prdc_recall": "PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc",
+    }
     description = "PRDC precision/recall/density/coverage over DINOv2 image features"
     default_config = {
         "model_name": "facebook/dinov2-large",
@@ -50,7 +57,7 @@ class PRDCDINOv2Module(BatchMetricModule):
         self.model_name = self.config.get("model_name", "facebook/dinov2-large")
         self.device_config = self.config.get("device", "auto")
         self.k = self.config.get("k", 5)
-        self._backend = "image_stats"
+        self._backend = "unavailable"
         self._model = None
         self._processor = None
         self._device = "cpu"
@@ -70,35 +77,32 @@ class PRDCDINOv2Module(BatchMetricModule):
             self._model = AutoModel.from_pretrained(resolved).to(self._device).eval()
             self._backend = "dinov2"
             logger.info("PRDC-DINOv2 initialised with %s on %s", self.model_name, self._device)
-        except ImportError:
-            logger.warning("PRDC-DINOv2 requires torch and transformers; using image-stat proxy")
         except Exception as e:
-            logger.warning("PRDC-DINOv2 setup failed (%s); using image-stat proxy", e)
+            logger.warning("PRDC-DINOv2 unavailable — DINOv2 setup failed: %s", e)
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
+        if self._backend != "dinov2" or self._model is None:
+            return None
         frame = load_representative_frame(sample.path, color="rgb")
         if frame is None:
             return None
-        if self._backend == "dinov2" and self._model is not None:
-            return self._extract_dinov2(frame)
-        return image_stats_features(frame)
+        return self._extract_dinov2(frame)
 
     def compute_distribution_metric(
         self,
         features: List[np.ndarray],
         reference_features: Optional[List[np.ndarray]] = None,
-    ) -> float:
+    ) -> Optional[float]:
         gen = np.stack(features).astype(np.float64)
-        if reference_features:
-            real = np.stack(reference_features).astype(np.float64)
-        else:
-            mid = len(gen) // 2
-            if mid < 1:
-                return 0.0
-            real = gen[:mid]
-            gen = gen[mid:]
+        if not reference_features:
+            # PRDC needs a real reference set; self-splitting is not PRDC.
+            return None
+        real = np.stack(reference_features).astype(np.float64)
 
-        precision, recall, density, coverage = self._compute_prdc(real, gen)
+        scores = self._compute_prdc(real, gen)
+        if scores is None:
+            return None
+        precision, recall, density, coverage = scores
         if hasattr(self, "pipeline") and self.pipeline and hasattr(self.pipeline, "add_dataset_metric"):
             self.pipeline.add_dataset_metric("prdc_precision", precision)
             self.pipeline.add_dataset_metric("prdc_recall", recall)
@@ -114,7 +118,7 @@ class PRDCDINOv2Module(BatchMetricModule):
         return precision
 
     def on_dispose(self) -> None:
-        if len(self._feature_cache) < 2:
+        if len(self._feature_cache) < 2 or not self._reference_cache:
             self._feature_cache = []
             self._reference_cache = []
             return
@@ -147,9 +151,11 @@ class PRDCDINOv2Module(BatchMetricModule):
             logger.debug("PRDC-DINOv2 feature extraction failed: %s", e)
             return None
 
-    def _compute_prdc(self, real: np.ndarray, gen: np.ndarray) -> Tuple[float, float, float, float]:
+    def _compute_prdc(
+        self, real: np.ndarray, gen: np.ndarray
+    ) -> Optional[Tuple[float, float, float, float]]:
         if len(real) < 2 or len(gen) < 2:
-            return 0.0, 0.0, 0.0, 0.0
+            return None
 
         k_real = min(int(self.k), len(real) - 1)
         k_gen = min(int(self.k), len(gen) - 1)
@@ -157,10 +163,12 @@ class PRDCDINOv2Module(BatchMetricModule):
         gen_radii = _kth_radii(gen, gen, k_gen, exclude_self=True)
         d_rg = _euclidean_distances(real, gen)
 
-        precision = float(np.mean(np.any(d_rg <= real_radii[:, None], axis=0)))
-        recall = float(np.mean(np.any(d_rg <= gen_radii[None, :], axis=1)))
-        density = float(np.mean(np.sum(d_rg <= real_radii[:, None], axis=1) / max(k_real, 1)))
-        coverage = float(np.mean(np.min(d_rg, axis=1) <= real_radii))
+        # Official PRDC (Naeem et al., ICML 2020) formulas: strict inequalities,
+        # density = per-fake count of containing real balls, divided by k.
+        precision = float(np.mean(np.any(d_rg < real_radii[:, None], axis=0)))
+        recall = float(np.mean(np.any(d_rg < gen_radii[None, :], axis=1)))
+        density = float(np.mean(np.sum(d_rg < real_radii[:, None], axis=0) / max(k_real, 1)))
+        coverage = float(np.mean(np.min(d_rg, axis=1) < real_radii))
         return precision, recall, density, coverage
 
 

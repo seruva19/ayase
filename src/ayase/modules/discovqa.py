@@ -29,6 +29,10 @@ logger = logging.getLogger(__name__)
 
 class DisCoVQAModule(PipelineModule):
     name = "discovqa"
+    provenance = "utility"
+    sources = {
+        "discovqa_score": "DisCoVQA (Wu et al. 2023) — stub — https://github.com/VQAssessment/DisCoVQA",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "DisCoVQA temporal distortion-content VQA (2023)"
     default_config = {

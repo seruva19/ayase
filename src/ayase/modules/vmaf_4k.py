@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class VMAF4KModule(ReferenceBasedModule):
     name = "vmaf_4k"
+    provenance = "published"
+    sources = {
+        "vmaf_4k": "VMAF 4K v0.6.1; libvmaf — https://github.com/Netflix/vmaf",
+    }
     description = "VMAF 4K model for UHD content (0-100, higher=better)"
     default_config = {}
     metric_groups = {

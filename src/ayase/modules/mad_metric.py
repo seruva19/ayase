@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 class MADModule(PipelineModule):
     name = "mad"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "mad": "MAD (Larson & Chandler, 2010) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "Most Apparent Distortion full-reference metric (lower=better)"
     default_config = {"subsample": 8}
     metric_groups = {

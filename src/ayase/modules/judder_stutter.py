@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 class JudderStutterModule(PipelineModule):
     name = "judder_stutter"
+    deprecated = True
+    provenance = {
+        "judder_score": "own",
+        "stutter_score": "utility",
+    }
     description = "Detects judder (uneven cadence) and stutter (duplicate frames)"
     default_config = {
         "max_frames": 600,

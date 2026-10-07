@@ -27,6 +27,10 @@ _TORCH_LOAD_LOCK = threading.Lock()
 
 class CDPAMModule(PipelineModule):
     name = "cdpam"
+    provenance = "published"
+    sources = {
+        "cdpam_score": "CDPAM (Manocha et al. 2021), the cdpam 0.0.6 package — https://github.com/pranaymanocha/PerceptualAudio",
+    }
     description = "CDPAM learned perceptual audio distance (full-reference)"
     default_config = {
         "device": "auto",

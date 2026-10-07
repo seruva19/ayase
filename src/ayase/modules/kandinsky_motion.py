@@ -12,6 +12,12 @@ logger = logging.getLogger(__name__)
 
 class KandinskyMotionModule(PipelineModule):
     name = "kandinsky_motion"
+    provenance = "utility"
+    sources = {
+        "kandinsky_camera_motion_score": "ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor",
+        "kandinsky_dynamics_score": "ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor",
+        "kandinsky_object_motion_score": "ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor",
+    }
     description = "Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2)"
     default_config = {"models_dir": "models"}
     models = [

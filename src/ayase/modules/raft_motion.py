@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 class RAFTMotionModule(PipelineModule):
     name = "raft_motion"
+    deprecated = True
+    provenance = "own"
     description = "RAFT optical flow motion scoring (torchvision)"
     default_config = {"subsample": 8}
     metric_groups = {

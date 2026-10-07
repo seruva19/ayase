@@ -39,6 +39,7 @@ SAFE_CONTAINERS = {
 
 class CodecCompatibilityModule(PipelineModule):
     name = "codec_compatibility"
+    provenance = "utility"
     description = "Validates codec, pixel format, and container for ML dataloader compatibility"
     default_config = {
         "min_bitrate_kbps": 500,     # Minimum video bitrate (kbps)

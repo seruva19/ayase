@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class LetterboxModule(PipelineModule):
     name = "letterbox"
+    provenance = "utility"
     description = "Border/letterbox detection (0-1, 0=no borders)"
     default_config = {"threshold": 16, "subsample": 4}
     metric_groups = {

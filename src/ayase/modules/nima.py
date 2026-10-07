@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 class NIMAModule(PipelineModule):
     name = "nima"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "nima_score": "NIMA (Talebi & Milanfar, TIP 2018) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "NIMA aesthetic and technical image quality (1-10 scale)"
     default_config = {"subsample": 8}
     metric_groups = {

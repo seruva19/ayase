@@ -58,6 +58,16 @@ _WEIGHTS = {
 
 class VerseBenchModule(PipelineModule):
     name = "verse_bench"
+    provenance = {
+        "verse_bench_breakdown_est": "own",
+        "verse_bench_metrics": "published",
+        "verse_bench_overall_est": "own",
+    }
+    sources = {
+        "verse_bench_breakdown_est": "unconfirmed — https://huggingface.co/datasets/dorni/Verse-Bench",
+        "verse_bench_metrics": "Verse-Bench (UniVerse-1, arXiv:2509.06155) — https://arxiv.org/abs/2509.06155",
+        "verse_bench_overall_est": "unconfirmed — https://huggingface.co/datasets/dorni/Verse-Bench",
+    }
     description = "Ayase-native Verse-Bench dataset-level benchmark wrapper"
     default_config = {
         "dataset_root": None,
@@ -79,9 +89,9 @@ class VerseBenchModule(PipelineModule):
         {"id": "fsmn-vad", "type": "huggingface", "task": "FSMN voice activity detection (FunASR)"},
     ]
     metric_info = {
-        "verse_bench_overall": "Weighted aggregate score (0-1, higher=better) from S_joint(50%), S_video(20%), S_audio(20%), S_other(10%)",
+        "verse_bench_overall_est": "Weighted aggregate score (0-1, higher=better) from S_joint(50%), S_video(20%), S_audio(20%), S_other(10%)",
         "verse_bench_metrics": "Raw metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, LSE-D, AV-A",
-        "verse_bench_breakdown": "Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score",
+        "verse_bench_breakdown_est": "Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score",
     }
     # NOTE: Verse-Bench only reports aggregate statistics at dataset level
     # via `pipeline.add_dataset_metric(...)`; it does not populate
@@ -127,10 +137,10 @@ class VerseBenchModule(PipelineModule):
 
             if hasattr(self, "pipeline") and self.pipeline and hasattr(self.pipeline, "add_dataset_metric"):
                 self.pipeline.add_dataset_metric("verse_bench_metrics", raw_metrics)
-                self.pipeline.add_dataset_metric("verse_bench_breakdown", breakdown)
+                self.pipeline.add_dataset_metric("verse_bench_breakdown_est", breakdown)
                 overall = breakdown.get("Overall Score")
                 if overall is not None:
-                    self.pipeline.add_dataset_metric("verse_bench_overall", float(overall))
+                    self.pipeline.add_dataset_metric("verse_bench_overall_est", float(overall))
         except Exception as e:
             logger.warning("Verse-Bench post_process failed: %s", e)
 

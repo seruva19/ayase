@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class RAMTaggingModule(PipelineModule):
     name = "ram_tagging"
+    provenance = "utility"
+    sources = {
+        "ram_tags": "RAM++ (Recognize Anything) — https://github.com/xinyu1205/recognize-anything",
+    }
     description = "RAM++ multi-label tagging on sampled video frames"
     default_config = {
         "repo_id": "xinyu1205/recognize-anything-plus-model",

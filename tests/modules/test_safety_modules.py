@@ -9,9 +9,16 @@ def test_deepfake_detection_image(image_sample):
     from ayase.modules.deepfake_detection import DeepfakeDetectionModule
 
     m = DeepfakeDetectionModule({})
+    m.setup()
     result = m.process(image_sample)
-    assert result.quality_metrics is not None
-    assert result.quality_metrics.deepfake_probability is not None
+    # Without the real backends (CLIP spectral model) the module must leave
+    # the field unset rather than emit a heuristic substitute.
+    if m._backend in (None, "unavailable"):
+        if result.quality_metrics is not None:
+            assert result.quality_metrics.deepfake_probability is None
+    else:
+        assert result.quality_metrics is not None
+        assert result.quality_metrics.deepfake_probability is not None
 
 
 def test_watermark_robustness_basics():

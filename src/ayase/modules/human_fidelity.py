@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class HumanFidelityModule(PipelineModule):
     name = "human_fidelity"
+    provenance = "own"
+    sources = {
+        "human_fidelity_score": "DWPose/MediaPipe Pose models; the aggregation is own — https://github.com/IDEA-Research/DWPose",
+    }
     description = "Human body/hand/face fidelity (DWPose / MediaPipe)"
     default_config = {}
     metric_groups = {

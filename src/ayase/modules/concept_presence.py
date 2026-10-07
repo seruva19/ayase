@@ -36,6 +36,12 @@ _FACE_KEYWORDS = frozenset([
 
 class ConceptPresenceModule(PipelineModule):
     name = "concept_presence"
+    deprecated = True
+    provenance = {
+        "concept_count": "own",
+        "concept_face_count": "utility",
+        "concept_presence": "own",
+    }
     description = "Detect concept presence via face detection, CLIP-based object/style detection"
     default_config = {
         "detection_mode": "auto",  # "auto", "face", "clip", "combined"

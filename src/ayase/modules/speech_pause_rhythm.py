@@ -287,6 +287,14 @@ class SpeechPauseRhythmModule(PipelineModule):
     """Compare exact Silero-VAD pause timing in matching-content speech."""
 
     name = "speech_pause_rhythm"
+    provenance = "own"
+    sources = {
+        "speech_activity_fraction_difference": "Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad",
+        "speech_activity_pattern_disagreement": "Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad",
+        "speech_pause_count_difference": "Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad",
+        "speech_pause_duration_wasserstein_ms": "Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad",
+        "speech_span_duration_ratio": "Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad",
+    }
     description = "Paired-speech pause and activity timing diagnostics from Silero VAD"
     default_config = {}
     models = [

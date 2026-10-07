@@ -35,16 +35,18 @@ def test_vqinsight_parse_score():
         '{"spatial": 60.0, "temporal": 80.0, "consistency": 40.0}'
         "</answer>"
     )
-    # mean(60,80,40)=60 -> 0.60
-    assert abs(aigc._parse_score(out) - 0.60) < 1e-6
+    # Upstream reports the three dimensions separately — raw 0-100 values.
+    assert aigc._parse_score(out) == {"spatial": 60.0, "temporal": 80.0, "consistency": 40.0}
     # No <answer> tag but JSON present -> still parses (tolerant fallback).
-    assert aigc._parse_score('{"spatial": 50, "temporal": 50, "consistency": 50}') == 0.5
+    assert aigc._parse_score('{"spatial": 50, "temporal": 50, "consistency": 50}') == {
+        "spatial": 50.0, "temporal": 50.0, "consistency": 50.0,
+    }
     # Garbage -> None, never a silent-wrong number.
     assert aigc._parse_score("no numbers at all here") is None
     assert aigc._parse_score("") is None
 
     natural = VQInsightModule({"video_type": "natural"})
-    assert abs(natural._parse_score("<answer>72.5</answer>") - 0.725) < 1e-6
+    assert abs(natural._parse_score("<answer>72.5</answer>") - 72.5) < 1e-6
     assert natural._parse_score("<answer>no score</answer>") is None
 
 

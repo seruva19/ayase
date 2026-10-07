@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 class ActionRecognitionModule(PipelineModule):
     name = "action_recognition"
+    provenance = "own"
+    sources = {
+        "action_confidence": "VideoMAE (Tong et al. 2022) as a classifier; not a metric — https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics",
+        "action_score": "VideoMAE (Tong et al. 2022) as a classifier; not a metric — https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics",
+    }
     description = "Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models"
     default_config = {
         "model_name": "MCG-NJU/videomae-large-finetuned-kinetics",

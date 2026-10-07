@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 class QualiCLIPModule(PipelineModule):
     name = "qualiclip"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "qualiclip_score": "QualiCLIP (Agnolucci et al., 2024) via pyiqa — https://github.com/miccunifi/QualiCLIP",
+    }
     description = "QualiCLIP opinion-unaware CLIP-based no-reference IQA"
     default_config = {"subsample": 8}
     metric_groups = {

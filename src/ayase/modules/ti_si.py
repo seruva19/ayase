@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 class TISIModule(PipelineModule):
     name = "ti_si"
+    provenance = "published"
+    sources = {
+        "spatial_information": "ITU-T P.910 — https://www.itu.int/rec/T-REC-P.910",
+        "temporal_information": "ITU-T P.910 — https://www.itu.int/rec/T-REC-P.910",
+    }
     description = "ITU-T P.910 Temporal & Spatial Information"
     default_config = {
         "max_frames": 300,  # Cap to avoid very long videos

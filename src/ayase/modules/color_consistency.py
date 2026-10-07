@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 class ColorConsistencyModule(PipelineModule):
     name = "color_consistency"
+    deprecated = True
+    provenance = "own"
     description = "Verifies color attributes in prompt vs video content"
     default_config = {}
     metric_groups = {

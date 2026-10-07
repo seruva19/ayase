@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingModule(PipelineModule):
     name = "embedding"
+    provenance = "utility"
     description = "Calculates X-CLIP embeddings for similarity search"
     default_config = {
         "model_name": "microsoft/xclip-base-patch32",
