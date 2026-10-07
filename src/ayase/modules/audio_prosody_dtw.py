@@ -87,6 +87,8 @@ class AudioProsodyDTWModule(PipelineModule):
     """Compare paired speech energy contours after independent MFCC-based DTW."""
 
     name = "audio_prosody_dtw"
+    deprecated = True
+    provenance = "own"
     description = (
         "MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech"
     )

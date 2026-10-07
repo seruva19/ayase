@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 class PoseDriverFidelityModule(PipelineModule):
     name = "pose_driver_fidelity"
+    deprecated = True
+    provenance = "own"
     description = "Body-pose fidelity to a driving video (PCK over normalised skeletons)"
     default_config = {
         "device": "auto",

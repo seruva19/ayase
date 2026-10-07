@@ -82,7 +82,6 @@ def test_ref4d_imports_four_dimension_summaries(tmp_path):
     assert qm.ref4d_event_score == pytest.approx(70.0)
     assert qm.ref4d_motion_score == pytest.approx(60.0)
     assert qm.ref4d_world_score == pytest.approx(50.0)
-    assert qm.ref4d_overall_score == pytest.approx(65.0)
 
 
 def test_phyground_imports_structured_scores(tmp_path):

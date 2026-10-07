@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 class JumpCutModule(PipelineModule):
     name = "jump_cut"
+    deprecated = True
+    provenance = "own"
+    sources = {
+        "jump_cut_score": "— (heuristic; Open-Sora reference) — https://github.com/hpcaitech/Open-Sora",
+    }
     description = "Jump cut / abrupt transition detection (0-1, 1=no cuts)"
     default_config = {"threshold": 40.0}
     metric_groups = {

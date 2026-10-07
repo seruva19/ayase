@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 
 class SceneDetectionModule(PipelineModule):
     name = "scene_detection"
+    deprecated = True
+    provenance = {
+        "avg_scene_duration": "utility",
+        "scene_stability": "own",
+    }
+    sources = {
+        "avg_scene_duration": "TransNetV2 — https://github.com/soCzech/TransNetV2",
+    }
     description = "Scene stability metric — penalises rapid cuts (0-1, higher=more stable)"
     default_config = {"threshold": 0.5}
     metric_groups = {

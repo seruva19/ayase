@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 
 class TemporalStyleModule(PipelineModule):
     name = "temporal_style"
+    deprecated = True
+    provenance = "own"
     description = "Analyzes temporal style (Slow Motion, Timelapse, Speed)"
     default_config = {}
 

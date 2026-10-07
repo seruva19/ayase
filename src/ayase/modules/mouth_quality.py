@@ -1,13 +1,13 @@
-"""Localized mouth-region quality using THEval's cropped MUSIQ protocol.
+"""Localized mouth-region quality using THEval's cropped MUSIQ-SPAQ protocol.
 
 Each detected lip region receives ten pixels of padding. Crops are zero-padded
-to a common batch shape and scored by MUSIQ; their mean is reported. Higher is
-better and complements whole-frame MUSIQ by exposing localized mouth defects.
+to a common batch shape and scored by MUSIQ (SPAQ-pretrained, as in THEval);
+their mean is reported. Higher is better and complements whole-frame MUSIQ by
+exposing localized mouth defects.
 """
 
 import logging
 import math
-import hashlib
 from pathlib import Path
 from typing import Optional, Sequence
 
@@ -17,7 +17,6 @@ import numpy as np
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 from ayase.runtime import resolve_torch_device
-from ayase.config import download_model_file
 
 from ._blendshape_utils import (
     MODEL_FILENAME, MODEL_REPO_ID, MODEL_REVISION, MODEL_URL,
@@ -26,14 +25,6 @@ from ._blendshape_utils import (
 from .lip_dynamics import LIP_INDICES
 
 logger = logging.getLogger(__name__)
-
-MUSIQ_REVISION = "f59fec34ffc4eee73fb0a172ff23407e6323d65d"
-MUSIQ_FILENAME = "theval/musiq_koniq_ckpt-e95806b9.pth"
-MUSIQ_SHA256 = "e95806b9eae5f3814c410f574ba8e552362bd5bc63d758ed5b97860f5d6185aa"
-MUSIQ_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
-    f"{MUSIQ_REVISION}/{MUSIQ_FILENAME}"
-)
 
 
 def mouth_bbox(
@@ -53,16 +44,20 @@ def mouth_bbox(
 
 class MouthQualityModule(PipelineModule):
     name = "mouth_quality"
-    description = "THEval localized mouth-crop MUSIQ quality"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "mouth_quality_score": "THEval (Quignon et al., arXiv 2511.04520) — https://arxiv.org/abs/2511.04520",
+    }
+    description = "THEval localized mouth-crop MUSIQ-SPAQ quality"
     default_config = {"batch_size": 64, "padding": 10, "num_faces": 1, "face_index": None}
     models = [
-        {"id": "AkaneTendo25/ayase-runtime-assets", "type": "huggingface",
-         "url": MUSIQ_URL, "revision": MUSIQ_REVISION,
-         "task": "Pinned MUSIQ KonIQ weights for mouth-crop quality"},
+        {"id": "musiq-spaq", "type": "pyiqa",
+         "task": "MUSIQ pretrained on SPAQ — the THEval mouth-crop scorer"},
         {"id": MODEL_REPO_ID, "type": "huggingface", "url": MODEL_URL,
          "revision": MODEL_REVISION, "task": f"Lip landmarks ({MODEL_FILENAME})"},
     ]
-    metric_info = {"mouth_quality_score": "Mean MUSIQ score over detected mouth crops (higher=better)"}
+    metric_info = {"mouth_quality_score": "Mean MUSIQ-SPAQ score over detected mouth crops (higher=better)"}
     metric_groups = {"mouth_quality_score": "nr_quality"}
 
     def __init__(self, config=None):
@@ -85,17 +80,11 @@ class MouthQualityModule(PipelineModule):
             if not self._extractor.setup("MouthQuality"):
                 return
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            checkpoint = download_model_file(
-                MUSIQ_FILENAME, MUSIQ_URL, self.config.get("models_dir", "models")
-            )
-            digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
-            if digest != MUSIQ_SHA256:
-                raise RuntimeError(f"MUSIQ checkpoint SHA-256 mismatch: {digest}")
-            self._metric = pyiqa.create_metric(
-                "musiq", device=self._device, pretrained_model_path=str(checkpoint)
-            )
+            # THEval uses MUSIQ trained on SPAQ — pyiqa's musiq-spaq is the
+            # official Google checkpoint port.
+            self._metric = pyiqa.create_metric("musiq-spaq", device=self._device)
             self._ml_available = True
-            self._backend = "mediapipe_face_landmarker+pyiqa_musiq"
+            self._backend = "mediapipe_face_landmarker+pyiqa_musiq_spaq"
         except ImportError:
             logger.warning("MouthQuality requires mediapipe and pyiqa")
         except Exception as exc:

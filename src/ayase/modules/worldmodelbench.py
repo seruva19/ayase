@@ -18,7 +18,6 @@ checked before comparing dataset aggregates.
 import json
 import importlib.machinery
 import logging
-import re
 import sys
 import types
 import zipfile
@@ -60,23 +59,59 @@ COMMON_SENSE_FIELDS = (
     "worldmodelbench_aesthetics_adherence",
     "worldmodelbench_temporal_adherence",
 )
+# Verbatim question pool and prompt templates from the upstream evaluation.py
+# (WorldModelBench-Team/WorldModelBench). Question strings are substituted into
+# the templates lower-cased, exactly as upstream does.
 PHYSICAL_QUESTIONS = (
-    "objects moving without an external force, violating Newton's laws",
-    "irregular deformation that violates mass conservation or solid mechanics",
-    "liquid flowing in a physically unnatural way",
-    "objects passing through one another non-physically",
-    "behavior inconsistent with gravity",
+    "Violation of Newton's Law: Objects move without any external force.",
+    "Violation of the Law of Conservation of Mass or Solid Constitutive Law: Objects deform irregularly.",
+    "Violation of Fluid Constitutive Law: Liquids flow in an unnatural manner.",
+    "Violation of Non-physical Penetration: Objects unnaturally pass through each other.",
+    "Violation of Gravity: Objects behave inconsistently with gravity.",
 )
 COMMON_SENSE_QUESTIONS = (
-    "poor aesthetics or visibly low-quality content",
-    "temporal inconsistency such as flicker or abrupt changes",
+    "Poor Aesthetics: Visually unappealing or low-quality content.",
+    "Temporal Inconsistency: Noticeable flickering or abrupt changes.",
 )
+INSTRUCTION_TEMPLATE = """
+    Evaluate if this video follows the instruction: '{instruction}'.
+    Use the following scoring criteria:
+
+    - 0: The video does not follow the instruction at all.
+    - 1: The video includes the correct object but performs the wrong action, or vice versa.
+    - 2: The video follows the instruction and shows a tendency toward the intended goal.
+    - 3: The video follows the instruction precisely and successfully achieves the goal.
+
+    Let's analyze step-by-step and conclude with 'Score: [score]'.
+""".strip()
+PHYSICAL_LAWS_TEMPLATE = """
+    Watch the video and determine if it shows any '{physical_laws}'
+    Let's think step-by-step and conclude with "Yes" or "No".
+""".strip()
+COMMON_SENSE_TEMPLATE = """
+    Does the video exhibit '{common_sense}'?
+    Let's think step-by-step and conclude with "Yes" or "No".
+""".strip()
 
 
 class WorldModelBenchModule(PipelineModule):
     """Evaluate a WorldModelBench-compatible video set with its upstream judge."""
 
     name = "worldmodelbench"
+    provenance = "published"
+    sources = {
+        "worldmodelbench_aesthetics_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_common_sense_score": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_fluid_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_gravity_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_instruction_score": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_mass_solid_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_newton_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_penetration_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_physical_score": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_temporal_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+        "worldmodelbench_total_score": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",
+    }
     description = "WorldModelBench instruction, physics, and commonsense scores"
     default_config = {
         "model_name": "Efficient-Large-Model/vila-ewm-qwen2-1.5b",
@@ -404,31 +439,42 @@ class WorldModelBenchModule(PipelineModule):
         return metrics
 
     def _ask(self, video: Any, prompt: str) -> str:
+        # Upstream evaluate_video(): without --cot, the chain-of-thought lead-in
+        # is replaced with "Answer with ..." rather than asking for it.
         if not self.config.get("cot", False):
-            prompt += " Give only the requested final score or yes/no answer."
+            prompt = prompt.replace(
+                "Let's think step-by-step and conclude with", "Answer with"
+            ).replace(
+                "Let's analyze step-by-step and conclude with", "Answer with"
+            )
         return str(self._judge.generate_content([video, prompt]))
 
     @staticmethod
     def _instruction_score(answer: str) -> float:
-        matches = re.findall(r"(?:score\s*:\s*)?([0-3](?:\.0+)?)", answer, re.IGNORECASE)
-        return float(matches[-1]) if matches else 0.0
+        # Upstream: float(pred.split(":")[-1].strip(" .")) with 0 on failure.
+        try:
+            score = float(answer.split(":")[-1].strip(" ."))
+        except ValueError:
+            logger.warning("Could not parse score from prediction: %s", answer)
+            score = 0.0
+        return score
 
     def _evaluate(self, video_path: Path, instruction: str) -> Dict[str, List[Any]]:
         video = self._llava.Video(str(video_path))
-        instruction_prompt = (
-            f"Judge whether the video follows this instruction: {instruction!r}. "
-            "Score 0 if it does not follow it; 1 if only the object or action is right; "
-            "2 if it follows the instruction and trends toward the goal; 3 if it completes "
-            "the goal precisely. Conclude with 'Score: N'."
+        instruction_score = self._instruction_score(
+            self._ask(video, INSTRUCTION_TEMPLATE.format(instruction=instruction))
         )
-        instruction_score = self._instruction_score(self._ask(video, instruction_prompt))
         physical = []
         for question in PHYSICAL_QUESTIONS:
-            answer = self._ask(video, f"Does this video show {question}? Conclude yes or no.")
+            answer = self._ask(
+                video, PHYSICAL_LAWS_TEMPLATE.format(physical_laws=question.lower())
+            )
             physical.append("no" in answer.lower())
         common = []
         for question in COMMON_SENSE_QUESTIONS:
-            answer = self._ask(video, f"Does this video exhibit {question}? Conclude yes or no.")
+            answer = self._ask(
+                video, COMMON_SENSE_TEMPLATE.format(common_sense=question.lower())
+            )
             common.append("no" in answer.lower())
         return {
             "instruction": [instruction_score],

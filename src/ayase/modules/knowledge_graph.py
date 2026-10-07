@@ -19,6 +19,7 @@ class KnowledgeGraphModule(PipelineModule):
     Edges: Relationships based on presence, co-occurrence, and semantic similarity.
     """
     name = "knowledge_graph"
+    provenance = "utility"
     description = "Generates a conceptual knowledge graph of the video dataset"
     default_config = {
         "output_file": "knowledge_graph.json",
@@ -57,7 +58,7 @@ class KnowledgeGraphModule(PipelineModule):
                 "id": sample_id,
                 "label": sample_id,
                 "type": "video",
-                "quality": sample.quality_metrics.aesthetic_score if sample.quality_metrics else None
+                "quality": sample.quality_metrics.aesthetic_v25_score if sample.quality_metrics else None
             })
             
             # Extract concepts from detections

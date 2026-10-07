@@ -2,14 +2,13 @@
 
 The preferred ``llava-hf/llava-1.5-7b-hf`` backend receives a fixed English
 prompt asking for 1-5 novelty, composition, and imagination ratings; their sum
-is divided by 15 and clipped to [0, 1]. The fallback is a handcrafted heuristic:
-CLIP distance from ten fixed common English prompts, optionally blended 60/40
-with a ``pyiqa`` LAION aesthetic prediction; without that predictor it uses
-CLIP novelty alone. ``creativity_score`` is per-sample and higher means more
-creativity under the selected rubric, but the two backend scales are not
-equivalent or calibrated. No sample caption, generation prompt, reference
-media, temporal evidence, or dataset context is used. Applicability follows the
-LLaVA/CLIP/LAION model domains rather than an objective creativity ground truth.
+is divided by 15 and clipped to [0, 1]. When LLaVA cannot be loaded the module
+emits no score — a handcrafted CLIP-distance heuristic is a different,
+uncalibrated quantity and is not substituted under the same field.
+``creativity_score`` is per-sample and higher means more creativity under the
+rubric. No sample caption, generation prompt, reference media, temporal
+evidence, or dataset context is used. Applicability follows the LLaVA model
+domain rather than an objective creativity ground truth.
 """
 
 import logging
@@ -21,28 +20,15 @@ import numpy as np
 from ayase.image import load_representative_frame
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
 
 logger = logging.getLogger(__name__)
-
-# Common prompt embeddings for CLIP novelty baseline
-_COMMON_PROMPTS = [
-    "a photo of a person",
-    "a photo of a landscape",
-    "a photo of a building",
-    "a photo of an animal",
-    "a photo of a car",
-    "a photo of food on a plate",
-    "a photo of a street scene",
-    "a photo of the sky",
-    "a photo of a room interior",
-    "a photo of a group of people",
-]
 
 
 class CreativityModule(PipelineModule):
     name = "creativity"
-    description = "Artistic novelty assessment (VLM / CLIP)"
+    deprecated = True
+    provenance = "own"
+    description = "Artistic novelty assessment (LLaVA VLM rubric)"
     default_config = {
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
     }
@@ -56,10 +42,6 @@ class CreativityModule(PipelineModule):
         self._backend = None
         self._vlm_model = None
         self._vlm_processor = None
-        self._clip_model = None
-        self._clip_processor = None
-        self._common_embeddings = None
-        self._aes_model = None
         self._device = "cpu"
 
     def setup(self) -> None:
@@ -95,65 +77,8 @@ class CreativityModule(PipelineModule):
         except Exception as e:
             logger.info("VLM unavailable for creativity: %s", e)
 
-        # Tier 2: CLIP + aesthetic
-        try:
-            import torch
-            from transformers import CLIPModel, CLIPProcessor
-            from ayase.runtime import (
-                from_pretrained_with_attention,
-                resolve_torch_device,
-                shared_runtime_resource,
-            )
-
-            self._device = resolve_torch_device(self.config.get("device", "auto"))
-            models_dir = self.config.get("models_dir", "models")
-            model_name = "openai/clip-vit-base-patch32"
-
-            def load_clip():
-                model = from_pretrained_with_attention(
-                    CLIPModel,
-                    model_name,
-                    self.config,
-                    device=self._device,
-                    cache_dir=models_dir,
-                ).to(self._device).eval()
-                processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
-                return model, processor
-
-            self._clip_model, self._clip_processor = shared_runtime_resource(
-                self,
-                (
-                    "hf_clip",
-                    model_name,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "default",
-                ),
-                load_clip,
-            )
-
-            # Pre-compute common prompt embeddings
-            with torch.no_grad():
-                inputs = self._clip_processor(text=_COMMON_PROMPTS, return_tensors="pt", padding=True).to(self._device)
-                text_features = extract_features(self._clip_model.get_text_features(**inputs))
-                self._common_embeddings = text_features / text_features.norm(dim=-1, keepdim=True)
-
-            # Pre-load LAION aesthetic model for reuse
-            try:
-                import pyiqa
-                self._aes_model = pyiqa.create_metric("laion_aes", device=self._device)
-            except Exception:
-                pass
-
-            self._backend = "clip"
-            self._ml_available = True
-            logger.info("Creativity loaded CLIP on %s", self._device)
-            return
-        except Exception as e:
-            logger.info("CLIP unavailable for creativity: %s", e)
-
         self._backend = "unavailable"
-        logger.warning("Creativity unavailable: install transformers")
+        logger.warning("Creativity unavailable: LLaVA VLM could not be loaded")
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -169,8 +94,6 @@ class CreativityModule(PipelineModule):
         try:
             if self._backend == "vlm":
                 score = self._compute_vlm(image)
-            elif self._backend == "clip":
-                score = self._compute_clip(image)
             else:
                 return sample
 
@@ -225,50 +148,6 @@ class CreativityModule(PipelineModule):
 
         # Unparseable model response — do not fabricate a score.
         return None
-
-    # ------------------------------------------------------------------ #
-    # Tier 2: CLIP novelty + aesthetic                                     #
-    # ------------------------------------------------------------------ #
-
-    def _compute_clip(self, image: np.ndarray) -> Optional[float]:
-        import torch
-        from PIL import Image
-
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        pil_image = Image.fromarray(image_rgb)
-
-        with torch.no_grad():
-            inputs = self._clip_processor(images=pil_image, return_tensors="pt").to(self._device)
-            image_features = extract_features(self._clip_model.get_image_features(**inputs))
-            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-
-            # Novelty = distance from common prompts
-            similarities = (image_features @ self._common_embeddings.T).squeeze()
-            max_sim = float(similarities.max())
-            # High distance from common = high novelty
-            novelty = 1.0 - max_sim  # CLIP sim is typically 0.1-0.4
-
-        # Try LAION aesthetic via cached pyiqa model. If unavailable, base the
-        # score on CLIP novelty alone rather than fabricating an aesthetic value.
-        aesthetic_score = None
-        try:
-            if self._aes_model is not None:
-                import torch
-                import torchvision.transforms.functional as TF
-                img_tensor = TF.to_tensor(pil_image).unsqueeze(0).to(self._device)
-                with torch.no_grad():
-                    raw = float(self._aes_model(img_tensor).item())
-                aesthetic_score = min(raw / 10.0, 1.0)  # LAION is 0-10
-        except Exception:
-            aesthetic_score = None
-
-        # Normalize novelty to reasonable range
-        novelty_normalized = min(max(novelty * 2.0, 0.0), 1.0)
-        if aesthetic_score is not None:
-            score = 0.6 * novelty_normalized + 0.4 * aesthetic_score
-        else:
-            score = novelty_normalized
-        return float(np.clip(score, 0.0, 1.0))
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #

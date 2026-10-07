@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 class CWSSIMModule(PipelineModule):
     name = "cw_ssim"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "cw_ssim": "CW-SSIM (Sampat et al. 2009) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "Complex Wavelet SSIM full-reference metric (0-1, higher=better)"
     default_config = {"subsample": 8}
     metric_groups = {

@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 
 class DepthAnythingModule(PipelineModule):
     name = "depth_anything"
+    provenance = "own"
+    sources = {
+        "depth_anything_consistency": "Depth Anything V2 model (Yang et al. 2024); the metrics are own — https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf",
+        "depth_anything_score": "Depth Anything V2 model (Yang et al. 2024); the metrics are own — https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf",
+    }
     description = "Depth Anything V2 monocular depth estimation and consistency"
     default_config = {
         "model_name": "depth-anything/Depth-Anything-V2-Small-hf",

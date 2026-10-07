@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ImagingQualityModule(PipelineModule):
     name = "imaging_quality"
+    provenance = "own"
     description = "Classical noise/edge/artifact estimation (Immerkaer sigma, edge density, FFT)"
     default_config = {
         "noise_threshold": 20.0,

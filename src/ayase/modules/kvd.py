@@ -20,18 +20,23 @@ logger = logging.getLogger(__name__)
 
 class KVDModule(BatchMetricModule):
     name = "kvd"
+    provenance = "adapted"
+    sources = {
+        "kvd": "KVD (Unterthiner et al. 2018) — https://arxiv.org/abs/1812.01717",
+    }
+    deviations = {
+        "kvd": "Uses Ayase's StyleGAN-V-derived 16-frame I3D feature path; without a reference the metric is not emitted",
+    }
     description = "Kernel Video Distance using Maximum Mean Discrepancy (batch metric)"
     default_config = {
-        "feature_extractor": "i3d",  # Same as FVD
-        "kernel": "rbf",  # RBF kernel for MMD
-        "bandwidth": 1.0,  # Kernel bandwidth
         "device": "auto",
     }
     models = [
         {
-            "id": "torchvision/r3d_18",
-            "type": "torchvision",
-            "task": "Kinetics-400 R3D-18 video feature extractor",
+            "id": "i3d_torchscript.pt",
+            "type": "local",
+            "url": "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt",
+            "task": "I3D Kinetics-400 video feature extractor (shared with FVD)",
         },
     ]
     metric_info = {
@@ -40,9 +45,6 @@ class KVDModule(BatchMetricModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.feature_extractor_type = self.config.get("feature_extractor", "i3d")
-        self.kernel_type = self.config.get("kernel", "rbf")
-        self.bandwidth = self.config.get("bandwidth", 1.0)
         self.device_config = self.config.get("device", "auto")
         self.device = None
         self._ml_available = False
@@ -56,7 +58,7 @@ class KVDModule(BatchMetricModule):
 
             self.device = resolve_torch_device(self.device_config)
 
-            # Load feature extractor (reuse FVD's Kinetics-400 R3D-18 backbone).
+            # Load feature extractor (reuse FVD's I3D torchscript backbone).
             from ayase.modules.fvd import FVDModule
 
             fvd_module = FVDModule(self.config)
@@ -68,7 +70,7 @@ class KVDModule(BatchMetricModule):
                 # Reuse a single FVD delegate for feature extraction rather than
                 # constructing a fresh module per sample.
                 self._fvd_delegate = fvd_module
-                self._backend = "r3d18"
+                self._backend = "i3d"
                 logger.info(f"KVD module initialized on {self.device}")
             else:
                 self._backend = "unavailable"
@@ -78,59 +80,36 @@ class KVDModule(BatchMetricModule):
             logger.warning(f"Failed to setup KVD: {e}")
 
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """Extract features using the shared FVD R3D-18 delegate."""
+        """Extract features using the shared FVD I3D delegate."""
         if not sample.is_video or self._fvd_delegate is None:
             return None
         return self._fvd_delegate.extract_features(sample)
 
-    def _rbf_kernel(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
-        """Compute RBF (Gaussian) kernel matrix.
-
-        Args:
-            X: Feature matrix (N, D)
-            Y: Feature matrix (M, D)
-
-        Returns:
-            Kernel matrix (N, M)
-        """
-        # Compute pairwise squared distances
-        XX = np.sum(X ** 2, axis=1)[:, np.newaxis]
-        YY = np.sum(Y ** 2, axis=1)[np.newaxis, :]
-        XY = X @ Y.T
-        dists = XX + YY - 2 * XY
-
-        # RBF kernel
-        K = np.exp(-dists / (2 * self.bandwidth ** 2))
-        return K
+    def _poly_kernel(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+        """Published KVD kernel: K(x, y) = (x·y/d + 1)^3 (same as KID)."""
+        d = X.shape[1]
+        return (X @ Y.T / d + 1.0) ** 3
 
     def _compute_mmd(self, X: np.ndarray, Y: np.ndarray) -> float:
-        """Compute Maximum Mean Discrepancy.
-
-        Args:
-            X: Features from distribution 1
-            Y: Features from distribution 2
-
-        Returns:
-            MMD score (lower = more similar distributions)
-        """
-        # Kernel matrices
-        K_XX = self._rbf_kernel(X, X)
-        K_YY = self._rbf_kernel(Y, Y)
-        K_XY = self._rbf_kernel(X, Y)
+        """Unbiased MMD² with the polynomial kernel (lower = more similar)."""
+        K_XX = self._poly_kernel(X, X)
+        K_YY = self._poly_kernel(Y, Y)
+        K_XY = self._poly_kernel(X, Y)
 
         m = X.shape[0]
         n = Y.shape[0]
+        np.fill_diagonal(K_XX, 0)
+        np.fill_diagonal(K_YY, 0)
 
-        # MMD^2 = E[K(X,X)] + E[K(Y,Y)] - 2*E[K(X,Y)]
-        mmd_sq = (K_XX.sum() - np.trace(K_XX)) / (m * (m - 1))
-        mmd_sq += (K_YY.sum() - np.trace(K_YY)) / (n * (n - 1))
+        mmd_sq = K_XX.sum() / (m * (m - 1))
+        mmd_sq += K_YY.sum() / (n * (n - 1))
         mmd_sq -= 2 * K_XY.mean()
 
-        return float(max(mmd_sq, 0.0))  # MMD^2 can be slightly negative due to numerical errors
+        return float(max(mmd_sq, 0.0))
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
-    ) -> float:
+    ) -> Optional[float]:
         """Compute KVD using Maximum Mean Discrepancy.
 
         Args:
@@ -138,7 +117,7 @@ class KVDModule(BatchMetricModule):
             reference_features: Optional list of features from real/reference videos
 
         Returns:
-            KVD score (lower is better)
+            KVD score (lower is better), or None without a reference set
         """
         try:
             # Convert to numpy array
@@ -147,18 +126,14 @@ class KVDModule(BatchMetricModule):
             if reference_features is not None and len(reference_features) > 0:
                 ref_array = np.stack(reference_features, axis=0)
             else:
-                # Split features in half
-                mid = len(features_array) // 2
-                ref_array = features_array[:mid]
-                features_array = features_array[mid:]
+                logger.info(
+                    "KVD: no reference features provided; "
+                    "metric is undefined without a reference set"
+                )
+                return None
 
-            # Compute MMD
-            mmd = self._compute_mmd(features_array, ref_array)
-
-            # Scale to similar range as FVD (multiply by large constant)
-            kvd = mmd * 1000.0
-
-            return float(kvd)
+            # Published KVD = unbiased polynomial-kernel MMD² (no rescaling).
+            return self._compute_mmd(features_array, ref_array)
 
         except Exception as e:
             logger.error(f"Failed to compute KVD: {e}")
@@ -177,6 +152,8 @@ class KVDModule(BatchMetricModule):
                 self._feature_cache,
                 self._reference_cache if self._reference_cache else None
             )
+            if kvd_score is None:
+                return
 
             logger.info(
                 f"KVD computed: {kvd_score:.2f} "

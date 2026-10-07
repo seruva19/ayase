@@ -27,6 +27,8 @@ class SpectralUpscalingModule(PipelineModule):
     whereas upscaled content shows a sharp drop-off after the original low-res cutoff.
     """
     name = "spectral_upscaling"
+    deprecated = True
+    provenance = "own"
     description = "Detection of upscaled/fake high-resolution content"
     default_config = {
         "energy_threshold": 0.05,  # Threshold for high-frequency energy ratio

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class PVMAFModule(ReferenceBasedModule):
     name = "pvmaf"
+    provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Predictive VMAF ~35x faster via bitstream+pixel features (2024, 0-100)"
     metric_field = "pvmaf_score"

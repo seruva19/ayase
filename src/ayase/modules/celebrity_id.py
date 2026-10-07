@@ -1,11 +1,13 @@
-"""Celebrity ID Score — EvalCrafter metric #17.
+"""Face identity similarity — DeepFace verification (own metric).
 
 Computes face identity verification distance between video frames and
 reference face images using DeepFace.  Lower distance = better identity match.
+Inspired by the EvalCrafter celebrity_id_score dimension; its protocol is
+not reproduced (different verifier wiring and aggregation).
 
-For dataset curation (no celebrity references), this module computes
-frame-to-frame face identity consistency instead: it extracts face
-embeddings from every sampled frame and measures how stable the identity is.
+Without ``reference_dir`` the module emits no score — identity drift between
+frames of the same video is a different quantity (covered by
+``face_identity_drift``) and is not written under this field.
 """
 
 import logging
@@ -22,7 +24,11 @@ logger = logging.getLogger(__name__)
 
 class CelebrityIDModule(PipelineModule):
     name = "celebrity_id"
-    description = "Face identity verification using DeepFace (EvalCrafter celebrity_id_score)"
+    provenance = "own"
+    sources = {
+        "face_id_similarity": "inspired by EvalCrafter celebrity_id_score (DeepFace) — https://github.com/evalcrafter/EvalCrafter",
+    }
+    description = "Face identity verification using DeepFace (own metric)"
     default_config = {
         "reference_dir": "",  # Directory of reference face images (optional)
         "num_frames": 8,
@@ -30,7 +36,7 @@ class CelebrityIDModule(PipelineModule):
         "model_name": "VGG-Face",
     }
     metric_groups = {
-        "celebrity_id_score": "face",
+        "face_id_similarity": "face",
     }
 
     def __init__(self, config=None):
@@ -58,7 +64,7 @@ class CelebrityIDModule(PipelineModule):
             logger.warning(f"Failed to setup DeepFace: {e}")
 
     def process(self, sample: Sample) -> Sample:
-        if not self._ml_available:
+        if not self._ml_available or not self.reference_dir:
             return sample
 
         try:
@@ -66,10 +72,7 @@ class CelebrityIDModule(PipelineModule):
             if len(frames) < 2:
                 return sample
 
-            if self.reference_dir:
-                score = self._verify_against_references(frames)
-            else:
-                score = self._measure_identity_consistency(frames)
+            score = self._verify_against_references(frames)
 
             if score is None:
                 return sample
@@ -77,17 +80,7 @@ class CelebrityIDModule(PipelineModule):
             from ayase.models import QualityMetrics
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.celebrity_id_score = float(score)
-
-            if not self.reference_dir and score > self.consistency_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.INFO,
-                        message=f"Face identity drift detected (distance={score:.3f})",
-                        details={"face_identity_distance": float(score)},
-                        recommendation="Face identity changes across frames; possible multi-person or scene change.",
-                    )
-                )
+            sample.quality_metrics.face_id_similarity = float(score)
 
         except Exception as e:
             logger.warning(f"Celebrity ID check failed for {sample.path}: {e}")
@@ -133,44 +126,6 @@ class CelebrityIDModule(PipelineModule):
 
         if not distances:
             return None
-        return float(np.mean(distances))
-
-    def _measure_identity_consistency(self, frames):
-        """No references: measure identity drift across frames using DeepFace embeddings."""
-        import tempfile
-        import os
-        from PIL import Image
-
-        embeddings = []
-        for frame in frames:
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-                tmp_path = tmp.name
-                Image.fromarray(frame).save(tmp_path)
-            try:
-                result = self._deepface.represent(
-                    img_path=tmp_path,
-                    model_name=self.model_name,
-                    enforce_detection=False,
-                )
-                if result and len(result) > 0:
-                    embeddings.append(np.array(result[0]["embedding"]))
-            except Exception:
-                pass
-            finally:
-                os.unlink(tmp_path)
-
-        if len(embeddings) < 2:
-            return None
-
-        # Cosine distance from first frame to all others
-        ref = embeddings[0]
-        ref_norm = ref / (np.linalg.norm(ref) + 1e-10)
-        distances = []
-        for emb in embeddings[1:]:
-            emb_norm = emb / (np.linalg.norm(emb) + 1e-10)
-            cos_sim = np.dot(ref_norm, emb_norm)
-            distances.append(1.0 - cos_sim)  # cosine distance
-
         return float(np.mean(distances))
 
     def _load_frames(self, sample: Sample):

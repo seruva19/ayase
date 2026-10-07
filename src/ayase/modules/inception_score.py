@@ -1,32 +1,47 @@
-"""Reference-free Inception Score over sampled frames from one video.
+"""Dataset-level Inception Score (IS).
 
-ImageNet InceptionV3 class distributions from at least two frames define
-``exp(E[KL(p(y|x) || p(y))])``. Higher values indicate confident predictions
-and diversity among sampled ImageNet labels; they do not directly establish
-visual quality, temporal coherence, or prompt fidelity. The score is sensitive
-to frame count and ImageNet domain fit, and still images are normally skipped.
+Published Inception Score (Salimans et al., NeurIPS 2016) is a dataset-level
+quantity: ``exp(E[KL(p(y|x) || p(y))])`` over generated images using the
+TF-Inception weights, averaged over 10 splits. Per-video values on a handful
+of frames are not comparable to published IS numbers, so this module reports
+it at dataset level through ``torch-fidelity`` — the canonical PyTorch
+backend. When torch-fidelity is unavailable the metric is left unset.
 
 Metric basis: https://arxiv.org/abs/1606.03498
 """
 
 import logging
-from typing import Optional
+from typing import Optional, List
 
-import numpy as np
-
-from ayase.image import sample_frames
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
-from ayase.pipeline import PipelineModule
+from ayase.models import Sample
+from ayase.base_modules import BatchMetricModule
 
 logger = logging.getLogger(__name__)
 
 
-class InceptionScoreModule(PipelineModule):
+class InceptionScoreModule(BatchMetricModule):
     name = "inception_score"
-    description = "Inception Score (IS) using InceptionV3 — EvalCrafter quality metric"
+    provenance = "published"
+    sources = {
+        "is_score": "Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498",
+    }
+    deviations = {
+        "is_score": "dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted",
+    }
+    description = "Inception Score (IS), dataset-level via torch-fidelity"
     default_config = {
-        "num_frames": 16,
-        "splits": 1,  # Per-sample we use 1 split; dataset-level uses 10
+        "isc_splits": 10,  # Published IS uses 10 splits
+    }
+    models = [
+        {
+            "id": "torch-fidelity",
+            "type": "pip_package",
+            "install": "pip install torch-fidelity",
+            "task": "Inception Score backend (TF-Inception weights)",
+        },
+    ]
+    metric_info = {
+        "is_score": "Dataset-level Inception Score via torch-fidelity (higher=better)",
     }
     metric_groups = {
         "is_score": "distribution",
@@ -34,105 +49,99 @@ class InceptionScoreModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.num_frames = self.config.get("num_frames", 16)
-        self.splits = self.config.get("splits", 1)
-        self._model = None
-        self._device = "cpu"
+        self.isc_splits = self.config.get("isc_splits", 10)
         self._ml_available = False
-        self._transform = None
         self._backend = None
 
     def setup(self):
         try:
-            from torchvision import models, transforms
-            from torchvision.models import Inception_V3_Weights
-            from ayase.runtime import resolve_torch_device, shared_runtime_resource
-
-            self._device = resolve_torch_device(self.config.get("device", "auto"))
-            logger.info(f"Loading InceptionV3 for IS on {self._device}...")
-
-            def load_inception():
-                # Full InceptionV3 (classification head intact) for logits.
-                m = models.inception_v3(
-                    weights=Inception_V3_Weights.IMAGENET1K_V1,
-                    transform_input=False,
-                )
-                return m.to(self._device).eval()
-
-            self._model = shared_runtime_resource(
-                self,
-                ("inception_v3_logits", str(self._device)),
-                load_inception,
+            import torch_fidelity  # noqa: F401
+            self._ml_available = True
+            self._backend = "torch_fidelity"
+            logger.info("Inception Score module initialised (torch-fidelity backend)")
+        except ImportError:
+            self._backend = "unavailable"
+            logger.info(
+                "Inception Score unavailable: requires torch-fidelity "
+                "(pip install torch-fidelity)"
             )
 
-            self._transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.Resize((299, 299)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225]),
-            ])
-            self._ml_available = True
-            self._backend = "inception_v3"
-        except Exception as e:
-            self._backend = "unavailable"
-            logger.warning(f"Failed to load InceptionV3: {e}")
-
-    def process(self, sample: Sample) -> Sample:
+    def extract_features(self, sample: Sample) -> Optional[str]:
+        """Cache the sample path — torch-fidelity works on directories."""
         if not self._ml_available:
-            return sample
+            return None
+        return str(sample.path)
 
+    def compute_distribution_metric(
+        self, features: List[str], reference_features: Optional[List] = None
+    ) -> Optional[float]:
+        """Dataset IS via torch-fidelity. ``features`` are image paths."""
         try:
-            import torch
+            import shutil
+            import tempfile
+            from pathlib import Path
 
-            frames = self._load_frames(sample)
-            if len(frames) < 2:
-                return sample
+            import torch_fidelity
 
-            # Get softmax probabilities from InceptionV3
-            probs_list = []
-            with torch.no_grad():
-                for frame in frames:
-                    tensor = self._transform(frame).unsqueeze(0).to(self._device)
-                    logits = self._model(tensor)
-                    # inception_v3 returns InceptionOutputs during eval — extract .logits
-                    if hasattr(logits, "logits"):
-                        logits = logits.logits
-                    probs = torch.softmax(logits, dim=1)
-                    probs_list.append(probs)
+            with tempfile.TemporaryDirectory() as gen_dir:
+                # torch-fidelity needs image files; video samples contribute
+                # their representative frame.
+                import cv2
+                from ayase.image import load_representative_frame
 
-            probs_all = torch.cat(probs_list, dim=0)  # [N, 1000]
+                written = 0
+                for i, p in enumerate(features):
+                    path = Path(p)
+                    if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".bmp", ".webp"}:
+                        shutil.copy(str(path), Path(gen_dir) / f"{i:06d}{path.suffix}")
+                        written += 1
+                    else:
+                        frame = load_representative_frame(path, color="rgb")
+                        if frame is None:
+                            continue
+                        out = Path(gen_dir) / f"{i:06d}.png"
+                        cv2.imwrite(str(out), cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+                        written += 1
 
-            # IS = exp(E[KL(p(y|x) || p(y))])
-            # p(y) = mean over all frames
-            marginal = probs_all.mean(dim=0, keepdim=True)  # [1, 1000]
-            kl_divs = probs_all * (torch.log(probs_all + 1e-10) - torch.log(marginal + 1e-10))
-            kl_per_frame = kl_divs.sum(dim=1)  # [N]
-            is_score = torch.exp(kl_per_frame.mean()).item()
-
-            from ayase.models import QualityMetrics
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.is_score = float(is_score)
-
-            if is_score < 2.0:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.INFO,
-                        message=f"Low Inception Score ({is_score:.2f})",
-                        details={"is_score": float(is_score)},
-                        recommendation="Low IS indicates poor visual quality or low diversity across frames.",
+                if written < self.isc_splits:
+                    logger.info(
+                        "Inception Score: not enough samples (%d) for %d splits",
+                        written, self.isc_splits,
                     )
+                    return None
+
+                metrics = torch_fidelity.calculate_metrics(
+                    input1=gen_dir,
+                    isc=True,
+                    isc_splits=self.isc_splits,
                 )
+                return float(metrics["inception_score_mean"])
 
         except Exception as e:
-            logger.warning(f"Inception Score failed for {sample.path}: {e}")
+            logger.error(f"Failed to compute Inception Score: {e}")
+            return None
 
-        return sample
+    def on_dispose(self) -> None:
+        if len(self._feature_cache) < 2:
+            logger.info(
+                "Inception Score: not enough samples (%d)", len(self._feature_cache)
+            )
+            self._feature_cache = []
+            self._reference_cache = []
+            return
 
-    def _load_frames(self, sample: Sample):
         try:
-            return list(sample_frames(sample.path, max_frames=self.num_frames, color="rgb"))
+            score = self.compute_distribution_metric(self._feature_cache)
+            if score is None:
+                return
+            logger.info(
+                "Inception Score: %.4f (%d samples)", score, len(self._feature_cache)
+            )
+            if hasattr(self, "pipeline") and self.pipeline:
+                if hasattr(self.pipeline, "add_dataset_metric"):
+                    self.pipeline.add_dataset_metric("is_score", score)
         except Exception as e:
-            logger.debug(f"Frame loading failed for IS: {e}")
-            return []
+            logger.error(f"Inception Score failed: {e}")
+        finally:
+            self._feature_cache = []
+            self._reference_cache = []

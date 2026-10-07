@@ -199,6 +199,10 @@ _RF_COLUMNS = sorted(
 
 class P1204Module(PipelineModule):
     name = "p1204"
+    provenance = "published"
+    sources = {
+        "p1204_mos": "ITU-T P.1204.3 — https://github.com/Telecommunication-Telemedia-Assessment/bitstream_mode3_p1204_3",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "ITU-T P.1204.3 bitstream NR quality (2020)"
     default_config = {

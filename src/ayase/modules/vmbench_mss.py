@@ -32,6 +32,10 @@ _MSS_WEIGHTS = [1.0, 0.75, 0.5, 0.25, 0.0]
 
 class VMBenchMotionSmoothnessModule(PipelineModule):
     name = "vmbench_mss"
+    provenance = "published"
+    sources = {
+        "vmbench_mss": "VMBench MSS — https://github.com/AMAP-ML/VMBench",
+    }
     description = "VMBench Motion Smoothness — Q-Align per-frame quality-jump detection (0-1, higher=smoother)"
     default_config = {
         "model_name": "q-future/one-align",

@@ -209,6 +209,10 @@ def _flow_trajectory_streaming(
 
 class AVAlignModule(PipelineModule):
     name = "av_align"
+    provenance = "published"
+    sources = {
+        "av_align_score": "AV-Align (Yariv et al., AAAI 2024, TempoTokens) — https://github.com/guyyariv/TempoTokens/blob/master/av_align.py",
+    }
     description = (
         "AV-Align — IoU of audio onsets and optical-flow motion peaks "
         "(TempoTokens / Yariv et al. 2024; higher=better)"

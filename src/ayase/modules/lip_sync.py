@@ -30,6 +30,11 @@ _SYNCNET_REL = "lip_sync/syncnet_v2.model"
 
 class LipSyncModule(PipelineModule):
     name = "lip_sync"
+    provenance = "published"
+    sources = {
+        "lse_c": "LSE-C/LSE-D on SyncNet (Chung & Zisserman 2016; Wav2Lip protocol) — https://github.com/joonson/syncnet_python",
+        "lse_d": "LSE-C/LSE-D on SyncNet (Chung & Zisserman 2016; Wav2Lip protocol) — https://github.com/joonson/syncnet_python",
+    }
     description = "LSE-D/LSE-C lip sync error (SyncNet, reference-free; no dataset required)"
     default_config = {
         "models_dir": "models",   # weights land under models_dir/lip_sync/

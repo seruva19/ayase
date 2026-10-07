@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class MetadataModule(PipelineModule):
     name = "metadata"
+    provenance = {
+        "metadata": "utility",
+    }
     description = "Checks video/image metadata (resolution, FPS, duration, integrity)"
     default_config = {
         "min_resolution": 720,

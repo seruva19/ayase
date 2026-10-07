@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 class PieAPPModule(PipelineModule):
     name = "pieapp"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "pieapp": "PieAPP (Prashnani et al., CVPR 2018) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "PieAPP full-reference perceptual error via pairwise preference (lower=better)"
     default_config = {"subsample": 8}
     metric_groups = {

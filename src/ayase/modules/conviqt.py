@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 
 class CONVIQTModule(PipelineModule):
     name = "conviqt"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "conviqt_score": "CONVIQT (Madhusudana et al., TIP 2023) — https://github.com/pavancm/CONVIQT",
+    }
     description = "CONVIQT contrastive self-supervised NR-VQA (TIP 2023)"
     default_config = {
         "subsample": 8,

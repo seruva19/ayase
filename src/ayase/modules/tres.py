@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 class TReSModule(PipelineModule):
     name = "tres"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "tres_score": "TReS, Golestaneh et al. WACV 2022; pyiqa — https://github.com/isalirezag/TReS",
+    }
     description = "TReS transformer-based NR image quality (WACV 2022)"
     default_config = {"subsample": 4}
     metric_groups = {

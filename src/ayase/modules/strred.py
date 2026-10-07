@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 
 class STRREDModule(ReferenceBasedModule):
     name = "strred"
+    provenance = "published"
+    sources = {
+        "strred": "Soundararajan & Bovik, TCSVT 2013; scikit-video — http://www.scikit-video.org/stable/modules/generated/skvideo.measure.strred.html",
+    }
     description = "STRRED reduced-reference temporal quality (ITU, lower=better)"
     default_config = {
         "subsample": 3,

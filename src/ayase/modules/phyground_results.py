@@ -23,6 +23,15 @@ class PhyGroundResultModule(PipelineModule):
     """Import PhyGround/PhyJudge structured JSON results."""
 
     name = "phyground_results"
+    provenance = "utility"
+    sources = {
+        "phyground_general_score": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",
+        "phyground_persistence_score": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",
+        "phyground_physical_coverage": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",
+        "phyground_physical_score": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",
+        "phyground_prompt_temporal_validity_score": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",
+        "phyground_spatial_alignment_score": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",
+    }
     description = "PhyGround general and physical-law judge result adapter"
     default_config = {"results_path": None}
     models = [

@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 class CRFIQAModule(PipelineModule):
     name = "crfiqa"
+    provenance = "utility"
+    sources = {
+        "crfiqa_score": "CR-FIQA (Boutros et al., CVPR 2023) — https://github.com/fdbtrs/CR-FIQA",
+    }
     description = "CR-FIQA face quality via classifiability (CVPR 2023)"
     default_config = {
         "subsample": 4,

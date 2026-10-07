@@ -26,7 +26,6 @@ _IMPORTS = [
     ("AestheticModule", ".aesthetic"),
     ("AestheticScoringModule", ".aesthetic_scoring"),
     ("NIMAModule", ".nima"),
-    ("NIMAONNXModule", ".nima_onnx"),
     ("LAIONAestheticModule", ".laion_aesthetic"),
     # --- Text / OCR ---
     ("TextDetectionModule", ".text"),
@@ -59,7 +58,7 @@ _IMPORTS = [
     # --- Alignment ---
     ("SemanticAlignmentModule", ".semantic_alignment"),
     ("VideoTextMatchingModule", ".video_text_matching"),
-    ("T2VScoreModule", ".t2v_score"),
+    ("T2VScoreModule", ".t2v_generic_score"),
     ("VQAScoreModule", ".vqa_score"),
     ("BLIPScoreModule", ".blip_score"),
     ("TIFAModule", ".tifa"),
@@ -108,10 +107,9 @@ _IMPORTS = [
     ("AIGVAssessorModule", ".aigv_assessor"),
     ("FineVQModule", ".finevq"),
     ("KVQModule", ".kvq"),
-    ("JEDiModule", ".jedi_metric"),
+    ("JEDiModule", ".mmd_selfsplit"),
     ("COVERModule", ".cover"),
     ("VIDEVALModule", ".videval"),
-    ("UNQAModule", ".unqa"),
     ("InternVQAModule", ".internvqa"),
     ("NRGVQMModule", ".nr_gvqm"),
     # --- Generation metrics ---
@@ -137,6 +135,7 @@ _IMPORTS = [
     ("NearIDModule", ".nearid"),
     ("MaSCModule", ".masc"),
     ("ExpressionFollowingModule", ".expression_following"),
+    ("ExpressionSimilarityModule", ".expression_similarity"),
     ("GazeDynamicsModule", ".gaze_dynamics"),
     ("FaceMotionPreservationModule", ".face_motion_preservation"),
     ("PoseHeatSSIMModule", ".pose_heat_ssim"),
@@ -215,7 +214,6 @@ _IMPORTS = [
     # --- VBench-2.0 / Benchmarks ---
     ("CreativityModule", ".creativity"),
     ("ChronoMagicModule", ".chronomagic"),
-    ("T2VCompBenchModule", ".t2v_compbench"),
     ("VerseBenchModule", ".verse_bench"),
     ("LOVEResultModule", ".love_results"),
     ("Ref4DResultModule", ".ref4d_results"),

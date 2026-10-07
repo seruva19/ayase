@@ -601,6 +601,13 @@ def _build_model(device):
 
 class ProVQAModule(PipelineModule):
     name = "provqa"
+    provenance = "adapted"
+    sources = {
+        "provqa_score": "ProVQA (Yang et al., TIP 2022) — https://github.com/yanglixiaoshen/ProVQA",
+    }
+    deviations = {
+        "provqa_score": "model vendored verbatim; upstream protocol: 6 anchors in [4, N-4] with triplets of neighbouring frames ±3 (interval=3) — our anchors are uniformly deterministic instead of random; output is 1-DMOS",
+    }
     description = "ProVQA progressive blind 360° VQA (real model only)"
     default_config = {
         "device": "auto",
@@ -671,22 +678,57 @@ class ProVQAModule(PipelineModule):
         """Build the (1, num_frame*3, 3, H, W) ERP clip tensor.
 
         The network consumes ``num_frame`` temporal triplets ordered
-        ``[left, center, right]``; ``num_frame*3`` uniformly-spaced frames in
-        temporal order reproduce that layout (the center frames land spread
-        across the video, each flanked by its temporal neighbours).  Frames are
-        fed as RGB in [0, 1] with no mean/std normalisation, exactly as the
-        upstream ODV-VQA dataset does.
+        ``[left, center, right]``.  Upstream (test_odv240-vqa_dataset.py) picks
+        ``num_frame`` anchor frames in ``[4, N-4]`` and feeds each anchor's
+        stride-3 neighbours: ``[a-3, a, a+3]``.  We reproduce that layout with
+        deterministic uniformly-spaced anchors instead of random sampling.
+        Frames are fed as RGB in [0, 1] with no mean/std normalisation, exactly
+        as the upstream ODV-VQA dataset does.
         """
         import cv2
         import torch
 
         n_needed = _NUM_FRAME * 3  # 18
-        frames = list(sample_frames(sample.path, max_frames=n_needed, color="rgb"))
-        if not frames:
-            return None
-        # Pad/resample to exactly n_needed via uniform index selection over what
-        # was decoded (a still image or short clip is tiled deterministically).
-        idx = np.linspace(0, len(frames) - 1, n_needed).round().astype(int)
+        interval = 3
+        cap = cv2.VideoCapture(str(sample.path))
+        try:
+            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+            if total >= 2 * interval + 1:
+                lo, hi = interval, total - 1 - interval
+                anchors = np.linspace(lo, hi, _NUM_FRAME).round().astype(int)
+                wanted = sorted({int(v) for a in anchors for v in (a - interval, a, a + interval)})
+            else:
+                anchors = np.array([], dtype=int)
+                wanted = []
+            decoded = {}
+            for wi in wanted:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, wi)
+                ok, frame = cap.read()
+                if ok:
+                    decoded[wi] = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            if decoded:
+                frames = list(decoded.values())
+        finally:
+            cap.release()
+
+        if anchors.size and decoded:
+            idx = np.concatenate(
+                [[a - interval, a, a + interval] for a in anchors]
+            )
+            frames = [decoded[int(i)] for i in idx if int(i) in decoded]
+            if len(frames) == n_needed:
+                idx = np.arange(n_needed)
+            elif frames:
+                # Fill missing seeks by deterministic tiling of what decoded.
+                idx = np.linspace(0, len(frames) - 1, n_needed).round().astype(int)
+            else:
+                return None
+        else:
+            # Short clip, image, or failed decode — tile deterministically.
+            frames = list(sample_frames(sample.path, max_frames=n_needed, color="rgb"))
+            if not frames:
+                return None
+            idx = np.linspace(0, len(frames) - 1, n_needed).round().astype(int)
 
         tensors = []
         for i in idx:

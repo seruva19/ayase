@@ -238,6 +238,11 @@ def _build_resnet34():
 
 class MC360IQAModule(PipelineModule):
     name = "mc360iqa"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "mc360iqa_score": "MC360IQA (Sun et al., IEEE JSTSP 2019) — https://github.com/sunwei925/MC360IQA",
+    }
     description = "MC360IQA blind 360 IQA (2019; real model only, disabled if unavailable)"
     default_config = {
         "weights_variant": "OIQA",   # "OIQA" (default, more robust) or "CVIQ"

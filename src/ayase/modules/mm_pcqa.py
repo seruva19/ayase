@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 class MMPCQAModule(PipelineModule):
     name = "mm_pcqa"
+    provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable)"
     default_config = {

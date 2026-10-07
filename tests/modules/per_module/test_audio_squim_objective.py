@@ -65,41 +65,24 @@ def test_audio_squim_objective_setup_uses_public_bundle(monkeypatch):
     assert module._backend == "torchaudio:SQUIM_OBJECTIVE"
 
 
-def test_audio_squim_objective_windows_are_bounded_and_tail_aligned():
+def test_audio_squim_objective_scores_whole_waveform_in_one_pass():
     from ayase.modules.audio_squim_objective import AudioSQUIMObjectiveModule
 
     sample_rate = 16000
     audio = np.arange(11 * sample_rate, dtype=np.float32) + 1.0
-    module = AudioSQUIMObjectiveModule({"max_windows": 3})
+    module = AudioSQUIMObjectiveModule()
 
-    windows = module._select_windows(audio)
+    waveform = module._prepare_waveform(audio)
 
-    assert len(windows) == 3
-    assert all(window.shape == (5 * sample_rate,) for window in windows)
-    assert windows[0][0] == pytest.approx(audio[0])
-    assert windows[1][0] == pytest.approx(audio[3 * sample_rate])
-    assert windows[2][0] == pytest.approx(audio[6 * sample_rate])
-    assert windows[-1][-1] == pytest.approx(audio[-1])
+    assert waveform.shape == audio.shape
+    assert waveform[0] == pytest.approx(audio[0])
+    assert waveform[-1] == pytest.approx(audio[-1])
 
 
-def test_audio_squim_objective_single_window_is_tail_aligned():
-    from ayase.modules.audio_squim_objective import AudioSQUIMObjectiveModule
-
-    sample_rate = 16000
-    audio = np.arange(7 * sample_rate, dtype=np.float32) + 1.0
-    module = AudioSQUIMObjectiveModule({"max_windows": 1})
-
-    windows = module._select_windows(audio)
-
-    assert len(windows) == 1
-    assert windows[0][0] == pytest.approx(audio[2 * sample_rate])
-    assert windows[0][-1] == pytest.approx(audio[-1])
-
-
-def test_audio_squim_objective_process_maps_and_averages_outputs(monkeypatch, tmp_path):
+def test_audio_squim_objective_process_maps_outputs(monkeypatch, tmp_path):
     import ayase.modules.audio_squim_objective as squim_module
 
-    module = squim_module.AudioSQUIMObjectiveModule({"max_windows": 3})
+    module = squim_module.AudioSQUIMObjectiveModule()
     module._model = object()
     module._backend = "torchaudio:SQUIM_OBJECTIVE"
     audio = np.ones(11 * 16000, dtype=np.float32) * 0.1
@@ -111,13 +94,18 @@ def test_audio_squim_objective_process_maps_and_averages_outputs(monkeypatch, tm
 
     monkeypatch.setattr(squim_module, "load_audio", fake_load_audio)
 
-    returned = iter(((0.70, 2.0, -2.0), (0.80, 3.0, 0.0), (0.90, 4.0, 5.0)))
-    monkeypatch.setattr(module, "_score_window", lambda _window: next(returned))
+    scored = {}
+    monkeypatch.setattr(
+        module,
+        "_score_waveform",
+        lambda waveform: (scored.setdefault("n", len(waveform)), (0.8, 3.0, 1.0))[1],
+    )
     sample = Sample(path=tmp_path / "speech.wav", is_video=False)
 
     result = module.process(sample)
 
     assert result is sample
+    assert scored["n"] == 11 * 16000
     assert result.quality_metrics is not None
     assert result.quality_metrics.squim_stoi_score == pytest.approx(0.8)
     assert result.quality_metrics.squim_pesq_score == pytest.approx(3.0)
@@ -180,8 +168,8 @@ def test_audio_squim_objective_failure_returns_same_sample(monkeypatch, tmp_path
     )
     monkeypatch.setattr(
         module,
-        "_score_window",
-        lambda _window: (_ for _ in ()).throw(RuntimeError("test failure")),
+        "_score_waveform",
+        lambda _waveform: (_ for _ in ()).throw(RuntimeError("test failure")),
     )
     sample = Sample(path=tmp_path / "speech.wav", is_video=False)
 

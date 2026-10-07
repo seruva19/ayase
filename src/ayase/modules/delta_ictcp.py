@@ -1,10 +1,15 @@
-"""Delta ICtCp module.
+"""Delta E_ITP (ITU-R BT.2124) perceptual color difference.
 
-Delta ICtCp measures perceptual color difference in the ICtCp color space
-defined by BT.2100 PQ. This color space is designed for HDR content and
-provides better perceptual uniformity than traditional color spaces.
+Computes the BT.2124 color-difference metric in the ICtCp space (BT.2100):
 
-Range: 0+ (lower = more similar, 0 = identical).
+    ΔE_ITP = 720 · sqrt(ΔI² + (0.5 · ΔCt)² + ΔCp²)
+
+Inputs are linearised according to their actual transfer characteristics —
+sRGB (IEC 61966-2-1) by default, BT.2100 PQ when ``input_transfer='pq'`` — and
+remapped into BT.2020 primaries before the ICtCp transform. The LMS and ICtCp
+matrices are the exact BT.2100 coefficients.
+
+Range: 0+ (lower = more similar, 0 = identical; per-pixel ΔE_ITP averaged).
 
 Full-reference metric.
 """
@@ -38,6 +43,25 @@ def _pq_inverse_eotf(signal: np.ndarray) -> np.ndarray:
     num = np.maximum(Vm2 - c1, 0.0)
     den = np.maximum(c2 - c3 * Vm2, 1e-10)
     return np.power(num / den, 1.0 / m1)
+
+
+def _srgb_to_linear(signal: np.ndarray) -> np.ndarray:
+    """IEC 61966-2-1 (sRGB) EOTF: encoded → linear light in sRGB primaries."""
+    signal = np.clip(signal, 0.0, 1.0)
+    low = signal / 12.92
+    high = np.power((signal + 0.055) / 1.055, 2.4)
+    return np.where(signal <= 0.04045, low, high)
+
+
+# BT.2087 BT.709 (sRGB) → BT.2020 primaries conversion matrix (D65).
+_RGB709_TO_RGB2020 = np.array(
+    [
+        [0.6274, 0.3293, 0.0433],
+        [0.0691, 0.9195, 0.0114],
+        [0.0164, 0.0880, 0.8956],
+    ],
+    dtype=np.float64,
+)
 
 
 def _linear_to_pq(L: np.ndarray) -> np.ndarray:
@@ -78,9 +102,17 @@ def _rgb_to_ictcp(rgb_linear: np.ndarray) -> np.ndarray:
 
 class DeltaICtCpModule(ReferenceBasedModule):
     name = "delta_ictcp"
-    description = "Delta ICtCp HDR perceptual color difference (lower=better)"
+    provenance = "adapted"
+    sources = {
+        "delta_ictcp": "ITU-R BT.2124 (ΔE_ITP) on BT.2100 ICtCp — https://www.itu.int/rec/R-REC-BT.2124",
+    }
+    deviations = {
+        "delta_ictcp": "video aggregation (mean over frames at subsample stride) is own; the per-pixel formula and color transforms follow BT.2124/BT.2100/BT.2087",
+    }
+    description = "Delta E_ITP (BT.2124) perceptual color difference (lower=better)"
     default_config = {
-        "subsample": 5,
+        "subsample": 1,
+        "input_transfer": "srgb",
     }
     metric_groups = {
         "delta_ictcp": "hdr",
@@ -88,7 +120,8 @@ class DeltaICtCpModule(ReferenceBasedModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.subsample = self.config.get("subsample", 5)
+        self.subsample = max(1, int(self.config.get("subsample", 1)))
+        self.input_transfer = str(self.config.get("input_transfer", "srgb")).lower()
         self._ml_available = True  # Pure numpy
         # Delta ICtCp is an exact BT.2100 color-space formula; the direct numpy
         # implementation IS the real backend (no model/weights involved).
@@ -113,23 +146,24 @@ class DeltaICtCpModule(ReferenceBasedModule):
             logger.debug(f"Delta ICtCp failed: {e}")
             return None
 
+    def _to_ictcp(self, bgr: np.ndarray) -> np.ndarray:
+        """Decoded frame → ICtCp, honouring the configured input transfer."""
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB).astype(np.float64) / 255.0
+        if self.input_transfer == "pq":
+            linear_2020 = _pq_inverse_eotf(rgb)
+        else:
+            linear_709 = _srgb_to_linear(rgb)
+            linear_2020 = linear_709 @ _RGB709_TO_RGB2020.T
+        return _rgb_to_ictcp(linear_2020)
+
     def _compute_delta(self, ref_bgr: np.ndarray, dist_bgr: np.ndarray) -> float:
-        # Convert BGR to RGB, normalize to [0,1]
-        ref_rgb = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-        dist_rgb = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+        ref_ictcp = self._to_ictcp(ref_bgr)
+        dist_ictcp = self._to_ictcp(dist_bgr)
 
-        # Apply PQ inverse EOTF for linearization (BT.2100 PQ content)
-        # For SDR content this also works as a reasonable approximation
-        ref_linear = _pq_inverse_eotf(ref_rgb)
-        dist_linear = _pq_inverse_eotf(dist_rgb)
-
-        # Convert to ICtCp
-        ref_ictcp = _rgb_to_ictcp(ref_linear)
-        dist_ictcp = _rgb_to_ictcp(dist_linear)
-
-        # Compute Delta ICtCp (Euclidean distance)
+        # BT.2124: ΔE_ITP = 720 * sqrt(ΔI² + (0.5·ΔCt)² + ΔCp²)
         diff = ref_ictcp - dist_ictcp
-        delta = np.sqrt(np.sum(diff ** 2, axis=2))
+        diff[..., 1] *= 0.5
+        delta = 720.0 * np.sqrt(np.sum(diff ** 2, axis=2))
         return float(np.mean(delta))
 
     def process(self, sample: Sample) -> Sample:

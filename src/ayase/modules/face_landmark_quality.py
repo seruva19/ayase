@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class FaceLandmarkQualityModule(PipelineModule):
     name = "face_landmark_quality"
+    provenance = "own"
     description = "Facial landmark jitter, expression smoothness, identity consistency"
     default_config = {
         "subsample": 2,  # Every Nth video frame

@@ -63,6 +63,10 @@ _AUDIO_SUFFIXES = {".wav", ".flac"}  # read directly; anything else goes through
 
 class SpeakerSimModule(PipelineModule):
     name = "speaker_sim"
+    provenance = "published"
+    sources = {
+        "sim_o": "SIM-o speaker similarity: VALL-E (arXiv:2301.02111), Voicebox (arXiv:2306.15687); port of F5-TTS eval utils_eval.py:run_sim — https://github.com/SWivid/F5-TTS",
+    }
     description = "SIM-o speaker similarity to a reference recording (WavLM-TDNN, UniSpeech / F5-TTS eval)"
     default_config = {
         "device": "auto",

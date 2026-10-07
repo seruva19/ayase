@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 class FlowCoherenceModule(PipelineModule):
     name = "flow_coherence"
+    deprecated = True
+    provenance = "own"
     description = "Bidirectional optical flow consistency (0-1, higher=coherent)"
     default_config = {"subsample": 8}
     metric_groups = {

@@ -1,7 +1,9 @@
-"""Background consistency via CLIP pairwise frame similarity (VBench-style).
+"""VBench Background Consistency over whole-frame CLIP embeddings.
 
-Computes all-pairs cosine similarity across uniformly sampled frames.
-Returns background_consistency (0-1, higher = more consistent). Warns below 0.5."""
+Per frame i>=1 the score is ``(max(0, cos(f_i, f_{i-1})) + max(0, cos(f_i,
+f_0))) / 2``; the reported value is the mean over all frames (EvalCrafter/VBench
+protocol — every frame is embedded, no sampling). Returns
+``background_consistency`` (0-1, higher = more consistent). Warns below 0.5."""
 
 import logging
 import numpy as np
@@ -21,11 +23,18 @@ logger = logging.getLogger(__name__)
 
 class BackgroundConsistencyModule(PipelineModule):
     name = "background_consistency"
-    description = "Background consistency using CLIP (all pairwise frame similarity)"
+    provenance = "adapted"
+    sources = {
+        "background_consistency": "VBench Background Consistency — https://github.com/Vchitect/VBench/blob/master/vbench/background_consistency.py",
+    }
+    deviations = {
+        "background_consistency": "HF CLIPProcessor (bilinear resize + center crop) vs upstream clip_transform (BICUBIC resize + center crop) — embeddings differ at the ~1e-3 level",
+    }
+    description = "Background consistency using CLIP (VBench per-frame protocol)"
 
     default_config = {
-        "model_name": "openai/clip-vit-base-patch32",
-        "max_frames": 16,
+        "model_name": "openai/clip-vit-large-patch14",
+        "max_frames": 0,
         "warning_threshold": 0.5,
     }
     metric_groups = {
@@ -34,7 +43,9 @@ class BackgroundConsistencyModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.max_frames = self.config.get("max_frames", 16)
+        # VBench embeds every frame; max_frames <= 0 keeps that, a positive
+        # value is an explicit non-default sampling cap.
+        self.max_frames = self.config.get("max_frames", 0)
         self.warning_threshold = self.config.get("warning_threshold", 0.5)
         self._model = None
         self._processor = None
@@ -53,7 +64,7 @@ class BackgroundConsistencyModule(PipelineModule):
             )
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
+            model_name = self.config.get("model_name", "openai/clip-vit-large-patch14")
             models_dir = self.config.get("models_dir", "models")
             resolved = resolve_model_path(model_name, models_dir)
             logger.info(f"Loading CLIP for Background Consistency on {self._device}...")
@@ -100,7 +111,9 @@ class BackgroundConsistencyModule(PipelineModule):
                 return sample
 
             pil_frames = arrays_to_pil(frames)
-            model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
+            model_name = self.config.get(
+                "model_name", "openai/clip-vit-large-patch14"
+            )
             embeddings = cached_clip_image_features(
                 self,
                 self._model,
@@ -108,7 +121,7 @@ class BackgroundConsistencyModule(PipelineModule):
                 pil_frames,
                 model_key=model_name,
                 device=self._device,
-                cache_key=(self.max_frames, media_state_key(sample.path)),
+                cache_key=(self._frame_limit(), media_state_key(sample.path)),
             )
 
             self._apply_score(sample, embeddings)
@@ -134,12 +147,14 @@ class BackgroundConsistencyModule(PipelineModule):
                     continue
                 prepared.append(sample)
                 image_groups.append(arrays_to_pil(frames))
-                cache_keys.append((self.max_frames, media_state_key(sample.path)))
+                cache_keys.append((self._frame_limit(), media_state_key(sample.path)))
 
             if not prepared:
                 return samples
 
-            model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
+            model_name = self.config.get(
+                "model_name", "openai/clip-vit-large-patch14"
+            )
             feature_groups = cached_clip_image_feature_groups(
                 self,
                 self._model,
@@ -162,16 +177,22 @@ class BackgroundConsistencyModule(PipelineModule):
 
         import torch.nn.functional as F
 
-        # All pairwise cosine similarities (VBench style)
-        similarities = []
-        for i in range(embeddings.size(0)):
-            for j in range(i + 1, embeddings.size(0)):
-                # embeddings is a 2D [n_frames, D] tensor from cached_clip_image_features;
-                # indexing yields a 1D vector, so default dim=1 in cosine_similarity errors.
-                sim = F.cosine_similarity(embeddings[i:i+1], embeddings[j:j+1], dim=1).item()
-                similarities.append(sim)
+        # VBench: for each frame i>=1, (max(0, sim to previous) +
+        # max(0, sim to first)) / 2; the metric is the mean over frames.
+        embeddings = F.normalize(embeddings, dim=-1, p=2)
+        first = embeddings[0:1]
+        prev = embeddings[0]
+        frame_sims = []
+        for i in range(1, embeddings.size(0)):
+            cur = embeddings[i:i + 1]
+            sim_pre = max(0.0, F.cosine_similarity(prev, cur).item())
+            sim_fir = max(0.0, F.cosine_similarity(first, cur).item())
+            frame_sims.append((sim_pre + sim_fir) / 2)
+            prev = embeddings[i]
 
-        avg_consistency = float(np.mean(similarities))
+        avg_consistency = float(np.mean(frame_sims)) if frame_sims else None
+        if avg_consistency is None:
+            return
 
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
@@ -186,9 +207,15 @@ class BackgroundConsistencyModule(PipelineModule):
                 )
             )
 
+    def _frame_limit(self) -> int:
+        """Effective frame cap; <=0 means every frame (VBench protocol)."""
+        return self.max_frames if self.max_frames > 0 else 1_000_000
+
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
         try:
-            return sample_frames(sample.path, max_frames=self.max_frames, color="rgb")
+            return sample_frames(
+                sample.path, max_frames=self._frame_limit(), color="rgb"
+            )
         except Exception as e:
             logger.debug(f"Failed to load frames for background consistency: {e}")
         return []

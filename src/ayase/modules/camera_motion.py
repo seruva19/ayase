@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class CameraMotionModule(PipelineModule):
     name = "camera_motion"
+    provenance = "own"
     description = "Analyzes camera motion stability (VMBench) using Homography"
     default_config = {}
     metric_groups = {
@@ -42,6 +43,7 @@ class CameraMotionModule(PipelineModule):
             return
 
         motion_errors = []
+        pairs_analyzed = 0
         try:
             # Read first frame
             ret, prev_frame = cap.read()
@@ -86,6 +88,7 @@ class CameraMotionModule(PipelineModule):
                         M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
                         if M is not None:
+                            pairs_analyzed += 1
                             # Translation magnitude between frames
                             trans = np.sqrt(M[0, 2] ** 2 + M[1, 2] ** 2)
 
@@ -120,6 +123,9 @@ class CameraMotionModule(PipelineModule):
             cap.release()
 
         # Store camera motion score as a stability metric (0-1, higher = more stable)
+        if pairs_analyzed == 0:
+            # No frame pair produced a usable homography — nothing measured.
+            return
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         if motion_errors:
@@ -128,7 +134,7 @@ class CameraMotionModule(PipelineModule):
             stability = 1.0 / (1.0 + avg_shake / 20.0)
             sample.quality_metrics.camera_motion_score = round(stability, 4)
         else:
-            sample.quality_metrics.camera_motion_score = 1.0  # No shake detected
+            sample.quality_metrics.camera_motion_score = 1.0  # Analyzed and stable
 
         if len(motion_errors) > 3:
             avg_shake = np.mean(motion_errors)

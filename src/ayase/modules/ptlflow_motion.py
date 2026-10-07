@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 class PtlflowMotionModule(PipelineModule):
     name = "ptlflow_motion"
+    deprecated = True
+    provenance = "own"
     description = "ptlflow optical flow motion scoring (dpflow model)"
     default_config = {
         "model_name": "dpflow",

@@ -29,6 +29,16 @@ logger = logging.getLogger(__name__)
 
 class FLIPModule(ReferenceBasedModule):
     name = "flip"
+    provenance = "adapted"
+    sources = {
+        "flip_score": "ꟻLIP (Andersson et al., HPG 2020) — https://github.com/NVlabs/flip",
+    }
+    deviations = {
+        "flip_score": "Backend is the `flip-evaluator` pip package (LDR mode); "
+        "the `flip_torch` fallback path is unverified against upstream; unequal inputs "
+        "are resized to shared minimum dimensions and videos report the mean over every "
+        "fifth paired frame by default.",
+    }
     description = "NVIDIA FLIP perceptual difference (0-1, lower=better)"
     default_config = {
         "subsample": 5,
@@ -101,10 +111,11 @@ class FLIPModule(ReferenceBasedModule):
 
         ref_rgb = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
         dist_rgb = cv2.cvtColor(dist_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-        result = flip_evaluator.evaluate(ref_rgb, dist_rgb)
-        if isinstance(result, dict):
-            return float(result.get("mean", result.get("flip_mean", 0.0)))
-        return float(result)
+        # evaluate() returns (error_map, mean_error, parameters)
+        error_map, mean_error, _params = flip_evaluator.evaluate(
+            ref_rgb, dist_rgb, "LDR"
+        )
+        return float(mean_error)
 
     def _compute_flip_torch(self, ref_bgr: np.ndarray, dist_bgr: np.ndarray) -> float:
         import torch

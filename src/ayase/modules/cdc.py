@@ -1,8 +1,11 @@
-"""CDC — Color Distribution Consistency for Video Colorization (2024).
+"""CDC — Color Distribution Consistency for video colorization.
 
-No-reference metric that measures temporal consistency of color
-distributions across consecutive frames. Uses Jensen-Shannon divergence
-of color histograms in LAB color space.
+Published definition (Liu et al.; used as the temporal-consistency metric of
+the NTIRE 2023 Video Colorization Challenge):
+
+    CDC = mean over consecutive frame pairs and over the R/G/B channels of the
+    Jensen–Shannon divergence between the frames' per-channel colour
+    histograms.
 
 cdc_score — lower = better (more consistent color distribution).
 """
@@ -21,10 +24,16 @@ logger = logging.getLogger(__name__)
 
 class CDCModule(PipelineModule):
     name = "cdc"
-    description = "CDC color distribution consistency for video colorization (2024)"
+    provenance = "published"
+    sources = {
+        "cdc_score": "CDC (Liu et al.; NTIRE 2023 Video Colorization Challenge temporal metric) — https://doi.org/10.1109/CVPRW59228.2023.00159",
+    }
+    deviations = {
+        "cdc_score": "the paper does not fix the histogram bin count — 256 is used (the full 8-bit channel resolution)",
+    }
+    description = "CDC color distribution consistency for video colorization"
     default_config = {
-        "subsample": 16,
-        "hist_bins": 32,
+        "hist_bins": 256,
     }
     metric_groups = {
         "cdc_score": "temporal",
@@ -33,10 +42,9 @@ class CDCModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._model = None
-        self.subsample = self.config.get("subsample", 16)
-        self.hist_bins = self.config.get("hist_bins", 32)
-        # CDC is defined as the JS-divergence of per-frame LAB colour
-        # histograms; the numpy implementation below IS that metric.
+        self.hist_bins = int(self.config.get("hist_bins", 256))
+        # CDC is defined as the JS-divergence of consecutive-frame per-channel
+        # colour histograms; the numpy implementation below IS that metric.
         self._backend = "algorithmic"
 
     def setup(self) -> None:
@@ -60,30 +68,19 @@ class CDCModule(PipelineModule):
         return sample
 
     def _compute_cdc(self, path: Path) -> Optional[float]:
-        """Compute color distribution consistency via JSD in LAB space."""
+        """Compute CDC: mean JS divergence of per-channel histograms over
+        consecutive frames."""
         cap = cv2.VideoCapture(str(path))
         try:
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total < 2:
-                return None
-
-            n_sample = min(self.subsample, total)
-            indices = np.linspace(0, total - 1, n_sample, dtype=int)
-
             prev_hist = None
             jsd_values = []
 
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            while True:
                 ret, frame = cap.read()
                 if not ret:
-                    continue
+                    break
 
-                # Convert to LAB
-                lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-
-                # Compute color histogram (A and B channels in LAB)
-                hist = self._compute_lab_histogram(lab)
+                hist = self._compute_rgb_histogram(frame)
 
                 if prev_hist is not None:
                     jsd = self._jensen_shannon_divergence(prev_hist, hist)
@@ -98,23 +95,18 @@ class CDCModule(PipelineModule):
         finally:
             cap.release()
 
-    def _compute_lab_histogram(self, lab: np.ndarray) -> np.ndarray:
-        """Compute normalised 2D histogram of A and B channels in LAB."""
-        a_channel = lab[:, :, 1].flatten()
-        b_channel = lab[:, :, 2].flatten()
-
-        hist, _, _ = np.histogram2d(
-            a_channel.astype(np.float64),
-            b_channel.astype(np.float64),
-            bins=self.hist_bins,
-            range=[[0, 256], [0, 256]],
-        )
-
-        # Normalise to probability distribution
-        total = hist.sum()
-        if total > 0:
-            hist = hist / total
-        return hist.flatten()
+    def _compute_rgb_histogram(self, frame_bgr: np.ndarray) -> np.ndarray:
+        """Concatenated normalised 1-D histograms of the R, G, B channels."""
+        hists = []
+        for ch in (2, 1, 0):  # BGR -> R, G, B
+            hist, _ = np.histogram(
+                frame_bgr[:, :, ch].ravel().astype(np.float64),
+                bins=self.hist_bins,
+                range=(0, 256),
+            )
+            total = hist.sum()
+            hists.append(hist / total if total > 0 else hist)
+        return np.concatenate(hists)
 
     def _jensen_shannon_divergence(self, p: np.ndarray, q: np.ndarray) -> float:
         """Compute Jensen-Shannon divergence between two distributions."""

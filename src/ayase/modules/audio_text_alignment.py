@@ -26,6 +26,7 @@ class AudioTextAlignmentModule(PipelineModule):
     Ensures that if the caption mentions sound, the audio actually contains it.
     """
     name = "audio_text_alignment"
+    provenance = "utility"
     description = "Multimodal alignment check (Audio-Text) using CLAP"
     default_config = {
         "alignment_threshold": 0.2,

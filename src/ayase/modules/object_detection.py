@@ -24,6 +24,18 @@ logger = logging.getLogger(__name__)
 
 class ObjectDetectionModule(PipelineModule):
     name = "object_detection"
+    deprecated = True
+    provenance = {
+        "count_score": "own",
+        "detection_diversity": "own",
+        "detection_score": "own",
+        "detections": "utility",
+        "person_count": "own",
+        "person_count_score": "own",
+    }
+    sources = {
+        "detections": "YOLOv8 / YOLO-World / GRiT — https://docs.ultralytics.com/models/yolov8/",
+    }
     description = "Detects objects (GRiT / YOLOv8) - Supports Heavy Models"
     default_config = {
         "model_name": "yolov8n.pt",  # Default small model

@@ -642,11 +642,22 @@ if _TORCH_OK:
 
 class ZoomVQAModule(PipelineModule):
     name = "zoomvqa"
+    provenance = "adapted"
+    sources = {
+        "zoomvqa_score": "Zoom-VQA, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA",
+        "zoomvqa_iqa_score": "Zoom-VQA CPNet IQA branch, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA",
+        "zoomvqa_vqa_score": "Zoom-VQA Swin VQA branch, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA",
+    }
+    deviations = {
+        "zoomvqa_score": "fusion without z-score+sigmoid (dataset normalization is undefined for a single sample); the branches are published separately in zoomvqa_iqa_score/zoomvqa_vqa_score",
+        "zoomvqa_iqa_score": "frames at iqa_fps=2 with 512 resize and a 320 center crop; the multi-scale IQA protocol variant is not reproduced",
+        "zoomvqa_vqa_score": "4 temporal clips of 32 frames with frame_interval=2 and patch_size*8 fragments; other upstream pipeline details not verified line-by-line",
+    }
     description = (
         "Zoom-VQA dual-branch IQA+VQA late-fusion blind VQA (CVPRW 2023)"
     )
     default_config = {
-        "subsample": 16,          # IQA frames sampled from a video
+        "iqa_fps": 2.0,           # paper protocol: IQA branch at 2 fps
         "iqa_rsize": 512,
         "iqa_csize": 320,
         "vqa_rsize": 480,         # min-edge resize before spatial fragments
@@ -657,8 +668,15 @@ class ZoomVQAModule(PipelineModule):
         "fusion_iqa_weight": 0.5,
         "device": "auto",
     }
+    metric_info = {
+        "zoomvqa_score": "Zoom-VQA fused score (0.5*iqa + 0.5*vqa, higher=better)",
+        "zoomvqa_iqa_score": "Zoom-VQA CPNet IQA branch score (higher=better)",
+        "zoomvqa_vqa_score": "Zoom-VQA Swin VQA branch score (higher=better)",
+    }
     metric_groups = {
         "zoomvqa_score": "nr_quality",
+        "zoomvqa_iqa_score": "nr_quality",
+        "zoomvqa_vqa_score": "nr_quality",
     }
 
     def __init__(self, config=None):
@@ -770,8 +788,11 @@ class ZoomVQAModule(PipelineModule):
         n = len(vr)
         if n == 0:
             return None
-        k = min(int(self.config.get("subsample", 16)), n)
-        idxs = np.linspace(0, n - 1, k).astype(int).tolist()
+        # Paper protocol: IQA branch scores frames at 2 fps.
+        fps = float(vr.get_avg_fps() or 0)
+        step = max(1, int(round(fps / max(float(self.config.get("iqa_fps", 2.0)), 0.1)))) \
+            if fps > 0 else 12
+        idxs = list(range(0, n, step)) or [0]
         batch = vr.get_batch(idxs)  # tolerate a leaked global decord torch-bridge
         frames = batch.asnumpy() if hasattr(batch, "asnumpy") else batch.cpu().numpy()  # (k, H, W, 3) RGB
         return self._iqa_score_from_frames([frames[i] for i in range(len(idxs))])
@@ -832,17 +853,21 @@ class ZoomVQAModule(PipelineModule):
             if getattr(sample, "is_video", False):
                 iqa = self._run_iqa_video(str(sample.path))
                 vqa = self._run_vqa(str(sample.path))
+                if iqa is not None:
+                    sample.quality_metrics.zoomvqa_iqa_score = float(iqa)
+                if vqa is not None:
+                    sample.quality_metrics.zoomvqa_vqa_score = float(vqa)
+                # The fused score needs both branches — a lone branch is a
+                # different quantity, not a degraded Zoom-VQA score.
                 if iqa is not None and vqa is not None:
                     score = w * iqa + (1.0 - w) * vqa
-                elif iqa is not None:
-                    score = iqa
-                elif vqa is not None:
-                    score = vqa
                 else:
                     score = None
             else:
                 # Single image: only the IQA branch is defined.
                 score = self._run_iqa_image(str(sample.path))
+                if score is not None:
+                    sample.quality_metrics.zoomvqa_iqa_score = float(score)
             if score is not None:
                 sample.quality_metrics.zoomvqa_score = float(score)
         except Exception as e:

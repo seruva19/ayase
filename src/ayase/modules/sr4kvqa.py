@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class SR4KVQAModule(PipelineModule):
     name = "sr4kvqa"
+    provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "SR4KVQA super-resolution 4K quality (2024)"
     default_config = {

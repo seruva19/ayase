@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 class SceneComplexityModule(PipelineModule):
     name = "scene_complexity"
+    deprecated = True
+    provenance = "own"
     description = "Spatial and temporal scene complexity analysis"
     default_config = {
         # Pure OpenCV, no ML needed

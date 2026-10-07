@@ -20,6 +20,10 @@ logger = logging.getLogger(__name__)
 
 class CRAVEModule(PipelineModule):
     name = "crave"
+    provenance = "utility"
+    sources = {
+        "crave_score": "CRAVE (2025) — https://github.com/littlespray/CRAVE",
+    }
     description = "CRAVE content-rich AIGC video evaluator (2025)"
     default_config = {
         "subsample": 12,

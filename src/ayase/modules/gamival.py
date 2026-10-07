@@ -62,6 +62,10 @@ logger = logging.getLogger(__name__)
 
 class GAMIVALModule(PipelineModule):
     name = "gamival"
+    provenance = "utility"
+    sources = {
+        "gamival_score": "GAMIVAL (Yu et al., IEEE SPL 2023) — stub — https://github.com/utlive/GAMIVAL",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023)"
     default_config = {

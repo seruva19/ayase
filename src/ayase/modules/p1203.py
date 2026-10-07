@@ -23,6 +23,15 @@ logger = logging.getLogger(__name__)
 
 class P1203Module(PipelineModule):
     name = "p1203"
+    provenance = "published"
+    sources = {
+        "p1203_mos": "ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203",
+    }
+    deviations = {
+        "p1203_mos": "Input is a synthesized single-segment mode-0 report built "
+        "from container metadata (no per-segment representations, no stalling "
+        "or audio data) — h264 only.",
+    }
     description = "ITU-T P.1203 streaming QoE estimation (1-5 MOS)"
     default_config = {
         "display_size": "phone",  # "phone", "tablet", "pc", "tv"
@@ -75,12 +84,24 @@ class P1203Module(PipelineModule):
         return sample
 
     def _compute_official(self, sample: Sample) -> Optional[float]:
-        """Compute MOS using the upstream ITU-T P.1203 implementation."""
+        """Compute MOS using the upstream ITU-T P.1203 implementation.
+
+        Builds the JSON input dict the official ``itu_p1203`` package
+        expects: ``I13`` video segments, ``I23`` stalling info, ``IGen``
+        generic display/device info. Mode 0 supports only h264 — other
+        codecs need the P.1204 extension, so we decline rather than
+        fabricate a score.
+        """
         meta = sample.video_metadata
         if meta is None:
             return None
 
         try:
+            codec = (meta.codec or "h264").lower()
+            if "h264" not in codec and "avc" not in codec:
+                logger.debug("P.1203 mode 0 supports only h264; codec=%s", codec)
+                return None
+
             bitrate = meta.bitrate
             if bitrate is None or bitrate <= 0:
                 if meta.duration > 0 and meta.file_size and meta.file_size > 0:
@@ -88,30 +109,36 @@ class P1203Module(PipelineModule):
                 else:
                     return None
 
-            codec = (meta.codec or "h264").lower()
-            # Map to P.1203 codec IDs
-            if "h265" in codec or "hevc" in codec:
-                codec_id = 2
-            elif "vp9" in codec:
-                codec_id = 3
-            else:
-                codec_id = 1  # H.264/AVC
+            device_map = {
+                "phone": "mobile",
+                "tablet": "handheld",
+                "pc": "pc",
+                "tv": "pc",
+            }
+            input_json = {
+                "I13": {
+                    "streamId": 42,
+                    "segments": [
+                        {
+                            "codec": "h264",
+                            "start": 0.0,
+                            "duration": float(meta.duration),
+                            "resolution": f"{meta.width}x{meta.height}",
+                            "bitrate": bitrate / 1000.0,  # kbit/s
+                            "fps": meta.fps,
+                        }
+                    ],
+                },
+                "I23": {"streamId": 42, "stalling": []},
+                "IGen": {
+                    "device": device_map.get(self.display_size, "mobile"),
+                    "displaySize": f"{meta.width}x{meta.height}",
+                    "viewingDistance": 0,
+                },
+            }
 
-            # Build per-second segment list expected by P1203Standalone
-            duration = max(1.0, meta.duration)
-            n_segments = max(1, int(duration))
-            segments = []
-            for _ in range(n_segments):
-                segments.append({
-                    "codec": codec_id,
-                    "bitrate": bitrate / 1000.0,  # kbps
-                    "resolution": f"{meta.width}x{meta.height}",
-                    "fps": meta.fps,
-                    "duration": 1.0,
-                })
-
-            result = self._p1203_cls(segments).calculate()
-            mos = result.get("O46", result.get("mos"))
+            result = self._p1203_cls(input_json).calculate_complete()
+            mos = result.get("O46")
             if mos is not None:
                 return float(max(1.0, min(5.0, mos)))
             return None

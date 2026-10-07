@@ -1,17 +1,22 @@
 """Measure source-to-edited-video motion fidelity with dense CoTracker trajectories.
 
 ``sample.reference_path`` is the source-motion video and ``sample.path`` is the
-edited/generated candidate; prompts and masks are not used. Each clip is uniformly
-sampled to at most ``max_frames`` and resized independently. CoTracker3 tracks a
-frame-zero point grid, coordinates are normalized by frame size, and unequal track
-lengths are temporally resampled. Initial positions plus frame-to-frame velocities
-are compared by cosine similarity, choosing the best source track for each candidate
-track and averaging. The mathematical range is -1 to 1 and higher is better.
+edited/generated candidate; prompts and masks are not used. Each clip is decoded
+in full at native resolution (``max_frames``/``long_side`` are opt-in caps).
+CoTracker3 tracks a frame-zero point grid, coordinates are normalized by frame
+size, and unequal track lengths are temporally resampled. Initial positions plus
+frame-to-frame velocities are compared by cosine similarity, choosing the best
+source track for each candidate track and averaging. The mathematical range is
+-1 to 1 and higher is better.
 
-This MTBench-inspired metric uses the vendored offline CoTracker3 runtime and the
-``GD-ML/VMBench`` ``scaled_offline.pth`` checkpoint. It ignores tracker visibility,
-appearance, instruction fidelity, and edit-region masks; camera motion, sampling,
-resizing, and tracking failures can therefore affect the result.
+This follows MTBench's official ``motion_fidelity`` (evaluation.py): CoTracker
+offline tracks a ``grid_size=50`` frame-zero grid over the whole video at
+native resolution, coordinates are normalised per axis, and each candidate
+track is matched to its best source track by mean cosine similarity of the
+initial-position + per-frame-velocity vectors. It ignores tracker visibility,
+appearance, instruction fidelity, and edit-region masks (upstream's optional
+bounding-box ``segm_mask`` has no Ayase input channel); camera motion and
+tracking failures can therefore affect the result.
 
 Metric basis: https://openaccess.thecvf.com/content/ICCV2025/html/Shi_Decouple_and_Track_Benchmarking_and_Improving_Video_Diffusion_Transformers_For_ICCV_2025_paper.html
 Tracker: https://github.com/facebookresearch/co-tracker
@@ -27,7 +32,6 @@ import numpy as np
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 from ayase.runtime import resolve_torch_device
-from ayase.image import sample_frames
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +67,15 @@ def trajectory_motion_similarity(generated, source) -> Optional[float]:
 
 class VideoEditMotionFidelityModule(PipelineModule):
     name = "video_edit_motion_fidelity"
+    provenance = "adapted"
+    sources = {
+        "video_edit_motion_fidelity": "MTBench, Shi et al. ICCV 2025 — https://openaccess.thecvf.com/content/ICCV2025/html/Shi_Decouple_and_Track_Benchmarking_and_Improving_Video_Diffusion_Transformers_For_ICCV_2025_paper.html",
+    }
+    deviations = {
+        "video_edit_motion_fidelity": "CoTracker checkpoint from GD-ML/VMBench; upstream's optional bbox segm_mask is not supplied (no markup channel) — otherwise the evaluation.py protocol",
+    }
     description = "MTBench dense-trajectory motion similarity between source and edited video"
-    default_config = {"max_frames": 60, "long_side": 512, "grid_size": 30}
+    default_config = {"max_frames": 0, "long_side": 0, "grid_size": 50}
     models = [{"id": COTRACKER_REPO, "type": "huggingface", "revision": COTRACKER_REVISION,
                "task": "CoTracker3 offline dense point tracking"}]
     metric_info = {"video_edit_motion_fidelity": "Best-match dense trajectory-motion cosine similarity (higher=better)"}
@@ -110,12 +121,28 @@ class VideoEditMotionFidelityModule(PipelineModule):
         return sample
 
     def _frames(self, path: Path) -> Optional[np.ndarray]:
+        """All frames at native resolution (``max_frames``/``long_side`` are
+        opt-in caps, off by default — upstream reads the whole video)."""
         import cv2
-        frames = sample_frames(path, max_frames=int(self.config.get("max_frames", 60)), color="rgb")
+        cap = cv2.VideoCapture(str(path))
+        frames = []
+        try:
+            while True:
+                ok, frame = cap.read()
+                if not ok:
+                    break
+                frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        finally:
+            cap.release()
         if len(frames) < 2:
             return None
+        max_frames = int(self.config.get("max_frames", 0))
+        if max_frames > 0 and len(frames) > max_frames:
+            idx = np.linspace(0, len(frames) - 1, max_frames).round().astype(int)
+            frames = [frames[i] for i in idx]
         height, width = frames[0].shape[:2]
-        scale = min(1.0, float(self.config.get("long_side", 512)) / max(height, width))
+        long_side = int(self.config.get("long_side", 0))
+        scale = min(1.0, float(long_side) / max(height, width)) if long_side > 0 else 1.0
         if scale < 1.0:
             size = (int(round(width * scale)), int(round(height * scale)))
             frames = [cv2.resize(frame, size, interpolation=cv2.INTER_AREA) for frame in frames]
@@ -123,7 +150,7 @@ class VideoEditMotionFidelityModule(PipelineModule):
 
     def _tracks(self, frames: np.ndarray):
         tracks, _ = self._tracker.track(
-            frames, grid_size=int(self.config.get("grid_size", 30)),
+            frames, grid_size=int(self.config.get("grid_size", 50)),
             grid_query_frame=0, backward_tracking=True,
         )
         tracks = tracks[0].permute(1, 0, 2).float().cpu()

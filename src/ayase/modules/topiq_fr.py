@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 class TOPIQFRModule(PipelineModule):
     name = "topiq_fr"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "topiq_fr": "TOPIQ-FR; pyiqa topiq_fr — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "TOPIQ full-reference top-down semantics-to-distortion IQA (higher=better)"
     default_config = {"subsample": 8}
     metric_groups = {

@@ -1,13 +1,21 @@
-"""OCR Fidelity — measures whether text requested in the caption appears in video frames.
+"""OCR Fidelity — EvalCrafter OCR score for text rendered in video frames.
 
-Based on the EvalCrafter OCR score methodology:
-1. Extract expected text from the caption (quoted strings like "Hello", 'World')
-2. Run PaddleOCR on sampled video frames to recognize rendered text
-3. Compute Normalized Edit Distance (NED) between expected and recognized text
-4. Score = (1 - NED) * 100 → higher means text was rendered more accurately
+Protocol (EvalCrafter ``metrics/ocr_score.py``):
+1. Expected text comes from the caller (``expected_text`` config) or is
+   extracted from quoted caption strings — the benchmark takes it from its
+   metadata.
+2. PaddleOCR runs on **every** frame; recognized lines are concatenated raw
+   (no separator, no case folding).
+3. Per frame: NED = lev(gt, pred)/max(len(pred), len(gt)) (ICDAR 2019),
+   CER = CharacTER's shift-aware character edit rate,
+   WER = word-level lev/len(gt_words). Frames where OCR finds nothing
+   contribute (0, 0, 0).
+4. ``ocr_fidelity`` == ``ocr_score`` = mean over frames of (NED+CER+WER)/3 —
+   this is an *error* measure: **lower is better**. ``ocr_cer``/``ocr_wer``
+   report the two component means.
 
 This is fundamentally different from the ``text_detection`` module, which only
-measures text *area coverage*.  This module checks text *accuracy* — whether the
+measures text *area coverage*. This module checks text *accuracy* — whether the
 video actually renders the words the prompt asked for.
 
 References:
@@ -65,42 +73,46 @@ def _normalized_edit_distance(reference: str, hypothesis: str) -> float:
     return d / max(len(reference), len(hypothesis))
 
 
-def _character_error_rate(reference: str, hypothesis: str) -> float:
-    """Compute Character Error Rate (CER) between two strings.
+def _character_error_rate(hypothesis: str, reference: str) -> float:
+    """EvalCrafter CER — ``cer.calculate_cer(pred_words, gt_words)``.
 
-    CER = Levenshtein(ref, hyp) / len(ref).
-    Returns a value in [0, ∞) where 0 means identical strings.
-    Clamped to [0, 1] for scoring purposes.
+    The ``cer`` package implements CharacTER: a word-shift pass on the
+    hypothesis followed by character-level Levenshtein between the joined
+    strings, normalized by the hypothesis character length and clipped to
+    1.0. When the package is unavailable the fallback computes the same
+    final step without the shift optimization (identical when no word
+    reordering reduces the distance).
     """
-    if not reference:
-        return 0.0 if not hypothesis else 1.0
     try:
-        from Levenshtein import distance as lev_distance
+        from cer import calculate_cer
 
-        d = lev_distance(reference, hypothesis)
+        return float(calculate_cer(hypothesis.split(" "), reference.split(" ")))
     except ImportError:
-        d = _levenshtein_dp(reference, hypothesis)
-    return min(1.0, d / len(reference))
+        pass
+    hyp_chars = " ".join(hypothesis.split(" "))
+    ref_chars = " ".join(reference.split(" "))
+    if not hyp_chars:
+        return 0.0 if not ref_chars else 1.0
+    return min(1.0, _levenshtein_dp(hyp_chars, ref_chars) / len(hyp_chars))
 
 
 def _word_error_rate(reference: str, hypothesis: str) -> float:
-    """Compute Word Error Rate (WER) between two strings.
+    """EvalCrafter WER — ``fastwer.score_sent(pred, gt)/100``.
 
-    WER = Levenshtein(ref_words, hyp_words) / len(ref_words).
-    Returns a value in [0, ∞) where 0 means identical word sequences.
-    Clamped to [0, 1] for scoring purposes.
+    Word-level Levenshtein normalized by the *reference* word count, returned
+    as a fraction. No clipping.
     """
-    ref_words = reference.split()
-    hyp_words = hypothesis.split()
+    try:
+        import fastwer
+
+        return float(fastwer.score_sent(hypothesis, reference) / 100)
+    except ImportError:
+        pass
+    ref_words = reference.split(" ")
+    hyp_words = hypothesis.split(" ")
     if not ref_words:
         return 0.0 if not hyp_words else 1.0
-    try:
-        from Levenshtein import distance as lev_distance
-
-        d = lev_distance(ref_words, hyp_words)
-    except (ImportError, TypeError):
-        d = _levenshtein_dp(ref_words, hyp_words)
-    return min(1.0, d / len(ref_words))
+    return _levenshtein_dp(ref_words, hyp_words) / len(ref_words)
 
 
 def _levenshtein_dp(s, t) -> int:
@@ -118,9 +130,16 @@ def _levenshtein_dp(s, t) -> int:
 
 class OCRFidelityModule(PipelineModule):
     name = "ocr_fidelity"
-    description = "Checks whether text requested in the caption actually appears in video frames (EvalCrafter OCR)"
+    provenance = "published"
+    sources = {
+        "ocr_cer": "EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py",
+        "ocr_fidelity": "EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py",
+        "ocr_score": "EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py",
+        "ocr_wer": "EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py",
+    }
+    description = "EvalCrafter OCR score — text rendering accuracy vs expected text (error measure, lower=better)"
     default_config = {
-        "num_frames": 8,
+        "num_frames": 0,
         "lang": "en",
         "text_recognition_model_name": None,
     }
@@ -133,10 +152,11 @@ class OCRFidelityModule(PipelineModule):
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.num_frames = self.config.get("num_frames", 8)
+        self.num_frames = self.config.get("num_frames", 0)
         self.lang = self.config.get("lang", "en")
         self.text_recognition_model_name = self.config.get("text_recognition_model_name")
         self._ocr = None
+        self._ocr_api = None
         self._ocr_available = False
         self._backend = None
 
@@ -151,12 +171,19 @@ class OCRFidelityModule(PipelineModule):
             from paddleocr import PaddleOCR
 
             logger.info("Loading PaddleOCR for OCR Fidelity...")
-            kw = {}
-            if self.text_recognition_model_name:
-                kw["text_recognition_model_name"] = self.text_recognition_model_name
+            if hasattr(PaddleOCR, "predict"):
+                # PaddleOCR 3.x pipeline API
+                kw = {}
+                if self.text_recognition_model_name:
+                    kw["text_recognition_model_name"] = self.text_recognition_model_name
+                else:
+                    kw["lang"] = self.lang
+                self._ocr = PaddleOCR(**kw)
+                self._ocr_api = "v3"
             else:
-                kw["lang"] = self.lang
-            self._ocr = PaddleOCR(**kw)
+                # PaddleOCR 2.x API — the version EvalCrafter runs upstream
+                self._ocr = PaddleOCR(use_angle_cls=True, lang=self.lang)
+                self._ocr_api = "v2"
             self._ocr_available = True
             self._backend = "paddleocr"
         except ImportError:
@@ -184,58 +211,68 @@ class OCRFidelityModule(PipelineModule):
         if not expected_texts:
             return sample
 
-        expected = " ".join(expected_texts).lower()
+        # EvalCrafter keeps the ground-truth text as-is (no case folding).
+        expected = " ".join(expected_texts)
 
         try:
             frames = self._load_frames(sample)
             if not frames:
                 return sample
 
-            # Run OCR per-frame and keep the best NED — EvalCrafter
-            # "text rendered correctly at least once" semantics.
-            best_ned = 1.0
-            best_cer = 1.0
-            best_wer = 1.0
-            best_recognized = ""
+            neds: List[float] = []
+            cers: List[float] = []
+            wers: List[float] = []
+            last_recognized = ""
             for frame in frames:
                 frame_texts: List[str] = []
-                result = self._ocr.predict(frame)
-                if result and result[0]:
-                    for txt in (result[0].get("rec_texts") or []):
-                        if txt:
-                            frame_texts.append(txt)
-                frame_recognized = " ".join(frame_texts).lower()
-                frame_ned = _normalized_edit_distance(expected, frame_recognized)
-                if frame_ned < best_ned:
-                    best_ned = frame_ned
-                    best_cer = _character_error_rate(expected, frame_recognized)
-                    best_wer = _word_error_rate(expected, frame_recognized)
-                    best_recognized = frame_recognized
+                if self._ocr_api == "v3":
+                    result = self._ocr.predict(frame)
+                    if result and result[0]:
+                        texts = result[0].get("rec_texts") or []
+                        frame_texts.extend(t for t in texts if t)
+                else:
+                    result = self._ocr.ocr(frame, cls=True)
+                    if result and result[0]:
+                        for line in result[0]:
+                            if line and line[1] and line[1][0]:
+                                frame_texts.append(line[1][0])
+                if not frame_texts:
+                    # EvalCrafter contributes (0, 0, 0) for frames with no OCR
+                    # output rather than skipping them.
+                    neds.append(0.0)
+                    cers.append(0.0)
+                    wers.append(0.0)
+                    continue
+                # EvalCrafter concatenates recognized lines raw — no
+                # separator, no case folding.
+                recognized = "".join(frame_texts)
+                last_recognized = recognized
+                neds.append(_normalized_edit_distance(expected, recognized))
+                cers.append(_character_error_rate(recognized, expected))
+                wers.append(_word_error_rate(expected, recognized))
 
-            recognized = best_recognized
-            ned = best_ned
-            cer = best_cer
-            wer = best_wer
-            score = max(0.0, (1.0 - ned)) * 100.0
+            cer = float(np.mean(cers)) if cers else None
+            wer = float(np.mean(wers)) if wers else None
+            score = float(np.mean([(n + c + w) / 3.0 for n, c, w in zip(neds, cers, wers)]))
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.ocr_fidelity = round(score, 2)
-            sample.quality_metrics.ocr_score = round(score, 2)
-            sample.quality_metrics.ocr_cer = round(cer, 4)
-            sample.quality_metrics.ocr_wer = round(wer, 4)
+            sample.quality_metrics.ocr_fidelity = score
+            sample.quality_metrics.ocr_score = score
+            sample.quality_metrics.ocr_cer = cer
+            sample.quality_metrics.ocr_wer = wer
 
-            if score < 30.0:
+            if score > 0.5:
                 sample.validation_issues.append(
                     ValidationIssue(
                         severity=ValidationSeverity.WARNING,
-                        message=f"Low OCR fidelity: {score:.1f}% — text in video doesn't match caption",
+                        message=f"Low OCR fidelity: error score {score:.2f} — text in video doesn't match caption",
                         details={
                             "expected_text": expected,
-                            "recognized_text": recognized[:200],
+                            "recognized_text": last_recognized[:200],
                             "ocr_fidelity": score,
-                            "cer": round(cer, 4),
-                            "wer": round(wer, 4),
+                            "cer": cer,
+                            "wer": wer,
                         },
                         recommendation="Video may not be rendering the requested text correctly.",
                     )
@@ -266,7 +303,8 @@ class OCRFidelityModule(PipelineModule):
                 if total <= 0:
                     cap.release()
                     return frames
-                n = min(self.num_frames, total)
+                # num_frames <= 0 follows the EvalCrafter protocol: every frame.
+                n = total if self.num_frames <= 0 else min(self.num_frames, total)
                 indices = np.linspace(0, total - 1, n, dtype=int)
                 for idx in indices:
                     cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))

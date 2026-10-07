@@ -129,7 +129,8 @@ def test_imagebind_av_uses_official_file_preprocessing_and_raw_cosine(
         video_path=video_path,
     )
 
-    assert scores["imagebind_score"] == pytest.approx(0.0)
+    # Raw audio-text cosine (the historical (cos+1)/2 remap was removed).
+    assert scores["imagebind_score"] == pytest.approx(-1.0)
     # Official JavisBench sim_av is raw cosine, not shifted into [0, 1].
     assert scores["imagebind_av_score"] == pytest.approx(0.6)
     assert calls["text"] == (["a bell rings"], "cpu")
@@ -178,14 +179,3 @@ def test_imagebind_av_gracefully_skips_missing_audio(monkeypatch):
 
     assert module.process(sample) is sample
     assert sample.quality_metrics is None
-
-
-def test_nima_onnx_basics(image_sample):
-    from ayase.modules.nima_onnx import NIMAONNXModule
-
-    _test_module_basics(NIMAONNXModule, "nima_onnx")
-    module = NIMAONNXModule()
-    assert module.process(image_sample) is image_sample
-    assert image_sample.quality_metrics is not None
-    qm = QualityMetrics(nima_onnx_score=5.0)
-    assert qm.nima_onnx_score == 5.0

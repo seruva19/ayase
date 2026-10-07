@@ -45,6 +45,12 @@ class ColorVideoVDPModule(ReferenceBasedModule):
     """Run the upstream ColorVideoVDP metric on a test/reference pair."""
 
     name = "cvvdp"
+    provenance = "published"
+    sources = {
+        "cvvdp_ml_saliency_score": "ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP",
+        "cvvdp_ml_transformer_score": "ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP",
+        "cvvdp_score": "ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP",
+    }
     description = "ColorVideoVDP display-aware color image/video FR quality"
     metric_field = "cvvdp_score"
     default_config = {

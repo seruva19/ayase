@@ -27,9 +27,17 @@ logger = logging.getLogger(__name__)
 
 class DAVISJFModule(ReferenceBasedModule):
     name = "davis_jf"
+    provenance = "published"
+    sources = {
+        "davis_f": "DAVIS J&F (Perazzi et al., CVPR 2016) — db_eval_boundary, https://github.com/davisvideochallenge/davis2017-evaluation/blob/master/davis2017/metrics.py",
+        "davis_j": "DAVIS J&F (Perazzi et al., CVPR 2016) — db_eval_iou, https://github.com/davisvideochallenge/davis2017-evaluation/blob/master/davis2017/metrics.py",
+    }
+    deviations = {
+        "davis_f": "masks are read from a video container (lossy encoding may shift boundaries)",
+    }
     description = "DAVIS J&F video segmentation quality (FR, 2016)"
     metric_field = None  # We override process() to set both davis_j and davis_f
-    default_config = {"subsample": 8, "boundary_threshold": 2}
+    default_config = {}
     metric_groups = {
         "davis_f": "temporal",
         "davis_j": "temporal",
@@ -38,8 +46,6 @@ class DAVISJFModule(ReferenceBasedModule):
     def __init__(self, config=None):
         super().__init__(config)
         self._model = None
-        self.subsample = self.config.get("subsample", 8)
-        self.boundary_threshold = self.config.get("boundary_threshold", 2)
         self._backend = "algorithmic"
 
     def setup(self) -> None:
@@ -109,17 +115,15 @@ class DAVISJFModule(ReferenceBasedModule):
             if total <= 0:
                 return None
 
-            indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
             j_scores = []
             f_scores = []
 
-            for idx in indices:
-                cap_s.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                cap_r.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            # Official protocol evaluates every frame — read sequentially.
+            while True:
                 ret_s, frame_s = cap_s.read()
                 ret_r, frame_r = cap_r.read()
                 if not (ret_s and ret_r):
-                    continue
+                    break
 
                 pred = cv2.cvtColor(frame_s, cv2.COLOR_BGR2GRAY) if frame_s.ndim == 3 else frame_s
                 gt = cv2.cvtColor(frame_r, cv2.COLOR_BGR2GRAY) if frame_r.ndim == 3 else frame_r
@@ -153,46 +157,50 @@ class DAVISJFModule(ReferenceBasedModule):
         return float(intersection / union)
 
     def _compute_boundary_f(self, pred: np.ndarray, gt: np.ndarray) -> float:
-        """Compute boundary F-measure between binary masks.
+        """Boundary F-measure following the official ``db_eval_boundary``.
 
-        Extracts contours and computes precision/recall based on boundary
-        pixel distance.
+        Boundaries come from ``seg2bmap`` (pixels whose 8-neighbourhood holds
+        another label, both sides of the edge) and matching uses dilation by a
+        disk of ``ceil(0.008 * diagonal)`` pixels — the toolkit tolerance.
         """
-        # Extract boundaries
-        pred_boundary = self._get_boundary(pred)
-        gt_boundary = self._get_boundary(gt)
+        pred_b = self._seg2bmap(pred.astype(bool))
+        gt_b = self._seg2bmap(gt.astype(bool))
 
-        if pred_boundary.sum() == 0 and gt_boundary.sum() == 0:
-            return 1.0  # Both have no boundaries
-        if pred_boundary.sum() == 0 or gt_boundary.sum() == 0:
+        bound_pix = int(np.ceil(0.008 * float(np.linalg.norm(pred.shape))))
+        pred_dil = self._dilate_disk(pred_b, bound_pix)
+        gt_dil = self._dilate_disk(gt_b, bound_pix)
+
+        n_pred, n_gt = pred_b.sum(), gt_b.sum()
+        # Official edge cases: empty-vs-nonempty gives (1, 0) or (0, 1).
+        if n_pred == 0 and n_gt == 0:
+            precision = recall = 1.0
+        elif n_pred == 0:
+            precision, recall = 1.0, 0.0
+        elif n_gt == 0:
+            precision, recall = 0.0, 1.0
+        else:
+            precision = float((pred_b & gt_dil).sum()) / float(n_pred)
+            recall = float((gt_b & pred_dil).sum()) / float(n_gt)
+
+        if precision + recall == 0:
             return 0.0
+        return float(2 * precision * recall / (precision + recall))
 
-        # Distance transform for tolerance matching
-        from cv2 import distanceTransform, DIST_L2
-
-        gt_dist = distanceTransform(1 - gt_boundary, DIST_L2, 3)
-        pred_dist = distanceTransform(1 - pred_boundary, DIST_L2, 3)
-
-        # Precision: predicted boundary pixels within threshold of GT boundary
-        precision = float(
-            np.sum(pred_boundary * (gt_dist <= self.boundary_threshold)) /
-            (pred_boundary.sum() + 1e-8)
-        )
-
-        # Recall: GT boundary pixels within threshold of predicted boundary
-        recall = float(
-            np.sum(gt_boundary * (pred_dist <= self.boundary_threshold)) /
-            (gt_boundary.sum() + 1e-8)
-        )
-
-        if precision + recall < 1e-8:
-            return 0.0
-        f_measure = 2 * precision * recall / (precision + recall)
-        return float(np.clip(f_measure, 0.0, 1.0))
-
-    def _get_boundary(self, mask: np.ndarray) -> np.ndarray:
-        """Extract boundary pixels from a binary mask using morphological erosion."""
-        kernel = np.ones((3, 3), np.uint8)
-        eroded = cv2.erode(mask, kernel, iterations=1)
-        boundary = (mask - eroded).astype(np.uint8)
+    @staticmethod
+    def _seg2bmap(mask: np.ndarray) -> np.ndarray:
+        """Pixels whose 8-neighbourhood contains a different label."""
+        padded = np.pad(mask, 1, mode="edge")
+        boundary = np.zeros(mask.shape, dtype=bool)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dy == 0 and dx == 0:
+                    continue
+                boundary |= mask != padded[1 + dy:1 + dy + mask.shape[0],
+                                          1 + dx:1 + dx + mask.shape[1]]
         return boundary
+
+    @staticmethod
+    def _dilate_disk(bmap: np.ndarray, radius: int) -> np.ndarray:
+        r = max(int(radius), 0)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
+        return cv2.dilate(bmap.astype(np.uint8), kernel).astype(bool)

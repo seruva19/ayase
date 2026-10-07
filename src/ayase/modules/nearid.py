@@ -24,6 +24,10 @@ _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 
 class NearIDModule(PipelineModule):
     name = "nearid"
+    provenance = "published"
+    sources = {
+        "nearid_identity_similarity": "NearID (Cvejic et al., arXiv 2604.01973) — https://github.com/Gorluxor/NearID",
+    }
     description = "NearID near-distractor-aware identity similarity (ECCV 2026)"
     default_config = {"model": _MODEL_ID, "device": "auto", "models_dir": "models"}
     models = [

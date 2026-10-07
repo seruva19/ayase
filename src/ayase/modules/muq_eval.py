@@ -45,6 +45,10 @@ class MuQEvalModule(PipelineModule):
     """frozen-MuQ A1 predictor for generated-music quality."""
 
     name = "muq_eval"
+    provenance = "published"
+    sources = {
+        "muq_eval_mi_score": "MuQ-Eval A1 — https://huggingface.co/zhudi2825/MuQ-Eval-A1",
+    }
     description = "MuQ-Eval A1 per-sample generated-music Musical Impression MOS"
     default_config = {
         "sample_rate": 24000,

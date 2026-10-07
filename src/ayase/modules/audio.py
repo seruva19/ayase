@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class AudioModule(PipelineModule):
     name = "audio"
+    provenance = "utility"
     description = "Validates audio stream quality and presence"
     default_config = {
         "require_audio": False,

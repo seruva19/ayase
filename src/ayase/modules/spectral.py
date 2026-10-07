@@ -28,6 +28,7 @@ _DINOV2_WEIGHTS = {
 
 class SpectralComplexityModule(PipelineModule):
     name = "spectral_complexity"
+    provenance = "own"
     description = "Analyzes spectral complexity (Effective Rank) of video features (DINOv2)"
     default_config = {
         "model_type": "dinov2_vits14", # 'dinov2_vits14', 'dinov2_vitb14'
@@ -213,3 +214,4 @@ class SpectralCompatModule(SpectralComplexityModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "spectral"
+    deprecated = True

@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class MACLIPModule(PipelineModule):
     name = "maclip"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "maclip_score": "MACLIP via pyiqa 'maclip' — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "MACLIP multi-attribute CLIP no-reference quality (higher=better)"
     default_config = {
         "subsample": 3,

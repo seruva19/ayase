@@ -213,6 +213,7 @@ class BodyMotionKinematicsModule(PipelineModule):
     """Compare reference-relative body-motion summary diagnostics."""
 
     name = "body_motion_kinematics"
+    provenance = "own"
     description = "Reference-relative 2D body-motion kinematic diagnostics without frame alignment"
     default_config = {
         "device": "auto",

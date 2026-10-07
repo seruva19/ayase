@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class SceneModule(PipelineModule):
     name = "scene"
+    provenance = "utility"
     description = "Detects scene cuts and shots using PySceneDetect"
     default_config = {
         "threshold": 27.0,  # Detection sensitivity

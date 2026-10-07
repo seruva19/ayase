@@ -58,6 +58,16 @@ MEDIA_SUFFIXES = (".mp4", ".mkv", ".mov", ".webm", ".avi") + AUDIO_SUFFIXES
 
 class VoiceIdentityModule(PipelineModule):
     name = "voice_identity"
+    provenance = {
+        "voice_identity": "adapted",
+        "voice_identity_coverage": "utility",
+    }
+    sources = {
+        "voice_identity": "ECAPA-TDNN (Desplanques et al. 2020), SpeechBrain cosine verification — https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb",
+    }
+    deviations = {
+        "voice_identity": "clip-reference pair is the standard cosine SV score; averaging over a set of references is an own aggregation",
+    }
     description = "Speaker-verification similarity of the voice to a reference set of the person"
     default_config = {
         "device": "auto",
@@ -68,12 +78,10 @@ class VoiceIdentityModule(PipelineModule):
     }
     metric_groups = {
         "voice_identity": "audio",
-        "voice_identity_max": "audio",
         "voice_identity_coverage": "audio",
     }
     metric_info = {
         "voice_identity": "Mean speaker-embedding cosine similarity to the reference set (higher=better)",
-        "voice_identity_max": "Best similarity over the reference set (higher=better)",
         "voice_identity_coverage": "Share of reference files that yielded an embedding (0-1)",
     }
     models = [
@@ -149,7 +157,6 @@ class VoiceIdentityModule(PipelineModule):
             sample.quality_metrics = QualityMetrics()
         qm = sample.quality_metrics
         qm.voice_identity = round(float(np.mean(scores)), 4)
-        qm.voice_identity_max = round(float(np.max(scores)), 4)
         qm.voice_identity_coverage = round(coverage, 4)
         return sample
 

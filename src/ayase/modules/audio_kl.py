@@ -1,33 +1,34 @@
-"""Audio KL divergence — distributional metric over audio-classifier softmax.
+"""Audio KL divergence — paired classifier-logit metric (audioldm_eval protocol).
 
-Compares the distribution of softmax probabilities produced by a pre-trained
-audio classifier on generated audio against the same distribution on reference
-audio. The classifier is pretrained on AudioSet (527 sound classes) so the
-softmax acts as a perceptual "semantic" descriptor.
+Follows ``audioldm_eval/metrics/kl.py``: per-sample logits from a pretrained
+AudioSet classifier, paired between generated and reference audio **by matching
+file basename**, then
 
-This metric is used by audio-generation papers such as MMAudio, FoleyGen and
-AudioGen. Two backbones are supported:
+::
 
-* ``panns_cnn14``  — PANNs CNN14 from Kong et al., 2020
-  (https://github.com/qiuqiangkong/panns_inference, ``pip install panns_inference``).
-* ``passt``        — PaSST from Koutini et al., 2022
-  (https://github.com/kkoutini/PaSST, ``pip install hear21passt``).
+    audio_kl = mean_i( KL( softmax(ref_logits_i) || softmax(gen_logits_i) ) )
 
-Formula::
+the AudioGen formulation (``kullback_leibler_divergence_softmax``). Lower is
+better. Reference logits are collected through ``sample.reference_path`` and
+paired with generated samples by identical basename — the same pairing rule
+upstream derives from folder structure. If no reference pairs can be formed
+the metric is left unset.
 
-    KL = mean_i( sum_c gen_probs[i, c] * log( gen_probs[i, c] / mean_ref_probs[c] ) )
+Two backbones produce the logits:
 
-Lower is better. If neither backend is installed the module logs a warning and
-becomes a no-op so the rest of the pipeline keeps running.
+* ``panns_cnn14`` — vendored PANNs Cnn14 at 16 kHz with the published
+  ``Cnn14_16k_mAP=0.438.pth`` weights (the audioldm_eval backbone);
+* ``passt``       — PaSST at 32 kHz (``pip install hear21passt``).
+
+If neither backend is installed the module logs a warning and becomes a no-op.
 
 The ``audio_kl`` field is not declared on :class:`QualityMetrics`; this is a
 batch / dataset-level metric and the final scalar is written through
-``pipeline.add_dataset_metric("audio_kl", score)`` in ``on_dispose`` (inherited
-from :class:`BatchMetricModule`).
+``pipeline.add_dataset_metric("audio_kl", score)``.
 """
 
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -36,16 +37,24 @@ from ayase.models import Sample
 
 logger = logging.getLogger(__name__)
 
+_EPS = 1e-6
+
 
 class AudioKLModule(BatchMetricModule):
     name = "audio_kl"
+    provenance = "adapted"
+    sources = {
+        "audio_kl": "audioldm_eval paired KL (AudioGen formulation) — https://github.com/haoheliu/audioldm_eval/blob/main/audioldm_eval/metrics/kl.py",
+    }
+    deviations = {
+        "audio_kl": "backend='passt' swaps the classifier for PaSST-32k — a valid KL backbone but not the audioldm_eval one",
+    }
     description = (
-        "KL divergence between audio-classifier softmax distributions "
-        "(PANNs/PASST backbone, lower=better)"
+        "Paired KL divergence between audio-classifier softmax distributions "
+        "(audioldm_eval protocol, lower=better)"
     )
     default_config = {
         "backend": "panns_cnn14",
-        "sample_rate": 16000,
         "panns_checkpoint_path": None,
         "passt_model_name": "passt_s_kd_p16_128_ap486",
         "device": "auto",
@@ -53,29 +62,38 @@ class AudioKLModule(BatchMetricModule):
     }
     models = [
         {
-            "id": "panns_cnn14",
+            "id": "Cnn14_16k_mAP=0.438.pth",
+            "type": "local",
+            "url": "https://zenodo.org/records/3987831/files/Cnn14_16k_mAP%3D0.438.pth",
+            "task": "PANNs Cnn14-16k AudioSet classifier — the audioldm_eval KL backbone",
+            "auto_download": True,
+        },
+        {
+            "id": "torchlibrosa",
             "type": "pip_package",
-            "install": "pip install panns_inference",
-            "task": "PANNs CNN14 AudioSet classifier (527 classes) for KL-style scoring",
+            "install": "pip install torchlibrosa",
+            "task": "Log-mel front-end for the vendored Cnn14_16k",
         },
         {
             "id": "passt_s_kd_p16_128_ap486",
             "type": "pip_package",
             "install": "pip install hear21passt",
-            "task": "PaSST AudioSet classifier (527 classes) for KL-style scoring",
+            "task": "Optional PaSST AudioSet classifier backbone (non-default)",
         },
     ]
     metric_info = {
         "audio_kl": (
-            "KL divergence between audio classifier softmax distributions "
-            "(PANNs/PASST backbone, lower=better)"
+            "Paired KL divergence between audio classifier softmax distributions "
+            "(audioldm_eval protocol, lower=better)"
         ),
     }
 
     def __init__(self, config=None):
         super().__init__(config)
         self.backend = str(self.config.get("backend", "panns_cnn14")).lower()
-        self.sample_rate = int(self.config.get("sample_rate", 16000))
+        # Each classifier consumes audio at its native rate (Cnn14_16k @ 16 kHz;
+        # PaSST is a 32 kHz model).
+        self.sample_rate = 32000 if self.backend == "passt" else 16000
         self.panns_checkpoint_path = self.config.get("panns_checkpoint_path", None)
         self.passt_model_name = self.config.get(
             "passt_model_name", "passt_s_kd_p16_128_ap486"
@@ -86,10 +104,9 @@ class AudioKLModule(BatchMetricModule):
         self._model = None
         self._device = "cpu"
         self._ml_available = False
-        # Resolved backend (may differ from the config if a fallback kicks in).
-        self._active_backend: Optional[str] = None
-        # PaSST helper bound at setup time.
-        self._passt_get_basic_model = None
+        # Sample basename aligned with _feature_cache / _reference_cache.
+        self._feature_names: List[str] = []
+        self._reference_names: List[str] = []
 
     # ------------------------------------------------------------------
     def setup(self) -> None:
@@ -120,31 +137,44 @@ class AudioKLModule(BatchMetricModule):
 
     def _setup_panns(self, torch) -> None:
         try:
-            from panns_inference import AudioTagging
+            import torchlibrosa  # noqa: F401
+            from ayase.third_party.panns_cnn14 import Cnn14
+            from ayase.config import download_model_file
         except ImportError:
             logger.warning(
-                "audio_kl backend panns_cnn14 requires `pip install panns_inference`"
+                "audio_kl backend panns_cnn14 requires torchlibrosa "
+                "(pip install torchlibrosa)"
             )
+            self._ml_available = False
+            return
+        except Exception as e:  # pragma: no cover - defensive
+            logger.warning("audio_kl: failed to import Cnn14_16k deps: %s", e)
             self._ml_available = False
             return
 
         try:
-            kwargs = {"device": self._device}
-            if self.panns_checkpoint_path:
-                kwargs["checkpoint_path"] = self.panns_checkpoint_path
-            model = AudioTagging(**kwargs)
-            # ``AudioTagging`` wraps the actual nn.Module on ``.model``.
-            inner = getattr(model, "model", None)
-            if inner is not None and hasattr(inner, "eval"):
-                inner.eval()
-            self._model = model
-            self._active_backend = "panns_cnn14"
+            ckpt = self.panns_checkpoint_path
+            if not ckpt:
+                ckpt = download_model_file(
+                    "panns/Cnn14_16k_mAP=0.438.pth",
+                    "https://zenodo.org/records/3987831/files/Cnn14_16k_mAP%3D0.438.pth",
+                    self.config.get("models_dir", "models"),
+                )
+            model = Cnn14(
+                features_list=["2048", "logits"],
+                sample_rate=16000,
+                window_size=512,
+                hop_size=160,
+                mel_bins=64,
+                fmin=50,
+                fmax=8000,
+                classes_num=527,
+            )
+            model.load_checkpoint(str(ckpt))
+            self._model = model.to(self._device).eval()
             self._ml_available = True
             logger.info(
-                "audio_kl initialised (panns_cnn14) on %s; native sr=32000, "
-                "resampling from %d as needed",
-                self._device,
-                self.sample_rate,
+                "audio_kl initialised with PANNs Cnn14_16k on %s", self._device
             )
         except Exception as e:
             logger.warning("audio_kl panns_cnn14 setup failed: %s", e)
@@ -165,21 +195,31 @@ class AudioKLModule(BatchMetricModule):
             model.eval()
             model.to(self._device)
             self._model = model
-            self._passt_get_basic_model = get_basic_model
-            self._active_backend = "passt"
             self._ml_available = True
             logger.info(
-                "audio_kl initialised (passt:%s) on %s; native sr=32000, "
-                "resampling from %d as needed",
+                "audio_kl initialised (passt:%s) on %s",
                 self.passt_model_name,
                 self._device,
-                self.sample_rate,
             )
         except Exception as e:
             logger.warning("audio_kl passt setup failed: %s", e)
             self._ml_available = False
 
     # ------------------------------------------------------------------
+    def process(self, sample: Sample) -> Sample:
+        # Track basenames alongside the base-class caches so pairs can be
+        # formed the upstream way (identical file names).
+        before_gen = len(self._feature_cache)
+        before_ref = len(self._reference_cache)
+        sample = super().process(sample)
+        if len(self._feature_cache) > before_gen:
+            self._feature_names.append(sample.path.name)
+        if len(self._reference_cache) > before_ref:
+            from pathlib import Path
+
+            self._reference_names.append(Path(sample.reference_path).name)
+        return sample
+
     def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
         if not self._ml_available:
             return None
@@ -197,118 +237,110 @@ class AudioKLModule(BatchMetricModule):
             if audio.ndim > 1:
                 audio = audio.mean(axis=1).astype(np.float32)
 
-            if self._active_backend == "panns_cnn14":
-                return self._probs_panns(audio)
-            if self._active_backend == "passt":
-                return self._probs_passt(audio)
+            if self.backend == "panns_cnn14":
+                return self._logits_panns(audio)
+            if self.backend == "passt":
+                return self._logits_passt(audio)
             return None
         except Exception as e:
             logger.debug("audio_kl feature extraction failed for %s: %s", sample.path, e)
             return None
 
-    def _probs_panns(self, audio: np.ndarray) -> Optional[np.ndarray]:
-        # PANNs CNN14 is trained at 32 kHz; resample if loaded at a different rate.
-        x = _resample_linear(audio, self.sample_rate, 32000)
-        # AudioTagging.inference expects a 2-D batch [B, T].
-        batch = x[np.newaxis, :].astype(np.float32)
+    def _logits_panns(self, audio: np.ndarray) -> Optional[np.ndarray]:
+        if self._model is None:
+            return None
+        import torch
+
+        batch = torch.as_tensor(
+            np.asarray(audio, dtype=np.float32)[None, :], device=self._device
+        )
         try:
-            clipwise, _embedding = self._model.inference(batch)
+            with torch.no_grad():
+                out = self._model(batch)
         except Exception as e:
             logger.debug("audio_kl panns inference failed: %s", e)
             return None
+        logits = out["logits"] if isinstance(out, dict) else out[0]
+        return logits.detach().cpu().numpy().astype(np.float64)[0]
 
-        probs = np.asarray(clipwise).reshape(-1)
-        # ``clipwise_output`` from panns_inference is sigmoid-multi-label, not a
-        # categorical softmax. KL-divergence over distributions requires a
-        # probability simplex, so we apply softmax over the logit-space view
-        # (log) of the sigmoid probabilities to obtain a valid distribution.
-        probs = np.clip(probs, 1e-10, 1.0 - 1e-10)
-        logits = np.log(probs) - np.log(1.0 - probs)
-        return _softmax(logits)
-
-    def _probs_passt(self, audio: np.ndarray) -> Optional[np.ndarray]:
+    def _logits_passt(self, audio: np.ndarray) -> Optional[np.ndarray]:
         try:
             import torch
         except ImportError:
             return None
 
-        x = _resample_linear(audio, self.sample_rate, 32000)
-        # PaSST expects ~10 s clips at 32 kHz, shape [B, T].
-        tensor = torch.from_numpy(x).float().unsqueeze(0).to(self._device)
+        tensor = torch.as_tensor(audio, dtype=torch.float32, device=self._device)
+        if tensor.ndim == 1:
+            tensor = tensor.unsqueeze(0)
         try:
             with torch.no_grad():
                 logits = self._model(tensor)
         except Exception as e:
             logger.debug("audio_kl passt inference failed: %s", e)
             return None
-
         if isinstance(logits, (tuple, list)):
             logits = logits[0]
-        probs = torch.softmax(logits, dim=-1).squeeze(0).detach().cpu().numpy()
-        return probs.astype(np.float64)
+        return logits.squeeze(0).detach().cpu().numpy().astype(np.float64)
 
     # ------------------------------------------------------------------
     def compute_distribution_metric(
         self,
         features: List[np.ndarray],
         reference_features: Optional[List[np.ndarray]] = None,
-    ) -> float:
-        try:
-            gen = np.stack(features, axis=0).astype(np.float64)
-        except Exception as e:
-            logger.debug("audio_kl: could not stack features: %s", e)
-            return float("inf")
+    ) -> Optional[float]:
+        """Paired KL(ref_i || gen_i) over samples with identical basenames."""
+        if not reference_features:
+            logger.info(
+                "audio_kl: no reference features provided; "
+                "metric is undefined without a reference set"
+            )
+            return None
 
-        if reference_features:
-            try:
-                ref = np.stack(reference_features, axis=0).astype(np.float64)
-            except Exception as e:
-                logger.debug("audio_kl: could not stack reference features: %s", e)
-                return float("inf")
-        else:
-            mid = len(gen) // 2
-            if mid < 1:
-                return float("inf")
-            ref = gen[:mid]
-            gen = gen[mid:]
+        gen_by_name: Dict[str, np.ndarray] = {}
+        for name, logits in zip(self._feature_names, features):
+            gen_by_name[name] = np.asarray(logits, dtype=np.float64)
 
-        if len(gen) < 1 or len(ref) < 1:
-            return float("inf")
+        pairs: List[Tuple[np.ndarray, np.ndarray]] = []
+        for name, logits in zip(self._reference_names, reference_features):
+            gen = gen_by_name.get(name)
+            if gen is not None:
+                pairs.append((gen, np.asarray(logits, dtype=np.float64)))
 
-        eps = 1e-10
-        # Re-normalise rows in case the backbone produced unnormalised scores.
-        gen = gen / np.clip(gen.sum(axis=1, keepdims=True), eps, None)
-        ref = ref / np.clip(ref.sum(axis=1, keepdims=True), eps, None)
+        if not pairs:
+            logger.info(
+                "audio_kl: no generated/reference pairs with matching basenames; "
+                "metric is undefined"
+            )
+            return None
 
-        mean_ref = ref.mean(axis=0)
-        # Per-sample KL( gen_i || mean_ref )
-        kl_terms = gen * (np.log(gen + eps) - np.log(mean_ref + eps))
-        per_sample = kl_terms.sum(axis=1)
-        return float(max(per_sample.mean(), 0.0))
+        per_pair = np.empty(len(pairs), dtype=np.float64)
+        for i, (gen_logits, ref_logits) in enumerate(pairs):
+            # Upstream AudioGen formulation: KL(softmax(ref) || softmax(gen)),
+            # summed over classes.
+            log_gen = _log_softmax(gen_logits + _EPS)
+            ref_probs = _softmax_vec(ref_logits)
+            per_pair[i] = float(np.sum(ref_probs * (np.log(ref_probs + _EPS) - log_gen)))
+        return float(max(per_pair.mean(), 0.0))
+
+    def on_dispose(self) -> None:
+        self._feature_names = []
+        self._reference_names = []
+        super().on_dispose()
 
 
 # ---------------------------------------------------------------------------
-def _softmax(x: np.ndarray) -> np.ndarray:
+def _softmax_vec(x: np.ndarray) -> np.ndarray:
     x = np.asarray(x, dtype=np.float64)
     x = x - np.max(x)
     e = np.exp(x)
     s = e.sum()
-    if s <= 0:
+    if s <= 0 or not np.isfinite(s):
         return np.full_like(e, 1.0 / e.size)
     return e / s
 
 
-def _resample_linear(audio: np.ndarray, src_sr: int, dst_sr: int) -> np.ndarray:
-    """Cheap linear-interpolation resampler.
-
-    The backbones expect 32 kHz; this keeps the module dependency-free for the
-    common case where ``ayase.audio.load_audio`` already returned the requested
-    sample rate. For high-fidelity resampling install ``librosa`` and feed the
-    module at its native rate via ``sample_rate=32000``.
-    """
-    if src_sr == dst_sr or len(audio) == 0:
-        return audio.astype(np.float32)
-    duration = len(audio) / float(src_sr)
-    n_target = max(1, int(round(duration * dst_sr)))
-    indices = np.linspace(0, len(audio) - 1, n_target)
-    return np.interp(indices, np.arange(len(audio)), audio).astype(np.float32)
+def _log_softmax(x: np.ndarray) -> np.ndarray:
+    x = np.asarray(x, dtype=np.float64)
+    x = x - np.max(x)
+    logsum = np.log(np.sum(np.exp(x)))
+    return x - logsum

@@ -9,9 +9,9 @@ https://github.com/v-iashin/Synchformer). Lower = better synchronised.
 
 Synchformer classifies the A/V offset over a ±2 s grid (21 classes at 0.2 s
 steps) and returns the ``argmax`` offset in seconds; DeSync is its absolute
-value. Following the MMAudio evaluation protocol, DeSync is the *absolute*
-predicted offset (MMAudio averages ``|offset|`` over the first/last windows of
-a clip — see fidelity notes in the accompanying tests).
+value. Following the MMAudio evaluation protocol, DeSync is the mean of the
+absolute predicted offsets over the first and last 4.8-second windows of the
+clip (a single whole-clip pass when the video is shorter than 4.8 s).
 
 Only the real Synchformer backend produces this metric. There is deliberately
 **no** energy-correlation heuristic here — the honest energy cross-correlation
@@ -28,7 +28,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from ayase.models import Sample, QualityMetrics
 from ayase.pipeline import PipelineModule
@@ -53,8 +53,46 @@ def _has_audio_stream(video_path: str) -> bool:
         return False
 
 
+def _video_duration_sec(video_path: str) -> Optional[float]:
+    """Return container duration in seconds via ffprobe, or None."""
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                "-of", "csv=p=0", video_path,
+            ],
+            capture_output=True, text=True, timeout=10,
+        )
+        return float(result.stdout.strip())
+    except Exception:
+        return None
+
+
+_WINDOW_SEC = 4.8
+
+
+def _cut_window(video_path: Path, start_sec: float, dst: Path) -> bool:
+    """Cut a ``_WINDOW_SEC`` clip starting at *start_sec* into *dst* via ffmpeg."""
+    try:
+        result = subprocess.run(
+            [
+                "ffmpeg", "-y", "-v", "error", "-ss", f"{start_sec:.3f}",
+                "-t", f"{_WINDOW_SEC:.3f}", "-i", str(video_path),
+                "-c", "copy", str(dst),
+            ],
+            capture_output=True, text=True, timeout=60,
+        )
+        return result.returncode == 0 and dst.exists() and dst.stat().st_size > 0
+    except Exception:
+        return False
+
+
 class AVDesyncModule(PipelineModule):
     name = "av_desync"
+    provenance = "published"
+    sources = {
+        "desync_score": "DeSync (Movie Gen/MMAudio) on Synchformer — https://github.com/hkchengrex/MMAudio",
+    }
     description = (
         "DeSync — Synchformer |predicted A/V offset| in seconds "
         "(Movie Gen / MMAudio / HunyuanVideo-Foley; real model only, lower=better)"
@@ -172,14 +210,45 @@ class AVDesyncModule(PipelineModule):
             logger.error("av_desync failed for %s: %s", sample.path, e)
         return sample
 
-    def _compute_desync(self, video_path: Path) -> Optional[float]:
-        """Run Synchformer and return DeSync = |predicted offset| in seconds."""
+    def _infer_offset(self, video_path: Path) -> Optional[float]:
+        """Run Synchformer on one clip and return the predicted offset (sec)."""
         try:
             import torch
 
             with torch.inference_mode():
-                offset_sec = float(self._inferencer.infer(str(video_path)))
-            return abs(offset_sec)
+                return float(self._inferencer.infer(str(video_path)))
         except Exception as e:  # pylint: disable=broad-except
             logger.warning("Synchformer inference failed for %s: %s", video_path, e)
             return None
+
+    def _compute_desync(self, video_path: Path) -> Optional[float]:
+        """DeSync = mean |predicted offset| over first/last 4.8 s windows."""
+        duration = _video_duration_sec(str(video_path))
+        windows: List[Path] = []
+        offsets: List[float] = []
+
+        if duration is None or duration <= _WINDOW_SEC:
+            offsets.append(self._infer_offset(video_path))
+        else:
+            import tempfile
+
+            try:
+                with tempfile.TemporaryDirectory(prefix="av_desync_") as tmpdir:
+                    first = Path(tmpdir) / "first.mp4"
+                    last = Path(tmpdir) / "last.mp4"
+                    if _cut_window(video_path, 0.0, first):
+                        windows.append(first)
+                        offsets.append(self._infer_offset(first))
+                    if _cut_window(video_path, duration - _WINDOW_SEC, last):
+                        windows.append(last)
+                        offsets.append(self._infer_offset(last))
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning("av_desync window extraction failed: %s", e)
+
+            if not offsets:
+                offsets.append(self._infer_offset(video_path))
+
+        valid = [abs(o) for o in offsets if o is not None]
+        if not valid:
+            return None
+        return float(sum(valid) / len(valid))

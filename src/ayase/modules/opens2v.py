@@ -1,58 +1,54 @@
 """OpenS2V-Eval subject-consistency metrics (NexusScore + NaturalScore).
 
 Implements the two subject-driven video-generation metrics from OpenS2V-Nexus
-(PKU-YuanGroup, arXiv:2505.20292) — the reference benchmark for subject-driven /
-personalized ("subject-to-video", S2V) generation:
+(PKU-YuanGroup, arXiv:2505.20292, ``eval/get_nexusscore.py`` /
+``eval/get_naturalscore.py``):
 
-* **NexusScore** ``opens2v_nexus_score`` — subject consistency. An open-vocabulary
-  detector localizes the *subject phrase* in every sampled frame, each detected
-  crop is embedded and compared (cosine) against the reference subject image, and
-  the per-detection similarities are filtered and aggregated. The text-relevance
-  gate makes the score robust to multi-subject frames: crops that do not match the
-  subject phrase (the *wrong* subject) are dropped before aggregation.
-* **NaturalScore** ``opens2v_natural_score`` — naturalness. A vision-language
-  model rates each frame on OpenS2V's 1-5 anti-"copy-paste" rubric (common sense,
-  physical plausibility, visual naturalness, AI-generation artifacts).
+* **NexusScore** ``opens2v_nexus_score`` — subject consistency. The canonical
+  backend (``nexus_backend="opens2v"``) reproduces the upstream pipeline
+  verbatim: a **YOLO-World v2-L image-prompt adapter**
+  (``yolo_world_v2_l_image_prompt_adapter-719a7afb.pth`` via the mmyolo/MMEngine
+  runner) localizes the subject in 32 uniformly sampled frames, conditioned by
+  the *reference image* embedding (CLIP-ViT-B/32 vision encoder -> the
+  adapter's projector), with ``score_thr=0.5`` / ``nms_thr=0.7`` /
+  ``max_num_boxes=100``. Detected crops and the reference image are embedded
+  with **GME-Qwen2-VL-7B** (``Alibaba-NLP/gme-Qwen2-VL-7B-Instruct``); kept
+  detections satisfy ``bbox_conf > 0.6`` and ``gme_text_score > 0.30``;
+  the score is ``mean(kept image scores) / frame_obj`` (``frame_obj`` = frames
+  containing at least one detection), exactly as upstream.
 
-Fidelity vs the reference implementation (``eval/get_nexusscore.py`` /
-``eval/get_naturalscore.py`` in the OpenS2V-Nexus repo):
+  ``nexus_backend="gdino"`` is an opt-in documented deviation (GroundingDINO
+  text-prompted detector + CLIP/DINOv2 crop encoder); ``"auto"`` prefers the
+  canonical backend and falls back to gdino when the mmyolo/yolo_world stack
+  is not installed. The canonical stack requires
+  ``pip install mmyolo`` plus the ``yolo_world`` package
+  (``pip install git+https://github.com/AILab-CVC/YOLO-World``).
 
-    Component            | OpenS2V reference        | This module (practical, real-or-none)
-    ---------------------|--------------------------|--------------------------------------
-    detector             | YOLO-World v2 image-     | GroundingDINO (HF
-                         | prompt adapter (MMEngine)| ``IDEA-Research/grounding-dino-*``),
-                         |                          | text-prompted with the subject phrase
-    crop encoder         | GME (Qwen2-VL-7B) image  | CLIP-I (default) or DINOv2 — config
-                         | & text embeddings        | ``encoder``; CLIP also drives the
-                         |                          | text-relevance gate
-    aggregation          | ``mean(kept)/frame_obj`` | identical (see ``_aggregate_nexus``)
-    keep gates           | bbox>0.6, text>0.30,     | configurable ``keep_box_conf`` /
-                         | image!=0                 | ``keep_text_sim`` (defaults recalibrated
-                         |                          | for the GDINO/CLIP confidence scale)
-    NaturalScore judge   | GPT-4o (whole video, x3) | local VLM (LLaVA, per frame, averaged)
-                         |                          | — same 1-5 rubric, no external API
+* **NaturalScore** ``opens2v_natural_score`` — naturalness. The canonical
+  backend (``natural_judge="openai"``) reproduces the upstream judge verbatim:
+  16 frames sampled at stride ``total//16``, each resized to long-side 512 and
+  sent as base64 JPEG to ``gpt-4o-2024-11-20`` with the upstream rubric prompt;
+  three independent runs are averaged. Requires an OpenAI API key (config
+  ``openai_api_key`` or the ``OPENAI_API_KEY`` env var). ``natural_judge="vlm"``
+  is an opt-in local-VLM deviation (per-frame rubric, averaged); ``"auto"``
+  prefers OpenAI when a key is configured and falls back to the local VLM.
 
-The reference substitutions (GroundingDINO text-prompted detector; CLIP/DINO
-crop encoder; local VLM judge) are deliberate: YOLO-World's MMEngine
-image-prompt-adapter stack and GME-Qwen2-VL-7B / GPT-4o are impractical hard
-dependencies, and a text-prompted detector matches "detect the subject phrase per
-frame" directly. The filtering + aggregation math is ported exactly.
+STRICT real-or-none policy: there is **no** whole-frame-similarity fallback. If
+the detector/encoder stack is unavailable, ``opens2v_nexus_score`` stays
+``None``; if no judge is available, ``opens2v_natural_score`` stays ``None``.
 
-STRICT real-or-none policy: there is **no** whole-frame-similarity fallback (that
-is what ``clip_image_similarity`` / ``i2v_similarity`` already do). If the
-detector or crop encoder are unavailable, ``opens2v_nexus_score`` stays ``None``;
-if the VLM is unavailable, ``opens2v_natural_score`` stays ``None``. ``self._backend``
-records what actually ran (e.g. ``"groundingdino+clip"``, ``"groundingdino+clip+llava"``,
-or ``"unavailable"``).
-
-Reference subject image (precedence): ``sample.reference_path`` (an image file, or
-a directory whose images are averaged), else config ``reference_image``.
-Subject phrase (precedence): config ``subject_prompt``, else ``sample.caption.text``.
-When neither a reference nor a phrase can be resolved, NexusScore is left ``None``.
+Reference subject image (precedence): ``sample.reference_path`` (an image file,
+or a directory whose images are averaged), else config ``reference_image``.
+Subject phrase (precedence): config ``subject_prompt``, else
+``sample.caption.text``. Upstream supports multiple reference images/labels per
+video; Ayase's generic sample model carries a single reference pair, which is
+the documented adaptation.
 """
 
 import logging
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
@@ -71,45 +67,101 @@ _DINOV2_WEIGHTS = {
     "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
 }
 
-# OpenS2V NaturalScore rubric (ported from eval/get_naturalscore.py — GPT-4o prompt).
-_NATURAL_RUBRIC = (
-    "You are evaluating whether a single video frame looks natural and free of "
-    "AI-generation artifacts. Assess: (1) common-sense consistency, (2) physical "
-    "plausibility (lighting, shadows, motion, reflections), (3) visual naturalness "
-    "(textures, proportions, details), and (4) AI-generation artifacts (blurring, "
-    "morphing, glitches, distortions). If people are present, pay special attention "
-    "to faces, anatomical correctness, and body proportions. Rate the naturalness on "
-    "an integer scale from 1 to 5, where: 1 = clear and frequent artifacts, distorted "
-    "shapes, implausible physics; 2 = noticeable AI-generation cues, inconsistent "
-    "anatomy, fluctuating textures; 3 = mixed indicators, subtle flaws or small "
-    "anomalies; 4 = mostly natural, only minor and rare irregularities; 5 = fully "
-    "consistent with real-world physics, no visible artifacts. Answer with a single "
-    "digit from 1 to 5 and nothing else."
+# OpenS2V NaturalScore judge prompt (verbatim, eval/get_naturalscore.py).
+_NATURAL_PROMPT = """
+Your task is to determine how realistic the given video clip appears, based on 16 extracted frames. Consider the following aspects in your evaluation:
+
+- **Common sense consistency**: Are the objects, people, and interactions logically coherent in the context of the video?
+- **Physical plausibility**: Do lighting, shadows, motion, and reflections obey the laws of physics? Are the objects in motion consistent with real-world physics?
+- **Naturalness**: Does the visual quality (textures, details, proportions, etc.) resemble what we would expect in real life? Is there any unnatural visual distortion?
+- **AI generation artifacts**: Are there signs of unnatural blurring, morphing, glitches, distortions, or inconsistencies across frames?
+
+**If the video contains humans**, pay special attention to:
+- Are the facial features realistic and anatomically correct (e.g., eyes, mouth, and nose proportions)?
+- Do the body parts appear proportionate and natural in motion (e.g., arm and leg movements, hand gestures)?
+
+If **no humans** are present in the video, you can focus on evaluating the realism of other visual aspects like object consistency, motion fluidity, and environmental plausibility without needing to specifically assess human-related elements.
+
+Output a score from 1 to 5 based on the criteria below, followed by an explanation of the reasoning behind your score:
+
+- **1 — Definitely AI-Generated**: Clear and frequent artifacts (e.g., blurry faces or objects, unnatural movements, inconsistent lighting), distorted shapes, implausible physics (e.g., impossible movements, lighting issues), and severe inconsistencies. Violates common sense or real-world logic. Faces and bodies may be unrealistic or distorted if humans are present.
+- **2 — Likely AI-Generated**: Noticeable AI generation cues such as inconsistent anatomy, fluctuating object textures, or mild physical implausibility (e.g., unnatural hand positions or eye movements). Faces and bodies may appear unnatural or inconsistent if humans are present. Still clearly synthetic upon inspection.
+- **3 — Uncertain / Borderline**: Mixed indicators — the video may appear mostly natural but contains subtle flaws or small anomalies that raise suspicion. Faces and bodies might show mild inconsistencies (e.g., slight distortion in facial features or body parts) if humans are present. Hard to determine definitively.
+- **4 — Likely Real**: Mostly natural and physically plausible, with only minor and rare irregularities that might be explainable (e.g., slight compression, mild lighting inconsistencies). Faces and body parts are mostly natural, with only minor imperfections, if humans are present.
+- **5 — Definitely Real**: Fully consistent with real-world physics, common sense, and appearance. No visible artifacts or signs of AI generation. Faces and body parts appear fully realistic, without any visible distortions or unnatural movements, if humans are present.
+
+Please only return the score (1-5), no additional explanation.
+"""
+
+# Upstream OpenS2V-Weight checkpoint for the image-prompt YOLO-World adapter.
+_YOLO_CKPT_NAME = "yolo_world_v2_l_image_prompt_adapter-719a7afb.pth"
+_YOLO_CKPT_URL = "https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/yolo_world_v2_l_image_prompt_adapter-719a7afb.pth"
+_YOLO_CFG_REL = os.path.join(
+    "configs", "yolo_world_v2_l_vlpan_bn_2e-4_80e_8gpus_image_prompt_demo.py"
 )
+
+
+def _mmyolo_config_path(rel_path: str) -> Optional[str]:
+    """Resolve an mmyolo repo-relative config inside the installed package."""
+    try:
+        import mmyolo
+    except ImportError:
+        return None
+    base = os.path.dirname(mmyolo.__file__)
+    for root in (os.path.join(base, ".mim"), base):
+        candidate = os.path.join(root, rel_path.replace("/", os.sep))
+        if os.path.isfile(candidate):
+            return candidate
+    return None
 
 
 class OpenS2VModule(PipelineModule):
     name = "opens2v"
+    provenance = "adapted"
+    sources = {
+        "opens2v_natural_score": "OpenS2V-Nexus NaturalScore (arXiv 2505.20292) — https://github.com/PKU-YuanGroup/OpenS2V-Nexus",
+        "opens2v_nexus_score": "OpenS2V-Nexus NexusScore (arXiv 2505.20292) — https://github.com/PKU-YuanGroup/OpenS2V-Nexus",
+    }
+    deviations = {
+        "opens2v_natural_score": "canonical 'openai' replicates upstream (GPT-4o x3 over 16 stride-sampled frames, verbatim prompt); 'vlm' is a local VLM judge substitute (documented substitution)",
+        "opens2v_nexus_score": "canonical 'opens2v' replicates upstream (YOLO-World image-prompt + GME-Qwen2-VL-7B); 'gdino' substitutes GroundingDINO+CLIP/DINOv2 for the detector/encoder (documented substitution). A single reference pair instead of upstream's img_paths×labels list",
+    }
     description = (
-        "OpenS2V-Eval subject-consistency metrics: NexusScore (GroundingDINO subject "
-        "crops vs reference subject image) and NaturalScore (VLM naturalness judge)"
+        "OpenS2V-Eval subject-consistency metrics: NexusScore (YOLO-World image-prompt "
+        "subject crops vs reference subject image, GME embeddings) and NaturalScore "
+        "(GPT-4o naturalness judge)"
     )
     default_config = {
         "device": "auto",
-        "max_frames": 16,
-        # GroundingDINO (open-vocabulary, text-prompted) detector
+        "nexus_backend": "auto",    # "auto" | "opens2v" | "gdino"
+        "natural_judge": "auto",    # "auto" | "openai" | "vlm"
+        # Canonical NexusScore stack (upstream eval/get_nexusscore.py)
+        "nexus_frames": 32,          # upstream: 32 linspace frames
+        "yolo_checkpoint": _YOLO_CKPT_NAME,
+        "yolo_clip_model": "openai/clip-vit-base-patch32",
+        "gme_model": "Alibaba-NLP/gme-Qwen2-VL-7B-Instruct",
+        "det_score_thr": 0.5,        # upstream yoloworld_inference score_thr
+        "det_nms_thr": 0.7,          # upstream yoloworld_inference nms_thr
+        "det_max_boxes": 100,        # upstream max_num_boxes
+        "keep_box_conf": 0.6,        # upstream aggregation gate
+        "keep_text_sim": 0.30,       # upstream aggregation gate
+        # GroundingDINO fallback detector (opt-in deviation)
         "detector_model": "IDEA-Research/grounding-dino-tiny",
-        "box_threshold": 0.30,   # GDINO detection score threshold (post-process)
-        "text_threshold": 0.25,  # GDINO token-grounding threshold (post-process)
-        # NexusScore aggregation gates (OpenS2V get_nexusscore.py: 0.6 / 0.30 for
-        # YOLO-World + GME; recalibrated here for the GDINO + CLIP confidence scale).
-        "keep_box_conf": 0.30,
-        "keep_text_sim": 0.20,
-        # Subject-crop feature encoder for crop<->reference similarity.
-        "encoder": "clip",       # "clip" (CLIP-I) | "dino" (DINOv2)
+        "box_threshold": 0.30,
+        "text_threshold": 0.25,
+        "gdino_keep_box_conf": 0.30,
+        "gdino_keep_text_sim": 0.20,
+        "encoder": "clip",           # "clip" (CLIP-I) | "dino" (DINOv2)
         "clip_model": "openai/clip-vit-base-patch32",
         "dino_model": "dinov2_vitb14",
-        # NaturalScore VLM judge
+        "max_frames": 16,            # gdino path frame count
+        # Canonical NaturalScore judge (upstream eval/get_naturalscore.py)
+        "openai_model": "gpt-4o-2024-11-20",
+        "openai_api_key": None,      # else OPENAI_API_KEY env var
+        "openai_base_url": None,
+        "natural_frames": 16,        # upstream: stride total//16
+        "natural_runs": 3,           # upstream: naturalscore_1/2/3
+        # Local VLM judge (opt-in deviation)
         "vlm_model": "llava-hf/llava-1.5-7b-hf",
         "vlm_max_frames": 4,
         "vlm_max_new_tokens": 8,
@@ -126,13 +178,42 @@ class OpenS2VModule(PipelineModule):
     metric_info = {
         "opens2v_nexus_score": (
             "OpenS2V NexusScore — subject consistency of detected subject crops vs the "
-            "reference subject image (0-1 range before frame normalization; higher=better)"
+            "reference subject image (higher=better)"
         ),
         "opens2v_natural_score": (
             "OpenS2V NaturalScore — VLM naturalness rating on the 1-5 anti-copy-paste "
             "rubric (higher=better)"
         ),
     }
+    models = [
+        {
+            "id": "BestWishYsh/OpenS2V-Weight",
+            "type": "huggingface",
+            "task": "YOLO-World v2-L image-prompt subject detector (canonical)",
+            "notes": f"file {_YOLO_CKPT_NAME}",
+        },
+        {
+            "id": "Alibaba-NLP/gme-Qwen2-VL-7B-Instruct",
+            "type": "huggingface",
+            "task": "GME image/text embeddings (canonical NexusScore)",
+        },
+        {
+            "id": "openai/clip-vit-base-patch32",
+            "type": "huggingface",
+            "task": "YOLO-World prompt encoder / CLIP fallback encoder",
+        },
+        {
+            "id": "gpt-4o-2024-11-20",
+            "type": "other",
+            "task": "NaturalScore judge via OpenAI API (canonical)",
+        },
+        {
+            "id": "mmyolo+yolo_world",
+            "type": "pip_package",
+            "install": "pip install mmyolo && pip install git+https://github.com/AILab-CVC/YOLO-World",
+            "task": "MMEngine YOLO-World runner stack (canonical NexusScore)",
+        },
+    ]
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(config)
@@ -148,6 +229,12 @@ class OpenS2VModule(PipelineModule):
         self._dino_transform = None
         self._vlm_model = None
         self._vlm_processor = None
+        self._yolo_runner = None
+        self._yolo_vision = None
+        self._yolo_processor = None
+        self._yolo_txt_feats = None
+        self._gme = None
+        self._openai_client = None
 
         # Availability flags
         self._gdino_ok = False
@@ -155,7 +242,9 @@ class OpenS2VModule(PipelineModule):
         self._dino_ok = False
         self._vlm_ok = False
         self._nexus_available = False
+        self._nexus_backend = None
         self._natural_available = False
+        self._natural_backend = None
         self._vlm_tag = "vlm"
 
         self._backend = "unavailable"
@@ -174,41 +263,186 @@ class OpenS2VModule(PipelineModule):
 
         self._device = resolve_torch_device(self.config.get("device", "auto"))
 
-        self._load_detector()
-        self._load_clip()
-        if self._encoder == "dino":
-            self._load_dino()
-        self._load_vlm()
+        nexus_backend = str(self.config.get("nexus_backend", "auto")).lower()
+        natural_judge = str(self.config.get("natural_judge", "auto")).lower()
 
-        # NexusScore needs the detector, the CLIP text gate, and the chosen crop encoder.
-        self._nexus_available = (
-            self._gdino_ok
-            and self._clip_ok
-            and (self._encoder != "dino" or self._dino_ok)
-        )
-        self._natural_available = self._vlm_ok
+        # NexusScore: canonical upstream stack first, GDINO as opt-in/fallback.
+        if nexus_backend in ("auto", "opens2v"):
+            self._load_official_nexus()
+        if self._nexus_backend is None and nexus_backend in ("auto", "gdino"):
+            self._load_detector()
+            self._load_clip()
+            if self._encoder == "dino":
+                self._load_dino()
+            if self._gdino_ok and self._clip_ok and (
+                self._encoder != "dino" or self._dino_ok
+            ):
+                self._nexus_backend = "gdino"
+        elif self._nexus_backend is None and nexus_backend == "opens2v":
+            logger.warning(
+                "OpenS2V: canonical nexus backend requested but mmyolo/yolo_world "
+                "stack is unavailable; opens2v_nexus_score will not be populated"
+            )
+        self._nexus_available = self._nexus_backend is not None
+
+        # NaturalScore: canonical GPT-4o judge first, local VLM as opt-in/fallback.
+        if natural_judge in ("auto", "openai"):
+            self._load_openai()
+        if self._natural_backend is None and natural_judge in ("auto", "vlm"):
+            self._load_vlm()
+            if self._vlm_ok:
+                self._natural_backend = "vlm"
+        elif self._natural_backend is None and natural_judge == "openai":
+            logger.warning(
+                "OpenS2V: openai judge requested but no API key configured; "
+                "opens2v_natural_score will not be populated"
+            )
+        self._natural_available = self._natural_backend is not None
 
         parts: List[str] = []
-        if self._gdino_ok:
-            parts.append("groundingdino")
-        if self._encoder == "dino" and self._dino_ok:
-            parts.append("dino")
-        if self._clip_ok:
-            parts.append("clip")
-        if self._vlm_ok:
-            parts.append(self._vlm_tag)
-
-        if (self._nexus_available or self._natural_available) and parts:
-            self._backend = "+".join(parts)
-        else:
-            self._backend = "unavailable"
+        if self._nexus_backend:
+            parts.append(self._nexus_backend)
+        if self._natural_backend:
+            parts.append(self._natural_backend if self._natural_backend != "vlm" else self._vlm_tag)
+        self._backend = "+".join(parts) if parts else "unavailable"
 
         logger.info(
             "OpenS2V ready: backend=%s nexus=%s natural=%s",
             self._backend,
-            self._nexus_available,
-            self._natural_available,
+            self._nexus_backend,
+            self._natural_backend,
         )
+
+    # -- canonical NexusScore loaders ---------------------------------------
+
+    def _load_official_nexus(self) -> None:
+        """Load the upstream YOLO-World image-prompt runner + GME encoder."""
+        try:
+            runner, vision_model, vision_processor, txt_feats = self._build_yolo_runner()
+        except Exception as e:  # noqa: BLE001
+            logger.info("OpenS2V: canonical YOLO-World stack unavailable: %s", e)
+            runner = None
+        if runner is None:
+            return
+        try:
+            from ayase.third_party.opens2v.gme_model import GmeQwen2VL
+            from ayase.runtime import shared_runtime_resource
+
+            gme_path = self.config.get("gme_model", "Alibaba-NLP/gme-Qwen2-VL-7B-Instruct")
+            device = self._device
+
+            def load_gme():
+                return GmeQwen2VL(model_path=gme_path, device=device)
+
+            self._gme = shared_runtime_resource(self, ("gme_qwen2vl", gme_path, device), load_gme)
+        except Exception as e:  # noqa: BLE001
+            logger.info("OpenS2V: GME encoder unavailable: %s", e)
+            return
+
+        self._yolo_runner, self._yolo_vision, self._yolo_processor, self._yolo_txt_feats = (
+            runner, vision_model, vision_processor, txt_feats,
+        )
+        self._nexus_backend = "opens2v"
+
+    def _build_yolo_runner(self):
+        """Upstream ``load_model_and_config``: Runner + CLIP prompt encoders."""
+        import torch
+        from mmengine.config import Config
+        from mmengine.dataset import Compose
+        from mmengine.runner import Runner
+        from mmyolo.registry import RUNNERS
+        from transformers import (
+            AutoProcessor,
+            AutoTokenizer,
+            CLIPTextModelWithProjection,
+            CLIPVisionModelWithProjection,
+        )
+
+        base_cfg = _mmyolo_config_path(
+            "configs/yolov8/yolov8_l_syncbn_fast_8xb16-500e_coco.py"
+        )
+        if base_cfg is None:
+            raise ImportError("mmyolo base config not found (pip install mmyolo)")
+
+        # The vendored config's ``_base_`` is repo-relative; rewrite it to the
+        # absolute path inside the installed mmyolo package.
+        vendored = Path(__file__).resolve().parent.parent / "third_party" / "opens2v" / _YOLO_CFG_REL
+        text = vendored.read_text(encoding="utf-8")
+        text = re.sub(
+            r'^_base_\s*=\s*["\'][^"\']*["\']',
+            f'_base_ = "{base_cfg.replace(os.sep, "/")}"',
+            text,
+            count=1,
+            flags=re.M,
+        )
+        tmp = tempfile.NamedTemporaryFile(
+            "w", suffix="_yoloworld_cfg.py", delete=False, encoding="utf-8"
+        )
+        tmp.write(text)
+        tmp.close()
+
+        from ayase.config import download_model_file
+
+        models_dir = str(self.config.get("models_dir", "models"))
+        ckpt = download_model_file(
+            f"opens2v/{self.config.get('yolo_checkpoint', _YOLO_CKPT_NAME)}",
+            _YOLO_CKPT_URL,
+            models_dir,
+        )
+        clip_model_path = self.config.get("yolo_clip_model", "openai/clip-vit-base-patch32")
+        device = self._device
+
+        cfg = Config.fromfile(tmp.name)
+        cfg.load_from = str(ckpt)
+        cfg.text_model_name = clip_model_path
+        cfg.model.vision_model = clip_model_path
+        cfg.model.backbone.text_model.model_name = clip_model_path
+
+        runner = (
+            Runner.from_cfg(cfg)
+            if "runner_type" not in cfg
+            else RUNNERS.build(cfg)
+        )
+        runner.call_hook("before_run")
+        runner.load_or_resume()
+        pipeline = cfg.test_dataloader.dataset.pipeline
+        pipeline[0].type = "mmdet.LoadImageFromNDArray"
+        runner.pipeline = Compose(pipeline)
+        runner.model.eval()
+
+        vision_processor = AutoProcessor.from_pretrained(clip_model_path)
+        vision_model = CLIPVisionModelWithProjection.from_pretrained(clip_model_path)
+        vision_model.to(device)
+        tokenizer = AutoTokenizer.from_pretrained(clip_model_path, use_fast=True)
+        text_model = CLIPTextModelWithProjection.from_pretrained(clip_model_path)
+        text_model.to(device)
+
+        texts = tokenizer(text=[" "], return_tensors="pt", padding=True).to(device)
+        txt_feats = text_model(**texts).text_embeds
+        txt_feats = txt_feats / txt_feats.norm(p=2, dim=-1, keepdim=True)
+        txt_feats = txt_feats.reshape(-1, txt_feats.shape[-1])[0].unsqueeze(0)
+
+        return runner, vision_model, vision_processor, txt_feats
+
+    # -- canonical NaturalScore loader ----------------------------------------
+
+    def _load_openai(self) -> None:
+        api_key = self.config.get("openai_api_key") or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            logger.info("OpenS2V: no OpenAI API key (openai_api_key / OPENAI_API_KEY)")
+            return
+        try:
+            from openai import OpenAI
+
+            self._openai_client = OpenAI(
+                api_key=api_key, base_url=self.config.get("openai_base_url")
+            )
+            self._natural_backend = "openai"
+            logger.info("OpenS2V: OpenAI judge ready (%s)", self.config.get("openai_model"))
+        except Exception as e:  # noqa: BLE001
+            logger.info("OpenS2V: OpenAI client unavailable: %s", e)
+
+    # -- deviation backend loaders --------------------------------------------
 
     def _load_detector(self) -> None:
         try:
@@ -383,19 +617,13 @@ class OpenS2VModule(PipelineModule):
             return sample
 
         try:
-            frames = sample_frames(
-                sample.path, max_frames=int(self.config.get("max_frames", 16)), color="rgb"
-            )
-            if not frames:
-                return sample
-
             nexus: Optional[float] = None
             if self._nexus_available:
-                nexus = self._compute_nexus(sample, frames)
+                nexus = self._compute_nexus(sample)
 
             natural: Optional[float] = None
             if self._natural_available:
-                natural = self._compute_natural(frames)
+                natural = self._compute_natural(sample)
 
             if nexus is None and natural is None:
                 return sample
@@ -430,11 +658,164 @@ class OpenS2VModule(PipelineModule):
     #  NexusScore                                                         #
     # ------------------------------------------------------------------ #
 
-    def _compute_nexus(self, sample: Sample, frames: List[np.ndarray]) -> Optional[float]:
+    def _compute_nexus(self, sample: Sample) -> Optional[float]:
         phrase = self._resolve_phrase(sample)
         ref_path = self._resolve_reference(sample)
         if not phrase or ref_path is None:
             # No subject phrase or reference subject image => cannot run (strict None).
+            return None
+
+        if self._nexus_backend == "opens2v":
+            return self._compute_nexus_official(sample, ref_path, phrase)
+        return self._compute_nexus_gdino(sample, ref_path, phrase)
+
+    # -- canonical upstream path ----------------------------------------------
+
+    def _generate_prompt_embeddings(self, prompt_image: Image.Image):
+        """Upstream ``generate_image_embeddings``: CLIP vision embed -> projector."""
+        import torch
+
+        prompt_image = prompt_image.convert("RGB")
+        inputs = self._yolo_processor(
+            images=[prompt_image], return_tensors="pt", padding=True
+        ).to(self._device)
+        image_outputs = self._yolo_vision(**inputs)
+        img_feats = image_outputs.image_embeds.view(1, -1)
+        img_feats = img_feats / img_feats.norm(p=2, dim=-1, keepdim=True)
+        projector = getattr(self._yolo_runner.model, "image_prompt_encoder", None)
+        projector = getattr(projector, "projector", None) if projector is not None else None
+        if projector is not None:
+            img_feats = projector(img_feats)
+        return img_feats
+
+    def _yoloworld_inference(self, frame: Image.Image, prompt_image: Image.Image):
+        """Upstream ``yoloworld_inference``: image-prompt-conditioned detection."""
+        import torch
+        from mmengine.runner.amp import autocast
+        from torchvision.ops import nms
+
+        image = frame.convert("RGB")
+        prompt_embeddings = self._generate_prompt_embeddings(prompt_image)
+        prompt_embeddings = prompt_embeddings / prompt_embeddings.norm(
+            p=2, dim=-1, keepdim=True
+        )
+        runner = self._yolo_runner
+        runner.model.num_test_classes = prompt_embeddings.shape[0]
+        runner.model.setembeddings(prompt_embeddings[None])
+
+        data_info = {"img_id": 0, "img": np.array(image), "texts": [["object"], [" "]]}
+        data_info = runner.pipeline(data_info)
+        data_batch = {
+            "inputs": data_info["inputs"].unsqueeze(0),
+            "data_samples": [data_info["data_samples"]],
+        }
+
+        with autocast(enabled=False), torch.no_grad():
+            if "texts" in data_batch["data_samples"][0]:
+                del data_batch["data_samples"][0]["texts"]
+            output = runner.model.test_step(data_batch)[0]
+            pred_instances = output.pred_instances
+
+        keep = nms(
+            pred_instances.bboxes,
+            pred_instances.scores,
+            iou_threshold=float(self.config.get("det_nms_thr", 0.7)),
+        )
+        pred_instances = pred_instances[keep]
+        pred_instances = pred_instances[
+            pred_instances.scores.float() > float(self.config.get("det_score_thr", 0.5))
+        ]
+
+        max_boxes = int(self.config.get("det_max_boxes", 100))
+        if len(pred_instances.scores) > max_boxes:
+            indices = pred_instances.scores.float().topk(max_boxes)[1]
+            pred_instances = pred_instances[indices]
+
+        return pred_instances.cpu().numpy()
+
+    def _compute_nexus_official(
+        self, sample: Sample, ref_path: Path, phrase: str
+    ) -> Optional[float]:
+        """Verbatim upstream scoring: image-prompt detections + GME + gates."""
+        frames = sample_frames(
+            sample.path,
+            max_frames=int(self.config.get("nexus_frames", 32)),
+            color="rgb",
+        )
+        if not frames:
+            return None
+
+        prompt_image = load_pil_image(ref_path)
+        if prompt_image is None:
+            return None
+
+        all_local_images: List[Image.Image] = []
+        all_yolo_conf: List[float] = []
+        frame_obj = 0
+
+        for arr in frames:
+            frame = Image.fromarray(arr)
+            pred = self._yoloworld_inference(frame, prompt_image)
+            bboxes = pred["bboxes"]
+            confidences = pred["scores"]
+            all_yolo_conf.extend(confidences.tolist())
+
+            if len(bboxes) != 0:
+                frame_obj += 1
+            for bbox in bboxes:
+                x1, y1, x2, y2 = [float(v) for v in bbox]
+                all_local_images.append(
+                    frame.crop((x1, y1, x2, y2))
+                )
+
+        if not all_local_images:
+            return None
+
+        import torch
+
+        e_main = self._gme.get_image_embeddings(
+            images=[prompt_image] * len(all_local_images),
+            is_query=False,
+            show_progress_bar=False,
+        )
+        e_query = self._gme.get_text_embeddings(
+            texts=[phrase] * len(all_local_images),
+            instruction="Find an image that matches the given text.",
+            show_progress_bar=False,
+        )
+        e_local = self._gme.get_image_embeddings(
+            images=all_local_images, is_query=False, show_progress_bar=False
+        )
+
+        gme_image_score = (e_main * e_local).sum(-1)
+        gme_text_score = (e_query * e_local).sum(-1)
+
+        kept: List[float] = []
+        for bbox_conf, text_conf, nexus_score in zip(
+            all_yolo_conf, gme_text_score, gme_image_score
+        ):
+            if (
+                float(bbox_conf) > float(self.config.get("keep_box_conf", 0.6))
+                and float(text_conf) > float(self.config.get("keep_text_sim", 0.30))
+                and float(nexus_score) != 0
+            ):
+                kept.append(float(nexus_score))
+
+        if kept:
+            return float(torch.mean(torch.tensor(kept)).item()) / max(frame_obj, 1)
+        return 0.0
+
+    # -- GDINO deviation path --------------------------------------------------
+
+    def _compute_nexus_gdino(
+        self, sample: Sample, ref_path: Path, phrase: str
+    ) -> Optional[float]:
+        frames = sample_frames(
+            sample.path,
+            max_frames=int(self.config.get("max_frames", 16)),
+            color="rgb",
+        )
+        if not frames:
             return None
 
         which = "dino" if self._encoder == "dino" else "clip"
@@ -475,8 +856,8 @@ class OpenS2VModule(PipelineModule):
         return self._aggregate_nexus(
             detections,
             frame_obj,
-            box_conf_threshold=float(self.config.get("keep_box_conf", 0.30)),
-            text_sim_threshold=float(self.config.get("keep_text_sim", 0.20)),
+            box_conf_threshold=float(self.config.get("gdino_keep_box_conf", 0.30)),
+            text_sim_threshold=float(self.config.get("gdino_keep_text_sim", 0.20)),
         )
 
     @staticmethod
@@ -578,24 +959,90 @@ class OpenS2VModule(PipelineModule):
     #  NaturalScore                                                       #
     # ------------------------------------------------------------------ #
 
-    def _compute_natural(self, frames: List[np.ndarray]) -> Optional[float]:
-        max_frames = int(self.config.get("vlm_max_frames", 4))
-        step = max(1, len(frames) // max_frames) if max_frames > 0 else 1
+    def _compute_natural(self, sample: Sample) -> Optional[float]:
+        if self._natural_backend == "openai":
+            return self._natural_openai(sample)
+        return self._natural_vlm(sample)
+
+    def _natural_frames_official(self, video_path: str, num_frames: int = 16):
+        """Upstream ``extract_frames``: stride ``total//num_frames`` positions,
+        long-side 512 resize, base64 JPEG."""
+        import base64
+        import cv2
+
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_interval = max(total_frames // num_frames, 1)
+        frames_b64 = []
+        for i in range(num_frames):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, i * frame_interval)
+            ret, frame = cap.read()
+            if ret:
+                h, w = frame.shape[:2]
+                if h >= w:
+                    new_size = (int(w * 512 / h), 512)
+                else:
+                    new_size = (512, int(h * 512 / w))
+                frame = cv2.resize(frame, new_size, interpolation=cv2.INTER_AREA)
+                _, buffer = cv2.imencode(".jpg", frame)
+                frames_b64.append(base64.b64encode(buffer).decode("utf-8"))
+        cap.release()
+        return frames_b64
+
+    def _natural_openai(self, sample: Sample) -> Optional[float]:
+        if not sample.is_video:
+            return None
+        frames_b64 = self._natural_frames_official(
+            str(sample.path), int(self.config.get("natural_frames", 16))
+        )
+        if not frames_b64:
+            return None
+
+        content = [
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
+            }
+            for b64 in frames_b64
+        ]
+        content.append({"type": "text", "text": _NATURAL_PROMPT})
+
+        scores: List[float] = []
+        for _ in range(int(self.config.get("natural_runs", 3))):
+            try:
+                response = self._openai_client.chat.completions.create(
+                    model=self.config.get("openai_model", "gpt-4o-2024-11-20"),
+                    stream=False,
+                    messages=[{"role": "user", "content": content}],
+                )
+                text = response.choices[0].message.content.strip()
+                m = re.search(r"[1-5]", text)
+                if m:
+                    scores.append(float(m.group()))
+            except Exception as e:  # noqa: BLE001
+                logger.info("OpenS2V: OpenAI judge call failed: %s", e)
+        return float(np.mean(scores)) if scores else None
+
+    def _natural_vlm(self, sample: Sample) -> Optional[float]:
+        frames = sample_frames(
+            sample.path,
+            max_frames=int(self.config.get("vlm_max_frames", 4)),
+            color="rgb",
+        )
+        if not frames:
+            return None
         scores: List[int] = []
-        for frame in frames[::step][:max_frames]:
-            pil = Image.fromarray(np.ascontiguousarray(frame))
-            rating = self._vlm_rate(pil)
+        for arr in frames:
+            rating = self._vlm_rate(Image.fromarray(np.ascontiguousarray(arr)))
             if rating is not None:
                 scores.append(rating)
-        if not scores:
-            return None
-        return float(np.mean(scores))
+        return float(np.mean(scores)) if scores else None
 
     def _vlm_rate(self, pil_frame: Image.Image) -> Optional[int]:
         try:
             import torch
 
-            prompt = f"USER: <image>\n{_NATURAL_RUBRIC}\nASSISTANT:"
+            prompt = f"USER: <image>\n{_NATURAL_PROMPT}\nASSISTANT:"
             # LlavaProcessor.__call__ takes ``images`` as its first positional
             # argument, so pass text/images by keyword (matching the model card).
             inputs = self._vlm_processor(
@@ -676,27 +1123,26 @@ class OpenS2VModule(PipelineModule):
         return pils
 
     # ------------------------------------------------------------------ #
-    #  Reference / subject-phrase resolution                             #
+    #  Input resolution                                                   #
     # ------------------------------------------------------------------ #
 
     def _resolve_phrase(self, sample: Sample) -> Optional[str]:
-        prompt = self.config.get("subject_prompt")
-        if prompt:
-            return str(prompt)
-        caption = getattr(sample, "caption", None)
-        if caption is not None and getattr(caption, "text", None):
-            return str(caption.text)
+        phrase = self.config.get("subject_prompt")
+        if phrase:
+            return str(phrase)
+        if sample.caption and sample.caption.text:
+            return sample.caption.text
         return None
 
     def _resolve_reference(self, sample: Sample) -> Optional[Path]:
         ref = getattr(sample, "reference_path", None)
         if ref:
-            rp = Path(ref)
-            if rp.exists():
-                return rp
+            p = Path(ref)
+            if p.exists():
+                return p
         cfg_ref = self.config.get("reference_image")
         if cfg_ref:
-            rp = Path(str(cfg_ref))
-            if rp.exists():
-                return rp
+            p = Path(cfg_ref)
+            if p.exists():
+                return p
         return None

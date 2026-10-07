@@ -7,7 +7,9 @@ pairs.
 
 Outputs:
     image_lpips      — per-sample LPIPS distance vs reference (0-1, lower=more similar)
-    lpips_diversity  — dataset-level average pairwise LPIPS (higher=more diverse)
+    lpips_diversity  — dataset-level average pairwise LPIPS between samples
+                       that share the same conditioning input
+                       (``reference_path``); higher=more diverse
 
 Requires ``sample.reference_path`` for per-sample LPIPS.
 
@@ -29,6 +31,11 @@ logger = logging.getLogger(__name__)
 
 class ImageLPIPSModule(PipelineModule):
     name = "image_lpips"
+    provenance = "published"
+    sources = {
+        "image_lpips": "LPIPS (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity",
+        "lpips_diversity": "LPIPS-diversity (BicycleGAN/MUNIT) — https://arxiv.org/abs/1711.11586",
+    }
     description = "LPIPS perceptual distance between image pairs and diversity metric"
     default_config = {
         "net": "alex",  # "alex", "vgg", "squeeze"
@@ -48,7 +55,7 @@ class ImageLPIPSModule(PipelineModule):
     ]
     metric_info = {
         "image_lpips": "Per-sample LPIPS distance to reference image (lower=better)",
-        "lpips_diversity": "Dataset average pairwise LPIPS distance (higher=more diverse)",
+        "lpips_diversity": "Mean pairwise LPIPS between outputs sharing a conditioning input (higher=more diverse)",
     }
     metric_groups = {
         "image_lpips": "fr_quality",
@@ -60,8 +67,8 @@ class ImageLPIPSModule(PipelineModule):
         self._lpips_model = None
         self._device = "cpu"
         self._backend = None
-        # Cache resized RGB images for diversity computation
-        self._tensor_cache: List[Tuple[str, np.ndarray]] = []
+        # Cache (condition key, resized RGB image) for diversity computation
+        self._tensor_cache: List[Tuple[Optional[str], np.ndarray]] = []
 
     def setup(self) -> None:
         """Load (or reuse a pipeline-shared) LPIPS model."""
@@ -108,11 +115,12 @@ class ImageLPIPSModule(PipelineModule):
             if sample_img is None:
                 return sample
 
-            # Cache for diversity computation (store path + resized image)
-            self._cache_for_diversity(str(sample.path), sample_img)
+            # Cache for diversity computation — keyed by the conditioning
+            # reference so pairs are only formed within one condition.
+            ref_path = getattr(sample, "reference_path", None)
+            self._cache_for_diversity(str(ref_path) if ref_path else None, sample_img)
 
             # Per-sample FR LPIPS requires reference_path
-            ref_path = getattr(sample, "reference_path", None)
             if ref_path is None:
                 return sample
 
@@ -131,38 +139,49 @@ class ImageLPIPSModule(PipelineModule):
         return sample
 
     def post_process(self, all_samples: List[Sample]) -> None:
-        """Compute dataset-level LPIPS diversity from cached images."""
-        if len(self._tensor_cache) < 2:
-            self._tensor_cache = []
-            return
+        """Compute dataset-level LPIPS diversity from cached images.
+
+        Per the published diversity protocol, pairs are only formed between
+        outputs produced for the *same* conditioning input
+        (``reference_path``) — not across the whole dataset.
+        """
+        # Group cached outputs by condition key; conditions with one output
+        # contribute nothing.
+        groups: dict = {}
+        for idx, (key, _img) in enumerate(self._tensor_cache):
+            groups.setdefault(key, []).append(idx)
 
         try:
             max_pairs = self.config.get("diversity_max_pairs", 500)
-            n = len(self._tensor_cache)
+            seed = int(self.config.get("seed", 42))
+            rng = random.Random(seed)
 
-            # Generate all possible pair indices
-            all_pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+            per_condition: List[float] = []
+            for key in sorted(groups):
+                indices = groups[key]
+                if len(indices) < 2:
+                    continue
 
-            # Subsample if too many pairs, with a locally-seeded RNG so the
-            # diversity metric is reproducible across runs (does not touch the
-            # global random state).
-            if len(all_pairs) > max_pairs:
-                seed = int(self.config.get("seed", 42))
-                rng = random.Random(seed)
-                pairs = rng.sample(all_pairs, max_pairs)
-            else:
-                pairs = all_pairs
+                all_pairs = [
+                    (i, j) for a, i in enumerate(indices) for j in indices[a + 1 :]
+                ]
+                if len(all_pairs) > max_pairs:
+                    all_pairs = rng.sample(all_pairs, max_pairs)
 
-            distances = self._compute_distances_batched(pairs)
+                distances = self._compute_distances_batched(all_pairs)
+                if distances:
+                    per_condition.append(float(np.mean(distances)))
 
-            if distances:
-                diversity = float(np.mean(distances))
+            if per_condition:
+                diversity = float(np.mean(per_condition))
                 # Store in pipeline stats
                 if hasattr(self, "pipeline") and self.pipeline:
                     if hasattr(self.pipeline, "add_dataset_metric"):
                         self.pipeline.add_dataset_metric("lpips_diversity", diversity)
                 logger.info(
-                    "ImageLPIPS diversity: %.4f (from %d pairs)", diversity, len(distances)
+                    "ImageLPIPS diversity: %.4f (over %d conditions)",
+                    diversity,
+                    len(per_condition),
                 )
 
         except Exception as e:
@@ -185,9 +204,9 @@ class ImageLPIPSModule(PipelineModule):
         except Exception:
             return None
 
-    def _cache_for_diversity(self, path: str, img: np.ndarray) -> None:
-        """Cache an image for diversity computation."""
-        self._tensor_cache.append((path, img))
+    def _cache_for_diversity(self, key: Optional[str], img: np.ndarray) -> None:
+        """Cache an image for diversity computation under its condition key."""
+        self._tensor_cache.append((key, img))
 
     def _to_tensor(self, img_rgb: np.ndarray):
         """RGB uint8 HWC -> LPIPS tensor (1,3,H,W) in [-1, 1]."""

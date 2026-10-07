@@ -1,128 +1,50 @@
-"""FGD — Frechet Gesture Distance (Yoon et al. 2020).
+"""FGD — Frechet Gesture Distance (external backend).
 
-Dataset-level metric that measures the Frechet distance between distributions
-of gesture/motion sequences. The published FGD uses a trained gesture
-autoencoder to embed pose sequences; ayase has no such pretrained backend
-wired, so the metric is left unset rather than reported from an optical-flow
-proxy (which would not reproduce FGD).
+Yoon et al. (TOG 2020) evaluate co-speech gesture generation with a Frechet
+distance between the generated and reference distributions of features from
+an autoencoder trained on TED-style gesture motion. For the BEAT dataset the
+sanctioned implementation is the PantoMatrix/EMAGE autoencoder checkpoint on
+SMPL-X joint rotations.
 
-fgd_score — lower = better (distribution closer to reference).
+The trained gesture autoencoder is not bundled (checkpoint must be fetched
+from the PantoMatrix release assets), so the module stays registered but
+marked ``requires_external_backend`` until the encoder is wired in.
+
+fgd (dataset-level) -- lower = closer to the reference gesture set.
 """
 
 import logging
-from pathlib import Path
-from typing import Optional, List
 
-import cv2
-import numpy as np
-
-from ayase.models import Sample, QualityMetrics
 from ayase.base_modules import BatchMetricModule
+from ayase.models import Sample
 
 logger = logging.getLogger(__name__)
 
 
 class FGDModule(BatchMetricModule):
     name = "fgd"
-    description = "Frechet Gesture Distance for motion generation (batch metric, 2020)"
-    default_config = {
-        "num_frames": 16,
-        "subsample_videos": None,
+    description = "Frechet Gesture Distance on autoencoder latents (Yoon et al. 2020)"
+    provenance = "published"
+    sources = {
+        "fgd": "FGD, Yoon et al., TOG 2020 (arXiv:2009.02119); PantoMatrix/EMAGE encoder — https://github.com/PantoMatrix/PantoMatrix",
     }
+    requires_external_backend = True  # gesture autoencoder checkpoint not bundled
+    requires_reference = True
+    default_config = {"fps": 15}
     metric_info = {
-        "fgd": "Frechet Gesture Distance between generated and reference motion distributions (lower=better)",
+        "fgd": "Frechet distance on gesture-autoencoder latents vs reference set (lower=closer)",
     }
-
-    def __init__(self, config=None):
-        super().__init__(config)
-        self._model = None
-        self.num_frames = self.config.get("num_frames", 16)
-        self.subsample_videos = self.config.get("subsample_videos", None)
-        self._processed_count = 0
-        self._ml_available = False
-        self._backend = "unavailable"
+    metric_groups = {"fgd": "motion"}
 
     def setup(self) -> None:
         logger.warning(
-            "FGD unavailable: no pretrained gesture-autoencoder backend for "
-            "Frechet Gesture Distance is wired; metric disabled."
+            "fgd unavailable: the published FGD encoder (Yoon et al. 2020 "
+            "gesture autoencoder / PantoMatrix checkpoint) is not bundled; "
+            "fgd left unset."
         )
 
-    def extract_features(self, sample: Sample) -> Optional[np.ndarray]:
-        """FGD has no real feature extractor wired; no features are produced."""
+    def extract_features(self, sample: Sample):
         return None
 
-    def compute_distribution_metric(
-        self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
-    ) -> float:
-        """Compute Frechet distance between gesture feature distributions."""
-        try:
-            features_array = np.stack(features, axis=0)
-
-            if reference_features is not None and len(reference_features) > 0:
-                ref_array = np.stack(reference_features, axis=0)
-            else:
-                mid = len(features_array) // 2
-                if mid < 1:
-                    return 0.0
-                ref_array = features_array[:mid]
-                features_array = features_array[mid:]
-
-            return self._frechet_distance(features_array, ref_array)
-        except Exception as e:
-            logger.error(f"FGD computation failed: {e}")
-            return float("inf")
-
-    def _frechet_distance(self, feat1: np.ndarray, feat2: np.ndarray) -> float:
-        """Compute Frechet distance between two feature sets."""
-        mu1 = np.mean(feat1, axis=0)
-        mu2 = np.mean(feat2, axis=0)
-
-        if feat1.shape[0] < 2 or feat2.shape[0] < 2:
-            return float(np.sum((mu1 - mu2) ** 2))
-
-        sigma1 = np.cov(feat1, rowvar=False)
-        sigma2 = np.cov(feat2, rowvar=False)
-
-        if sigma1.ndim == 0:
-            sigma1 = np.array([[sigma1]])
-        if sigma2.ndim == 0:
-            sigma2 = np.array([[sigma2]])
-
-        diff = mu1 - mu2
-
-        try:
-            from scipy import linalg
-            covmean, _ = linalg.sqrtm(sigma1 @ sigma2, disp=False)
-            if np.iscomplexobj(covmean):
-                covmean = covmean.real
-            fd = diff @ diff + np.trace(sigma1 + sigma2 - 2 * covmean)
-        except ImportError:
-            # Fallback without scipy: use trace approximation
-            fd = float(diff @ diff + np.trace(sigma1) + np.trace(sigma2))
-
-        return float(fd)
-
-    def on_dispose(self) -> None:
-        if len(self._feature_cache) < 2:
-            logger.info(f"FGD: Not enough samples ({len(self._feature_cache)})")
-            self._feature_cache = []
-            self._reference_cache = []
-            return
-
-        try:
-            score = self.compute_distribution_metric(
-                self._feature_cache,
-                self._reference_cache if self._reference_cache else None,
-            )
-            logger.info(f"FGD: {score:.4f} ({len(self._feature_cache)} samples)")
-
-            if hasattr(self, "pipeline") and self.pipeline:
-                if hasattr(self.pipeline, "add_dataset_metric"):
-                    self.pipeline.add_dataset_metric("fgd", score)
-        except Exception as e:
-            logger.error(f"FGD failed: {e}")
-        finally:
-            self._feature_cache = []
-            self._reference_cache = []
-            self._processed_count = 0
+    def compute_distribution_metric(self, features, reference_features=None):
+        return None

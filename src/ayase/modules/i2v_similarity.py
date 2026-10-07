@@ -1,26 +1,23 @@
 """Image-to-Video Similarity — reference image vs generated video quality.
 
-Measures how closely a generated video matches its source reference image using
-three complementary perceptual metrics with a sliding-window approach:
+Ayase construct (own): measures how closely a generated video matches its
+source reference image with three sliding-window similarity signals:
 
-- **CLIP** (Radford et al., 2021): cosine similarity of CLIP embeddings
-- **DINOv2** (Oquab et al., 2023): cosine similarity of self-supervised embeddings
-- **LPIPS** (Zhang et al., 2018): learned perceptual distance (lower = more similar)
+- **CLIP**: cosine similarity between the reference image embedding and the
+  mean embedding of each 16-frame window
+- **DINOv2**: same construction over self-supervised embeddings
+- **LPIPS**: learned perceptual distance between the reference image and the
+  pixel-wise window average (lower = more similar)
 
-The sliding-window technique (used in VBench, EvalCrafter) splits video frames
-into overlapping temporal windows, computes per-window scores against the
-reference image, and takes the median — providing a robust aggregate that
-handles temporal variation.
+Per-window scores are aggregated by median over overlapping windows, and
+``i2v_quality_blend`` combines the three into a 0-100 score:
 
-Aggregated I2V quality score:
-    i2v_quality = clip * 0.4 + (1 - lpips) * 100 * 0.2 + dino * 0.4
+    i2v_quality_blend = clip * 0.4 + (1 - lpips) * 100 * 0.2 + dino * 0.4
 
-Activates only when ``sample.is_video`` and ``sample.reference_path`` points to
-an image file.
-
-References:
-    - VBench (Huang et al., 2023) — comprehensive video generation benchmark
-    - EvalCrafter (Liu et al., 2023) — T2V evaluation framework
+This module is NOT the VBench-I2V subject/background consistency metrics —
+those score every frame against the reference image, which this windowed
+construction does not. Activates only when ``sample.is_video`` and
+``sample.reference_path`` points to an image file.
 """
 
 import logging
@@ -40,6 +37,13 @@ _IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"}
 
 class I2VSimilarityModule(PipelineModule):
     name = "i2v_similarity"
+    provenance = "own"
+    sources = {
+        "i2v_clip_winmed": "Ayase construct — median of CLIP reference-similarity over 16-frame windows",
+        "i2v_dino_winmed": "Ayase construct — median of DINOv2 reference-similarity over 16-frame windows",
+        "i2v_lpips_winmed": "Ayase construct — median LPIPS of reference vs window pixel-average",
+        "i2v_quality_blend": "Ayase construct — weighted blend 0.4*CLIP + 0.2*(1-LPIPS) + 0.4*DINOv2",
+    }
     description = "Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)"
     default_config = {
         "window_size": 16,
@@ -53,10 +57,10 @@ class I2VSimilarityModule(PipelineModule):
         "enable_lpips": True,
     }
     metric_groups = {
-        "i2v_clip": "i2v",
-        "i2v_dino": "i2v",
-        "i2v_lpips": "i2v",
-        "i2v_quality": "i2v",
+        "i2v_clip_winmed": "i2v",
+        "i2v_dino_winmed": "i2v",
+        "i2v_lpips_winmed": "i2v",
+        "i2v_quality_blend": "i2v",
     }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -293,16 +297,16 @@ class I2VSimilarityModule(PipelineModule):
                 sample.quality_metrics = QualityMetrics()
 
             if clip_score is not None:
-                sample.quality_metrics.i2v_clip = round(clip_score, 4)
+                sample.quality_metrics.i2v_clip_winmed = round(clip_score, 4)
             if dino_score is not None:
-                sample.quality_metrics.i2v_dino = round(max(0.0, dino_score), 4)
+                sample.quality_metrics.i2v_dino_winmed = round(max(0.0, dino_score), 4)
             if lpips_score is not None:
-                sample.quality_metrics.i2v_lpips = round(lpips_score, 4)
+                sample.quality_metrics.i2v_lpips_winmed = round(lpips_score, 4)
 
             # Aggregated quality
             i2v_q = self._aggregate(clip_score, dino_score, lpips_score)
             if i2v_q is not None:
-                sample.quality_metrics.i2v_quality = round(i2v_q, 2)
+                sample.quality_metrics.i2v_quality_blend = round(i2v_q, 2)
 
                 if i2v_q < 30.0:
                     sample.validation_issues.append(
@@ -310,10 +314,10 @@ class I2VSimilarityModule(PipelineModule):
                             severity=ValidationSeverity.WARNING,
                             message=f"Low I2V quality: {i2v_q:.1f}/100",
                             details={
-                                "i2v_clip": clip_score,
-                                "i2v_dino": dino_score,
-                                "i2v_lpips": lpips_score,
-                                "i2v_quality": i2v_q,
+                                "i2v_clip_winmed": clip_score,
+                                "i2v_dino_winmed": dino_score,
+                                "i2v_lpips_winmed": lpips_score,
+                                "i2v_quality_blend": i2v_q,
                             },
                             recommendation="Generated video diverges significantly from the reference image.",
                         )

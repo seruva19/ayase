@@ -99,8 +99,8 @@ def test_deduplication_groups_near_duplicates_and_keeps_best(tmp_path):
         Sample(path=tmp_path / name, is_video=False)
         for name in ("orig.png", "copy.jpg", "other.png")
     ]
-    samples[0].quality_metrics = QualityMetrics(technical_score=40.0)
-    samples[1].quality_metrics = QualityMetrics(technical_score=80.0)
+    samples[0].quality_metrics = QualityMetrics(blur_score=40.0)
+    samples[1].quality_metrics = QualityMetrics(blur_score=80.0)
 
     m = DeduplicationModule({"hamming_threshold": 6})
     m.on_mount()
@@ -109,7 +109,7 @@ def test_deduplication_groups_near_duplicates_and_keeps_best(tmp_path):
     m.post_process(samples)
 
     dup_issues = lambda s: [i for i in s.validation_issues if i.issue_type == "near_duplicate"]
-    # The higher-technical_score copy is kept; the original is flagged against it.
+    # The higher-priority_metric (blur_score) copy is kept; the original is flagged against it.
     assert len(dup_issues(samples[0])) == 1
     assert dup_issues(samples[0])[0].details["original"] == str(samples[1].path)
     assert dup_issues(samples[1]) == []

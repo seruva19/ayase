@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 class MSSSIMModule(ReferenceBasedModule):
     name = "ms_ssim"
+    provenance = "published"
+    sources = {
+        "ms_ssim": "MS-SSIM (Wang et al., 2003) via pytorch-msssim — https://github.com/VainF/pytorch-msssim",
+    }
     description = "Multi-Scale SSIM perceptual similarity metric (full-reference)"
     default_config = {
         "scales": 5,  # Number of downsampling scales

@@ -36,7 +36,6 @@ from numpy.lib.stride_tricks import sliding_window_view
 from scipy.ndimage import uniform_filter
 from scipy.signal import convolve2d
 
-from ayase.image import sample_frames
 from ayase.models import Sample
 from ayase.base_modules import ReferenceBasedModule
 
@@ -441,16 +440,24 @@ def _stmad_index(ref_frames: List[np.ndarray], dst_frames: List[np.ndarray]) -> 
 
 class STMADModule(ReferenceBasedModule):
     name = "st_mad"
+    provenance = "adapted"
+    sources = {
+        "st_mad": "Vu, Vu, Chandler, ICIP 2011; STMAD_2011_MatlabCode — https://github.com/Netflix/vmaf/tree/master/matlab/STMAD_2011_MatlabCode",
+    }
+    deviations = {
+        "st_mad": "line-by-line port; upstream reads all video frames — here all consecutive frames up to an optional max_frames; luma via cv2 BGR2GRAY",
+    }
     description = "ST-MAD spatiotemporal MAD (ICIP 2011, deterministic port, lower=better)"
     metric_field = "st_mad"
-    default_config = {"max_frames": 64}
+    # 0 = all consecutive frames (upstream protocol); >0 = cap for cost control.
+    default_config = {"max_frames": 0}
     metric_groups = {
         "st_mad": "fr_quality",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.max_frames = int(self.config.get("max_frames", 64))
+        self.max_frames = int(self.config.get("max_frames", 0))
         self._backend = None
 
     def setup(self) -> None:
@@ -467,12 +474,24 @@ class STMADModule(ReferenceBasedModule):
         if sample_path.suffix.lower() not in _VIDEO_EXTS:
             return None
         try:
-            ref_frames = sample_frames(str(reference_path), max_frames=self.max_frames, color="gray")
-            dst_frames = sample_frames(str(sample_path), max_frames=self.max_frames, color="gray")
+            import cv2
+
+            def read_all(path):
+                """Upstream MATLAB reads the whole video; consecutive gray frames."""
+                cap = cv2.VideoCapture(str(path))
+                out = []
+                while cap.isOpened() and (self.max_frames <= 0 or len(out) < self.max_frames):
+                    ok, frame = cap.read()
+                    if not ok:
+                        break
+                    out.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+                cap.release()
+                return out
+
+            ref_frames = read_all(reference_path)
+            dst_frames = read_all(sample_path)
             if not ref_frames or not dst_frames:
                 return None
-
-            import cv2
 
             n = min(len(ref_frames), len(dst_frames))
             hei = min(ref_frames[0].shape[0], dst_frames[0].shape[0])

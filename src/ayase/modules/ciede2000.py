@@ -103,6 +103,11 @@ def _ciede2000_pixel(lab1: np.ndarray, lab2: np.ndarray) -> np.ndarray:
 
 class CIEDE2000Module(ReferenceBasedModule):
     name = "ciede2000"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "ciede2000": "CIEDE2000 (CIE; Sharma et al. 2005, DOI:10.1002/col.20070)",
+    }
     description = "CIEDE2000 perceptual color difference (lower=better)"
     default_config = {"subsample": 5}
     metric_groups = {

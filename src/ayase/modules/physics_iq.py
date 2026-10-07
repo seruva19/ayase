@@ -33,7 +33,7 @@ The legacy combined score follows ``physiq/calculate_iq_score.py``:
             - (mse - var_mse)
     score = clamp(round(score * 100, 2), 0, 100)
 
-DEVIATION (documented): the legacy ``physics_iq_score`` uses neutral ``var_*``
+DEVIATION (documented): the legacy ``physics_iq_neutral_score`` uses neutral ``var_*``
 terms because a single-reference sample has no second real take. The reference
 ``var_*`` terms are the *physical
 variance* — the metric between two *independent real takes* (take-1 vs
@@ -70,6 +70,30 @@ logger = logging.getLogger(__name__)
 
 class PhysicsIQModule(ReferenceBasedModule):
     name = "physics_iq"
+    provenance = {
+        "physics_iq_mse": "published",
+        "physics_iq_neutral_score": "own",
+        "physics_iq_spatial_iou": "published",
+        "physics_iq_spatiotemporal_iou": "published",
+        "physics_iq_verified_mse_score": "published",
+        "physics_iq_verified_score": "published",
+        "physics_iq_verified_spatial_score": "published",
+        "physics_iq_verified_spatiotemporal_score": "published",
+        "physics_iq_verified_weighted_spatial_score": "published",
+        "physics_iq_weighted_spatial_iou": "published",
+    }
+    sources = {
+        "physics_iq_mse": "Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_neutral_score": "Physics-IQ score claimed — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_spatial_iou": "Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_spatiotemporal_iou": "Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_verified_mse_score": "Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_verified_score": "Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_verified_spatial_score": "Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_verified_spatiotemporal_score": "Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_verified_weighted_spatial_score": "Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark",
+        "physics_iq_weighted_spatial_iou": "Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark",
+    }
     description = (
         "Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)"
     )
@@ -101,7 +125,7 @@ class PhysicsIQModule(ReferenceBasedModule):
         "ratio_epsilon": 1e-8,
     }
     metric_info = {
-        "physics_iq_score": "Combined Physics-IQ score (0-100, higher=better)",
+        "physics_iq_neutral_score": "Combined Physics-IQ score (0-100, higher=better)",
         "physics_iq_spatial_iou": "IoU of time-collapsed motion masks vs real continuation (0-1)",
         "physics_iq_spatiotemporal_iou": "Mean per-frame motion-mask IoU vs real continuation (0-1)",
         "physics_iq_weighted_spatial_iou": "IoU of per-pixel motion-frequency maps vs real continuation (0-1)",
@@ -113,7 +137,7 @@ class PhysicsIQModule(ReferenceBasedModule):
         "physics_iq_verified_mse_score": "Inverse physical-variance-normalized MSE (0-1)",
     }
     metric_groups = {
-        "physics_iq_score": "fr_quality",
+        "physics_iq_neutral_score": "fr_quality",
         "physics_iq_spatial_iou": "fr_quality",
         "physics_iq_spatiotemporal_iou": "fr_quality",
         "physics_iq_weighted_spatial_iou": "fr_quality",
@@ -413,7 +437,7 @@ class PhysicsIQModule(ReferenceBasedModule):
         sample.quality_metrics.physics_iq_spatiotemporal_iou = st_iou
         sample.quality_metrics.physics_iq_weighted_spatial_iou = weighted_iou
         sample.quality_metrics.physics_iq_mse = mse
-        sample.quality_metrics.physics_iq_score = score
+        sample.quality_metrics.physics_iq_neutral_score = score
 
         variance_reference = self._resolve_variance_reference()
         if variance_reference is not None:

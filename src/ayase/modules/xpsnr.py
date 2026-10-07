@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 class XPSNRModule(ReferenceBasedModule):
     name = "xpsnr"
+    provenance = "published"
+    sources = {
+        "xpsnr": "XPSNR, Helmrich et al.; FFmpeg xpsnr — https://ffmpeg.org/ffmpeg-filters.html#xpsnr",
+    }
     description = "XPSNR perceptually weighted PSNR (Fraunhofer, dB, higher=better)"
     default_config = {}
     metric_groups = {

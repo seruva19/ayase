@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class NIQEModule(NoReferenceModule):
     name = "niqe"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "niqe": "NIQE (Mittal et al., 2013) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "Natural Image Quality Evaluator (no-reference)"
     default_config = {
         "subsample": 2,  # Process every Nth frame for videos

@@ -81,6 +81,23 @@ class VoiceIdentityDriftModule(PipelineModule):
     """Expose chronological ECAPA-TDNN speaker-identity diagnostics."""
 
     name = "voice_identity_drift"
+    deprecated = True
+    provenance = {
+        "voice_identity_below_threshold_fraction": "own",
+        "voice_identity_drift_slope": "own",
+        "voice_identity_longest_below_threshold_run_fraction": "own",
+        "voice_identity_reference_coverage": "utility",
+        "voice_identity_similarity_min": "own",
+        "voice_identity_similarity_p05": "own",
+        "voice_identity_window_coverage": "utility",
+    }
+    sources = {
+        "voice_identity_below_threshold_fraction": "none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143",
+        "voice_identity_drift_slope": "none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143",
+        "voice_identity_longest_below_threshold_run_fraction": "none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143",
+        "voice_identity_similarity_min": "none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143",
+        "voice_identity_similarity_p05": "none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143",
+    }
     description = "Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics"
     default_config = {
         "device": "auto",

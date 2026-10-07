@@ -83,6 +83,12 @@ def _agreement(left: np.ndarray, right: np.ndarray) -> float:
 
 class HeadPoseSimilarityModule(PipelineModule):
     name = "head_pose_similarity"
+    provenance = {
+        "head_pose_angle_agreement": "own",
+        "head_pose_rate_agreement": "own",
+        "head_pose_similarity": "own",
+        "head_pose_similarity_coverage": "utility",
+    }
     description = "Similarity of head-motion manner to a reference clip, compared as distributions"
     default_config = {
         "models_dir": "models",

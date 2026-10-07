@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class MemoryVQAModule(PipelineModule):
     name = "memoryvqa"
+    provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable)"
     default_config = {

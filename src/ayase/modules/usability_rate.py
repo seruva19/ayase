@@ -2,7 +2,7 @@
 
 This is not a frame- or dataset-level rate. It returns 100 when technical_score
 meets the configured 0--100 threshold, otherwise 0; if technical_score is absent,
-it applies the threshold to aesthetic_score multiplied by ten. It does not
+it applies the threshold to aesthetic_v25_score multiplied by ten. It does not
 compare predictions with MOS or combine other metrics. With no supported input
 score, usability_rate remains unset.
 
@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 class UsabilityRateModule(PipelineModule):
     name = "usability_rate"
+    deprecated = True
+    provenance = "own"
     description = "Computes percentage of usable frames based on quality thresholds"
     default_config = {
         "quality_threshold": 50.0,  # Minimum quality score to be "usable"
@@ -47,13 +49,14 @@ class UsabilityRateModule(PipelineModule):
             return None  # Unknown — no quality signal
 
         # Check technical score
-        if sample.quality_metrics.technical_score is not None:
-            return 1.0 if sample.quality_metrics.technical_score >= self.quality_threshold else 0.0
+        technical = sample.quality_metrics.model_dump().get("technical_score")
+        if technical is not None:
+            return 1.0 if technical >= self.quality_threshold else 0.0
 
         # Check aesthetic score as fallback
-        if sample.quality_metrics.aesthetic_score is not None:
+        if sample.quality_metrics.aesthetic_v25_score is not None:
             # Aesthetic score is 0-10, convert to 0-100
-            aesthetic_100 = sample.quality_metrics.aesthetic_score * 10
+            aesthetic_100 = sample.quality_metrics.aesthetic_v25_score * 10
             return 1.0 if aesthetic_100 >= self.quality_threshold else 0.0
 
         return None  # Unknown — no quality signal

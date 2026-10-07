@@ -21,6 +21,13 @@ logger = logging.getLogger(__name__)
 
 class WSSSIMModule(ReferenceBasedModule):
     name = "ws_ssim"
+    provenance = "adapted"
+    sources = {
+        "ws_ssim": "WS-SSIM, Zhou et al. 2018; 360tools — https://github.com/Samsung/360tools",
+    }
+    deviations = {
+        "ws_ssim": "weights at pixel centers as in 360tools; SSIM kernel via cv2 GaussianBlur (upstream uses a fixed Gaussian window); video — <=subsample frames with pairwise averaging",
+    }
     description = "WS-SSIM weighted spherical SSIM"
     metric_field = "ws_ssim"
     default_config = {"subsample": 8}
@@ -39,7 +46,8 @@ class WSSSIMModule(ReferenceBasedModule):
             h, w = img_gray.shape
             ref_gray = cv2.resize(ref_gray, (w, h))
             img_f, ref_f = img_gray.astype(np.float64), ref_gray.astype(np.float64)
-            lat = np.linspace(-np.pi / 2, np.pi / 2, h).reshape(-1, 1)
+            # 360tools pixel-centre latitude weights: cos((j+0.5-H/2)*pi/H)
+            lat = ((np.arange(h, dtype=np.float64) + 0.5 - h / 2.0) * np.pi / h).reshape(-1, 1)
             weights = np.cos(lat)
             weights = np.broadcast_to(weights, (h, w))
             C1, C2 = 6.5025, 58.5225

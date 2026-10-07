@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 class FUNQUEModule(PipelineModule):
     name = "funque"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "funque_score": "FUNQUE (Venkataramanan et al.) — per the paper's design — https://github.com/abhinaukumar/funque",
+    }
     description = "Fused quality evaluator via the real FUNQUE package (full-reference)"
     default_config = {"subsample": 8}
     metric_groups = {

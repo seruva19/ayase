@@ -7,30 +7,30 @@ from ayase.models import QualityMetrics, Sample
 
 
 def test_finevq_basics():
-    from ayase.modules.finevq import FineVQModule
+    from ayase.modules.finevq_raw import FineVQModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(FineVQModule, "finevq")
+    _test_module_basics(FineVQModule, "finevq_raw")
 
 
 def test_finevq_video(video_sample):
-    from ayase.modules.finevq import FineVQModule
+    from ayase.modules.finevq_raw import FineVQModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = FineVQModule()
     result = m.process(video_sample)
     # Without ML backend, module skips gracefully
-    assert result.quality_metrics.finevq_score is None
+    assert result.quality_metrics.finevq_raw_mean is None
 
 
 def test_finevq_image(image_sample):
-    from ayase.modules.finevq import FineVQModule
+    from ayase.modules.finevq_raw import FineVQModule
 
     image_sample.quality_metrics = QualityMetrics()
     m = FineVQModule()
     result = m.process(image_sample)
     # Without ML backend, module skips gracefully
-    assert result.quality_metrics.finevq_score is None
+    assert result.quality_metrics.finevq_raw_mean is None
 
 
 def test_kvq_basics():
@@ -78,49 +78,49 @@ def test_rqvqa_video(video_sample):
 
 
 def test_videval_basics():
-    from ayase.modules.videval import VIDEVALModule
+    from ayase.modules.svr60_vq import VIDEVALModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(VIDEVALModule, "videval")
+    _test_module_basics(VIDEVALModule, "svr60_vq")
 
 
 def test_videval_video(video_sample):
-    from ayase.modules.videval import VIDEVALModule
+    from ayase.modules.svr60_vq import VIDEVALModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = VIDEVALModule()
     result = m.process(video_sample)
     # Without ML backend, module skips gracefully
-    assert result.quality_metrics.videval_score is None
+    assert result.quality_metrics.svr60_score is None
 
 
 def test_videval_image(image_sample):
-    from ayase.modules.videval import VIDEVALModule
+    from ayase.modules.svr60_vq import VIDEVALModule
 
     image_sample.quality_metrics = QualityMetrics()
     m = VIDEVALModule()
     result = m.process(image_sample)
     # Without ML backend, module skips gracefully
-    assert result.quality_metrics.videval_score is None
+    assert result.quality_metrics.svr60_score is None
 
 
 def test_tlvqm_basics():
-    from ayase.modules.tlvqm import TLVQMModule
+    from ayase.modules.resnet_svr_vq import TLVQMModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(TLVQMModule, "tlvqm")
+    _test_module_basics(TLVQMModule, "resnet_svr_vq")
 
 
 def test_tlvqm_video(video_sample):
     """The handcrafted-feature tier was removed: without the CNN-TLVQM
     backend loaded (setup not run), the score must stay unset."""
-    from ayase.modules.tlvqm import TLVQMModule
+    from ayase.modules.resnet_svr_vq import TLVQMModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = TLVQMModule()
     result = m.process(video_sample)
     assert m._ml_available is False
-    assert result.quality_metrics.tlvqm_score is None
+    assert result.quality_metrics.resnet_svr_score is None
 
 
 def test_funque_basics():
@@ -148,71 +148,71 @@ def test_funque_video(video_sample):
 
 
 def test_movie_basics():
-    from ayase.modules.movie import MOVIEModule
+    from ayase.modules.gabor_flow_vq import MOVIEModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(MOVIEModule, "movie")
+    _test_module_basics(MOVIEModule, "gabor_flow_vq")
 
 
 def test_movie_video_no_reference_is_unset(video_sample):
     """MOVIE is full-reference: without a reference nothing is fabricated."""
-    from ayase.modules.movie import MOVIEModule
+    from ayase.modules.gabor_flow_vq import MOVIEModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = MOVIEModule()
     result = m.process(video_sample)
     assert m._backend == "unavailable"
-    assert result.quality_metrics.movie_score is None
+    assert result.quality_metrics.gabor_flow_score is None
 
 
 def test_movie_video_with_reference(video_sample):
     """With a reference the real Gabor FR computation produces a score."""
-    from ayase.modules.movie import MOVIEModule
+    from ayase.modules.gabor_flow_vq import MOVIEModule
 
     video_sample.quality_metrics = QualityMetrics()
     video_sample.reference_path = video_sample.path
     m = MOVIEModule()
     result = m.process(video_sample)
-    assert result.quality_metrics.movie_score is not None
-    assert 0.0 <= result.quality_metrics.movie_score <= 1.0
+    assert result.quality_metrics.gabor_flow_score is not None
+    assert 0.0 <= result.quality_metrics.gabor_flow_score <= 1.0
 
 
 def test_st_greed_basics():
-    from ayase.modules.st_greed import STGREEDModule
+    from ayase.modules.mscn_entropy import STGREEDModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(STGREEDModule, "st_greed")
+    _test_module_basics(STGREEDModule, "mscn_entropy")
 
 
 def test_st_greed_video_no_reference_is_unset(video_sample):
     """ST-GREED is full-reference: without a reference nothing is fabricated."""
-    from ayase.modules.st_greed import STGREEDModule
+    from ayase.modules.mscn_entropy import STGREEDModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = STGREEDModule()
     result = m.process(video_sample)
-    assert result.quality_metrics.st_greed_score is None
+    assert result.quality_metrics.mscn_entropy_score is None
 
 
 def test_st_greed_video_with_reference(video_sample):
     """With a reference the real entropic-difference FR computation runs."""
-    from ayase.modules.st_greed import STGREEDModule
+    from ayase.modules.mscn_entropy import STGREEDModule
 
     video_sample.quality_metrics = QualityMetrics()
     video_sample.reference_path = video_sample.path
     m = STGREEDModule()
     result = m.process(video_sample)
-    assert result.quality_metrics.st_greed_score is not None
-    assert 0.0 <= result.quality_metrics.st_greed_score <= 1.0
+    assert result.quality_metrics.mscn_entropy_score is not None
+    assert 0.0 <= result.quality_metrics.mscn_entropy_score <= 1.0
 
 
 def test_st_greed_image(image_sample):
-    from ayase.modules.st_greed import STGREEDModule
+    from ayase.modules.mscn_entropy import STGREEDModule
 
     image_sample.quality_metrics = QualityMetrics()
     m = STGREEDModule()
     result = m.process(image_sample)
-    assert result.quality_metrics.st_greed_score is None
+    assert result.quality_metrics.mscn_entropy_score is None
 
 
 def test_c3dvqa_basics():
@@ -267,16 +267,16 @@ def test_flolpips_image(image_sample):
 
 
 def test_hdr_vqm_basics():
-    from ayase.modules.hdr_vqm import HDRVQMModule
+    from ayase.modules.hdr_subband_flicker_score import HDRVQMModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(HDRVQMModule, "hdr_vqm")
+    _test_module_basics(HDRVQMModule, "hdr_subband_flicker_score")
 
 
 def test_hdr_vqm_video(video_sample):
     """HDR-VQM is full-reference (PU21 + wavelets): scores only with a
     reference and the pywt backend, no NR proxy."""
-    from ayase.modules.hdr_vqm import HDRVQMModule
+    from ayase.modules.hdr_subband_flicker_score import HDRVQMModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = HDRVQMModule()
@@ -284,20 +284,20 @@ def test_hdr_vqm_video(video_sample):
 
     # No reference → no score, ever
     result = m.process(video_sample)
-    assert result.quality_metrics.hdr_vqm is None
+    assert result.quality_metrics.hdr_subband_flicker_score is None
 
     video_sample.reference_path = video_sample.path
     result = m.process(video_sample)
     if m._backend == "pu21_wavelet":
-        assert result.quality_metrics.hdr_vqm is not None
-        assert 0.0 <= result.quality_metrics.hdr_vqm <= 1.0
+        assert result.quality_metrics.hdr_subband_flicker_score is not None
+        assert 0.0 <= result.quality_metrics.hdr_subband_flicker_score <= 1.0
     else:
         assert m._backend == "unavailable"
-        assert result.quality_metrics.hdr_vqm is None
+        assert result.quality_metrics.hdr_subband_flicker_score is None
 
 
 def test_hdr_vqm_image(image_sample):
-    from ayase.modules.hdr_vqm import HDRVQMModule
+    from ayase.modules.hdr_subband_flicker_score import HDRVQMModule
 
     image_sample.quality_metrics = QualityMetrics()
     image_sample.reference_path = image_sample.path
@@ -305,36 +305,36 @@ def test_hdr_vqm_image(image_sample):
     m.setup()
     result = m.process(image_sample)
     if m._backend == "pu21_wavelet":
-        assert result.quality_metrics.hdr_vqm is not None
+        assert result.quality_metrics.hdr_subband_flicker_score is not None
     else:
         assert m._backend == "unavailable"
-        assert result.quality_metrics.hdr_vqm is None
+        assert result.quality_metrics.hdr_subband_flicker_score is None
 
 
 def test_st_lpips_basics():
-    from ayase.modules.st_lpips import STLPIPSModule
+    from ayase.modules.stlpips_selfdist import STLPIPSModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(STLPIPSModule, "st_lpips")
+    _test_module_basics(STLPIPSModule, "stlpips_selfdist")
 
 
 def test_st_lpips_video(video_sample):
-    from ayase.modules.st_lpips import STLPIPSModule
+    from ayase.modules.stlpips_selfdist import STLPIPSModule
 
     video_sample.quality_metrics = QualityMetrics()
     m = STLPIPSModule()
     result = m.process(video_sample)
     # Without ML backend, module skips gracefully
-    assert result.quality_metrics.st_lpips is None
+    assert result.quality_metrics.stlpips_selfdist is None
 
 
 def test_st_lpips_image(image_sample):
-    from ayase.modules.st_lpips import STLPIPSModule
+    from ayase.modules.stlpips_selfdist import STLPIPSModule
 
     image_sample.quality_metrics = QualityMetrics()
     m = STLPIPSModule()
     result = m.process(image_sample)
-    assert result.quality_metrics.st_lpips is None
+    assert result.quality_metrics.stlpips_selfdist is None
 
 
 def test_kvq_dispatches_to_real_model_when_loaded():

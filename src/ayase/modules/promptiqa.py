@@ -25,7 +25,15 @@ logger = logging.getLogger(__name__)
 
 class PromptIQAModule(PipelineModule):
     name = "promptiqa"
+    provenance = "adapted"
+    sources = {
+        "promptiqa_score": "PromptIQA (Chen et al., ECCV 2024) — https://github.com/chencn2020/PromptIQA",
+    }
+    deviations = {
+        "promptiqa_score": "no backend: pyiqa 0.1.14.1 has no promptiqa metric; moreover the image-score prompt pairs that define the method are not passed",
+    }
     description = "Prompt-guided NR-IQA (PromptIQA via pyiqa)"
+    requires_external_backend = True  # pyiqa has no 'promptiqa' metric; the official repo needs author checkpoints and prompt image-score pairs
     default_config = {
         "subsample": 4,
     }

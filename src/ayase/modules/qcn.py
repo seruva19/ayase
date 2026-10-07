@@ -24,6 +24,12 @@ logger = logging.getLogger(__name__)
 
 class QCNModule(PipelineModule):
     name = "qcn"
+    requires_external_backend = True
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "qcn_score": "QCN (Shin et al., CVPR 2024) — https://github.com/nhshin-mcl/QCN",
+    }
     description = "Blind IQA (QCN via pyiqa)"
     default_config = {"subsample": 4}
     metric_groups = {

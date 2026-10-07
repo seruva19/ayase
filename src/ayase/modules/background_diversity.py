@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 class BackgroundDiversityModule(PipelineModule):
     name = "background_diversity"
+    deprecated = True
+    provenance = "own"
     description = "Checks background complexity (entropy) to detect concept bleeding"
     default_config = {
         "min_entropy_threshold": 3.0,

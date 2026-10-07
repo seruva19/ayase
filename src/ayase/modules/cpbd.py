@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 class CPBDModule(PipelineModule):
     name = "cpbd"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "cpbd_score": "CPBD (Narvekar & Karam 2011), the cpbd package — https://github.com/0x64746b/python-cpbd",
+    }
     description = "Cumulative Probability of Blur Detection (Perceptual Blur)"
     default_config = {
         "threshold_cpbd": 0.65,

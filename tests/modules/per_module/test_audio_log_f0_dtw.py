@@ -16,23 +16,24 @@ def _features(f0, voiced, frames=None):
     if frames is None:
         frames = f0.size
     axis = np.linspace(-1.0, 1.0, frames, dtype=np.float64)
-    mfcc = np.vstack([(index + 1) * axis for index in range(12)])
-    return _PitchFeatures(f0=f0, voiced=voiced, mfcc=mfcc)
+    mcep = np.vstack([(index + 1) * axis for index in range(24)])
+    return _PitchFeatures(f0=f0, voiced=voiced, mcep=mcep)
 
 
 def _module_with_diagonal_dtw(call_log=None):
     from ayase.modules.audio_log_f0_dtw import AudioLogF0DTWModule
 
-    def dtw(**kwargs):
+    def dtw(x, y):
+        """fastdtw signature: (gen_frames x dims, gt_frames x dims)."""
         if call_log is not None:
-            call_log.append(kwargs)
-        count = min(kwargs["X"].shape[1], kwargs["Y"].shape[1])
-        path = np.column_stack([np.arange(count), np.arange(count)])[::-1]
-        return np.zeros((kwargs["X"].shape[1], kwargs["Y"].shape[1])), path
+            call_log.append((x, y))
+        count = min(x.shape[0], y.shape[0])
+        path = list(zip(np.arange(count), np.arange(count)))
+        return 0.0, path
 
     module = AudioLogF0DTWModule()
-    module._librosa = SimpleNamespace(sequence=SimpleNamespace(dtw=dtw))
-    module._backend = "librosa_pyin"
+    module._dtw = dtw
+    module._backend = "espnet_f0"
     return module
 
 
@@ -42,12 +43,11 @@ def test_audio_log_f0_dtw_basics():
     _test_module_basics(AudioLogF0DTWModule, "audio_log_f0_dtw")
     assert set(AudioLogF0DTWModule.metric_groups) == {
         "audio_log_f0_rmse_cents",
-        "audio_f0_voicing_error",
-        "audio_f0_joint_coverage",
+        "audio_f0_voiced_mismatch",
     }
 
 
-def test_identical_contours_are_zero_and_use_constrained_mfcc_dtw():
+def test_identical_contours_are_zero_and_use_fastdtw_on_mcep():
     calls = []
     module = _module_with_diagonal_dtw(calls)
     track = _features(np.full(40, 220.0), np.ones(40, dtype=bool))
@@ -56,23 +56,10 @@ def test_identical_contours_are_zero_and_use_constrained_mfcc_dtw():
 
     assert result == (0.0, 0.0, 1.0)
     assert len(calls) == 1
-    call = calls[0]
-    assert set(call) == {
-        "X",
-        "Y",
-        "metric",
-        "subseq",
-        "backtrack",
-        "global_constraints",
-        "band_rad",
-    }
-    assert call["X"] is track.mfcc
-    assert call["Y"] is track.mfcc
-    assert call["metric"] == "euclidean"
-    assert call["subseq"] is False
-    assert call["backtrack"] is True
-    assert call["global_constraints"] is True
-    assert call["band_rad"] == 0.10
+    x, y = calls[0]
+    # fastdtw is called with frames x dims mel-cepstra (candidate, reference).
+    assert x.shape == (40, 24)
+    assert y.shape == (40, 24)
 
 
 def test_octave_shift_is_1200_cents():
@@ -82,7 +69,7 @@ def test_octave_shift_is_1200_cents():
 
     rmse, voicing_error, coverage = module._align_and_score(reference, candidate)
 
-    assert rmse == 1200.0
+    assert np.isclose(rmse, 1200.0)
     assert voicing_error == 0.0
     assert coverage == 1.0
 
@@ -98,7 +85,7 @@ def test_voicing_diagnostics_and_joint_coverage_are_path_based():
 
     rmse, voicing_error, coverage = module._align_and_score(reference, candidate)
 
-    assert rmse == 1200.0
+    assert np.isclose(rmse, 1200.0)
     assert voicing_error == 10 / 30
     assert coverage == 20 / 30
 
@@ -130,67 +117,61 @@ def test_fewer_than_twenty_voiced_frames_is_no_result():
     assert module._align_and_score(reference, candidate) is None
 
 
-def test_extract_features_uses_fixed_pyin_grid_trims_edges_and_cmn():
+def test_extract_features_uses_espnet_world_params_and_trims_edges(monkeypatch):
     from ayase.modules.audio_log_f0_dtw import AudioLogF0DTWModule
 
     calls = {}
-    f0 = np.full(25, np.nan)
+    f0 = np.zeros(25, dtype=np.float64)
     f0[2:23] = 220.0
-    voiced = np.isfinite(f0)
-    raw_mfcc = np.arange(13 * 25, dtype=np.float64).reshape(13, 25)
+    raw_mcep = np.arange(25 * 24, dtype=np.float64).reshape(25, 24)
 
-    def pyin(audio, **kwargs):
-        calls["pyin"] = (audio, kwargs)
-        return f0, voiced, voiced.astype(float)
+    def harvest(x, fs, f0_floor, f0_ceil, frame_period):
+        calls["harvest"] = (x, fs, f0_floor, f0_ceil, frame_period)
+        return f0, np.arange(25)
 
-    def mfcc(**kwargs):
-        calls["mfcc"] = kwargs
-        return raw_mfcc
+    def cheaptrick(x, f0v, time_axis, fs, fft_size):
+        calls["cheaptrick"] = fft_size
+        return np.zeros((25, 513))
+
+    def sp2mc(sp, dim, alpha):
+        calls["sp2mc"] = (dim, alpha)
+        return raw_mcep
+
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "pyworld",
+        SimpleNamespace(harvest=harvest, cheaptrick=cheaptrick),
+    )
+    monkeypatch.setitem(__import__("sys").modules, "pysptk", SimpleNamespace(sp2mc=sp2mc))
 
     module = AudioLogF0DTWModule()
-    module._librosa = SimpleNamespace(
-        pyin=pyin,
-        feature=SimpleNamespace(mfcc=mfcc),
-    )
-
     result = module._extract_features(np.ones(16000, dtype=np.float32))
 
     assert result is not None
     assert result.f0.shape == (21,)
     assert result.voiced.all()
-    assert result.mfcc.shape == (12, 21)
-    assert np.allclose(np.mean(result.mfcc, axis=1), 0.0)
-    pyin_kwargs = calls["pyin"][1]
-    assert pyin_kwargs == {
-        "fmin": 50.0,
-        "fmax": 800.0,
-        "sr": 16000,
-        "frame_length": 2048,
-        "hop_length": 160,
-        "center": True,
-        "fill_na": np.nan,
-    }
-    mfcc_kwargs = calls["mfcc"]
-    assert mfcc_kwargs["sr"] == 16000
-    assert mfcc_kwargs["n_mfcc"] == 13
-    assert mfcc_kwargs["n_fft"] == 512
-    assert mfcc_kwargs["win_length"] == 400
-    assert mfcc_kwargs["hop_length"] == 160
-    assert mfcc_kwargs["center"] is True
+    assert result.mcep.shape == (24, 21)
+    x, fs, f0_floor, f0_ceil, frame_period = calls["harvest"]
+    assert fs == 16000
+    assert f0_floor == 40.0
+    assert f0_ceil == 800.0
+    assert frame_period == 16.0
+    assert calls["cheaptrick"] == 1024
+    assert calls["sp2mc"] == (23, 0.42)
 
 
-def test_extract_features_fully_unvoiced_is_no_result():
+def test_extract_features_fully_unvoiced_is_no_result(monkeypatch):
     from ayase.modules.audio_log_f0_dtw import AudioLogF0DTWModule
 
-    module = AudioLogF0DTWModule()
-    module._librosa = SimpleNamespace(
-        pyin=lambda *_args, **_kwargs: (
-            np.full(30, np.nan),
-            np.zeros(30, dtype=bool),
-            np.zeros(30),
-        )
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "pyworld",
+        SimpleNamespace(
+            harvest=lambda *a, **k: (np.zeros(30), np.arange(30)),
+        ),
     )
 
+    module = AudioLogF0DTWModule()
     assert module._extract_features(np.zeros(16000, dtype=np.float32)) is None
 
 
@@ -221,8 +202,7 @@ def test_process_populates_three_fields_for_valid_pair(monkeypatch, tmp_path):
 
     assert result is sample
     assert result.quality_metrics.audio_log_f0_rmse_cents == 1200.0
-    assert result.quality_metrics.audio_f0_voicing_error == 0.0
-    assert result.quality_metrics.audio_f0_joint_coverage == 1.0
+    assert result.quality_metrics.audio_f0_voiced_mismatch == 0.0
 
 
 def test_process_below_coverage_writes_diagnostics_only(monkeypatch, tmp_path):
@@ -256,8 +236,7 @@ def test_process_below_coverage_writes_diagnostics_only(monkeypatch, tmp_path):
     result = module.process(sample)
 
     assert result.quality_metrics.audio_log_f0_rmse_cents is None
-    assert result.quality_metrics.audio_f0_voicing_error == 0.6667
-    assert result.quality_metrics.audio_f0_joint_coverage == 0.3333
+    assert result.quality_metrics.audio_f0_voiced_mismatch == 0.6667
 
 
 def test_missing_reference_and_overlong_audio_are_no_ops(monkeypatch, tmp_path):

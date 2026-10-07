@@ -28,6 +28,11 @@ logger = logging.getLogger(__name__)
 
 class HPSv2Module(PipelineModule):
     name = "hpsv2"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "hpsv2_score": "HPSv2 (Wu et al. 2023) — https://github.com/tgxs002/HPSv2",
+    }
     description = "HPSv2 prompt-image human preference scoring"
     default_config = {
         "backend": "auto",  # auto | hpsv2 | diffsynth

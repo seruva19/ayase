@@ -43,7 +43,7 @@ def test_syncnet_extracts_path_with_spaces(tmp_path):
     if shutil.which("ffmpeg") is None:
         pytest.skip("ffmpeg not found")
     inferencer = _syncnet_inferencer()
-    clip = tmp_path / "Дональд Трамп" / "clip 1.mp4"
+    clip = tmp_path / "René Descartes" / "clip 1.mp4"
     clip.parent.mkdir()
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=160x120:rate=25:duration=1",
                     "-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-shortest", str(clip)], check=True)
@@ -58,4 +58,4 @@ def test_syncnet_extraction_failure_is_raised(tmp_path):
         pytest.skip("ffmpeg not found")
     inferencer = _syncnet_inferencer()
     with pytest.raises(RuntimeError, match="ffmpeg failed"):
-        inferencer.video_to_frames_audio(tmp_path / "нет такого файла.mp4", str(tmp_path / "work"))
+        inferencer.video_to_frames_audio(tmp_path / "no such file.mp4", str(tmp_path / "work"))

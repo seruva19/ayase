@@ -69,6 +69,10 @@ logger = logging.getLogger(__name__)
 
 class AIGVQAModule(PipelineModule):
     name = "aigvqa"
+    provenance = "utility"
+    sources = {
+        "aigvqa_score": "AIGVQA (VQualA 2025, ICCVW) — https://github.com/IntMeGroup/AIGVQA",
+    }
     requires_external_backend = True  # no turnkey / self-contained real backend
     description = "AIGVQA multi-dimensional AIGC VQA (ICCVW 2025)"
     default_config = {

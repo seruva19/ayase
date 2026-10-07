@@ -27,12 +27,19 @@ logger = logging.getLogger(__name__)
 
 class SDReferenceModule(PipelineModule):
     name = "sd_reference"
-    description = "SD Score — CLIP similarity between video frames and SDXL-generated reference images"
+    provenance = "published"
+    sources = {
+        "sd_score": "EvalCrafter SD-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py",
+    }
+    description = "SD Score — CLIP similarity between video frames and SDXL-generated reference images (EvalCrafter)"
     default_config = {
         "clip_model": "openai/clip-vit-base-patch32",
         "sdxl_model": "stabilityai/stable-diffusion-xl-base-1.0",
         "num_sd_images": 5,
-        "num_video_frames": 8,
+        # EvalCrafter reads every frame; <=0 keeps that, a positive value is an
+        # explicit non-default sampling cap.
+        "num_video_frames": 0,
+        # EvalCrafter's own call: height=512, width=512, num_inference_steps=20.
         "sd_steps": 20,
         "cache_dir": ".ayase_sd_cache",
     }
@@ -45,7 +52,7 @@ class SDReferenceModule(PipelineModule):
         self.clip_model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
         self.sdxl_model_name = self.config.get("sdxl_model", "stabilityai/stable-diffusion-xl-base-1.0")
         self.num_sd_images = self.config.get("num_sd_images", 5)
-        self.num_video_frames = self.config.get("num_video_frames", 8)
+        self.num_video_frames = self.config.get("num_video_frames", 0)
         self.sd_steps = self.config.get("sd_steps", 20)
         self.cache_dir = Path(self.config.get("cache_dir", ".ayase_sd_cache"))
         self._clip_model = None
@@ -202,7 +209,8 @@ class SDReferenceModule(PipelineModule):
 
     def _load_frames(self, sample: Sample):
         try:
-            return sample_frames(sample.path, max_frames=self.num_video_frames, color="rgb")
+            limit = self.num_video_frames if self.num_video_frames > 0 else 1_000_000
+            return sample_frames(sample.path, max_frames=limit, color="rgb")
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
         return []

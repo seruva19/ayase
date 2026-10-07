@@ -76,6 +76,11 @@ _CH_WEIGHTS = {
 
 class ChronoMagicModule(PipelineModule):
     name = "chronomagic"
+    provenance = "published"
+    sources = {
+        "chronomagic_ch_score": "ChronoMagic-Bench CHScore/MTScore (NeurIPS 2024) — https://github.com/PKU-YuanGroup/ChronoMagic-Bench",
+        "chronomagic_mt_score": "ChronoMagic-Bench CHScore/MTScore (NeurIPS 2024) — https://github.com/PKU-YuanGroup/ChronoMagic-Bench",
+    }
     description = "ChronoMagic-Bench MTScore (InternVideo2) + CHScore (CoTracker2)"
     default_config = {
         # CHScore (CoTracker2) — upstream defaults.

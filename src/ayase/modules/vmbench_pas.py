@@ -30,7 +30,6 @@ from typing import List, Optional
 
 import numpy as np
 
-from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -39,15 +38,21 @@ logger = logging.getLogger(__name__)
 
 class VMBenchPerceptibleAmplitudeModule(PipelineModule):
     name = "vmbench_pas"
+    provenance = "adapted"
+    sources = {
+        "perceptible_amplitude_score": "VMBench PAS — https://github.com/AMAP-ML/VMBench",
+    }
+    deviations = {
+        "perceptible_amplitude_score": "the subject comes from metadata/prompt (upstream reads the benchmark's structured prompt); without it, falls back to 'person'",
+    }
     description = "VMBench Perceptible Amplitude — subject-vs-background tracked-point motion (0-1)"
     default_config = {
         "device": "auto",
-        "max_frames": 60,          # frames tracked (VMBench clips ~49f)
         "grid_size": 30,           # VMBench grid density per axis
         "box_threshold": 0.3,      # GroundingDINO box filter (VMBench default)
         "text_threshold": 0.25,    # GroundingDINO text filter (VMBench default)
-        "subject_noun": None,      # override; else sample.metadata['subject_noun'] or 'person'
-        "long_side": 512,          # cap tracking resolution (aspect preserved)
+        "subject_noun": None,      # override; else metadata/caption subject, else 'person'
+        "long_side": 0,            # 0 = native resolution (VMBench); >0 = opt-in cap
         "query_chunk_size": 64,    # TAPIR query points per forward (VRAM cap)
         "models_dir": "models",
     }
@@ -110,27 +115,49 @@ class VMBenchPerceptibleAmplitudeModule(PipelineModule):
             logger.warning("Failed to setup VMBench PAS: %s", e)
 
     # --------------------------------------------------------------- helpers
+    _SUBJECT_KEYS = ("subject_noun", "subject", "object", "main_subject")
+
     def _resolve_subject_noun(self, sample: Sample) -> str:
         noun = self.config.get("subject_noun")
         if noun:
             return str(noun)
-        meta_noun = (sample.metadata or {}).get("subject_noun")
-        if meta_noun:
-            return str(meta_noun)
+        meta = sample.metadata or {}
+        for key in self._SUBJECT_KEYS:
+            if meta.get(key):
+                return str(meta[key])
+        # VMBench prompts carry the subject in their structured metadata; for a
+        # free-text caption fall back to the first determiner+noun phrase.
+        caption = getattr(getattr(sample, "caption", None), "text", None)
+        if caption:
+            import re
+            m = re.search(
+                r"\b(?:a|an|the)\s+((?:[a-zA-Z-]+\s){0,2}[a-zA-Z-]+)\b",
+                caption.lower(),
+            )
+            if m:
+                return m.group(1).strip()
         return "person"
 
     def _load_frames(self, sample: Sample):
-        """Sampled RGB frames, long side capped (aspect preserved). Returns
-        (frames uint8 [T,H,W,3], width, height)."""
+        """All RGB frames at native resolution (opt-in ``long_side`` cap).
+        Returns (frames uint8 [T,H,W,3], width, height)."""
         import cv2
 
-        raw = sample_frames(sample.path, max_frames=int(self.config.get("max_frames", 60)),
-                            color="rgb")
+        cap = cv2.VideoCapture(str(sample.path))
+        raw = []
+        try:
+            while True:
+                ok, frame = cap.read()
+                if not ok:
+                    break
+                raw.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        finally:
+            cap.release()
         if len(raw) < 4:
             return None, 0, 0
         h0, w0 = raw[0].shape[:2]
-        long_side = int(self.config.get("long_side", 512))
-        scale = min(1.0, long_side / float(max(h0, w0)))
+        long_side = int(self.config.get("long_side", 0))
+        scale = min(1.0, long_side / float(max(h0, w0))) if long_side > 0 else 1.0
         if scale < 1.0:
             w, h = int(round(w0 * scale)), int(round(h0 * scale))
             frames = [cv2.resize(f, (w, h), interpolation=cv2.INTER_AREA) for f in raw]

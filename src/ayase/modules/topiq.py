@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 class TOPIQModule(PipelineModule):
     name = "topiq"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "topiq_score": "TOPIQ, Chen et al. TIP 2024; pyiqa topiq_nr — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "TOPIQ transformer-based no-reference IQA"
     default_config = {
         "variant": "topiq_nr",  # only topiq_nr supported (NR module)

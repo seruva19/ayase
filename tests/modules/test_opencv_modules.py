@@ -152,28 +152,28 @@ def test_bias_detection_setup():
 
 
 def test_dynamics_range_basics():
-    from ayase.modules.dynamics_range import DynamicsRangeModule
+    from ayase.modules.content_variation import ContentVariationModule
     from .conftest import _test_module_basics
 
-    _test_module_basics(DynamicsRangeModule, "dynamics_range")
+    _test_module_basics(ContentVariationModule, "content_variation")
 
 
 def test_dynamics_range_video(video_sample):
-    from ayase.modules.dynamics_range import DynamicsRangeModule
+    from ayase.modules.content_variation import ContentVariationModule
 
-    m = DynamicsRangeModule()
+    m = ContentVariationModule()
     result = m.process(video_sample)
     assert result.quality_metrics is not None
-    assert result.quality_metrics.dynamics_range is not None
-    assert result.quality_metrics.dynamics_range >= 0
+    assert result.quality_metrics.content_variation is not None
+    assert result.quality_metrics.content_variation >= 0
 
 
 def test_dynamics_range_image(image_sample):
-    from ayase.modules.dynamics_range import DynamicsRangeModule
+    from ayase.modules.content_variation import ContentVariationModule
 
-    m = DynamicsRangeModule()
+    m = ContentVariationModule()
     result = m.process(image_sample)
-    assert result.quality_metrics is None or result.quality_metrics.dynamics_range is None
+    assert result.quality_metrics is None or result.quality_metrics.content_variation is None
 
 
 def test_dynamics_controllability_basics():

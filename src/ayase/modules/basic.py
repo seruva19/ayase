@@ -3,17 +3,16 @@
 Still images are evaluated directly; videos are represented only by their
 middle frame. No caption or reference media is used. OpenCV measurements write
 ``blur_score`` (raw Laplacian variance), ``brightness`` (mean gray level),
-``contrast`` (gray-level standard deviation), ``saturation`` (mean HSV
-saturation), ``noise_score`` and ``artifacts_score`` (0-1 heuristics, higher
-meaning less estimated noise or edge-density "artifact"), and
-``gradient_detail`` (0-100, higher means stronger average gradients).
+``contrast`` (gray-level standard deviation), and ``saturation`` (mean HSV
+saturation).
 
-``technical_score`` is a 0-100 weighted composite of normalized sharpness,
-contrast, centered brightness, saturation, noise, edge density, and resolution;
-higher is better. These are classical pixel proxies rather than learned or
-temporal quality estimates: camera cuts and frame-to-frame defects are ignored,
-and texture may be treated as noise or artifacts. Decode or calculation errors
-leave unavailable fields unset and may add a validation warning.
+An internal weighted composite of normalized sharpness, contrast, centered
+brightness, saturation, noise, edge density, and resolution drives the
+low-quality validation warning. These are classical pixel proxies rather than
+learned or temporal quality estimates: camera cuts and frame-to-frame defects
+are ignored, and texture may be treated as noise or artifacts. Decode or
+calculation errors leave unavailable fields unset and may add a validation
+warning.
 """
 
 import cv2
@@ -30,6 +29,16 @@ logger = logging.getLogger(__name__)
 
 class BasicQualityModule(PipelineModule):
     name = "basic_quality"
+    provenance = {
+        "blur_score": "published",
+        "brightness": "utility",
+        "contrast": "utility",
+        "saturation": "utility",
+        "vqa_t_score": "utility",
+    }
+    sources = {
+        "blur_score": "variance of the Laplacian (Pech-Pacheco et al., ICPR 2000, DOI:10.1109/ICPR.2000.903548)",
+    }
     description = "Comprehensive technical quality assessment (blur, noise, artifacts, contrast)"
     default_config = {
         "threshold": 40.0,
@@ -37,14 +46,10 @@ class BasicQualityModule(PipelineModule):
         "noise_threshold": 50.0,
     }
     metric_groups = {
-        "artifacts_score": "basic",
         "blur_score": "basic",
         "brightness": "basic",
         "contrast": "basic",
-        "gradient_detail": "scene",
-        "noise_score": "basic",
         "saturation": "basic",
-        "technical_score": "basic",
         # vqa_t_score is a published temporal-VQA metric; this module does not
         # compute it (it is left None), but keeps the grouping so the field is
         # not orphaned in _FIELD_GROUPS.
@@ -89,21 +94,12 @@ class BasicQualityModule(PipelineModule):
                 resolution_score,
             )
             final_score_100 = technical_score * 100.0
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
-            grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
-            grad_mag = np.sqrt(grad_x ** 2 + grad_y ** 2)
-            gradient_detail = min(float(np.mean(grad_mag)) / 64.0, 1.0) * 100.0
 
             # Store raw metrics
             sample.quality_metrics.blur_score = blur_score
             sample.quality_metrics.brightness = brightness
             sample.quality_metrics.contrast = contrast
             sample.quality_metrics.saturation = saturation
-            sample.quality_metrics.noise_score = noise_score
-            sample.quality_metrics.artifacts_score = artifact_score
-            sample.quality_metrics.technical_score = final_score_100
-            sample.quality_metrics.gradient_detail = gradient_detail
 
             if final_score_100 < self.threshold:
                 sample.validation_issues.append(

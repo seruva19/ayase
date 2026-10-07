@@ -57,6 +57,15 @@ class MJVideoModule(PipelineModule):
     """Score each text-video pair with the upstream MJ-VIDEO-2B reward model."""
 
     name = "mj_video"
+    provenance = "published"
+    sources = {
+        "mj_video_alignment_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",
+        "mj_video_coherence_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",
+        "mj_video_fairness_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",
+        "mj_video_fineness_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",
+        "mj_video_overall_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",
+        "mj_video_safety_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",
+    }
     description = "MJ-Video overall reward and five fine-grained preference aspects"
     default_config = {
         "model_name": "MJ-Bench/MJ-VIDEO-2B",

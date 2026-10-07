@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 
 class HDRSDRVQAModule(PipelineModule):
     name = "hdr_sdr_vqa"
+    deprecated = True
+    provenance = "own"
+    sources = {
+        "hdr_quality": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",
+        "hdr_technical_score": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",
+        "sdr_quality": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",
+    }
     description = "HDR/SDR-aware video quality assessment"
     default_config = {
         # OpenCV-based
@@ -219,6 +226,12 @@ class FourKVQAModule(PipelineModule):
     """4K/Ultra-HD video quality assessment with memory-efficient processing."""
 
     name = "4k_vqa"
+    provenance = "own"
+    sources = {
+        "hdr_quality": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",
+        "hdr_technical_score": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",
+        "sdr_quality": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",
+    }
     description = "Memory-efficient quality assessment for 4K+ videos"
     default_config = {
         "tile_size": 512,  # Process in tiles to save memory

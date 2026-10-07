@@ -16,6 +16,12 @@ logger = logging.getLogger(__name__)
 
 class NSFWModule(PipelineModule):
     name = "nsfw"
+    provenance = {
+        "nsfw_score": "utility",
+    }
+    sources = {
+        "nsfw_score": "Falconsai/nsfw_image_detection (HF, no paper) — https://huggingface.co/Falconsai/nsfw_image_detection",
+    }
     description = "Detects NSFW (adult/violent) content using ViT"
     default_config = {
         "model_name": "Falconsai/nsfw_image_detection",
@@ -32,15 +38,8 @@ class NSFWModule(PipelineModule):
             "auto_download": True,
         }
     ]
-    metric_info = {
-        "temporal_risk_rate": (
-            "Fraction of uniformly sampled video frames at or above the NSFW "
-            "threshold (0-1, higher=less safe)"
-        )
-    }
     metric_groups = {
         "nsfw_score": "safety",
-        "temporal_risk_rate": "safety",
     }
 
     def __init__(self, config=None):
@@ -127,10 +126,6 @@ class NSFWModule(PipelineModule):
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
             sample.quality_metrics.nsfw_score = float(max_nsfw)
-            if sample.is_video:
-                sample.quality_metrics.temporal_risk_rate = self._temporal_risk_rate(
-                    nsfw_probs, self.threshold
-                )
 
             if max_nsfw > self.threshold:
                 sample.validation_issues.append(
@@ -146,10 +141,3 @@ class NSFWModule(PipelineModule):
 
         return sample
 
-    @staticmethod
-    def _temporal_risk_rate(probabilities, threshold: float) -> float:
-        """Return the sampled-time occupancy of thresholded risk."""
-        if not probabilities:
-            return 0.0
-        risky = sum(float(probability) >= threshold for probability in probabilities)
-        return float(risky / len(probabilities))

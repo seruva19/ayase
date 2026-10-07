@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class MaxVQAModule(PipelineModule):
     name = "maxvqa"
+    requires_external_backend = True
+    provenance = "published"
+    sources = {
+        "maxvqa_score": "MaxVQA (Wu et al., ACM MM 2023) — https://github.com/VQAssessment/ExplainableVQA",
+    }
     description = "MaxVQA explainable language-prompted VQA (ACM MM 2023; real model only)"
     default_config = {
         "subsample": 8,

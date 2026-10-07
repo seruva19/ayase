@@ -1,25 +1,24 @@
 """MCD (Mel Cepstral Distortion) module.
 
-Full-reference metric for evaluating TTS and voice conversion quality.
-Computes the Euclidean distance between MFCC vectors of reference and
-synthesised speech.
+Full-reference metric for evaluating TTS and voice conversion quality,
+computed by the ``pymcd`` package — 13-dimensional MFCC sequences aligned
+with approximate dynamic time warping and combined with the Kubichek constant
+10·sqrt(2)/ln(10) (coefficient 0 excluded). This is an adapted MCD-DTW
+implementation; it is not the SPTK mel-cepstrum protocol used by many TTS
+papers.
 
-Score range: 0.0+ dB (lower = better).
-  <4 dB   excellent (near-natural speech)
-  4-6 dB  good
-  6-8 dB  acceptable
-  >8 dB   poor
-
-Standard metric in TTS research since Kubichek (1993).
+Score range: 0.0+ dB (lower = better). Values are meaningful only when the
+same feature extraction, alignment, and coefficient convention is used.
+Without ``pymcd`` the score is left unset.
 
 References:
     - Kubichek (1993), "Mel-Cepstral Distance Measure for Objective
       Speech Quality Assessment"
+    - https://github.com/chenqi008/pymcd (implementation used here)
 """
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -31,33 +30,47 @@ logger = logging.getLogger(__name__)
 
 class AudioMCDModule(PipelineModule):
     name = "audio_mcd"
-    description = "Mel Cepstral Distortion for TTS/VC quality (full-reference)"
+    provenance = "adapted"
+    sources = {
+        "mcd_score": "MCD-DTW via chenqi008/pymcd — https://github.com/chenqi008/pymcd",
+    }
+    deviations = {
+        "mcd_score": "pymcd uses 13-dimensional librosa MFCCs and FastDTW; results are not interchangeable with SPTK mel-cepstrum MCD protocols",
+    }
+    description = "Mel Cepstral Distortion for TTS/VC quality (full-reference, pymcd)"
     default_config = {
-        "target_sr": 16000,
-        "n_mfcc": 13,
         "warning_threshold": 8.0,  # dB
     }
+    models = [
+        {
+            "id": "pymcd",
+            "type": "pip_package",
+            "install": "pip install pymcd",
+            "task": "MFCC-based MCD-DTW implementation",
+        },
+    ]
     metric_groups = {
         "mcd_score": "audio",
     }
 
     def __init__(self, config=None):
         super().__init__(config)
-        self.target_sr = self.config.get("target_sr", 16000)
-        self.n_mfcc = self.config.get("n_mfcc", 13)
         self.warning_threshold = self.config.get("warning_threshold", 8.0)
         self._ml_available = False
         self._backend = "unavailable"
 
     def setup(self) -> None:
         try:
-            import librosa  # noqa: F401
+            from pymcd.mcd import Calculate_MCD  # noqa: F401
 
             self._ml_available = True
-            self._backend = "algorithmic"
-            logger.info("MCD module initialised (librosa)")
+            self._backend = "pymcd"
+            logger.info("MCD module initialised (pymcd)")
         except ImportError:
-            logger.warning("librosa not installed. Install with: pip install librosa")
+            logger.warning(
+                "pymcd not installed (pip install pymcd). "
+                "MCD requires the configured pymcd backend; score left unset."
+            )
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
@@ -71,25 +84,12 @@ class AudioMCDModule(PipelineModule):
             return sample
 
         try:
-            ref_mfcc = self._extract_mfcc(reference)
-            syn_mfcc = self._extract_mfcc(sample.path)
+            from pymcd.mcd import Calculate_MCD
 
-            if ref_mfcc is None or syn_mfcc is None:
+            mcd_toolbox = Calculate_MCD(MCD_mode="dtw")
+            mcd = mcd_toolbox.calculate_mcd(str(reference), str(sample.path))
+            if mcd is None or not np.isfinite(mcd):
                 return sample
-
-            # Align to shorter
-            min_frames = min(ref_mfcc.shape[1], syn_mfcc.shape[1])
-            if min_frames < 10:
-                return sample
-
-            ref_mfcc = ref_mfcc[:, :min_frames]
-            syn_mfcc = syn_mfcc[:, :min_frames]
-
-            # MCD: (10 * sqrt(2) / ln(10)) * mean(||ref - syn||_2)
-            # Exclude c0 (energy), use c1..c_n_mfcc
-            diff = ref_mfcc[1:, :] - syn_mfcc[1:, :]
-            frame_dist = np.sqrt(np.sum(diff ** 2, axis=0))
-            mcd = (10.0 * np.sqrt(2.0) / np.log(10.0)) * np.mean(frame_dist)
 
             if sample.quality_metrics is None:
                 sample.quality_metrics = QualityMetrics()
@@ -108,14 +108,3 @@ class AudioMCDModule(PipelineModule):
             logger.warning(f"MCD failed for {sample.path}: {e}")
 
         return sample
-
-    def _extract_mfcc(self, path: Path) -> Optional[np.ndarray]:
-        try:
-            import librosa
-
-            y, sr = librosa.load(str(path), sr=self.target_sr, mono=True)
-            mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=self.n_mfcc + 1)
-            return mfcc
-        except Exception as e:
-            logger.debug(f"MFCC extraction failed: {e}")
-            return None

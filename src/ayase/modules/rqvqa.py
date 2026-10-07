@@ -313,6 +313,10 @@ def _build_liqe(checkpoint_path: Path, device: str, dtype):
 
 class RQVQAModule(PipelineModule):
     name = "rqvqa"
+    provenance = "published"
+    sources = {
+        "rqvqa_score": "RQ-VQA (Sun et al., CVPRW/NTIRE 2024) — https://github.com/sunwei925/RQ-VQA",
+    }
     description = "RQ-VQA rich quality-aware blind VQA ensemble (raw regression score)"
     default_config = {
         "ensemble_size": 10,

@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 
 class MultiViewConsistencyModule(PipelineModule):
     name = "multi_view_consistency"
+    deprecated = True
+    provenance = "own"
     description = "Geometric multi-view consistency via epipolar analysis"
     default_config = {
         "subsample": 5,  # Frame gap for pair analysis

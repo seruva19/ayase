@@ -21,12 +21,17 @@ logger = logging.getLogger(__name__)
 
 class CMMDModule(BatchMetricModule):
     name = "cmmd"
+    provenance = "published"
+    sources = {
+        "cmmd": "CMMD (Jayasumana et al., CVPR 2024) — https://github.com/google-research/google-research/tree/master/cmmd",
+    }
     description = "CLIP Maximum Mean Discrepancy for image generation (batch metric)"
     default_config = {
         "model_name": "openai/clip-vit-large-patch14-336",
         "device": "auto",
         "kernel": "rbf",
-        "sigma": None,
+        # Official CMMD: RBF kernel with sigma=10, reported MMD x1000.
+        "sigma": 10.0,
     }
     models = [
         {
@@ -44,7 +49,7 @@ class CMMDModule(BatchMetricModule):
         self.model_name = self.config.get("model_name", "openai/clip-vit-large-patch14-336")
         self.device_config = self.config.get("device", "auto")
         self.kernel = self.config.get("kernel", "rbf")
-        self.sigma = self.config.get("sigma", None)
+        self.sigma = self.config.get("sigma", 10.0)
         self._backend = "unavailable"
         self._model = None
         self._processor = None
@@ -107,19 +112,19 @@ class CMMDModule(BatchMetricModule):
         self,
         features: List[np.ndarray],
         reference_features: Optional[List[np.ndarray]] = None,
-    ) -> float:
+    ) -> Optional[float]:
         gen = np.stack(features).astype(np.float64)
-        if reference_features:
-            ref = np.stack(reference_features).astype(np.float64)
-        else:
-            mid = len(gen) // 2
-            if mid < 1:
-                return float("inf")
-            ref = gen[:mid]
-            gen = gen[mid:]
+        if not reference_features:
+            logger.info(
+                "cmmd: no reference features provided; "
+                "metric is undefined without a reference set"
+            )
+            return None
+        ref = np.stack(reference_features).astype(np.float64)
         if len(gen) < 1 or len(ref) < 1:
             return float("inf")
-        return float(max(self._mmd2(gen, ref), 0.0))
+        # Official CMMD reports the squared MMD scaled by 1000.
+        return float(max(self._mmd2(gen, ref) * 1000.0, 0.0))
 
     def _extract_clip(self, frame: np.ndarray, cache_key: Optional[tuple] = None) -> Optional[np.ndarray]:
         try:

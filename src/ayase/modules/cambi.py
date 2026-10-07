@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 
 class CAMBIModule(PipelineModule):
     name = "cambi"
+    provenance = "published"
+    sources = {
+        "cambi": "CAMBI (Netflix), libvmaf — https://github.com/Netflix/vmaf",
+    }
     description = "CAMBI banding/contouring detector (Netflix, 0-24, lower=better)"
     default_config = {
         "warning_threshold": 5.0,
@@ -93,9 +97,11 @@ class CAMBIModule(PipelineModule):
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
                 output_path = tmp.name
 
+            # libvmaf is a two-input filter even for no-reference features
+            # like CAMBI — feed the same video as both inputs.
             cmd = [
-                "ffmpeg", "-i", str(video_path),
-                "-lavfi", f"libvmaf=feature=name=cambi:log_path={output_path}:log_fmt=json",
+                "ffmpeg", "-i", str(video_path), "-i", str(video_path),
+                "-lavfi", f"[0:v][1:v]libvmaf=feature=name=cambi:log_path={output_path}:log_fmt=json",
                 "-f", "null", "-",
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)

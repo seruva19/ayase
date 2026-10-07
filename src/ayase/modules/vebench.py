@@ -82,6 +82,10 @@ class VEBenchModule(PipelineModule):
     """Score an edited video against its source video and edit instruction."""
 
     name = "vebench"
+    provenance = "published"
+    sources = {
+        "vebench_score": "VE-Bench, AAAI 2025; the vebench 1.0.0 package — https://github.com/littlespray/VE-Bench",
+    }
     description = "VE-Bench human-aligned instruction-guided video-edit quality (AAAI 2025)"
     default_config = {
         "models_dir": "models",

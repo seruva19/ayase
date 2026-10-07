@@ -334,6 +334,11 @@ class PROVEModule(PipelineModule):
     """Compute PROVE RC-S and RC-T from generated media plus a removal mask."""
 
     name = "prove"
+    provenance = "published"
+    sources = {
+        "prove_rc_s_score": "PROVE RC-S/RC-T (arXiv 2605.14534, ACM MM 2026) — https://github.com/xiaomi-research/prove",
+        "prove_rc_t_score": "PROVE RC-S/RC-T (arXiv 2605.14534, ACM MM 2026) — https://github.com/xiaomi-research/prove",
+    }
     description = "PROVE masked object-removal spatial and temporal coherence"
     default_config = {
         "model": _MODEL_ID,

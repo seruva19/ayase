@@ -38,6 +38,10 @@ _WEIGHTS = {
 
 class UVQModule(PipelineModule):
     name = "uvq"
+    provenance = "published"
+    sources = {
+        "uvq1p5_score": "Google UVQ 1.5 — https://github.com/google/uvq",
+    }
     description = "Google UVQ 1.5 no-reference perceptual video MOS"
     default_config = {
         "device": "auto",

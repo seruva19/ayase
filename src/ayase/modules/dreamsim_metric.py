@@ -1,8 +1,10 @@
 """Measure perceptual distance with DreamSim on images or sampled video frames.
 
-With a reference, paired frames are averaged; a reference-free video instead compares
-successive sampled frames, while a reference-free image is not scored. Lower is more
-similar; the distance has no fixed range. Basis: https://github.com/ssundaram21/dreamsim
+Requires ``sample.reference_path``: paired frames are averaged. Without a
+reference the sample is not scored — mean DreamSim between consecutive frames
+of the same video is a different quantity and is not emitted under this field.
+Lower is more similar; the distance has no fixed range.
+Basis: https://github.com/ssundaram21/dreamsim
 """
 
 import logging
@@ -19,6 +21,13 @@ logger = logging.getLogger(__name__)
 
 class DreamSimModule(PipelineModule):
     name = "dreamsim"
+    provenance = {"dreamsim": "adapted"}
+    sources = {
+        "dreamsim": "DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim",
+    }
+    deviations = {
+        "dreamsim": "DreamSim is defined for image pairs; video is scored as the mean over position-paired uniformly sampled frames.",
+    }
     description = "DreamSim foundation model perceptual similarity (CLIP+DINO ensemble)"
     default_config = {"subsample": 8, "model_type": "ensemble"}
     metric_groups = {
@@ -80,9 +89,7 @@ class DreamSimModule(PipelineModule):
 
         reference_path = getattr(sample, "reference_path", None)
         if reference_path is None:
-            # For videos without reference, compute inter-frame similarity
-            if sample.is_video:
-                return self._process_video_self(sample)
+            # DreamSim is a full-reference metric; no reference → no score.
             return sample
 
         try:
@@ -106,26 +113,6 @@ class DreamSimModule(PipelineModule):
             sample.quality_metrics.dreamsim = float(distances.mean().item())
         except Exception as e:
             logger.warning("DreamSim processing failed: %s", e)
-        return sample
-
-    def _process_video_self(self, sample: Sample) -> Sample:
-        """For videos without a reference: average DreamSim between consecutive frames."""
-        try:
-            import torch
-
-            frames = self._load_frames(sample.path)
-            if len(frames) < 2:
-                return sample
-
-            # Consecutive sampled-frame pairs, scored in one batched forward.
-            with torch.no_grad():
-                distances = self._model(
-                    self._prep_batch(frames[:-1]), self._prep_batch(frames[1:])
-                )
-
-            sample.quality_metrics.dreamsim = float(distances.mean().item())
-        except Exception as e:
-            logger.warning("DreamSim video processing failed: %s", e)
         return sample
 
     # DreamSim's DINO ViT-B/16 backbone is fetched by ``dreamsim(pretrained=True)`` via

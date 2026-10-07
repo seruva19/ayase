@@ -166,6 +166,10 @@ def _get_spatial_sama_fragments(
 
 class SAMAModule(PipelineModule):
     name = "sama"
+    provenance = "published"
+    sources = {
+        "sama_score": "SAMA (Liu et al., AAAI 2024) — https://github.com/Sissuire/SAMA",
+    }
     description = "SAMA scaling+masking VQA (AAAI 2024, real model only)"
     default_config = {
         # SAMA LSVQ baseline test config (fast-SAMA-test.yml).

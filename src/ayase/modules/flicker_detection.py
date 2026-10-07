@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 class FlickerDetectionModule(PipelineModule):
     name = "flicker_detection"
+    deprecated = True
+    provenance = "own"
     description = "Detects temporal luminance flicker"
     default_config = {
         "max_frames": 600,

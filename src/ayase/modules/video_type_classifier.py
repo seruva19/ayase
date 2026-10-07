@@ -48,6 +48,11 @@ VIDEO_TYPE_SHORT = [
 
 class VideoTypeClassifierModule(PipelineModule):
     name = "video_type_classifier"
+    provenance = "utility"
+    sources = {
+        "video_type": "CLIP zero-shot — https://huggingface.co/openai/clip-vit-base-patch32",
+        "video_type_confidence": "CLIP zero-shot — https://huggingface.co/openai/clip-vit-base-patch32",
+    }
     description = "CLIP zero-shot video content type classification"
     default_config = {
         "subsample": 4,

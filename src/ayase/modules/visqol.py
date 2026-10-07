@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 class ViSQOLModule(PipelineModule):
     name = "visqol"
+    provenance = "published"
+    sources = {
+        "visqol": "ViSQOL v3, Google — https://github.com/google/visqol",
+    }
     description = "ViSQOL audio quality MOS (Google, 1-5, higher=better)"
     default_config = {
         "mode": "audio",  # "audio" or "speech"

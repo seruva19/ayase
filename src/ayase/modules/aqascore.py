@@ -1,12 +1,14 @@
-"""Score per-sample audio agreement with its caption using Qwen2.5-Omni.
+"""AQAScore — probabilistic semantic verification of audio by an ALLM.
 
-The opt-in backend prompts ``Qwen/Qwen2.5-Omni-7B`` with the sample media and
-caption text, taken from ``sample.caption.text`` or a same-stem ``.txt`` file.
-The last standalone model response in [0, 1] becomes ``aqascore_score``;
-higher means the model judged the audio more consistent with that description.
-There is no reference audio or dataset aggregation, and no proxy score when the
-backend is disabled or unavailable. Language and audio-domain coverage follow
-the configured model. Model source: https://github.com/QwenLM/Qwen2.5-Omni
+Implements the AQAScore mechanism (Kuan, Chang, Lee, arXiv:2601.14728): the
+audio and the description are passed to an audio-aware LLM
+(``Qwen/Qwen2.5-Omni-7B``) with the paper's binary query template
+"Does this audio contain the sound events described by the text: {desc}", and
+the score is the exact first-token probability P("Yes"), normalized over the
+{"Yes", "No"} token pair. Higher means stronger audio-text semantic
+alignment. Single-query form (the paper decomposes captions into several
+targeted queries); the module is opt-in via ``enabled: true`` and emits no
+score when the backend is unavailable. There is no proxy path.
 """
 
 import logging
@@ -21,7 +23,11 @@ logger = logging.getLogger(__name__)
 
 class AQAScoreModule(PipelineModule):
     name = "aqascore"
-    description = "AQAScore opt-in audio question-answering alignment"
+    provenance = "published"
+    sources = {
+        "aqascore_score": "AQAScore (Kuan, Chang, Lee, 2026) — https://arxiv.org/abs/2601.14728",
+    }
+    description = "AQAScore opt-in audio question-answering alignment (P(Yes) protocol)"
     default_config = {
         "enabled": False,
         "model_name": "Qwen/Qwen2.5-Omni-7B",
@@ -99,7 +105,7 @@ class AQAScoreModule(PipelineModule):
             if audio is None or len(audio) == 0:
                 return sample
 
-            score = self._score_qwen(sample.path, caption)
+            score = self._score_qwen(sample.path, caption, audio)
             if score is None:
                 return sample
 
@@ -110,11 +116,15 @@ class AQAScoreModule(PipelineModule):
             logger.warning("AQAScore failed for %s: %s", sample.path, e)
         return sample
 
-    def _score_qwen(self, path, caption: str) -> Optional[float]:
+    def _score_qwen(self, path, caption: str, audio) -> Optional[float]:
+        """P("Yes") from the first generated token — the AQAScore mechanism."""
         try:
+            import torch
+
+            # The paper's query template for a single semantic query.
             prompt = (
-                "Listen to the audio and answer whether it matches this description. "
-                f"Description: {caption}. Reply with a score from 0 to 1."
+                "Does this audio contain the sound events described by the "
+                f'text: "{caption}" Answer only Yes or No.'
             )
             messages = [{
                 "role": "user",
@@ -123,13 +133,34 @@ class AQAScoreModule(PipelineModule):
                     {"type": "text", "text": prompt},
                 ],
             }]
-            text = self._processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-            inputs = self._processor(text=text, return_tensors="pt")
+            text = self._processor.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            inputs = self._processor(
+                text=text,
+                audio=[audio],
+                sampling_rate=self.sample_rate,
+                return_tensors="pt",
+            )
             if hasattr(inputs, "to"):
                 inputs = inputs.to(self._device)
-            outputs = self._model.generate(**inputs, max_new_tokens=16)
-            decoded = self._processor.batch_decode(outputs, skip_special_tokens=True)[0]
-            return _extract_score(decoded)
+
+            with torch.no_grad():
+                outputs = self._model.generate(
+                    **inputs,
+                    max_new_tokens=1,
+                    output_scores=True,
+                    return_dict_in_generate=True,
+                )
+            # logits of the first generated token -> softmax over Yes/No
+            first_logits = outputs.scores[0][0].float()
+            tokenizer = getattr(self._processor, "tokenizer", None) or getattr(
+                self._processor, "text_tokenizer", None
+            )
+            yes_id = tokenizer("Yes", add_special_tokens=False)["input_ids"][0]
+            no_id = tokenizer("No", add_special_tokens=False)["input_ids"][0]
+            pair = torch.stack([first_logits[yes_id], first_logits[no_id]])
+            return float(torch.softmax(pair, dim=0)[0].item())
         except Exception as e:
             logger.debug("AQAScore Omni scoring failed: %s", e)
             return None
@@ -145,12 +176,3 @@ def _caption_text(sample: Sample) -> Optional[str]:
     except Exception:
         logger.debug("Failed to read caption sidecar %s", sidecar)
     return None
-
-
-def _extract_score(text: str) -> Optional[float]:
-    import re
-
-    matches = re.findall(r"(?<!\d)(?:0(?:\.\d+)?|1(?:\.0+)?)(?!\d)", text)
-    if not matches:
-        return None
-    return float(max(0.0, min(1.0, float(matches[-1]))))

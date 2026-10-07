@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class BVQIModule(PipelineModule):
     name = "bvqi"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "bvqi_score": "BVQI (Wu et al., ICME 2023) — https://github.com/VQAssessment/BVQI",
+    }
     description = "BVQI zero-shot blind video quality index (ICME 2023)"
     default_config = {
         "subsample": 8,

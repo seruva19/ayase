@@ -13,14 +13,16 @@ The model *thinks* inside ``<think>...</think>`` and emits the final score insid
 ``<answer>...</answer>``. This module reproduces the upstream demo inference
 protocol (``src/eval/demo_vqinsight_score.py`` in ``github.com/bytedance/Q-Insight``):
 the same system prompt, per-mode user prompt, ``qwen_vl_utils.process_vision_info``
-frame handling, greedy generation, and ``<answer>`` parsing. The parsed 0-100 score
-(for AIGC, the mean of the three dimensions) is mapped to 0-1.
+frame handling, greedy generation, and ``<answer>`` parsing. For AIGC the three
+upstream dimensions are stored separately (each mapped to 0-1); for natural video
+the single score is mapped to 0-1.
 
 If the released weights / transformers backend are unavailable, the metric is
 left ``None`` — no CLIP zero-shot proxy or handcrafted approximation is
 substituted for the published metric.
 
-vqinsight_score — higher = better (0-1)
+vqinsight_score (natural), vqinsight_spatial / vqinsight_temporal /
+vqinsight_consistency (AIGC) — higher = better (0-1)
 
 Source: https://github.com/bytedance/Q-Insight (src/eval/demo_vqinsight_score.py);
 weights: https://huggingface.co/ByteDance/Q-Insight ; paper: arXiv:2506.18564.
@@ -69,6 +71,18 @@ _PROMPTS = {
 
 class VQInsightModule(PipelineModule):
     name = "vqinsight"
+    provenance = {
+        "vqinsight_score": "published",
+        "vqinsight_spatial": "published",
+        "vqinsight_temporal": "published",
+        "vqinsight_consistency": "published",
+    }
+    sources = {
+        "vqinsight_score": "VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight",
+        "vqinsight_spatial": "VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight",
+        "vqinsight_temporal": "VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight",
+        "vqinsight_consistency": "VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight",
+    }
     requires_external_backend = False  # real weights verified end-to-end on an H100 (see docstring)
     description = "VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)"
     default_config = {
@@ -79,8 +93,17 @@ class VQInsightModule(PipelineModule):
         "device": "auto",
         "models_dir": "models",
     }
+    metric_info = {
+        "vqinsight_score": "VQ-Insight single natural-video quality score (0-1)",
+        "vqinsight_spatial": "VQ-Insight AIGC spatial quality dimension (0-1)",
+        "vqinsight_temporal": "VQ-Insight AIGC temporal quality dimension (0-1)",
+        "vqinsight_consistency": "VQ-Insight AIGC text-video consistency dimension (0-1)",
+    }
     metric_groups = {
         "vqinsight_score": "nr_quality",
+        "vqinsight_spatial": "nr_quality",
+        "vqinsight_temporal": "nr_quality",
+        "vqinsight_consistency": "nr_quality",
     }
 
     def __init__(self, config=None):
@@ -165,12 +188,29 @@ class VQInsightModule(PipelineModule):
             return sample
 
         try:
-            score = self._score_video(str(sample.path))
-            if score is not None:
-                sample.quality_metrics.vqinsight_score = float(score)
+            parsed = self._score_video(str(sample.path))
+            if parsed is not None:
+                self._store(sample, parsed)
         except Exception as e:  # noqa: BLE001
             logger.warning("VQ-Insight failed for %s: %s", sample.path, e)
         return sample
+
+    @staticmethod
+    def _norm(value: float) -> float:
+        return max(0.0, min(1.0, value / 100.0))
+
+    def _store(self, sample: Sample, parsed) -> None:
+        qm = sample.quality_metrics
+        if self.video_type == "aigc":
+            for key, field in (
+                ("spatial", "vqinsight_spatial"),
+                ("temporal", "vqinsight_temporal"),
+                ("consistency", "vqinsight_consistency"),
+            ):
+                if parsed.get(key) is not None:
+                    setattr(qm, field, self._norm(parsed[key]))
+        else:
+            setattr(qm, "vqinsight_score", self._norm(parsed))
 
     def _score_video(self, video_path: str) -> Optional[float]:
         import torch
@@ -227,12 +267,12 @@ class VQInsightModule(PipelineModule):
 
         return self._parse_score(output_text)
 
-    def _parse_score(self, content: str) -> Optional[float]:
-        """Extract a 0-1 score from the model output.
+    def _parse_score(self, content: str):
+        """Extract the raw 0-100 measurement(s) from the model output.
 
-        Tolerant parse: prefer the ``<answer>...</answer>`` block, but fall back
-        to the whole string so a missing tag never silently yields ``None`` when
-        a number is present.
+        Returns a float for the natural-video checkpoint and a dict with the
+        ``spatial``/``temporal``/``consistency`` components for the AIGC
+        checkpoint (upstream demo reports the three dimensions separately).
         """
         if not content:
             return None
@@ -240,44 +280,40 @@ class VQInsightModule(PipelineModule):
         answer = m.group(1).strip() if m else content
 
         if self.video_type == "aigc":
-            score_100 = self._parse_aigc(answer)
-            if score_100 is None:
-                score_100 = self._parse_aigc(content)
-        else:
-            score_100 = self._first_float(answer)
-            if score_100 is None:
-                score_100 = self._first_float(content)
+            parsed = self._parse_aigc(answer)
+            if parsed is None:
+                parsed = self._parse_aigc(content)
+            return parsed
 
+        score_100 = self._first_float(answer)
         if score_100 is None:
-            return None
-        return max(0.0, min(1.0, score_100 / 100.0))
+            score_100 = self._first_float(content)
+        return score_100
 
     @staticmethod
-    def _parse_aigc(text: str) -> Optional[float]:
+    def _parse_aigc(text: str):
         keys = ("spatial", "temporal", "consistency")
         # First try a JSON object substring.
         obj_match = re.search(r"\{.*\}", text, re.DOTALL)
         if obj_match:
             try:
                 obj = json.loads(obj_match.group(0))
-                vals = [
-                    float(obj[k])
+                vals = {
+                    k: float(obj[k])
                     for k in keys
                     if k in obj and _is_number(obj[k])
-                ]
+                }
                 if vals:
-                    return sum(vals) / len(vals)
+                    return vals
             except (ValueError, TypeError):
                 pass
         # Fallback: regex each key independently.
-        vals = []
+        vals = {}
         for k in keys:
             km = re.search(rf'"?{k}"?\s*[:=]\s*(-?\d+(?:\.\d+)?)', text)
             if km:
-                vals.append(float(km.group(1)))
-        if vals:
-            return sum(vals) / len(vals)
-        return None
+                vals[k] = float(km.group(1))
+        return vals or None
 
     @staticmethod
     def _first_float(text: str) -> Optional[float]:

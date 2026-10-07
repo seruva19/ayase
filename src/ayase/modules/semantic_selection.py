@@ -17,6 +17,7 @@ class SemanticSelectionModule(PipelineModule):
     This module uses the 'style_traits' detection data produced by the VLMJudgeModule.
     """
     name = "semantic_selection"
+    provenance = "utility"
     description = "Selects diverse samples based on VLM-extracted semantic traits"
     default_config = {
         "num_to_select": 10,
@@ -49,7 +50,7 @@ class SemanticSelectionModule(PipelineModule):
             if traits:
                 video_traits[path_str] = traits
                 qm = sample.quality_metrics
-                video_scores[path_str] = (getattr(qm, "aesthetic_score", None) or 0.5) if qm else 0.5
+                video_scores[path_str] = (getattr(qm, "aesthetic_v25_score", None) or 0.5) if qm else 0.5
 
         if not video_traits:
             logger.info("No style traits found. Skipping semantic selection.")

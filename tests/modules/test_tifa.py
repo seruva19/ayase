@@ -13,7 +13,8 @@ def test_tifa_config():
 
     m = TIFAModule()
     assert "vqa_model" in m.default_config
-    assert "num_questions" in m.default_config
+    assert "question_generator" in m.default_config
+    assert "filter_questions" in m.default_config
     assert "subsample" in m.default_config
 
 
@@ -26,29 +27,17 @@ def test_tifa_skip_without_caption(image_sample):
     assert result.quality_metrics is None or result.quality_metrics.tifa_score is None
 
 
-def test_tifa_question_generation():
-    from ayase.modules.tifa import _generate_questions
+def test_tifa_unavailable_without_backends(image_sample):
+    # Without the official pipeline deps (torch/transformers checkpoints),
+    # setup() must degrade gracefully and process() must be a no-op.
+    from ayase.modules.tifa import TIFAModule
 
-    questions = _generate_questions("A red dog sitting on a green chair")
-    assert len(questions) > 0
-    # Should have questions about colors and objects
-    q_texts = [q[0].lower() for q in questions]
-    assert any("red" in q for q in q_texts)
-
-
-def test_tifa_color_detection():
-    from ayase.modules.tifa import _generate_questions
-
-    questions = _generate_questions("A blue bird on a white fence")
-    q_texts = [q[0].lower() for q in questions]
-    assert any("blue" in q for q in q_texts)
-
-
-def test_tifa_empty_caption():
-    from ayase.modules.tifa import _generate_questions
-
-    questions = _generate_questions("")
-    assert len(questions) == 0
+    m = TIFAModule()
+    m.on_mount()
+    if not m._ml_available:
+        image_sample.quality_metrics = QualityMetrics()
+        result = m.process(image_sample)
+        assert result.quality_metrics.tifa_score is None
 
 
 def test_tifa_field_exists():
@@ -58,6 +47,8 @@ def test_tifa_field_exists():
 
 
 def test_tifa_field_group():
-    qm = QualityMetrics()
-    groups = qm._FIELD_GROUPS
+    from ayase.pipeline import ModuleRegistry
+
+    ModuleRegistry.discover_modules()
+    groups = QualityMetrics._FIELD_GROUPS
     assert groups.get("tifa_score") == "alignment"

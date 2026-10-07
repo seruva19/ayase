@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 class MultiSubjectIdentityModule(PipelineModule):
     name = "multi_subject_identity"
+    deprecated = True
+    provenance = "own"
     description = "Per-subject face identity in multi-person clips (worst subject reported)"
     default_config = {
         "model_name": "buffalo_l",

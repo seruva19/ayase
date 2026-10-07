@@ -8,15 +8,12 @@ Implementation:
     The only real backend is the upstream AVQT CLI tool (macOS). When it is
     not installed the metric is left ``None`` (no proxy is substituted).
 
-avqt_score -- higher = better quality (0-1)
+avqt_score -- higher = better quality (1-5 MOS)
 
-REVIVAL NOTES (requires_external_backend -- no turnkey backend)
+Backend requirements
 Metric: AVQT (Apple Advanced Video Quality Tool).
-Category: IMPOSSIBLE.
-Why requires_external_backend: Closed-source macOS/Metal CLI binary; no published architecture or weights,
+Unavailable because: Closed-source macOS/Metal CLI binary; no published architecture or weights,
   Windows-unsupported.
-To revive: Not reproducible -- no public architecture/weights to reimplement. The only real path is the
-  upstream Apple AVQT CLI on macOS. Permanent.
 Source: Apple AVQT (closed-source, macOS only).
 """
 
@@ -35,6 +32,14 @@ logger = logging.getLogger(__name__)
 
 class AVQTModule(ReferenceBasedModule):
     name = "avqt"
+    provenance = "published"
+    sources = {
+        "avqt_score": "Apple AVQT (closed-source CLI) — https://streaminglearningcenter.com/metrics/apple-avqt-quality-metric.html",
+    }
+    deviations = {
+        "avqt_score": "Output parsed by keyword match on stdout (no structured "
+        "output mode in the AVQT CLI); scale is AVQT's native 1-5 MOS.",
+    }
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "Apple AVQT perceptual video quality (full-reference)"
     metric_field = "avqt_score"
@@ -91,8 +96,9 @@ class AVQTModule(ReferenceBasedModule):
     ) -> Optional[float]:
         """Run AVQT CLI tool."""
         try:
+            # Upstream CLI: `AVQT -r <reference> -t <test>`; score is 1-5 MOS.
             result = subprocess.run(
-                ["avqt", "--ref", str(reference_path), "--dis", str(sample_path)],
+                ["avqt", "-r", str(reference_path), "-t", str(sample_path)],
                 capture_output=True,
                 text=True,
                 timeout=300,
@@ -104,7 +110,7 @@ class AVQTModule(ReferenceBasedModule):
                         parts = line.split()
                         for part in reversed(parts):
                             try:
-                                return float(np.clip(float(part), 0.0, 1.0))
+                                return float(part)
                             except ValueError:
                                 continue
             return None

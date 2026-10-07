@@ -29,11 +29,14 @@ logger = logging.getLogger(__name__)
 
 class VMAFModule(ReferenceBasedModule):
     name = "vmaf"
+    provenance = "published"
+    sources = {
+        "vmaf": "VMAF v0.6.1, Netflix; FFmpeg libvmaf — https://github.com/Netflix/vmaf",
+    }
     description = "VMAF perceptual video quality metric (full-reference)"
     default_config = {
         "vmaf_model": "vmaf_v0.6.1",  # or "vmaf_4k_v0.6.1" for 4K content
         "subsample": 1,  # Process every Nth frame (1=all frames)
-        "use_ffmpeg": True,  # Use FFmpeg libvmaf if available, else fallback to frame-by-frame
         "warning_threshold": 70.0,  # Warn if VMAF < 70
     }
     metric_groups = {
@@ -44,53 +47,30 @@ class VMAFModule(ReferenceBasedModule):
         super().__init__(config)
         self.vmaf_model = self.config.get("vmaf_model", "vmaf_v0.6.1")
         self.subsample = self.config.get("subsample", 1)
-        self.use_ffmpeg = self.config.get("use_ffmpeg", True)
         self.warning_threshold = self.config.get("warning_threshold", 70.0)
         self._ml_available = False
-        self._ffmpeg_vmaf_available = False
         self._backend = None
 
     def setup(self) -> None:
+        # FFmpeg's libvmaf filter is the only real backend — the `vmaf` pip
+        # package exposes no `compute_vmaf` function.
         try:
-            # Check if FFmpeg with libvmaf is available
-            if self.use_ffmpeg:
-                result = subprocess.run(
-                    ["ffmpeg", "-filters"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
-                if "libvmaf" in result.stdout or "vmaf" in result.stdout:
-                    self._ffmpeg_vmaf_available = True
-                    logger.info("FFmpeg with libvmaf support detected")
-                else:
-                    logger.warning(
-                        "FFmpeg found but libvmaf not available. "
-                        "Falling back to Python implementation."
-                    )
-
-            # Try to import vmaf package as fallback
-            try:
-                import vmaf
-
+            result = subprocess.run(
+                ["ffmpeg", "-filters"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if "libvmaf" in result.stdout or "vmaf" in result.stdout:
                 self._ml_available = True
-                logger.info(f"VMAF module initialized (model: {self.vmaf_model})")
-            except ImportError:
-                if not self._ffmpeg_vmaf_available:
-                    logger.warning(
-                        "VMAF package not installed and FFmpeg libvmaf not available. "
-                        "Install with: pip install vmaf"
-                    )
-                else:
-                    self._ml_available = True  # FFmpeg method available
-
-            if self._ffmpeg_vmaf_available:
                 self._backend = "ffmpeg_libvmaf"
-            elif self._ml_available:
-                self._backend = "vmaf_python"
+                logger.info("FFmpeg with libvmaf support detected")
             else:
                 self._backend = "unavailable"
-
+                logger.warning(
+                    "FFmpeg found but libvmaf not available. "
+                    "VMAF requires FFmpeg built with libvmaf."
+                )
         except Exception as e:
             self._backend = "unavailable"
             logger.warning(f"Failed to setup VMAF: {e}")
@@ -107,10 +87,9 @@ class VMAFModule(ReferenceBasedModule):
         Returns:
             VMAF score (0-100), or None if computation failed
         """
-        if self._ffmpeg_vmaf_available:
-            return self._compute_vmaf_ffmpeg(sample_path, reference_path)
-        else:
-            return self._compute_vmaf_python(sample_path, reference_path)
+        if not self._ml_available:
+            return None
+        return self._compute_vmaf_ffmpeg(sample_path, reference_path)
 
     def _compute_vmaf_ffmpeg(
         self, sample_path: Path, reference_path: Path
@@ -129,6 +108,9 @@ class VMAFModule(ReferenceBasedModule):
             # Build FFmpeg command
             # FFmpeg VMAF filter: -lavfi "[0:v][1:v]libvmaf=model=version={model}:log_path={output}"
             model_version = self.vmaf_model.replace("vmaf_", "").replace("_", ".")
+            subsample_opt = (
+                f":n_subsample={self.subsample}" if self.subsample > 1 else ""
+            )
 
             cmd = [
                 "ffmpeg",
@@ -137,7 +119,7 @@ class VMAFModule(ReferenceBasedModule):
                 "-i",
                 str(reference_path),  # Reference video (input 1)
                 "-lavfi",
-                f"[0:v][1:v]libvmaf=model=version={model_version}:log_path={output_path}:log_fmt=json",
+                f"[0:v][1:v]libvmaf=model=version={model_version}{subsample_opt}:log_path={output_path}:log_fmt=json",
                 "-f",
                 "null",
                 "-",
@@ -180,72 +162,12 @@ class VMAFModule(ReferenceBasedModule):
             logger.warning(f"FFmpeg VMAF failed: {e}")
             return None
 
-    def _compute_vmaf_python(
-        self, sample_path: Path, reference_path: Path
-    ) -> Optional[float]:
-        """Compute VMAF using Python vmaf package (frame-by-frame).
-
-        Fallback method if FFmpeg libvmaf not available.
-        """
-        try:
-            import vmaf
-
-            # Open both videos
-            ref_cap = cv2.VideoCapture(str(reference_path))
-            dist_cap = cv2.VideoCapture(str(sample_path))
-
-            vmaf_scores = []
-            frame_idx = 0
-
-            while True:
-                ret_ref, ref_frame = ref_cap.read()
-                ret_dist, dist_frame = dist_cap.read()
-
-                if not ret_ref or not ret_dist:
-                    break
-
-                # Subsample frames
-                if frame_idx % self.subsample != 0:
-                    frame_idx += 1
-                    continue
-
-                # Convert BGR to RGB
-                ref_rgb = cv2.cvtColor(ref_frame, cv2.COLOR_BGR2RGB)
-                dist_rgb = cv2.cvtColor(dist_frame, cv2.COLOR_BGR2RGB)
-
-                # Compute VMAF for this frame
-                # Note: vmaf package API may vary, this is a simplified example
-                try:
-                    score = vmaf.compute_vmaf(
-                        ref_rgb, dist_rgb, model=self.vmaf_model
-                    )
-                    vmaf_scores.append(score)
-                except Exception as e:
-                    logger.debug(f"Failed to compute VMAF for frame {frame_idx}: {e}")
-
-                frame_idx += 1
-
-            ref_cap.release()
-            dist_cap.release()
-
-            if not vmaf_scores:
-                return None
-
-            return float(np.mean(vmaf_scores))
-
-        except ImportError:
-            logger.warning("vmaf package not installed")
-            return None
-        except Exception as e:
-            logger.warning(f"Python VMAF computation failed: {e}")
-            return None
-
     def process(self, sample: Sample) -> Sample:
         """Process sample with VMAF metric.
 
         Checks for reference_path in sample metadata. If not found, skips processing.
         """
-        if not self._ml_available and not self._ffmpeg_vmaf_available:
+        if not self._ml_available:
             return sample
 
         if not sample.is_video:

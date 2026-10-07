@@ -100,6 +100,10 @@ class SilentLipStabilityModule(PipelineModule):
     """Measure involuntary lip motion during acoustically silent intervals."""
 
     name = "silent_lip_stability"
+    provenance = "published"
+    sources = {
+        "silent_lip_stability": "THEval (Quignon et al., arXiv 2511.04520) — https://arxiv.org/abs/2511.04520",
+    }
     description = "THEval silent-mouth lip-opening MAD during Silero-VAD silence"
     default_config = {
         "minimum_silence_ms": 300.0,

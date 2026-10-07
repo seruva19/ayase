@@ -73,5 +73,5 @@ def test_metrics_table_matches_quality_metrics():
     )
 
     # Schema count includes all fields; delivered = schema − requires_external_backend-only.
-    assert len(model_fields) == 624, f"Expected 624 fields, got {len(model_fields)}"
-    assert len(delivered_fields) == 624 - len(external_only_fields)
+    assert len(model_fields) == 612, f"Expected 612 fields, got {len(model_fields)}"
+    assert len(delivered_fields) == 612 - len(external_only_fields)

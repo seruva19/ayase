@@ -19,7 +19,7 @@ def test_unified_reward_edit_no_backend_is_noop(image_sample):
 
     assert result is image_sample
     if result.quality_metrics is not None:
-        assert result.quality_metrics.unified_reward_edit_score is None
+        assert result.quality_metrics.unified_reward_edit_success_score is None
 
 
 def test_unified_reward_edit_no_reference_is_noop(image_sample):
@@ -82,4 +82,3 @@ def test_unified_reward_edit_store_scores(image_sample):
     qm = image_sample.quality_metrics
     assert qm.unified_reward_edit_success_score == 20.0
     assert qm.unified_reward_edit_overediting_score == 22.0
-    assert qm.unified_reward_edit_score == 21.0

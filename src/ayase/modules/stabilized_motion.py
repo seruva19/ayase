@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 
 class StabilizedMotionModule(PipelineModule):
     name = "stabilized_motion"
+    deprecated = True
+    provenance = "own"
     description = "Calculates motion scores with camera stabilization (ORB+Homography)"
     default_config = {
         "step": 2,

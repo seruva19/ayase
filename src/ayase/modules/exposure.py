@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class ExposureModule(PipelineModule):
     name = "exposure"
+    provenance = "utility"
     description = "Checks for overexposure, underexposure, and low contrast using histograms"
     default_config = {
         "overexposure_threshold": 0.3,

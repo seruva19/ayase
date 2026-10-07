@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 class MotionModule(PipelineModule):
     name = "motion"
+    deprecated = True
+    provenance = "own"
     description = "Analyzes motion dynamics (optical flow, flickering)"
     default_config = {
         "sample_rate": 5,

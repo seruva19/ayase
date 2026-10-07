@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 
 class ProductionQualityModule(PipelineModule):
     name = "production_quality"
+    deprecated = True
+    provenance = "own"
     description = "Professional production quality (colour, exposure, focus, banding)"
     default_config = {
         "max_frames": 150,

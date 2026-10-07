@@ -25,24 +25,17 @@ def test_camerabench_basics():
 def test_camera_motion_label_set():
     from ayase.modules.camerabench import CAMERA_MOTION_LABELS
 
+    # Official CameraBench binary-classification primitive set (15 questions).
     expected = {
-        "static",
-        "pan_left",
-        "pan_right",
-        "tilt_up",
-        "tilt_down",
-        "roll",
-        "zoom_in",
-        "zoom_out",
-        "dolly_in",
-        "dolly_out",
-        "truck",
-        "pedestal",
-        "follow",
+        "move_down", "move_in", "move_left", "move_out", "move_right", "move_up",
+        "pan_left", "pan_right", "roll_clockwise", "roll_counterclockwise",
+        "static", "tilt_down", "tilt_up", "zoom_in", "zoom_out",
     }
-    assert expected <= set(CAMERA_MOTION_LABELS.keys())
-    # Every label maps to a non-empty natural-language description.
-    assert all(isinstance(v, str) and v for v in CAMERA_MOTION_LABELS.values())
+    assert expected == set(CAMERA_MOTION_LABELS.keys())
+    # Every label maps to the verbatim benchmark question.
+    assert all(
+        isinstance(v, str) and v.endswith("?") for v in CAMERA_MOTION_LABELS.values()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -66,7 +59,7 @@ def test_process_writes_label_and_confidence(video_sample):
     m._ml_available = True
     m._backend = "qwen2.5-vl-camerabench"
     # Mock the classifier so no model is loaded.
-    m._classify = lambda sample: ("tilt_up", 0.87)
+    m._classify = lambda sample: ("tilt_up", 0.87, {"tilt_up": 0.87})
 
     video_sample.quality_metrics = QualityMetrics()
     result = m.process(video_sample)

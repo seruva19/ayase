@@ -232,6 +232,29 @@ class FaceMotionPreservationModule(PipelineModule):
     """Compare synchronized source/transformed face motion using the published protocol."""
 
     name = "face_motion_preservation"
+    provenance = {
+        "face_motion_blink_precision": "adapted",
+        "face_motion_blink_recall": "adapted",
+        "face_motion_cca_correlation": "adapted",
+        "face_motion_frame_coverage": "utility",
+        "face_motion_landmark_pair_coverage": "utility",
+        "face_motion_x_correlation": "adapted",
+        "face_motion_y_correlation": "adapted",
+    }
+    sources = {
+        "face_motion_blink_precision": "FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5",
+        "face_motion_blink_recall": "FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5",
+        "face_motion_cca_correlation": "FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5",
+        "face_motion_x_correlation": "FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5",
+        "face_motion_y_correlation": "FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5",
+    }
+    deviations = {
+        "face_motion_blink_precision": "the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper",
+        "face_motion_blink_recall": "the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper",
+        "face_motion_cca_correlation": "the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper",
+        "face_motion_x_correlation": "the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper",
+        "face_motion_y_correlation": "the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper",
+    }
     description = "Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics"
     default_config = {
         "models_dir": "models",
@@ -257,10 +280,8 @@ class FaceMotionPreservationModule(PipelineModule):
         "face_motion_x_correlation": "Mean Pearson r of 1,275 horizontal landmark-pair trajectories (-1 to 1)",
         "face_motion_y_correlation": "Mean Pearson r of 1,275 vertical landmark-pair trajectories (-1 to 1)",
         "face_motion_cca_correlation": "Mean first canonical correlation of 2-D landmark-pair trajectories (0-1)",
-        "face_motion_ear_correlation": "Ayase-derived Pearson correlation of synchronized EAR trajectories (-1 to 1)",
         "face_motion_blink_precision": "Adapted blink precision (0-1; threshold requires MediaPipe calibration)",
         "face_motion_blink_recall": "Adapted blink recall (0-1; threshold requires MediaPipe calibration)",
-        "face_motion_blink_f1": "Ayase-derived blink F1 (0-1; threshold requires MediaPipe calibration)",
         "face_motion_landmark_pair_coverage": "Share of landmark pairs with defined x/y/CCA correlations (0-1)",
         "face_motion_frame_coverage": "Share of synchronized frames with a face in both videos (0-1)",
     }
@@ -439,10 +460,8 @@ class FaceMotionPreservationModule(PipelineModule):
         qm.face_motion_x_correlation = result["face_motion_x_correlation"]
         qm.face_motion_y_correlation = result["face_motion_y_correlation"]
         qm.face_motion_cca_correlation = result["face_motion_cca_correlation"]
-        qm.face_motion_ear_correlation = result["face_motion_ear_correlation"]
         qm.face_motion_blink_precision = result["face_motion_blink_precision"]
         qm.face_motion_blink_recall = result["face_motion_blink_recall"]
-        qm.face_motion_blink_f1 = result["face_motion_blink_f1"]
         qm.face_motion_landmark_pair_coverage = result[
             "face_motion_landmark_pair_coverage"
         ]

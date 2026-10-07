@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 class UNIQUEModule(PipelineModule):
     name = "unique"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "unique_score": "UNIQUE, Zhang et al. TIP 2021; pyiqa — https://github.com/zwx8981/UNIQUE",
+    }
     description = "UNIQUE unified NR image quality (TIP 2021)"
     default_config = {"subsample": 4}
     metric_groups = {

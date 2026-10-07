@@ -31,6 +31,14 @@ _NISQA_WEIGHTS_FILENAME = "nisqa/nisqa.tar"
 
 class AudioNISQAModule(PipelineModule):
     name = "audio_nisqa"
+    provenance = "published"
+    sources = {
+        "nisqa_coloration": "NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA",
+        "nisqa_discontinuity": "NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA",
+        "nisqa_loudness": "NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA",
+        "nisqa_mos": "NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA",
+        "nisqa_noisiness": "NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA",
+    }
     description = "NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)"
     default_config = {
         "target_sr": 48000,  # NISQA expects 48 kHz internally

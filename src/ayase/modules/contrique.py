@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 class CONTRIQUEModule(PipelineModule):
     name = "contrique"
+    requires_external_backend = True
+    provenance = "utility"
+    sources = {
+        "contrique_score": "CONTRIQUE (Madhusudana et al., TIP 2022) — https://github.com/pavancm/CONTRIQUE",
+    }
     description = "Contrastive no-reference IQA"
     default_config = {
         "subsample": 5,

@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 class ImageRewardModule(PipelineModule):
     name = "image_reward"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "image_reward_score": "ImageReward (Xu et al., NeurIPS 2023) — https://github.com/THUDM/ImageReward",
+    }
     description = "Human preference prediction for text-to-image quality (ImageReward)"
     default_config = {
         "model_name": "ImageReward-v1.0",

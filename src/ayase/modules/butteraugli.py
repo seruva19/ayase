@@ -32,6 +32,11 @@ logger = logging.getLogger(__name__)
 
 class ButteraugliModule(ReferenceBasedModule):
     name = "butteraugli"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "butteraugli": "Butteraugli (Google/libjxl) via jxlpy or butteraugli — https://github.com/google/butteraugli",
+    }
     description = "Butteraugli perceptual distance (Google/JPEG XL, lower=better)"
     default_config = {
         "subsample": 5,

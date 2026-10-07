@@ -62,6 +62,10 @@ def _third_party_path(*parts: str) -> Path:
 
 class BrightRateModule(PipelineModule):
     name = "brightrate"
+    provenance = "published"
+    sources = {
+        "brightrate_score": "BrightRate / BrightVQ — https://brightvqa.github.io/BrightVQ/",
+    }
     description = "BrightRate HDR no-reference video quality via the BrightVQ inference script"
     default_config = {
         "repo_path": None,

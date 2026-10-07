@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class StructuralModule(PipelineModule):
     name = "structural"
+    provenance = "utility"
     description = "Checks structural integrity (scene cuts, black bars)"
     default_config = {"detect_cuts": True, "detect_black_bars": True}
 

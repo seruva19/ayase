@@ -43,13 +43,13 @@ def test_asr_speech_quality_relevance_module_basics():
     from ayase.modules.kad import KADModule
     from ayase.modules.pam import PAMModule
     from ayase.modules.scoreq import SCOREQModule
-    from ayase.modules.ttsds2 import TTSDS2Module
+    from ayase.modules.tts_system_dist import TTSDS2Module
 
     _test_module_basics(ASRTranscribeModule, "asr_transcribe")
     _test_module_basics(ASRCERModule, "asr_cer")
     _test_module_basics(ASRWERModule, "asr_wer")
     _test_module_basics(SCOREQModule, "scoreq")
-    _test_module_basics(TTSDS2Module, "ttsds2")
+    _test_module_basics(TTSDS2Module, "tts_system_dist")
     _test_module_basics(AudioUTMOSv2Module, "audio_utmos_v2")
     _test_module_basics(KADModule, "kad")
     _test_module_basics(HumanCLAPModule, "human_clap")
@@ -64,7 +64,7 @@ def test_quality_metrics_fields_for_metric_modules():
         "asr_cer",
         "asr_wer",
         "scoreq_score",
-        "ttsds2_score",
+        "tts_system_dist_score",
         "utmos_v2_score",
         "human_clap_score",
         "pam_score",
@@ -78,9 +78,15 @@ def test_image_distribution_features_real_backend_or_none(image_sample):
     from ayase.modules.fid import FIDModule
     from ayase.modules.prdc_dinov2 import PRDCDINOv2Module
 
-    # CMMD/FID no longer have proxy feature extractors: without the real
-    # CLIP/InceptionV3 backend loaded, extract_features must return None.
-    for cls, real_backend in ((CMMDModule, "clip"), (FIDModule, "inception_v3")):
+    # CMMD/FID/PRDC no longer have proxy feature extractors: without the real
+    # CLIP/InceptionV3/DINOv2 backend loaded, extract_features must return None.
+    # (PRDC computed on handcrafted image statistics is a different quantity
+    # than PRDC on DINOv2 features — the feature space is part of the metric.)
+    for cls, real_backend in (
+        (CMMDModule, "clip"),
+        (FIDModule, "inception_v3"),
+        (PRDCDINOv2Module, "dinov2"),
+    ):
         mod = cls({"use_torchvision_backend": False} if cls is FIDModule else {})
         feat = mod.extract_features(image_sample)
         if mod._backend == real_backend:
@@ -89,13 +95,6 @@ def test_image_distribution_features_real_backend_or_none(image_sample):
         else:
             assert mod._backend == "unavailable"
             assert feat is None
-
-    # PRDC's image_stats fallback is a real (handcrafted-statistics) feature
-    # extractor, not a fabricated proxy — it must keep producing features.
-    prdc = PRDCDINOv2Module({})
-    feat = prdc.extract_features(image_sample)
-    assert feat is not None
-    assert np.asarray(feat).ndim == 1
 
 
 def test_asr_cer_wer_use_shared_transcript_config(synthetic_wav):
@@ -119,7 +118,7 @@ def test_audio_modules_real_backend_or_none(synthetic_wav):
     from ayase.modules.audio_utmos_v2 import AudioUTMOSv2Module
     from ayase.modules.pam import PAMModule
     from ayase.modules.scoreq import SCOREQModule
-    from ayase.modules.ttsds2 import TTSDS2Module
+    from ayase.modules.tts_system_dist import TTSDS2Module
 
     sample = Sample(path=synthetic_wav, is_video=False)
     checks = [
@@ -127,7 +126,7 @@ def test_audio_modules_real_backend_or_none(synthetic_wav):
         (AudioUTMOSv2Module(), "utmos_v2_score",
          ("utmosv2_package", "torch_hub"), (1.0, 5.0)),
         (PAMModule(), "pam_score", ("clap",), (0.0, 1.0)),
-        (TTSDS2Module({"enabled": True}), "ttsds2_score", ("ttsds2",), (0.0, 1.0)),
+        (TTSDS2Module({"enabled": True}), "tts_system_dist_score", ("tts_system_dist",), (0.0, 1.0)),
     ]
     for module, field, real_backends, (lo, hi) in checks:
         module.on_mount()

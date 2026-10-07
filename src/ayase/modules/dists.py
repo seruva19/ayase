@@ -27,6 +27,11 @@ logger = logging.getLogger(__name__)
 
 class DISTSModule(PipelineModule):
     name = "dists"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "dists": "DISTS (Ding et al., TPAMI 2020) via piq — https://github.com/photosynthesis-team/piq",
+    }
     description = "Deep Image Structure and Texture Similarity (full-reference)"
     default_config = {
         "subsample": 5,  # Process every Nth video frame

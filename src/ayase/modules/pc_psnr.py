@@ -1,10 +1,10 @@
-"""Estimate reference-based D1/D2 geometry PSNR for PLY or PCD point clouds.
+"""Reference-based D1/D2 geometry PSNR for PLY or PCD point clouds.
 
-D1 uses one-way sample-to-reference point distances; D2 projects those errors
-onto reference normals and is unavailable when the reference has no normals.
-Scores are in dB and higher means less geometric error. This implementation
-uses the reference bounding-box diagonal as its peak and is not the symmetric,
-bit-exact MPEG conformance metric.
+D1 uses symmetric point-to-point distances (max of both directions, per
+``mpeg-pcc-dmetric``); D2 projects those errors onto the target cloud's
+normals (point-to-plane) and is reported when normals are available. The peak
+is the reference bounding-box diagonal. Scores are in dB; higher means less
+geometric error.
 
 Basis: MPEG point-cloud distortion metrics,
 https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric
@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 
 class PCPSNRModule(ReferenceBasedModule):
     name = "pc_psnr"
+    provenance = "published"
+    sources = {
+        "pc_d1_psnr": "MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric",
+        "pc_d2_psnr": "MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric",
+    }
+    deviations = {
+        "pc_d2_psnr": "at least one of the clouds needs normals; without normals the metric is not emitted",
+    }
     description = "D1/D2 MPEG point cloud PSNR"
     metric_field = None
     default_config = {}
@@ -73,20 +81,31 @@ class PCPSNRModule(ReferenceBasedModule):
             # D1: point-to-point
             from scipy.spatial import cKDTree
 
+            # MPEG pc_error convention: both directions, take the max MSE.
+            tree1 = cKDTree(p1)
             tree2 = cKDTree(p2)
-            d_p2p, _ = tree2.query(p1)
-            mse_d1 = np.mean(d_p2p**2)
-            peak = np.max(np.linalg.norm(p2.max(axis=0) - p2.min(axis=0)))
+            d_fwd, _ = tree2.query(p1)
+            d_bwd, _ = tree1.query(p2)
+            mse_d1 = max(float(np.mean(d_fwd**2)), float(np.mean(d_bwd**2)))
+            peak = float(np.linalg.norm(p2.max(axis=0) - p2.min(axis=0)))
             d1 = 10 * np.log10(peak**2 / max(mse_d1, 1e-10))
-            # D2: point-to-plane (approximation using normals)
-            d2 = None  # Requires normals for point-to-plane
+
+            # D2 (point-to-plane): project onto the *target* cloud's normals in
+            # each direction and take the symmetric max, like the reference.
+            mse_terms = []
             if pc2.has_normals():
-                normals = np.asarray(pc2.normals)
                 _, idx = tree2.query(p1)
-                proj = np.sum((p1 - p2[idx]) * normals[idx], axis=1) ** 2
-                mse_d2 = np.mean(proj)
-                d2 = 10 * np.log10(peak**2 / max(mse_d2, 1e-10))
-            return float(d1), float(d2) if d2 is not None else None
+                n2 = np.asarray(pc2.normals)[idx]
+                mse_terms.append(float(np.mean(np.sum((p1 - p2[idx]) * n2, axis=1) ** 2)))
+            if pc1.has_normals():
+                _, idx = tree1.query(p2)
+                n1 = np.asarray(pc1.normals)[idx]
+                mse_terms.append(float(np.mean(np.sum((p2 - p1[idx]) * n1, axis=1) ** 2)))
+            d2 = None
+            if mse_terms:
+                mse_d2 = max(mse_terms)
+                d2 = float(10 * np.log10(peak**2 / max(mse_d2, 1e-10)))
+            return float(d1), d2
         except ImportError:
             logger.debug("open3d/scipy not installed for PC-PSNR")
             return None, None

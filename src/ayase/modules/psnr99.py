@@ -1,8 +1,8 @@
-"""PSNR99 — Worst-Case Region PSNR for Super-Resolution (2025).
+"""PSNR99 — Image-Difficulty-Aware Evaluation for Super-Resolution (2025).
 
-Full-reference metric that computes per-block MSE and uses the 99th
-percentile (worst blocks) to derive a PSNR score, capturing localised
-quality drops missed by average PSNR.
+Full-reference metric from "Image-Difficulty-Aware Evaluation of SR Models"
+(arXiv 2509.26398): the PSNR derived from the mean of the top-1% largest
+per-pixel squared errors on the luma (Y) channel — the worst-1%-pixel PSNR.
 
 psnr99 — dB, higher = better.
 """
@@ -21,9 +21,16 @@ logger = logging.getLogger(__name__)
 
 class PSNR99Module(ReferenceBasedModule):
     name = "psnr99"
-    description = "PSNR99 worst-case region quality for super-resolution (FR, 2025)"
+    provenance = "published"
+    sources = {
+        "psnr99": "PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398",
+    }
+    deviations = {
+        "psnr99": "video aggregation (mean over subsample frames) is own; the per-frame formula follows the paper",
+    }
+    description = "PSNR99 worst-1%-pixel luma PSNR for super-resolution (FR, 2025)"
     metric_field = "psnr99"
-    default_config = {"subsample": 8, "block_size": 32}
+    default_config = {"subsample": 8}
     metric_groups = {
         "psnr99": "fr_quality",
     }
@@ -32,7 +39,6 @@ class PSNR99Module(ReferenceBasedModule):
         super().__init__(config)
         self._model = None
         self.subsample = self.config.get("subsample", 8)
-        self.block_size = self.config.get("block_size", 32)
         self._backend = "numpy"
 
     def setup(self) -> None:
@@ -82,29 +88,19 @@ class PSNR99Module(ReferenceBasedModule):
             cap_r.release()
 
     def _block_psnr99(self, img: np.ndarray, ref: np.ndarray) -> Optional[float]:
-        """Compute per-block MSE, take 99th percentile, convert to PSNR."""
+        """Mean of the top-1% per-pixel squared Y errors → PSNR (the paper's def)."""
         h, w = ref.shape[:2]
         img = cv2.resize(img, (w, h))
 
-        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float64)
-        gray_ref = cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY).astype(np.float64)
+        y_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_IYUV)[..., 0].astype(np.float64)
+        y_ref = cv2.cvtColor(ref, cv2.COLOR_BGR2YUV_IYUV)[..., 0].astype(np.float64)
 
-        bs = self.block_size
-        block_mses = []
-        for y in range(0, h - bs + 1, bs):
-            for x in range(0, w - bs + 1, bs):
-                block_img = gray_img[y:y + bs, x:x + bs]
-                block_ref = gray_ref[y:y + bs, x:x + bs]
-                mse = np.mean((block_img - block_ref) ** 2)
-                block_mses.append(mse)
+        sq_err = (y_img - y_ref) ** 2
+        n_top = max(1, int(np.ceil(sq_err.size * 0.01)))
+        # Mean of the largest 1% of per-pixel squared errors.
+        top = np.partition(sq_err.reshape(-1), sq_err.size - n_top)[-n_top:]
+        mse_top1 = float(np.mean(top))
 
-        if not block_mses:
-            return None
-
-        # 99th percentile MSE (worst 1% of blocks)
-        mse_99 = float(np.percentile(block_mses, 99))
-
-        if mse_99 < 1e-10:
-            return 100.0  # perfect match
-        psnr = 10.0 * np.log10(255.0 ** 2 / mse_99)
-        return float(np.clip(psnr, 0.0, 100.0))
+        if mse_top1 < 1e-10:
+            return 100.0  # identical inputs: unbounded PSNR, keep finite
+        return float(10.0 * np.log10(255.0 ** 2 / mse_top1))

@@ -38,6 +38,10 @@ _MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve
 
 class DepthConsistencyModule(PipelineModule):
     name = "depth_consistency"
+    provenance = "own"
+    sources = {
+        "depth_temporal_consistency": "MiDaS model (Ranftl et al.); the metric is own — https://github.com/isl-org/MiDaS",
+    }
     description = "Monocular depth temporal consistency"
     default_config = {
         "model_type": "MiDaS_small",

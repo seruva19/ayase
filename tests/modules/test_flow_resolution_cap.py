@@ -1,9 +1,12 @@
-"""Regression tests for the RAFT flow resolution cap.
+"""Contract tests for the optional RAFT flow resolution cap.
 
-Full-resolution HD frames make RAFT's correlation volume explode (observed: a
-single 1080p pair tried to allocate 62 GiB -> CUDA OOM -> metric silently None).
+Full-resolution frames can make RAFT's correlation volume exceed accelerator
+memory.
 `_cap_frame_resolution` downscales oversized frames before RAFT while leaving
-smaller frames untouched. These tests exercise the helper without GPU/RAFT.
+smaller frames untouched; it is only applied when the caller explicitly
+configures a positive ``max_resolution`` (the default keeps native resolution,
+matching the EvalCrafter protocol). These tests exercise the helper without
+GPU/RAFT.
 """
 
 import numpy as np

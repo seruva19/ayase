@@ -1,14 +1,13 @@
 """Import externally computed Ref4D-VideoBench dimension results.
 
-Reads semantic, event, motion, and world CSV scores matched to image or video samples and
-averages available dimensions for the overall score. This adapter does not run Ref4D,
+Reads semantic, event, motion, and world CSV scores matched to image or video samples.
+This adapter does not run Ref4D,
 compute the dimension metrics, or validate imported values; upstream 0-100 bounds are only
 declared for semantic, event, and motion. Basis: https://github.com/TAILab-W/Ref4D-VideoBench
 """
 
 import logging
 from pathlib import Path
-from statistics import fmean
 from typing import Any, Dict, Optional
 
 from ayase.models import QualityMetrics, Sample
@@ -21,6 +20,18 @@ class Ref4DResultModule(PipelineModule):
     """Import the four Ref4D-VideoBench summary CSVs."""
 
     name = "ref4d_results"
+    provenance = {
+        "ref4d_event_score": "utility",
+        "ref4d_motion_score": "utility",
+        "ref4d_semantic_score": "utility",
+        "ref4d_world_score": "utility",
+    }
+    sources = {
+        "ref4d_event_score": "Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench",
+        "ref4d_motion_score": "Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench",
+        "ref4d_semantic_score": "Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench",
+        "ref4d_world_score": "Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench",
+    }
     description = "Ref4D semantic, event, motion, and world result adapter"
     default_config = {
         "semantic_results_path": None,
@@ -43,14 +54,12 @@ class Ref4DResultModule(PipelineModule):
         "ref4d_event_score": "Ref4D event-temporal score (0-100)",
         "ref4d_motion_score": "Ref4D motion-dynamics score (0-100)",
         "ref4d_world_score": "Ref4D world-knowledge score",
-        "ref4d_overall_score": "Arithmetic mean of available Ref4D dimensions",
     }
     metric_groups = {
         "ref4d_semantic_score": "alignment",
         "ref4d_event_score": "temporal",
         "ref4d_motion_score": "motion",
         "ref4d_world_score": "alignment",
-        "ref4d_overall_score": "nr_quality",
     }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -97,7 +106,6 @@ class Ref4DResultModule(PipelineModule):
         sample.quality_metrics.ref4d_event_score = scores.get("event")
         sample.quality_metrics.ref4d_motion_score = scores.get("motion")
         sample.quality_metrics.ref4d_world_score = scores.get("world")
-        sample.quality_metrics.ref4d_overall_score = float(fmean(scores.values()))
         self._backend = "imported_results"
         return sample
 

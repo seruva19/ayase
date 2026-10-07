@@ -114,12 +114,10 @@ def test_vtss_with_metrics(video_sample):
     from ayase.modules.vtss import VTSSModule
 
     video_sample.quality_metrics = QualityMetrics(
-        aesthetic_score=7.0,
-        technical_score=60.0,
+        aesthetic_v25_score=7.0,
         motion_score=8.0,
         clip_temp=0.85,
         blur_score=300.0,
-        noise_score=10.0,
     )
     m = VTSSModule()
     result = m.process(video_sample)

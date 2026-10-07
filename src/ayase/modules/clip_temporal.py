@@ -1,18 +1,16 @@
-"""Measure consecutive-frame similarity with whole-frame CLIP embeddings.
+"""EvalCrafter CLIP-Temp and Face Consistency over whole-frame CLIP embeddings.
 
-For videos only, the module uniformly samples at most ``max_frames`` (32 by
-default), embeds each complete RGB frame with CLIP, and averages cosine
-similarity over adjacent pairs. It uses neither captions nor reference media
-and requires at least three decoded frames.
+For videos only, the module embeds **every** frame with CLIP (EvalCrafter
+protocol; ``max_frames`` > 0 optionally re-enables a uniform cap) and reports:
 
-Both output fields, ``clip_temp`` and ``face_consistency``, currently receive
-the same adjacent-pair mean (nominal cosine range -1 to 1; higher means more
-similar). Despite its historical name, ``face_consistency`` does not detect,
-crop, recognize, or track faces, so it is a whole-frame appearance-consistency
-proxy and can be dominated by backgrounds, camera motion, or scene cuts. The
-only backend is ``openai/clip-vit-base-patch32`` by default; model/setup,
-decoding, or inference failure leaves both metrics unset rather than using a
-heuristic fallback.
+- ``clip_temp``: mean cosine similarity over consecutive frame pairs.
+- ``face_consistency``: mean cosine similarity of frames [1:] to the first
+  frame. Despite the name it does not detect, crop, recognize, or track faces —
+  it is a whole-frame appearance-consistency proxy and can be dominated by
+  backgrounds, camera motion, or scene cuts.
+
+The only backend is ``openai/clip-vit-base-patch32``; model/setup, decoding,
+or inference failure leaves both metrics unset.
 """
 
 import logging
@@ -33,10 +31,19 @@ logger = logging.getLogger(__name__)
 
 class CLIPTemporalModule(PipelineModule):
     name = "clip_temporal"
+    provenance = "adapted"
+    sources = {
+        "clip_temp": "EvalCrafter CLIP-Temp — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py",
+        "face_consistency": "EvalCrafter Face Consistency — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py",
+    }
+    deviations = {
+        "clip_temp": "Frames go through CLIPProcessor normalization; upstream feeds raw 0-255 resized pixels to get_image_features — embeddings differ at the ~1e-3 level",
+        "face_consistency": "Frames go through CLIPProcessor normalization; upstream feeds raw 0-255 resized pixels to get_image_features — embeddings differ at the ~1e-2 level",
+    }
     description = "CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)"
     default_config = {
         "model_name": "openai/clip-vit-base-patch32",
-        "max_frames": 32,
+        "max_frames": 0,
         "temp_threshold": 0.90,
         "face_threshold": 0.85,
     }
@@ -48,7 +55,9 @@ class CLIPTemporalModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
-        self.max_frames = self.config.get("max_frames", 32)
+        # EvalCrafter reads every frame; max_frames <= 0 keeps that behaviour,
+        # a positive value is an explicit non-default sampling cap.
+        self.max_frames = self.config.get("max_frames", 0)
         self.temp_threshold = self.config.get("temp_threshold", 0.90)
         self.face_threshold = self.config.get("face_threshold", 0.85)
         self._model = None
@@ -106,7 +115,7 @@ class CLIPTemporalModule(PipelineModule):
 
         try:
             frames = self._load_frames(sample)
-            if len(frames) < 3:
+            if len(frames) < 2:
                 return sample
 
             # Compute CLIP image embeddings for every frame
@@ -131,11 +140,11 @@ class CLIPTemporalModule(PipelineModule):
                 if not sample.is_video:
                     continue
                 frames = self._load_frames(sample)
-                if len(frames) < 3:
+                if len(frames) < 2:
                     continue
                 prepared.append(sample)
                 image_groups.append(arrays_to_pil(frames))
-                cache_keys.append((self.max_frames, media_state_key(sample.path)))
+                cache_keys.append((self._frame_limit(), media_state_key(sample.path)))
 
             if not prepared:
                 return samples
@@ -157,7 +166,7 @@ class CLIPTemporalModule(PipelineModule):
         return samples
 
     def _apply_scores(self, sample: Sample, embeddings) -> None:
-        if embeddings is None or embeddings.size(0) < 3:
+        if embeddings is None or embeddings.size(0) < 2:
             return
 
         # L2 normalize defensively; cached HF features are already normalized.
@@ -185,13 +194,10 @@ class CLIPTemporalModule(PipelineModule):
                 )
             )
 
-        # --- face_consistency_score: rolling window (consecutive pairs) ---
-        # Matches EvalCrafter semantics and Ayase 0.1.11 contract — averaging
-        # similarity of neighbouring frames rather than drift from the first frame.
-        face_sims = []
-        for i in range(embeddings.size(0) - 1):
-            sim = (embeddings[i] @ embeddings[i + 1]).item()
-            face_sims.append(sim)
+        # --- face_consistency: mean similarity of frames [1:] to the first
+        # frame (EvalCrafter protocol) ---
+        anchor = embeddings[0]
+        face_sims = [(anchor @ embeddings[i]).item() for i in range(1, embeddings.size(0))]
         face_consistency = float(np.mean(face_sims)) if face_sims else clip_temp
         sample.quality_metrics.face_consistency = face_consistency
 
@@ -205,6 +211,10 @@ class CLIPTemporalModule(PipelineModule):
                 )
             )
 
+    def _frame_limit(self) -> int:
+        """Effective frame cap; <=0 means every frame (EvalCrafter protocol)."""
+        return self.max_frames if self.max_frames > 0 else 1_000_000
+
     def _embed_frames(self, sample: Sample, frames):
         return cached_clip_image_features(
             self,
@@ -213,12 +223,14 @@ class CLIPTemporalModule(PipelineModule):
             arrays_to_pil(frames),
             model_key=self.model_name,
             device=self._device,
-            cache_key=(self.max_frames, media_state_key(sample.path)),
+            cache_key=(self._frame_limit(), media_state_key(sample.path)),
         )
 
     def _load_frames(self, sample: Sample):
         try:
-            frames = sample_frames(sample.path, max_frames=self.max_frames, color="rgb")
+            frames = sample_frames(
+                sample.path, max_frames=self._frame_limit(), color="rgb"
+            )
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
             frames = []

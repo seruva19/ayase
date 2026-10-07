@@ -23,6 +23,13 @@ logger = logging.getLogger(__name__)
 
 class AudioboxAestheticsModule(PipelineModule):
     name = "audiobox_aesthetics"
+    provenance = "published"
+    sources = {
+        "audiobox_cu": "Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics",
+        "audiobox_enjoyment": "Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics",
+        "audiobox_pc": "Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics",
+        "audiobox_production": "Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics",
+    }
     description = "Meta Audiobox Aesthetics audio quality (2025)"
     default_config = {
         "sample_rate": 16000,

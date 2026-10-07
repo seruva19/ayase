@@ -21,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 class WaDIQaMFRModule(PipelineModule):
     name = "wadiqam_fr"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "wadiqam_fr": "WaDIQaM-FR; pyiqa — https://github.com/chaofengc/IQA-PyTorch",
+    }
     description = "WaDIQaM full-reference deep quality metric (higher=better)"
     default_config = {"subsample": 8}
     metric_groups = {

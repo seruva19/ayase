@@ -59,6 +59,10 @@ class VQA2Module(PipelineModule):
     """Run the upstream VQA² scorer on images or videos."""
 
     name = "vqa2"
+    provenance = "published"
+    sources = {
+        "vqa2_score": "VQA², ACM MM 2025 — https://github.com/Q-Future/Visual-Question-Answering-for-Video-Quality-Assessment",
+    }
     description = "VQA² LMM image/video quality score (ACM MM 2025)"
     requires_external_backend = False
     default_config = {

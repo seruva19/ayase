@@ -24,10 +24,8 @@ reference set the metric is not defined and nothing is emitted (no proxy).
 
 Dataset-level fields (populated only with the real ``v-stream`` backend):
     stream_temporal  — STREAM-T temporal naturalness (histogram correlation)
-    stream_spatial   — STREAM-S spatial quality: the harmonic mean (F1) of the
-                       backend's real stream_F (fidelity) and stream_D
-                       (diversity) outputs, since a single field must summarise
-                       both. Derived purely from real backend outputs.
+    stream_F         — STREAM-S fidelity (precision of generated mean signals)
+    stream_D         — STREAM-S diversity (recall of generated mean signals)
 """
 import logging
 import os
@@ -44,10 +42,21 @@ logger = logging.getLogger(__name__)
 
 class STREAMModule(BatchMetricModule):
     name = "stream_metric"
+    provenance = {
+        "stream_F": "published",
+        "stream_D": "published",
+        "stream_temporal": "published",
+    }
+    sources = {
+        "stream_F": "STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM",
+        "stream_D": "STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM",
+        "stream_temporal": "STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM",
+    }
     description = "STREAM spatial/temporal generation eval (ICLR 2024)"
     default_config = {"num_frame": 16, "model": "swav"}
     metric_info = {
-        "stream_spatial": "STREAM-S spatial fidelity/diversity (dataset-level, real backend only)",
+        "stream_F": "STREAM-S spatial fidelity / prdc precision (dataset-level)",
+        "stream_D": "STREAM-S spatial diversity / prdc recall (dataset-level)",
         "stream_temporal": "STREAM-T temporal naturalness (dataset-level, real backend only)",
     }
 
@@ -89,13 +98,13 @@ class STREAMModule(BatchMetricModule):
         except ImportError as e:
             logger.info(
                 "STREAM unavailable: v-stream/torch not installed (%s); "
-                "stream_spatial/stream_temporal will not be populated.",
+                "stream_F/stream_D/stream_temporal will not be populated.",
                 e,
             )
         except Exception as e:  # torch.hub backbone fetch failed (offline, etc.)
             logger.info(
                 "STREAM unavailable: backbone load failed (%s); "
-                "stream_spatial/stream_temporal will not be populated.",
+                "stream_F/stream_D/stream_temporal will not be populated.",
                 e,
             )
 
@@ -196,7 +205,7 @@ class STREAMModule(BatchMetricModule):
             if not self._warned_no_ref:
                 logger.info(
                     "STREAM requires a real reference video set "
-                    "(sample.reference_path); stream_spatial/stream_temporal not computed."
+                    "(sample.reference_path); stream_F/stream_D/stream_temporal not computed."
                 )
                 self._warned_no_ref = True
             return None
@@ -211,7 +220,8 @@ class STREAMModule(BatchMetricModule):
             return None
 
         temporal: Optional[float] = None
-        spatial: Optional[float] = None
+        stream_f: Optional[float] = None
+        stream_d: Optional[float] = None
 
         # STREAM-T: histogram correlation of per-video skewness distributions.
         try:
@@ -220,18 +230,19 @@ class STREAMModule(BatchMetricModule):
             logger.warning("STREAM-T computation failed: %s", e)
 
         # STREAM-S: prdc precision (fidelity) / recall (diversity). Needs enough
-        # samples per set for the k=5 nearest-neighbour manifolds.
+        # samples per set for the k=5 nearest-neighbour manifolds. The backend
+        # reports F and D as separate quantities — stored separately.
         try:
             s = self._stream_instance.stream_S(real_mean, fake_mean)
-            f_val = float(s["stream_F"])
-            d_val = float(s["stream_D"])
-            spatial = (2.0 * f_val * d_val / (f_val + d_val)) if (f_val + d_val) > 0 else 0.0
+            stream_f = float(s["stream_F"])
+            stream_d = float(s["stream_D"])
         except Exception as e:
             logger.warning("STREAM-S computation failed: %s", e)
 
         self._store_metric("stream_temporal", temporal)
-        self._store_metric("stream_spatial", spatial)
-        return spatial
+        self._store_metric("stream_F", stream_f)
+        self._store_metric("stream_D", stream_d)
+        return stream_f
 
     def _store_metric(self, name: str, value: Optional[float]) -> None:
         if value is None:

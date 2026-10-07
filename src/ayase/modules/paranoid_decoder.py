@@ -20,6 +20,7 @@ class ParanoidDecoderModule(PipelineModule):
     This detects corruption that simple metadata checks (MOOV atom etc.) might miss.
     """
     name = "paranoid_decoder"
+    provenance = "utility"
     description = "Deep bitstream validation using FFmpeg (Paranoid Mode)"
     default_config = {
         "timeout": 60,  # Max seconds to wait for decoding

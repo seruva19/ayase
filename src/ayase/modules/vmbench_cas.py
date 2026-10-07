@@ -8,14 +8,14 @@ the score is the expected value of that ordinal rating:
     CAS = sum( softmax(logits) * [0, 0.25, 0.5, 0.75, 1.0] )     (0-1, higher=better)
 
 The backend is the in-tree vendored VideoMAEv2 (``ayase.vendor.videomae``, weights
-``vit_g_vmbench.pt`` from GD-ML/VMBench on HF, pure ``pip install ayase``). This
-module produces the single-view estimate (one centre crop of a 16-frame, stride-4
-sample); VMBench's published number averages 30 spatio-temporal views.
+``vit_g_vmbench.pt`` from GD-ML/VMBench on HF, pure ``pip install ayase``). The
+score is the published 30-view estimate: softmax probabilities averaged over
+10 temporal segments x 3 spatial crops before the ordinal weighted sum
+(``cas_utils.final_test``/``final_merge``).
 """
 
 import logging
 
-from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
@@ -24,10 +24,14 @@ logger = logging.getLogger(__name__)
 
 class VMBenchCommonsenseAdherenceModule(PipelineModule):
     name = "vmbench_cas"
+    provenance = "published"
+    sources = {
+        "commonsense_adherence_score": "VMBench, Ling et al. ICCV 2025 — cas_utils 30-view protocol, https://github.com/AMAP-ML/VMBench",
+    }
+    deviations = {}
     description = "VMBench Commonsense Adherence — VideoMAEv2 ordinal plausibility rating (0-1, higher=better)"
     default_config = {
         "device": "auto",
-        "max_frames": 64,       # frames handed to the sampler (it selects 16 @ stride 4)
         "models_dir": "models",
     }
     metric_info = {
@@ -72,8 +76,7 @@ class VMBenchCommonsenseAdherenceModule(PipelineModule):
         if not sample.is_video or not self._ml_available:
             return sample
         try:
-            frames = sample_frames(sample.path, max_frames=int(self.config.get("max_frames", 64)),
-                                   color="rgb")
+            frames = self._load_frames(sample.path)
             if len(frames) < 4:
                 return sample
             cas = float(self._model.commonsense_adherence_score(frames))
@@ -85,3 +88,20 @@ class VMBenchCommonsenseAdherenceModule(PipelineModule):
         except Exception as e:
             logger.warning("VMBench CAS processing failed for %s: %s", sample.path, e)
         return sample
+
+    @staticmethod
+    def _load_frames(path) -> list:
+        """Decode the whole clip — the 10-segment view protocol spans it."""
+        import cv2
+
+        frames = []
+        cap = cv2.VideoCapture(str(path))
+        try:
+            while True:
+                ok, frame = cap.read()
+                if not ok:
+                    break
+                frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        finally:
+            cap.release()
+        return frames

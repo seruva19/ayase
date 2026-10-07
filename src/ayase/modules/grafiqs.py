@@ -1,27 +1,20 @@
 """GraFIQs -- Gradient-Based Face Image Quality (CVPRW 2024).
 
-Babnik et al. "GraFIQs: Face Image Quality Assessment Using Gradient
-Magnitudes" -- quality is derived from the gradient magnitude of a
-BatchNorm statistics loss w.r.t. the input image.
+Kolf, Damer, Boutros "GraFIQs: Face Image Quality Assessment Using Gradient
+Magnitudes" -- official protocol (extract_grafiqs.py + backbones/bn.py in
+github.com/jankolf/GraFIQs):
 
-Algorithm (from the paper):
-    1. Detect + align face with InsightFace.
-    2. Feed aligned face crop through a pretrained FR network (e.g. ArcFace).
-    3. Compute the BN-statistics loss: MSE between each BatchNorm layer's
-       running mean/variance and the batch statistics from the test sample.
-    4. Backpropagate this loss to the input image.
-    5. quality = 1 / (1 + sum_of_abs_gradients).
-       Well-recognised faces have low BN-statistics loss, producing small
-       gradients; poorly-recognised faces deviate from training statistics,
-       producing large gradients.
+    1. Detect + align the face to the FR input convention (112x112).
+    2. Feed it through a pretrained face-recognition network with BatchNorm
+       layers (facexlib ArcFace IR-SE50, FR-trained).
+    3. BN-statistics loss: for each BatchNorm2d layer, MSE between the batch
+       mean/variance of the test sample and the stored running statistics,
+       summed over layers and divided by their count.
+    4. quality signal = sum |d(BNS_loss)/d(image)| — the raw GraFIQs
+       magnitude. Lower = closer to the FR training distribution = better
+       face quality.
 
-Backend:
-    PyTorch model with BN-statistics gradient (the GraFIQs algorithm) on top of
-    InsightFace detection/alignment. Requires both InsightFace and a torch model
-    with BatchNorm layers; otherwise the metric is left unset (no embedding-norm
-    proxy stand-in).
-
-grafiqs_score -- higher = better quality (0-1)
+grafiqs_score -- raw |grad| sum; lower = better quality.
 """
 
 import logging
@@ -38,12 +31,21 @@ logger = logging.getLogger(__name__)
 
 class GraFIQsModule(PipelineModule):
     name = "grafiqs"
-    description = "GraFIQs gradient face quality (CVPRW 2024)"
+    provenance = "adapted"
+    sources = {
+        "grafiqs_score": "GraFIQs (Kolf, Damer, Boutros, CVPRW 2024) — https://github.com/jankolf/GraFIQs",
+    }
+    deviations = {
+        "grafiqs_score": "backbone is facexlib ArcFace IR-SE50 instead of upstream iresnet50/100 "
+        "(the same MS1M-class weights are unavailable); alignment uses InsightFace norm_crop "
+        "112x112; emits raw Σ|∇| from the upstream image branch, while videos report the "
+        "mean over up to four uniformly sampled frames",
+    }
+    description = "GraFIQs gradient face quality (CVPRW 2024; raw |grad|, lower=better)"
     default_config = {
         "subsample": 4,
         "face_model": "buffalo_l",
         "det_size": 640,
-        "gradient_scale": 1e4,  # Scaling for gradient -> quality mapping
     }
     metric_groups = {
         "grafiqs_score": "face",
@@ -54,7 +56,6 @@ class GraFIQsModule(PipelineModule):
         self.subsample = self.config.get("subsample", 4)
         self.face_model = self.config.get("face_model", "buffalo_l")
         self.det_size = self.config.get("det_size", 640)
-        self.gradient_scale = self.config.get("gradient_scale", 1e4)
         self._face_app = None
         self._torch_model = None
         self._bn_layers = []
@@ -99,44 +100,38 @@ class GraFIQsModule(PipelineModule):
             )
 
     def _try_load_torch_model(self) -> None:
-        """Load a PyTorch model with BatchNorm layers for GraFIQs gradient computation."""
+        """Load the pretrained FR network (facexlib ArcFace IR-SE50) whose
+        BatchNorm running statistics carry the FR training distribution —
+        the backbone family the official GraFIQs protocol is built on."""
         try:
             import torch  # noqa: F401
             import torch.nn as nn
-            from torchvision import models, transforms
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
 
-            # Use ResNet-50 pretrained on ImageNet as differentiable FR proxy.
-            # The key requirement is BatchNorm layers whose running statistics
-            # represent "well-recognised" inputs from training.
-            model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-            # Remove final FC -- we only need the feature extractor
-            self._torch_model = nn.Sequential(*list(model.children())[:-1])
+            from facexlib.recognition import init_recognition_model
+
+            self._torch_model = init_recognition_model(
+                "arcface", device=self._device
+            )
             self._torch_model.eval()
-            self._torch_model.to(self._device)
 
-            # Collect all BatchNorm layers for loss computation
-            self._bn_layers = []
-            for module in self._torch_model.modules():
-                if isinstance(module, (nn.BatchNorm2d, nn.BatchNorm1d)):
-                    self._bn_layers.append(module)
-
-            self._face_transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.Resize((112, 112)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-            ])
+            # All BatchNorm layers participate in the BNS loss.
+            self._bn_layers = [
+                m for m in self._torch_model.modules()
+                if isinstance(m, nn.BatchNorm2d)
+            ]
+            if not self._bn_layers:
+                raise RuntimeError("FR backbone has no BatchNorm2d layers")
 
             self._torch_available = True
             logger.info(
-                "GraFIQs: torch gradient model loaded (%d BN layers)",
+                "GraFIQs: FR gradient model loaded (%d BN layers)",
                 len(self._bn_layers),
             )
         except Exception as e:
-            logger.debug("GraFIQs: torch model not available, using fallback: %s", e)
+            logger.debug("GraFIQs: FR gradient model not available: %s", e)
             self._torch_available = False
 
     def process(self, sample: Sample) -> Sample:
@@ -157,7 +152,7 @@ class GraFIQsModule(PipelineModule):
             if scores:
                 if sample.quality_metrics is None:
                     sample.quality_metrics = QualityMetrics()
-                sample.quality_metrics.grafiqs_score = float(np.clip(np.mean(scores), 0, 1))
+                sample.quality_metrics.grafiqs_score = float(np.mean(scores))
 
         except Exception as e:
             logger.warning("GraFIQs failed for %s: %s", sample.path, e)
@@ -180,30 +175,38 @@ class GraFIQsModule(PipelineModule):
     def _compute_bn_gradient_quality(self, frame: np.ndarray, face) -> Optional[float]:
         """GraFIQs core: BN-statistics loss gradient w.r.t. input.
 
-        1. Forward pass through the model (eval mode keeps running stats frozen).
-        2. For each BN layer, compute MSE between the running mean/var
-           (learned during training) and the actual batch statistics of the
-           test sample.  This measures how much the test input deviates
-           from the training distribution.
-        3. Backpropagate the total BN loss to the input.
-        4. quality = 1 / (1 + sum(|grad|)).
+        1. Forward pass through the FR backbone (eval mode keeps running
+           stats frozen).
+        2. For each BN layer, MSE between the running mean/var and the actual
+           batch statistics of the test sample, summed over layers and
+           divided by their count (verbatim ``bn.py`` get_BN).
+        3. Backpropagate the BNS loss to the aligned input image.
+        4. GraFIQs signal = sum(|grad|) — raw magnitude, lower = better.
         """
         import torch
 
-        x1, y1, x2, y2 = [int(c) for c in face.bbox]
-        h, w = frame.shape[:2]
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
+        # Aligned 112x112 face in the FR input convention (norm_crop is the
+        # standard ArcFace alignment used for FR training/eval).
+        try:
+            from insightface.utils import face_align
 
-        face_crop = frame[y1:y2, x1:x2]
-        if face_crop.size == 0:
+            face_rgb = face_align.norm_crop(
+                frame, landmark=face.kps, image_size=112
+            )
+            face_rgb = cv2.cvtColor(face_rgb, cv2.COLOR_BGR2RGB)
+        except Exception:
             return None
 
-        face_rgb = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
-
         try:
-            input_tensor = self._face_transform(face_rgb).unsqueeze(0).to(self._device)
-            input_tensor = input_tensor.detach().requires_grad_(True)
+            t = (
+                torch.from_numpy(face_rgb)
+                .permute(2, 0, 1)
+                .unsqueeze(0)
+                .float()
+                .to(self._device)
+                / 255.0
+            )
+            input_tensor = ((t - 0.5) / 0.5).detach().requires_grad_(True)
 
             # Hook to capture intermediate BN inputs
             bn_inputs = {}
@@ -227,9 +230,10 @@ class GraFIQsModule(PipelineModule):
                 if i not in bn_inputs:
                     continue
                 feat = bn_inputs[i]  # (1, C, H, W)
-                # Compute sample statistics across spatial dims
+                # Compute sample statistics across spatial dims — upstream uses
+                # the biased variance (unbiased=False).
                 sample_mean = feat.mean(dim=(0, 2, 3))  # (C,)
-                sample_var = feat.var(dim=(0, 2, 3))  # (C,)
+                sample_var = feat.var(dim=(0, 2, 3), unbiased=False)  # (C,)
 
                 running_mean = bn_layer.running_mean.detach()
                 running_var = bn_layer.running_var.detach()
@@ -238,6 +242,10 @@ class GraFIQsModule(PipelineModule):
                 mean_loss = torch.nn.functional.mse_loss(sample_mean, running_mean)
                 var_loss = torch.nn.functional.mse_loss(sample_var, running_var)
                 bn_loss = bn_loss + mean_loss + var_loss
+
+            # Upstream divides the accumulated BNS loss by the layer count.
+            if self._bn_layers:
+                bn_loss = bn_loss / len(self._bn_layers)
 
             # Remove hooks
             for hook in hooks:
@@ -253,12 +261,8 @@ class GraFIQsModule(PipelineModule):
             if grad is None:
                 return None
 
-            # GraFIQs: quality inversely proportional to sum of |grad|
-            grad_sum = float(torch.sum(torch.abs(grad)).item())
-
-            # Invert: small gradient = high quality
-            quality = 1.0 / (1.0 + grad_sum / self.gradient_scale)
-            return float(np.clip(quality, 0.0, 1.0))
+            # GraFIQs signal: raw sum |grad| w.r.t. the aligned image.
+            return float(torch.sum(torch.abs(grad)).item())
 
         except Exception as e:
             logger.debug("GraFIQs gradient computation failed: %s", e)

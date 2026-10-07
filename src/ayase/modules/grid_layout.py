@@ -135,6 +135,7 @@ def _content_discontinuity(cell_a: np.ndarray, cell_b: np.ndarray) -> float:
 
 class GridLayoutModule(PipelineModule):
     name = "grid_layout"
+    provenance = "utility"
     description = "Split-screen/grid-collage detector (0-1, higher=more likely a grid)"
     default_config = {
         "subsample": 4,               # frames sampled per video

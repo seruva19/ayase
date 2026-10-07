@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 
 class VIIDEOModule(PipelineModule):
     name = "viideo"
+    provenance = "published"
+    sources = {
+        "viideo_score": "VIIDEO, Mittal et al. 2016; scikit-video — http://www.scikit-video.org",
+    }
     description = "VIIDEO blind NR-VQA via natural video statistics (Mittal 2016, lower=better)"
     default_config = {
         "subsample": 8,

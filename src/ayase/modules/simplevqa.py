@@ -166,6 +166,13 @@ def _build_model(device: str):
 
 class SimpleVQAModule(PipelineModule):
     name = "simplevqa"
+    provenance = "adapted"
+    sources = {
+        "simplevqa_score": "SimpleVQA (Sun et al., ACM MM 2022) — https://github.com/sunwei925/SimpleVQA",
+    }
+    deviations = {
+        "simplevqa_score": "model vendored verbatim; upstream protocol (extract_frame/test_demo): n_frames anchors at one per second (i*fps), motion clip — 32 consecutive frames from the anchor padded by repeating the last; spatial branch — resize/crop per the Swin-384 config",
+    }
     description = "SimpleVQA Swin+SlowFast blind VQA (real model only)"
     default_config = {
         "n_frames": 8,        # key frames / motion clips (upstream base model uses 8)
@@ -235,12 +242,19 @@ class SimpleVQAModule(PipelineModule):
     def _score_video(self, sample: Sample) -> Optional[float]:
         import torch
 
-        frames = self._decode_frames(sample)
-        if not frames:
+        frames, fps = self._decode_frames(sample)
+        if not frames or fps <= 0:
             return None
-        n = min(self.n_frames, len(frames))
-        # Uniformly spaced key-frame anchors across the decoded frames.
-        anchors = np.linspace(0, len(frames) - 1, n).round().astype(int).tolist()
+        fps_i = max(1, int(round(fps)))
+        # Upstream: one anchor per second, i.e. frame i*fps; the number of
+        # seconds read is ``n_frames`` (LSVQ loader reads exactly 8).
+        n_seconds = max(1, len(frames) // fps_i)
+        anchors = [i * fps_i for i in range(min(self.n_frames, n_seconds))]
+        # Pad to n_frames anchors by repeating the last second (upstream pads
+        # short videos to video_clip_min the same way).
+        n = self.n_frames
+        while len(anchors) < n:
+            anchors.append(anchors[-1])
 
         spatial = torch.stack(
             [self._spatial_tensor(frames[a]) for a in anchors]
@@ -262,20 +276,23 @@ class SimpleVQAModule(PipelineModule):
             out = self._model(spatial, motion)
         return float(out.reshape(-1)[0].item())
 
-    def _decode_frames(self, sample: Sample) -> List[np.ndarray]:
-        """Decode a bounded, contiguous run of RGB frames for both branches.
+    def _decode_frames(self, sample: Sample):
+        """Decode the contiguous RGB frames needed by both branches.
 
-        Motion clips need temporally contiguous frames, so we decode
-        sequentially rather than via the seek-based cache. Decoding is bounded
-        to ``n_frames`` anchors plus one ``clip_len`` tail.
+        Returns ``(frames, fps)``. Motion clips need temporally contiguous
+        frames, so we decode sequentially rather than via the seek-based cache.
+        The span is bounded to ``(n_frames-1)*fps + clip_len`` — the last
+        anchor's second plus its full clip tail.
         """
         import cv2
 
         cap = cv2.VideoCapture(str(sample.path))
         if not cap.isOpened():
-            return []
+            return [], 0.0
+        fps = float(cap.get(cv2.CAP_PROP_FPS)) or 0.0
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
-        cap_frames = max(self.n_frames * self.clip_len, self.clip_len) + self.clip_len
+        fps_i = max(1, int(round(fps)))
+        cap_frames = (self.n_frames - 1) * fps_i + self.clip_len
         limit = min(total, cap_frames) if total > 0 else cap_frames
         frames: List[np.ndarray] = []
         idx = 0
@@ -286,7 +303,7 @@ class SimpleVQAModule(PipelineModule):
             frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
             idx += 1
         cap.release()
-        return frames
+        return frames, fps
 
     def _spatial_tensor(self, frame_rgb: np.ndarray):
         """Resize(384) + CenterCrop(384) + ImageNet normalise -> (3, S, S)."""

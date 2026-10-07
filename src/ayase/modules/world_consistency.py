@@ -37,6 +37,10 @@ _DINOV2_MIRROR_RELATIVE = "spectral/dinov2_vits14_pretrain.pth"
 
 class WorldConsistencyModule(PipelineModule):
     name = "world_consistency"
+    provenance = "own"
+    sources = {
+        "world_consistency_score": "concept from arXiv:2508.00144, own implementation — https://arxiv.org/abs/2508.00144",
+    }
     description = "World Consistency Score: object permanence + causal compliance (2025)"
     default_config = {
         "subsample": 12,

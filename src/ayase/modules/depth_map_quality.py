@@ -36,6 +36,10 @@ _MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve
 
 class DepthMapQualityModule(PipelineModule):
     name = "depth_map_quality"
+    provenance = "own"
+    sources = {
+        "depth_quality": "MiDaS model; the aggregation is own — https://github.com/isl-org/MiDaS",
+    }
     description = "Monocular depth map quality (sharpness, completeness, edge alignment)"
     default_config = {
         "model_type": "MiDaS_small",

@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 class DBCNNModule(PipelineModule):
     name = "dbcnn"
+    provenance = 'adapted'
+    deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
+    sources = {
+        "dbcnn_score": "DBCNN (Zhang et al., TCSVT 2020) via pyiqa — https://github.com/zwx8981/DBCNN",
+    }
     description = "DBCNN deep bilinear CNN for no-reference IQA"
     default_config = {"subsample": 8}
     metric_groups = {
