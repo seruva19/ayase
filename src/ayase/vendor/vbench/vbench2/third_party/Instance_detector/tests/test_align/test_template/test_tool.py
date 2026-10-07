@@ -59,7 +59,7 @@ def test_qwq():
 
 
 def test_deepseek_r1_distill():
-    
+
     pt_engine = PtEngine('deepseek-ai/DeepSeek-R1-Distill-Qwen-7B')
     _test_tool(pt_engine, system='')
 

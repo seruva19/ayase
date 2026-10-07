@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.80** · Generated 2026-10-07 11:40 · **307 models** across **9 sources**
+> **Version 0.1.80** · Generated 2026-10-07 15:03 · **307 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -48,7 +48,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `nearid`
-- **Parameters**: 428M · **Downloads**: 99
+- **Parameters**: 428M · **Downloads**: 100
 - **Disk**: ~1.6 GB
 - **Task**: NearID identity-aware SigLIP2 image embeddings
 - **Notes**: Apache-2.0; pinned to revision 7f69f4a0c753297de708a0217ef32659fe12a008
@@ -77,7 +77,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 227
+- **Parameters**: 8.3B · **Downloads**: 207
 - **Disk**: 7B
 - **Task**: Self-evolving Qwen2.5-VL NR-IQA rating model
 - **Notes**: Loaded through transformers or served through an endpoint.
@@ -185,7 +185,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Downloads**: 329
+- **Downloads**: 338
 - **Task**: HPSv3 prompt-conditioned reward model
 - **Notes**: Reward head checkpoint
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
@@ -212,7 +212,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `qwen_image_bench`
-- **Parameters**: 27.4B · **Downloads**: 35K
+- **Parameters**: 27.4B · **Downloads**: 34K
 - **Disk**: 27B BF16
 - **Task**: Q-Judger text-to-image evaluation model
 - **Notes**: Can also be served through vLLM/SGLang with an OpenAI-compatible endpoint.
@@ -365,7 +365,7 @@
 > image-feature-extraction · mit
 
 - **Used by**: `id_sim`
-- **Downloads**: 28
+- **Downloads**: 30
 - **Task**: Official ID-Sim adapter and projection heads
 - **Notes**: MIT; pinned to revision bcd3f388bec7db42e75b165e235196833111c4ae
 - **Source**: <a href="https://arxiv.org/abs/2604.05039" target="_blank">arXiv</a>

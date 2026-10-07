@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class VendiModule(BatchMetricModule):
     name = "vendi"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
         "vendi": "Vendi Score, Friedman & Dieng TMLR 2023 — https://github.com/vertaix/Vendi-Score (Inception pool embeddings)",
     }

@@ -14,6 +14,7 @@ import pytest
 
 from ayase.models import QualityMetrics, Sample, VideoMetadata
 from ayase.modules.p1203 import P1203Module
+from ayase.pipeline import Pipeline
 
 
 class _FakeP1203Standalone:
@@ -65,6 +66,14 @@ def test_p1203_official_input_schema(monkeypatch, tmp_path):
     assert out.quality_metrics.p1203_mos == pytest.approx(4.0)
 
 
+def test_p1203_synthesized_session_is_adapted_and_opt_in():
+    assert P1203Module.field_provenance()["p1203_mos"] == "adapted"
+    assert "p1203" in Pipeline([P1203Module()])._provenance_excluded
+    assert "p1203" not in Pipeline(
+        [P1203Module()], allow_provenance=["adapted"]
+    )._provenance_excluded
+
+
 def test_p1203_non_h264_returns_none(monkeypatch, tmp_path):
     """Mode 0 supports only h264 — no fabricated score for other codecs."""
     monkeypatch.setitem(
@@ -72,5 +81,7 @@ def test_p1203_non_h264_returns_none(monkeypatch, tmp_path):
     )
     m = P1203Module()
     m.setup()
-    out = m.process(_sample(tmp_path, codec="vp9"))
+    sample = _sample(tmp_path, codec="vp9")
+    out = m.process(sample)
+    assert out is sample
     assert out.quality_metrics is None or out.quality_metrics.p1203_mos is None

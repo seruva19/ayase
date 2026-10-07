@@ -87,4 +87,5 @@ def run():
 
         
 if __name__ == "__main__":
+    # python3 -m tasks.inference_quick_start --model_name_or_path /tmp/tarsier2-1226-dpo --config configs/tarser2_default_config.yaml --input_path ./diving.mp4 --instruction "List the names of all sponsors on the background wall."
     run()

@@ -59,7 +59,6 @@ def windows_csf(y,use_views=False,adaptation='bilateral',h_win=h_win,w_win=w_win
     Divides frame into overlapping blocks and applies Barten's CSF
     '''
 
- 
     if(use_views): 
         max_h,max_w = round_down(y.shape[0],h_win),round_down(y.shape[1],w_win)
         y_crop = y[:max_h,:max_w]

@@ -21,12 +21,14 @@ logger = logging.getLogger(__name__)
 
 class PSNR99Module(ReferenceBasedModule):
     name = "psnr99"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
         "psnr99": "PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398",
     }
     deviations = {
-        "psnr99": "video aggregation (mean over subsample frames) is own; the per-frame formula follows the paper",
+        "psnr99": "Image inputs use the published per-image formula. Video inputs use "
+        "Ayase-defined uniform frame subsampling and mean aggregation; the shared "
+        "image/video field is classified as adapted.",
     }
     description = "PSNR99 worst-1%-pixel luma PSNR for super-resolution (FR, 2025)"
     metric_field = "psnr99"

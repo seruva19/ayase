@@ -297,7 +297,7 @@ class _FailingWriterModule(PipelineModule):
         raise RuntimeError("failed after write")
 
 
-class _FailingBatchWriterModule(_FailingWriterModule):
+class _FinalFailureBatchWriterModule(_FailingWriterModule):
     name = "test_failing_batch_writer"
 
     def process_batch(self, samples):
@@ -500,7 +500,7 @@ def test_failed_writer_restores_value_and_provenance(tmp_path):
 
 
 def test_failed_batch_writer_restores_value_and_provenance(tmp_path):
-    module = _FailingBatchWriterModule()
+    module = _FinalFailureBatchWriterModule()
     module._mounted = True
     p = Pipeline([module])
     sample = Sample(

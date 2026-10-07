@@ -30,6 +30,18 @@ retains a different model, preprocessing, sampling, or aggregation, the field
 is classified as `adapted` with the deviation recorded in `METRICS.md`.
 Values are **not comparable** with what the same field produced before.
 
+`fid`, `sfid`, `is_score`, PRDC precision/recall/density/coverage, `vendi`,
+`p1203_mos`, `i2i_dinov2_cls_similarity`, and `psnr99` are conservatively
+classified as `adapted`. Distribution metrics select or pool video frame
+features through Ayase-defined protocols; P.1203 receives a synthesized video-only session;
+DINO similarity permits a configurable encoder; PSNR99 also supports a custom
+video sampling and aggregation protocol. Source-matching image subprotocols
+remain available, but a shared field cannot promise published equivalence for
+every supported input. Explicit module selection or adapted-provenance opt-in
+is required to emit these fields. FID and sFID leave scores unset when their
+required matrix-square-root computation fails; they do not emit a substitute
+distance formula.
+
 | Field | Before | Now |
 |---|---|---|
 | `aesthetic_v25_score`, `aesthetic_v25_dup` (legacy reads: `aesthetic_score`, `vqa_a_score`) | rescaled to 0-100 | native Aesthetic Predictor V2.5 scale **1-10**; video = mean over 5 frames |
@@ -41,6 +53,7 @@ Values are **not comparable** with what the same field produced before.
 | `face_consistency` | mean consecutive-pair cosine (duplicate of `clip_temp`) | mean cosine of frames [1:] to the **first** frame (EvalCrafter Face Consistency) |
 | `background_consistency` | all-pairs cosine over 16 sampled frames | per-frame `(max(0, sim_prev) + max(0, sim_first))/2` over all frames (VBench) |
 | `subject_consistency` | all-pairs cosine, DINOv2-base, 16 frames | per-frame `(max(0, sim_prev) + max(0, sim_first))/2`, DINO ViT-B/16, all frames (VBench) |
+| `peaq_odg`, `peaq_di` | unsupported binary flags and a published-metric classification | documented peaqb-fast BASIC interface with 48 kHz mono 16-bit preprocessing; classified as `adapted`; failed executions and unsupported advanced modes leave values unset |
 
 `ocr_fidelity`, `ocr_score`, `ocr_cer`, `ocr_wer`, and `warping_error` are
 now registered as lower-is-better for `ayase filter --min-score`.

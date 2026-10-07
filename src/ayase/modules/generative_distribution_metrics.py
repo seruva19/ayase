@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class GenerativeDistributionModule(BatchMetricModule):
     name = "generative_distribution"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
         "coverage": "Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc",
         "density": "Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc",
@@ -32,6 +32,9 @@ class GenerativeDistributionModule(BatchMetricModule):
     }
     deviations = {
         "precision": "video → 1 representative frame; without a reference the metrics are not emitted",
+        "recall": "video → 1 representative frame; without a reference the metrics are not emitted",
+        "density": "video → 1 representative frame; without a reference the metrics are not emitted",
+        "coverage": "video → 1 representative frame; without a reference the metrics are not emitted",
     }
     description = "Precision / Recall / Density / Coverage (batch metric, prdc)"
     default_config = {

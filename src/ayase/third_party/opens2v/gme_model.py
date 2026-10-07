@@ -90,7 +90,7 @@ class GmeQwen2VL:
         )
 
         pooling_mask = attention_mask if pooling_mask is None else pooling_mask
-        left_padding = pooling_mask[:, -1].sum() == pooling_mask.shape[0]  
+        left_padding = pooling_mask[:, -1].sum() == pooling_mask.shape[0]
         if left_padding:
             embeddings = outputs.last_hidden_state[:, -1]
         else:
@@ -138,7 +138,7 @@ class GmeQwen2VL:
             max_length=self.max_length,
             return_tensors="pt",
         )
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}  
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
             embeddings = self.forward(**inputs)
         return embeddings

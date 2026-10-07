@@ -23,3 +23,9 @@ def test_inception_score_video(video_sample):
     m.on_mount()
     result = m.process(video_sample)
     assert result is video_sample
+
+
+def test_inception_score_is_adapted_for_mixed_image_video_input():
+    from ayase.modules.inception_score import InceptionScoreModule
+
+    assert InceptionScoreModule.field_provenance() == {"is_score": "adapted"}

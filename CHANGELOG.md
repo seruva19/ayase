@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default selections admit published metrics and utility outputs; explicit module selection opts into adapted and own quantities. Module-specific opt-in no longer enables unrelated modules, and mixed modules cannot emit disallowed metric fields.
 - Renamed quantities that differ from the published metrics they previously resembled. Deprecated module and model-field aliases preserve supported reads and constructor inputs; serialized output uses canonical names. See `MIGRATION.md`.
 - Classified video aggregations of image metrics and materially different models or preprocessing as adaptations, including CSIM, FVD, MCD and EvalCrafter/VBench wrappers. These values must not be compared as reproductions of the cited benchmarks.
+- **distribution metrics, p1203, i2i_learned, psnr99**: classified video feature sampling, synthesized session inputs, configurable encoders and video aggregation as adapted; default provenance selection excludes these fields unless explicitly enabled.
 - Distribution metrics require a real reference set; removed self-comparison and substitute backends that measured different quantities. Missing backends leave scores unset.
 - **aesthetic**: native Aesthetic Predictor V2.5 scale replaces the 0–100 rescale; the duplicate compatibility output has the same provenance and aesthetic category.
 - **ocr_fidelity**: mean OCR error replaces best-frame fidelity; lower values are better. Filtering and downstream thresholds must account for the direction change.
@@ -37,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **clip_temporal**: valid two-frame clips produce consecutive-frame consistency.
 - **ssimulacra2**: score direction is higher-is-better in validation, filtering and documentation.
 - **audio_mcd**: documentation now identifies the active pymcd MFCC/FastDTW backend rather than claiming SPTK mel cepstra.
+- **audio_peaq**: uses the documented BASIC-model command interface, rejects failed executions and unsupported modes, and identifies mono-preprocessed results as adapted quantities.
+- **fid, sfid**: matrix-square-root failures leave scores unset instead of emitting a different distance formula.
 - **published backends**: corrected DNSMOS ordering, UTMOS API, FLIP invocation, VMAF variants, P.1203 schema, DOVER fusion and other source-specific calculations; adaptations remain explicitly labeled.
 - Retained omitted upstream license notices for newly bundled evaluation code and included migration/reference documents in source distributions.
 

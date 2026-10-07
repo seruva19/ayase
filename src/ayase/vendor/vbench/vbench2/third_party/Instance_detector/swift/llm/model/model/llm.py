@@ -33,7 +33,7 @@ register_model(
         get_model_tokenizer_grok,
         architectures=['Grok1ModelForCausalLM'],
         model_arch=ModelArch.llama
-        
+
     ))
 
 

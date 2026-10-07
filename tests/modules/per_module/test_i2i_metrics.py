@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 
 from ayase.models import Sample
+from ayase.pipeline import Pipeline
 from tests.modules.conftest import _test_module_basics
 
 
@@ -79,3 +80,19 @@ def test_i2i_learned_without_setup_degrades_gracefully(tmp_path):
     sample = Sample(path=image, is_video=False, reference_path=image)
     assert I2ILearnedModule().process(sample) is sample
     assert sample.quality_metrics is None
+
+
+def test_i2i_dino_cls_shared_field_is_conservatively_adapted():
+    from ayase.modules.i2i_learned import I2ILearnedModule
+
+    assert (
+        I2ILearnedModule.field_provenance()["i2i_dinov2_cls_similarity"]
+        == "adapted"
+    )
+    default_module = I2ILearnedModule()
+    default_pipeline = Pipeline([default_module])
+    assert "adapted" not in default_pipeline._module_allowed_provenance[id(default_module)]
+
+    opted_in_module = I2ILearnedModule()
+    opted_in_pipeline = Pipeline([opted_in_module], allow_provenance=["adapted"])
+    assert "adapted" in opted_in_pipeline._module_allowed_provenance[id(opted_in_module)]

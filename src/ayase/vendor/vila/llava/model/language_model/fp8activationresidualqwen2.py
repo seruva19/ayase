@@ -682,7 +682,7 @@ class FP8ActivationResidualQwen2MLPResidual(FP8CacheWeightModule):
                     self.qargs,
                 )
         else:
-            raise NotImplementedError("Need TODO")
+            raise NotImplementedError("Not implemented")
             og_x = re_x
             re_x = self.ff_norm(re_x)
             re_x = self.ff_proj(re_x)

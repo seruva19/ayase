@@ -15,13 +15,21 @@ datasets:
     sampling_strategy: "all"
   - json_path: data/llava_instruct/real_vision_flan/visual_chat_en_26048_gpt4o_coco_checked.json
     sampling_strategy: "all"
+  # - json_path: data/llava_instruct/real_vision_flan/gpt4o_combinations_51316.json
   #   sampling_strategy: "all"
+  # - json_path: data/llava_instruct/real_vision_flan/chrome_writting_train_8835.json
   #   sampling_strategy: "first:20%"
+  # - json_path: data/llava_instruct/real_vision_flan/k12_printing_train_256646.json
   #   sampling_strategy: "first:1%"
+  # - json_path: data/llava_instruct/real_vision_flan/iiit5k_annotations_2000.json
   #   sampling_strategy: "first:20%"
+  # - json_path: data/llava_instruct/real_vision_flan/hme100k_train_clean_74502.json
   #   sampling_strategy: "first:10%"
+  # - json_path: data/llava_instruct/real_vision_flan/sroie_data_33626.json
   #   sampling_strategy: "first:1%"
+  # - json_path: data/llava_instruct/real_vision_flan/orand_car_a_train_2009.json
   #   sampling_strategy: "first:10%"
+  # - json_path: data/llava_instruct/real_vision_flan/orand_car_b_train_3000.json
   #   sampling_strategy: "first:10%"
   - json_path: data/llava_instruct/real_vision_flan/llavar_gpt4_20k.json
     sampling_strategy: "first:10%"
@@ -35,6 +43,7 @@ datasets:
     sampling_strategy: "all"
   - json_path: data/llava_instruct/real_vision_flan/lrv_normal_gpt4v_filtered_10500.json
     sampling_strategy: "first:10%"
+  # - json_path: data/llava_instruct/real_vision_flan/scienceqa_nona_context_19218.json
   #   sampling_strategy: "first:10%"
   - json_path: data/llava_instruct/real_vision_flan/allava_instruct_vflan4v_20000.json
     sampling_strategy: "first:30%"
@@ -140,6 +149,7 @@ datasets:
     sampling_strategy: "first:10%"
   - json_path: data/llava_instruct/cauldron/robut_wikisql_74989.json
     sampling_strategy: "first:10%"
+  # - json_path: data/llava_instruct/cauldron/robut_wtq_38246_llava_format_filtered_4000tokens_38236.json
   #   sampling_strategy: "first:10%"
   - json_path: data/llava_instruct/cauldron/screen2words_15730.json
     sampling_strategy: "first:10%"
@@ -167,8 +177,11 @@ datasets:
     sampling_strategy: all
   - json_path: data/llava_instruct/real_vision_flan/llava_ofa_mantis-instruct_reformatted.json
     sampling_strategy: all
+  # - json_path: data/llava_instruct/real_vision_flan/academic_source_30s_v1_all.json
   #   sampling_strategy: all
+  # - json_path: data/llava_instruct/real_vision_flan/0718_0_30_s_academic_mc_v0_1_all.json
   #   sampling_strategy: all
+  # - json_path: data/llava_instruct/real_vision_flan/sharegpt4video_255000.json
   #   sampling_strategy: all
   - json_path: data/jsons/tos/0_30_s_academic_v0_1_cap.json
     sampling_strategy: "all"

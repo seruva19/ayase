@@ -7,8 +7,11 @@ datasets:
     sampling_strategy: "all"
   - json_path: data/llava_instruct/real_vision_flan/llavar_gpt4_20k.json
     sampling_strategy: "all"
+  # - json_path: data/llava_instruct/real_vision_flan/sroie_data_33626.json
   #   sampling_strategy: "first:10%"
+  # - json_path: data/llava_instruct/real_vision_flan/orand_car_a_train_2009.json
   #   sampling_strategy: "all"
+  # - json_path: data/llava_instruct/real_vision_flan/orand_car_b_train_3000.json
   #   sampling_strategy: "all"
   - json_path: data/llava_instruct/real_vision_flan/mavis_math_metagen_87358.json
     sampling_strategy: "all"

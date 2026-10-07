@@ -48,7 +48,7 @@ class GRPOVllmEngine(VllmEngine):
         engine_kwargs: Optional[Dict[str, Any]] = None,
         template: Optional[Template] = None,
     ) -> None:
-        assert not use_async_engine  
+        assert not use_async_engine
         super().__init__(
             model_id_or_path=model_id_or_path,
             torch_dtype=torch_dtype,

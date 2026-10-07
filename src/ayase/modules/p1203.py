@@ -23,14 +23,15 @@ logger = logging.getLogger(__name__)
 
 class P1203Module(PipelineModule):
     name = "p1203"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
         "p1203_mos": "ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203",
     }
     deviations = {
-        "p1203_mos": "Input is a synthesized single-segment mode-0 report built "
-        "from container metadata (no per-segment representations, no stalling "
-        "or audio data) — h264 only.",
+        "p1203_mos": "Uses the upstream calculator with a synthesized single-segment "
+        "mode-0 report built from container metadata. The input has no audio, observed "
+        "stalling, or representation-switch history, so O46 is an adapted video-only "
+        "session estimate rather than a complete measured streaming session score.",
     }
     description = "ITU-T P.1203 streaming QoE estimation (1-5 MOS)"
     default_config = {
