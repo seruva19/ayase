@@ -1,17 +1,14 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.80** · Generated 2026-10-07 16:09 · **385 modules** · **566 metrics**
+> **Version 0.1.81** · Generated 2026-10-08 12:52 · **384 modules** · **565 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **377/385 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
-
-> [!NOTE]
-> Static test coverage links are included below. Live pass/fail status was not collected for this regeneration (`--no-tests` was passed). Re-run with `ayase modules docs --run-tests` to add live status.
+> Tests: **376/384 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 ## Summary
 
-**385** modules · **654** output fields · **566** metrics · **276** tiered · **181** GPU · **20** categories
+**384** modules · **653** output fields · **565** metrics · **275** tiered · **181** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +40,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-71-metrics) (71) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-89-fields) (89) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-71-metrics) (71) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-75-metrics) (75) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-89-fields) (89) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -1345,7 +1342,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
-- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
+- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 - **Config**: `dinov2_model=facebook/dino-vits16`, `clip_model=openai/clip-vit-base-patch32`, `siglip_model=google/siglip-base-patch16-224`, `device=auto`
 
 ### `i2i_dinov2_cls_similarity` [↑](#categories)
@@ -1358,7 +1355,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
-- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
+- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 - **Config**: `dinov2_model=facebook/dino-vits16`, `clip_model=openai/clip-vit-base-patch32`, `siglip_model=google/siglip-base-patch16-224`, `device=auto`
 
 ### `i2i_dinov2_patch_similarity` [↑](#categories)
@@ -1371,7 +1368,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
-- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
+- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 - **Config**: `dinov2_model=facebook/dino-vits16`, `clip_model=openai/clip-vit-base-patch32`, `siglip_model=google/siglip-base-patch16-224`, `device=auto`
 
 ### `i2i_gradient_similarity_mean` [↑](#categories)
@@ -1394,7 +1391,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
-- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
+- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 - **Config**: `dinov2_model=facebook/dino-vits16`, `clip_model=openai/clip-vit-base-patch32`, `siglip_model=google/siglip-base-patch16-224`, `device=auto`
 
 ### `i2i_mae` [↑](#categories)
@@ -1427,7 +1424,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.12242" target="_blank">arXiv</a> · <a href="https://github.com/richzhang/PerceptualSimilarity" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">HF</a>
-- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
+- **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 - **Config**: `dinov2_model=facebook/dino-vits16`, `clip_model=openai/clip-vit-base-patch32`, `siglip_model=google/siglip-base-patch16-224`, `device=auto`
 
 ### `image_lpips` [↑](#categories)
@@ -4355,7 +4352,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (76 metrics)
+## Audio Quality (75 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 > Lip-sync confidence of the best-synced face (higher=better) · ↑ higher=better
@@ -4749,7 +4746,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → pymcd
-- **Provenance**: `adapted` — pymcd uses 13-dimensional librosa MFCCs and FastDTW; results are not interchangeable with SPTK mel-cepstrum MCD protocols — source: MCD-DTW via chenqi008/pymcd — https://github.com/chenqi008/pymcd
+- **Provenance**: `adapted` — pymcd 0.2.1 uses FastDTW on SPTK mel-cepstral coefficients c1-c13 but includes c0-c13 in the final distance; results are not interchangeable with c0-excluding or exact-DTW MCD protocols — source: MCD-DTW via pymcd 0.2.1 — https://github.com/chenqi008/pymcd
 - **Packages**: pymcd
 - **Source**: <a href="https://github.com/chenqi008/pymcd" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_audio_mcd.py`](tests/modules/per_module/test_audio_mcd.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py)
@@ -4762,9 +4759,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
 - **Backend**: msclap → unavailable
-- **Provenance**: `published` — source: CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused
+- **Provenance**: `published` — source: MS-CLAP audio/text cosine — https://github.com/microsoft/CLAP
 - **Packages**: msclap, soundfile, torch
-- **Source**: <a href="https://huggingface.co/microsoft/msclap" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/microsoft/CLAP" target="_blank">GitHub</a> · <a href="https://huggingface.co/microsoft/msclap" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 - **Config**: `model_name=sarulab-speech/human-clap-wsce-mae`, `processor_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`, `version=2023`
 
@@ -4898,7 +4895,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `target_sr=48000`, `mode=basic`
 
 ### `pesq_score` [↑](#categories)
-> PESQ (-0.5 to 4.5, higher=better) · ↑ higher=better · -0.5 to 4.5
+> PESQ native MOS-LQO (higher=better; WB can exceed 4.5) · ↑ higher=better · ; WB can exceed 4.5
 
 **[`audio_pesq`](src/ayase/modules/audio_pesq.py)** — PESQ speech quality (full-reference, ITU-T P.862)
 
@@ -4911,14 +4908,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
 
 ### `scoreq_score` [↑](#categories)
-> SCOREQ speech naturalness score (0-1, higher=better) · ↑ higher=better · MOS-style
+> SCOREQ domain-dependent speech quality MOS (higher=better) · ↑ higher=better · native output
 
-**[`scoreq`](src/ayase/modules/scoreq.py)** — SCOREQ no-reference speech naturalness score
+**[`scoreq`](src/ayase/modules/scoreq.py)** — SCOREQ domain-dependent no-reference speech quality MOS
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: scoreq → unavailable
 - **Provenance**: `published` — source: SCOREQ (Ragano et al., NeurIPS 2024) — https://github.com/alessandroragano/scoreq
-- **Packages**: scoreq
 - **Source**: <a href="https://github.com/alessandroragano/scoreq" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 - **Config**: `sample_rate=16000`, `data_domain=natural`
@@ -5138,19 +5134,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://github.com/microsoft/DNS-Challenge" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_audio_squim_objective.py`](tests/modules/per_module/test_audio_squim_objective.py)
 - **Config**: `device=auto`, `min_duration_seconds=1.0`, `silence_rms_threshold=1e-05`
-
-### `tts_system_dist_score` [↑](#categories)
-> TTSDS2 speech quality score (0-1, higher=better) · ↑ higher=better · 0-1
-
-**[`tts_system_dist`](src/ayase/modules/tts_system_dist.py)** — Speaker-embedding distance speech-quality proxy (own, TTSDS2-inspired)
-
-- **Input**: img/vid · **Speed**: ⚡ fast
-- **Backend**: ttsds2 → unavailable
-- **Provenance**: `own` — source: TTSDS2, Minixhofer et al. 2025 — https://arxiv.org/abs/2506.19441
-- **Packages**: ttsds2
-- **Source**: <a href="https://arxiv.org/abs/2506.19441" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_cli_contracts.py`](tests/test_cli_contracts.py)
-- **Config**: `enabled=False`, `sample_rate=16000`
 
 ### `utmos_score` [↑](#categories)
 > UTMOS predicted MOS (1-5, higher=better) · ↑ higher=better · 1-5
@@ -8030,9 +8013,9 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 
 ---
 
-## External backend required — pending real backend (49 modules)
+## External backend required — pending real backend (50 modules)
 
-These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **46** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
+These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **47** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
 
 - **[`acc_emo`](src/ayase/modules/acc_emo.py)** — Target-emotion accuracy via Emotion-FAN/EmoNet (external backend) · Metrics: `acc_emo`
   - `acc_emo`: `published` — backend unavailable — source: Acc_emo, EAMM (https://arxiv.org/abs/2205.15278); EAT (https://arxiv.org/abs/2309.04946); Emotion-FAN/EmoNet backends
@@ -8117,6 +8100,8 @@ These modules ship in the package and stay registered, but currently have **no t
 - **[`sr4kvqa`](src/ayase/modules/sr4kvqa.py)** — SR4KVQA super-resolution 4K quality (2024) · Metrics: `sr4kvqa_score`
 - **[`srgr`](src/ayase/modules/srgr.py)** — SRGR: semantic-weighted gesture PCK (BEAT, external backend) · Metrics: `srgr`
   - `srgr`: `published` — backend unavailable — source: SRGR, BEAT (Liu et al., ECCV 2022, arXiv:2203.05297) — https://github.com/PantoMatrix/BEAT
+- **[`tts_system_dist`](src/ayase/modules/tts_system_dist.py)** — TTSDS2 dataset distribution score (external backend required) · Metrics: `tts_system_dist_score`
+  - `tts_system_dist_score`: `published` — backend unavailable — source: TTSDS2, Minixhofer et al. 2025 — https://arxiv.org/abs/2506.19441
 - **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014) · Metrics: `vbliinds_score`
 - **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025) · Metrics: `vqathinker_score` · Needs: vqathinker
   - `vqathinker_score`: `utility` — backend unavailable

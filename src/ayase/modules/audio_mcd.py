@@ -1,11 +1,11 @@
 """MCD (Mel Cepstral Distortion) module.
 
-Full-reference metric for evaluating TTS and voice conversion quality,
-computed by the ``pymcd`` package — 13-dimensional MFCC sequences aligned
-with approximate dynamic time warping and combined with the Kubichek constant
-10·sqrt(2)/ln(10) (coefficient 0 excluded). This is an adapted MCD-DTW
-implementation; it is not the SPTK mel-cepstrum protocol used by many TTS
-papers.
+Full-reference metric for evaluating TTS and voice conversion quality, computed
+by ``pymcd==0.2.1``. Audio is resampled to 22,050 Hz before a WORLD spectral
+envelope and 14 SPTK mel-cepstral coefficients (order 13, c0-c13) are extracted
+at 5 ms intervals, using FFT size 512 and SPTK alpha 0.65. FastDTW aligns
+c1-c13, while the final path distance includes
+c0-c13 and uses the Kubichek constant 10·sqrt(2)/ln(10).
 
 Score range: 0.0+ dB (lower = better). Values are meaningful only when the
 same feature extraction, alignment, and coefficient convention is used.
@@ -32,10 +32,10 @@ class AudioMCDModule(PipelineModule):
     name = "audio_mcd"
     provenance = "adapted"
     sources = {
-        "mcd_score": "MCD-DTW via chenqi008/pymcd — https://github.com/chenqi008/pymcd",
+        "mcd_score": "MCD-DTW via pymcd 0.2.1 — https://github.com/chenqi008/pymcd",
     }
     deviations = {
-        "mcd_score": "pymcd uses 13-dimensional librosa MFCCs and FastDTW; results are not interchangeable with SPTK mel-cepstrum MCD protocols",
+        "mcd_score": "pymcd 0.2.1 uses FastDTW on SPTK mel-cepstral coefficients c1-c13 but includes c0-c13 in the final distance; results are not interchangeable with c0-excluding or exact-DTW MCD protocols",
     }
     description = "Mel Cepstral Distortion for TTS/VC quality (full-reference, pymcd)"
     default_config = {
@@ -45,8 +45,9 @@ class AudioMCDModule(PipelineModule):
         {
             "id": "pymcd",
             "type": "pip_package",
-            "install": "pip install pymcd",
-            "task": "MFCC-based MCD-DTW implementation",
+            "install": "pip install pymcd==0.2.1",
+            "task": "WORLD/SPTK mel-cepstrum MCD with FastDTW alignment",
+            "notes": "Validated against pymcd 0.2.1; later versions may change the metric protocol",
         },
     ]
     metric_groups = {
@@ -68,7 +69,7 @@ class AudioMCDModule(PipelineModule):
             logger.info("MCD module initialised (pymcd)")
         except ImportError:
             logger.warning(
-                "pymcd not installed (pip install pymcd). "
+                "pymcd not installed (pip install pymcd==0.2.1). "
                 "MCD requires the configured pymcd backend; score left unset."
             )
 

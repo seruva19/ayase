@@ -4,7 +4,8 @@ ITU-T P.862 standard for objective speech quality measurement.
 Full-reference metric that compares a degraded audio signal to an
 original / reference.
 
-Score range: -0.5 to 4.5 (higher = better).
+Returns the ``pesq`` package's native MOS-LQO prediction (higher = better).
+Wideband results at 16 kHz can exceed 4.5; values are not clipped.
   4.0+  excellent
   3.5+  good
   3.0+  fair

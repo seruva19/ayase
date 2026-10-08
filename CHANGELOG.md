@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.81] - 2026-10-08
+
+### Fixed
+
+- **tts_system_dist**: removed unsupported per-file `ttsds2.score()`/`evaluate()` calls; the dataset-level TTSDS2 protocol is now declared unavailable and emits no substitute value.
+- **clap_score**: corrects per-output source attribution for each CLAP variant and identifies Microsoft's source for MS-CLAP.
+- **scoreq**: stores native ONNX checkpoints under the configured Ayase model directory instead of SCOREQ's hard-coded home cache, without changing preprocessing or predictions.
+- **captioning**: selects the requested BLEU-n component from pycocoevalcap's cumulative score vector when computing EvalCrafter BLIP-BLEU.
+- **text_detection**: supports PaddleOCR 2.x `ocr()` results and safely parses PaddleOCR 3.x NumPy polygon arrays.
+- **audio_mcd**: corrected the documented pymcd 0.2.1 WORLD/SPTK extraction and coefficient conventions; computed values are unchanged.
+- **audio_pesq**: corrected the native MOS-LQO description; valid wideband scores above 4.5 remain unchanged.
+
 ## [0.1.80] - 2026-10-07
 
 ### Added
@@ -134,7 +146,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **no source-code downloads**: the MJ-Video, VQA2, VILA and s2wrapper runtimes are vendored in-tree (`ayase.vendor`), trimmed to what inference reaches: 126 MB of upstream snapshots become 5.4 MB, with datasets, notebooks, demo media and the training paths left out. Ayase downloads weights, never code.
 - **cotracker**: the three modules that used CoTracker2 now build it from the already-vendored architecture instead of `torch.hub`, which fetched the upstream repository. Same network, same `cotracker2.pth`, no code download.
 - **vbench2**: the evaluator is vendored too. The upstream snapshot is 261 MB, but 142 MB of that is four copies of one LVIS annotation file inside vendored detector repositories; scoring needs 14 MB of Python and the 0.4 MB `VBench2_full_info.json`, which is now shipped and used as the default full-info path (it previously pointed at a file that does not exist, so the module always required `full_info_path` to be set by hand).
-
 
 ## [0.1.74] - 2026-09-02
 
@@ -513,8 +524,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dataset-level modules and vendored/third-party model modules now declare required `metric_info` / `models` metadata for docs generation.
 - Core config and pipeline typing now pass the configured strict MyPy target.
 
-### Fixed
-
 - Core config loading now lets `AYASE_*` environment overrides take precedence over TOML values
 - Pipeline cache and resume state now validate caption/reference context, reject stale persisted entries, and keep aggregate stats consistent when entries are replaced or skipped
 - Resume state now records a pipeline fingerprint, rejects incompatible or legacy untrusted caches, and rolls back partial module registrations from failed imports
@@ -542,6 +551,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **dino_face_identity**: DINOv2 face identity fields in QualityMetrics
 - **test_docs_integrity**: 327 new tests verifying module documentation, field writes, model references, and no-heuristic enforcement
 - Paper-accurate implementations: VSFA (quality-aware temporal pooling), VIDEVAL (60 hand-crafted features), VIIDEO/V-BLIINDS (scikit-video backend), face IQA (CR-FIQA/MagFace/SER-FIQ/GraFIQs via InsightFace), ModularBVQA (Laplacian+SlowFast rectifiers), Zoom-VQA (dual-branch IQA+VQA)
+
+## [0.1.26]
+
+### Added
+
+- **videoscore2**: VideoScore2 generative video evaluation with visual quality, text-video alignment, and physical/common-sense consistency outputs
+- 3 new QualityMetrics fields for VideoScore2: `videoscore2_visual`, `videoscore2_alignment`, `videoscore2_physical`
+- **verse_bench**: native Ayase Verse-Bench aggregation over vendored inferencers, with dataset-level outputs stored in `DatasetStats` when a materialized benchmark dataset is provided
+- 3 new DatasetStats fields for Verse-Bench: `verse_bench_overall`, `verse_bench_metrics`, `verse_bench_breakdown`
+- `models` and `metric_info` class-level declarations on `PipelineModule` for explicit model/metadata documentation in `MODELS.md` and `METRICS.md`
+- Module-level docstrings added to 46 modules that were missing them
+
+### Changed
+
+- **verse_bench**: added missing runtime dependencies to the base install (`moviepy`, `pyloudnorm`, `python_speech_features`, `wget`) so `pip install ayase` includes the vendored benchmark inferencer requirements
+- `PipelineModule.get_metadata()` now returns `models` and `metric_info` fields
+- `MODELS.md` generator reads `cls.models` declarations in addition to regex scanning
+- `METRICS.md` generator merges `cls.metric_info` descriptions into auto-inferred output fields
+- Removed unused vendor files from `verse_bench`: `aesthetic/musiq/` training code, `aesthetic/manica_utils/process.py`
+
+## [0.1.19] - 2026-03-28
+
+### Added
+
+- **pickscore**: PickScore prompt-conditioned preference scoring
+- **hpsv3**: HPSv3 prompt-conditioned preference scoring
+- **chipqa**: ChipQA no-reference video quality scoring
+- **hdr_chipqa**: HDR-ChipQA no-reference HDR video quality scoring
+- **hdrmax**: HDRMAX full-reference HDR video quality scoring
+- **brightrate**: BrightRate no-reference HDR video quality scoring
+- 2 new QualityMetrics fields for prompt-conditioned reward scoring: `pickscore_score`, `hpsv3_score`
+- 4 new QualityMetrics fields for ChipQA, HDR-ChipQA, HDRMAX, and BrightRate: `chipqa_score`, `hdr_chipqa_score`, `hdrmax_score`, `brightrate_score`
+- 3 new modules: **creativity** (VBench-2.0 artistic novelty), **chronomagic** (ChronoMagic-Bench MTScore + CHScore), **t2v_compbench** (T2V-CompBench 7 compositional sub-metrics)
+- 13 new QualityMetrics fields for VBench-2.0 faithfulness, ChronoMagic-Bench, and T2V-CompBench coverage
+- 4 upgraded modules with tiered backends and QM scoring: **physics** (`physics_score`), **human_fidelity** (`human_fidelity_score`), **commonsense** (`commonsense_score`), **dynamics_controllability** (CoTracker + camera motion classification)
+- 6 new modules: **identity_loss**, **tifa**, **tonal_dynamic_range**, **nemo_curator**, **umap_projection**, **vlm_judge presets**
+- `resolve_model_path()` and `download_model_file()` utilities in `config.py`
+- Explicit config params for evaluation: `ocr_fidelity.expected_text`, `motion_amplitude.expected_motion`, `action_recognition.expected_action`
+
+### Changed
+
+- Base installation now includes the shared runtime dependencies used by bundled metrics
+- HPSv3 loads directly through the Qwen2-VL reward path used by the bundled inference code
+- README metrics table redesigned as 5-column API reference
+- Removed `enable_ml` flag from all modules — ML auto-detected via tiered backend pattern
+- TUI: Windows drive letter support, `Path.home()` as default start directory
+
+### Removed
+
+- `quality.py` and `video.py` legacy files
 
 ## [0.1.18]
 
@@ -639,68 +698,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `QualityMetrics` now uses `extra="forbid"` — typo'd field names raise `ValidationError`
 - `pyiqa` minimum version bumped to `>=0.1.13`
-
-## [Unreleased]
-
-### Added
-
-- **videoscore2**: VideoScore2 generative video evaluation with visual quality, text-video alignment, and physical/common-sense consistency outputs
-- 3 new QualityMetrics fields for VideoScore2: `videoscore2_visual`, `videoscore2_alignment`, `videoscore2_physical`
-- **verse_bench**: native Ayase Verse-Bench aggregation over vendored inferencers, with dataset-level outputs stored in `DatasetStats` when a materialized benchmark dataset is provided
-- 3 new DatasetStats fields for Verse-Bench: `verse_bench_overall`, `verse_bench_metrics`, `verse_bench_breakdown`
-- `models` and `metric_info` class-level declarations on `PipelineModule` for explicit model/metadata documentation in `MODELS.md` and `METRICS.md`
-- Module-level docstrings added to 46 modules that were missing them
-- Module docstring requirement documented in AGENTS.md (Section 7)
-- Model/metric declaration rules documented in AGENTS.md (Section 8)
-
-### Changed
-
-- **verse_bench**: added missing runtime dependencies to the base install (`moviepy`, `pyloudnorm`, `python_speech_features`, `wget`) so `pip install ayase` includes the vendored benchmark inferencer requirements
-- `PipelineModule.get_metadata()` now returns `models` and `metric_info` fields
-- `MODELS.md` generator reads `cls.models` declarations in addition to regex scanning
-- `METRICS.md` generator merges `cls.metric_info` descriptions into auto-inferred output fields
-- Removed unused vendor files from `verse_bench`: `aesthetic/musiq/` training code, `aesthetic/manica_utils/process.py`
-
-### Fixed
-
-- Config precedence now applies `AYASE_*` environment overrides on top of TOML/default values instead of silently letting file values win
-- Pipeline cache reuse now respects caption/reference context instead of reusing stale results solely by file path
-- Required model-file downloads now reject path-escaping targets and use atomic `.part` writes before replacing the final file
-- CLI `stats` now counts image-only datasets, and `filter --mode list` no longer requires `--output`
-- CLI `scan`/`run` no longer create surprise report artifacts when the user already chose explicit stdout or `--output`
-- Module registry now rejects duplicate module names instead of silently overwriting the first registration
-- Docker/TUI docs no longer reference non-existent install extras in the single-install distribution
-
-## [0.1.19] - 2026-03-28
-
-### Added
-
-- **pickscore**: PickScore prompt-conditioned preference scoring
-- **hpsv3**: HPSv3 prompt-conditioned preference scoring
-- **chipqa**: ChipQA no-reference video quality scoring
-- **hdr_chipqa**: HDR-ChipQA no-reference HDR video quality scoring
-- **hdrmax**: HDRMAX full-reference HDR video quality scoring
-- **brightrate**: BrightRate no-reference HDR video quality scoring
-- 2 new QualityMetrics fields for prompt-conditioned reward scoring: `pickscore_score`, `hpsv3_score`
-- 4 new QualityMetrics fields for ChipQA, HDR-ChipQA, HDRMAX, and BrightRate: `chipqa_score`, `hdr_chipqa_score`, `hdrmax_score`, `brightrate_score`
-- 3 new modules: **creativity** (VBench-2.0 artistic novelty), **chronomagic** (ChronoMagic-Bench MTScore + CHScore), **t2v_compbench** (T2V-CompBench 7 compositional sub-metrics)
-- 13 new QualityMetrics fields for VBench-2.0 faithfulness, ChronoMagic-Bench, and T2V-CompBench coverage
-- 4 upgraded modules with tiered backends and QM scoring: **physics** (`physics_score`), **human_fidelity** (`human_fidelity_score`), **commonsense** (`commonsense_score`), **dynamics_controllability** (CoTracker + camera motion classification)
-- 6 new modules: **identity_loss**, **tifa**, **tonal_dynamic_range**, **nemo_curator**, **umap_projection**, **vlm_judge presets**
-- `resolve_model_path()` and `download_model_file()` utilities in `config.py`
-- Explicit config params for evaluation: `ocr_fidelity.expected_text`, `motion_amplitude.expected_motion`, `action_recognition.expected_action`
-
-### Changed
-
-- Base installation now includes the shared runtime dependencies used by bundled metrics
-- HPSv3 loads directly through the Qwen2-VL reward path used by the bundled inference code
-- README metrics table redesigned as 5-column API reference
-- Removed `enable_ml` flag from all modules — ML auto-detected via tiered backend pattern
-- TUI: Windows drive letter support, `Path.home()` as default start directory
-
-### Removed
-
-- `quality.py` and `video.py` legacy files
 
 ## [0.1.0] - 2024-12-01
 

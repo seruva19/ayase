@@ -1,5 +1,6 @@
 """Focused tests for BLIP, distribution, ASR, and speech-quality metrics."""
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -126,7 +127,7 @@ def test_audio_modules_real_backend_or_none(synthetic_wav):
         (AudioUTMOSv2Module(), "utmos_v2_score",
          ("utmosv2_package", "torch_hub"), (1.0, 5.0)),
         (PAMModule(), "pam_score", ("clap",), (0.0, 1.0)),
-        (TTSDS2Module({"enabled": True}), "tts_system_dist_score", ("tts_system_dist",), (0.0, 1.0)),
+        (TTSDS2Module({"enabled": True}), "tts_system_dist_score", (), (0.0, 100.0)),
     ]
     for module, field, real_backends, (lo, hi) in checks:
         module.on_mount()
@@ -138,6 +139,150 @@ def test_audio_modules_real_backend_or_none(synthetic_wav):
         else:
             assert module._backend in (None, "unavailable")
             assert value is None, f"{field} must stay unset without a real backend"
+
+
+def test_ttsds2_declares_dataset_protocol_and_never_scores_one_file(synthetic_wav):
+    from ayase.modules.tts_system_dist import TTSDS2Module
+
+    sample = Sample(path=synthetic_wav, is_video=False)
+    module = TTSDS2Module({"enabled": True})
+    assert module.requires_external_backend is True
+    assert module.provenance == "published"
+    module.setup()
+    result = module.process(sample)
+    assert result is sample
+    assert result.quality_metrics is None
+    assert module._backend is None
+
+
+def test_ttsds2_opt_in_reports_external_backend_unavailable(synthetic_wav):
+    from ayase.modules.tts_system_dist import TTSDS2Module
+    from ayase.pipeline import Pipeline
+
+    pipeline = Pipeline([TTSDS2Module({"enabled": True})])
+    pipeline.start()
+    result = pipeline.process_sample(Sample(path=synthetic_wav, is_video=False))
+    status = pipeline.get_run_status()
+    assert result.quality_metrics is None
+    assert status["complete"] is False
+    assert status["availability_excluded"] == {
+        "tts_system_dist": "external_backend_unavailable"
+    }
+
+
+def test_scoreq_redirects_native_download_to_models_dir(monkeypatch, tmp_path):
+    import ayase.modules.scoreq as scoreq_module
+
+    calls = []
+    package_dir = tmp_path / "installed" / "scoreq"
+    package_dir.mkdir(parents=True)
+    (package_dir / "__init__.py").write_text(
+        "raise AssertionError('scoreq package initializer must not execute')\n",
+        encoding="utf-8",
+    )
+    (package_dir / "scoreq.py").write_text(
+        """
+class Scoreq:
+    def __init__(self, data_domain='natural', mode='nr'):
+        self.data_domain = data_domain
+        self.mode = mode
+        self.model_path = self._download_model(
+            'adapt_nr_telephone.onnx', 'https://example.invalid/model', 'onnx-models'
+        )
+""",
+        encoding="utf-8",
+    )
+
+    class Distribution:
+        version = "1.0.1"
+        files = [Path("scoreq") / "scoreq.py"]
+
+        def locate_file(self, relative_path):
+            return tmp_path / "installed" / relative_path
+
+    def fake_download(relative_path, url, models_dir):
+        calls.append((relative_path, url, models_dir))
+        return Path(models_dir) / relative_path
+
+    monkeypatch.setattr(scoreq_module.metadata, "distribution", lambda name: Distribution())
+    monkeypatch.setattr(scoreq_module, "download_model_file", fake_download)
+    monkeypatch.setattr(
+        os.path,
+        "expanduser",
+        lambda path: (_ for _ in ()).throw(AssertionError(f"HOME access attempted: {path}")),
+    )
+
+    models_dir = tmp_path / "models"
+    module = scoreq_module.SCOREQModule({"models_dir": str(models_dir)})
+    module.setup()
+
+    assert module._backend == "scoreq"
+    assert module._backend_version == "1.0.1"
+    assert module._backend_source == str((package_dir / "scoreq.py").resolve())
+    assert type(module._model).__mro__[1].__module__ == "_ayase_native_scoreq_1_0_1"
+    assert module._model.data_domain == "natural"
+    assert module._model.mode == "nr"
+    assert calls == [
+        (
+            "scoreq/onnx-models/adapt_nr_telephone.onnx",
+            "https://example.invalid/model",
+            str(models_dir),
+        )
+    ]
+    assert not (tmp_path / "untouched-home").exists()
+
+
+def test_scoreq_cache_rejects_path_traversal(monkeypatch, tmp_path):
+    import ayase.modules.scoreq as scoreq_module
+
+    source_path = tmp_path / "installed" / "scoreq" / "scoreq.py"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_text(
+        """
+class Scoreq:
+    def __init__(self, data_domain='natural', mode='nr'):
+        self._download_model(
+            '../../../escape.onnx', 'https://example.invalid/model', 'onnx-models'
+        )
+""",
+        encoding="utf-8",
+    )
+
+    class Distribution:
+        version = "1.0.0"
+        files = [Path("scoreq") / "scoreq.py"]
+
+        def locate_file(self, relative_path):
+            return tmp_path / "installed" / relative_path
+
+    monkeypatch.setattr(scoreq_module.metadata, "distribution", lambda name: Distribution())
+
+    models_dir = tmp_path / "models"
+    module = scoreq_module.SCOREQModule({"models_dir": str(models_dir)})
+    module.setup()
+
+    assert module._backend == "unavailable"
+    assert not (tmp_path / "escape.onnx").exists()
+
+
+def test_scoreq_process_preserves_native_output(tmp_path):
+    from ayase.modules.scoreq import SCOREQModule
+
+    class NativePredictor:
+        def predict(self, test_path, ref_path=None):
+            assert test_path == str(tmp_path / "speech.wav")
+            assert ref_path is None
+            return 1.23456789
+
+    module = SCOREQModule()
+    module._backend = "scoreq"
+    module._model = NativePredictor()
+    sample = Sample(path=tmp_path / "speech.wav", is_video=False)
+
+    result = module.process(sample)
+
+    assert result is sample
+    assert result.quality_metrics.scoreq_score == 1.23456789
 
 
 def test_aqascore_is_opt_in(synthetic_wav):
