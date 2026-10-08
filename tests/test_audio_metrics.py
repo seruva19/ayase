@@ -49,15 +49,40 @@ class TestAudioSISDR:
 
 
 class TestAudioMCD:
-    def test_unavailable_without_pymcd(self, synthetic_wav):
+    def test_unavailable_without_pymcd(self, synthetic_wav, monkeypatch):
+        import builtins
+
         from ayase.modules.audio_mcd import AudioMCDModule
 
+        original_import = builtins.__import__
+
+        def import_without_pymcd(name, *args, **kwargs):
+            if name == "pymcd.mcd" or name.startswith("pymcd."):
+                raise ImportError("simulated missing pymcd")
+            return original_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", import_without_pymcd)
         mod = AudioMCDModule()
-        # pymcd is not installed in the test env — score must stay unset.
+        mod.setup()
         sample = Sample(path=synthetic_wav, is_video=False, reference_path=synthetic_wav)
         result = mod.process(sample)
         assert result is sample
+        assert mod._backend == "unavailable"
         assert sample.quality_metrics is None or sample.quality_metrics.mcd_score is None
+
+    def test_pymcd_protocol_metadata(self):
+        import sys
+
+        from ayase.modules.audio_mcd import AudioMCDModule
+
+        module_doc = sys.modules[AudioMCDModule.__module__].__doc__
+        protocol = AudioMCDModule.deviations["mcd_score"]
+        assert "WORLD spectral" in module_doc
+        assert "14 SPTK mel-cepstral coefficients" in module_doc
+        assert "pymcd 0.2.1" in protocol
+        assert "c1-c13" in protocol
+        assert "c0-c13" in protocol
+        assert AudioMCDModule.models[0]["install"] == "pip install pymcd==0.2.1"
 
     def test_self_mcd_zero_with_mocked_pymcd(self, synthetic_wav, monkeypatch):
         import sys

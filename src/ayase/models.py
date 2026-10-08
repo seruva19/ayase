@@ -576,7 +576,7 @@ class QualityMetrics(BaseModel):
     brisque: Optional[float] = None  # BRISQUE (0-100, lower=better)
 
     # Audio quality metrics
-    pesq_score: Optional[float] = None  # PESQ (-0.5 to 4.5, higher=better)
+    pesq_score: Optional[float] = None  # PESQ native MOS-LQO (higher=better; WB can exceed 4.5)
     estoi_score: Optional[float] = None  # ESTOI intelligibility (0-1, higher=better)
     mcd_score: Optional[float] = None  # Mel Cepstral Distortion (dB, lower=better)
     audio_log_f0_rmse_cents: Optional[float] = None  # DTW-aligned log-F0 RMSE (cents, lower=better)
@@ -603,8 +603,8 @@ class QualityMetrics(BaseModel):
     asr_cer: Optional[float] = None  # ASR character error rate vs reference text (unbounded, lower=better)
     asr_wer: Optional[float] = None  # ASR word error rate vs reference text (unbounded, lower=better)
     speech_bert_score: Optional[float] = None  # Matching-content speech similarity (-1..1, higher=better)
-    scoreq_score: Optional[float] = None  # SCOREQ speech naturalness score (0-1, higher=better)
-    tts_system_dist_score: Optional[float] = None  # TTSDS2 speech quality score (0-1, higher=better)
+    scoreq_score: Optional[float] = None  # SCOREQ domain-dependent speech quality MOS (higher=better)
+    tts_system_dist_score: Optional[float] = None  # TTSDS2 distribution score (0-100, higher=better)
     human_clap_score: Optional[float] = None  # Human-CLAP audio-text relevance (0-1, higher=better)
     laion_clap_score: Optional[float] = None  # LAION-CLAP audio-text relevance (0-1, higher=better)
     ms_clap_score: Optional[float] = None  # Microsoft CLAP audio-text relevance (0-1, higher=better)

@@ -227,6 +227,19 @@ class CaptioningModule(PipelineModule):
                 score, _ = scorer.compute_score(
                     {0: [reference]}, {0: [hyp]}
                 )
+                # pycocoevalcap returns cumulative BLEU orders: Bleu(n=3)
+                # yields [BLEU-1, BLEU-2, BLEU-3].  This loop measures the
+                # requested order, so select its final component rather than
+                # coercing the component list (or accidentally reusing BLEU-1).
+                if isinstance(score, (list, tuple)):
+                    if len(score) < n:
+                        logger.warning(
+                            "pycocoevalcap returned %d BLEU components for n=%d",
+                            len(score),
+                            n,
+                        )
+                        return None
+                    score = score[n - 1]
                 score = float(score)
                 if score > best:
                     best = score

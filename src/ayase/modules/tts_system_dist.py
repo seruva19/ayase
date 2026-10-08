@@ -1,20 +1,16 @@
-"""Speaker/embedding-distance speech-quality proxy — own metric inspired
-by TTSDS2; the published TTSDS2 pipeline is not reproduced.
+"""Declare TTSDS2 as an unavailable dataset-level TTS distribution metric.
 
-TTSDS2 is a heavier TTS evaluation pipeline, so this module is opt-in
-(``enabled=False`` by default). When enabled it uses an installed TTSDS2
-implementation. A generic signal-based speech-quality heuristic is not
-TTSDS2, so it is not emitted under the TTSDS2 name: if the ``ttsds2`` package
-is not installed the module reports itself unavailable.
+Published TTSDS2 compares synthetic speech with separate real-speech and noise
+datasets across feature distributions. The official ``ttsds`` package exposes
+``BenchmarkSuite`` over datasets; it has no supported single-file ``score`` or
+``evaluate`` API. Ayase's per-sample pipeline therefore emits no value.
 
-tts_system_dist_score — aggregate speech quality (0-1, higher=better), populated only
-with the real TTSDS2 backend.
+TTSDS2 scores are reported on a 0-100 scale, higher is better.
 """
 
 import logging
-from typing import Optional
 
-from ayase.models import QualityMetrics, Sample
+from ayase.models import Sample
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
@@ -22,79 +18,34 @@ logger = logging.getLogger(__name__)
 
 class TTSDS2Module(PipelineModule):
     name = "tts_system_dist"
-    provenance = "own"
+    provenance = "published"
+    requires_external_backend = True
     sources = {
         "tts_system_dist_score": "TTSDS2, Minixhofer et al. 2025 — https://arxiv.org/abs/2506.19441",
     }
-    description = "Speaker-embedding distance speech-quality proxy (own, TTSDS2-inspired)"
-    default_config = {
-        "enabled": False,
-        "sample_rate": 16000,
-    }
-    models = [
-        {
-            "id": "ttsds-benchmark",
-            "type": "other",
-            "task": "TTSDS2 benchmark implementation",
-        },
-    ]
+    description = "TTSDS2 dataset distribution score (external backend required)"
+    default_config = {"enabled": False}
+    models = [{
+        "id": "ttsds", "type": "pip_package", "install": "pip install ttsds",
+        "task": "Official dataset-level TTSDS2 BenchmarkSuite",
+        "notes": "Requires synthetic, real-reference, and noise datasets; not a per-file scorer",
+    }]
     metric_info = {
-        "tts_system_dist_score": "TTSDS2 aggregate speech quality score (0-1, higher=better)",
+        "tts_system_dist_score": "TTSDS2 aggregate distribution score (0-100, higher=better)",
     }
-    metric_groups = {
-        "tts_system_dist_score": "audio",
-    }
+    metric_groups = {"tts_system_dist_score": "audio"}
 
     def __init__(self, config=None):
         super().__init__(config)
         self.enabled = self.config.get("enabled", False)
-        self.sample_rate = self.config.get("sample_rate", 16000)
         self._backend = None
-        self._model = None
 
     def setup(self) -> None:
-        if not self.enabled:
-            return
-        try:
-            import ttsds2
-
-            self._model = ttsds2
-            self._backend = "ttsds2"
-            logger.info("TTSDS2 initialised with installed package")
-        except ImportError:
-            self._backend = "unavailable"
-            logger.info(
-                "TTSDS2 unavailable: the ttsds2 package is not installed; "
-                "tts_system_dist_score will not be populated by this module."
+        if self.enabled:
+            logger.warning(
+                "TTSDS2 is unavailable in Ayase's per-sample pipeline: the official "
+                "ttsds.BenchmarkSuite requires synthetic, reference, and noise datasets"
             )
-        except Exception as e:
-            self._backend = "unavailable"
-            logger.warning("TTSDS2 setup failed (%s); reporting unavailable", e)
 
     def process(self, sample: Sample) -> Sample:
-        if not self.enabled or self._backend != "ttsds2":
-            return sample
-        try:
-            score = self._score_package(sample.path)
-            if score is None:
-                return sample
-
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-            sample.quality_metrics.tts_system_dist_score = float(score)
-        except Exception as e:
-            logger.warning("TTSDS2 failed for %s: %s", sample.path, e)
         return sample
-
-    def _score_package(self, path) -> Optional[float]:
-        try:
-            if hasattr(self._model, "score"):
-                return float(self._model.score(str(path)))
-            if hasattr(self._model, "evaluate"):
-                result = self._model.evaluate(str(path))
-                if isinstance(result, dict):
-                    return float(result.get("score", result.get("overall")))
-                return float(result)
-        except Exception as e:
-            logger.debug("TTSDS2 package scoring failed: %s", e)
-        return None

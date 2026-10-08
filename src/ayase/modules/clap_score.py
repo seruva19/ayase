@@ -44,9 +44,7 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
     name = "laion_clap_score"
     provenance = "published"
     sources = {
-        "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
         "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
-        "ms_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
     }
     description = "LAION-CLAP audio-text alignment cosine similarity"
     default_config = {
@@ -79,9 +77,7 @@ class MSCLAPScoreModule(HumanCLAPModule):
     name = "ms_clap_score"
     provenance = "published"
     sources = {
-        "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
-        "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
-        "ms_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
+        "ms_clap_score": "MS-CLAP audio/text cosine — https://github.com/microsoft/CLAP",
     }
     description = "Microsoft CLAP audio-text alignment cosine similarity"
     default_config = {
@@ -164,8 +160,6 @@ class GenericCLAPScoreModule(HumanCLAPModule):
     provenance = "published"
     sources = {
         "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
-        "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
-        "ms_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
     }
     description = "Generic CLAP audio-text alignment cosine similarity (configurable backbone)"
     default_config = {

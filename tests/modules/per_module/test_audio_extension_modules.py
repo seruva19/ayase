@@ -46,6 +46,8 @@ def test_clap_score_variants_basics(video_sample):
     for module_cls in (LAIONCLAPScoreModule, MSCLAPScoreModule, GenericCLAPScoreModule):
         module = module_cls()
         assert module.process(video_sample) is video_sample
+        assert set(module.sources) == {module.metric_field_name}
+    assert "microsoft/CLAP" in MSCLAPScoreModule.sources["ms_clap_score"]
 
     qm = QualityMetrics(laion_clap_score=0.5, ms_clap_score=0.5, clap_score=0.5)
     assert qm.laion_clap_score == 0.5

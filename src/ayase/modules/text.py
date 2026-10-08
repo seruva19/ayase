@@ -41,6 +41,7 @@ class TextDetectionModule(PipelineModule):
         self._engine = None # 'paddle' or 'tesseract'
         self._backend = None
         self._model = None
+        self._ocr_api = None
         self.pytesseract = None
 
     def setup(self):
@@ -61,7 +62,12 @@ class TextDetectionModule(PipelineModule):
                     kw["text_recognition_model_name"] = self.text_recognition_model_name
                 else:
                     kw["lang"] = self.lang
-                self._model = PaddleOCR(**kw)
+                if hasattr(PaddleOCR, "predict"):
+                    self._model = PaddleOCR(**kw)
+                    self._ocr_api = "v3"
+                else:
+                    self._model = PaddleOCR(use_angle_cls=True, lang=self.lang)
+                    self._ocr_api = "v2"
                 self._engine = 'paddle'
                 self._backend = 'paddle'
                 self._ocr_available = True
@@ -104,20 +110,14 @@ class TextDetectionModule(PipelineModule):
                 total_area = image.shape[0] * image.shape[1]
 
                 if self._engine == 'paddle':
-                    result = self._model.predict(image)
-                    if result and result[0]:
-                        r = result[0]
-                        polys = r.get("dt_polys") or []
-                        texts = r.get("rec_texts") or []
-                        scores = r.get("rec_scores") or []
-                        for poly, txt, conf in zip(polys, texts, scores):
-                            if conf < 0.5:
-                                continue
-                            pts = np.asarray(poly, dtype=np.float64)
-                            x_min, y_min = pts.min(axis=0)
-                            x_max, y_max = pts.max(axis=0)
-                            text_area += float((x_max - x_min) * (y_max - y_min))
-                            found_text_frame.append(txt)
+                    for poly, txt, conf in self._paddle_detections(image):
+                        if conf < 0.5:
+                            continue
+                        pts = np.asarray(poly, dtype=np.float64)
+                        x_min, y_min = pts.min(axis=0)
+                        x_max, y_max = pts.max(axis=0)
+                        text_area += float((x_max - x_min) * (y_max - y_min))
+                        found_text_frame.append(txt)
 
                 elif self._engine == 'tesseract':
                     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -166,6 +166,33 @@ class TextDetectionModule(PipelineModule):
             logger.warning(f"OCR failed: {e}")
 
         return sample
+
+    def _paddle_detections(self, image):
+        """Return real PaddleOCR v2/v3 polygon, text, confidence triples."""
+        if self._ocr_api == "v2":
+            result = self._model.ocr(image, cls=True)
+            if not result or not result[0]:
+                return []
+            detections = []
+            for line in result[0]:
+                if not line or len(line) < 2 or not line[1]:
+                    continue
+                recognition = line[1]
+                if len(recognition) < 2:
+                    continue
+                detections.append((line[0], recognition[0], recognition[1]))
+            return detections
+
+        result = self._model.predict(image)
+        if not result or not result[0]:
+            return []
+        record = result[0]
+        polys = record.get("dt_polys")
+        texts = record.get("rec_texts")
+        scores = record.get("rec_scores")
+        if polys is None or texts is None or scores is None:
+            return []
+        return list(zip(polys, texts, scores))
 
 
 class TextCompatModule(TextDetectionModule):
