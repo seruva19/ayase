@@ -191,6 +191,9 @@ _IMPORTS = [
     ("BeatAlignmentModule", ".beat_alignment"),
     ("SongEvalModule", ".song_eval"),
     ("MuQEvalModule", ".muq_eval"),
+    ("LipSyncModule", ".lip_sync"),
+    ("LipSyncVerseModule", ".lip_sync"),
+    ("LipSyncSyncNetModule", ".lip_sync"),
     # --- HDR / codec ---
     ("HDRMetadataModule", ".hdr_metadata"),
     ("HDRChipQAModule", ".hdr_chipqa"),

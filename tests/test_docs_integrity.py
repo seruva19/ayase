@@ -52,6 +52,19 @@ def _get_full_source(cls: type) -> str:
             return ""
 
 
+def _get_class_hierarchy_source(cls: type) -> str:
+    """Return class-owned source plus inherited module implementation source."""
+    parts = []
+    for owner in cls.__mro__:
+        if owner in {PipelineModule, object}:
+            break
+        try:
+            parts.append(inspect.getsource(owner))
+        except (TypeError, OSError):
+            continue
+    return "\n".join(parts)
+
+
 # ═════════════════════════════════════════════════════════════════════════════
 # 1. Every module has a meaningful name and description
 # ═════════════════════════════════════════════════════════════════════════════
@@ -320,14 +333,20 @@ class TestFieldCollisions:
     def _is_known_variant_pair(cls, a: str, b: str) -> bool:
         return frozenset({a, b}) in cls._KNOWN_VARIANT_PAIRS
 
-    def test_no_unexpected_unguarded_collisions(self) -> None:
+    @staticmethod
+    def _field_writers(modules: Dict[str, type]) -> Dict[str, List[str]]:
         field_writers: Dict[str, List[str]] = {}
-        for name, cls in ALL_MODULES.items():
-            src = _get_full_source(cls)
+        for name, module_cls in modules.items():
+            declared = set(module_cls.get_metadata().get("output_fields", {}))
+            src = _get_class_hierarchy_source(module_cls)
             for pat in (r"quality_metrics\.(\w+)\s*=", r"\bqm\.(\w+)\s*="):
                 for field in re.findall(pat, src):
-                    if field in VALID_QM_FIELDS:
+                    if field in VALID_QM_FIELDS and field in declared:
                         field_writers.setdefault(field, []).append(name)
+        return field_writers
+
+    def test_no_unexpected_unguarded_collisions(self) -> None:
+        field_writers = self._field_writers(ALL_MODULES)
 
         unexpected = {}
         for field, writers in field_writers.items():
@@ -337,7 +356,7 @@ class TestFieldCollisions:
             # Check if writers guard with "if field is None"
             unguarded = []
             for w in unique:
-                src = _get_full_source(ALL_MODULES[w])
+                src = _get_class_hierarchy_source(ALL_MODULES[w])
                 if f"{field} is None" not in src:
                     unguarded.append(w)
             if len(unguarded) <= 1:
@@ -357,6 +376,37 @@ class TestFieldCollisions:
                 f"{len(unexpected)} unexpected unguarded field collision(s):\n"
                 + "\n".join(msg_parts)
             )
+
+    def test_sibling_classes_own_only_their_declared_fields(self) -> None:
+        from ayase.modules.lip_sync import LipSyncSyncNetModule, LipSyncVerseModule
+
+        writers = self._field_writers(
+            {"verse": LipSyncVerseModule, "syncnet": LipSyncSyncNetModule}
+        )
+        assert writers["lse_c_verse"] == ["verse"]
+        assert writers["lse_d_verse"] == ["verse"]
+        assert writers["lse_c_syncnet"] == ["syncnet"]
+        assert writers["lse_d_syncnet"] == ["syncnet"]
+
+    def test_genuine_overlapping_writers_are_still_detected(self) -> None:
+        class FirstWriter(PipelineModule):
+            name = "unnamed_module"
+            metric_info = {"blur_score": "first writer"}
+
+            def process(self, sample):
+                sample.quality_metrics.blur_score = 1.0
+                return sample
+
+        class SecondWriter(PipelineModule):
+            name = "unnamed_module"
+            metric_info = {"blur_score": "second writer"}
+
+            def process(self, sample):
+                sample.quality_metrics.blur_score = 2.0
+                return sample
+
+        writers = self._field_writers({"first": FirstWriter, "second": SecondWriter})
+        assert set(writers["blur_score"]) == {"first", "second"}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
