@@ -123,13 +123,13 @@ class I2VSimilarityModule(PipelineModule):
             self._backend = "+".join(available)
 
     _CLIP_URLS = {
-        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/i2v_similarity/ViT-B-32.safetensors",
+        "ViT-B-32": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/ViT-B-32.safetensors",
     }
 
     def _init_clip(self) -> None:
         try:
             import open_clip
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
 
             models_dir = self.config.get("models_dir", "models")
             local_clip = Path(str(models_dir)) / "open_clip" / f"{self.clip_model_name}.safetensors"
@@ -138,7 +138,7 @@ class I2VSimilarityModule(PipelineModule):
             if not local_clip.exists() and self.clip_model_name in self._CLIP_URLS:
                 download_model_file(
                     f"open_clip/{self.clip_model_name}.safetensors",
-                    self._CLIP_URLS[self.clip_model_name],
+                    resolve_assets_url(self._CLIP_URLS[self.clip_model_name], self.config),
                     models_dir,
                 )
 
@@ -179,14 +179,14 @@ class I2VSimilarityModule(PipelineModule):
 
     # Original: https://dl.fbaipublicfiles.com/dinov2/dinov2_vitb14/dinov2_vitb14_pretrain.pth
     _DINO_URLS = {
-        "dinov2_vitb14": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth",
+        "dinov2_vitb14": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth",
     }
 
     def _init_dino(self) -> None:
         try:
             import torch
             import timm
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
 
             models_dir = self.config.get("models_dir", "models")
             local_weights = Path(str(models_dir)) / "dinov2" / f"{self.dino_model_name}_pretrain.pth"
@@ -195,7 +195,7 @@ class I2VSimilarityModule(PipelineModule):
             if not local_weights.exists() and self.dino_model_name in self._DINO_URLS:
                 download_model_file(
                     f"dinov2/{self.dino_model_name}_pretrain.pth",
-                    self._DINO_URLS[self.dino_model_name],
+                    resolve_assets_url(self._DINO_URLS[self.dino_model_name], self.config),
                     models_dir,
                 )
 
@@ -229,7 +229,7 @@ class I2VSimilarityModule(PipelineModule):
             logger.error(f"Failed to load DINOv2 for I2V: {e}")
 
     # Original: https://github.com/richzhang/PerceptualSimilarity/raw/master/lpips/weights/v0.1/alex.pth
-    _LPIPS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/i2v_similarity/alex.pth"
+    _LPIPS_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/alex.pth"
 
     def _init_lpips(self) -> None:
         try:
@@ -237,14 +237,18 @@ class I2VSimilarityModule(PipelineModule):
             import contextlib
             import warnings
             import lpips as lpips_lib
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
 
             models_dir = self.config.get("models_dir", "models")
             local_lpips = Path(str(models_dir)) / "lpips" / "alex.pth"
 
             # Auto-download if missing
             if not local_lpips.exists():
-                download_model_file("lpips/alex.pth", self._LPIPS_URL, models_dir)
+                download_model_file(
+                    "lpips/alex.pth",
+                    resolve_assets_url(self._LPIPS_URL, self.config),
+                    models_dir,
+                )
 
             logger.info(f"Loading LPIPS (alex) for I2V on {self._device}...")
             warnings.filterwarnings(

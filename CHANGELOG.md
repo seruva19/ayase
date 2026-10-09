@@ -7,22 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-09
+
 ### Added
 
 - **lip_sync_syncnet**: tracked-face SyncNet LSE-C and LSE-D using S3FD detection, 25 fps preparation and an unweighted mean over eligible tracks.
+- **model assets**: configurable Hugging Face asset repository through `general.assets_repo`, `AYASE_GENERAL__ASSETS_REPO`, and per-module overrides.
 
 ### Changed
 
 - **lip sync**: separate VERSE and tracked-face protocols into `lip_sync_verse` and `lip_sync_syncnet`, each with qualified output fields and adapted provenance.
+- **model assets**: use the renamed `AkaneTendo25/ayase-assets` Hugging Face repository for Ayase-managed checkpoints and source archives.
 
 ### Fixed
 
 - **lip sync**: preserve `lip_sync` protocol inputs and historical output keys across direct, pipeline and isolated-client APIs; equivalent alias and canonical requests execute once.
 - **lip sync**: verify downloaded and cached SyncNet/S3FD checkpoints against pinned SHA-256 identities.
-
-## [0.1.82] - 2026-10-09
-
-### Fixed
 
 - Module metadata isolates sibling classes' outputs and preserves inherited processing fields and dynamic metric field declarations.
 - Pipeline run coverage is incomplete when requested modules are excluded by provenance policy.

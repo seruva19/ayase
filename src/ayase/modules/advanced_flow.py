@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 _RAFT_CTV1_FILE = "raft_large_C_T_V1-22a6c225.pth"
 _RAFT_CTV1_MIRROR = (
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+    "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
     f"advanced_flow/{_RAFT_CTV1_FILE}"
 )
 
@@ -92,7 +92,7 @@ class AdvancedFlowModule(PipelineModule):
         try:
             import os
             from ayase.runtime import resolve_torch_device, shared_runtime_resource
-            from ayase.config import download_torch_hub_checkpoint
+            from ayase.config import download_torch_hub_checkpoint, resolve_assets_url
 
             # Redirect torch hub cache to models_dir so RAFT weights respect config
             models_dir = str(self.config.get("models_dir", "models"))
@@ -100,7 +100,11 @@ class AdvancedFlowModule(PipelineModule):
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             try:
-                download_torch_hub_checkpoint(_RAFT_CTV1_FILE, _RAFT_CTV1_MIRROR, models_dir)
+                download_torch_hub_checkpoint(
+                    _RAFT_CTV1_FILE,
+                    resolve_assets_url(_RAFT_CTV1_MIRROR, self.config),
+                    models_dir,
+                )
             except Exception:
                 pass  # torchvision falls back to download.pytorch.org
 

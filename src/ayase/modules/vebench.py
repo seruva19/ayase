@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Tuple
 
-from ayase.config import download_hf_snapshot
+from ayase.config import download_hf_snapshot, resolve_assets_repo
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -28,7 +28,7 @@ from ._reward_utils import get_prompt
 logger = logging.getLogger(__name__)
 
 
-_MODEL_REPO = "AkaneTendo25/ayase-runtime-assets"
+_MODEL_REPO = "AkaneTendo25/ayase-assets"
 _MODEL_REVISION = "377ac94f1fadca1e35b7171c7860ccad6ae9fd1a"
 _WEIGHTS: Tuple[Tuple[str, int, str], ...] = (
     (
@@ -143,7 +143,7 @@ class VEBenchModule(PipelineModule):
 
             self._torch = torch
             snapshot_root = download_hf_snapshot(
-                _MODEL_REPO,
+                resolve_assets_repo(self.config),
                 str(self.config.get("models_dir", "models")),
                 revision=_MODEL_REVISION,
                 allow_patterns=["vebench/ckpts/*.pth"],

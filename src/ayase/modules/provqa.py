@@ -51,7 +51,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # HuggingFace mirror of the upstream ProVQA checkpoint.
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_FILENAME = "provqa/net_g_26400.pth"
 
 # Hyperparameters from the upstream test config
@@ -567,7 +567,7 @@ def _load_model_definitions():
     return _MODEL_CLASS
 
 
-def _build_model(device):
+def _build_model(device, config=None):
     """Reconstruct BVQA360v240 and load the mirrored weights (strict).
 
     Handles the BasicSR ``{'params': state_dict}`` / ``{'params_ema': ...}``
@@ -576,6 +576,7 @@ def _build_model(device):
     """
     import torch
     from huggingface_hub import hf_hub_download
+    from ayase.config import resolve_assets_repo
 
     cls = _load_model_definitions()
     net = cls(
@@ -585,7 +586,9 @@ def _build_model(device):
         num_frame=_NUM_FRAME, fc_dim1=20,
     )
 
-    weights_path = hf_hub_download(repo_id=_HF_REPO, filename=_HF_FILENAME)
+    weights_path = hf_hub_download(
+        repo_id=resolve_assets_repo(config), filename=_HF_FILENAME
+    )
     ckpt = torch.load(weights_path, map_location="cpu", weights_only=True)
     sd = ckpt
     if isinstance(ckpt, dict):
@@ -630,7 +633,7 @@ class ProVQAModule(PipelineModule):
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            self._model = _build_model(self._device)
+            self._model = _build_model(self._device, self.config)
             self._backend = "real"
             self._ml_available = True
             logger.info("ProVQA loaded real model (%s) on %s", _HF_FILENAME, self._device)

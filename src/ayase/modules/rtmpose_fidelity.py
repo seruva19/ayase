@@ -41,7 +41,7 @@ KEYPOINT_CONF = 0.30
 
 # Weights are mirrored under <models_dir>/rtmpose_fidelity/ and fetched on first
 # use, matching the other weight-backed modules.
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _DET_REL = "rtmpose_fidelity/yolox_m.onnx"
 _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 
@@ -95,12 +95,16 @@ class RTMPoseFidelityModule(PipelineModule):
 
         # Fetch the ONNX weights from the ayase-models mirror on first use
         # (cached afterwards), same as the other weight-backed modules.
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
 
         models_dir = str(self.config.get("models_dir", "models"))
         try:
-            self._det_path = str(download_model_file(_DET_REL, _MODELS_BASE + _DET_REL, models_dir))
-            self._pose_path = str(download_model_file(_POSE_REL, _MODELS_BASE + _POSE_REL, models_dir))
+            self._det_path = str(download_model_file(
+                _DET_REL, resolve_assets_url(_MODELS_BASE + _DET_REL, self.config), models_dir
+            ))
+            self._pose_path = str(download_model_file(
+                _POSE_REL, resolve_assets_url(_MODELS_BASE + _POSE_REL, self.config), models_dir
+            ))
         except Exception as e:
             logger.warning("RTMPoseFidelity: could not fetch ONNX weights (%s); staying unavailable", e)
             return

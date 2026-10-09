@@ -42,7 +42,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_WEIGHTS = "simplevqa/Swin_b_384_in22k_SlowFast_Fast_LSVQ.pth"
 
 _SPATIAL_MEAN = (0.485, 0.456, 0.406)
@@ -76,7 +76,7 @@ def _remap_swin_state_dict(feat_sd: dict) -> dict:
     }
 
 
-def _build_model(device: str):
+def _build_model(device: str, config=None):
     """Reconstruct the SimpleVQA Swin+SlowFast-fast network and load weights.
 
     Returns ``(spatial_model, slowfast_model)`` both on ``device`` in eval mode.
@@ -87,6 +87,7 @@ def _build_model(device: str):
     import torch
     import torch.nn as nn
     from huggingface_hub import hf_hub_download
+    from ayase.config import resolve_assets_repo
     from pytorchvideo.models.hub import slowfast_r50
 
     class SimpleVQASwin(nn.Module):
@@ -139,7 +140,9 @@ def _build_model(device: str):
                 fast = self.adp_avg_pool(fast)
             return fast
 
-    weights_path = hf_hub_download(repo_id=_HF_REPO, filename=_HF_WEIGHTS)
+    weights_path = hf_hub_download(
+        repo_id=resolve_assets_repo(config), filename=_HF_WEIGHTS
+    )
     sd = torch.load(weights_path, map_location="cpu", weights_only=True)
     if "state_dict" in sd:
         sd = sd["state_dict"]
@@ -204,7 +207,7 @@ class SimpleVQAModule(PipelineModule):
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
-            self._model, self._slowfast = _build_model(self._device)
+            self._model, self._slowfast = _build_model(self._device, self.config)
             self._backend = "real"
             self._ml_available = True
             logger.info("SimpleVQA loaded real model (%s) on %s", _HF_WEIGHTS, self._device)

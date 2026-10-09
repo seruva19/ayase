@@ -230,7 +230,7 @@ class BodyMotionKinematicsModule(PipelineModule):
             "task": "single prominent-person detection",
             "auto_download": True,
             "url": (
-                "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+                "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
                 "rtmpose_fidelity/yolox_m.onnx"
             ),
             "notes": "Loaded through the shared ayase.pose backend",
@@ -241,7 +241,7 @@ class BodyMotionKinematicsModule(PipelineModule):
             "task": "COCO-17 2D pose estimation",
             "auto_download": True,
             "url": (
-                "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+                "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
                 "rtmpose_fidelity/rtmpose_m.onnx"
             ),
             "notes": "Loaded through the shared ayase.pose backend",
@@ -289,6 +289,7 @@ class BodyMotionKinematicsModule(PipelineModule):
         self._backend = load_pose_backend(
             device=self.config.get("device", "auto"),
             models_dir=self.config.get("models_dir", "models"),
+            config=self.config,
         )
         if self._backend is None:
             logger.warning("body_motion_kinematics: pose backend unavailable; metric disabled")

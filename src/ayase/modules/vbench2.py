@@ -28,9 +28,9 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-MIRROR_REPO = "AkaneTendo25/ayase-runtime-assets"
+MIRROR_REPO = "AkaneTendo25/ayase-assets"
 MIRROR_REVISION = "main"
-MIRROR_RESOLVE_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve"
+MIRROR_RESOLVE_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve"
 VBENCH_REVISION = "45e79ec14e69a2187202c675d2dbce1a71843d53"
 COTRACKER_REVISION = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d"
 #: Repositories the operator checks out; the mirror above holds only weights.
@@ -256,8 +256,10 @@ class VBench2Module(PipelineModule):
         return root
 
     def _mirror_url(self, path: str) -> str:
+        from ayase.config import resolve_assets_repo
+
         revision = quote(str(self.config.get("mirror_revision", MIRROR_REVISION)), safe="")
-        return f"{MIRROR_RESOLVE_BASE}/{revision}/{path}"
+        return f"https://huggingface.co/{resolve_assets_repo(self.config)}/resolve/{revision}/{path}"
 
     @staticmethod
     def _ensure_offline_gdown_compatibility() -> None:

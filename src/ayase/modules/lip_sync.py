@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Weights are mirrored under <models_dir>/lip_sync/ and fetched on first use,
 # matching the other weight-backed modules.
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _SYNCNET_REL = "lip_sync/syncnet_v2.model"
 _S3FD_REL = "lip_sync/sfd_face.pth"
 _S3FD_URL = "https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/sfd_face.pth"
@@ -220,10 +220,14 @@ class _CanonicalLipSyncModule(PipelineModule):
 
     def _fetch_weight(self, relative_path: str, url: str, expected_size: Optional[int]) -> Optional[Path]:
         import hashlib
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
 
         try:
-            path = download_model_file(relative_path, url, self.models_dir)
+            path = download_model_file(
+                relative_path,
+                resolve_assets_url(url, self.config),
+                self.models_dir,
+            )
         except Exception as exc:
             logger.warning("Lip Sync: could not fetch %s (%s)", relative_path, exc)
             return None

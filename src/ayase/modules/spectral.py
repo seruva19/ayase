@@ -20,7 +20,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _DINOV2_WEIGHTS = {
     "dinov2_vits14": "spectral/dinov2_vits14_pretrain.pth",
     "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
@@ -66,9 +66,11 @@ class SpectralComplexityModule(PipelineModule):
             relative_path = _DINOV2_WEIGHTS.get(self.model_type)
             if relative_path is None:
                 raise ValueError(f"Unsupported mirrored DINOv2 model: {self.model_type}")
+            from ayase.config import resolve_assets_url
+
             checkpoint = download_model_file(
                 relative_path,
-                _DINOV2_MIRROR_BASE + relative_path,
+                resolve_assets_url(_DINOV2_MIRROR_BASE + relative_path, self.config),
                 str(self.config.get("models_dir", "models")),
             )
             self._model = torch.hub.load(

@@ -14,7 +14,7 @@ that field-based metrics stay numerically consistent with ``flow_score``.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 import numpy as np
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # torchvision mirror for the RAFT-Large weights (shared with ``advanced_flow``).
 _RAFT_LARGE_MIRROR = (
     "raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+    "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
     "advanced_flow/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
 )
 
@@ -31,7 +31,11 @@ _RAFT_LARGE_MIRROR = (
 _MODELS: Dict[Tuple[str, str], Tuple[Any, Any]] = {}
 
 
-def load_raft_flow_model(device: str = "auto", models_dir: str = "models") -> Tuple[Any, Any, str]:
+def load_raft_flow_model(
+    device: str = "auto",
+    models_dir: str = "models",
+    config: Optional[Mapping[str, Any]] = None,
+) -> Tuple[Any, Any, str]:
     """Load and cache RAFT-Large plus its preprocessing transforms.
 
     Uses the Ayase weight mirror and device resolution, matching ``advanced_flow``.
@@ -45,27 +49,29 @@ def load_raft_flow_model(device: str = "auto", models_dir: str = "models") -> Tu
 
     from torchvision.models.optical_flow import Raft_Large_Weights, raft_large
 
-    from ayase.config import download_torch_hub_checkpoint
+    from ayase.config import download_torch_hub_checkpoint, resolve_assets_url
     from ayase.runtime import resolve_torch_device
 
     device_str = resolve_torch_device(device)
-    cached = _MODELS.get(("raft_large", device_str))
+    mirror_url = resolve_assets_url(_RAFT_LARGE_MIRROR[1], config)
+    cache_key = (f"raft_large:{mirror_url}", device_str)
+    cached = _MODELS.get(cache_key)
     if cached is not None:
         return cached[0], cached[1], device_str
 
     # Redirect torch.hub's checkpoint cache to models_dir, then prefetch from the
     # Ayase-controlled mirror (best effort; torchvision falls back to its own hub).
     os.environ.setdefault("TORCH_HOME", str(models_dir))
-    filename, url = _RAFT_LARGE_MIRROR
+    filename, _ = _RAFT_LARGE_MIRROR
     try:
-        download_torch_hub_checkpoint(filename, url, models_dir)
+        download_torch_hub_checkpoint(filename, mirror_url, models_dir)
     except Exception as exc:  # pylint: disable=broad-except
         logger.debug("RAFT mirror prefetch skipped (%s); using torchvision hub", exc)
 
     weights = Raft_Large_Weights.DEFAULT  # == Raft_Large_Weights.C_T_SKHT_V2
     model = raft_large(weights=weights, progress=False).to(device_str).eval()
     transforms = weights.transforms()
-    _MODELS[("raft_large", device_str)] = (model, transforms)
+    _MODELS[cache_key] = (model, transforms)
     logger.info("RAFT flow-field model ready on %s", device_str)
     return model, transforms, device_str
 
@@ -83,6 +89,7 @@ def raft_flow_field(
     *,
     device: str = "auto",
     models_dir: str = "models",
+    config: Optional[Mapping[str, Any]] = None,
 ) -> np.ndarray:
     """Dense RAFT optical flow ``(H, W, 2)`` between two RGB ``uint8`` frames.
 
@@ -106,7 +113,7 @@ def raft_flow_field(
     """
     import torch
 
-    model, transforms, device_str = load_raft_flow_model(device, models_dir)
+    model, transforms, device_str = load_raft_flow_model(device, models_dir, config)
 
     prev_c = _crop_to_multiple_of_8(prev_rgb)
     cur_c = _crop_to_multiple_of_8(cur_rgb)

@@ -125,6 +125,7 @@ class HeadPoseSimilarityModule(PipelineModule):
         self.min_samples = max(4, int(self.config.get("min_samples", 8)))
         self._extractor = BlendshapeExtractor(
             str(self.config.get("models_dir", "models")),
+            config=self.config,
             num_faces=max(1, int(self.config.get("num_faces", 1))),
             face_index=self.config.get("face_index"),
             output_facial_transformation_matrixes=True,

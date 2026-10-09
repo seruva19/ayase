@@ -119,6 +119,7 @@ class ExpressionFollowingModule(PipelineModule):
         self.face_index = self.config.get("face_index")
         self._extractor = BlendshapeExtractor(
             self.models_dir,
+            config=self.config,
             num_faces=self.num_faces,
             face_index=self.face_index,
             min_face_detection_confidence=float(

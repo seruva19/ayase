@@ -57,6 +57,7 @@ class PoseDriverFidelityModule(PipelineModule):
         self._backend = load_pose_backend(
             device=self.config.get("device", "auto"),
             models_dir=self.config.get("models_dir", "models"),
+            config=self.config,
         )
         if self._backend is None:
             logger.warning("pose_driver_fidelity: pose backend unavailable; metric disabled")

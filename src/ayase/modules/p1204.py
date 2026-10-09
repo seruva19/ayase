@@ -55,7 +55,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_MODEL_DIR = "p1204/models/p1204_3"
 _HF_CONFIG = _HF_MODEL_DIR + "/config.json"
 
@@ -270,8 +270,10 @@ class P1204Module(PipelineModule):
 
     def _load_model(self) -> None:
         from huggingface_hub import hf_hub_download
+        from ayase.config import resolve_assets_repo
 
-        config_path = hf_hub_download(repo_id=_HF_REPO, filename=_HF_CONFIG)
+        repo_id = resolve_assets_repo(self.config)
+        config_path = hf_hub_download(repo_id=repo_id, filename=_HF_CONFIG)
         with open(config_path) as fp:
             config = json.load(fp)
         device_cfg = config[self._device_key]
@@ -280,11 +282,11 @@ class P1204Module(PipelineModule):
         reg_name = device_cfg["rf"]  # e.g. mode3_pc_20trees_depth_8_reg.json
         fs_name = reg_name.replace("_reg.json", "_fs.json")
         reg_path = hf_hub_download(
-            repo_id=_HF_REPO, filename=f"{_HF_MODEL_DIR}/{reg_name}"
+            repo_id=repo_id, filename=f"{_HF_MODEL_DIR}/{reg_name}"
         )
         try:
             fs_path = hf_hub_download(
-                repo_id=_HF_REPO, filename=f"{_HF_MODEL_DIR}/{fs_name}"
+                repo_id=repo_id, filename=f"{_HF_MODEL_DIR}/{fs_name}"
             )
         except Exception:
             fs_path = None

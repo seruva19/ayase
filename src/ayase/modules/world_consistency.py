@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 # bypasses the mirror the rest of the pipeline already relies on. The architecture
 # still comes from the (reliable, cacheable) torch.hub repo code. Same file as
 # ``spectral`` uses, so the two modules share one download.
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _DINOV2_MIRROR_RELATIVE = "spectral/dinov2_vits14_pretrain.pth"
 
 
@@ -81,13 +81,15 @@ class WorldConsistencyModule(PipelineModule):
             import torch
             import torchvision.transforms as T
 
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
             from ayase.runtime import resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             checkpoint = download_model_file(
                 _DINOV2_MIRROR_RELATIVE,
-                _DINOV2_MIRROR_BASE + _DINOV2_MIRROR_RELATIVE,
+                resolve_assets_url(
+                    _DINOV2_MIRROR_BASE + _DINOV2_MIRROR_RELATIVE, self.config
+                ),
                 str(self.config.get("models_dir", "models")),
             )
             self._model = torch.hub.load(

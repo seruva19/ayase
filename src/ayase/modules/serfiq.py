@@ -30,9 +30,10 @@ cleanly reports ``_backend="unavailable"`` and leaves ``serfiq_score`` unset.
 serfiq_score -- higher = better quality (0-1)
 
 Backend requirements
-computation). Blocker: requires MXNet, which has no installable wheel on Windows/Python-3.10. To
-revive: on Linux, ``pip install mxnet insightface``; the module then auto-downloads
-AkaneTendo25/ayase-runtime-assets::serfiq/serfiq_model.zip and works. No code change needed.
+--------------------
+The backend requires MXNet and InsightFace. On supported Linux environments,
+install them with `pip install mxnet insightface`. Model weights are downloaded
+from AkaneTendo25/ayase-assets::serfiq/serfiq_model.zip.
 Source: https://github.com/pterhoer/FaceImageQuality
 """
 
@@ -49,7 +50,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # HuggingFace mirror of the upstream SER-FIQ dropout-ArcFace weights (MXNet).
-_WEIGHTS_REPO = "AkaneTendo25/ayase-runtime-assets"
+_WEIGHTS_REPO = "AkaneTendo25/ayase-assets"
 _WEIGHTS_FILE = "serfiq/serfiq_model.zip"
 _SYMBOL_NAME = "insightface-symbol.json"
 _PARAMS_NAME = "insightface-0000.params"
@@ -174,8 +175,11 @@ class SERFIQModule(PipelineModule):
         Returns ``(symbol_path, params_path)`` on the local filesystem.
         """
         from huggingface_hub import hf_hub_download
+        from ayase.config import resolve_assets_repo
 
-        zip_path = hf_hub_download(repo_id=_WEIGHTS_REPO, filename=_WEIGHTS_FILE)
+        zip_path = hf_hub_download(
+            repo_id=resolve_assets_repo(self.config), filename=_WEIGHTS_FILE
+        )
         extract_dir = os.path.join(os.path.dirname(zip_path), "serfiq_extracted")
         os.makedirs(extract_dir, exist_ok=True)
 

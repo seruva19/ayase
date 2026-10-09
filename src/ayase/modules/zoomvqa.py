@@ -26,7 +26,7 @@ module reports the direct fused output of the two real trained networks
 checkpoints -- no proxy or heuristic model is substituted.
 
 Real backend requires ``torch``, ``timm``, ``einops``, ``decord`` and the two
-released checkpoints (mirrored on HF ``AkaneTendo25/ayase-runtime-assets``). When any
+released checkpoints (mirrored on HF ``AkaneTendo25/ayase-assets``). When any
 are missing the metric is left ``None``.
 
 zoomvqa_score -- higher = better quality
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 IQA_WEIGHT = "zoomvqa/iqa_best_29epoch_checkpoint.pth.tar"
 VQA_WEIGHT = "zoomvqa/vqa_best_29e_val-vqpve_s.pth"
-HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+HF_REPO = "AkaneTendo25/ayase-assets"
 
 # ---------------------------------------------------------------------------
 # Vendored minimal model definitions (from github.com/k-zha14/Zoom-VQA).
@@ -715,8 +715,11 @@ class ZoomVQAModule(PipelineModule):
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         try:
-            iqa_path = hf_hub_download(repo_id=HF_REPO, filename=IQA_WEIGHT)
-            vqa_path = hf_hub_download(repo_id=HF_REPO, filename=VQA_WEIGHT)
+            from ayase.config import resolve_assets_repo
+
+            repo_id = resolve_assets_repo(self.config)
+            iqa_path = hf_hub_download(repo_id=repo_id, filename=IQA_WEIGHT)
+            vqa_path = hf_hub_download(repo_id=repo_id, filename=VQA_WEIGHT)
         except Exception as e:
             self._backend = "unavailable"
             logger.warning("Zoom-VQA unavailable: checkpoints not found (%s)", e)

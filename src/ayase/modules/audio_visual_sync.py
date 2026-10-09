@@ -53,7 +53,7 @@ class AudioVisualSyncModule(PipelineModule):
 
     _WEIGHTS_URLS = {
         "24-01-04T16-39-21.pt": (
-            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
             "synchformer/24-01-04T16-39-21.pt"
         ),
     }
@@ -72,10 +72,10 @@ class AudioVisualSyncModule(PipelineModule):
         if not url:
             return False
         try:
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
             download_model_file(
                 "24-01-04T16-39-21.pt",
-                url,
+                resolve_assets_url(url, self.config),
                 str(model_path),
             )
         except Exception as e:  # pylint: disable=broad-except
@@ -96,7 +96,7 @@ class AudioVisualSyncModule(PipelineModule):
                 self._backend = "unavailable"
                 logger.warning(
                     "Synchformer weights unavailable (cannot download from "
-                    "AkaneTendo25/ayase-runtime-assets HF mirror)"
+                    "AkaneTendo25/ayase-assets HF mirror)"
                 )
                 return
             self._syncformer = SyncformerInferencer(str(model_path))

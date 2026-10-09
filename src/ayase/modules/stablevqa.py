@@ -35,7 +35,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # HuggingFace mirror of the upstream StableVQA checkpoint.
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_FILENAME = "stablevqa/stablevqa_checkpoint.pth"
 
 # Frame preprocessing constants (upstream FusionDataset).
@@ -1049,7 +1049,11 @@ class StableVQAModule(PipelineModule):
             model = evaluator_cls()
             model.eval()
 
-            ckpt_path = hf_hub_download(repo_id=_HF_REPO, filename=_HF_FILENAME)
+            from ayase.config import resolve_assets_repo
+
+            ckpt_path = hf_hub_download(
+                repo_id=resolve_assets_repo(self.config), filename=_HF_FILENAME
+            )
             checkpoint = torch.load(ckpt_path, map_location="cpu", weights_only=False)
             state_dict = (
                 checkpoint["state_dict"]

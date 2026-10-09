@@ -62,7 +62,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # DINOv2 backbone weights (mirror, consistent with dino_face_identity/i2v_similarity).
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _DINOV2_WEIGHTS = {
     "dinov2_vitb14": "dino_face_identity/dinov2_vitb14_pretrain.pth",
 }
@@ -538,9 +538,13 @@ class OpenS2VModule(PipelineModule):
                 "facebookresearch/dinov2", model_name, pretrained=(rel is None)
             )
             if rel:
-                from ayase.config import download_model_file
+                from ayase.config import download_model_file, resolve_assets_url
 
-                ckpt = download_model_file(rel, _DINOV2_MIRROR_BASE + rel, models_dir)
+                ckpt = download_model_file(
+                    rel,
+                    resolve_assets_url(_DINOV2_MIRROR_BASE + rel, self.config),
+                    models_dir,
+                )
                 model.load_state_dict(torch.load(str(ckpt), map_location="cpu"))
             model.eval().to(self._device)
 

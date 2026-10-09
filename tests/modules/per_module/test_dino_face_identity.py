@@ -108,7 +108,7 @@ def test_default_repo_reference_is_preserved(monkeypatch, tmp_path):
     assert download_calls == [
         (
             "dino_face_identity/dinov2_vitb14_pretrain.pth",
-            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
             "dino_face_identity/dinov2_vitb14_pretrain.pth",
             "models",
         )
@@ -126,7 +126,7 @@ def test_model_metadata_distinguishes_architecture_pin_from_default_weights():
         "id": "dino_face_identity/dinov2_vitb14_pretrain.pth",
         "type": "local",
         "url": (
-            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
             "dino_face_identity/dinov2_vitb14_pretrain.pth"
         ),
         "task": "Default dinov2_vitb14 checkpoint weights",

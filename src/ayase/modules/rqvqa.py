@@ -21,14 +21,14 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from ayase.config import download_model_file
+from ayase.config import download_model_file, resolve_assets_url
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
-_HF_ROOT = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main"
+_HF_REPO = "AkaneTendo25/ayase-assets"
+_HF_ROOT = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main"
 
 # The best published fold comes first, so ensemble_size=1 remains a genuine,
 # useful RQ-VQA model. With the default ensemble_size=10, ordering is immaterial.
@@ -398,15 +398,21 @@ class RQVQAModule(PipelineModule):
 
             checkpoint_paths = [
                 download_model_file(
-                    f"rqvqa/{name}", f"{_HF_ROOT}/rqvqa/{name}", models_dir
+                    f"rqvqa/{name}",
+                    resolve_assets_url(f"{_HF_ROOT}/rqvqa/{name}", self.config),
+                    models_dir,
                 )
                 for name in _CHECKPOINTS[:self.ensemble_size]
             ]
             liqe_path = download_model_file(
-                f"rqvqa/{_LIQE_FILE}", f"{_HF_ROOT}/rqvqa/{_LIQE_FILE}", models_dir
+                f"rqvqa/{_LIQE_FILE}",
+                resolve_assets_url(f"{_HF_ROOT}/rqvqa/{_LIQE_FILE}", self.config),
+                models_dir,
             )
             slowfast_path = download_model_file(
-                f"rqvqa/{_SLOWFAST_FILE}", f"{_HF_ROOT}/rqvqa/{_SLOWFAST_FILE}", models_dir
+                f"rqvqa/{_SLOWFAST_FILE}",
+                resolve_assets_url(f"{_HF_ROOT}/rqvqa/{_SLOWFAST_FILE}", self.config),
+                models_dir,
             )
 
             self._models = [

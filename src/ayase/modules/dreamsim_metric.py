@@ -134,7 +134,7 @@ class DreamSimModule(PipelineModule):
     # networks (and bypasses the mirror the rest of the pipeline relies on). Pre-place it
     # from the ayase-models HF mirror into torch.hub's checkpoints dir so DreamSim loads
     # it offline. Original: https://dl.fbaipublicfiles.com/dino/dino_vitbase16_pretrain/dino_vitbase16_pretrain.pth
-    _DINO_MIRROR_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dreamsim/dino_vitbase16_pretrain.pth"
+    _DINO_MIRROR_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dreamsim/dino_vitbase16_pretrain.pth"
     _DINO_FILENAME = "dino_vitbase16_pretrain.pth"
 
     def _ensure_dino_cached(self) -> None:
@@ -148,11 +148,11 @@ class DreamSimModule(PipelineModule):
             return
         os.makedirs(cache_dir, exist_ok=True)
         logger.info("Pre-caching base DINO backbone for DreamSim from the ayase mirror...")
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
 
         tmp = download_model_file(
             os.path.join("hub", "checkpoints", self._DINO_FILENAME),
-            self._DINO_MIRROR_URL,
+            resolve_assets_url(self._DINO_MIRROR_URL, self.config),
             os.path.dirname(hub_dir),  # parent of hub dir
         )
         # Move to torch cache if downloaded elsewhere

@@ -22,7 +22,7 @@ RetinaFace, so detection is retried once on a replicate-padded copy (``pad_retry
 Backends:
     - Face detection: InsightFace (buffalo_l)
     - Embedding: DINOv2 ViT-B/14 (facebookresearch/dinov2 architecture; weights from
-      the ayase-runtime-assets HF mirror)
+      the ayase-assets HF mirror)
 
 Set ``repo_revision`` to a full 40-character Git commit to pin the torch.hub
 architecture code only. It does not pin the separately downloaded checkpoint.
@@ -44,11 +44,11 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# DINOv2 backbone weights are fetched from the ayase-runtime-assets HF mirror rather than
+# DINOv2 backbone weights are fetched from the ayase-assets HF mirror rather than
 # the torch.hub entrypoint's fbaipublicfiles original, which is unreliable on some
 # networks (and bypasses the mirror the rest of the pipeline already relies on).
 # The architecture still comes from the (reliable, cacheable) torch.hub repo code.
-_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_DINOV2_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 # Only sizes actually rehosted on the mirror; any other ``model_name`` falls back to
 # the torch.hub pretrained path (upstream fbaipublicfiles).
 _DINOV2_WEIGHTS = {
@@ -69,7 +69,7 @@ class DINOFaceIdentityModule(PipelineModule):
         {
             "id": "dino_face_identity/dinov2_vitb14_pretrain.pth",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth",
             "task": "Default dinov2_vitb14 checkpoint weights",
             "notes": "Downloaded from the mutable main revision; repo_revision does not pin this artifact.",
         },
@@ -120,7 +120,7 @@ class DINOFaceIdentityModule(PipelineModule):
         self._device = resolve_torch_device(self.config.get("device", "auto"))
 
         # Load DINOv2. The architecture comes from the torch.hub repo code; the
-        # weights come from the ayase-runtime-assets HF mirror (reliable and consistent with
+        # weights come from the ayase-assets HF mirror (reliable and consistent with
         # the rest of the pipeline) instead of the torch.hub fbaipublicfiles original.
         try:
             repo_ref = self._repo_ref()
@@ -131,7 +131,13 @@ class DINOFaceIdentityModule(PipelineModule):
                 self._dino = torch.hub.load(
                     repo_ref, self.model_name, pretrained=False
                 )
-                ckpt = download_model_file(rel, _DINOV2_MIRROR_BASE + rel, self.models_dir)
+                from ayase.config import resolve_assets_url
+
+                ckpt = download_model_file(
+                    rel,
+                    resolve_assets_url(_DINOV2_MIRROR_BASE + rel, self.config),
+                    self.models_dir,
+                )
                 self._dino.load_state_dict(torch.load(str(ckpt), map_location="cpu"))
             else:
                 self._dino = torch.hub.load(repo_ref, self.model_name)
