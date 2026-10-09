@@ -31,6 +31,7 @@ class SubjectConsistencyModule(PipelineModule):
 
     default_config = {
         "model_name": "facebook/dino-vitb16",
+        "revision": None,
         "max_frames": 0,
         "warning_threshold": 0.6,
     }
@@ -44,6 +45,7 @@ class SubjectConsistencyModule(PipelineModule):
         # value is an explicit non-default sampling cap.
         self.max_frames = self.config.get("max_frames", 0)
         self.warning_threshold = self.config.get("warning_threshold", 0.6)
+        self.revision = self.config.get("revision")
         self._model = None
         self._processor = None
         self._device = "cpu"
@@ -62,10 +64,13 @@ class SubjectConsistencyModule(PipelineModule):
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             model_name = self.config.get("model_name", "facebook/dino-vitb16")
             models_dir = self.config.get("models_dir", "models")
+            revision_kwargs = self._revision_kwargs()
             logger.info(f"Loading {model_name} on {self._device}...")
 
             def load_dino():
-                processor = AutoImageProcessor.from_pretrained(model_name, cache_dir=models_dir)
+                processor = AutoImageProcessor.from_pretrained(
+                    model_name, cache_dir=models_dir, **revision_kwargs
+                )
                 model = from_pretrained_with_attention(
                     AutoModel,
                     model_name,
@@ -73,18 +78,22 @@ class SubjectConsistencyModule(PipelineModule):
                     device=self._device,
                     cache_dir=models_dir,
                     use_safetensors=True,
+                    **revision_kwargs,
                 ).to(self._device).eval()
                 return model, processor
 
+            resource_key = (
+                "hf_vision",
+                model_name,
+                self._device,
+                str(self.config.get("attention_backend", "auto")),
+                "safetensors",
+            )
+            if revision_kwargs:
+                resource_key += ("revision", revision_kwargs["revision"])
             self._model, self._processor = shared_runtime_resource(
                 self,
-                (
-                    "hf_vision",
-                    model_name,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "safetensors",
-                ),
+                resource_key,
                 load_dino,
             )
             self._ml_available = True
@@ -93,6 +102,17 @@ class SubjectConsistencyModule(PipelineModule):
             logger.warning("Transformers/Torch not installed. DINO checks disabled.")
         except Exception as e:
             logger.error(f"Failed to load DINO ViT-B/16: {e}")
+
+    def _revision_kwargs(self) -> dict:
+        """Return a validated optional Hugging Face revision argument."""
+        if self.revision is None:
+            return {}
+        if not isinstance(self.revision, str):
+            raise ValueError("revision must be a string or None")
+        revision = self.revision.strip()
+        if not revision or len(revision) > 256:
+            raise ValueError("revision must be a non-empty string of at most 256 characters")
+        return {"revision": revision}
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available or not sample.is_video:

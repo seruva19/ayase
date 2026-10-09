@@ -1,10 +1,13 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.81** · Generated 2026-10-08 12:52 · **384 modules** · **565 metrics**
+> **Version 0.1.82** · Generated 2026-10-09 09:50 · **384 modules** · **565 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
 > Tests: **376/384 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+
+> [!NOTE]
+> Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
@@ -271,7 +274,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `warning_threshold=0.4`
 
 ### `evoquality_score` [↑](#categories)
-> EvoQuality self-evolving VLM NR-IQA (1-5, higher=better) · ↑ higher=better · 1-5
+> ↑ higher=better · 1-5
 
 **[`evoquality`](src/ayase/modules/evoquality.py)** — EvoQuality self-evolving VLM no-reference quality rating
 
@@ -1167,7 +1170,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=8`
 
 ### `cvvdp_ml_saliency_score` [↑](#categories)
-> Saliency-weighted ColorVideoVDP JOD (max 10) · ↑ higher=better
+> Saliency-weighted ColorVideoVDP JOD (max 10) · ↑ higher=better · 10=reference quality; can be negative
 
 **[`cvvdp_ml_saliency`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score
 
@@ -1178,7 +1181,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `display_name=standard_fhd`, `device=auto`
 
 ### `cvvdp_ml_transformer_score` [↑](#categories)
-> Learned ColorVideoVDP JOD (max 10) · ↑ higher=better
+> Learned ColorVideoVDP JOD (max 10) · ↑ higher=better · 10=reference quality; can be negative
 
 **[`cvvdp_ml_transformer`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score
 
@@ -1191,7 +1194,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `display_name=standard_fhd`, `device=auto`
 
 ### `cvvdp_score` [↑](#categories)
-> ColorVideoVDP quality in JOD units (max 10) · ↓ lower=better · 10=reference quality, lower=worse; can be negative
+> ColorVideoVDP quality in JOD units (max 10) · ↑ higher=better · 10=reference quality; can be negative
 
 **[`cvvdp`](src/ayase/modules/cvvdp.py)** — ColorVideoVDP display-aware color image/video FR quality
 
@@ -1428,7 +1431,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `dinov2_model=facebook/dino-vits16`, `clip_model=openai/clip-vit-base-patch32`, `siglip_model=google/siglip-base-patch16-224`, `device=auto`
 
 ### `image_lpips` [↑](#categories)
-> LPIPS perceptual distance vs reference (0-1, lower=more similar) · ↓ lower=better
+> ↓ lower=better
 
 **[`image_lpips`](src/ayase/modules/image_lpips.py)** — LPIPS perceptual distance between image pairs and diversity metric
 
@@ -1462,7 +1465,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: MAD (Larson & Chandler, 2010) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
 - **Source**: <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_mad.py`](tests/modules/per_module/test_mad.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Tests**: covered by [`test_mad.py`](tests/modules/per_module/test_mad.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +1 more
 - **Config**: `subsample=8`
 
 ### `ms_ssim` [↑](#categories)
@@ -1513,7 +1516,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: NLPD (Laparra et al., 2016) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
 - **Source**: <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_nlpd.py`](tests/modules/per_module/test_nlpd.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Tests**: covered by [`test_nlpd.py`](tests/modules/per_module/test_nlpd.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +1 more
 - **Config**: `subsample=8`
 
 ### `pc_d1_psnr` [↑](#categories)
@@ -1553,7 +1556,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`, `ratio_epsilon=1e-08`
 
 ### `physics_iq_neutral_score` [↑](#categories)
-> Combined Physics-IQ score (0-100, higher=better) · ↑ higher=better · 0-100
+> ↑ higher=better · 0-100
 
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
@@ -1577,7 +1580,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`, `ratio_epsilon=1e-08`
 
 ### `physics_iq_spatiotemporal_iou` [↑](#categories)
-> Spatiotemporal IoU vs real continuation (0-1) · 0-1
+> 0-1
 
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
@@ -1649,7 +1652,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `motion_threshold=10`, `accumulate_alpha=0.3`, `gaussian_kernel=5`, `morph_kernel=5`, `mask_binarize_threshold=127`, `downscale_factor=4`, `max_frames=0`, `min_frames=2`, `ratio_epsilon=1e-08`
 
 ### `physics_iq_weighted_spatial_iou` [↑](#categories)
-> Weighted spatial IoU vs real continuation (0-1) · 0-1
+> 0-1
 
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
@@ -1674,7 +1677,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=8`
 
 ### `pose_heat_ssim` [↑](#categories)
-> Aligned 133-joint pose-heatmap SSIM (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`pose_heat_ssim`](src/ayase/modules/pose_heat_ssim.py)** — PoseHeat-SSIM against an aligned reference (0-1, higher=better)
 
@@ -1686,7 +1689,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `confidence_threshold=0.3`, `sigma=4.0`, `min_joints=3`, `person_match_frac=0.25`, `min_matched_frames=1`, `fps_tolerance=0.001`
 
 ### `pose_heat_ssim_coverage` [↑](#categories)
-> Share of corresponding frames with one valid pose in both clips (0-1) · 0-1
+> 0-1
 
 **[`pose_heat_ssim`](src/ayase/modules/pose_heat_ssim.py)** — PoseHeat-SSIM against an aligned reference (0-1, higher=better)
 
@@ -2044,7 +2047,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model_name=Salesforce/blip-itm-large-coco`, `max_frames=8`, `warning_threshold=0.4`, `device=auto`
 
 ### `clip_image_similarity` [↑](#categories)
-> CLIP image-to-image cosine similarity vs reference (0-1, higher=better) · ↑ higher=better · 0-1, higher = closer match
+> ↑ higher=better · 0-1, higher = closer match
 
 **[`clip_image_similarity`](src/ayase/modules/clip_image_similarity.py)** — CLIP image-to-image cosine similarity vs reference image (CLIP-I)
 
@@ -2299,7 +2302,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model_name=ImageReward-v1.0`, `num_frames=5`, `warning_threshold=0.0`
 
 ### `imagebind_av_score` [↑](#categories)
-> Raw ImageBind audio-video semantic cosine (-1..1, higher=better) · ↑ higher=better · -1 to 1 theoretical; higher=greater semantic correspondence, not synchronization
+> ↑ higher=better · -1 to 1 theoretical; higher=greater semantic correspondence, not synchronization
 
 **[`imagebind_score`](src/ayase/modules/imagebind_score.py)** — ImageBind audio-text and audio-video semantic cosine similarities
 
@@ -2323,7 +2326,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py)
 
 ### `masc_concept_preservation` [↑](#categories)
-> MaSC masked-maxcos concept preservation (higher=better) · ↑ higher=better · -1 to 1
+> ↑ higher=better · -1 to 1
 
 **[`masc`](src/ayase/modules/masc.py)** — MaSC masked-maxcos concept preservation similarity
 
@@ -2373,7 +2376,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py)
 
 ### `pickscore_score` [↑](#categories)
-> PickScore prompt-image preference score (higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`pickscore`](src/ayase/modules/pickscore.py)** — PickScore prompt-conditioned human preference scoring (frame-averaged on video)
 
@@ -2633,7 +2636,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model_name=TIGER-Lab/VideoScore`, `num_frames=16`, `trust_remote_code=True`
 
 ### `vision_reward_score` [↑](#categories)
-> VisionReward weighted judgment score (higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`vision_reward`](src/ayase/modules/vision_reward.py)** — VisionReward fine-grained QA-decomposed human preference reward (CogVLM2-Video judgment questions, linearly weighted) — AAAI 2026
 
@@ -2718,7 +2721,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `hist_bins=256`
 
 ### `chronomagic_ch_score` [↑](#categories)
-> CHScore = 1/TSI_sum (unbounded, higher=more coherent) · ↑ higher=better · unbounded, higher=more coherent
+> ↑ higher=better
 
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore (InternVideo2) + CHScore (CoTracker2)
 
@@ -2878,27 +2881,27 @@ Default selections allow `published` and `utility`; explicit module selection op
 ### `lse_c` [↑](#categories)
 > LSE-C lip sync error confidence (higher=better) · ↑ higher=better
 
-**[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet, reference-free; no dataset required)
+**[`lip_sync`](src/ayase/modules/lip_sync.py)** — Adapted LSE-D/LSE-C lip-sync scores using SyncNet with bundled VERSE-Bench face preparation
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: syncnet
-- **Provenance**: `published` — source: LSE-C/LSE-D on SyncNet (Chung & Zisserman 2016; Wav2Lip protocol) — https://github.com/joonson/syncnet_python
+- **Provenance**: `adapted` — Bundled VERSE-Bench preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages confidence across retained segments. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python
 - **Packages**: syncnet
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `device=auto`
 
 ### `lse_d` [↑](#categories)
 > LSE-D lip sync error distance (lower=better) · ↓ lower=better
 
-**[`lip_sync`](src/ayase/modules/lip_sync.py)** — LSE-D/LSE-C lip sync error (SyncNet, reference-free; no dataset required)
+**[`lip_sync`](src/ayase/modules/lip_sync.py)** — Adapted LSE-D/LSE-C lip-sync scores using SyncNet with bundled VERSE-Bench face preparation
 
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: syncnet
-- **Provenance**: `published` — source: LSE-C/LSE-D on SyncNet (Chung & Zisserman 2016; Wav2Lip protocol) — https://github.com/joonson/syncnet_python
+- **Provenance**: `adapted` — Bundled VERSE-Bench preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages distance vectors across retained segments before taking their minimum. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python
 - **Packages**: syncnet
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `device=auto`
 
 ### `mj_video_coherence_score` [↑](#categories)
@@ -2915,7 +2918,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model_name=MJ-Bench/MJ-VIDEO-2B`, `tokenizer_base_url=https://huggingface.co/internlm/internlm2-chat-1_8b/resolve`, `tokenizer_revision=main`, `num_segments=8`, `max_new_tokens=1024`, `do_sample=True`, `gating_temperature=1.0`, `gating_hidden_dim=1024`, `gating_n_hidden=3`
 
 ### `object_permanence_border_exit` [↑](#categories)
-> Tracks that ended at the frame border (a legitimate exit)
 
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
@@ -2927,7 +2929,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `backend=auto`, `subsample=2`, `max_frames=300`, `match_distance=80.0`, `warning_threshold=50.0`, `border_margin=0.02`
 
 ### `object_permanence_interior_vanish` [↑](#categories)
-> Tracks that ended away from the frame border (disappearance, not exit)
 
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
@@ -2939,7 +2940,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `backend=auto`, `subsample=2`, `max_frames=300`, `match_distance=80.0`, `warning_threshold=50.0`, `border_margin=0.02`
 
 ### `object_permanence_occlusion_share` [↑](#categories)
-> Share of frames with overlapping boxes; how far the two counts above can be trusted
 
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
@@ -3141,7 +3141,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `sigma=3.0`
 
 ### `beat_consistency` [↑](#categories)
-> Beat Consistency, audio/gesture beat kernel (BEAT; 0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`beat_consistency`](src/ayase/modules/beat_consistency.py)** — Beat Consistency — audio/gesture beat kernel (BEAT, EMAGE)
 
@@ -3154,7 +3154,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `sigma=0.1`, `fps=0.0`, `max_frames=1200`
 
 ### `body_motion_acceleration_ratio` [↑](#categories)
-> Median normalized joint acceleration, sample/reference (1.0 = equal)
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3165,7 +3164,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_arm_coverage` [↑](#categories)
-> Minimum generated/reference coverage with at least one complete arm chain (0-1, higher=more observable) · 0-1, higher=more observable
+> 0-1, higher=more observable
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3176,7 +3175,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_idle_fraction_difference` [↑](#categories)
-> Absolute low-speed frame-fraction difference (0-1, lower=closer)
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3187,7 +3185,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_jerk_ratio` [↑](#categories)
-> Median normalized joint jerk, sample/reference (1.0 = equal)
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3198,7 +3195,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_left_right_symmetry_difference` [↑](#categories)
-> Absolute left/right motion-balance difference (0-1, lower=closer)
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3209,7 +3205,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_pose_coverage` [↑](#categories)
-> Minimum generated/reference usable-pose coverage (0-1, higher=more observable) · 0-1, higher=more observable
+> 0-1, higher=more observable
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3220,7 +3216,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_range_ratio` [↑](#categories)
-> Median joint trajectory range, sample/reference (1.0 = equal)
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3231,7 +3226,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_derivative_samples=8`, `idle_speed_threshold=0.05`
 
 ### `body_motion_speed_ratio` [↑](#categories)
-> Median normalized joint speed, sample/reference (1.0 = equal)
 
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
@@ -3254,7 +3248,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=16`
 
 ### `camera_motion_class_confidence` [↑](#categories)
-> Confidence of predicted camera-motion class (0-1)
 
 **[`camerabench`](src/ayase/modules/camerabench.py)** — CameraBench camera-motion taxonomy classification via the fine-tuned Qwen2.5-VL model (chancharikm/qwen2.5-vl-7b-cam-motion)
 
@@ -3277,7 +3270,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_camera_motion.py`](tests/modules/per_module/test_camera_motion.py)
 
 ### `camera_rot_error` [↑](#categories)
-> RotErr: rotation error vs target trajectory (deg, lower=better) · ↓ lower=better · lower is better
+> ↓ lower=better · lower is better
 
 **[`camera_trajectory`](src/ayase/modules/camera_trajectory.py)** — CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP pose re-estimation against a target trajectory
 
@@ -3290,7 +3283,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `num_frames=0`, `trajectory_key=camera_trajectory`, `trajectory_suffix=.camera.json`, `pose_backend=auto`, `model_id=facebook/VGGT-1B`, `sfm_timeout=600`
 
 ### `camera_traj_consistency` [↑](#categories)
-> CamMC: camera motion consistency (lower=better) · ↓ lower=better · lower is better
+> ↓ lower=better · lower is better
 
 **[`camera_trajectory`](src/ayase/modules/camera_trajectory.py)** — CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP pose re-estimation against a target trajectory
 
@@ -3303,7 +3296,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `num_frames=0`, `trajectory_key=camera_trajectory`, `trajectory_suffix=.camera.json`, `pose_backend=auto`, `model_id=facebook/VGGT-1B`, `sfm_timeout=600`
 
 ### `camera_trans_error` [↑](#categories)
-> TransErr: translation error vs target trajectory (lower=better) · ↓ lower=better · lower is better
+> ↓ lower=better · lower is better
 
 **[`camera_trajectory`](src/ayase/modules/camera_trajectory.py)** — CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP pose re-estimation against a target trajectory
 
@@ -3365,7 +3358,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `max_frames=0`, `max_resolution=0`
 
 ### `hand_gesture_articulation_amplitude_difference` [↑](#categories)
-> Finger-straightness p90-p10 span difference (0-1, 0=equal) · 0=equal; range 0-1
+> 0=equal; range 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3377,7 +3370,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_articulation_location_difference` [↑](#categories)
-> Median finger-straightness difference (0-1, 0=equal) · 0=equal; range 0-1
+> 0=equal; range 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3389,7 +3382,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_articulation_speed_difference` [↑](#categories)
-> Median normalized hand-shape speed difference per second (0=equal)
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3401,7 +3393,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_left_right_asymmetry_difference` [↑](#categories)
-> Normalized left/right shape-speed asymmetry difference (0-1, 0=equal) · 0=equal; range 0-1
+> 0=equal; range 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3413,7 +3405,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_openness_amplitude_difference` [↑](#categories)
-> Palm-normalized openness span difference (0=equal)
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3425,7 +3416,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_openness_location_difference` [↑](#categories)
-> Median palm-normalized openness difference (0=equal)
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3437,7 +3427,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_pinch_amplitude_difference` [↑](#categories)
-> Palm-normalized pinch span difference (0=equal) · ↓ lower=better
+> ↓ lower=better
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3449,7 +3439,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_pinch_location_difference` [↑](#categories)
-> Median palm-normalized thumb-index distance difference (0=equal) · ↓ lower=better
+> ↓ lower=better
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3461,7 +3451,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_reference_coverage` [↑](#categories)
-> Reference frames with at least one normalizable hand (0-1) · 0-1
+> 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3473,7 +3463,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_reference_joint_observability` [↑](#categories)
-> Confident reference hand joints among 42 per sampled frame (0-1) · 0-1
+> 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3485,7 +3475,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_sample_coverage` [↑](#categories)
-> Sample frames with at least one normalizable hand (0-1) · 0-1
+> 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3497,7 +3487,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `hand_gesture_sample_joint_observability` [↑](#categories)
-> Confident sample hand joints among 42 per sampled frame (0-1) · 0-1
+> 0-1
 
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
@@ -3509,7 +3499,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=64`, `min_conf=0.3`, `min_palm_points=3`, `min_samples=4`, `min_speed_samples=3`, `min_velocity_joints=8`
 
 ### `head_motion_dynamics_score` [↑](#categories)
-> THEval pose/translation complexity (higher=more dynamic) · ↑ higher=better · higher=more dynamic
+> ↑ higher=better · higher=more dynamic
 
 **[`head_motion_dynamics`](src/ayase/modules/head_motion_dynamics.py)** — THEval pose/derivative/translation head-motion complexity
 
@@ -3521,7 +3511,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `num_faces=1`
 
 ### `head_pose_angle_agreement` [↑](#categories)
-> Agreement of the head-angle distributions; carries camera placement (0-1) · 0-1, carries camera placement
+> 0-1, carries camera placement
 
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
@@ -3532,7 +3522,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
 
 ### `head_pose_rate_agreement` [↑](#categories)
-> Agreement of the angular-rate distributions; survives a change of camera (0-1) · 0-1, survives a change of camera
+> 0-1, survives a change of camera
 
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
@@ -3543,7 +3533,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
 
 ### `head_pose_similarity` [↑](#categories)
-> Head-motion manner similarity to a reference clip, no time alignment (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
@@ -3554,7 +3544,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `stride=3`, `min_samples=8`, `num_faces=1`
 
 ### `head_pose_similarity_coverage` [↑](#categories)
-> Lower of the two per-clip shares of sampled frames with a head pose (0-1) · ↓ lower=better · 0-1
+> ↓ lower=better · 0-1
 
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
@@ -3611,7 +3601,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `amplitude_threshold=5.0`, `max_frames=0`, `max_resolution=0`
 
 ### `motion_manner_amplitude_ratio` [↑](#categories)
-> Speed spread of the sample over the reference (1.0 = equal)
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3622,7 +3611,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_manner_arm_agreement` [↑](#categories)
-> Arm-keypoint speed-distribution agreement; unset when the wrists are out of frame (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3633,7 +3621,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_manner_arm_coverage` [↑](#categories)
-> Lower of the two per-clip shares of moments with a visible wrist (0-1) · ↓ lower=better · 0-1
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3644,7 +3631,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_manner_coverage` [↑](#categories)
-> Lower of the two per-clip shares of moments with a detected person (0-1) · ↓ lower=better · 0-1
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3655,7 +3641,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_manner_head_agreement` [↑](#categories)
-> Head-keypoint speed-distribution agreement (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3666,7 +3651,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_manner_similarity` [↑](#categories)
-> Movement-manner similarity to a reference clip, no time alignment (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3677,7 +3662,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=48`, `min_conf=0.3`, `min_speeds=8`, `arm_coverage_floor=0.25`
 
 ### `motion_manner_speed_agreement` [↑](#categories)
-> Whole-body speed-distribution agreement with the reference (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
@@ -3761,7 +3745,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=16`
 
 ### `pose_driver_fidelity` [↑](#categories)
-> Body-pose fidelity to a driving video, PCK over normalised skeletons (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better
 
 **[`pose_driver_fidelity`](src/ayase/modules/pose_driver_fidelity.py)** — Body-pose fidelity to a driving video (PCK over normalised skeletons)
 
@@ -3772,7 +3756,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=16`, `alpha=0.2`, `min_conf=0.3`
 
 ### `pose_driver_fidelity_coverage` [↑](#categories)
-> Share of compared moments where both skeletons were found (0-1) · ↑ higher=better · 0-1
+> ↑ higher=better
 
 **[`pose_driver_fidelity`](src/ayase/modules/pose_driver_fidelity.py)** — Body-pose fidelity to a driving video (PCK over normalised skeletons)
 
@@ -3783,7 +3767,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device=auto`, `moments=16`, `alpha=0.2`, `min_conf=0.3`
 
 ### `pose_driver_fidelity_min` [↑](#categories)
-> Worst matched moment of the same measure (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better
 
 **[`pose_driver_fidelity`](src/ayase/modules/pose_driver_fidelity.py)** — Body-pose fidelity to a driving video (PCK over normalised skeletons)
 
@@ -3828,7 +3812,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_result_adapters.py`](tests/modules/per_module/test_result_adapters.py)
 
 ### `rtmpose_score` [↑](#categories)
-> RTMPose keypoint-confidence pose plausibility (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`rtmpose_fidelity`](src/ayase/modules/rtmpose_fidelity.py)** — RTMPose keypoint-confidence pose/gesture plausibility (rtmlib, local ONNX; 0-1, higher=better)
 
@@ -3887,7 +3871,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `max_frames=150`, `resize=256`, `num_points=4096`, `num_support_tracks=2048`, `num_target_tracks=2048`, `query_chunk_size=32`, `seed=0`
 
 ### `video_edit_motion_fidelity` [↑](#categories)
-> Source/edit trajectory-motion similarity (higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`video_edit_motion_fidelity`](src/ayase/modules/video_edit_motion_fidelity.py)** — MTBench dense-trajectory motion similarity between source and edited video
 
@@ -3980,7 +3964,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `fps=25`, `max_frames=600`, `visibility_threshold=0.5`, `pck_threshold=0.1`
 
 ### `mpjpe` [↑](#categories)
-> MPJPE, mean per-joint position error vs source (Ginosar 2019; lower=better) · ↓ lower=better
+> ↓ lower=better
 
 **[`pose_fidelity`](src/ayase/modules/pose_fidelity.py)** — AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source
 
@@ -3993,7 +3977,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `fps=25`, `max_frames=600`, `visibility_threshold=0.5`, `pck_threshold=0.1`
 
 ### `pck` [↑](#categories)
-> PCK, fraction of joints within threshold of source pose (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`pose_fidelity`](src/ayase/modules/pose_fidelity.py)** — AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source
 
@@ -4064,7 +4048,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `threshold_cpbd=0.65`, `max_frames=8`
 
 ### `grid_layout_score` [↑](#categories)
-> Split-screen/grid-collage likelihood (0-1, higher=more likely) · ↑ higher=better · 0-1, higher=more likely
+> ↑ higher=better · 0-1, higher=more likely
 
 **[`grid_layout`](src/ayase/modules/grid_layout.py)** — Split-screen/grid-collage detector (0-1, higher=more likely a grid)
 
@@ -4075,7 +4059,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=4`, `border_threshold=16`, `warn_threshold=0.5`
 
 ### `imaging_artifacts_score` [↑](#categories)
-> Imaging edge-density artifacts (0-1, higher=cleaner) · ↑ higher=better · 0-1, higher=cleaner
+> ↑ higher=better
 
 **[`imaging_quality`](src/ayase/modules/imaging_quality.py)** — Classical noise/edge/artifact estimation (Immerkaer sigma, edge density, FFT)
 
@@ -4113,7 +4097,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `threshold=16`, `subsample=4`
 
 ### `overexposed_pixel_ratio` [↑](#categories)
-> Share of gray pixels > 240 (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms
 
@@ -4168,7 +4151,6 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `low_percentile=1`, `high_percentile=99`, `subsample=8`
 
 ### `underexposed_pixel_ratio` [↑](#categories)
-> Share of gray pixels < 15 (0-1, lower=better) · ↓ lower=better · 0-1
 
 **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms
 
@@ -4355,7 +4337,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ## Audio Quality (75 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
-> Lip-sync confidence of the best-synced face (higher=better) · ↑ higher=better
 
 **[`active_speaker`](src/ayase/modules/active_speaker.py)** — Lip-sync separation between faces: is exactly one mouth in sync
 
@@ -4366,7 +4347,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_faces=3`, `crop_size=256`, `crop_pad=0.8`, `fps=25`
 
 ### `active_speaker_margin` [↑](#categories)
-> Lip-sync confidence gap between the best-synced face and the runner-up (higher=cleaner) · higher=cleaner
 
 **[`active_speaker`](src/ayase/modules/active_speaker.py)** — Lip-sync separation between faces: is exactly one mouth in sync
 
@@ -4377,7 +4357,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_faces=3`, `crop_size=256`, `crop_pad=0.8`, `fps=25`
 
 ### `active_speaker_silent_faces` [↑](#categories)
-> Faces for which no talking mouth was detected
 
 **[`active_speaker`](src/ayase/modules/active_speaker.py)** — Lip-sync separation between faces: is exactly one mouth in sync
 
@@ -4401,7 +4380,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `enabled=False`, `model_name=Qwen/Qwen2.5-Omni-7B`, `sample_rate=16000`, `device=auto`
 
 ### `asr_cer` [↑](#categories)
-> ASR character error rate vs reference text (unbounded, lower=better) · ↓ lower=better · unbounded
+> ↓ lower=better · unbounded
 
 **[`asr_cer`](src/ayase/modules/asr_cer.py)** — ASR character error rate against expected speech text
 
@@ -4412,7 +4391,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=large-v3`, `device=auto`
 
 ### `asr_wer` [↑](#categories)
-> ASR word error rate vs reference text (unbounded, lower=better) · ↓ lower=better · unbounded
+> ↓ lower=better · unbounded
 
 **[`asr_wer`](src/ayase/modules/asr_wer.py)** — ASR word error rate against expected speech text
 
@@ -4423,7 +4402,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=large-v3`, `device=auto`
 
 ### `audio_duration_ratio` [↑](#categories)
-> Candidate/reference duration ratio (0+, 1.0=equal)
 
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
@@ -4434,7 +4412,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_audio_prosody_dtw.py`](tests/modules/per_module/test_audio_prosody_dtw.py)
 
 ### `audio_energy_contour_correlation` [↑](#categories)
-> MFCC-DTW-aligned relative-energy Pearson correlation (-1..1, higher=better) · ↑ higher=better · -1..1; not a perceptual prosody score
+> ↑ higher=better · -1..1; not a perceptual prosody score
 
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
@@ -4445,7 +4423,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_audio_prosody_dtw.py`](tests/modules/per_module/test_audio_prosody_dtw.py)
 
 ### `audio_f0_voiced_mismatch` [↑](#categories)
-> DTW-path voiced/unvoiced mismatch rate (0-1, lower=better) · ↓ lower=better · 0-1
+> ↓ lower=better · 0-1
 
 **[`audio_log_f0_dtw`](src/ayase/modules/audio_log_f0_dtw.py)** — WORLD/mcep-DTW-aligned log-F0 RMSE in cents (ESPnet evaluate_f0 protocol)
 
@@ -4469,7 +4447,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py)
 
 ### `audio_prosody_warp_ratio` [↑](#categories)
-> Shorter contour length / MFCC-DTW path length (0-1, higher=less repeated-frame warping) · 0-1, higher=less repeated-frame warping; path-efficiency diagnostic
+> 0-1, higher=less repeated-frame warping; path-efficiency diagnostic
 
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
@@ -4480,7 +4458,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_audio_prosody_dtw.py`](tests/modules/per_module/test_audio_prosody_dtw.py)
 
 ### `audio_relative_energy_rmse_db` [↑](#categories)
-> MFCC-DTW-aligned mean-centred energy RMSE in dB (0+, lower=better) · ↓ lower=better · 0+; absolute level removed
+> ↓ lower=better · 0+; absolute level removed
 
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
@@ -4491,7 +4469,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_audio_prosody_dtw.py`](tests/modules/per_module/test_audio_prosody_dtw.py)
 
 ### `audio_voiced_fraction_difference` [↑](#categories)
-> Absolute pYIN voiced-fraction difference (0-1, lower=better) · ↓ lower=better · 0-1
+> ↓ lower=better · 0-1
 
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
@@ -4593,14 +4571,14 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `target_sr=22050`
 
 ### `clap_score` [↑](#categories)
-> Generic CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better
+> Generic CLAP raw audio-text cosine (-1..1, higher=better) · ↑ higher=better
 
 **[`clap_score`](src/ayase/modules/clap_score.py)** — Generic CLAP audio-text alignment cosine similarity (configurable backbone)
 
 - **Input**: audio · **Speed**: ⚡ fast
 - **Provenance**: `published` — source: CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
-- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
+- **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `model_name=laion/clap-htsat-fused`, `processor_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`
 
 ### `desync_score` [↑](#categories)
@@ -4617,7 +4595,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `allow_download=True`
 
 ### `distill_mos_score` [↑](#categories)
-> Distill-MOS overall speech quality (1-5, higher=better) · ↑ higher=better · 1-5
+> ↑ higher=better · 1-5
 
 **[`audio_distill_mos`](src/ayase/modules/audio_distill_mos.py)** — Microsoft Distill-MOS compact reference-free speech quality (1-5 MOS)
 
@@ -4691,7 +4669,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `target_sr=10000`, `warning_threshold=0.5`
 
 ### `human_clap_score` [↑](#categories)
-> Human-CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · -1 to 1 theoretical
+> ↑ higher=better · -1 to 1 theoretical
 
 **[`human_clap`](src/ayase/modules/human_clap.py)** — Human-CLAP audio-text relevance score
 
@@ -4717,7 +4695,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=imagebind_huge`, `sample_rate=16000`, `device=auto`, `warning_threshold=0.2`
 
 ### `laion_clap_score` [↑](#categories)
-> LAION-CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · −1..1
 
 **[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
 
@@ -4753,7 +4731,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `warning_threshold=8.0`
 
 ### `ms_clap_score` [↑](#categories)
-> Microsoft CLAP audio-text relevance (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · −1..1
 
 **[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
 
@@ -4766,7 +4744,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=sarulab-speech/human-clap-wsce-mae`, `processor_name=laion/clap-htsat-fused`, `sample_rate=48000`, `warning_threshold=0.25`, `device=auto`, `version=2023`
 
 ### `muq_eval_mi_score` [↑](#categories)
-> MuQ-Eval musical impression MOS (1-5, higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`muq_eval`](src/ayase/modules/muq_eval.py)** — MuQ-Eval A1 per-sample generated-music Musical Impression MOS
 
@@ -4856,7 +4834,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `display_size=phone`
 
 ### `pam_score` [↑](#categories)
-> PAM anti-prompt perceptual audio quality (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`pam`](src/ayase/modules/pam.py)** — PAM anti-prompt no-reference perceptual audio quality (MS-CLAP)
 
@@ -4908,7 +4886,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
 
 ### `scoreq_score` [↑](#categories)
-> SCOREQ domain-dependent speech quality MOS (higher=better) · ↑ higher=better · native output
+> ↑ higher=better · native output
 
 **[`scoreq`](src/ayase/modules/scoreq.py)** — SCOREQ domain-dependent no-reference speech quality MOS
 
@@ -4933,7 +4911,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `target_sr=16000`, `warning_threshold=0.0`
 
 ### `silent_lip_stability` [↑](#categories)
-> THEval silent-mouth lip-opening MAD (lower=better) · ↓ lower=better
+> ↓ lower=better
 
 **[`silent_lip_stability`](src/ayase/modules/silent_lip_stability.py)** — THEval silent-mouth lip-opening MAD during Silero-VAD silence
 
@@ -4946,7 +4924,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `minimum_silence_ms=300.0`, `sample_rate=16000`, `num_faces=1`, `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`
 
 ### `sim_o` [↑](#categories)
-> SIM-o, WavLM-TDNN speaker similarity to the original reference audio (-1..1) · ↑ higher=better · -1..1
+> ↑ higher=better · -1..1
 
 **[`speaker_sim`](src/ayase/modules/speaker_sim.py)** — SIM-o speaker similarity to a reference recording (WavLM-TDNN, UniSpeech / F5-TTS eval)
 
@@ -4959,7 +4937,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`
 
 ### `song_eval_clarity` [↑](#categories)
-> SongEval clarity of song structure (1-5, higher=better) · ↑ higher=better · 1-5
+> ↑ higher=better · 1-5
 
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
@@ -5011,7 +4989,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
 ### `song_eval_naturalness` [↑](#categories)
-> SongEval vocal breathing/phrasing naturalness (1-5, higher=better) · ↑ higher=better · 1-5
+> ↑ higher=better · 1-5
 
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
@@ -5024,7 +5002,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `sample_rate=24000`, `checkpoint_subpath=song_eval/model.safetensors`
 
 ### `speech_activity_fraction_difference` [↑](#categories)
-> Absolute Silero-VAD speech-fraction difference (0-1) · 0-1
+> 0-1
 
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
@@ -5036,7 +5014,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_speech_pause_rhythm.py`](tests/modules/per_module/test_speech_pause_rhythm.py)
 
 ### `speech_activity_pattern_disagreement` [↑](#categories)
-> Normalized speech-interval symmetric difference (0-1) · ↓ lower=better · 0-1, lower=more similar
+> ↓ lower=better · 0-1, lower=more similar
 
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
@@ -5048,7 +5026,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_speech_pause_rhythm.py`](tests/modules/per_module/test_speech_pause_rhythm.py)
 
 ### `speech_bert_score` [↑](#categories)
-> Matching-content speech similarity (-1..1, higher=better) · ↑ higher=better · [-1, 1]
+> ↑ higher=better · [-1, 1]
 
 **[`speech_bert_score`](src/ayase/modules/speech_bert_score.py)** — SpeechBERTScore similarity for matching-content reference speech
 
@@ -5061,7 +5039,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_duration_seconds=0.1`, `max_duration_seconds=30.0`, `silence_rms_threshold=1e-05`, `similarity_block_frames=1024`
 
 ### `speech_pause_count_difference` [↑](#categories)
-> Absolute internal-pause count difference (0+)
 
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
@@ -5073,7 +5050,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_speech_pause_rhythm.py`](tests/modules/per_module/test_speech_pause_rhythm.py)
 
 ### `speech_pause_duration_wasserstein_ms` [↑](#categories)
-> Internal-pause duration Wasserstein distance in ms (0+) · ↓ lower=better · 0+, lower=more similar; unset if either input has no pause
+> ↓ lower=better · 0+, lower=more similar; unset if either input has no pause
 
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
@@ -5085,7 +5062,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_speech_pause_rhythm.py`](tests/modules/per_module/test_speech_pause_rhythm.py)
 
 ### `speech_span_duration_ratio` [↑](#categories)
-> Candidate/reference first-to-last-speech span duration ratio (0+)
 
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
@@ -5175,7 +5151,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `mode=audio`
 
 ### `voice_identity` [↑](#categories)
-> Mean speaker-embedding cosine similarity to a reference set of the person (higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
 
@@ -5186,7 +5162,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 ### `voice_identity_below_threshold_fraction` [↑](#categories)
-> Valid windows below caller threshold (0-1) · 0-1
+> 0-1
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5199,7 +5175,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_coverage` [↑](#categories)
-> Share of reference files that yielded a speaker embedding (0-1) · 0-1
+> 0-1
 
 **[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
 
@@ -5210,7 +5186,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 ### `voice_identity_drift_slope` [↑](#categories)
-> Cosine-similarity trend per normalized scheduled sequence
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5223,7 +5198,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_longest_below_threshold_run_fraction` [↑](#categories)
-> Longest below-threshold run / scheduled windows (0-1) · 0-1
+> 0-1
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5236,7 +5211,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_reference_coverage` [↑](#categories)
-> Valid ECAPA reference embeddings / selected references (0-1) · 0-1
+> 0-1
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5249,7 +5224,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_similarity_min` [↑](#categories)
-> Minimum window cosine similarity to reference centroid (-1 to 1) · ↑ higher=better · [-1, 1], higher=more similar
+> ↑ higher=better · [-1, 1], higher=more similar
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5262,7 +5237,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_similarity_p05` [↑](#categories)
-> Fifth-percentile window cosine similarity to reference centroid (-1 to 1) · ↑ higher=better · [-1, 1], higher=more similar
+> ↑ higher=better · [-1, 1], higher=more similar
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5275,7 +5250,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_window_coverage` [↑](#categories)
-> Valid ECAPA candidate windows / scheduled windows (0-1) · 0-1, higher=more observable
+> 0-1, higher=more observable
 
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
@@ -5291,7 +5266,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 ## Face & Identity (75 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
-> AdaFace cosine similarity vs reference face (0-1, higher=better) · ↑ higher=better · −1..1
+> ↑ higher=better · −1..1
 
 **[`adaface`](src/ayase/modules/adaface.py)** — AdaFace identity similarity vs reference face (CVPR 2022, quality-adaptive margin)
 
@@ -5304,7 +5279,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `checkpoint=ir101_webface12m`, `face_model=buffalo_l`, `subsample=8`, `warning_threshold=0.3`, `pad_retry=0.25`, `device=auto`
 
 ### `aed` [↑](#categories)
-> AED, mean 3DMM expression-coefficient distance to the driver video (PIRenderer; lower=better) · ↓ lower=better · lower=closer
+> ↓ lower=better · lower=closer
 
 **[`aed_apd`](src/ayase/modules/aed_apd.py)** — AED/APD: 3DMM expression and pose distance to a driver video
 
@@ -5318,7 +5293,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `fps=25`, `read_stride=96`, `rec_stride=32`, `det_size_threshold=75`, `det_score_threshold=0.7`, `det_target_size=1280`, `device=auto`
 
 ### `anatomy_score` [↑](#categories)
-> Keypoint-based limb-count/anatomy plausibility (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`anatomy_check`](src/ayase/modules/anatomy_check.py)** — Human anatomy plausibility (extra/duplicated limbs) via DWPose/MediaPipe (0-1, higher=better)
 
@@ -5330,7 +5305,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=8`, `warn_threshold=0.5`, `device=auto`
 
 ### `apd` [↑](#categories)
-> APD, mean 3DMM pose-coefficient distance to the driver video (PIRenderer; lower=better) · ↓ lower=better · lower=closer
+> ↓ lower=better · lower=closer
 
 **[`aed_apd`](src/ayase/modules/aed_apd.py)** — AED/APD: 3DMM expression and pose distance to a driver video
 
@@ -5344,7 +5319,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `fps=25`, `read_stride=96`, `rec_stride=32`, `det_size_threshold=75`, `det_score_threshold=0.7`, `det_target_size=1280`, `device=auto`
 
 ### `aucon` [↑](#categories)
-> AUCON, fraction of frames with coincident active-AU sets vs driver (MarioNETte; 0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`aucon_prmse`](src/ayase/modules/aucon_prmse.py)** — AUCON/PRMSE — action-unit and pose agreement with a driver video
 
@@ -5384,7 +5359,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`
 
 ### `csim` [↑](#categories)
-> CSIM, mean ArcFace cosine to the reference face (Zakharov 2019 / SadTalker; higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`csim`](src/ayase/modules/csim.py)** — CSIM: mean ArcFace cosine similarity to the reference face (Zakharov 2019, SadTalker)
 
@@ -5397,7 +5372,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `max_frames=0`, `det_size=640`, `device=auto`
 
 ### `csim_face_frames` [↑](#categories)
-> CSIM frames with a detected face / evaluated frames (0-1) · 0-1
+> 0-1
 
 **[`csim`](src/ayase/modules/csim.py)** — CSIM: mean ArcFace cosine similarity to the reference face (Zakharov 2019, SadTalker)
 
@@ -5410,7 +5385,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `max_frames=0`, `det_size=640`, `device=auto`
 
 ### `dino_face_identity` [↑](#categories)
-> DINOv2 face identity cosine similarity (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
@@ -5419,12 +5393,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2
 - **Packages**: gc, insightface, torch, torchvision
 - **VRAM**: ~400 MB
-- **Source**: <a href="https://github.com/facebookresearch/dinov2" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebookresearch/dinov2" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/facebookresearch/dinov2" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py)
 - **Config**: `model_name=dinov2_vitb14`, `face_model=buffalo_l`, `subsample=8`, `face_margin=0.3`, `warning_threshold=0.3`, `pad_retry=0.25`
 
 ### `dino_face_identity_max` [↑](#categories)
-> Max DINOv2 face identity across frames (0-1, higher=better) · ↑ higher=better · 0-1
 
 **[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
@@ -5433,12 +5406,12 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2
 - **Packages**: gc, insightface, torch, torchvision
 - **VRAM**: ~400 MB
-- **Source**: <a href="https://github.com/facebookresearch/dinov2" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebookresearch/dinov2" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/facebookresearch/dinov2" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py)
 - **Config**: `model_name=dinov2_vitb14`, `face_model=buffalo_l`, `subsample=8`, `face_margin=0.3`, `warning_threshold=0.3`, `pad_retry=0.25`
 
 ### `expr_var_3dmm` [↑](#categories)
-> Variation of 3DMM expression coefficients over time (higher=more varied) · higher=more varied
+> higher=more varied
 
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance and variation on 3DMM expression/pose coefficients
 
@@ -5474,7 +5447,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `num_faces=5`
 
 ### `expression_following_distance` [↑](#categories)
-> Mean blendshape L1 distance (0-1, lower=better) · ↓ lower=better · 0-1
+> ↓ lower=better · 0-1
 
 **[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
@@ -5485,7 +5458,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `num_faces=5`
 
 ### `expression_similarity` [↑](#categories)
-> Time-free expression-manner similarity (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
@@ -5496,7 +5469,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
 
 ### `expression_similarity_coactivation` [↑](#categories)
-> Correlation-structure agreement (0-1) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
@@ -5507,7 +5480,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
 
 ### `expression_similarity_coverage` [↑](#categories)
-> Lower per-video valid-face coverage (0-1) · ↓ lower=better · 0-1
+> ↓ lower=better · 0-1
 
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
@@ -5518,7 +5491,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
 
 ### `expression_similarity_distribution` [↑](#categories)
-> Expression-repertoire agreement (0-1) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
@@ -5540,7 +5513,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
 
 ### `expression_similarity_range_ratio` [↑](#categories)
-> Expressive spread, sample/reference (1.0=equal) · ↑ higher=better
+> ↑ higher=better
 
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
@@ -5551,7 +5524,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`, `low_coverage_threshold=0.5`, `min_valid_frames=15`, `quantile_count=21`, `exclude_gaze=False`, `num_faces=5`
 
 ### `eyebrow_dynamics_score` [↑](#categories)
-> THEval normalized brow-motion intensity (higher=more dynamic) · ↑ higher=better · higher=more dynamic
+> ↑ higher=better · higher=more dynamic
 
 **[`eyebrow_dynamics`](src/ayase/modules/eyebrow_dynamics.py)** — THEval inter-eye-normalized eyebrow micro-expression intensity
 
@@ -5563,7 +5536,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `num_faces=1`
 
 ### `f_lmd` [↑](#categories)
-> F-LMD, full-face landmark distance to the source video (Chen 2018; lower=better) · ↓ lower=better
+> ↓ lower=better
 
 **[`lmd`](src/ayase/modules/lmd.py)** — LMD/F-LMD: landmark distance of lips and full face to the source video
 
@@ -5602,7 +5575,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=haar`, `subsample=5`, `max_frames=60`, `min_face_size=64`, `blur_threshold=50.0`, `warning_threshold=40.0`
 
 ### `face_cross_similarity` [↑](#categories)
-> Avg pairwise face similarity (0-1, higher=more consistent) · ↑ higher=better
+> ↑ higher=better
 
 **[`face_cross_similarity`](src/ayase/modules/face_cross_similarity.py)** — Pairwise ArcFace cosine similarity matrix across dataset faces
 
@@ -5652,7 +5625,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `reference_dir=`, `num_frames=8`, `consistency_threshold=0.4`, `model_name=VGG-Face`
 
 ### `face_identity_below_threshold_fraction` [↑](#categories)
-> Detected frames below caller-supplied threshold (0-1) · 0-1
+> 0-1
 
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
@@ -5690,7 +5663,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `max_faces_per_image=5`, `similarity_threshold=0.3`, `subsample=8`, `max_cache_size=10000`, `device=auto`
 
 ### `face_identity_detection_coverage` [↑](#categories)
-> Detected sampled frames / all sampled frames (0-1) · 0-1, higher=more observable
+> 0-1, higher=more observable
 
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
@@ -5703,7 +5676,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_drift_slope` [↑](#categories)
-> ArcFace similarity slope per normalized sampled sequence
 
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
@@ -5716,7 +5688,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_longest_below_threshold_run_fraction` [↑](#categories)
-> Longest low-similarity run / sampled frames (0-1) · 0-1
+> 0-1
 
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
@@ -5729,7 +5701,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_similarity_min` [↑](#categories)
-> Minimum ArcFace similarity (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
@@ -5742,7 +5714,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_similarity_p05` [↑](#categories)
-> Fifth-percentile ArcFace similarity (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
@@ -5825,7 +5797,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
 
 ### `face_motion_landmark_pair_coverage` [↑](#categories)
-> Defined pair-correlation fraction (0-1) · 0-1
+> 0-1
 
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
@@ -5836,7 +5808,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
 
 ### `face_motion_x_correlation` [↑](#categories)
-> Frame-aligned landmark-pair x correlation (-1 to 1)
 
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
@@ -5847,7 +5818,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `num_faces=2`, `min_paired_frames=15`, `low_coverage_threshold=0.5`, `fps_tolerance=0.05`, `frame_count_tolerance=0`
 
 ### `face_motion_y_correlation` [↑](#categories)
-> Frame-aligned landmark-pair y correlation (-1 to 1)
 
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
@@ -5870,7 +5840,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=haar`, `subsample=5`, `max_frames=60`, `min_face_size=64`, `blur_threshold=50.0`, `warning_threshold=40.0`
 
 ### `face_recognition_score` [↑](#categories)
-> Face identity cosine similarity (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better
 
 **[`identity_loss`](src/ayase/modules/identity_loss.py)** — Face identity preservation metric (ArcFace cosine distance/similarity vs reference)
 
@@ -5883,7 +5853,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`, `pad_retry=0.25`
 
 ### `facesim_arc` [↑](#categories)
-> FaceSim-Arc, ArcFace cosine to a reference face (ConsisID; higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
 
@@ -5896,7 +5866,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `protocol=consisid`, `device=auto`
 
 ### `facesim_cur` [↑](#categories)
-> FaceSim-Cur, CurricularFace cosine to a reference face (ConsisID; higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
 
@@ -5909,7 +5879,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `protocol=consisid`, `device=auto`
 
 ### `facesim_face_frames` [↑](#categories)
-> FaceSim frames with a detected face / sampled frames (0-1) · 0-1
+> 0-1
 
 **[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
 
@@ -5922,7 +5892,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `protocol=consisid`, `device=auto`
 
 ### `gaze_blendshape_binocular_disagreement_difference` [↑](#categories)
-> Median left/right ocular-control disagreement difference (0=equal)
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5933,7 +5902,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_horizontal_amplitude_difference` [↑](#categories)
-> Horizontal eye-look P90-P10 span difference (0=equal)
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5944,7 +5912,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_horizontal_location_difference` [↑](#categories)
-> Median horizontal eye-look activation difference (0=equal)
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5955,7 +5922,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_reference_coverage` [↑](#categories)
-> Reference valid eye-look activation coverage (0-1) · 0-1
+> 0-1
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5966,7 +5933,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_sample_coverage` [↑](#categories)
-> Sample valid eye-look activation coverage (0-1) · 0-1
+> 0-1
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5977,7 +5944,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_speed_difference` [↑](#categories)
-> Median 2-D eye-look activation-speed difference per second (0=equal)
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5988,7 +5954,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_vertical_amplitude_difference` [↑](#categories)
-> Vertical eye-look P90-P10 span difference (0=equal)
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -5999,7 +5964,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `min_samples=8`, `num_faces=1`
 
 ### `gaze_blendshape_vertical_location_difference` [↑](#categories)
-> Median vertical eye-look activation difference (0=equal)
 
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
@@ -6024,7 +5988,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`
 
 ### `head_beat_align` [↑](#categories)
-> Head Beat Align, Bailando kernel between audio and head-motion beats (0-1, higher=better) · ↑ higher=better · 0-1
+> ↑ higher=better · 0-1
 
 **[`head_beat_align`](src/ayase/modules/head_beat_align.py)** — Beat Align — audio/head-motion sync via the Bailando kernel
 
@@ -6038,7 +6002,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `sigma=3.0`, `fps=25`, `read_stride=96`, `rec_stride=32`, `det_size_threshold=75`, `det_score_threshold=0.7`, `det_target_size=1280`, `device=auto`
 
 ### `head_pose_diversity` [↑](#categories)
-> Head-pose diversity, temporal std of pose coefficients (SadTalker; higher=more diverse) · higher=more diverse
+> higher=more diverse
 
 **[`head_pose_diversity`](src/ayase/modules/head_pose_diversity.py)** — Head pose diversity — temporal std of 3DMM pose coefficients
 
@@ -6052,7 +6016,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `fps=25`, `read_stride=96`, `rec_stride=32`, `det_size_threshold=75`, `det_score_threshold=0.7`, `det_target_size=1280`, `device=auto`
 
 ### `id_reveal_distance` [↑](#categories)
-> ID-Reveal distance to reference videos (Cozzolino 2021; lower=better) · ↓ lower=better · ; Cozzolino et al. 2021
+> ↓ lower=better · ; Cozzolino et al. 2021
 
 **[`id_reveal`](src/ayase/modules/id_reveal.py)** — ID-Reveal identity distance to reference videos (lower=better; RetinaFace + TDDFA + temporal ID-Reveal net)
 
@@ -6080,7 +6044,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `fps=25`, `read_stride=96`, `rec_stride=32`, `clip_length=100`, `clip_stride=50`, `clip_ref_stride=1`, `final_mean=7`, `percentile=5`, `det_size_threshold=75`, `det_target_size=1280`, `det_score_threshold=0.7`, `track_iou_threshold=0.4`
 
 ### `id_sim_distance` [↑](#categories)
-> ID-Sim fine-grained visual identity distance (lower=better) · ↓ lower=better · lower=more similar
+> ↓ lower=better · lower=more similar
 
 **[`id_sim`](src/ayase/modules/id_sim.py)** — ID-Sim fine-grained visual identity distance (CVPR 2026)
 
@@ -6106,7 +6070,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`, `pad_retry=0.25`
 
 ### `lip_dynamics_score` [↑](#categories)
-> THEval mouth-shape distance variation (higher=more dynamic) · ↓ lower=better · higher=more dynamic
+> ↓ lower=better · higher=more dynamic
 
 **[`lip_dynamics`](src/ayase/modules/lip_dynamics.py)** — THEval temporal variation of all pairwise lip-landmark distances
 
@@ -6118,7 +6082,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `num_faces=1`, `min_face_detection_confidence=0.5`, `min_face_presence_confidence=0.5`, `min_tracking_confidence=0.5`
 
 ### `lmd` [↑](#categories)
-> LMD, lip-landmark distance to the source video (Chen 2018; lower=better) · ↓ lower=better
+> ↓ lower=better
 
 **[`lmd`](src/ayase/modules/lmd.py)** — LMD/F-LMD: landmark distance of lips and full face to the source video
 
@@ -6131,7 +6095,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `fps=25`, `max_frames=600`
 
 ### `multi_subject_identity_coverage` [↑](#categories)
-> Share of sampled frames covered by the assigned face tracks (0-1) · 0-1
 
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
@@ -6142,7 +6105,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `multi_subject_identity_mean` [↑](#categories)
-> Mean per-subject identity similarity in a multi-person clip (higher=better) · ↑ higher=better
 
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
@@ -6153,7 +6115,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `multi_subject_identity_tracks` [↑](#categories)
-> Number of face tracks the assignment was built from
 
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
@@ -6164,7 +6125,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `multi_subject_identity_worst` [↑](#categories)
-> Lowest per-subject identity similarity in a multi-person clip (higher=better) · ↑ higher=better
 
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
@@ -6175,7 +6135,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `nearid_identity_similarity` [↑](#categories)
-> NearID cosine similarity vs reference image (higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`nearid`](src/ayase/modules/nearid.py)** — NearID near-distractor-aware identity similarity (ECCV 2026)
 
@@ -6188,7 +6148,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model=Aleksandar/nearid-siglip2`, `device=auto`
 
 ### `pose_var_3dmm` [↑](#categories)
-> Variation of 3DMM pose coefficients over time (higher=more varied) · higher=more varied
+> higher=more varied
 
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance and variation on 3DMM expression/pose coefficients
 
@@ -6202,7 +6162,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `fps=25`, `read_stride=96`, `rec_stride=32`, `det_size_threshold=75`, `det_score_threshold=0.7`, `det_target_size=1280`, `device=auto`
 
 ### `prmse` [↑](#categories)
-> PRMSE, RMSE of head-pose angles vs driver (MarioNETte; lower=better) · ↓ lower=better
+> ↓ lower=better
 
 **[`aucon_prmse`](src/ayase/modules/aucon_prmse.py)** — AUCON/PRMSE — action-unit and pose agreement with a driver video
 
@@ -6295,7 +6255,6 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `detection_mode=auto`, `clip_model=openai/clip-vit-base-patch32`, `clip_threshold=0.25`, `face_detection_confidence=0.5`, `concepts=[]`, `num_frames=5`
 
 ### `concept_presence` [↑](#categories)
-> Concept presence confidence (0-1, higher=more confident) · 0-1, higher=more confident
 
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
@@ -6357,7 +6316,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Tests**: covered by [`test_human_fidelity.py`](tests/modules/per_module/test_human_fidelity.py)
 
 ### `person_count` [↑](#categories)
-> Peak number of 'person' detections in a single frame (crowd size) · type: int
+> type: int
 
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
@@ -6369,7 +6328,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `model_name=yolov8n.pt`, `use_yolo_world=False`, `use_grit=False`
 
 ### `person_count_score` [↑](#categories)
-> Normalized crowd/person-count score (0-100, saturates at 10/frame) · ↑ higher=better · 0-100, saturates at 10/frame
+> ↑ higher=better
 
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
@@ -6822,7 +6781,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `num_frames=0`, `lang=en`
 
 ### `ocr_fidelity` [↑](#categories)
-> OCR error vs expected text (mean of NED/CER/WER, lower=better) · ↓ lower=better · mean of NED/CER/WER
+> ↑ higher=better
 
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — EvalCrafter OCR score — text rendering accuracy vs expected text (error measure, lower=better)
 
@@ -7065,7 +7024,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `window_size=16`, `stride=8`, `max_frames=256`, `clip_model=ViT-B-32`, `clip_pretrained=openai`, `dino_model=dinov2_vitb14`, `enable_clip=True`, `enable_dino=True`, `enable_lpips=True`
 
 ### `opens2v_nexus_score` [↑](#categories)
-> NexusScore detected-subject-crop consistency (higher=better) · ↑ higher=better
+> ↑ higher=better
 
 **[`opens2v`](src/ayase/modules/opens2v.py)** — OpenS2V-Eval subject-consistency metrics: NexusScore (YOLO-World image-prompt subject crops vs reference subject image, GME embeddings) and NaturalScore (GPT-4o naturalness judge)
 
@@ -7276,7 +7235,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
 ### `fad_panns` [↑](#categories)
-> Frechet Audio Distance with PANNs CNN14 backbone (lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, PANNs Cnn14 backbone
 
@@ -7285,7 +7244,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
 ### `fad_panns_infinity` [↑](#categories)
-> PANNs FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fad`](src/ayase/modules/fad.py)** — FAD PANNs Cnn14 extrapolated to infinite sample size
 
@@ -7303,7 +7262,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
 ### `fad_passt_infinity` [↑](#categories)
-> PaSST FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fad`](src/ayase/modules/fad.py)** — FAD PASST extrapolated to infinite sample size
 
@@ -7321,7 +7280,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
 ### `fad_vggish_infinity` [↑](#categories)
-> VGGish FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fad`](src/ayase/modules/fad.py)** — FAD VGGish extrapolated to infinite sample size
 
@@ -7330,7 +7289,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
 ### `fd_3dmm_expression` [↑](#categories)
-> Frechet distance on 3DMM expression-coefficient distributions vs reference set (lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance on expression-coefficient distributions vs reference set (lower=closer)
 
@@ -7339,7 +7298,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fd_3dmm.py`](tests/modules/per_module/test_fd_3dmm.py)
 
 ### `fd_3dmm_pose` [↑](#categories)
-> Frechet distance on 3DMM pose-coefficient distributions vs reference set (lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance on pose-coefficient distributions vs reference set (lower=closer)
 
@@ -7348,7 +7307,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fd_3dmm.py`](tests/modules/per_module/test_fd_3dmm.py)
 
 ### `fd_g` [↑](#categories)
-> FD_g, Frechet on body-pose distributions vs reference set (Audio2Photoreal; lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fd_gk`](src/ayase/modules/fd_gk.py)** — Frechet distance on body-pose distributions vs reference set (lower=closer)
 
@@ -7357,7 +7316,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_fd_gk.py`](tests/modules/per_module/test_fd_gk.py)
 
 ### `fd_k` [↑](#categories)
-> FD_k, Frechet on body-velocity distributions vs reference set (Audio2Photoreal; lower=better) · ↓ lower=better · type: float
+> type: float
 
 **[`fd_gk`](src/ayase/modules/fd_gk.py)** — Frechet distance on body-velocity distributions vs reference set (lower=closer)
 
@@ -7447,7 +7406,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_kvd.py`](tests/modules/per_module/test_kvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +2 more
 
 ### `l1_diversity` [↑](#categories)
-> L1 gesture diversity across the set (EMAGE; higher=more diverse) · type: float
+> type: float
 
 **[`gesture_diversity`](src/ayase/modules/gesture_diversity.py)** — Mean pairwise L1 between per-video pose signatures (higher=more diverse)
 
@@ -7456,7 +7415,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_gesture_diversity.py`](tests/modules/per_module/test_gesture_diversity.py)
 
 ### `lpips_diversity` [↑](#categories)
-> Average pairwise LPIPS across dataset (higher=more diverse) · type: float
+> type: float
 
 **[`image_lpips`](src/ayase/modules/image_lpips.py)** — Mean pairwise LPIPS between outputs sharing a conditioning input (higher=more diverse)
 
@@ -7852,7 +7811,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_vendi.py`](tests/modules/per_module/test_vendi.py)
 
 ### `verse_bench_breakdown_est` [↑](#categories)
-> Verse-Bench subscores and overall · type: float
+> type: float
 
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score
 

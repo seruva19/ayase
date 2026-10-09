@@ -22,10 +22,15 @@ RetinaFace, so detection is retried once on a replicate-padded copy (``pad_retry
 Backends:
     - Face detection: InsightFace (buffalo_l)
     - Embedding: DINOv2 ViT-B/14 (facebookresearch/dinov2 architecture; weights from
-      the ayase-models HF mirror)
+      the ayase-runtime-assets HF mirror)
+
+Set ``repo_revision`` to a full 40-character Git commit to pin the torch.hub
+architecture code only. It does not pin the separately downloaded checkpoint.
+The default keeps torch.hub's existing unqualified repo behavior.
 """
 
 import logging
+import re
 from typing import List, Optional
 
 import cv2
@@ -39,7 +44,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-# DINOv2 backbone weights are fetched from the ayase-models HF mirror rather than
+# DINOv2 backbone weights are fetched from the ayase-runtime-assets HF mirror rather than
 # the torch.hub entrypoint's fbaipublicfiles original, which is unreliable on some
 # networks (and bypasses the mirror the rest of the pipeline already relies on).
 # The architecture still comes from the (reliable, cacheable) torch.hub repo code.
@@ -54,6 +59,21 @@ _DINOV2_WEIGHTS = {
 class DINOFaceIdentityModule(PipelineModule):
     name = "dino_face_identity"
     provenance = "own"
+    models = [
+        {
+            "id": "facebookresearch/dinov2",
+            "type": "torch_hub",
+            "task": "DINOv2 face-crop appearance encoder",
+            "notes": "repo_revision optionally pins architecture code only; configured model_name selects the backbone.",
+        },
+        {
+            "id": "dino_face_identity/dinov2_vitb14_pretrain.pth",
+            "type": "local",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth",
+            "task": "Default dinov2_vitb14 checkpoint weights",
+            "notes": "Downloaded from the mutable main revision; repo_revision does not pin this artifact.",
+        },
+    ]
     sources = {
         "dino_face_identity": "DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2",
         "dino_face_identity_max": "DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2",
@@ -61,6 +81,8 @@ class DINOFaceIdentityModule(PipelineModule):
     description = "Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)"
     default_config = {
         "model_name": "dinov2_vitb14",
+        # Optional immutable revision of the DINOv2 architecture code only.
+        "repo_revision": None,
         "face_model": "buffalo_l",
         "subsample": 8,
         "face_margin": 0.3,
@@ -78,6 +100,7 @@ class DINOFaceIdentityModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.model_name = self.config.get("model_name", "dinov2_vitb14")
+        self.repo_revision = self.config.get("repo_revision")
         self.face_model = self.config.get("face_model", "buffalo_l")
         self.subsample = self.config.get("subsample", 8)
         self.face_margin = self.config.get("face_margin", 0.3)
@@ -97,20 +120,21 @@ class DINOFaceIdentityModule(PipelineModule):
         self._device = resolve_torch_device(self.config.get("device", "auto"))
 
         # Load DINOv2. The architecture comes from the torch.hub repo code; the
-        # weights come from the ayase-models HF mirror (reliable, and consistent with
+        # weights come from the ayase-runtime-assets HF mirror (reliable and consistent with
         # the rest of the pipeline) instead of the torch.hub fbaipublicfiles original.
         try:
+            repo_ref = self._repo_ref()
             rel = _DINOV2_WEIGHTS.get(self.model_name)
             if rel:
                 from ayase.config import download_model_file
 
                 self._dino = torch.hub.load(
-                    "facebookresearch/dinov2", self.model_name, pretrained=False
+                    repo_ref, self.model_name, pretrained=False
                 )
                 ckpt = download_model_file(rel, _DINOV2_MIRROR_BASE + rel, self.models_dir)
                 self._dino.load_state_dict(torch.load(str(ckpt), map_location="cpu"))
             else:
-                self._dino = torch.hub.load("facebookresearch/dinov2", self.model_name)
+                self._dino = torch.hub.load(repo_ref, self.model_name)
             self._dino.eval().to(self._device)
             logger.info(f"DINOFaceIdentity: loaded {self.model_name} on {self._device}")
         except Exception as e:
@@ -137,6 +161,16 @@ class DINOFaceIdentityModule(PipelineModule):
 
         # Both DINOv2 embedder and the face detector are ready.
         self._backend = f"dinov2:{self.model_name}+insightface"
+
+    def _repo_ref(self) -> str:
+        """Return the default torch.hub repo or an explicitly pinned commit."""
+        if self.repo_revision is None:
+            return "facebookresearch/dinov2"
+        if not isinstance(self.repo_revision, str) or re.fullmatch(
+            r"[0-9a-fA-F]{40}", self.repo_revision
+        ) is None:
+            raise ValueError("repo_revision must be a full 40-character hexadecimal commit")
+        return f"facebookresearch/dinov2:{self.repo_revision}"
 
     def process(self, sample: Sample) -> Sample:
         if self._dino is None or self._face_app is None:

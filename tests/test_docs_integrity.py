@@ -18,7 +18,6 @@ import pytest
 from ayase.models import DatasetStats, QualityMetrics
 from ayase.pipeline import ModuleRegistry, PipelineModule
 
-
 # ── Fixtures / helpers ───────────────────────────────────────────────────────
 
 VALID_QM_FIELDS: Set[str] = set(QualityMetrics.model_fields.keys())
@@ -69,16 +68,12 @@ class TestModuleIdentity:
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_description_is_not_default(self, name: str) -> None:
         cls = ALL_MODULES[name]
-        assert cls.description != "No description provided", (
-            f"{name} has no description"
-        )
+        assert cls.description != "No description provided", f"{name} has no description"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_description_is_nontrivial(self, name: str) -> None:
         cls = ALL_MODULES[name]
-        assert len(cls.description) >= 10, (
-            f"{name} description too short: {cls.description!r}"
-        )
+        assert len(cls.description) >= 10, f"{name} description too short: {cls.description!r}"
 
     def test_no_duplicate_names(self) -> None:
         names = [cls.name for cls in ALL_MODULES.values()]
@@ -104,8 +99,14 @@ class TestGetMetadata:
     def test_metadata_has_required_keys(self, name: str) -> None:
         cls = ALL_MODULES[name]
         meta = cls.get_metadata()
-        for key in ("name", "description", "input_type", "output_fields",
-                     "dataset_output_fields", "default_config"):
+        for key in (
+            "name",
+            "description",
+            "input_type",
+            "output_fields",
+            "dataset_output_fields",
+            "default_config",
+        ):
             assert key in meta, f"{name} missing metadata key: {key}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
@@ -113,22 +114,16 @@ class TestGetMetadata:
         """Every field listed in output_fields must exist in QualityMetrics."""
         cls = ALL_MODULES[name]
         meta = cls.get_metadata()
-        bad = [f for f in meta.get("output_fields", {})
-               if f not in VALID_QM_FIELDS]
-        assert not bad, (
-            f"{name} declares output fields not in QualityMetrics: {bad}"
-        )
+        bad = [f for f in meta.get("output_fields", {}) if f not in VALID_QM_FIELDS]
+        assert not bad, f"{name} declares output fields not in QualityMetrics: {bad}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_dataset_output_fields_are_valid_dataset_stats(self, name: str) -> None:
         """Every dataset-level output field must exist in DatasetStats."""
         cls = ALL_MODULES[name]
         meta = cls.get_metadata()
-        bad = [f for f in meta.get("dataset_output_fields", {})
-               if f not in VALID_DS_FIELDS]
-        assert not bad, (
-            f"{name} declares dataset output fields not in DatasetStats: {bad}"
-        )
+        bad = [f for f in meta.get("dataset_output_fields", {}) if f not in VALID_DS_FIELDS]
+        assert not bad, f"{name} declares dataset output fields not in DatasetStats: {bad}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_input_type_is_recognized(self, name: str) -> None:
@@ -166,21 +161,15 @@ class TestFieldWrites:
         ignore = {"__class__", "model_fields", "model_config"}
         written -= ignore
         bad = [f for f in written if f not in VALID_QM_FIELDS and not f.startswith("_")]
-        assert not bad, (
-            f"{name} writes unknown QualityMetrics fields: {bad}"
-        )
+        assert not bad, f"{name} writes unknown QualityMetrics fields: {bad}"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
 # 4. HuggingFace model IDs look well-formed
 # ═════════════════════════════════════════════════════════════════════════════
 
-_HF_PRETRAINED_RE = re.compile(
-    r'from_pretrained\(\s*["\']([A-Za-z0-9_.-]+/[A-Za-z0-9_.+-]+)["\']'
-)
-_HF_URL_RE = re.compile(
-    r'https://huggingface\.co/([A-Za-z0-9_.-]+/[A-Za-z0-9_.+-]+)/resolve'
-)
+_HF_PRETRAINED_RE = re.compile(r'from_pretrained\(\s*["\']([A-Za-z0-9_.-]+/[A-Za-z0-9_.+-]+)["\']')
+_HF_URL_RE = re.compile(r"https://huggingface\.co/([A-Za-z0-9_.-]+/[A-Za-z0-9_.+-]+)/resolve")
 
 
 def _extract_hf_ids(src: str) -> List[str]:
@@ -200,13 +189,11 @@ class TestHuggingFaceReferences:
             parts = hf_id.split("/")
             assert len(parts) == 2, f"{name}: malformed HF id {hf_id!r}"
             org, model = parts
-            assert len(org) >= 1 and len(model) >= 1, (
-                f"{name}: empty org or model in {hf_id!r}"
-            )
+            assert len(org) >= 1 and len(model) >= 1, f"{name}: empty org or model in {hf_id!r}"
             # No spaces or weird chars
-            assert re.match(r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.+-]+$', hf_id), (
-                f"{name}: invalid chars in HF id {hf_id!r}"
-            )
+            assert re.match(
+                r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.+-]+$", hf_id
+            ), f"{name}: invalid chars in HF id {hf_id!r}"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -225,9 +212,9 @@ class TestPyiqaReferences:
         src = _get_full_source(cls)
         for metric_name in _PYIQA_RE.findall(src):
             # Should be lowercase alphanumeric with hyphens/underscores/plus
-            assert re.match(r'^[a-z0-9_+\-]+$', metric_name, re.I), (
-                f"{name}: suspicious pyiqa metric name {metric_name!r}"
-            )
+            assert re.match(
+                r"^[a-z0-9_+\-]+$", metric_name, re.I
+            ), f"{name}: suspicious pyiqa metric name {metric_name!r}"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -286,8 +273,7 @@ class TestFieldCoverage:
             declared.update(getattr(cls, "metric_info", None) or {})
 
         float_fields = {
-            f for f, info in QualityMetrics.model_fields.items()
-            if "float" in str(info.annotation)
+            f for f, info in QualityMetrics.model_fields.items() if "float" in str(info.annotation)
         }
         # Known intentionally-unwritten fields
         orphaned = float_fields - written - declared
@@ -359,10 +345,7 @@ class TestFieldCollisions:
             # Filter out known variant pairs
             truly_unexpected = []
             for i, a in enumerate(unguarded):
-                is_variant = all(
-                    self._is_known_variant_pair(a, b)
-                    for b in unguarded if b != a
-                )
+                is_variant = all(self._is_known_variant_pair(a, b) for b in unguarded if b != a)
                 if not is_variant:
                     truly_unexpected.append(a)
             if len(truly_unexpected) > 1:
@@ -394,9 +377,7 @@ class TestModuleStaticHealth:
         # Check for super().on_mount() in the class source
         cls_src = inspect.getsource(cls)
         if "def on_mount" in cls_src and "super().on_mount" not in cls_src:
-            pytest.fail(
-                f"{name} overrides on_mount() without calling super().on_mount()"
-            )
+            pytest.fail(f"{name} overrides on_mount() without calling super().on_mount()")
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_process_method_exists(self, name: str) -> None:
@@ -411,8 +392,12 @@ class TestModuleStaticHealth:
 
 _URL_RE = re.compile(r'https?://[^\s"\'<>,\)]+')
 _KNOWN_DOMAINS = {
-    "huggingface.co", "github.com", "arxiv.org", "pypi.org",
-    "pytorch.org", "download.pytorch.org",
+    "huggingface.co",
+    "github.com",
+    "arxiv.org",
+    "pypi.org",
+    "pytorch.org",
+    "download.pytorch.org",
 }
 
 
@@ -431,8 +416,7 @@ class TestURLFormats:
             # HF resolve URLs must have /resolve/main/ or /resolve/
             if "huggingface.co" in url and "/resolve/" in url:
                 assert re.search(
-                    r'huggingface\.co/[^/]+/[^/]+/resolve/',
-                    url
+                    r"huggingface\.co/[^/]+/[^/]+/resolve/", url
                 ), f"{name}: malformed HF resolve URL {url!r}"
 
 
@@ -451,9 +435,7 @@ class TestMetricInfo:
             return
         # metric_info keys can reference QualityMetrics or DatasetStats fields
         bad = [k for k in cls.metric_info if k not in VALID_ALL_FIELDS]
-        assert not bad, (
-            f"{name} metric_info has keys not in QualityMetrics or DatasetStats: {bad}"
-        )
+        assert not bad, f"{name} metric_info has keys not in QualityMetrics or DatasetStats: {bad}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_metric_info_values_are_strings(self, name: str) -> None:
@@ -461,9 +443,7 @@ class TestMetricInfo:
         if not cls.metric_info:
             return
         bad = [k for k, v in cls.metric_info.items() if not isinstance(v, str)]
-        assert not bad, (
-            f"{name} metric_info has non-string values for: {bad}"
-        )
+        assert not bad, f"{name} metric_info has non-string values for: {bad}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_dataset_metric_writes_have_metric_info(self, name: str) -> None:
@@ -476,9 +456,7 @@ class TestMetricInfo:
             if m.group(1) in VALID_DS_FIELDS
         }
         missing = [f for f in sorted(dataset_fields) if f not in cls.metric_info]
-        assert not missing, (
-            f"{name} writes DatasetStats fields without metric_info: {missing}"
-        )
+        assert not missing, f"{name} writes DatasetStats fields without metric_info: {missing}"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -490,8 +468,14 @@ class TestModelsAttr:
     """If a module sets models=[], validate structure."""
 
     VALID_MODEL_TYPES = {
-        "huggingface", "local", "pyiqa", "torch_hub", "torchvision",
-        "clip", "pip_package", "other",
+        "huggingface",
+        "local",
+        "pyiqa",
+        "torch_hub",
+        "torchvision",
+        "clip",
+        "pip_package",
+        "other",
     }
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
@@ -500,14 +484,12 @@ class TestModelsAttr:
         if not cls.models:
             return
         for i, entry in enumerate(cls.models):
-            assert isinstance(entry, dict), (
-                f"{name} models[{i}] is not a dict"
-            )
+            assert isinstance(entry, dict), f"{name} models[{i}] is not a dict"
             assert "id" in entry, f"{name} models[{i}] missing 'id'"
             assert "type" in entry, f"{name} models[{i}] missing 'type'"
-            assert entry["type"] in self.VALID_MODEL_TYPES, (
-                f"{name} models[{i}] has invalid type: {entry['type']!r}"
-            )
+            assert (
+                entry["type"] in self.VALID_MODEL_TYPES
+            ), f"{name} models[{i}] has invalid type: {entry['type']!r}"
 
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_vendor_or_third_party_modules_declare_models(self, name: str) -> None:
@@ -515,9 +497,9 @@ class TestModelsAttr:
         src = _get_full_source(cls)
         if "ayase.vendor" not in src and "ayase.third_party" not in src:
             return
-        assert cls.models, (
-            f"{name} uses vendored/third_party model code but has no class-level models metadata"
-        )
+        assert (
+            cls.models
+        ), f"{name} uses vendored/third_party model code but has no class-level models metadata"
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -536,10 +518,9 @@ class TestNoHeuristicBackends:
         for i, line in enumerate(lines):
             if re.search(r'_backend\s*=\s*["\']heuristic["\']', line):
                 # Check if it's only inside a test_mode guard
-                ctx = "\n".join(lines[max(0, i - 5):i + 1])
+                ctx = "\n".join(lines[max(0, i - 5) : i + 1])
                 assert "test_mode" in ctx, (
-                    f"{name} sets _backend='heuristic' outside test_mode "
-                    f"at line {i + 1}"
+                    f"{name} sets _backend='heuristic' outside test_mode " f"at line {i + 1}"
                 )
 
     _FABRICATED_LITERALS = frozenset({0.0, 1.0, 0.5})
@@ -588,9 +569,8 @@ class TestNoHeuristicBackends:
         except SyntaxError:
             return
         hits = list(self._iter_literal_returns(tree))
-        assert not hits, (
-            f"{name} returns fabricated constants from failure branches: "
-            + "; ".join(f"line {ln} ({kind})" for ln, kind in hits)
+        assert not hits, f"{name} returns fabricated constants from failure branches: " + "; ".join(
+            f"line {ln} ({kind})" for ln, kind in hits
         )
 
 
@@ -654,8 +634,7 @@ class TestGeneratedDocsAreFresh:
         if committed != regenerated:
             pytest.fail(
                 "METRICS.md is stale. Run `ayase modules docs --no-tests "
-                "-o METRICS.md` to refresh.\n\n"
-                + _diff(committed, regenerated, committed_path)
+                "-o METRICS.md` to refresh.\n\n" + _diff(committed, regenerated, committed_path)
             )
 
     def test_models_md_matches_generator(self) -> None:
@@ -679,8 +658,7 @@ class TestGeneratedDocsAreFresh:
         if committed != regenerated:
             pytest.fail(
                 "MODELS.md is stale. Run `ayase modules models -o MODELS.md` "
-                "to refresh.\n\n"
-                + _diff(committed, regenerated, committed_path)
+                "to refresh.\n\n" + _diff(committed, regenerated, committed_path)
             )
 
     def test_readme_counts_match_registry(self) -> None:
@@ -701,9 +679,9 @@ class TestGeneratedDocsAreFresh:
             all_modules
         )
         delivered_modules = [
-            n for n in all_modules
-            if ModuleRegistry.get_module(n) is not None
-            and n not in external_backend_modules
+            n
+            for n in all_modules
+            if ModuleRegistry.get_module(n) is not None and n not in external_backend_modules
         ]
         total = len(delivered_modules)
         # Exclude provenance/bookkeeping fields (e.g. ``metric_backends``) that
@@ -727,8 +705,7 @@ class TestGeneratedDocsAreFresh:
                 has_no_output_modules = True
             for fn in meta.get("output_fields", {}):
                 field_writers.add(fn)
-        rendered_cats = {qm_fields[fn]["group"]
-                         for fn in field_writers if fn in qm_fields}
+        rendered_cats = {qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields}
         has_dataset_outputs = any(
             ModuleRegistry.get_module(name) is not None
             and ModuleRegistry.get_module(name).get_metadata().get("dataset_output_fields")
@@ -759,6 +736,36 @@ class TestGeneratedDocsAreFresh:
                 f"README.md CLI snippet says 'show all {m} modules' but "
                 f"registry has {total}. Run `ayase modules sync-readme`."
             )
+
+
+class TestMetricDirectionRendering:
+    @pytest.mark.parametrize(
+        ("description", "expected"),
+        [
+            ("JOD (10=reference quality, lower=worse)", "↑ higher=better"),
+            ("Error (higher = worse)", "↓ lower=better"),
+            ("Distance (lower=better)", "↓ lower=better"),
+            ("Similarity (higher = better)", "↑ higher=better"),
+        ],
+    )
+    def test_explicit_direction_markers(self, description, expected) -> None:
+        from ayase.metrics_doc import _get_score_direction
+
+        assert _get_score_direction("ambiguous_score", description) == expected
+
+    def test_generated_cvvdp_taglines_are_higher_better(self) -> None:
+        from ayase.metrics_doc import generate_metrics_doc
+
+        document = generate_metrics_doc(run_tests=False)
+        for field in (
+            "cvvdp_score",
+            "cvvdp_ml_transformer_score",
+            "cvvdp_ml_saliency_score",
+        ):
+            section = document.split(f"### `{field}`", 1)[1].split("\n### `", 1)[0]
+            assert "↑ higher=better" in section
+            assert "↓ lower=better" not in section
+            assert "lower=worse" not in section
 
 
 class TestPackageDetection:

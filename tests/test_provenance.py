@@ -25,7 +25,9 @@ from ayase.pipeline import ModuleRegistry, Pipeline, PipelineModule
 VALID_CLASSES = {"published", "adapted", "own", "utility"}
 PUBLISHED_NAMES_PATH = (
     __import__("pathlib").Path(__file__).resolve().parent.parent
-    / "src" / "ayase" / "published_names.txt"
+    / "src"
+    / "ayase"
+    / "published_names.txt"
 )
 
 
@@ -38,9 +40,7 @@ def registry():
 @pytest.fixture(scope="module")
 def all_field_names():
     return (
-        set(QualityMetrics.model_fields)
-        | set(Sample.model_fields)
-        | set(DatasetStats.model_fields)
+        set(QualityMetrics.model_fields) | set(Sample.model_fields) | set(DatasetStats.model_fields)
     )
 
 
@@ -96,17 +96,15 @@ def test_every_module_declares_provenance(registry):
 def test_provenance_classes_valid(registry):
     for name, (cls, prov) in _classes(registry).items():
         for field, value in prov.items():
-            assert value in VALID_CLASSES, (
-                f"{name}.{field}: unknown provenance class {value!r}"
-            )
+            assert value in VALID_CLASSES, f"{name}.{field}: unknown provenance class {value!r}"
 
 
 def test_provenance_keys_are_real_fields(registry, all_field_names):
     for name, (cls, prov) in _classes(registry).items():
         for field in prov:
-            assert field == "<module>" or field in all_field_names, (
-                f"{name}: provenance key {field!r} is not a declared field"
-            )
+            assert (
+                field == "<module>" or field in all_field_names
+            ), f"{name}: provenance key {field!r} is not a declared field"
 
 
 def test_every_inferred_output_has_provenance(registry):
@@ -125,9 +123,37 @@ def test_own_fields_do_not_use_published_names(registry, published_names):
             if value == "own" and field in published_names:
                 offenders.add(f"{name}.{field}")
     assert not offenders, (
-        "own-class fields must not use published metric names: "
-        f"{sorted(offenders)}"
+        "own-class fields must not use published metric names: " f"{sorted(offenders)}"
     )
+
+
+def test_lip_sync_fields_declare_the_bundled_preprocessing_as_adapted():
+    """SyncNet names retain their source while VERSE-Bench preparation is explicit."""
+    from ayase.modules.lip_sync import LipSyncModule
+
+    metadata = LipSyncModule.get_metadata()
+    assert LipSyncModule.field_provenance() == {"lse_c": "adapted", "lse_d": "adapted"}
+    assert metadata["provenance"] == {"lse_c": "adapted", "lse_d": "adapted"}
+    for field in ("lse_c", "lse_d"):
+        assert "SyncNet" in metadata["sources"][field]
+        assert "VERSE-Bench" in metadata["sources"][field]
+        assert "first InsightFace detection" in metadata["deviations"][field]
+        assert "shorter than two seconds" in metadata["deviations"][field]
+        assert "offset >=14" in metadata["deviations"][field]
+
+
+def test_lip_sync_requires_explicit_adapted_opt_in():
+    """Default published-only execution cannot silently emit the adapted LSE fields."""
+    from ayase.modules.lip_sync import LipSyncModule
+
+    default_module = LipSyncModule()
+    default_pipeline = Pipeline([default_module])
+    assert default_pipeline._provenance_excluded[default_module.name] == "adapted"
+
+    opted_in_module = LipSyncModule()
+    opted_in_pipeline = Pipeline([opted_in_module], allow_provenance=["adapted"])
+    assert opted_in_module.name not in opted_in_pipeline._provenance_excluded
+    assert "adapted" in opted_in_pipeline._module_allowed_provenance[id(opted_in_module)]
 
 
 def test_adapted_fields_have_deviations(registry):
@@ -153,9 +179,7 @@ def test_published_and_adapted_fields_have_sources(registry):
         if cls is None or not _is_packaged(cls):
             continue
         prov = cls.field_provenance()
-        src = cls._resolve_field_map(
-            "sources", list(cls.get_metadata().get("output_fields", {}))
-        )
+        src = cls._resolve_field_map("sources", list(cls.get_metadata().get("output_fields", {})))
         for field, value in prov.items():
             if value in ("published", "adapted") and not src.get(field):
                 missing.append(f"{name}.{field}")
@@ -165,18 +189,14 @@ def test_published_and_adapted_fields_have_sources(registry):
 def test_published_and_adapted_sources_are_traceable(registry):
     untraceable = []
     for name, (cls, prov) in _classes(registry).items():
-        src = cls._resolve_field_map(
-            "sources", list(cls.get_metadata().get("output_fields", {}))
-        )
+        src = cls._resolve_field_map("sources", list(cls.get_metadata().get("output_fields", {})))
         for field, value in prov.items():
             source = str(src.get(field, "")).lower()
             if value in ("published", "adapted") and not (
                 "http://" in source or "https://" in source or "doi:" in source
             ):
                 untraceable.append(f"{name}.{field}")
-    assert not untraceable, (
-        "published/adapted sources need a URL or DOI: " f"{untraceable}"
-    )
+    assert not untraceable, "published/adapted sources need a URL or DOI: " f"{untraceable}"
 
 
 def test_metadata_exposes_provenance(registry):
@@ -208,6 +228,26 @@ class _PublishedModule(PipelineModule):
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         sample.quality_metrics.vmaf = 50.0
+        return sample
+
+
+class _SiblingVmafModule(PipelineModule):
+    name = "test_sibling_vmaf"
+    provenance = "published"
+    sources = {"vmaf": "https://github.com/Netflix/vmaf"}
+
+    def process(self, sample):
+        sample.quality_metrics.vmaf = 50.0
+        return sample
+
+
+class _SiblingBrisqueModule(PipelineModule):
+    name = "test_sibling_brisque"
+    provenance = "published"
+    sources = {"brisque": "https://live.ece.utexas.edu/research/quality/BRISQUE_release.zip"}
+
+    def process(self, sample):
+        sample.quality_metrics.brisque = 25.0
         return sample
 
 
@@ -312,6 +352,18 @@ def test_default_pipeline_excludes_own_and_adapted():
     assert "test_published_only" not in p._provenance_excluded
 
 
+def test_provenance_exclusion_marks_requested_coverage_incomplete():
+    p = Pipeline([_OwnModule(), _PublishedModule()])
+    status = p.get_run_status()
+    assert status["complete"] is False
+    assert status["provenance_excluded"] == {"test_own_only": "own"}
+    assert status["requested_modules"] == ["test_own_only", "test_published_only"]
+    assert status["mounted_modules"] == ["test_published_only"]
+
+    opted_in = Pipeline([_OwnModule(), _PublishedModule()], allow_provenance=["own"])
+    assert opted_in.get_run_status()["complete"] is True
+
+
 def test_allow_provenance_override():
     p = Pipeline([_OwnModule()], allow_provenance=["own"])
     assert not p._provenance_excluded
@@ -355,8 +407,11 @@ def test_metric_provenance_stamped(tmp_path):
     assert out.quality_metrics.metric_provenance.get("vmaf") == "published"
     # bookkeeping field is not itself counted as a metric
     assert "metric_provenance" not in out.quality_metrics.non_null_metrics()
-    assert "metric_provenance" not in out.quality_metrics.metric_count_fields() \
-        if hasattr(out.quality_metrics, "metric_count_fields") else True
+    assert (
+        "metric_provenance" not in out.quality_metrics.metric_count_fields()
+        if hasattr(out.quality_metrics, "metric_count_fields")
+        else True
+    )
 
 
 def test_metric_provenance_not_in_non_null():
@@ -410,9 +465,7 @@ def test_same_value_assignment_updates_provenance(tmp_path):
     sample = Sample(
         path=tmp_path / "x.png",
         is_video=False,
-        quality_metrics=QualityMetrics(
-            vmaf=50.0, metric_provenance={"vmaf": "adapted"}
-        ),
+        quality_metrics=QualityMetrics(vmaf=50.0, metric_provenance={"vmaf": "adapted"}),
     )
     out = p.process_sample(sample)
     assert out.quality_metrics.metric_provenance["vmaf"] == "published"
@@ -425,9 +478,7 @@ def test_clearing_value_clears_stale_provenance(tmp_path):
     sample = Sample(
         path=tmp_path / "x.png",
         is_video=False,
-        quality_metrics=QualityMetrics(
-            vmaf=50.0, metric_provenance={"vmaf": "published"}
-        ),
+        quality_metrics=QualityMetrics(vmaf=50.0, metric_provenance={"vmaf": "published"}),
     )
     out = p.process_sample(sample)
     assert out.quality_metrics.vmaf is None
@@ -483,6 +534,46 @@ def test_metadata_cache_invalidates_declared_fields():
     assert first["description"] != second["description"]
 
 
+def test_metadata_output_inference_does_not_leak_sibling_class_fields():
+    assert set(_SiblingVmafModule.get_metadata()["output_fields"]) == {"vmaf"}
+    assert set(_SiblingBrisqueModule.get_metadata()["output_fields"]) == {"brisque"}
+
+
+def test_clap_variant_metadata_owns_only_its_metric_field():
+    from ayase.modules.clap_score import (
+        GenericCLAPScoreModule,
+        LAIONCLAPScoreModule,
+        MSCLAPScoreModule,
+    )
+
+    for cls in (LAIONCLAPScoreModule, MSCLAPScoreModule, GenericCLAPScoreModule):
+        expected = {cls.metric_field_name}
+        metadata = cls.get_metadata()
+        assert set(metadata["output_fields"]) == expected
+        assert set(metadata["provenance"]) == expected
+        assert set(metadata["sources"]) == expected
+
+
+@pytest.mark.parametrize(
+    ("module_path", "class_name", "field"),
+    [
+        ("ayase.modules.flip_metric", "FLIPCompatModule", "flip_score"),
+        ("ayase.modules.mad_metric", "MADCompatModule", "mad"),
+        ("ayase.modules.nlpd_metric", "NLPDCompatModule", "nlpd"),
+        ("ayase.modules.pi_metric", "PICompatModule", "pi_score"),
+        ("ayase.modules.unique_iqa", "UNIQUECompatModule", "unique_score"),
+    ],
+)
+def test_compat_metadata_inherits_real_output_without_sibling_leakage(
+    module_path, class_name, field
+):
+    module = __import__(module_path, fromlist=[class_name])
+    metadata = getattr(module, class_name).get_metadata()
+    assert set(metadata["output_fields"]) == {field}
+    assert set(metadata["provenance"]) == {field}
+    assert set(metadata["sources"]) == {field}
+
+
 def test_failed_writer_restores_value_and_provenance(tmp_path):
     module = _FailingWriterModule()
     module._mounted = True
@@ -490,9 +581,7 @@ def test_failed_writer_restores_value_and_provenance(tmp_path):
     sample = Sample(
         path=tmp_path / "x.png",
         is_video=False,
-        quality_metrics=QualityMetrics(
-            vmaf=12.0, metric_provenance={"vmaf": "adapted"}
-        ),
+        quality_metrics=QualityMetrics(vmaf=12.0, metric_provenance={"vmaf": "adapted"}),
     )
     out = p.process_sample(sample)
     assert out.quality_metrics.vmaf == 12.0
@@ -506,9 +595,7 @@ def test_failed_batch_writer_restores_value_and_provenance(tmp_path):
     sample = Sample(
         path=tmp_path / "x.png",
         is_video=False,
-        quality_metrics=QualityMetrics(
-            vmaf=12.0, metric_provenance={"vmaf": "adapted"}
-        ),
+        quality_metrics=QualityMetrics(vmaf=12.0, metric_provenance={"vmaf": "adapted"}),
     )
     out = p._process_module_batch(module, [sample])[0]
     assert out.quality_metrics.vmaf == 12.0

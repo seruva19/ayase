@@ -16,9 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 logger = logging.getLogger(__name__)
 
 _MISSING = object()
-_METRIC_WRITE_OBSERVER: ContextVar[Any] = ContextVar(
-    "ayase_metric_write_observer", default=None
-)
+_METRIC_WRITE_OBSERVER: ContextVar[Any] = ContextVar("ayase_metric_write_observer", default=None)
 
 
 @contextmanager
@@ -175,9 +173,7 @@ class QualityMetrics(BaseModel):
     # Fields that carry provenance/bookkeeping rather than a computed metric.
     # They are excluded from the metric-view helpers (counts, grouping, summary)
     # so adding them does not inflate metric statistics.
-    _NON_METRIC_FIELDS: ClassVar[frozenset] = frozenset(
-        {"metric_backends", "metric_provenance"}
-    )
+    _NON_METRIC_FIELDS: ClassVar[frozenset] = frozenset({"metric_backends", "metric_provenance"})
 
     # Metric fields renamed in 0.1.80 (see CHANGELOG). Reading the old name
     # still resolves to the renamed field, with a DeprecationWarning, so
@@ -387,9 +383,7 @@ class QualityMetrics(BaseModel):
         for field, group in mapping.items():
             existing = cls._FIELD_GROUPS.get(field)
             if existing is not None and existing != group:
-                logger.warning(
-                    "metric group for %r overridden: %r -> %r", field, existing, group
-                )
+                logger.warning("metric group for %r overridden: %r -> %r", field, existing, group)
             cls._FIELD_GROUPS[field] = group
 
     # -- Fields -----------------------------------------------------------
@@ -412,7 +406,9 @@ class QualityMetrics(BaseModel):
     stabilized_camera_score: Optional[float] = None  # Stabilized camera motion estimate
     cpbd_score: Optional[float] = None  # CPBD perceptual blur detection (0-1, higher=sharper)
     imaging_noise_score: Optional[float] = None  # Imaging noise level (0-1, higher=cleaner)
-    imaging_artifacts_score: Optional[float] = None  # Imaging edge-density artifacts (0-1, higher=cleaner)
+    imaging_artifacts_score: Optional[float] = (
+        None  # Imaging edge-density artifacts (0-1, higher=cleaner)
+    )
     watermark_probability: Optional[float] = None  # 0-1
     ocr_area_ratio: Optional[float] = None  # 0-1
     face_count: Optional[int] = None
@@ -427,86 +423,210 @@ class QualityMetrics(BaseModel):
     blip_bleu: Optional[float] = None
     detection_score: Optional[float] = None
     count_score: Optional[float] = None
-    person_count: Optional[int] = None  # Peak number of 'person' detections in a single frame (crowd size)
-    person_count_score: Optional[float] = None  # Normalized crowd/person-count score (0-100, saturates at 10/frame)
+    person_count: Optional[int] = (
+        None  # Peak number of 'person' detections in a single frame (crowd size)
+    )
+    person_count_score: Optional[float] = (
+        None  # Normalized crowd/person-count score (0-100, saturates at 10/frame)
+    )
     color_score: Optional[float] = None
     face_id_similarity: Optional[float] = None
     identity_loss: Optional[float] = None  # Face identity cosine distance (0-1, lower=better)
-    face_recognition_score: Optional[float] = None  # Face identity cosine similarity (0-1, higher=better)
-    facesim_cur: Optional[float] = None  # FaceSim-Cur, CurricularFace cosine to a reference face (ConsisID; higher=better)
-    facesim_arc: Optional[float] = None  # FaceSim-Arc, ArcFace cosine to a reference face (ConsisID; higher=better)
-    facesim_face_frames: Optional[float] = None  # FaceSim frames with a detected face / sampled frames (0-1)
-    csim: Optional[float] = None  # CSIM, mean ArcFace cosine to the reference face (Zakharov 2019 / SadTalker; higher=better)
-    csim_face_frames: Optional[float] = None  # CSIM frames with a detected face / evaluated frames (0-1)
-    sim_o: Optional[float] = None  # SIM-o, WavLM-TDNN speaker similarity to the original reference audio (-1..1)
-    id_reveal_distance: Optional[float] = None  # ID-Reveal distance to reference videos (Cozzolino 2021; lower=better)
+    face_recognition_score: Optional[float] = (
+        None  # Face identity cosine similarity (0-1, higher=better)
+    )
+    facesim_cur: Optional[float] = (
+        None  # FaceSim-Cur, CurricularFace cosine to a reference face (ConsisID; higher=better)
+    )
+    facesim_arc: Optional[float] = (
+        None  # FaceSim-Arc, ArcFace cosine to a reference face (ConsisID; higher=better)
+    )
+    facesim_face_frames: Optional[float] = (
+        None  # FaceSim frames with a detected face / sampled frames (0-1)
+    )
+    csim: Optional[float] = (
+        None  # CSIM, mean ArcFace cosine to the reference face (Zakharov 2019 / SadTalker; higher=better)
+    )
+    csim_face_frames: Optional[float] = (
+        None  # CSIM frames with a detected face / evaluated frames (0-1)
+    )
+    sim_o: Optional[float] = (
+        None  # SIM-o, WavLM-TDNN speaker similarity to the original reference audio (-1..1)
+    )
+    id_reveal_distance: Optional[float] = (
+        None  # ID-Reveal distance to reference videos (Cozzolino 2021; lower=better)
+    )
     id_reveal_tracks: Optional[float] = None  # ID-Reveal face tracks contributing to the score
-    aed: Optional[float] = None  # AED, mean 3DMM expression-coefficient distance to the driver video (PIRenderer; lower=better)
-    apd: Optional[float] = None  # APD, mean 3DMM pose-coefficient distance to the driver video (PIRenderer; lower=better)
-    head_pose_diversity: Optional[float] = None  # Head-pose diversity, temporal std of pose coefficients (SadTalker; higher=more diverse)
-    head_beat_align: Optional[float] = None  # Head Beat Align, Bailando kernel between audio and head-motion beats (0-1, higher=better)
-    expr_var_3dmm: Optional[float] = None  # Variation of 3DMM expression coefficients over time (higher=more varied)
-    pose_var_3dmm: Optional[float] = None  # Variation of 3DMM pose coefficients over time (higher=more varied)
-    aucon: Optional[float] = None  # AUCON, fraction of frames with coincident active-AU sets vs driver (MarioNETte; 0-1, higher=better)
-    prmse: Optional[float] = None  # PRMSE, RMSE of head-pose angles vs driver (MarioNETte; lower=better)
-    lmd: Optional[float] = None  # LMD, lip-landmark distance to the source video (Chen 2018; lower=better)
-    f_lmd: Optional[float] = None  # F-LMD, full-face landmark distance to the source video (Chen 2018; lower=better)
+    aed: Optional[float] = (
+        None  # AED, mean 3DMM expression-coefficient distance to the driver video (PIRenderer; lower=better)
+    )
+    apd: Optional[float] = (
+        None  # APD, mean 3DMM pose-coefficient distance to the driver video (PIRenderer; lower=better)
+    )
+    head_pose_diversity: Optional[float] = (
+        None  # Head-pose diversity, temporal std of pose coefficients (SadTalker; higher=more diverse)
+    )
+    head_beat_align: Optional[float] = (
+        None  # Head Beat Align, Bailando kernel between audio and head-motion beats (0-1, higher=better)
+    )
+    expr_var_3dmm: Optional[float] = (
+        None  # Variation of 3DMM expression coefficients over time (higher=more varied)
+    )
+    pose_var_3dmm: Optional[float] = (
+        None  # Variation of 3DMM pose coefficients over time (higher=more varied)
+    )
+    aucon: Optional[float] = (
+        None  # AUCON, fraction of frames with coincident active-AU sets vs driver (MarioNETte; 0-1, higher=better)
+    )
+    prmse: Optional[float] = (
+        None  # PRMSE, RMSE of head-pose angles vs driver (MarioNETte; lower=better)
+    )
+    lmd: Optional[float] = (
+        None  # LMD, lip-landmark distance to the source video (Chen 2018; lower=better)
+    )
+    f_lmd: Optional[float] = (
+        None  # F-LMD, full-face landmark distance to the source video (Chen 2018; lower=better)
+    )
     akd: Optional[float] = None  # AKD, average keypoint distance vs source (FOMM; lower=better)
     mkr: Optional[float] = None  # MKR, missing keypoint rate vs source (FOMM; 0-1, lower=better)
-    mpjpe: Optional[float] = None  # MPJPE, mean per-joint position error vs source (Ginosar 2019; lower=better)
-    pck: Optional[float] = None  # PCK, fraction of joints within threshold of source pose (0-1, higher=better)
-    beat_consistency: Optional[float] = None  # Beat Consistency, audio/gesture beat kernel (BEAT; 0-1, higher=better)
-    lip_reading_wer: Optional[float] = None  # WER of the lip-read transcript vs caption (0-1, lower=better)
-    acc_emo: Optional[float] = None  # Acc_emo, target-emotion accuracy (EAMM/EAT; 0-1, higher=better)
-    fdd: Optional[float] = None  # FDD, upper-face vertex-motion distance vs GT (CodeTalker; lower=better)
+    mpjpe: Optional[float] = (
+        None  # MPJPE, mean per-joint position error vs source (Ginosar 2019; lower=better)
+    )
+    pck: Optional[float] = (
+        None  # PCK, fraction of joints within threshold of source pose (0-1, higher=better)
+    )
+    beat_consistency: Optional[float] = (
+        None  # Beat Consistency, audio/gesture beat kernel (BEAT; 0-1, higher=better)
+    )
+    lip_reading_wer: Optional[float] = (
+        None  # WER of the lip-read transcript vs caption (0-1, lower=better)
+    )
+    acc_emo: Optional[float] = (
+        None  # Acc_emo, target-emotion accuracy (EAMM/EAT; 0-1, higher=better)
+    )
+    fdd: Optional[float] = (
+        None  # FDD, upper-face vertex-motion distance vs GT (CodeTalker; lower=better)
+    )
     lve: Optional[float] = None  # LVE, lip-vertex error vs GT (MeshTalk; lower=better)
     mod: Optional[float] = None  # MOD, mouth-opening distance vs GT (DiffPoseTalk; lower=better)
     srgr: Optional[float] = None  # SRGR, semantic-weighted gesture PCK (BEAT; 0-1, higher=better)
-    poi_forensics_score: Optional[float] = None  # POI-Forensics AV identity distance vs references (lower=better)
-    manner_correlation: Optional[float] = None  # Mannerism-signature authenticity vs reference person (Agarwal 2019; higher=genuine)
-    face_gesture_correlation: Optional[float] = None  # Face/gesture signature authenticity vs reference person (Bohacek 2022; higher=genuine)
-    behavioral_embedding_distance: Optional[float] = None  # Behavioural embedding distance vs reference recordings (lower=better)
-    clip_image_similarity: Optional[float] = None  # CLIP image-to-image cosine similarity vs reference (0-1, higher=better)
-    face_cross_similarity: Optional[float] = None  # Avg pairwise face similarity (0-1, higher=more consistent)
+    poi_forensics_score: Optional[float] = (
+        None  # POI-Forensics AV identity distance vs references (lower=better)
+    )
+    manner_correlation: Optional[float] = (
+        None  # Mannerism-signature authenticity vs reference person (Agarwal 2019; higher=genuine)
+    )
+    face_gesture_correlation: Optional[float] = (
+        None  # Face/gesture signature authenticity vs reference person (Bohacek 2022; higher=genuine)
+    )
+    behavioral_embedding_distance: Optional[float] = (
+        None  # Behavioural embedding distance vs reference recordings (lower=better)
+    )
+    clip_image_similarity: Optional[float] = (
+        None  # CLIP image-to-image cosine similarity vs reference (0-1, higher=better)
+    )
+    face_cross_similarity: Optional[float] = (
+        None  # Avg pairwise face similarity (0-1, higher=more consistent)
+    )
     face_identity_count: Optional[int] = None  # Number of unique identities detected
-    dino_face_identity: Optional[float] = None  # DINOv2 face identity cosine similarity (0-1, higher=better)
-    dino_face_identity_max: Optional[float] = None  # Max DINOv2 face identity across frames (0-1, higher=better)
-    adaface_identity_similarity: Optional[float] = None  # AdaFace cosine similarity vs reference face (0-1, higher=better)
-    face_identity_detection_coverage: Optional[float] = None  # Detected sampled frames / all sampled frames (0-1)
-    face_identity_similarity_p05: Optional[float] = None  # Fifth-percentile ArcFace similarity (0-1, higher=better)
-    face_identity_similarity_min: Optional[float] = None  # Minimum ArcFace similarity (0-1, higher=better)
-    face_identity_below_threshold_fraction: Optional[float] = None  # Detected frames below caller-supplied threshold (0-1)
-    face_identity_longest_below_threshold_run_fraction: Optional[float] = None  # Longest low-similarity run / sampled frames (0-1)
-    face_identity_drift_slope: Optional[float] = None  # ArcFace similarity slope per normalized sampled sequence
-    id_sim_distance: Optional[float] = None  # ID-Sim fine-grained visual identity distance (lower=better)
-    nearid_identity_similarity: Optional[float] = None  # NearID cosine similarity vs reference image (higher=better)
-    masc_concept_preservation: Optional[float] = None  # MaSC masked-maxcos concept preservation (higher=better)
+    dino_face_identity: Optional[float] = (
+        None  # DINOv2 face identity cosine similarity (0-1, higher=better)
+    )
+    dino_face_identity_max: Optional[float] = (
+        None  # Max DINOv2 face identity across frames (0-1, higher=better)
+    )
+    adaface_identity_similarity: Optional[float] = (
+        None  # AdaFace cosine similarity vs reference face (0-1, higher=better)
+    )
+    face_identity_detection_coverage: Optional[float] = (
+        None  # Detected sampled frames / all sampled frames (0-1)
+    )
+    face_identity_similarity_p05: Optional[float] = (
+        None  # Fifth-percentile ArcFace similarity (0-1, higher=better)
+    )
+    face_identity_similarity_min: Optional[float] = (
+        None  # Minimum ArcFace similarity (0-1, higher=better)
+    )
+    face_identity_below_threshold_fraction: Optional[float] = (
+        None  # Detected frames below caller-supplied threshold (0-1)
+    )
+    face_identity_longest_below_threshold_run_fraction: Optional[float] = (
+        None  # Longest low-similarity run / sampled frames (0-1)
+    )
+    face_identity_drift_slope: Optional[float] = (
+        None  # ArcFace similarity slope per normalized sampled sequence
+    )
+    id_sim_distance: Optional[float] = (
+        None  # ID-Sim fine-grained visual identity distance (lower=better)
+    )
+    nearid_identity_similarity: Optional[float] = (
+        None  # NearID cosine similarity vs reference image (higher=better)
+    )
+    masc_concept_preservation: Optional[float] = (
+        None  # MaSC masked-maxcos concept preservation (higher=better)
+    )
     expression_following: Optional[float] = None  # Driver-expression fidelity (0-1, higher=better)
-    expression_following_distance: Optional[float] = None  # Mean blendshape L1 distance (0-1, lower=better)
+    expression_following_distance: Optional[float] = (
+        None  # Mean blendshape L1 distance (0-1, lower=better)
+    )
     expression_following_coverage: Optional[float] = None  # Joint valid-face coverage (0-1)
-    expression_similarity: Optional[float] = None  # Time-free expression-manner similarity (0-1, higher=better)
-    expression_similarity_distribution: Optional[float] = None  # Expression-repertoire agreement (0-1)
-    expression_similarity_coactivation: Optional[float] = None  # Correlation-structure agreement (0-1)
+    expression_similarity: Optional[float] = (
+        None  # Time-free expression-manner similarity (0-1, higher=better)
+    )
+    expression_similarity_distribution: Optional[float] = (
+        None  # Expression-repertoire agreement (0-1)
+    )
+    expression_similarity_coactivation: Optional[float] = (
+        None  # Correlation-structure agreement (0-1)
+    )
     expression_similarity_dynamics: Optional[float] = None  # Change-rate agreement (0-1)
-    expression_similarity_range_ratio: Optional[float] = None  # Expressive spread, sample/reference (1.0=equal)
-    expression_similarity_coverage: Optional[float] = None  # Lower per-video valid-face coverage (0-1)
-    gaze_blendshape_horizontal_location_difference: Optional[float] = None  # Median horizontal eye-look activation difference (0=equal)
-    gaze_blendshape_vertical_location_difference: Optional[float] = None  # Median vertical eye-look activation difference (0=equal)
-    gaze_blendshape_horizontal_amplitude_difference: Optional[float] = None  # Horizontal eye-look P90-P10 span difference (0=equal)
-    gaze_blendshape_vertical_amplitude_difference: Optional[float] = None  # Vertical eye-look P90-P10 span difference (0=equal)
-    gaze_blendshape_speed_difference: Optional[float] = None  # Median 2-D eye-look activation-speed difference per second (0=equal)
-    gaze_blendshape_binocular_disagreement_difference: Optional[float] = None  # Median left/right ocular-control disagreement difference (0=equal)
-    gaze_blendshape_sample_coverage: Optional[float] = None  # Sample valid eye-look activation coverage (0-1)
-    gaze_blendshape_reference_coverage: Optional[float] = None  # Reference valid eye-look activation coverage (0-1)
-    face_motion_x_correlation: Optional[float] = None  # Frame-aligned landmark-pair x correlation (-1 to 1)
-    face_motion_y_correlation: Optional[float] = None  # Frame-aligned landmark-pair y correlation (-1 to 1)
+    expression_similarity_range_ratio: Optional[float] = (
+        None  # Expressive spread, sample/reference (1.0=equal)
+    )
+    expression_similarity_coverage: Optional[float] = (
+        None  # Lower per-video valid-face coverage (0-1)
+    )
+    gaze_blendshape_horizontal_location_difference: Optional[float] = (
+        None  # Median horizontal eye-look activation difference (0=equal)
+    )
+    gaze_blendshape_vertical_location_difference: Optional[float] = (
+        None  # Median vertical eye-look activation difference (0=equal)
+    )
+    gaze_blendshape_horizontal_amplitude_difference: Optional[float] = (
+        None  # Horizontal eye-look P90-P10 span difference (0=equal)
+    )
+    gaze_blendshape_vertical_amplitude_difference: Optional[float] = (
+        None  # Vertical eye-look P90-P10 span difference (0=equal)
+    )
+    gaze_blendshape_speed_difference: Optional[float] = (
+        None  # Median 2-D eye-look activation-speed difference per second (0=equal)
+    )
+    gaze_blendshape_binocular_disagreement_difference: Optional[float] = (
+        None  # Median left/right ocular-control disagreement difference (0=equal)
+    )
+    gaze_blendshape_sample_coverage: Optional[float] = (
+        None  # Sample valid eye-look activation coverage (0-1)
+    )
+    gaze_blendshape_reference_coverage: Optional[float] = (
+        None  # Reference valid eye-look activation coverage (0-1)
+    )
+    face_motion_x_correlation: Optional[float] = (
+        None  # Frame-aligned landmark-pair x correlation (-1 to 1)
+    )
+    face_motion_y_correlation: Optional[float] = (
+        None  # Frame-aligned landmark-pair y correlation (-1 to 1)
+    )
     face_motion_cca_correlation: Optional[float] = None  # Adapted 2-D canonical correlation (0-1)
     face_motion_blink_precision: Optional[float] = None  # Adapted overlapping-blink precision (0-1)
     face_motion_blink_recall: Optional[float] = None  # Adapted overlapping-blink recall (0-1)
-    face_motion_landmark_pair_coverage: Optional[float] = None  # Defined pair-correlation fraction (0-1)
+    face_motion_landmark_pair_coverage: Optional[float] = (
+        None  # Defined pair-correlation fraction (0-1)
+    )
     face_motion_frame_coverage: Optional[float] = None  # Joint valid-face frame fraction (0-1)
     ocr_score: Optional[float] = None
-    ocr_fidelity: Optional[float] = None  # OCR error vs expected text (mean of NED/CER/WER, lower=better)
+    ocr_fidelity: Optional[float] = (
+        None  # OCR error vs expected text (mean of NED/CER/WER, lower=better)
+    )
     ocr_cer: Optional[float] = None  # Character Error Rate (0-1, lower=better)
     ocr_wer: Optional[float] = None  # Word Error Rate (0-1, lower=better)
 
@@ -580,17 +700,39 @@ class QualityMetrics(BaseModel):
     estoi_score: Optional[float] = None  # ESTOI intelligibility (0-1, higher=better)
     mcd_score: Optional[float] = None  # Mel Cepstral Distortion (dB, lower=better)
     audio_log_f0_rmse_cents: Optional[float] = None  # DTW-aligned log-F0 RMSE (cents, lower=better)
-    audio_f0_voiced_mismatch: Optional[float] = None  # DTW-path voiced/unvoiced mismatch rate (0-1, lower=better)
-    audio_relative_energy_rmse_db: Optional[float] = None  # MFCC-DTW-aligned mean-centred energy RMSE in dB (0+, lower=better)
-    audio_energy_contour_correlation: Optional[float] = None  # MFCC-DTW-aligned relative-energy Pearson correlation (-1..1, higher=better)
-    audio_voiced_fraction_difference: Optional[float] = None  # Absolute pYIN voiced-fraction difference (0-1, lower=better)
-    audio_duration_ratio: Optional[float] = None  # Candidate/reference duration ratio (0+, 1.0=equal)
-    audio_prosody_warp_ratio: Optional[float] = None  # Shorter contour length / MFCC-DTW path length (0-1, higher=less repeated-frame warping)
-    speech_span_duration_ratio: Optional[float] = None  # Candidate/reference first-to-last-speech span duration ratio (0+)
-    speech_activity_fraction_difference: Optional[float] = None  # Absolute Silero-VAD speech-fraction difference (0-1)
-    speech_pause_count_difference: Optional[float] = None  # Absolute internal-pause count difference (0+)
-    speech_pause_duration_wasserstein_ms: Optional[float] = None  # Internal-pause duration Wasserstein distance in ms (0+)
-    speech_activity_pattern_disagreement: Optional[float] = None  # Normalized speech-interval symmetric difference (0-1)
+    audio_f0_voiced_mismatch: Optional[float] = (
+        None  # DTW-path voiced/unvoiced mismatch rate (0-1, lower=better)
+    )
+    audio_relative_energy_rmse_db: Optional[float] = (
+        None  # MFCC-DTW-aligned mean-centred energy RMSE in dB (0+, lower=better)
+    )
+    audio_energy_contour_correlation: Optional[float] = (
+        None  # MFCC-DTW-aligned relative-energy Pearson correlation (-1..1, higher=better)
+    )
+    audio_voiced_fraction_difference: Optional[float] = (
+        None  # Absolute pYIN voiced-fraction difference (0-1, lower=better)
+    )
+    audio_duration_ratio: Optional[float] = (
+        None  # Candidate/reference duration ratio (0+, 1.0=equal)
+    )
+    audio_prosody_warp_ratio: Optional[float] = (
+        None  # Shorter contour length / MFCC-DTW path length (0-1, higher=less repeated-frame warping)
+    )
+    speech_span_duration_ratio: Optional[float] = (
+        None  # Candidate/reference first-to-last-speech span duration ratio (0+)
+    )
+    speech_activity_fraction_difference: Optional[float] = (
+        None  # Absolute Silero-VAD speech-fraction difference (0-1)
+    )
+    speech_pause_count_difference: Optional[float] = (
+        None  # Absolute internal-pause count difference (0+)
+    )
+    speech_pause_duration_wasserstein_ms: Optional[float] = (
+        None  # Internal-pause duration Wasserstein distance in ms (0+)
+    )
+    speech_activity_pattern_disagreement: Optional[float] = (
+        None  # Normalized speech-interval symmetric difference (0-1)
+    )
     si_sdr_score: Optional[float] = None  # Scale-Invariant SDR (dB, higher=better)
     squim_stoi_score: Optional[float] = None  # SQUIM STOI estimate (0-1, higher=better)
     squim_pesq_score: Optional[float] = None  # SQUIM WB-PESQ estimate (~1-4.64, higher=better)
@@ -599,19 +741,41 @@ class QualityMetrics(BaseModel):
     cdpam_score: Optional[float] = None  # CDPAM perceptual audio distance (lower=better)
     utmos_score: Optional[float] = None  # UTMOS predicted MOS (1-5, higher=better)
     utmos_v2_score: Optional[float] = None  # UTMOSv2 predicted MOS (1-5, higher=better)
-    distill_mos_score: Optional[float] = None  # Distill-MOS overall speech quality (1-5, higher=better)
-    asr_cer: Optional[float] = None  # ASR character error rate vs reference text (unbounded, lower=better)
-    asr_wer: Optional[float] = None  # ASR word error rate vs reference text (unbounded, lower=better)
-    speech_bert_score: Optional[float] = None  # Matching-content speech similarity (-1..1, higher=better)
-    scoreq_score: Optional[float] = None  # SCOREQ domain-dependent speech quality MOS (higher=better)
-    tts_system_dist_score: Optional[float] = None  # TTSDS2 distribution score (0-100, higher=better)
-    human_clap_score: Optional[float] = None  # Human-CLAP audio-text relevance (0-1, higher=better)
-    laion_clap_score: Optional[float] = None  # LAION-CLAP audio-text relevance (0-1, higher=better)
-    ms_clap_score: Optional[float] = None  # Microsoft CLAP audio-text relevance (0-1, higher=better)
-    clap_score: Optional[float] = None  # Generic CLAP audio-text relevance (0-1, higher=better)
+    distill_mos_score: Optional[float] = (
+        None  # Distill-MOS overall speech quality (1-5, higher=better)
+    )
+    asr_cer: Optional[float] = (
+        None  # ASR character error rate vs reference text (unbounded, lower=better)
+    )
+    asr_wer: Optional[float] = (
+        None  # ASR word error rate vs reference text (unbounded, lower=better)
+    )
+    speech_bert_score: Optional[float] = (
+        None  # Matching-content speech similarity (-1..1, higher=better)
+    )
+    scoreq_score: Optional[float] = (
+        None  # SCOREQ domain-dependent speech quality MOS (higher=better)
+    )
+    tts_system_dist_score: Optional[float] = (
+        None  # TTSDS2 distribution score (0-100, higher=better)
+    )
+    human_clap_score: Optional[float] = (
+        None  # Human-CLAP raw audio-text cosine (-1..1, higher=better)
+    )
+    laion_clap_score: Optional[float] = (
+        None  # LAION-CLAP raw audio-text cosine (-1..1, higher=better)
+    )
+    ms_clap_score: Optional[float] = (
+        None  # Microsoft CLAP raw audio-text cosine (-1..1, higher=better)
+    )
+    clap_score: Optional[float] = None  # Generic CLAP raw audio-text cosine (-1..1, higher=better)
     imagebind_score: Optional[float] = None  # ImageBind audio-text relevance (0-1, higher=better)
-    imagebind_av_score: Optional[float] = None  # Raw ImageBind audio-video semantic cosine (-1..1, higher=better)
-    pam_score: Optional[float] = None  # PAM anti-prompt perceptual audio quality (0-1, higher=better)
+    imagebind_av_score: Optional[float] = (
+        None  # Raw ImageBind audio-video semantic cosine (-1..1, higher=better)
+    )
+    pam_score: Optional[float] = (
+        None  # PAM anti-prompt perceptual audio quality (0-1, higher=better)
+    )
     aqascore_score: Optional[float] = None  # AQAScore audio question-answering alignment (0-1)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
 
@@ -629,8 +793,12 @@ class QualityMetrics(BaseModel):
     color_grading_score: Optional[float] = None  # Colour consistency 0-100
     white_balance_score: Optional[float] = None  # White balance accuracy 0-100
     exposure_consistency: Optional[float] = None  # Exposure stability 0-100
-    underexposed_pixel_ratio: Optional[float] = None  # Share of gray pixels < 15 (0-1, lower=better)
-    overexposed_pixel_ratio: Optional[float] = None  # Share of gray pixels > 240 (0-1, lower=better)
+    underexposed_pixel_ratio: Optional[float] = (
+        None  # Share of gray pixels < 15 (0-1, lower=better)
+    )
+    overexposed_pixel_ratio: Optional[float] = (
+        None  # Share of gray pixels > 240 (0-1, lower=better)
+    )
     focus_quality: Optional[float] = None  # Sharpness/focus quality 0-100
     banding_severity: Optional[float] = None  # Colour banding 0-100 (lower=better)
 
@@ -771,12 +939,16 @@ class QualityMetrics(BaseModel):
 
     # ImageReward (human preference for text-to-image)
     image_reward_score: Optional[float] = None  # Human preference reward (-2..+2, higher=better)
-    pickscore_score: Optional[float] = None  # PickScore prompt-image preference score (higher=better)
+    pickscore_score: Optional[float] = (
+        None  # PickScore prompt-image preference score (higher=better)
+    )
     hpsv2_score: Optional[float] = None  # HPSv2 prompt-image preference score (higher=better)
     hpsv3_score: Optional[float] = None  # HPSv3 human preference reward mu (higher=better)
     cycle_reward_score: Optional[float] = None  # CycleReward-Combo alignment (higher=better)
     chipqa_score: Optional[float] = None  # ChipQA space-time-chip NR-VQA (higher=better)
-    evoquality_score: Optional[float] = None  # EvoQuality self-evolving VLM NR-IQA (1-5, higher=better)
+    evoquality_score: Optional[float] = (
+        None  # EvoQuality self-evolving VLM NR-IQA (1-5, higher=better)
+    )
 
     # Text overlay (NVIDIA Curator)
     text_overlay_score: Optional[float] = None  # Text overlay severity (0-1)
@@ -889,7 +1061,9 @@ class QualityMetrics(BaseModel):
 
     # ChronoMagic-Bench (NeurIPS 2024, arXiv:2406.18522)
     chronomagic_mt_score: Optional[float] = None  # Metamorphic temporal (0-1, higher=better)
-    chronomagic_ch_score: Optional[float] = None  # CHScore = 1/TSI_sum (unbounded, higher=more coherent)
+    chronomagic_ch_score: Optional[float] = (
+        None  # CHScore = 1/TSI_sum (unbounded, higher=more coherent)
+    )
 
     # GenEval T2I compositional (NeurIPS 2024, arXiv:2310.11513) — image-only, 0-1, higher=better
     clipchk_single_object: Optional[float] = None  # Single-object presence
@@ -985,7 +1159,6 @@ class QualityMetrics(BaseModel):
     vqinsight_consistency: Optional[float] = None  # VQ-Insight AIGC consistency dim
     vqathinker_score: Optional[float] = None  # VQAThinker GRPO (higher=better)
 
-
     # Video reward models
     hpsv2_const_quality: Optional[float] = None  # VADER reward alignment
 
@@ -1056,19 +1229,35 @@ class QualityMetrics(BaseModel):
     song_eval_coherence: Optional[float] = None  # SongEval overall coherence (1-5, higher=better)
     song_eval_musicality: Optional[float] = None  # SongEval overall musicality (1-5, higher=better)
     song_eval_memorability: Optional[float] = None  # SongEval memorability (1-5, higher=better)
-    song_eval_clarity: Optional[float] = None  # SongEval clarity of song structure (1-5, higher=better)
-    song_eval_naturalness: Optional[float] = None  # SongEval vocal breathing/phrasing naturalness (1-5, higher=better)
-    muq_eval_mi_score: Optional[float] = None  # MuQ-Eval musical impression MOS (1-5, higher=better)
+    song_eval_clarity: Optional[float] = (
+        None  # SongEval clarity of song structure (1-5, higher=better)
+    )
+    song_eval_naturalness: Optional[float] = (
+        None  # SongEval vocal breathing/phrasing naturalness (1-5, higher=better)
+    )
+    muq_eval_mi_score: Optional[float] = (
+        None  # MuQ-Eval musical impression MOS (1-5, higher=better)
+    )
 
     # Talking head / lip sync
     lse_d: Optional[float] = None  # LSE-D lip sync error distance (lower=better)
     lse_c: Optional[float] = None  # LSE-C lip sync error confidence (higher=better)
-    silent_lip_stability: Optional[float] = None  # THEval silent-mouth lip-opening MAD (lower=better)
-    lip_dynamics_score: Optional[float] = None  # THEval mouth-shape distance variation (higher=more dynamic)
-    eyebrow_dynamics_score: Optional[float] = None  # THEval normalized brow-motion intensity (higher=more dynamic)
-    head_motion_dynamics_score: Optional[float] = None  # THEval pose/translation complexity (higher=more dynamic)
+    silent_lip_stability: Optional[float] = (
+        None  # THEval silent-mouth lip-opening MAD (lower=better)
+    )
+    lip_dynamics_score: Optional[float] = (
+        None  # THEval mouth-shape distance variation (higher=more dynamic)
+    )
+    eyebrow_dynamics_score: Optional[float] = (
+        None  # THEval normalized brow-motion intensity (higher=more dynamic)
+    )
+    head_motion_dynamics_score: Optional[float] = (
+        None  # THEval pose/translation complexity (higher=more dynamic)
+    )
     mouth_quality_score: Optional[float] = None  # THEval MUSIQ on mouth crops (higher=better)
-    video_edit_motion_fidelity: Optional[float] = None  # Source/edit trajectory-motion similarity (higher=better)
+    video_edit_motion_fidelity: Optional[float] = (
+        None  # Source/edit trajectory-motion similarity (higher=better)
+    )
 
     # Video segmentation
     davis_j: Optional[float] = None  # DAVIS J region similarity IoU (higher=better)
@@ -1084,21 +1273,33 @@ class QualityMetrics(BaseModel):
     dsg_score: Optional[float] = None  # DSG Davidsonian Scene Graph (higher=better)
 
     # Image LPIPS (FR perceptual distance)
-    image_lpips: Optional[float] = None  # LPIPS perceptual distance vs reference (0-1, lower=more similar)
+    image_lpips: Optional[float] = (
+        None  # LPIPS perceptual distance vs reference (0-1, lower=more similar)
+    )
 
     # Concept presence detection
-    concept_presence: Optional[float] = None  # Concept presence confidence (0-1, higher=more confident)
+    concept_presence: Optional[float] = (
+        None  # Concept presence confidence (0-1, higher=more confident)
+    )
     concept_count: Optional[int] = None  # Number of detected instances of target concept
     concept_face_count: Optional[int] = None  # Number of faces detected
 
     # Fine-grained preference reward (VisionReward, AAAI 2026)
-    vision_reward_score: Optional[float] = None  # VisionReward weighted judgment score (higher=better)
+    vision_reward_score: Optional[float] = (
+        None  # VisionReward weighted judgment score (higher=better)
+    )
 
     # Physics-IQ reference-based physical understanding (ICCV 2025)
-    physics_iq_neutral_score: Optional[float] = None  # Combined Physics-IQ score (0-100, higher=better)
+    physics_iq_neutral_score: Optional[float] = (
+        None  # Combined Physics-IQ score (0-100, higher=better)
+    )
     physics_iq_spatial_iou: Optional[float] = None  # Spatial IoU vs real continuation (0-1)
-    physics_iq_spatiotemporal_iou: Optional[float] = None  # Spatiotemporal IoU vs real continuation (0-1)
-    physics_iq_weighted_spatial_iou: Optional[float] = None  # Weighted spatial IoU vs real continuation (0-1)
+    physics_iq_spatiotemporal_iou: Optional[float] = (
+        None  # Spatiotemporal IoU vs real continuation (0-1)
+    )
+    physics_iq_weighted_spatial_iou: Optional[float] = (
+        None  # Weighted spatial IoU vs real continuation (0-1)
+    )
     physics_iq_mse: Optional[float] = None  # MSE vs real continuation (lower=better)
     physics_iq_verified_score: Optional[float] = None  # Two-real-take verified score (0-100)
     physics_iq_verified_spatial_score: Optional[float] = None  # Variance-normalized spatial IoU
@@ -1131,81 +1332,205 @@ class QualityMetrics(BaseModel):
     i2i_lpips_alex: Optional[float] = None
 
     # Camera trajectory adherence (CamI2V-style pose errors)
-    camera_rot_error: Optional[float] = None  # RotErr: rotation error vs target trajectory (deg, lower=better)
-    camera_trans_error: Optional[float] = None  # TransErr: translation error vs target trajectory (lower=better)
-    camera_traj_consistency: Optional[float] = None  # CamMC: camera motion consistency (lower=better)
+    camera_rot_error: Optional[float] = (
+        None  # RotErr: rotation error vs target trajectory (deg, lower=better)
+    )
+    camera_trans_error: Optional[float] = (
+        None  # TransErr: translation error vs target trajectory (lower=better)
+    )
+    camera_traj_consistency: Optional[float] = (
+        None  # CamMC: camera motion consistency (lower=better)
+    )
 
     # Camera motion taxonomy (CameraBench)
-    camera_motion_class_confidence: Optional[float] = None  # Confidence of predicted camera-motion class (0-1)
+    camera_motion_class_confidence: Optional[float] = (
+        None  # Confidence of predicted camera-motion class (0-1)
+    )
 
     # Audio-visual generation sync
     desync_score: Optional[float] = None  # Synchformer predicted AV offset (seconds, lower=better)
     av_align_score: Optional[float] = None  # AV-Align onset/flow-peak IoU (0-1, higher=better)
 
     # Subject-driven generation consistency (OpenS2V-Eval)
-    opens2v_nexus_score: Optional[float] = None  # NexusScore detected-subject-crop consistency (higher=better)
+    opens2v_nexus_score: Optional[float] = (
+        None  # NexusScore detected-subject-crop consistency (higher=better)
+    )
     opens2v_natural_score: Optional[float] = None  # NaturalScore VLM naturalness (higher=better)
 
     # Human anatomy plausibility
-    anatomy_score: Optional[float] = None  # Keypoint-based limb-count/anatomy plausibility (0-1, higher=better)
+    anatomy_score: Optional[float] = (
+        None  # Keypoint-based limb-count/anatomy plausibility (0-1, higher=better)
+    )
 
     # RTMPose pose/gesture plausibility
-    rtmpose_score: Optional[float] = None  # RTMPose keypoint-confidence pose plausibility (0-1, higher=better)
-    pose_driver_fidelity: Optional[float] = None  # Body-pose fidelity to a driving video, PCK over normalised skeletons (0-1, higher=better)
-    pose_driver_fidelity_min: Optional[float] = None  # Worst matched moment of the same measure (0-1, higher=better)
-    pose_driver_fidelity_coverage: Optional[float] = None  # Share of compared moments where both skeletons were found (0-1)
-    pose_heat_ssim: Optional[float] = None  # Aligned 133-joint pose-heatmap SSIM (0-1, higher=better)
-    pose_heat_ssim_coverage: Optional[float] = None  # Share of corresponding frames with one valid pose in both clips (0-1)
-    motion_manner_similarity: Optional[float] = None  # Movement-manner similarity to a reference clip, no time alignment (0-1, higher=better)
-    motion_manner_speed_agreement: Optional[float] = None  # Whole-body speed-distribution agreement with the reference (0-1, higher=better)
-    motion_manner_head_agreement: Optional[float] = None  # Head-keypoint speed-distribution agreement (0-1, higher=better)
-    motion_manner_arm_agreement: Optional[float] = None  # Arm-keypoint speed-distribution agreement; unset when the wrists are out of frame (0-1, higher=better)
-    motion_manner_amplitude_ratio: Optional[float] = None  # Speed spread of the sample over the reference (1.0 = equal)
-    motion_manner_coverage: Optional[float] = None  # Lower of the two per-clip shares of moments with a detected person (0-1)
-    motion_manner_arm_coverage: Optional[float] = None  # Lower of the two per-clip shares of moments with a visible wrist (0-1)
-    body_motion_speed_ratio: Optional[float] = None  # Median normalized joint speed, sample/reference (1.0 = equal)
-    body_motion_acceleration_ratio: Optional[float] = None  # Median normalized joint acceleration, sample/reference (1.0 = equal)
-    body_motion_jerk_ratio: Optional[float] = None  # Median normalized joint jerk, sample/reference (1.0 = equal)
-    body_motion_range_ratio: Optional[float] = None  # Median joint trajectory range, sample/reference (1.0 = equal)
-    body_motion_left_right_symmetry_difference: Optional[float] = None  # Absolute left/right motion-balance difference (0-1, lower=closer)
-    body_motion_idle_fraction_difference: Optional[float] = None  # Absolute low-speed frame-fraction difference (0-1, lower=closer)
-    body_motion_pose_coverage: Optional[float] = None  # Minimum generated/reference usable-pose coverage (0-1, higher=more observable)
-    body_motion_arm_coverage: Optional[float] = None  # Minimum generated/reference coverage with at least one complete arm chain (0-1, higher=more observable)
-    hand_gesture_sample_coverage: Optional[float] = None  # Sample frames with at least one normalizable hand (0-1)
-    hand_gesture_reference_coverage: Optional[float] = None  # Reference frames with at least one normalizable hand (0-1)
-    hand_gesture_sample_joint_observability: Optional[float] = None  # Confident sample hand joints among 42 per sampled frame (0-1)
-    hand_gesture_reference_joint_observability: Optional[float] = None  # Confident reference hand joints among 42 per sampled frame (0-1)
-    hand_gesture_articulation_location_difference: Optional[float] = None  # Median finger-straightness difference (0-1, 0=equal)
-    hand_gesture_articulation_amplitude_difference: Optional[float] = None  # Finger-straightness p90-p10 span difference (0-1, 0=equal)
-    hand_gesture_openness_location_difference: Optional[float] = None  # Median palm-normalized openness difference (0=equal)
-    hand_gesture_openness_amplitude_difference: Optional[float] = None  # Palm-normalized openness span difference (0=equal)
-    hand_gesture_pinch_location_difference: Optional[float] = None  # Median palm-normalized thumb-index distance difference (0=equal)
-    hand_gesture_pinch_amplitude_difference: Optional[float] = None  # Palm-normalized pinch span difference (0=equal)
-    hand_gesture_articulation_speed_difference: Optional[float] = None  # Median normalized hand-shape speed difference per second (0=equal)
-    hand_gesture_left_right_asymmetry_difference: Optional[float] = None  # Normalized left/right shape-speed asymmetry difference (0-1, 0=equal)
-    head_pose_similarity: Optional[float] = None  # Head-motion manner similarity to a reference clip, no time alignment (0-1, higher=better)
-    head_pose_angle_agreement: Optional[float] = None  # Agreement of the head-angle distributions; carries camera placement (0-1)
-    head_pose_rate_agreement: Optional[float] = None  # Agreement of the angular-rate distributions; survives a change of camera (0-1)
-    head_pose_similarity_coverage: Optional[float] = None  # Lower of the two per-clip shares of sampled frames with a head pose (0-1)
-    voice_identity: Optional[float] = None  # Mean speaker-embedding cosine similarity to a reference set of the person (higher=better)
-    voice_identity_coverage: Optional[float] = None  # Share of reference files that yielded a speaker embedding (0-1)
-    voice_identity_window_coverage: Optional[float] = None  # Valid ECAPA candidate windows / scheduled windows (0-1)
-    voice_identity_reference_coverage: Optional[float] = None  # Valid ECAPA reference embeddings / selected references (0-1)
-    voice_identity_similarity_p05: Optional[float] = None  # Fifth-percentile window cosine similarity to reference centroid (-1 to 1)
-    voice_identity_similarity_min: Optional[float] = None  # Minimum window cosine similarity to reference centroid (-1 to 1)
-    voice_identity_below_threshold_fraction: Optional[float] = None  # Valid windows below caller threshold (0-1)
-    voice_identity_longest_below_threshold_run_fraction: Optional[float] = None  # Longest below-threshold run / scheduled windows (0-1)
-    voice_identity_drift_slope: Optional[float] = None  # Cosine-similarity trend per normalized scheduled sequence
-    multi_subject_identity_worst: Optional[float] = None  # Lowest per-subject identity similarity in a multi-person clip (higher=better)
-    multi_subject_identity_mean: Optional[float] = None  # Mean per-subject identity similarity in a multi-person clip (higher=better)
-    multi_subject_identity_coverage: Optional[float] = None  # Share of sampled frames covered by the assigned face tracks (0-1)
-    multi_subject_identity_tracks: Optional[float] = None  # Number of face tracks the assignment was built from
-    active_speaker_margin: Optional[float] = None  # Lip-sync confidence gap between the best-synced face and the runner-up (higher=cleaner)
-    active_speaker_best_conf: Optional[float] = None  # Lip-sync confidence of the best-synced face (higher=better)
-    active_speaker_silent_faces: Optional[float] = None  # Faces for which no talking mouth was detected
-    object_permanence_interior_vanish: Optional[float] = None  # Tracks that ended away from the frame border (disappearance, not exit)
-    object_permanence_border_exit: Optional[float] = None  # Tracks that ended at the frame border (a legitimate exit)
-    object_permanence_occlusion_share: Optional[float] = None  # Share of frames with overlapping boxes; how far the two counts above can be trusted
+    rtmpose_score: Optional[float] = (
+        None  # RTMPose keypoint-confidence pose plausibility (0-1, higher=better)
+    )
+    pose_driver_fidelity: Optional[float] = (
+        None  # Body-pose fidelity to a driving video, PCK over normalised skeletons (0-1, higher=better)
+    )
+    pose_driver_fidelity_min: Optional[float] = (
+        None  # Worst matched moment of the same measure (0-1, higher=better)
+    )
+    pose_driver_fidelity_coverage: Optional[float] = (
+        None  # Share of compared moments where both skeletons were found (0-1)
+    )
+    pose_heat_ssim: Optional[float] = (
+        None  # Aligned 133-joint pose-heatmap SSIM (0-1, higher=better)
+    )
+    pose_heat_ssim_coverage: Optional[float] = (
+        None  # Share of corresponding frames with one valid pose in both clips (0-1)
+    )
+    motion_manner_similarity: Optional[float] = (
+        None  # Movement-manner similarity to a reference clip, no time alignment (0-1, higher=better)
+    )
+    motion_manner_speed_agreement: Optional[float] = (
+        None  # Whole-body speed-distribution agreement with the reference (0-1, higher=better)
+    )
+    motion_manner_head_agreement: Optional[float] = (
+        None  # Head-keypoint speed-distribution agreement (0-1, higher=better)
+    )
+    motion_manner_arm_agreement: Optional[float] = (
+        None  # Arm-keypoint speed-distribution agreement; unset when the wrists are out of frame (0-1, higher=better)
+    )
+    motion_manner_amplitude_ratio: Optional[float] = (
+        None  # Speed spread of the sample over the reference (1.0 = equal)
+    )
+    motion_manner_coverage: Optional[float] = (
+        None  # Lower of the two per-clip shares of moments with a detected person (0-1)
+    )
+    motion_manner_arm_coverage: Optional[float] = (
+        None  # Lower of the two per-clip shares of moments with a visible wrist (0-1)
+    )
+    body_motion_speed_ratio: Optional[float] = (
+        None  # Median normalized joint speed, sample/reference (1.0 = equal)
+    )
+    body_motion_acceleration_ratio: Optional[float] = (
+        None  # Median normalized joint acceleration, sample/reference (1.0 = equal)
+    )
+    body_motion_jerk_ratio: Optional[float] = (
+        None  # Median normalized joint jerk, sample/reference (1.0 = equal)
+    )
+    body_motion_range_ratio: Optional[float] = (
+        None  # Median joint trajectory range, sample/reference (1.0 = equal)
+    )
+    body_motion_left_right_symmetry_difference: Optional[float] = (
+        None  # Absolute left/right motion-balance difference (0-1, lower=closer)
+    )
+    body_motion_idle_fraction_difference: Optional[float] = (
+        None  # Absolute low-speed frame-fraction difference (0-1, lower=closer)
+    )
+    body_motion_pose_coverage: Optional[float] = (
+        None  # Minimum generated/reference usable-pose coverage (0-1, higher=more observable)
+    )
+    body_motion_arm_coverage: Optional[float] = (
+        None  # Minimum generated/reference coverage with at least one complete arm chain (0-1, higher=more observable)
+    )
+    hand_gesture_sample_coverage: Optional[float] = (
+        None  # Sample frames with at least one normalizable hand (0-1)
+    )
+    hand_gesture_reference_coverage: Optional[float] = (
+        None  # Reference frames with at least one normalizable hand (0-1)
+    )
+    hand_gesture_sample_joint_observability: Optional[float] = (
+        None  # Confident sample hand joints among 42 per sampled frame (0-1)
+    )
+    hand_gesture_reference_joint_observability: Optional[float] = (
+        None  # Confident reference hand joints among 42 per sampled frame (0-1)
+    )
+    hand_gesture_articulation_location_difference: Optional[float] = (
+        None  # Median finger-straightness difference (0-1, 0=equal)
+    )
+    hand_gesture_articulation_amplitude_difference: Optional[float] = (
+        None  # Finger-straightness p90-p10 span difference (0-1, 0=equal)
+    )
+    hand_gesture_openness_location_difference: Optional[float] = (
+        None  # Median palm-normalized openness difference (0=equal)
+    )
+    hand_gesture_openness_amplitude_difference: Optional[float] = (
+        None  # Palm-normalized openness span difference (0=equal)
+    )
+    hand_gesture_pinch_location_difference: Optional[float] = (
+        None  # Median palm-normalized thumb-index distance difference (0=equal)
+    )
+    hand_gesture_pinch_amplitude_difference: Optional[float] = (
+        None  # Palm-normalized pinch span difference (0=equal)
+    )
+    hand_gesture_articulation_speed_difference: Optional[float] = (
+        None  # Median normalized hand-shape speed difference per second (0=equal)
+    )
+    hand_gesture_left_right_asymmetry_difference: Optional[float] = (
+        None  # Normalized left/right shape-speed asymmetry difference (0-1, 0=equal)
+    )
+    head_pose_similarity: Optional[float] = (
+        None  # Head-motion manner similarity to a reference clip, no time alignment (0-1, higher=better)
+    )
+    head_pose_angle_agreement: Optional[float] = (
+        None  # Agreement of the head-angle distributions; carries camera placement (0-1)
+    )
+    head_pose_rate_agreement: Optional[float] = (
+        None  # Agreement of the angular-rate distributions; survives a change of camera (0-1)
+    )
+    head_pose_similarity_coverage: Optional[float] = (
+        None  # Lower of the two per-clip shares of sampled frames with a head pose (0-1)
+    )
+    voice_identity: Optional[float] = (
+        None  # Mean speaker-embedding cosine similarity to a reference set of the person (higher=better)
+    )
+    voice_identity_coverage: Optional[float] = (
+        None  # Share of reference files that yielded a speaker embedding (0-1)
+    )
+    voice_identity_window_coverage: Optional[float] = (
+        None  # Valid ECAPA candidate windows / scheduled windows (0-1)
+    )
+    voice_identity_reference_coverage: Optional[float] = (
+        None  # Valid ECAPA reference embeddings / selected references (0-1)
+    )
+    voice_identity_similarity_p05: Optional[float] = (
+        None  # Fifth-percentile window cosine similarity to reference centroid (-1 to 1)
+    )
+    voice_identity_similarity_min: Optional[float] = (
+        None  # Minimum window cosine similarity to reference centroid (-1 to 1)
+    )
+    voice_identity_below_threshold_fraction: Optional[float] = (
+        None  # Valid windows below caller threshold (0-1)
+    )
+    voice_identity_longest_below_threshold_run_fraction: Optional[float] = (
+        None  # Longest below-threshold run / scheduled windows (0-1)
+    )
+    voice_identity_drift_slope: Optional[float] = (
+        None  # Cosine-similarity trend per normalized scheduled sequence
+    )
+    multi_subject_identity_worst: Optional[float] = (
+        None  # Lowest per-subject identity similarity in a multi-person clip (higher=better)
+    )
+    multi_subject_identity_mean: Optional[float] = (
+        None  # Mean per-subject identity similarity in a multi-person clip (higher=better)
+    )
+    multi_subject_identity_coverage: Optional[float] = (
+        None  # Share of sampled frames covered by the assigned face tracks (0-1)
+    )
+    multi_subject_identity_tracks: Optional[float] = (
+        None  # Number of face tracks the assignment was built from
+    )
+    active_speaker_margin: Optional[float] = (
+        None  # Lip-sync confidence gap between the best-synced face and the runner-up (higher=cleaner)
+    )
+    active_speaker_best_conf: Optional[float] = (
+        None  # Lip-sync confidence of the best-synced face (higher=better)
+    )
+    active_speaker_silent_faces: Optional[float] = (
+        None  # Faces for which no talking mouth was detected
+    )
+    object_permanence_interior_vanish: Optional[float] = (
+        None  # Tracks that ended away from the frame border (disappearance, not exit)
+    )
+    object_permanence_border_exit: Optional[float] = (
+        None  # Tracks that ended at the frame border (a legitimate exit)
+    )
+    object_permanence_occlusion_share: Optional[float] = (
+        None  # Share of frames with overlapping boxes; how far the two counts above can be trusted
+    )
 
     # VMBench Object Integrity Score (human bone-length/joint-angle temporal integrity)
     object_integrity_score: Optional[float] = None  # VMBench OIS (0-1, higher=better)
@@ -1223,7 +1548,9 @@ class QualityMetrics(BaseModel):
     commonsense_adherence_score: Optional[float] = None  # VMBench CAS (0-1, higher=more plausible)
 
     # Layout artifacts
-    grid_layout_score: Optional[float] = None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
+    grid_layout_score: Optional[float] = (
+        None  # Split-screen/grid-collage likelihood (0-1, higher=more likely)
+    )
 
     # -- Provenance (not a metric) ----------------------------------------
     # Maps ``module.name`` -> the backend/tier that produced its metrics for
@@ -1413,11 +1740,19 @@ class DatasetStats(BaseModel):
     fad: Optional[float] = None  # Frechet Audio Distance (lower=better)
     fad_infinity: Optional[float] = None  # FAD extrapolated to infinite sample size (lower=better)
     fad_vggish: Optional[float] = None  # Frechet Audio Distance with VGGish backbone (lower=better)
-    fad_vggish_infinity: Optional[float] = None  # VGGish FAD extrapolated to infinite sample size (lower=better)
-    fad_panns: Optional[float] = None  # Frechet Audio Distance with PANNs CNN14 backbone (lower=better)
-    fad_panns_infinity: Optional[float] = None  # PANNs FAD extrapolated to infinite sample size (lower=better)
+    fad_vggish_infinity: Optional[float] = (
+        None  # VGGish FAD extrapolated to infinite sample size (lower=better)
+    )
+    fad_panns: Optional[float] = (
+        None  # Frechet Audio Distance with PANNs CNN14 backbone (lower=better)
+    )
+    fad_panns_infinity: Optional[float] = (
+        None  # PANNs FAD extrapolated to infinite sample size (lower=better)
+    )
     fad_passt: Optional[float] = None  # Frechet Audio Distance with PaSST backbone (lower=better)
-    fad_passt_infinity: Optional[float] = None  # PaSST FAD extrapolated to infinite sample size (lower=better)
+    fad_passt_infinity: Optional[float] = (
+        None  # PaSST FAD extrapolated to infinite sample size (lower=better)
+    )
     audio_isc_mean: Optional[float] = None  # Inception Score for Audio mean (higher=better)
     audio_isc_std: Optional[float] = None  # Inception Score for Audio standard deviation
     audio_kl: Optional[float] = None  # Audio classifier distribution KL divergence (lower=better)
@@ -1431,12 +1766,24 @@ class DatasetStats(BaseModel):
     stream_D: Optional[float] = None  # STREAM-S spatial diversity (prdc recall)
     stream_temporal: Optional[float] = None  # STREAM temporal naturalness
     worldscore: Optional[float] = None  # WorldScore generation quality
-    fd_3dmm_expression: Optional[float] = None  # Frechet distance on 3DMM expression-coefficient distributions vs reference set (lower=better)
-    fd_3dmm_pose: Optional[float] = None  # Frechet distance on 3DMM pose-coefficient distributions vs reference set (lower=better)
-    fd_g: Optional[float] = None  # FD_g, Frechet on body-pose distributions vs reference set (Audio2Photoreal; lower=better)
-    fd_k: Optional[float] = None  # FD_k, Frechet on body-velocity distributions vs reference set (Audio2Photoreal; lower=better)
-    fgd: Optional[float] = None  # FGD, Frechet on gesture-autoencoder latents vs reference set (Yoon 2020; lower=better)
-    l1_diversity: Optional[float] = None  # L1 gesture diversity across the set (EMAGE; higher=more diverse)
+    fd_3dmm_expression: Optional[float] = (
+        None  # Frechet distance on 3DMM expression-coefficient distributions vs reference set (lower=better)
+    )
+    fd_3dmm_pose: Optional[float] = (
+        None  # Frechet distance on 3DMM pose-coefficient distributions vs reference set (lower=better)
+    )
+    fd_g: Optional[float] = (
+        None  # FD_g, Frechet on body-pose distributions vs reference set (Audio2Photoreal; lower=better)
+    )
+    fd_k: Optional[float] = (
+        None  # FD_k, Frechet on body-velocity distributions vs reference set (Audio2Photoreal; lower=better)
+    )
+    fgd: Optional[float] = (
+        None  # FGD, Frechet on gesture-autoencoder latents vs reference set (Yoon 2020; lower=better)
+    )
+    l1_diversity: Optional[float] = (
+        None  # L1 gesture diversity across the set (EMAGE; higher=more diverse)
+    )
 
     # Reference VBench 2.0 intrinsic-faithfulness suite (dataset-level)
     vbench2_human_anatomy: Optional[float] = None
@@ -1482,16 +1829,18 @@ class DatasetStats(BaseModel):
     bd_psnr: Optional[float] = None  # BD-PSNR quality delta (dB, positive=better)
 
     # Image LPIPS diversity (dataset-level)
-    lpips_diversity: Optional[float] = None  # Average pairwise LPIPS across dataset (higher=more diverse)
+    lpips_diversity: Optional[float] = (
+        None  # Average pairwise LPIPS across dataset (higher=more diverse)
+    )
 
     # Verse-Bench benchmark (dataset-level)
     verse_bench_overall_est: Optional[float] = None  # Verse-Bench final score
     verse_bench_metrics: Optional[Dict[str, float]] = None  # Raw Verse-Bench component metrics
-    verse_bench_breakdown_est: Optional[Dict[str, float]] = None  # Verse-Bench subscores and overall
+    verse_bench_breakdown_est: Optional[Dict[str, float]] = (
+        None  # Verse-Bench subscores and overall
+    )
 
     # Maps dataset-level ``field_name`` -> provenance class, populated by
     # ``Pipeline.add_dataset_metric()`` from the producing module's
     # ``provenance`` declaration. Bookkeeping, not a metric.
     metric_provenance: Dict[str, str] = Field(default_factory=dict)
-
-

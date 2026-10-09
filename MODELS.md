@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.81** · Generated 2026-10-08 12:53 · **308 models** across **9 sources**
+> **Version 0.1.82** · Generated 2026-10-09 09:51 · **310 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**308** models · **122** HuggingFace · **45** pyiqa · **9** sources
+**310** models · **123** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (88)](#huggingface-models) · [Weight Files (34)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (55)](#pip-packages) · [Local Weights (41)](#local-weight-files) · [Other Models (21)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (88)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (55)](#pip-packages) · [Local Weights (42)](#local-weight-files) · [Other Models (21)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -777,6 +777,7 @@
 - `brightrate_brightvq.pt` — used by `brightrate`
 - `convnext_tiny_1k_224_ema.pth` — used by `cover`, `dover`
 - `dino_vitbase16_pretrain.pth` — used by `dreamsim`, `dreamsim_metric`
+- `dinov2_vitb14_pretrain.pth` — used by `dino_face_identity`
 - `dinov2_vitb14_pretrain.pth` — used by `i2v_similarity`
 - `flownet.pkl` — used by `motion_smoothness`
 - `frames_modelparameters.mat` — used by `brightrate`
@@ -890,6 +891,12 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `dover`
 - **Task**: ConvNeXt-Tiny aesthetic backbone
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth" target="_blank">`dino_face_identity/dinov2_vitb14_pretrain.pth`</a> [↑](#categories)
+
+- **Used by**: `dino_face_identity`
+- **Task**: Default dinov2_vitb14 checkpoint weights
+- **Notes**: Downloaded from the mutable main revision; repo_revision does not pin this artifact.
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`fast_vqa/FAST_VQA_B_1_4.pth`</a> [↑](#categories)
 
