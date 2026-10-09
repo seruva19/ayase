@@ -20,7 +20,7 @@ from ayase.compat import extract_features
 logger = logging.getLogger(__name__)
 
 # Original: https://github.com/christophschuhmann/improved-aesthetic-predictor/raw/main/sac+logos+ava1-l14-linearMSE.pth
-AESTHETIC_MLP_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/aesthetic_scoring/sac+logos+ava1-l14-linearMSE.pth"
+AESTHETIC_MLP_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/aesthetic_scoring/sac+logos+ava1-l14-linearMSE.pth"
 AESTHETIC_MLP_FILENAME = "sac+logos+ava1-l14-linearMSE.pth"
 
 
@@ -95,7 +95,11 @@ class AestheticScoringModule(PipelineModule):
             weight_dir.mkdir(parents=True, exist_ok=True)
             weight_path = weight_dir / AESTHETIC_MLP_FILENAME
             if not weight_path.exists():
-                urllib.request.urlretrieve(AESTHETIC_MLP_URL, weight_path)
+                from ayase.config import resolve_assets_url
+
+                urllib.request.urlretrieve(
+                    resolve_assets_url(AESTHETIC_MLP_URL, self.config), weight_path
+                )
             
             # The upstream weight is a simple serialized torch dict or similar.
             # Usually it's just a linear layer weight (768, 1) and bias.

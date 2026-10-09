@@ -49,6 +49,7 @@ def test_vbench2_setup_downloads_and_prewarms(monkeypatch, tmp_path):
     fake_vbench.VBench2 = object
     fake_vbench.utils = fake_utils
     monkeypatch.setitem(sys.modules, "vbench2", fake_vbench)
+
     def fake_snapshot(repo_id, models_dir, **kwargs):
         captured["repo_id"] = repo_id
         captured["snapshot"] = tmp_path
@@ -63,9 +64,7 @@ def test_vbench2_setup_downloads_and_prewarms(monkeypatch, tmp_path):
         lambda self, checkpoint_root, models_dir: source_root,
     )
 
-    module = VBench2Module(
-        {"models_dir": tmp_path, "dimensions": ["Human_Identity"]}
-    )
+    module = VBench2Module({"models_dir": tmp_path, "dimensions": ["Human_Identity"]})
     module.setup()
 
     assert captured["snapshot"] == tmp_path
@@ -80,9 +79,9 @@ def test_vbench2_external_artifacts_use_akane_hf_mirror():
 
     module = VBench2Module()
     assert module._mirror_url("vbench2/raft/models.zip").startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
     )
-    assert "AkaneTendo25/ayase-runtime-assets" in module._mirror_url(
+    assert "AkaneTendo25/ayase-assets" in module._mirror_url(
         "vbench2/torchvision/vgg19-dcbb9e9d.pth"
     )
 

@@ -28,6 +28,7 @@ from .pipeline import ModuleRegistry
 def _validate_urls(entries: Dict[str, "ModelEntry"]) -> List[str]:
     """Check that model URLs are reachable. Returns list of warnings."""
     import sys
+
     warnings = []
     urls_to_check = []
     for key, entry in entries.items():
@@ -53,14 +54,18 @@ def _validate_urls(entries: Dict[str, "ModelEntry"]) -> List[str]:
             warnings.append(f"  {key}: {type(e).__name__} — {url}")
     return warnings
 
+
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ModelEntry:
     """A single model/weight file used by one or more modules."""
+
     name: str
-    source: str  # "huggingface", "pyiqa", "torch_hub", "torchvision", "clip", "ffmpeg", "local", "pip"
+    source: (
+        str  # "huggingface", "pyiqa", "torch_hub", "torchvision", "clip", "ffmpeg", "local", "pip"
+    )
     modules: List[str] = field(default_factory=list)
     url: Optional[str] = None
     install: Optional[str] = None  # pip install command
@@ -289,16 +294,33 @@ _KNOWN_LICENSES: Dict[str, tuple] = {
 
 # Licenses known to be commercial-friendly
 _COMMERCIAL_OK_LICENSES = {
-    "mit", "apache-2.0", "bsd-2-clause", "bsd-3-clause", "bsd",
-    "isc", "unlicense", "cc0-1.0", "wtfpl", "0bsd", "artistic-2.0",
-    "zlib", "bsl-1.0", "ecl-2.0",
+    "mit",
+    "apache-2.0",
+    "bsd-2-clause",
+    "bsd-3-clause",
+    "bsd",
+    "isc",
+    "unlicense",
+    "cc0-1.0",
+    "wtfpl",
+    "0bsd",
+    "artistic-2.0",
+    "zlib",
+    "bsl-1.0",
+    "ecl-2.0",
 }
 
 # Licenses known to restrict commercial use
 _NON_COMMERCIAL_LICENSES = {
-    "cc-by-nc-4.0", "cc-by-nc-sa-4.0", "cc-by-nc-nd-4.0",
-    "cc-by-nc-2.0", "cc-by-nc-sa-2.0", "cc-by-nc-3.0",
-    "non-commercial", "research-only", "academic",
+    "cc-by-nc-4.0",
+    "cc-by-nc-sa-4.0",
+    "cc-by-nc-nd-4.0",
+    "cc-by-nc-2.0",
+    "cc-by-nc-sa-2.0",
+    "cc-by-nc-3.0",
+    "non-commercial",
+    "research-only",
+    "academic",
 }
 
 
@@ -401,8 +423,13 @@ def _fetch_hf_info_batch(model_ids: List[str]) -> Dict[str, dict]:
                         break
             data["arxiv"] = arxiv
             result[model_id] = data
-            logger.info("  %s → %s, %s downloads, %s params",
-                        model_id, lic, data["downloads"], data["parameters"])
+            logger.info(
+                "  %s → %s, %s downloads, %s params",
+                model_id,
+                lic,
+                data["downloads"],
+                data["parameters"],
+            )
         except Exception as exc:
             logger.debug("Failed to fetch HF info for %s: %s", model_id, exc)
     return result
@@ -497,20 +524,29 @@ def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
         if (
             _is_likely_hf_model_id(candidate)
             and ("from_pretrained" in source or "AutoModel" in source)
-            and not any(x in candidate for x in (
-                "ayase-models",
-                "facebookresearch/",
-                "intel-isl/",
-                "resolve/main",
-                "subfolder",
-                "tarepan/",
-            ))
+            and not any(
+                x in candidate
+                for x in (
+                    "ayase-models",
+                    "facebookresearch/",
+                    "intel-isl/",
+                    "resolve/main",
+                    "subfolder",
+                    "tarepan/",
+                )
+            )
         ):
             models.add(candidate)
     # Model names from default_config
     if default_config:
-        for key in ("model_name", "vlm_model", "vlm_model_name",
-                     "sdxl_model", "vqa_model", "xclip_model_name"):
+        for key in (
+            "model_name",
+            "vlm_model",
+            "vlm_model_name",
+            "sdxl_model",
+            "vqa_model",
+            "xclip_model_name",
+        ):
             val = default_config.get(key, "")
             if isinstance(val, str) and _is_likely_hf_model_id(val):
                 models.add(val)
@@ -526,7 +562,9 @@ def _extract_pyiqa_metrics(source: str) -> List[str]:
     # Variable-based: self.variant or name passed to create_metric
     # Look for variant/name = "metric" patterns when create_metric is present
     if "create_metric" in source and "import pyiqa" in source:
-        for m in re.finditer(r'(?:variant|name|metric_name)\s*=\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
+        for m in re.finditer(
+            r'(?:variant|name|metric_name)\s*=\s*["\']([a-zA-Z0-9_+-]+)["\']', source
+        ):
             metrics.add(m.group(1))
         # Also check default_config for variant
         for m in re.finditer(r'"variant"\s*:\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
@@ -546,12 +584,14 @@ def _extract_torchvision_models(source: str) -> List[str]:
     """Extract torchvision pretrained model usage."""
     models = set()
     # Also catch `models.inception_v3(...)` when `from torchvision import models`
-    for m in re.finditer(r'(?:from torchvision\.models\S*\s+import\s+|torchvision\.models\.|models\.)(\w+)', source):
+    for m in re.finditer(
+        r"(?:from torchvision\.models\S*\s+import\s+|torchvision\.models\.|models\.)(\w+)", source
+    ):
         name = m.group(1)
         if name[0].islower():  # function names like raft_small, resnet18
             models.add(name)
     # Also catch weight enums
-    for m in re.finditer(r'(\w+)_Weights\.DEFAULT', source):
+    for m in re.finditer(r"(\w+)_Weights\.DEFAULT", source):
         models.add(m.group(1).lower())
     return sorted(models)
 
@@ -576,14 +616,14 @@ def _extract_ffmpeg_models(source: str) -> List[str]:
     """Extract FFmpeg filter/model references."""
     models = set()
     # Only match model version strings used in libvmaf filter args
-    for m in re.finditer(r'model=version=(vmaf[_a-z0-9.]+)', source):
+    for m in re.finditer(r"model=version=(vmaf[_a-z0-9.]+)", source):
         models.add(m.group(1))
     # Also check for explicit model name strings
     for m in re.finditer(r'["\']libvmaf["\']', source):
         models.add("libvmaf")
     if re.search(r'\bxpsnr\b.*filter|filter.*\bxpsnr\b|["\']xpsnr["\']', source):
         models.add("xpsnr")
-    if re.search(r'feature=name=cambi', source):
+    if re.search(r"feature=name=cambi", source):
         models.add("cambi")
     if "phone_model=1" in source or "phone=1" in source:
         models.add("vmaf_phone_model")
@@ -596,7 +636,7 @@ def _extract_hf_direct_urls(source: str) -> List[tuple]:
     Also handles Python implicit string concatenation across lines.
     """
     # Pre-process: join adjacent string literals ("a" "b" → "ab")
-    joined = re.sub(r'"\s*\n\s*"', '', source)
+    joined = re.sub(r'"\s*\n\s*"', "", source)
     results = []
     for m in re.finditer(
         r'https://huggingface\.co/([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)/resolve/main/([^\s"\']+)',
@@ -627,14 +667,27 @@ def _generate_charts(
     paths: Dict[str, str] = {}
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import seaborn as sns
 
         output_dir.mkdir(parents=True, exist_ok=True)
-        _colors = ['#6C5CE7', '#00B894', '#FD79A8', '#0984E3', '#FDCB6E',
-                    '#E17055', '#00CEC9', '#636E72', '#A29BFE', '#FAB1A0',
-                    '#55EFC4', '#DFE6E9', '#74B9FF']
+        _colors = [
+            "#6C5CE7",
+            "#00B894",
+            "#FD79A8",
+            "#0984E3",
+            "#FDCB6E",
+            "#E17055",
+            "#00CEC9",
+            "#636E72",
+            "#A29BFE",
+            "#FAB1A0",
+            "#55EFC4",
+            "#DFE6E9",
+            "#74B9FF",
+        ]
 
         _W = 5  # uniform width for all charts (paired 2-per-row)
 
@@ -642,10 +695,11 @@ def _generate_charts(
             sns.set_theme(style="whitegrid", font_scale=0.9)
             labels = [label for label, _ in items]
             values = [v for _, v in items]
-            cols = (palette or _colors)[:len(items)]
+            cols = (palette or _colors)[: len(items)]
             fig, ax = plt.subplots(figsize=(_W, max(2.5, len(items) * 0.32)))
-            bars = ax.barh(labels[::-1], values[::-1], color=cols[::-1],
-                           height=0.65, edgecolor="none")
+            bars = ax.barh(
+                labels[::-1], values[::-1], color=cols[::-1], height=0.65, edgecolor="none"
+            )
             ax.bar_label(bars, padding=4, fontsize=9, color="#333")
             ax.set_xlim(0, max(values) * 1.12)
             ax.xaxis.set_visible(False)
@@ -673,20 +727,19 @@ def _generate_charts(
                     lic_colors.append("#E17055")
                 else:
                     lic_colors.append("#636E72")
-            paths["licenses"] = _save_bar(
-                license_counts, "models_licenses.png", palette=lic_colors)
+            paths["licenses"] = _save_bar(license_counts, "models_licenses.png", palette=lic_colors)
 
         # 3. VRAM tiers bar
         if vram_tiers:
             paths["vram"] = _save_bar(
-                vram_tiers, "models_vram.png",
-                palette=["#74B9FF"] * len(vram_tiers))
+                vram_tiers, "models_vram.png", palette=["#74B9FF"] * len(vram_tiers)
+            )
 
         # 4. Top used models bar
         if top_used:
             paths["top_used"] = _save_bar(
-                top_used, "models_top_used.png",
-                palette=["#A29BFE"] * len(top_used))
+                top_used, "models_top_used.png", palette=["#A29BFE"] * len(top_used)
+            )
 
     except ImportError as exc:
         logger.warning(
@@ -916,7 +969,11 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 entries[key] = ModelEntry(
                     name=f"CLIP {clip_model}",
                     source="clip",
-                    install="pip install clip" if "open_clip" not in clip_model else "pip install open-clip-torch",
+                    install=(
+                        "pip install clip"
+                        if "open_clip" not in clip_model
+                        else "pip install open-clip-torch"
+                    ),
                     size_estimate=disk,
                     vram_estimate=vram,
                     notes="Auto-downloads on first use",
@@ -939,7 +996,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 )
             entries[key].modules.append(mod_name)
 
-        # Direct HF download URLs (AkaneTendo25/ayase-runtime-assets etc.)
+        # Direct HF download URLs (AkaneTendo25/ayase-assets etc.)
         # Use full module source to catch module-level URL constants
         full_source = _get_module_source(cls)
         for repo, path in _extract_hf_direct_urls(full_source):
@@ -972,7 +1029,10 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
             "stlpips_pytorch": ("stlpips-pytorch", "ST-LPIPS spatiotemporal perceptual"),
             "dreamsim": ("dreamsim", "DreamSim CLIP+DINO similarity"),
             "ptlflow": ("ptlflow", "ptlflow optical flow models"),
-            "aesthetic_predictor_v2_5": ("aesthetic-predictor-v2-5", "Aesthetic Predictor V2.5 (SigLIP)"),
+            "aesthetic_predictor_v2_5": (
+                "aesthetic-predictor-v2-5",
+                "Aesthetic Predictor V2.5 (SigLIP)",
+            ),
             "erqa": ("erqa", "ERQA edge restoration quality"),
             "torchmetrics": ("torchmetrics[audio]", "TorchMetrics (DNSMOS, etc.)"),
             "ultralytics": ("ultralytics", "YOLOv8 object detection"),
@@ -989,7 +1049,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
             key = "pip:ultralytics"
             if key not in entries:
                 entries[key] = ModelEntry(
-                    name="ultralytics", source="pip",
+                    name="ultralytics",
+                    source="pip",
                     install="pip install ultralytics",
                     notes="YOLOv8 object detection",
                 )
@@ -1000,7 +1061,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 key = f"pip:{pip_name}"
                 if key not in entries:
                     entries[key] = ModelEntry(
-                        name=pip_name, source="pip",
+                        name=pip_name,
+                        source="pip",
                         install=f"pip install {pip_name}",
                         notes=desc,
                     )
@@ -1056,10 +1118,15 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                             entry.size_estimate = f"~{size_mb:.0f} MB"
 
     # 3. Inherit license from parent repo for file entries
-    # e.g., AkaneTendo25/ayase-runtime-assets files inherit from the repo
+    # e.g., AkaneTendo25/ayase-assets files inherit from the repo
     repo_licenses: Dict[str, tuple] = {}
     for key, entry in entries.items():
-        if entry.source == "huggingface" and entry.license and "/" in entry.name and entry.name.count("/") == 1:
+        if (
+            entry.source == "huggingface"
+            and entry.license
+            and "/" in entry.name
+            and entry.name.count("/") == 1
+        ):
             repo_licenses[entry.name] = (entry.license, entry.commercial_ok)
     for key, entry in entries.items():
         if entry.license is None and entry.notes and "From `" in (entry.notes or ""):
@@ -1086,6 +1153,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
     # VRAM tiers
     from collections import Counter
+
     vram_counter: Counter = Counter()
     for e in entries.values():
         tier = _classify_vram_tier(e.vram_estimate)
@@ -1096,12 +1164,19 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
     # Top used models (most modules)
     top_used_entries = sorted(entries.values(), key=lambda e: -len(e.modules))[:12]
-    top_used = [(e.name.split("/")[-1] if "/" in e.name else e.name, len(e.modules))
-                for e in top_used_entries if len(e.modules) > 1]
+    top_used = [
+        (e.name.split("/")[-1] if "/" in e.name else e.name, len(e.modules))
+        for e in top_used_entries
+        if len(e.modules) > 1
+    ]
 
     docs_dir = Path(__file__).parent.parent.parent / "docs"
     chart_paths = _generate_charts(
-        dict(source_counts), license_counts, vram_tiers, top_used, docs_dir,
+        dict(source_counts),
+        license_counts,
+        vram_tiers,
+        top_used,
+        docs_dir,
     )
 
     # ══════════════════════════════════════════════════════════════════════
@@ -1111,6 +1186,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     a = L.append
 
     from datetime import datetime
+
     try:
         from ayase import __version__
     except ImportError:
@@ -1118,8 +1194,10 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
     a("# Ayase Models Reference")
     a("")
-    a(f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
-      f"· **{total_models} models** across **{len(source_counts)} sources**")
+    a(
+        f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
+        f"· **{total_models} models** across **{len(source_counts)} sources**"
+    )
     a(">")
     a("> `ayase modules models -o MODELS.md` to regenerate")
 
@@ -1127,12 +1205,18 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     a("")
     a("## Summary")
     a("")
-    a(f"**{total_models}** models · **{source_counts.get('huggingface', 0)}** HuggingFace "
-      f"· **{source_counts.get('pyiqa', 0)}** pyiqa · **{len(source_counts)}** sources")
+    a(
+        f"**{total_models}** models · **{source_counts.get('huggingface', 0)}** HuggingFace "
+        f"· **{source_counts.get('pyiqa', 0)}** pyiqa · **{len(source_counts)}** sources"
+    )
     a("")
-    a("*License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*")
+    a(
+        "*License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*"
+    )
     a("*Project and vendored runtime licensing is documented in the final section below.*")
-    a("*Resolution order: hardcoded source mappings, HuggingFace metadata when available, then parent-repo inheritance for weight files.*")
+    a(
+        "*Resolution order: hardcoded source mappings, HuggingFace metadata when available, then parent-repo inheritance for weight files.*"
+    )
 
     # ── Charts (2-per-row) ───────────────────────────────────────────────
     chart_titles = {
@@ -1143,7 +1227,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     }
     chart_order = [k for k in ("sources", "licenses", "vram", "top_used") if k in chart_paths]
     for i in range(0, len(chart_order), 2):
-        pair = chart_order[i:i + 2]
+        pair = chart_order[i : i + 2]
         if len(pair) == 2:
             t1, t2 = chart_titles[pair[0]], chart_titles[pair[1]]
             p1, p2 = chart_paths[pair[0]], chart_paths[pair[1]]
@@ -1178,26 +1262,33 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
         else:
             a(f"**Estimated total download size (all models):** ~{total_mb:.0f} MB")
         a("")
-        a("*Note: Most modules auto-download only the models they need on first use. "
-          "You rarely need all models at once.*")
+        a(
+            "*Note: Most modules auto-download only the models they need on first use. "
+            "You rarely need all models at once.*"
+        )
 
     # ── License warning ──────────────────────────────────────────────────
-    comm_research = sum(1 for e in entries.values()
-                        if e.license and "research" in (e.license or "").lower()
-                        and e.commercial_ok is None)
+    comm_research = sum(
+        1
+        for e in entries.values()
+        if e.license and "research" in (e.license or "").lower() and e.commercial_ok is None
+    )
     if comm_no > 0 or comm_research > 0:
         a("")
         a("> [!WARNING]")
-        a("> **Commercial use:** Stick to modules whose models are marked "
-          "\"Commercial OK\" above. Most pyiqa metrics marked \"research\" "
-          "are re-implementations under pyiqa's MIT license, but the original "
-          "training data or architecture may carry restrictions — verify before "
-          "commercial deployment.")
+        a(
+            "> **Commercial use:** Stick to modules whose models are marked "
+            '"Commercial OK" above. Most pyiqa metrics marked "research" '
+            "are re-implementations under pyiqa's MIT license, but the original "
+            "training data or architecture may carry restrictions — verify before "
+            "commercial deployment."
+        )
 
     # ── Validate URLs (stderr warnings only) ────────────────────────────
     if fetch_licenses:
         url_warnings = _validate_urls(entries)
         import sys
+
         if url_warnings == ["__NETWORK_UNAVAILABLE__"]:
             print("INFO: URL validation skipped (network unavailable).", file=sys.stderr)
         else:
@@ -1209,16 +1300,24 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 for w in real_broken:
                     print(w, file=sys.stderr)
             if gated:
-                print(f"INFO: {len(gated)} gated/private model(s) (auth required):", file=sys.stderr)
+                print(
+                    f"INFO: {len(gated)} gated/private model(s) (auth required):", file=sys.stderr
+                )
                 for w in gated:
                     print(w, file=sys.stderr)
 
     # ── Category navigation ──────────────────────────────────────────────
     # Prepare section data for navigation and rendering
-    hf_entries = [(k, e) for k, e in sorted(entries.items())
-                  if e.source == "huggingface" and not (e.notes and "From `" in (e.notes or ""))]
-    hf_file_entries = [(k, e) for k, e in sorted(entries.items())
-                       if e.source == "huggingface" and e.notes and "From `" in (e.notes or "")]
+    hf_entries = [
+        (k, e)
+        for k, e in sorted(entries.items())
+        if e.source == "huggingface" and not (e.notes and "From `" in (e.notes or ""))
+    ]
+    hf_file_entries = [
+        (k, e)
+        for k, e in sorted(entries.items())
+        if e.source == "huggingface" and e.notes and "From `" in (e.notes or "")
+    ]
     pyiqa_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pyiqa"]
     tv_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torchvision"]
     clip_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "clip"]
@@ -1326,7 +1425,9 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
             # Source link (arXiv)
             if e.arxiv:
-                a(f'- **Source**: <a href="https://arxiv.org/abs/{e.arxiv}" target="_blank">arXiv</a>')
+                a(
+                    f'- **Source**: <a href="https://arxiv.org/abs/{e.arxiv}" target="_blank">arXiv</a>'
+                )
 
             a("")
 
@@ -1420,9 +1521,11 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     if pyiqa_entries:
         a(f"## pyiqa Metrics ({len(pyiqa_entries)})")
         a("")
-        a('<a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection '
-          "of image/video quality metrics. Weights auto-download on first "
-          "`pyiqa.create_metric()` call. `pip install pyiqa`")
+        a(
+            '<a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection '
+            "of image/video quality metrics. Weights auto-download on first "
+            "`pyiqa.create_metric()` call. `pip install pyiqa`"
+        )
         a("")
         a("| Metric | Task | License | Commercial | Used By |")
         a("|--------|------|---------|------------|---------|")
@@ -1588,12 +1691,16 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
     a("## Project and Vendored Runtime Licenses")
     a("")
-    a("Ayase's own source code is MIT. Model weights and runtime assets retain the "
-      "licenses shown in the catalog above.")
+    a(
+        "Ayase's own source code is MIT. Model weights and runtime assets retain the "
+        "licenses shown in the catalog above."
+    )
     a("")
-    a("Some metrics execute research code shipped under `ayase/vendor`; see the "
-      "[vendored-source inventory](src/ayase/vendor/README.md). The following "
-      "components are not covered solely by Ayase's MIT license:")
+    a(
+        "Some metrics execute research code shipped under `ayase/vendor`; see the "
+        "[vendored-source inventory](src/ayase/vendor/README.md). The following "
+        "components are not covered solely by Ayase's MIT license:"
+    )
     a("")
     a("| Metrics | Vendored component | License | Practical restriction |")
     a("|---|---|---|---|")
@@ -1602,14 +1709,18 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
         used_by = ", ".join(f"`{name}`" for name in modules) or "Not currently declared"
         a(f"| {used_by} | {entry.component} | {entry.license} | {entry.note} |")
     a("")
-    a(f"The remaining {len(PERMISSIVE_COMPONENTS)} registered vendored component "
-      "families use permissive terms or retain their own license notices; consult "
-      "the inventory before redistribution.")
+    a(
+        f"The remaining {len(PERMISSIVE_COMPONENTS)} registered vendored component "
+        "families use permissive terms or retain their own license notices; consult "
+        "the inventory before redistribution."
+    )
     a("")
-    a("Running an affected metric may place the component's terms on use of its "
-      "output. Each affected module declares its vendored components and logs a "
-      "notice during setup. The plan for 1.0 is to replace non-permissive components "
-      "with implementations Ayase can license compatibly.")
+    a(
+        "Running an affected metric may place the component's terms on use of its "
+        "output. Each affected module declares its vendored components and logs a "
+        "notice during setup. The plan for 1.0 is to replace non-permissive components "
+        "with implementations Ayase can license compatibly."
+    )
     a("")
 
     # ══════════════════════════════════════════════════════════════════════

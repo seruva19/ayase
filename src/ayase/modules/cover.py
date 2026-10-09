@@ -141,7 +141,7 @@ class COVERModule(PipelineModule):
     )
 
     # Original: https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
-    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
+    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
     _CONVNEXT_FILENAME = "convnext_tiny_1k_224_ema.pth"
 
     def _ensure_convnext_cached(self) -> None:
@@ -155,11 +155,11 @@ class COVERModule(PipelineModule):
             return
         os.makedirs(cache_dir, exist_ok=True)
         logger.info("Downloading ConvNeXt backbone for COVER...")
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
 
         tmp = download_model_file(
             os.path.join("hub", "checkpoints", self._CONVNEXT_FILENAME),
-            self._CONVNEXT_URL,
+            resolve_assets_url(self._CONVNEXT_URL, self.config),
             os.path.dirname(hub_dir),
         )
         if str(tmp) != cached and os.path.exists(str(tmp)):
@@ -184,12 +184,12 @@ class COVERModule(PipelineModule):
                 return candidate
 
         try:
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
 
             return str(
                 download_model_file(
                     os.path.join("cover", "COVER.pth"),
-                    self._COVER_WEIGHTS_URL,
+                    resolve_assets_url(self._COVER_WEIGHTS_URL, self.config),
                     models_dir,
                 )
             )

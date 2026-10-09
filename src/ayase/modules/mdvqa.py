@@ -43,7 +43,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_HEAD = "mdvqa/LSVQ_rp0.pth"  # default: LSVQ-trained fusion/head
 
 # ImageNet normalisation (semantic + motion branches, per upstream video_transform).
@@ -482,7 +482,11 @@ class MDVQAModule(PipelineModule):
             self._semantic = _build_semantic(self._device)
             self._motion = _build_motion(self._device)
             head = _build_head()
-            weights_path = hf_hub_download(repo_id=_HF_REPO, filename=_HF_HEAD)
+            from ayase.config import resolve_assets_repo
+
+            weights_path = hf_hub_download(
+                repo_id=resolve_assets_repo(self.config), filename=_HF_HEAD
+            )
             sd = torch.load(weights_path, map_location="cpu", weights_only=True)
             if isinstance(sd, dict) and "state_dict" in sd:
                 sd = sd["state_dict"]

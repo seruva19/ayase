@@ -31,7 +31,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # Official trained checkpoint (models/VSFA.pt in lidq92/VSFA), mirrored on HF.
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_FILENAME = "vsfa/VSFA.pt"
 _OFFICIAL_URL = "https://github.com/lidq92/VSFA/raw/master/models/VSFA.pt"
 
@@ -160,10 +160,11 @@ class VSFAModule(PipelineModule):
         """Load the official VSFA.pt (ANN + GRU + q head)."""
         try:
             from huggingface_hub import hf_hub_download
+            from ayase.config import resolve_assets_repo
 
             try:
                 weights_path = hf_hub_download(
-                    repo_id=_HF_REPO, filename=_HF_FILENAME
+                    repo_id=resolve_assets_repo(self.config), filename=_HF_FILENAME
                 )
             except Exception:
                 weights_path = self._download_official()

@@ -2,16 +2,81 @@
 
 import json
 import os
+import re
 from pathlib import Path
-from typing import Any, Dict, Optional, List, cast
+from typing import Any, Dict, List, Mapping, Optional, cast
+from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 import logging
 
 _log = logging.getLogger(__name__)
+
+DEFAULT_ASSETS_REPO = "AkaneTendo25/ayase-assets"
+_DEFAULT_ASSETS_RESOLVE_PREFIX = f"https://huggingface.co/{DEFAULT_ASSETS_REPO}/resolve/"
+_HF_REPO_COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def _normalize_assets_repo(value: Any) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError("assets_repo must be a Hugging Face repository id or URL")
+
+    candidate = value
+    if candidate.startswith("https://"):
+        parsed = urlsplit(candidate)
+        if (
+            parsed.scheme != "https"
+            or parsed.hostname != "huggingface.co"
+            or parsed.port is not None
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("assets_repo URL must identify a Hugging Face repository")
+        candidate = parsed.path.strip("/")
+    elif "://" in candidate:
+        raise ValueError("assets_repo only supports https://huggingface.co URLs")
+
+    parts = candidate.split("/")
+    if (
+        len(parts) != 2
+        or len(candidate) > 96
+        or any(part in ("", ".", "..") for part in parts)
+        or any(not _HF_REPO_COMPONENT.fullmatch(part) for part in parts)
+        or any(part.startswith(("-", ".")) for part in parts)
+        or any(part.endswith(("-", ".")) for part in parts)
+        or any("--" in part or ".." in part for part in parts)
+    ):
+        raise ValueError("assets_repo must be an owner/repository Hugging Face id")
+    return "/".join(parts)
+
+
+def resolve_assets_repo(config: Optional[Mapping[str, Any]] = None) -> str:
+    """Return the configured Ayase asset repository as an ``owner/repo`` id."""
+
+    value = (
+        DEFAULT_ASSETS_REPO if config is None else config.get("assets_repo", DEFAULT_ASSETS_REPO)
+    )
+    return _normalize_assets_repo(value)
+
+
+def resolve_assets_url(url: str, config: Optional[Mapping[str, Any]] = None) -> str:
+    """Point a default Ayase asset URL at the configured Hugging Face repo.
+
+    Only the canonical default repository's ``/resolve/`` prefix is replaced.
+    The revision, file path, and query string remain byte-for-byte unchanged.
+    """
+
+    if not url.startswith(_DEFAULT_ASSETS_RESOLVE_PREFIX):
+        return url
+    repo_id = resolve_assets_repo(config)
+    return (
+        f"https://huggingface.co/{repo_id}/resolve/" f"{url[len(_DEFAULT_ASSETS_RESOLVE_PREFIX):]}"
+    )
 
 
 def download_model_file(relative_path: str, url: str, models_dir: str = "models") -> Path:
@@ -45,9 +110,7 @@ def download_model_file(relative_path: str, url: str, models_dir: str = "models"
     return dest
 
 
-def download_torch_hub_checkpoint(
-    filename: str, url: str, models_dir: str = "models"
-) -> Path:
+def download_torch_hub_checkpoint(filename: str, url: str, models_dir: str = "models") -> Path:
     """Populate torch.hub's checkpoint cache from an Ayase-controlled URL."""
     if Path(filename).name != filename:
         raise ValueError(f"Torch Hub checkpoint must be a basename: {filename!r}")
@@ -120,6 +183,7 @@ class GeneralConfig(BaseModel):
     cache_enabled: bool = True
     cache_dir: Path = Path.home() / ".cache" / "ayase"
     models_dir: Path = Path("models")
+    assets_repo: str = DEFAULT_ASSETS_REPO
     device: str = "auto"
     dtype: str = "auto"
     amp_enabled: bool = True
@@ -128,6 +192,13 @@ class GeneralConfig(BaseModel):
     timing_enabled: bool = True
     sample_batch_size: int = 1
     max_clip_images_per_forward: int = 64
+
+    @field_validator("assets_repo", mode="before")
+    @classmethod
+    def normalize_assets_repo(cls, value: Any) -> str:
+        """Normalize supported Hugging Face repository URLs to repository ids."""
+
+        return _normalize_assets_repo(value)
 
 
 class QualityConfig(BaseModel):
@@ -254,9 +325,7 @@ class AyaseConfig(BaseSettings):
         file_data: Dict[str, Any] = {}
         if config_path is not None:
             if not config_path.exists():
-                raise FileNotFoundError(
-                    f"Config file not found: {config_path}"
-                )
+                raise FileNotFoundError(f"Config file not found: {config_path}")
             file_data = cls._load_toml(config_path)
         else:
             # Try default locations

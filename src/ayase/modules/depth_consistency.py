@@ -33,7 +33,7 @@ _MIDAS_MIRRORS = {
     "DPT_Hybrid": ("dpt_hybrid_384.pt", "depth_consistency/dpt_hybrid_384.pt"),
     "DPT_Large": ("dpt_large_384.pt", "depth_consistency/dpt_large_384.pt"),
 }
-_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 
 
 class DepthConsistencyModule(PipelineModule):
@@ -72,7 +72,7 @@ class DepthConsistencyModule(PipelineModule):
         try:
             import torch
             import os
-            from ayase.config import download_torch_hub_checkpoint
+            from ayase.config import download_torch_hub_checkpoint, resolve_assets_url
             from ayase.runtime import resolve_torch_device
 
             self.device = torch.device(resolve_torch_device(self.device_config))
@@ -83,7 +83,9 @@ class DepthConsistencyModule(PipelineModule):
                 raise ValueError(f"Unsupported mirrored MiDaS model: {self.model_type}")
             filename, relative_path = mirror
             checkpoint_path = download_torch_hub_checkpoint(
-                filename, _MIRROR_BASE + relative_path, models_dir
+                filename,
+                resolve_assets_url(_MIRROR_BASE + relative_path, self.config),
+                models_dir,
             )
 
             from ayase.modules._midas_utils import load_midas_model

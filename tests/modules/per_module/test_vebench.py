@@ -33,9 +33,7 @@ def test_vebench_process_stores_reference_scalar(video_sample, synthetic_video):
     video_sample.reference_path = synthetic_video
     module = VEBenchModule({"instruction": "Turn the subject's head"})
     module._backend = "vebench"
-    module._model = SimpleNamespace(
-        evaluate=lambda *args: calls.append(args) or 1.3104406595230103
-    )
+    module._model = SimpleNamespace(evaluate=lambda *args: calls.append(args) or 1.3104406595230103)
 
     result = module.process(video_sample)
 
@@ -98,6 +96,6 @@ def test_vebench_declares_huggingface_snapshot():
     assert VEBenchModule.models[0]["id"] == "vebench==1.0.0"
     assert len(VEBenchModule.models) == 2
     assert VEBenchModule.models[1]["type"] == "huggingface"
-    assert VEBenchModule.models[1]["id"] == "AkaneTendo25/ayase-runtime-assets"
+    assert VEBenchModule.models[1]["id"] == "AkaneTendo25/ayase-assets"
     assert _MODEL_REVISION in VEBenchModule.models[1]["notes"]
     assert VEBenchModule.models[1]["auto_download"] is True

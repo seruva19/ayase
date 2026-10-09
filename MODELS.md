@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.1.82** · Generated 2026-10-09 13:51 · **311 models** across **9 sources**
+> **Version 0.2.0** · Generated 2026-10-09 16:53 · **311 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -37,7 +37,7 @@
 
 ## HuggingFace Models
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/worldmodelbench/worldmodelbench.json" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/worldmodelbench/worldmodelbench.json" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
 
 - **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `face_motion_preservation`, `gaze_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `id_sim`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
 - **VRAM**: ~6 GB total evaluator peak · **Disk**: 5.65 GB
@@ -759,7 +759,7 @@
 
 ## Weight File Repos
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets" target="_blank">`AkaneTendo25/ayase-runtime-assets`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
 - `24-01-04T16-39-21.pt` — used by `audio_visual_sync`, `av_desync`, `av_sync`
@@ -846,23 +846,23 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `cycle_reward`
 - **Task**: CycleReward combined I2T/T2I preference checkpoint
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/DOVER.pth" target="_blank">`DOVER.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/DOVER.pth" target="_blank">`DOVER.pth`</a> [↑](#categories)
 
 - **Used by**: `dover`
 - **Task**: Native DOVER video quality weights
 - **Notes**: Resolved from weights_path or models_dir
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth" target="_blank">`FAST_VQA_3D_1_1.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth" target="_blank">`FAST_VQA_3D_1_1.pth`</a> [↑](#categories)
 
 - **Used by**: `fast_vqa`
 - **Task**: FAST-VQA / FasterVQA video quality checkpoint
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`FAST_VQA_B_1_4.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`FAST_VQA_B_1_4.pth`</a> [↑](#categories)
 
 - **Used by**: `fast_vqa`
 - **Task**: FAST-VQA base video quality checkpoint
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth" target="_blank">`FAST_VQA_M_1_4.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth" target="_blank">`FAST_VQA_M_1_4.pth`</a> [↑](#categories)
 
 - **Used by**: `fast_vqa`
 - **Task**: FAST-VQA motion-aware video quality checkpoint
@@ -887,23 +887,23 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `verse_bench`
 - **Task**: MANIQA Swin-T quality assessment (KonIQ-10k)
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth" target="_blank">`convnext_tiny_1k_224_ema.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth" target="_blank">`convnext_tiny_1k_224_ema.pth`</a> [↑](#categories)
 
 - **Used by**: `dover`
 - **Task**: ConvNeXt-Tiny aesthetic backbone
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth" target="_blank">`dino_face_identity/dinov2_vitb14_pretrain.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth" target="_blank">`dino_face_identity/dinov2_vitb14_pretrain.pth`</a> [↑](#categories)
 
 - **Used by**: `dino_face_identity`
 - **Task**: Default dinov2_vitb14 checkpoint weights
 - **Notes**: Downloaded from the mutable main revision; repo_revision does not pin this artifact.
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`fast_vqa/FAST_VQA_B_1_4.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`fast_vqa/FAST_VQA_B_1_4.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA FAST-VQA 768-D feature encoder
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/motion_smoothness/flownet.pkl" target="_blank">`flownet.pkl`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/motion_smoothness/flownet.pkl" target="_blank">`flownet.pkl`</a> [↑](#categories)
 
 - **Used by**: `motion_smoothness`
 - **Task**: Bundled RIFE HD v3 interpolation weights
@@ -925,84 +925,84 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `kad`
 - **Task**: PANNs Wavegram-Logmel audio embedding checkpoint
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/nisqa/nisqa.tar" target="_blank">`nisqa.tar`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/nisqa/nisqa.tar" target="_blank">`nisqa.tar`</a> [↑](#categories)
 
 - **Used by**: `audio_nisqa`
 - **Task**: NISQAv2 multidimensional speech quality (MIT)
 - **Notes**: ~1 MB; vendored source at ayase/third_party/nisqa/
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/onnx_dover.onnx" target="_blank">`onnx_dover.onnx`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/onnx_dover.onnx" target="_blank">`onnx_dover.onnx`</a> [↑](#categories)
 
 - **Used by**: `dover`
 - **Task**: Optional ONNX DOVER backend
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/LIQE.pt" target="_blank">`rqvqa/LIQE.pt`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/LIQE.pt" target="_blank">`rqvqa/LIQE.pt`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA LIQE feature encoder
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/SLOWFAST_8x8_R50.pyth" target="_blank">`rqvqa/SLOWFAST_8x8_R50.pyth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/SLOWFAST_8x8_R50.pyth" target="_blank">`rqvqa/SLOWFAST_8x8_R50.pyth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA SlowFast-R50 motion encoder
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_4_SRCC_0.905999.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_4_SRCC_0.905999.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_4_SRCC_0.905999.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_4_SRCC_0.905999.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_9_SRCC_0.885692.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_9_SRCC_0.885692.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_9_SRCC_0.885692.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v0_epoch_9_SRCC_0.885692.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_19_SRCC_0.923127.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_19_SRCC_0.923127.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_19_SRCC_0.923127.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_19_SRCC_0.923127.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_22_SRCC_0.894115.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_22_SRCC_0.894115.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_22_SRCC_0.894115.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v1_epoch_22_SRCC_0.894115.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_21_SRCC_0.924423.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_21_SRCC_0.924423.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_21_SRCC_0.924423.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_21_SRCC_0.924423.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_25_SRCC_0.913571.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_25_SRCC_0.913571.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_25_SRCC_0.913571.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v2_epoch_25_SRCC_0.913571.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_16_SRCC_0.901800.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_16_SRCC_0.901800.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_16_SRCC_0.901800.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_16_SRCC_0.901800.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_8_SRCC_0.896798.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_8_SRCC_0.896798.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_8_SRCC_0.896798.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v3_epoch_8_SRCC_0.896798.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_14_SRCC_0.904949.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_14_SRCC_0.904949.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_14_SRCC_0.904949.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_14_SRCC_0.904949.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_6_SRCC_0.905095.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_6_SRCC_0.905095.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_6_SRCC_0.905095.pth" target="_blank">`rqvqa/Swin_b_384_in22k_SlowFast_Fast_LLM_LIQE_FASTVQA_BoT_NTIREVideo_plcc_NR_v4_epoch_6_SRCC_0.905095.pth`</a> [↑](#categories)
 
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx" target="_blank">`rtmpose_m.onnx`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx" target="_blank">`rtmpose_m.onnx`</a> [↑](#categories)
 
 - **Used by**: `body_motion_kinematics`, `object_integrity`
 - **Task**: RTMPose keypoint estimator (rtmlib opt-in backend)
 - **Notes**: Shared with rtmpose_fidelity
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth" target="_blank">`sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth" target="_blank">`sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth`</a> [↑](#categories)
 
 - **Used by**: `sama`
 - **Task**: SAMA LSVQ baseline video quality checkpoint
@@ -1026,7 +1026,7 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Disk**: 29,584,237 bytes (28.213727 MiB)
 - **Notes**: DNS 2020 weights; SHA-256 2c54586fea83fb5eb5394d710038ee89f55cab7011a5bf730bebed4c8777e828; license https://github.com/microsoft/DNS-Challenge/blob/interspeech2020/master/LICENSE
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/lip_sync/syncnet_v2.model" target="_blank">`syncnet_v2.model`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/lip_sync/syncnet_v2.model" target="_blank">`syncnet_v2.model`</a> [↑](#categories)
 
 - **Used by**: `lip_sync_syncnet`, `lip_sync_verse`, `verse_bench`
 - **Task**: SyncNet v2 lip-sync model
@@ -1054,7 +1054,7 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Disk**: 15.3 MB
 - **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx" target="_blank">`yolox_m.onnx`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx" target="_blank">`yolox_m.onnx`</a> [↑](#categories)
 
 - **Used by**: `body_motion_kinematics`, `object_integrity`
 - **Task**: YOLOX person detector (rtmlib opt-in backend)

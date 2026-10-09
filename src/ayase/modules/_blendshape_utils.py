@@ -11,7 +11,7 @@ import logging
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import cv2
 import numpy as np
@@ -20,11 +20,11 @@ from ayase.config import download_model_file
 
 logger = logging.getLogger(__name__)
 
-MODEL_REPO_ID = "AkaneTendo25/ayase-runtime-assets"
+MODEL_REPO_ID = "AkaneTendo25/ayase-assets"
 MODEL_FILENAME = "expression_following/face_landmarker.task"
 MODEL_REVISION = "409c832ac7a30524a48ab642455bf963c2a95d1f"
 MODEL_URL = (
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
+    "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/"
     f"{MODEL_REVISION}/{MODEL_FILENAME}"
 )
 BLENDSHAPE_DIM = 52
@@ -134,6 +134,7 @@ class BlendshapeExtractor:
         self,
         models_dir: str = "models",
         *,
+        config: Optional[Mapping[str, Any]] = None,
         num_faces: int = 5,
         face_index: Optional[int] = None,
         min_face_detection_confidence: float = 0.5,
@@ -142,6 +143,7 @@ class BlendshapeExtractor:
         output_facial_transformation_matrixes: bool = False,
     ) -> None:
         self.models_dir = str(models_dir)
+        self.config = config
         self.num_faces = max(1, int(num_faces))
         self.face_index = face_index
         self.min_face_detection_confidence = float(min_face_detection_confidence)
@@ -167,7 +169,13 @@ class BlendshapeExtractor:
             required = ("FaceLandmarker", "FaceLandmarkerOptions", "RunningMode")
             if not all(hasattr(mp.tasks.vision, name) for name in required):
                 raise RuntimeError("installed mediapipe lacks the Face Landmarker Tasks API")
-            path = download_model_file(MODEL_FILENAME, MODEL_URL, self.models_dir)
+            from ayase.config import resolve_assets_url
+
+            path = download_model_file(
+                MODEL_FILENAME,
+                resolve_assets_url(MODEL_URL, self.config),
+                self.models_dir,
+            )
             if not path.is_file() or path.stat().st_size <= 0:
                 raise RuntimeError(f"invalid Face Landmarker artifact: {path}")
             self.model_path = path

@@ -44,7 +44,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # rtmlib fallback weights (mirror), shared with rtmpose_fidelity.
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _DET_REL = "rtmpose_fidelity/yolox_m.onnx"
 _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 
@@ -132,10 +132,10 @@ class ObjectIntegrityModule(PipelineModule):
             "task": "OpenMMLab pose pipeline (canonical upstream backend)",
         },
         {"id": "yolox_m.onnx", "type": "local",
-         "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx",
+         "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx",
          "task": "YOLOX person detector (rtmlib opt-in backend)", "notes": "Shared with rtmpose_fidelity"},
         {"id": "rtmpose_m.onnx", "type": "local",
-         "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx",
+         "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx",
          "task": "RTMPose keypoint estimator (rtmlib opt-in backend)", "notes": "Shared with rtmpose_fidelity"},
     ]
 
@@ -194,12 +194,16 @@ class ObjectIntegrityModule(PipelineModule):
             logger.debug("rtmlib import check failed: %s", e)
             return False
 
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
 
         models_dir = str(self.config.get("models_dir", "models"))
         try:
-            self._det_path = str(download_model_file(_DET_REL, _MODELS_BASE + _DET_REL, models_dir))
-            self._pose_path = str(download_model_file(_POSE_REL, _MODELS_BASE + _POSE_REL, models_dir))
+            self._det_path = str(download_model_file(
+                _DET_REL, resolve_assets_url(_MODELS_BASE + _DET_REL, self.config), models_dir
+            ))
+            self._pose_path = str(download_model_file(
+                _POSE_REL, resolve_assets_url(_MODELS_BASE + _POSE_REL, self.config), models_dir
+            ))
         except Exception as e:
             logger.warning("ObjectIntegrity: could not fetch ONNX weights (%s); staying unavailable", e)
             return False

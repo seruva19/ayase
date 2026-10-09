@@ -13,7 +13,6 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 
-
 _CURRENT_PIPELINE: ContextVar[Optional[Any]] = ContextVar(
     "ayase_current_pipeline",
     default=None,
@@ -78,6 +77,7 @@ def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
     pipeline_cfg = getattr(config, "pipeline", None)
     return {
         "models_dir": str(general.models_dir),
+        "assets_repo": general.assets_repo,
         "parallel_jobs": general.parallel_jobs,
         "device": general.device,
         "dtype": general.dtype,
@@ -88,9 +88,7 @@ def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
         "timing_enabled": general.timing_enabled,
         "sample_batch_size": general.sample_batch_size,
         "max_clip_images_per_forward": general.max_clip_images_per_forward,
-        "allow_provenance": list(
-            getattr(pipeline_cfg, "allow_provenance", []) or []
-        ),
+        "allow_provenance": list(getattr(pipeline_cfg, "allow_provenance", []) or []),
     }
 
 
@@ -177,9 +175,8 @@ def _max_clip_images_per_forward(owner: Any) -> int:
 
 def _is_cuda_oom(exc: BaseException) -> bool:
     message = str(exc).lower()
-    return (
-        "out of memory" in message
-        and ("cuda" in message or "cublas" in message or "cudnn" in message)
+    return "out of memory" in message and (
+        "cuda" in message or "cublas" in message or "cudnn" in message
     )
 
 
@@ -317,7 +314,7 @@ def _encode_clip_image_chunks(
     outputs = []
     start = 0
     while start < len(image_values):
-        chunk = image_values[start:start + chunk_size]
+        chunk = image_values[start : start + chunk_size]
         try:
             inputs = processor(images=chunk, return_tensors="pt").to(device)
             with torch_inference_context(
@@ -341,8 +338,6 @@ def _encode_clip_image_chunks(
     if len(outputs) == 1:
         return outputs[0]
     return torch.cat(outputs, dim=0)
-
-
 
 
 def cached_clip_image_feature_groups(
@@ -557,7 +552,7 @@ def _encode_openai_clip_image_chunks(
     outputs = []
     start = 0
     while start < len(image_values):
-        chunk = image_values[start:start + chunk_size]
+        chunk = image_values[start : start + chunk_size]
         try:
             inputs = torch.stack([preprocess(image) for image in chunk]).to(device)
             with torch_inference_context(
@@ -763,7 +758,11 @@ def torch_inference_context(
 
     dtype = resolve_torch_dtype(device, dtype_config)
     with torch.inference_mode():
-        if amp_enabled and dtype in (torch.float16, torch.bfloat16) and str(device).startswith("cuda"):
+        if (
+            amp_enabled
+            and dtype in (torch.float16, torch.bfloat16)
+            and str(device).startswith("cuda")
+        ):
             with torch.autocast("cuda", dtype=dtype):
                 yield
         else:

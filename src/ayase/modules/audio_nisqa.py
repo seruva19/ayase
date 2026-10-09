@@ -25,7 +25,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 
-_NISQA_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/nisqa/nisqa.tar"
+_NISQA_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/nisqa/nisqa.tar"
 _NISQA_WEIGHTS_FILENAME = "nisqa/nisqa.tar"
 
 
@@ -95,8 +95,12 @@ class AudioNISQAModule(PipelineModule):
 
             weights = self.weights_path
             if not weights:
+                from ayase.config import resolve_assets_url
+
                 weights = str(download_model_file(
-                    _NISQA_WEIGHTS_FILENAME, _NISQA_WEIGHTS_URL, self.models_dir,
+                    _NISQA_WEIGHTS_FILENAME,
+                    resolve_assets_url(_NISQA_WEIGHTS_URL, self.config),
+                    self.models_dir,
                 ))
             self._nisqa_weights = weights
             self._nisqa_output_dir = tempfile.mkdtemp(prefix="ayase_nisqa_")

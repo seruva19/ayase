@@ -19,7 +19,7 @@ so importing :mod:`ayase.pose` stays cheap for consumers that never call it.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import numpy as np
 
@@ -48,7 +48,7 @@ RIGHT_ANKLE = 16
 #: pose-plausibility module uses, so consumers agree on what "found" means.
 KEYPOINT_CONF = 0.3
 
-_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+_MODELS_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 _DET_REL = "rtmpose_fidelity/yolox_m.onnx"
 _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 
@@ -60,6 +60,7 @@ def load_pose_backend(
     models_dir: str = "models",
     det_input_size: Tuple[int, int] = (640, 640),
     pose_input_size: Tuple[int, int] = (192, 256),
+    config: Optional[Mapping[str, Any]] = None,
 ) -> Optional[Tuple[Any, Any]]:
     """Return an ``(detector, pose_estimator)`` pair, or ``None`` if unavailable.
 
@@ -67,7 +68,7 @@ def load_pose_backend(
     condition for a metrics toolkit, and consumers degrade by leaving their own
     values unset.
     """
-    from ayase.config import download_model_file
+    from ayase.config import download_model_file, resolve_assets_url
     from ayase.runtime import resolve_torch_device
 
     torch_device = resolve_torch_device(device)
@@ -77,8 +78,16 @@ def load_pose_backend(
     # are shared, so a consumer of this primitive never triggers a second download
     # and keypoints stay identical to the ones behind ``rtmpose_score``.
     try:
-        det_path = str(download_model_file(_DET_REL, _MODELS_BASE + _DET_REL, models_dir))
-        pose_path = str(download_model_file(_POSE_REL, _MODELS_BASE + _POSE_REL, models_dir))
+        det_path = str(
+            download_model_file(
+                _DET_REL, resolve_assets_url(_MODELS_BASE + _DET_REL, config), models_dir
+            )
+        )
+        pose_path = str(
+            download_model_file(
+                _POSE_REL, resolve_assets_url(_MODELS_BASE + _POSE_REL, config), models_dir
+            )
+        )
     except Exception as exc:  # pragma: no cover - depends on local model store
         logger.warning("pose primitive: model files unavailable (%s)", exc)
         return None
@@ -121,6 +130,7 @@ def pose_keypoints(
     device: str = "auto",
     models_dir: str = "models",
     backend: Optional[Tuple[Any, Any]] = None,
+    config: Optional[Mapping[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """People detected in one BGR frame, largest first.
 
@@ -135,7 +145,9 @@ def pose_keypoints(
     if frame_bgr is None or getattr(frame_bgr, "size", 0) == 0:
         return []
 
-    detpose = backend if backend is not None else load_pose_backend(device, models_dir)
+    detpose = (
+        backend if backend is not None else load_pose_backend(device, models_dir, config=config)
+    )
     if detpose is None:
         return []
     detector, estimator = detpose
@@ -176,8 +188,9 @@ def pose_keypoints(
     return people
 
 
-def body_scale(keypoints: np.ndarray, scores: np.ndarray,
-               min_conf: float = KEYPOINT_CONF) -> Optional[float]:
+def body_scale(
+    keypoints: np.ndarray, scores: np.ndarray, min_conf: float = KEYPOINT_CONF
+) -> Optional[float]:
     """Scale factor for making two skeletons comparable, or ``None``.
 
     Shoulder width first, shoulder-to-hip length as a fallback. Hip-based
@@ -197,8 +210,9 @@ def body_scale(keypoints: np.ndarray, scores: np.ndarray,
     return None
 
 
-def body_origin(keypoints: np.ndarray, scores: np.ndarray,
-                min_conf: float = KEYPOINT_CONF) -> Optional[np.ndarray]:
+def body_origin(
+    keypoints: np.ndarray, scores: np.ndarray, min_conf: float = KEYPOINT_CONF
+) -> Optional[np.ndarray]:
     """Anchor point for aligning two skeletons: shoulder midpoint, else the nose."""
     if scores[LEFT_SHOULDER] >= min_conf and scores[RIGHT_SHOULDER] >= min_conf:
         return (keypoints[LEFT_SHOULDER] + keypoints[RIGHT_SHOULDER]) / 2.0

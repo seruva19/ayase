@@ -119,7 +119,7 @@ class AVDesyncModule(PipelineModule):
     # Same checkpoint / mirror the av_sync module uses for the vendored inferencer.
     _WEIGHTS_URLS = {
         "24-01-04T16-39-21.pt": (
-            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
             "synchformer/24-01-04T16-39-21.pt"
         ),
     }
@@ -145,9 +145,13 @@ class AVDesyncModule(PipelineModule):
         if not url:
             return False
         try:
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
 
-            download_model_file("24-01-04T16-39-21.pt", url, str(model_path))
+            download_model_file(
+                "24-01-04T16-39-21.pt",
+                resolve_assets_url(url, self.config),
+                str(model_path),
+            )
         except Exception as e:  # pylint: disable=broad-except
             logger.warning("Synchformer weights download failed: %s", e)
             return False
@@ -169,7 +173,7 @@ class AVDesyncModule(PipelineModule):
             if not self._ensure_synchformer_weights(model_path):
                 logger.warning(
                     "av_desync: Synchformer weights unavailable "
-                    "(cannot fetch AkaneTendo25/ayase-runtime-assets mirror); "
+                    "(cannot fetch AkaneTendo25/ayase-assets mirror); "
                     "desync_score left unset."
                 )
                 self._backend = "unavailable"

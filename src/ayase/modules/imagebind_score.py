@@ -85,7 +85,7 @@ class ImageBindScoreModule(PipelineModule):
 
     _WEIGHTS_URLS = {
         "imagebind_huge.pth": (
-            "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+            "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
             "imagebind/imagebind_huge.pth"
         ),
     }
@@ -106,10 +106,10 @@ class ImageBindScoreModule(PipelineModule):
         if not url:
             return False
         try:
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
             download_model_file(
                 "imagebind_huge.pth",
-                url,
+                resolve_assets_url(url, self.config),
                 target_dir,
             )
         except Exception as e:  # pylint: disable=broad-except
@@ -145,7 +145,7 @@ class ImageBindScoreModule(PipelineModule):
         if not self._ensure_weights():
             logger.warning(
                 "ImageBind weights unavailable (cannot download from "
-                "AkaneTendo25/ayase-runtime-assets HF mirror); module disabled"
+                "AkaneTendo25/ayase-assets HF mirror); module disabled"
             )
             self._ml_available = False
             self._backend = "unavailable"

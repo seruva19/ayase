@@ -54,7 +54,7 @@ class IDSimModule(PipelineModule):
             "notes": f"MIT; pinned to revision {_ADAPTER_REVISION}",
         },
         {
-            "id": "AkaneTendo25/ayase-runtime-assets",
+            "id": "AkaneTendo25/ayase-assets",
             "type": "huggingface",
             "task": "Exact DINOv2 ViT-B/14 backbone used by ID-Sim",
             "auto_download": True,
@@ -83,7 +83,7 @@ class IDSimModule(PipelineModule):
         if self.test_mode:
             return
         try:
-            from ayase.config import download_model_file
+            from ayase.config import download_model_file, resolve_assets_url
             from ayase.runtime import resolve_torch_device
             from ayase.third_party.id_sim import id_sim
 
@@ -91,8 +91,11 @@ class IDSimModule(PipelineModule):
             cache_dir = Path(self.models_dir) / "id_sim"
             backbone = download_model_file(
                 "id_sim/checkpoints/dinov2_vitb14_pretrain.pth",
-                f"https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/{_BACKBONE_REVISION}/"
-                "id_sim/dinov2_vitb14_pretrain.pth",
+                resolve_assets_url(
+                    f"https://huggingface.co/AkaneTendo25/ayase-assets/resolve/{_BACKBONE_REVISION}/"
+                    "id_sim/dinov2_vitb14_pretrain.pth",
+                    self.config,
+                ),
                 self.models_dir,
             )
             if self._sha256(backbone) != _BACKBONE_SHA256:

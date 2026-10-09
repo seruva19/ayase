@@ -123,7 +123,7 @@ class SongEvalModule(PipelineModule):
     }
 
     _CHECKPOINT_URL = (
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
         "song_eval/model.safetensors"
     )
 
@@ -196,8 +196,12 @@ class SongEvalModule(PipelineModule):
             return Path(resolved)
 
         try:
-            from ayase.config import download_model_file
-            return download_model_file(subpath, self._CHECKPOINT_URL, models_dir)
+            from ayase.config import download_model_file, resolve_assets_url
+            return download_model_file(
+                subpath,
+                resolve_assets_url(self._CHECKPOINT_URL, self.config),
+                models_dir,
+            )
         except Exception as e:
             logger.debug(f"SongEval checkpoint download failed: {e}")
             return None

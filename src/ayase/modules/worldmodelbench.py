@@ -35,7 +35,7 @@ VILA_REVISION = "0f1426e8da9181e6e6653e10bc15f62d515fa2f6"
 S2WRAPPER_REVISION = "9c008a37540e761f53574b488979db6e49a64312"
 MIRROR_REVISION = "main"
 MIRROR_BASE = (
-    "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/"
+    "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/"
     f"{MIRROR_REVISION}/"
 )
 BENCHMARK_URL = (
@@ -133,7 +133,7 @@ class WorldModelBenchModule(PipelineModule):
             "auto_download": True,
         },
         {
-            "id": "AkaneTendo25/ayase-runtime-assets",
+            "id": "AkaneTendo25/ayase-assets",
             "type": "huggingface",
             "url": BENCHMARK_URL,
             "task": "Mirrored benchmark definition and VILA runtime source",
@@ -348,7 +348,11 @@ class WorldModelBenchModule(PipelineModule):
 
     def setup(self) -> None:
         try:
-            from ayase.config import download_hf_snapshot, download_model_file
+            from ayase.config import (
+                download_hf_snapshot,
+                download_model_file,
+                resolve_assets_url,
+            )
 
             models_dir = str(self.config.get("models_dir", "models"))
             judge_path = download_hf_snapshot(
@@ -358,7 +362,9 @@ class WorldModelBenchModule(PipelineModule):
             )
             benchmark_path = download_model_file(
                 "worldmodelbench/worldmodelbench.json",
-                str(self.config.get("benchmark_url", BENCHMARK_URL)),
+                resolve_assets_url(
+                    str(self.config.get("benchmark_url", BENCHMARK_URL)), self.config
+                ),
                 models_dir,
             )
             vila_root = self._vendored("vila", "llava")

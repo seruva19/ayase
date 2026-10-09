@@ -23,7 +23,7 @@ at runtime. It has two vendored, self-contained torch model definitions:
   * Track autoencoder: a from-scratch torch reimplementation of the Flax
     ``TrackAutoEncoder`` (Perceiver cross/self-attention encoder + decoder), whose
     weights are converted from the Flax checkpoint ``track_autoencoder_ckpt.npz``
-    (mirrored at ``AkaneTendo25/ayase-runtime-assets``; Flax Dense kernels transposed,
+    (mirrored at ``AkaneTendo25/ayase-assets``; Flax Dense kernels transposed,
     DenseGeneral qkv/out reshaped, LayerNorm/RMSNorm scale mapped 1:1).
 
 VALIDATION (decisive evidence of faithfulness)
@@ -69,7 +69,7 @@ _BOOTSTAPIR_REL = "trajan/bootstapir_checkpoint_v2.pt"
 
 # Track-autoencoder weights (DeepMind Flax params, mirrored). Flat
 # "path/to/param" -> array npz, converted to a torch state_dict at load time.
-_AE_REPO = "AkaneTendo25/ayase-runtime-assets"
+_AE_REPO = "AkaneTendo25/ayase-assets"
 _AE_FILE = "trajan/track_autoencoder_ckpt.npz"
 
 # Cache for the lazily-built torch backend (classes + helpers).
@@ -919,8 +919,9 @@ class TRAJANModule(PipelineModule):
 
         # Track-autoencoder Flax checkpoint -> torch state_dict.
         from huggingface_hub import hf_hub_download
+        from ayase.config import resolve_assets_repo
 
-        ae_path = hf_hub_download(repo_id=_AE_REPO, filename=_AE_FILE)
+        ae_path = hf_hub_download(repo_id=resolve_assets_repo(self.config), filename=_AE_FILE)
         loaded = np.load(ae_path, allow_pickle=False)
         flat = {k: np.asarray(loaded[k]) for k in loaded.files}
         ae = backend.TrackAutoEncoder()

@@ -32,7 +32,7 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+HF_REPO = "AkaneTendo25/ayase-assets"
 _WEIGHT_FILES = {
     "OIQA": "mc360iqa/OIQA.pkl",
     "CVIQ": "mc360iqa/CVIQ.pkl",
@@ -299,7 +299,11 @@ class MC360IQAModule(PipelineModule):
 
         try:
             import torch
-            ckpt_path = hf_hub_download(repo_id=HF_REPO, filename=weight_file)
+            from ayase.config import resolve_assets_repo
+
+            ckpt_path = hf_hub_download(
+                repo_id=resolve_assets_repo(self.config), filename=weight_file
+            )
             state_dict = torch.load(ckpt_path, map_location="cpu")
             model = _build_resnet34()
             model.load_state_dict(state_dict, strict=True)

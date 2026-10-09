@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 #   https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_B_1_4.pth
 #   https://github.com/VQAssessment/FAST-VQA-and-FasterVQA/releases/download/v2.0.0/FAST_VQA_M_1_4.pth
 FASTVQA_MODEL_URLS = {
-    "FAST_VQA_3D_1_1.pth": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth",
-    "FAST_VQA_B_1_4.pth": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth",
-    "FAST_VQA_M_1_4.pth": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth",
+    "FAST_VQA_3D_1_1.pth": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth",
+    "FAST_VQA_B_1_4.pth": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth",
+    "FAST_VQA_M_1_4.pth": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth",
 }
 
 
@@ -191,7 +191,9 @@ class FastVQAModule(PipelineModule):
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         logger.info(f"Downloading {filename} from {url}...")
 
-        urllib.request.urlretrieve(url, destination_path)
+        from ayase.config import resolve_assets_url
+
+        urllib.request.urlretrieve(resolve_assets_url(url, self.config), destination_path)
         logger.info(f"Downloaded {filename}")
 
     def _prepare_input(self, video_path, min_dimension=None):

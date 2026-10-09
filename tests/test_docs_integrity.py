@@ -454,6 +454,16 @@ _KNOWN_DOMAINS = {
 class TestURLFormats:
     """Validate that URLs in source code are well-formed (no network requests)."""
 
+    def test_current_source_uses_canonical_asset_repository(self) -> None:
+        project_root = Path(__file__).parents[1]
+        obsolete = "AkaneTendo25/ayase-" + "runtime-assets"
+        violations = []
+        for root in (project_root / "src", project_root / "tests"):
+            for path in root.rglob("*.py"):
+                if obsolete in path.read_text(encoding="utf-8", errors="replace"):
+                    violations.append(str(path.relative_to(project_root)))
+        assert not violations, f"current source uses obsolete asset repository: {violations}"
+
     @pytest.mark.parametrize("name", MODULE_NAMES)
     def test_urls_are_well_formed(self, name: str) -> None:
         cls = ALL_MODULES[name]

@@ -85,6 +85,7 @@ class EyebrowDynamicsModule(PipelineModule):
         super().__init__(config)
         self._extractor = BlendshapeExtractor(
             self.config.get("models_dir", "models"),
+            config=self.config,
             num_faces=int(self.config.get("num_faces", 1)),
             face_index=self.config.get("face_index"),
         )

@@ -30,13 +30,13 @@ def test_worldmodelbench_native_autodownload_defaults():
     assert "judge_path" not in config
     assert "evaluator_script" not in config
     assert config["benchmark_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
     )
     assert config["vila_source_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
     )
     assert config["s2wrapper_source_url"].startswith(
-        "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/"
+        "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
     )
     assert WorldModelBenchModule.models[0]["auto_download"] is True
 
@@ -59,7 +59,9 @@ def test_worldmodelbench_setup_downloads_and_loads_judge(monkeypatch, tmp_path):
     source.mkdir()
 
     def fake_file(relative_path, url, models_dir):
-        return benchmark if relative_path.endswith("worldmodelbench.json") else tmp_path / "vila.zip"
+        return (
+            benchmark if relative_path.endswith("worldmodelbench.json") else tmp_path / "vila.zip"
+        )
 
     monkeypatch.setattr(ayase.config, "download_model_file", fake_file)
     monkeypatch.setattr(

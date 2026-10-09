@@ -11,6 +11,7 @@ from ayase.models import QualityMetrics
 
 def test_p1204_basics():
     from ayase.modules.p1204 import P1204Module
+
     _test_module_basics(P1204Module, "p1204")
 
 
@@ -19,6 +20,7 @@ def test_p1204_video(video_sample):
     'unavailable', and process() returns the sample unchanged (no fabricated
     MOS)."""
     from ayase.modules.p1204 import P1204Module
+
     video_sample.quality_metrics = QualityMetrics()
     m = P1204Module()
     m.on_mount()
@@ -76,15 +78,15 @@ def test_p1204_predict_parametric_and_rf():
 
     try:
         reg = huggingface_hub.hf_hub_download(
-            repo_id="AkaneTendo25/ayase-runtime-assets",
+            repo_id="AkaneTendo25/ayase-assets",
             filename="p1204/models/p1204_3/mode3_pc_20trees_depth_8_reg.json",
         )
         fs = huggingface_hub.hf_hub_download(
-            repo_id="AkaneTendo25/ayase-runtime-assets",
+            repo_id="AkaneTendo25/ayase-assets",
             filename="p1204/models/p1204_3/mode3_pc_20trees_depth_8_fs.json",
         )
         cfg = huggingface_hub.hf_hub_download(
-            repo_id="AkaneTendo25/ayase-runtime-assets",
+            repo_id="AkaneTendo25/ayase-assets",
             filename="p1204/models/p1204_3/config.json",
         )
     except Exception as exc:  # offline / hub unavailable

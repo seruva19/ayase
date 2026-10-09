@@ -82,6 +82,7 @@ pipeline.export("report.json")   # also: report.csv, report.html
 ```toml
 [general]
 parallel_jobs = 8  # concurrency hint passed to capable modules/backends
+assets_repo = "AkaneTendo25/ayase-assets"  # owner/repo or its huggingface.co URL
 
 [pipeline]
 modules = ["metadata", "basic_quality", "motion"]
@@ -90,6 +91,11 @@ modules = ["metadata", "basic_quality", "motion"]
 default_format = "json"
 artifacts_dir = "reports"
 ```
+
+`assets_repo` selects the Hugging Face repository used for Ayase-managed
+checkpoints and source archives. It can also be set with
+`AYASE_GENERAL__ASSETS_REPO`; a module profile's `assets_repo` value takes
+precedence for that module.
 
 ## Custom Modules
 

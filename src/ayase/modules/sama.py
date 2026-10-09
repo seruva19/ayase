@@ -27,7 +27,7 @@ from ayase.pipeline import PipelineModule
 logger = logging.getLogger(__name__)
 
 # Original weights (GoogleDrive/BaiDu in upstream repo), mirrored on HF.
-SAMA_REPO_ID = "AkaneTendo25/ayase-runtime-assets"
+SAMA_REPO_ID = "AkaneTendo25/ayase-assets"
 SAMA_WEIGHTS_FILE = "sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth"
 
 # Normalisation constants (Kinetics / FAST-VQA / SAMA shared).
@@ -187,7 +187,7 @@ class SAMAModule(PipelineModule):
         {
             "id": SAMA_WEIGHTS_FILE,
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth",
             "task": "SAMA LSVQ baseline video quality checkpoint",
         },
     ]
@@ -213,6 +213,7 @@ class SAMAModule(PipelineModule):
             import torch  # noqa: F401
             import decord  # noqa: F401
             from huggingface_hub import hf_hub_download
+            from ayase.config import resolve_assets_repo
             from ayase.third_party.fastvqa.models import DiViDeAddEvaluator
             from ayase.runtime import resolve_torch_device
 
@@ -229,7 +230,7 @@ class SAMAModule(PipelineModule):
             model = DiViDeAddEvaluator(**model_args).to(self.device)
 
             weights_path = hf_hub_download(
-                repo_id=SAMA_REPO_ID, filename=SAMA_WEIGHTS_FILE
+                repo_id=resolve_assets_repo(self.config), filename=SAMA_WEIGHTS_FILE
             )
             checkpoint = torch.load(
                 weights_path, map_location=self.device, weights_only=False

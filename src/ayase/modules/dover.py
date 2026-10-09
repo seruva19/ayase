@@ -71,20 +71,20 @@ class DOVERModule(PipelineModule):
         {
             "id": "DOVER.pth",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/DOVER.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/DOVER.pth",
             "task": "Native DOVER video quality weights",
             "notes": "Resolved from weights_path or models_dir",
         },
         {
             "id": "onnx_dover.onnx",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/onnx_dover.onnx",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/onnx_dover.onnx",
             "task": "Optional ONNX DOVER backend",
         },
         {
             "id": "convnext_tiny_1k_224_ema.pth",
             "type": "local",
-            "url": "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth",
             "task": "ConvNeXt-Tiny aesthetic backbone",
         },
     ]
@@ -213,7 +213,7 @@ class DOVERModule(PipelineModule):
             return False
 
     # Original: https://dl.fbaipublicfiles.com/convnext/convnext_tiny_1k_224_ema.pth
-    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
+    _CONVNEXT_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth"
     _CONVNEXT_FILENAME = "convnext_tiny_1k_224_ema.pth"
 
     def _ensure_convnext_cached(self) -> None:
@@ -226,10 +226,10 @@ class DOVERModule(PipelineModule):
             return
         os.makedirs(cache_dir, exist_ok=True)
         logger.info("Downloading ConvNeXt backbone for DOVER...")
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
         tmp = download_model_file(
             os.path.join("hub", "checkpoints", self._CONVNEXT_FILENAME),
-            self._CONVNEXT_URL,
+            resolve_assets_url(self._CONVNEXT_URL, self.config),
             os.path.dirname(hub_dir),  # parent of hub dir
         )
         # Move to torch cache if downloaded elsewhere
@@ -238,7 +238,7 @@ class DOVERModule(PipelineModule):
             shutil.copy2(str(tmp), cached)
 
     # Original: https://github.com/VQAssessment/DOVER/releases/download/v0.1.0/DOVER.pth
-    _DOVER_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/DOVER.pth"
+    _DOVER_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/DOVER.pth"
 
     def _resolve_weights(self) -> Optional[str]:
         """Find DOVER.pth weights file, auto-downloading if needed."""
@@ -265,10 +265,12 @@ class DOVERModule(PipelineModule):
                 return path
 
         # Auto-download
-        from ayase.config import download_model_file
+        from ayase.config import download_model_file, resolve_assets_url
 
         return download_model_file(
-            "dover/DOVER.pth", self._DOVER_WEIGHTS_URL, models_dir
+            "dover/DOVER.pth",
+            resolve_assets_url(self._DOVER_WEIGHTS_URL, self.config),
+            models_dir,
         )
 
     # ------------------------------------------------------------------ #
@@ -276,7 +278,7 @@ class DOVERModule(PipelineModule):
     # ------------------------------------------------------------------ #
 
     # Original: https://github.com/VQAssessment/DOVER (convert_to_onnx.py)
-    _ONNX_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/dover/onnx_dover.onnx"
+    _ONNX_WEIGHTS_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/onnx_dover.onnx"
 
     def _try_onnx_setup(self) -> bool:
         try:
@@ -286,9 +288,13 @@ class DOVERModule(PipelineModule):
             onnx_path = os.path.join(models_dir, "dover", "onnx_dover.onnx")
 
             if not os.path.exists(onnx_path):
-                from ayase.config import download_model_file
+                from ayase.config import download_model_file, resolve_assets_url
                 try:
-                    download_model_file("dover/onnx_dover.onnx", self._ONNX_WEIGHTS_URL, models_dir)
+                    download_model_file(
+                        "dover/onnx_dover.onnx",
+                        resolve_assets_url(self._ONNX_WEIGHTS_URL, self.config),
+                        models_dir,
+                    )
                 except Exception:
                     return False
 

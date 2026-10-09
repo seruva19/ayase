@@ -33,7 +33,7 @@ _WINDOW = 12
 # Minimum frame side so the 5x-downsampled feature stays >= the Swin window (4).
 _MIN_SIDE = 128
 
-_HF_REPO = "AkaneTendo25/ayase-runtime-assets"
+_HF_REPO = "AkaneTendo25/ayase-assets"
 _HF_WEIGHTS = "vfips/model.pytorch"
 
 
@@ -582,7 +582,11 @@ class VFIPSModule(ReferenceBasedModule):
 
             arch = _build_arch()
             model = arch()
-            ckpt = hf_hub_download(repo_id=_HF_REPO, filename=_HF_WEIGHTS)
+            from ayase.config import resolve_assets_repo
+
+            ckpt = hf_hub_download(
+                repo_id=resolve_assets_repo(self.config), filename=_HF_WEIGHTS
+            )
             state_dict = torch.load(ckpt, map_location="cpu")
             model.load_state_dict(state_dict, strict=True)
             model.to(self._device).eval()
