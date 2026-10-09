@@ -127,30 +127,45 @@ def test_own_fields_do_not_use_published_names(registry, published_names):
     )
 
 
-def test_lip_sync_fields_declare_the_bundled_preprocessing_as_adapted():
-    """SyncNet names retain their source while VERSE-Bench preparation is explicit."""
-    from ayase.modules.lip_sync import LipSyncModule
+def test_lip_sync_verse_fields_declare_the_bundled_preprocessing_as_adapted():
+    """The released VERSE path has its own canonical fields and metadata."""
+    from ayase.modules.lip_sync import LipSyncModule, LipSyncVerseModule
 
-    metadata = LipSyncModule.get_metadata()
-    assert LipSyncModule.field_provenance() == {"lse_c": "adapted", "lse_d": "adapted"}
-    assert metadata["provenance"] == {"lse_c": "adapted", "lse_d": "adapted"}
-    for field in ("lse_c", "lse_d"):
+    metadata = LipSyncVerseModule.get_metadata()
+    expected = {"lse_c_verse": "adapted", "lse_d_verse": "adapted"}
+    assert LipSyncVerseModule.field_provenance() == expected
+    assert metadata["provenance"] == expected
+    assert LipSyncModule.get_metadata() == metadata
+    for field in expected:
         assert "SyncNet" in metadata["sources"][field]
-        assert "VERSE-Bench" in metadata["sources"][field]
-        assert "first InsightFace detection" in metadata["deviations"][field]
-        assert "shorter than two seconds" in metadata["deviations"][field]
-        assert "offset >=14" in metadata["deviations"][field]
+        assert "VERSE" in metadata["sources"][field]
+        assert metadata["deviations"][field]
+
+
+def test_lip_sync_syncnet_fields_declare_track_aggregation_as_adapted():
+    """The opt-in SyncNet path states its source and multi-track mean deviation."""
+    from ayase.modules.lip_sync import LipSyncSyncNetModule
+
+    metadata = LipSyncSyncNetModule.get_metadata()
+    expected = {"lse_c_syncnet": "adapted", "lse_d_syncnet": "adapted"}
+    assert LipSyncSyncNetModule.field_provenance() == expected
+    assert metadata["provenance"] == expected
+    for field in expected:
+        assert "https://github.com/joonson/syncnet_python" in metadata["sources"][field]
+        deviation = metadata["deviations"][field].lower()
+        assert "mean" in deviation
+        assert "track" in deviation
 
 
 def test_lip_sync_requires_explicit_adapted_opt_in():
     """Default published-only execution cannot silently emit the adapted LSE fields."""
-    from ayase.modules.lip_sync import LipSyncModule
+    from ayase.modules.lip_sync import LipSyncVerseModule
 
-    default_module = LipSyncModule()
+    default_module = LipSyncVerseModule()
     default_pipeline = Pipeline([default_module])
     assert default_pipeline._provenance_excluded[default_module.name] == "adapted"
 
-    opted_in_module = LipSyncModule()
+    opted_in_module = LipSyncVerseModule()
     opted_in_pipeline = Pipeline([opted_in_module], allow_provenance=["adapted"])
     assert opted_in_module.name not in opted_in_pipeline._provenance_excluded
     assert "adapted" in opted_in_pipeline._module_allowed_provenance[id(opted_in_module)]

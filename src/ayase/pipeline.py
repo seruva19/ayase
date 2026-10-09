@@ -22,6 +22,7 @@ from .models import (
     QualityMetrics,
     ValidationIssue,
     ValidationSeverity,
+    move_lip_sync_legacy_aliases,
     observe_metric_writes,
 )
 from .runtime import (
@@ -587,12 +588,80 @@ class Pipeline:
         "cache_enabled",
     }
 
+    @staticmethod
+    def _deduplicate_modules(modules: List[PipelineModule]) -> List[PipelineModule]:
+        """Collapse only duplicate canonical lip-sync compatibility requests."""
+        result: List[PipelineModule] = []
+        by_name: Dict[str, PipelineModule] = {}
+        lip_sync_names = {"lip_sync_verse", "lip_sync_syncnet"}
+        for module in modules:
+            if module.name not in lip_sync_names:
+                result.append(module)
+                continue
+            existing = by_name.get(module.name)
+            if existing is None:
+                by_name[module.name] = module
+                result.append(module)
+                continue
+            if existing.config != module.config:
+                differing = sorted(
+                    key
+                    for key in set(existing.config) | set(module.config)
+                    if existing.config.get(key) != module.config.get(key)
+                )
+                raise ValueError(
+                    f"Conflicting configurations for canonical module {module.name!r}; "
+                    f"differing keys: {differing}"
+                )
+            for attr in (
+                "_requested_module_name",
+                "_legacy_output_aliases",
+                "_legacy_lip_sync_protocol",
+            ):
+                incoming = getattr(module, attr, None)
+                current = getattr(existing, attr, None)
+                if incoming is not None and current is not None and incoming != current:
+                    raise ValueError(
+                        f"Conflicting compatibility modes for canonical module {module.name!r}"
+                    )
+                if incoming is not None and current is None:
+                    setattr(existing, attr, deepcopy(incoming))
+        return result
+
     def __init__(
         self,
         modules: List[PipelineModule],
         allow_provenance: Optional[Iterable[str]] = None,
     ):
-        self.modules = modules
+        self.modules = self._deduplicate_modules(modules)
+        self._legacy_module_aliases: Dict[str, str] = {}
+        self._legacy_output_aliases: Dict[str, str] = {}
+        self._legacy_lip_sync_protocol: Optional[str] = None
+        for module in self.modules:
+            requested_name = getattr(module, "_requested_module_name", None)
+            if requested_name:
+                existing = self._legacy_module_aliases.get(requested_name)
+                if existing is not None and existing != module.name:
+                    raise ValueError(
+                        f"Legacy module {requested_name!r} resolves to both "
+                        f"{existing!r} and {module.name!r}"
+                    )
+                self._legacy_module_aliases[requested_name] = module.name
+            aliases = getattr(module, "_legacy_output_aliases", {})
+            for canonical, legacy in aliases.items():
+                if legacy in self._legacy_output_aliases.values():
+                    raise ValueError(
+                        f"Legacy output {legacy!r} is claimed by multiple lip-sync protocols"
+                    )
+                self._legacy_output_aliases[canonical] = legacy
+            protocol = getattr(module, "_legacy_lip_sync_protocol", None)
+            if protocol is not None:
+                if (
+                    self._legacy_lip_sync_protocol is not None
+                    and self._legacy_lip_sync_protocol != protocol
+                ):
+                    raise ValueError("A pipeline cannot expose two legacy lip-sync protocols")
+                self._legacy_lip_sync_protocol = protocol
         # Provenance gate: by default only "published" and "utility" fields let a
         # module run. Modules whose declared output fields are exclusively
         # "adapted"/"own" are excluded unless their classes were explicitly
@@ -1122,7 +1191,7 @@ class Pipeline:
 
         qm = sample.quality_metrics
         if qm:
-            dumped = qm.model_dump()
+            dumped = qm.canonical_model_dump()
             for stats_field, qm_field in self._AVG_METRIC_MAP.items():
                 # model_dump().get() silently yields None for removed fields
                 # instead of emitting a DeprecationWarning per sample.
@@ -1143,6 +1212,8 @@ class Pipeline:
         manifest: Dict[str, Any],
     ) -> None:
         """Store a processed sample while keeping aggregate stats consistent."""
+        if sample.quality_metrics is not None and self._legacy_lip_sync_protocol is not None:
+            sample.quality_metrics._set_lip_sync_legacy_protocol(self._legacy_lip_sync_protocol)
         previous = self.results.get(key)
         if previous is not None:
             self._apply_sample_stats(previous, -1)
@@ -1221,7 +1292,8 @@ class Pipeline:
         if after is not None:
             entry["after"] = after
         if entry:
-            self._hooks[module_name] = entry
+            canonical_name = self._legacy_module_aliases.get(module_name, module_name)
+            self._hooks[canonical_name] = entry
 
     def add_dataset_metric(self, metric_name: str, value: Any) -> None:
         """Add a dataset-level metric to stats.
@@ -1547,7 +1619,7 @@ class Pipeline:
 
         if sample.quality_metrics is None:
             return {}
-        return copy.deepcopy(sample.quality_metrics.model_dump())
+        return copy.deepcopy(sample.quality_metrics.canonical_model_dump())
 
     @staticmethod
     def _metric_values_equal(left: Any, right: Any) -> bool:
@@ -2163,7 +2235,7 @@ class Pipeline:
                 data = {
                     "run_status": self.get_run_status(),
                     "stats": self.stats.model_dump(),
-                    "samples": [s.model_dump(mode="json") for s in self.results.values()],
+                    "samples": [self.dump_sample(s) for s in self.results.values()],
                 }
                 json.dump(data, f, indent=2, default=str)
 
@@ -2181,7 +2253,7 @@ class Pipeline:
                         [i.recommendation for i in s.validation_issues if i.recommendation]
                     )
                     score = (
-                        s.quality_metrics.model_dump().get("technical_score")
+                        s.quality_metrics.canonical_model_dump().get("technical_score")
                         if s.quality_metrics
                         else None
                     ) or 0.0
@@ -2258,6 +2330,19 @@ class Pipeline:
             return str(value)
         return str(value)
 
+    def dump_sample(self, sample: Sample) -> Dict[str, Any]:
+        """Serialize a public result, applying requested legacy output names once."""
+        dumped = self._dump_sample_state(str(sample.path), sample)
+        if not self._legacy_output_aliases:
+            return dumped
+        metrics = dumped.get("quality_metrics")
+        if not isinstance(metrics, dict):
+            return dumped
+        dumped["quality_metrics"] = move_lip_sync_legacy_aliases(
+            metrics, self._legacy_lip_sync_protocol
+        )
+        return dumped
+
     @classmethod
     def _dump_sample_state(cls, key: str, sample: Sample) -> Dict[str, Any]:
         """Serialize a sample to JSON-safe dict, tolerating bad ``metadata``.
@@ -2269,7 +2354,7 @@ class Pipeline:
         ``metadata`` coerced to JSON-safe types; keep valid metadata intact.
         """
         try:
-            return cast(Dict[str, Any], sample.model_dump(mode="json"))
+            return cast(Dict[str, Any], sample.canonical_model_dump(mode="json"))
         except Exception as exc:
             logger.warning(
                 "Sample %s has non-serializable metadata; coercing to JSON-safe "
@@ -2279,7 +2364,7 @@ class Pipeline:
             )
         try:
             safe = sample.model_copy(update={"metadata": cls._json_safe(sample.metadata)})
-            return cast(Dict[str, Any], safe.model_dump(mode="json"))
+            return cast(Dict[str, Any], safe.canonical_model_dump(mode="json"))
         except Exception as exc:
             logger.warning(
                 "Sample %s metadata still non-serializable after coercion; "
@@ -2288,7 +2373,7 @@ class Pipeline:
                 exc,
             )
             dropped = sample.model_copy(update={"metadata": {}})
-            return cast(Dict[str, Any], dropped.model_dump(mode="json"))
+            return cast(Dict[str, Any], dropped.canonical_model_dump(mode="json"))
 
     def save_state(self, path: Path) -> None:
         """Save current pipeline state to disk for resume."""
@@ -2333,7 +2418,10 @@ class Pipeline:
 
         from .models import QualityMetrics
 
-        unknown = [k for k in qm if k not in QualityMetrics.model_fields]
+        legacy_metric_keys = {"lse_c", "lse_d"}
+        unknown = [
+            k for k in qm if k not in QualityMetrics.model_fields and k not in legacy_metric_keys
+        ]
         if not unknown:
             return data
         logger.warning(
@@ -2391,7 +2479,21 @@ class Pipeline:
             if "results" in data:
                 for k, v in results_data.items():
                     try:
-                        sample = Sample.model_validate(self._sanitize_cached_sample(k, v))
+                        context = (
+                            {"lip_sync_protocol": self._legacy_lip_sync_protocol}
+                            if self._legacy_lip_sync_protocol is not None
+                            else None
+                        )
+                        sample = Sample.model_validate(
+                            self._sanitize_cached_sample(k, v), context=context
+                        )
+                        if (
+                            sample.quality_metrics is not None
+                            and self._legacy_lip_sync_protocol is not None
+                        ):
+                            sample.quality_metrics.method_set_lip_sync_legacy_protocol(
+                                self._legacy_lip_sync_protocol
+                            )
                         manifest = manifests.get(k) if isinstance(manifests, dict) else None
                         if isinstance(manifest, dict):
                             if not self._sample_matches_manifest(manifest):
@@ -2495,6 +2597,15 @@ class ModuleRegistry:
     @classmethod
     def get_module(cls, name: str) -> Optional[Type[PipelineModule]]:
         module_cls = cls._modules.get(name)
+        if module_cls is None and name == "lip_sync":
+            # ``lip_sync`` is a config-aware compatibility factory and is
+            # intentionally absent from the canonical module registry.
+            try:
+                from .modules.lip_sync import LipSyncModule
+
+                module_cls = LipSyncModule
+            except ImportError:
+                module_cls = None
         if module_cls is None:
             new_name = MODULE_ALIASES.get(name)
             if new_name is not None and new_name in cls._modules:
@@ -2725,6 +2836,22 @@ class ModuleRegistry:
                 logger.warning(f"Failed to scan plugin folder {folder}: {e}")
 
 
+def instantiate_module_requests(
+    requests: Iterable[tuple[str, Dict[str, Any]]],
+) -> List[PipelineModule]:
+    """Resolve module requests, then deduplicate their canonical instances."""
+    modules: List[PipelineModule] = []
+    for requested_name, params in requests:
+        module_cls = ModuleRegistry.get_module(requested_name)
+        if module_cls is None:
+            raise ValueError(f"Unknown module: {requested_name}")
+        module = module_cls(config=deepcopy(params))
+        if requested_name == "lip_sync" and not getattr(module, "_requested_module_name", None):
+            setattr(module, "_requested_module_name", "lip_sync")
+        modules.append(module)
+    return Pipeline._deduplicate_modules(modules)
+
+
 class AyasePipeline:
     """High-level entry point for running Ayase pipelines.
 
@@ -2785,18 +2912,26 @@ class AyasePipeline:
     ) -> List[PipelineModule]:
         """Recreate module instances so each run starts from clean module state."""
         source = self._modules if templates is None else templates
-        return [module.__class__(config=deepcopy(module.config)) for module in source]
+        clones: List[PipelineModule] = []
+        for module in source:
+            clone = module.__class__(config=deepcopy(module.config))
+            for attr in (
+                "_requested_module_name",
+                "_legacy_output_aliases",
+                "_legacy_lip_sync_protocol",
+            ):
+                if hasattr(module, attr):
+                    setattr(clone, attr, deepcopy(getattr(module, attr)))
+            clones.append(clone)
+        return clones
 
     def _build_modules(self, names: List[str]) -> List[PipelineModule]:
         # Modules named via ``modules=`` or ``pipeline.modules`` are an explicit
         # choice, which is the provenance opt-in: adapted/own modules may run.
-        result = []
+        requests: List[tuple[str, Dict[str, Any]]] = []
         for name in names:
-            cls = ModuleRegistry.get_module(name)
-            if cls is None:
-                raise ValueError(f"Unknown module: {name}")
-            result.append(cls(config=opt_in_all_provenance(runtime_module_config(self.config))))
-        return result
+            requests.append((name, opt_in_all_provenance(runtime_module_config(self.config))))
+        return instantiate_module_requests(requests)
 
     @staticmethod
     def _clone_pipeline_hooks(

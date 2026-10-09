@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 from pydantic import BaseModel, Field
 
 from .config import AyaseConfig
-from .pipeline import ModuleRegistry, PipelineModule
+from .pipeline import ModuleRegistry, PipelineModule, instantiate_module_requests
 from .runtime import opt_in_all_provenance, runtime_module_config
 
 
@@ -75,10 +75,9 @@ def instantiate_profile_modules(
     if not loaded.modules:
         return []
 
-    modules: List[PipelineModule] = []
+    requests: List[tuple[str, Dict[str, Any]]] = []
     for module_name in loaded.modules:
-        module_cls = ModuleRegistry.get_module(module_name)
-        if module_cls is None:
+        if ModuleRegistry.get_module(module_name) is None:
             raise ValueError(f"Unknown module in profile: {module_name}")
 
         # A profile names its modules explicitly, which is the provenance
@@ -89,6 +88,6 @@ def instantiate_profile_modules(
         if per_module:
             params.update(per_module)
 
-        modules.append(module_cls(config=params))
+        requests.append((module_name, params))
 
-    return modules
+    return instantiate_module_requests(requests)

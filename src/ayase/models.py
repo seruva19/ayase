@@ -3,20 +3,54 @@
 from __future__ import annotations
 
 import logging
+import json
 import warnings
 from collections.abc import Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from enum import Enum
 from pathlib import Path
-from typing import Any, ClassVar, Dict, Iterator, List, Optional
+from typing import Any, ClassVar, Dict, Iterator, List, Optional, cast
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationInfo, model_validator
 
 logger = logging.getLogger(__name__)
 
 _MISSING = object()
 _METRIC_WRITE_OBSERVER: ContextVar[Any] = ContextVar("ayase_metric_write_observer", default=None)
+
+
+def move_lip_sync_legacy_aliases(
+    document: Dict[str, Any], protocol: Optional[str]
+) -> Dict[str, Any]:
+    """Move one canonical lip-sync pair to legacy keys without duplicating it."""
+    if protocol not in {"verse_bench", "wav2lip"}:
+        return document
+    suffix = "syncnet" if protocol == "wav2lip" else "verse"
+    other_suffix = "verse" if suffix == "syncnet" else "syncnet"
+    aliases = {f"lse_c_{suffix}": "lse_c", f"lse_d_{suffix}": "lse_d"}
+    result = dict(document)
+    for name in (f"lse_c_{other_suffix}", f"lse_d_{other_suffix}"):
+        if result.get(name) is None:
+            result.pop(name, None)
+    for canonical, legacy in aliases.items():
+        if canonical in result:
+            result[legacy] = result.pop(canonical)
+    provenance = result.get("metric_provenance")
+    if isinstance(provenance, Mapping):
+        provenance = dict(provenance)
+        for canonical, legacy in aliases.items():
+            if canonical in provenance:
+                provenance[legacy] = provenance.pop(canonical)
+        result["metric_provenance"] = provenance
+    backends = result.get("metric_backends")
+    if isinstance(backends, Mapping):
+        backends = dict(backends)
+        canonical_module = f"lip_sync_{suffix}"
+        if canonical_module in backends:
+            backends["lip_sync"] = backends.pop(canonical_module)
+        result["metric_backends"] = backends
+    return result
 
 
 @contextmanager
@@ -162,6 +196,10 @@ class QualityMetrics(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid")
+
+    # Set only by the deprecated ``lip_sync`` facade. Canonical modules leave
+    # this unset, so their public names remain unambiguous.
+    _legacy_lip_sync_protocol: Optional[str] = PrivateAttr(default=None)
 
     # -- Field grouping registry (field name -> category) ------------------
     # Empty by design: every metric's category is declared on its producing
@@ -309,12 +347,49 @@ class QualityMetrics(BaseModel):
     )
 
     def __getattr__(self, name: str) -> Any:
+        if name in {"lse_c", "lse_d"}:
+            protocol = self._legacy_lip_sync_protocol or "verse_bench"
+            suffix = "syncnet" if protocol == "wav2lip" else "verse"
+            warnings.warn(
+                f"QualityMetrics.{name} is deprecated; use {name}_{suffix}",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return getattr(self, f"{name}_{suffix}")
         resolved = _resolve_legacy_field(self, name)
         if resolved is not _MISSING:
             return resolved
         return super().__getattr__(name)
 
+    @model_validator(mode="wrap")
+    @classmethod
+    def _restore_legacy_lip_sync_marker(cls, data: Any, handler: Any, info: ValidationInfo) -> Any:
+        provenance = data.get("metric_provenance") if isinstance(data, Mapping) else None
+        has_legacy = isinstance(data, Mapping) and (
+            "lse_c" in data
+            or "lse_d" in data
+            or (
+                isinstance(provenance, Mapping) and ("lse_c" in provenance or "lse_d" in provenance)
+            )
+        )
+        result = handler(data)
+        if has_legacy:
+            context = info.context if isinstance(info.context, Mapping) else {}
+            protocol = context.get("lip_sync_protocol", "verse_bench")
+            result._set_lip_sync_legacy_protocol(protocol)
+        return result
+
     def __setattr__(self, name: str, value: Any) -> None:
+        if name in {"lse_c", "lse_d"}:
+            protocol = self._legacy_lip_sync_protocol or "verse_bench"
+            suffix = "syncnet" if protocol == "wav2lip" else "verse"
+            canonical = f"{name}_{suffix}"
+            super().__setattr__(canonical, value)
+            self._legacy_lip_sync_protocol = protocol
+            observer = _METRIC_WRITE_OBSERVER.get()
+            if observer is not None:
+                observer(self, canonical)
+            return
         super().__setattr__(name, value)
         observer = _METRIC_WRITE_OBSERVER.get()
         if observer is not None and name in type(self).model_fields:
@@ -322,14 +397,94 @@ class QualityMetrics(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _translate_legacy_field_keys(cls, data: Any) -> Any:
+    def _translate_legacy_field_keys(cls, data: Any, info: ValidationInfo) -> Any:
+        legacy_provenance = data.get("metric_provenance") if isinstance(data, Mapping) else None
+        has_legacy_lip_sync = isinstance(data, Mapping) and (
+            "lse_c" in data
+            or "lse_d" in data
+            or (
+                isinstance(legacy_provenance, Mapping)
+                and ("lse_c" in legacy_provenance or "lse_d" in legacy_provenance)
+            )
+        )
+        if has_legacy_lip_sync:
+            data = dict(data)
+            context = info.context if isinstance(info.context, Mapping) else {}
+            protocol = context.get("lip_sync_protocol", "verse_bench")
+            if protocol not in {"verse_bench", "wav2lip"}:
+                raise ValueError(f"Unknown legacy lip-sync protocol: {protocol!r}")
+            suffix = "syncnet" if protocol == "wav2lip" else "verse"
+            for old in ("lse_c", "lse_d"):
+                if old not in data:
+                    continue
+                canonical = f"{old}_{suffix}"
+                legacy_value = data.pop(old)
+                if canonical in data and data[canonical] != legacy_value:
+                    raise ValueError(f"Conflicting values for legacy {old!r} and {canonical!r}")
+                data.setdefault(canonical, legacy_value)
+            provenance = data.get("metric_provenance")
+            if isinstance(provenance, Mapping):
+                provenance = dict(provenance)
+                for old in ("lse_c", "lse_d"):
+                    if old not in provenance:
+                        continue
+                    canonical = f"{old}_{suffix}"
+                    legacy_value = provenance.pop(old)
+                    if canonical in provenance and provenance[canonical] != legacy_value:
+                        raise ValueError(
+                            f"Conflicting provenance for legacy {old!r} and {canonical!r}"
+                        )
+                    provenance.setdefault(canonical, legacy_value)
+                data["metric_provenance"] = provenance
         return _translate_legacy_fields(cls, data)
+
+    def method_set_lip_sync_legacy_protocol(
+        self,
+        protocol: str,
+        lse_c: Optional[float] = None,
+        lse_d: Optional[float] = None,
+    ) -> None:
+        """Select the deprecated ``lse_c``/``lse_d`` attribute-read target."""
+        if protocol not in {"verse_bench", "wav2lip"}:
+            raise ValueError(f"Unknown legacy lip-sync protocol: {protocol!r}")
+        suffix = "syncnet" if protocol == "wav2lip" else "verse"
+        for name, supplied in (("lse_c", lse_c), ("lse_d", lse_d)):
+            canonical = getattr(self, f"{name}_{suffix}")
+            if supplied is not None and canonical != supplied:
+                raise ValueError(f"Legacy {name!r} does not match its {protocol!r} canonical value")
+        self._legacy_lip_sync_protocol = protocol
+
+    def set_lip_sync_legacy_protocol(self, protocol: str) -> None:
+        """Backward-compatible spelling for selecting legacy attribute reads."""
+        self.method_set_lip_sync_legacy_protocol(protocol)
+
+    def _set_lip_sync_legacy_protocol(self, protocol: str) -> None:
+        """Internal hook used by a canonical module reached through the legacy facade."""
+        self.method_set_lip_sync_legacy_protocol(protocol)
+
+    def canonical_model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """Return canonical fields even when a legacy facade produced this value."""
+        return cast(Dict[str, Any], super().model_dump(**kwargs))
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """Serialize legacy-facade results with their historical field names."""
+        dumped = self.canonical_model_dump(**kwargs)
+        return move_lip_sync_legacy_aliases(dumped, self._legacy_lip_sync_protocol)
+
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """JSON counterpart of the compatibility-aware ``model_dump``."""
+        if self._legacy_lip_sync_protocol is None:
+            return cast(str, super().model_dump_json(**kwargs))
+        indent = kwargs.get("indent")
+        canonical = json.loads(super().model_dump_json(**kwargs))
+        dumped = move_lip_sync_legacy_aliases(canonical, self._legacy_lip_sync_protocol)
+        return json.dumps(dumped, indent=indent, ensure_ascii=False)
 
     def non_null_metrics(self) -> dict[str, object]:
         """Return only the metrics that were actually computed (non-None)."""
         return {
             k: v
-            for k, v in self.model_dump().items()
+            for k, v in self.canonical_model_dump().items()
             if v is not None and k not in self._NON_METRIC_FIELDS
         }
 
@@ -337,7 +492,7 @@ class QualityMetrics(BaseModel):
         """Count how many metrics were actually computed."""
         return sum(
             1
-            for k, v in self.model_dump().items()
+            for k, v in self.canonical_model_dump().items()
             if v is not None and k not in self._NON_METRIC_FIELDS
         )
 
@@ -356,7 +511,7 @@ class QualityMetrics(BaseModel):
         Fields not mapped to a group appear under ``"other"``.
         """
         result: dict[str, dict[str, object]] = {}
-        for field_name, value in self.model_dump().items():
+        for field_name, value in self.canonical_model_dump().items():
             if value is None or field_name in self._NON_METRIC_FIELDS:
                 continue
             group = self._FIELD_GROUPS.get(field_name, "other")
@@ -1240,8 +1395,10 @@ class QualityMetrics(BaseModel):
     )
 
     # Talking head / lip sync
-    lse_d: Optional[float] = None  # LSE-D lip sync error distance (lower=better)
-    lse_c: Optional[float] = None  # LSE-C lip sync error confidence (higher=better)
+    lse_d_verse: Optional[float] = None  # VERSE LSE-D distance (lower=better)
+    lse_c_verse: Optional[float] = None  # VERSE LSE-C confidence (higher=better)
+    lse_d_syncnet: Optional[float] = None  # SyncNet LSE-D distance (lower=better)
+    lse_c_syncnet: Optional[float] = None  # SyncNet LSE-C confidence (higher=better)
     silent_lip_stability: Optional[float] = (
         None  # THEval silent-mouth lip-opening MAD (lower=better)
     )
@@ -1598,6 +1755,38 @@ class Sample(BaseModel):
     # class. Serialised with the sample state; empty by default so legacy state
     # files load cleanly.
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    def canonical_model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """Serialize sample state with canonical metric names."""
+        return cast(Dict[str, Any], super().model_dump(**kwargs))
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """Preserve legacy lip-sync keys for samples produced by the old facade."""
+        dumped = self.canonical_model_dump(**kwargs)
+        if self.quality_metrics is None:
+            return dumped
+        metrics = dumped.get("quality_metrics")
+        if isinstance(metrics, dict):
+            dumped["quality_metrics"] = move_lip_sync_legacy_aliases(
+                metrics, self.quality_metrics._legacy_lip_sync_protocol
+            )
+        return dumped
+
+    def model_dump_json(self, **kwargs: Any) -> str:
+        """JSON counterpart of the compatibility-aware ``model_dump``."""
+        protocol = (
+            self.quality_metrics._legacy_lip_sync_protocol
+            if self.quality_metrics is not None
+            else None
+        )
+        if protocol is None:
+            return cast(str, super().model_dump_json(**kwargs))
+        indent = kwargs.get("indent")
+        canonical = json.loads(super().model_dump_json(**kwargs))
+        metrics = canonical.get("quality_metrics")
+        if isinstance(metrics, dict):
+            canonical["quality_metrics"] = move_lip_sync_legacy_aliases(metrics, protocol)
+        return json.dumps(canonical, indent=indent, ensure_ascii=False)
 
     @property
     def is_valid(self) -> bool:

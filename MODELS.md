@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.1.82** · Generated 2026-10-09 09:51 · **310 models** across **9 sources**
+> **Version 0.1.82** · Generated 2026-10-09 13:51 · **311 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**310** models · **123** HuggingFace · **45** pyiqa · **9** sources
+**311** models · **123** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (88)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (55)](#pip-packages) · [Local Weights (42)](#local-weight-files) · [Other Models (21)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (88)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (55)](#pip-packages) · [Local Weights (43)](#local-weight-files) · [Other Models (21)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -48,7 +48,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `nearid`
-- **Parameters**: 428M · **Downloads**: 100
+- **Parameters**: 428M · **Downloads**: 95
 - **Disk**: ~1.6 GB
 - **Task**: NearID identity-aware SigLIP2 image embeddings
 - **Notes**: Apache-2.0; pinned to revision 7f69f4a0c753297de708a0217ef32659fe12a008
@@ -67,7 +67,7 @@
 > text-to-video · apache-2.0
 
 - **Used by**: `csim`, `facesim`, `opens2v`
-- **Downloads**: 140
+- **Downloads**: 149
 - **Disk**: 174 MB
 - **Task**: YOLO-World v2-L image-prompt subject detector (canonical)
 - **Notes**: file yolo_world_v2_l_image_prompt_adapter-719a7afb.pth
@@ -77,7 +77,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 196
+- **Parameters**: 8.3B · **Downloads**: 193
 - **Disk**: 7B
 - **Task**: Self-evolving Qwen2.5-VL NR-IQA rating model
 - **Notes**: Loaded through transformers or served through an endpoint.
@@ -92,14 +92,14 @@
 ### <a href="https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b" target="_blank">`Efficient-Large-Model/vila-ewm-qwen2-1.5b`</a> [↑](#categories)
 
 - **Used by**: `worldmodelbench`
-- **Downloads**: 110
+- **Downloads**: 115
 - **Task**: Human-aligned WorldModelBench video judge
 
 ### <a href="https://huggingface.co/Falconsai/nsfw_image_detection" target="_blank">`Falconsai/nsfw_image_detection`</a> [↑](#categories)
 > image-classification · apache-2.0
 
 - **Used by**: `nsfw`
-- **Parameters**: 86M · **Downloads**: 1.8M
+- **Parameters**: 86M · **Downloads**: 1.7M
 - **Disk**: ~327 MB
 - **Task**: Per-frame NSFW classification
 - **Source**: <a href="https://arxiv.org/abs/2010.11929" target="_blank">arXiv</a>
@@ -123,7 +123,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `dice_edit`
-- **Parameters**: 8.5B · **Downloads**: 114K
+- **Parameters**: 8.5B · **Downloads**: 111K
 - **VRAM**: ~20 GB in bfloat16 · **Disk**: ~17 GB
 - **Task**: Idefics3-8B base for DICE coherence estimation
 - **Source**: <a href="https://arxiv.org/abs/2306.16527" target="_blank">arXiv</a>
@@ -132,7 +132,7 @@
 > zero-shot-object-detection · apache-2.0
 
 - **Used by**: `opens2v`
-- **Parameters**: 172M · **Downloads**: 831K
+- **Parameters**: 172M · **Downloads**: 821K
 - **Disk**: ~657 MB
 - **Source**: <a href="https://arxiv.org/abs/2303.05499" target="_blank">arXiv</a>
 
@@ -140,14 +140,14 @@
 > apache-2.0
 
 - **Used by**: `aigv_assessor`
-- **Parameters**: 8.2B · **Downloads**: 13
+- **Parameters**: 8.2B · **Downloads**: 15
 - **Disk**: ~30.4 GB
 
 ### <a href="https://huggingface.co/IntMeGroup/FineVQ_score" target="_blank">`IntMeGroup/FineVQ_score`</a> [↑](#categories)
 > apache-2.0
 
 - **Used by**: `finevq_raw`
-- **Parameters**: 8.2B · **Downloads**: 514
+- **Parameters**: 8.2B · **Downloads**: 474
 - **Disk**: ~30.5 GB
 
 ### <a href="https://huggingface.co/JZHWS/slowfast" target="_blank">`JZHWS/slowfast`</a> [↑](#categories)
@@ -169,14 +169,14 @@
 > video-classification · cc-by-nc-4.0
 
 - **Used by**: `action_recognition`
-- **Parameters**: 304M · **Downloads**: 41K
+- **Parameters**: 304M · **Downloads**: 40K
 - **VRAM**: ~1.5 GB · **Disk**: ~1.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2203.12602" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/MJ-Bench/MJ-VIDEO-2B" target="_blank">`MJ-Bench/MJ-VIDEO-2B`</a> [↑](#categories)
 
 - **Used by**: `mj_video`
-- **Parameters**: 2.2B · **Downloads**: 20
+- **Parameters**: 2.2B · **Downloads**: 22
 - **Disk**: 4.43 GB inference checkpoint
 - **Task**: Fine-grained video preference reward model
 - **Notes**: Eight uniformly sampled frames by default
@@ -185,7 +185,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Downloads**: 334
+- **Downloads**: 337
 - **Task**: HPSv3 prompt-conditioned reward model
 - **Notes**: Reward head checkpoint
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
@@ -202,7 +202,7 @@
 > audio-classification · cc-by-nc-4.0
 
 - **Used by**: `muq_eval`, `song_eval`
-- **Parameters**: 333M · **Downloads**: 320K
+- **Parameters**: 333M · **Downloads**: 323K
 - **Disk**: ~1.2 GB
 - **Task**: MuQ audio feature encoder for SongEval
 - **Notes**: Only config.json is downloaded; A1 includes encoder parameters. Original encoder weights are CC-BY-NC-4.0, so commercial use still requires separate review
@@ -212,7 +212,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `qwen_image_bench`
-- **Parameters**: 27.4B · **Downloads**: 34K
+- **Parameters**: 27.4B · **Downloads**: 32K
 - **Disk**: 27B BF16
 - **Task**: Q-Judger text-to-image evaluation model
 - **Notes**: Can also be served through vLLM/SGLang with an OpenAI-compatible endpoint.
@@ -222,7 +222,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Parameters**: 8.3B · **Downloads**: 662K
+- **Parameters**: 8.3B · **Downloads**: 657K
 - **VRAM**: ~16 GB · **Disk**: ~15 GB
 - **Task**: Vision-language backbone used by HPSv3
 - **Source**: <a href="https://arxiv.org/abs/2409.12191" target="_blank">arXiv</a>
@@ -231,7 +231,7 @@
 > any-to-any · other
 
 - **Used by**: `aqascore`
-- **Parameters**: 10.7B · **Downloads**: 314K
+- **Parameters**: 10.7B · **Downloads**: 306K
 - **Disk**: ~40.0 GB
 - **Task**: Optional audio question-answering evaluator
 - **Notes**: Heavy opt-in backend; default module config leaves it disabled.
@@ -241,7 +241,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 5.4M
+- **Parameters**: 8.3B · **Downloads**: 5.3M
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2309.00071" target="_blank">arXiv</a>
 
@@ -257,7 +257,7 @@
 > image-text-to-text · mit
 
 - **Used by**: `captioning`
-- **Parameters**: 3.7B · **Downloads**: 607K
+- **Parameters**: 3.7B · **Downloads**: 591K
 - **VRAM**: ~6 GB · **Disk**: ~6 GB
 - **Source**: <a href="https://arxiv.org/abs/2301.12597" target="_blank">arXiv</a>
 
@@ -277,14 +277,14 @@
 > text-generation · other
 
 - **Used by**: `vision_reward`
-- **Parameters**: 12.5B · **Downloads**: 3K
+- **Parameters**: 12.5B · **Downloads**: 2K
 - **Disk**: ~46.6 GB
 
 ### <a href="https://huggingface.co/TIGER-Lab/VideoScore" target="_blank">`TIGER-Lab/VideoScore`</a> [↑](#categories)
 > visual-question-answering · apache-2.0
 
 - **Used by**: `videoscore`
-- **Parameters**: 8.3B · **Downloads**: 59
+- **Parameters**: 8.3B · **Downloads**: 60
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: <a href="https://arxiv.org/abs/2406.15252" target="_blank">arXiv</a>
 
@@ -306,7 +306,7 @@
 ### <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">`ai-forever/kandinsky-video-motion-predictor`</a> [↑](#categories)
 
 - **Used by**: `kandinsky_motion`
-- **Parameters**: 115M · **Downloads**: 100
+- **Parameters**: 115M · **Downloads**: 103
 - **Disk**: ~440 MB
 - **Task**: VideoMAE-V2 camera/object/dynamics motion predictor
 - **Notes**: Loaded through bundled Kandinsky third-party wrapper
@@ -332,14 +332,14 @@
 ### <a href="https://huggingface.co/allenai/unifiedqa-v2-t5-large-1363200" target="_blank">`allenai/unifiedqa-v2-t5-large-1363200`</a> [↑](#categories)
 
 - **Used by**: `tifa`
-- **Downloads**: 646
+- **Downloads**: 638
 - **Task**: TIFA question filter
 
 ### <a href="https://huggingface.co/anonymousdb/LOVE-Correspondence" target="_blank">`anonymousdb/LOVE-Correspondence`</a> [↑](#categories)
 > apache-2.0
 
 - **Used by**: `love_results`
-- **Parameters**: 9.2B · **Downloads**: 10
+- **Parameters**: 9.2B · **Downloads**: 11
 - **Disk**: ~34.4 GB
 - **Task**: LOVE text-video correspondence regressor
 - **Notes**: Run with the upstream LOVE repository; software license not published
@@ -348,7 +348,7 @@
 > apache-2.0
 
 - **Used by**: `love_results`
-- **Parameters**: 9.2B · **Downloads**: 16
+- **Parameters**: 9.2B · **Downloads**: 18
 - **Disk**: ~34.4 GB
 - **Task**: LOVE video perception regressor
 - **Notes**: Run with the upstream LOVE repository; software license not published
@@ -374,7 +374,7 @@
 > video-text-to-text · other
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 237
+- **Parameters**: 8.3B · **Downloads**: 234
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2404.01291" target="_blank">arXiv</a>
 
@@ -399,14 +399,14 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `subject_consistency`
-- **Downloads**: 509K
+- **Downloads**: 508K
 - **Source**: <a href="https://arxiv.org/abs/2104.14294" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/facebook/dino-vits16" target="_blank">`facebook/dino-vits16`</a> [↑](#categories)
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `i2i_learned`
-- **Downloads**: 105K
+- **Downloads**: 103K
 - **Task**: DINO v1 ViT-S/16 — the DreamBooth DINO-score backbone
 - **Source**: <a href="https://arxiv.org/abs/2104.14294" target="_blank">arXiv</a>
 
@@ -422,7 +422,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `prove`
-- **Parameters**: 1.1B · **Downloads**: 268K
+- **Parameters**: 1.1B · **Downloads**: 262K
 - **VRAM**: ~4.5 GB · **Disk**: 4.55 GB
 - **Task**: DINOv2-Giant patch features for PROVE RC-S and RC-T
 - **Notes**: Apache-2.0; pinned to revision 611a9d42f2335e0f921f1e313ad3c1b7178d206d
@@ -441,7 +441,7 @@
 > video-classification · apache-2.0
 
 - **Used by**: `mmd_selfsplit`, `mmd_selfsplit_metric`
-- **Parameters**: 1.0B · **Downloads**: 94K
+- **Parameters**: 1.0B · **Downloads**: 93K
 - **Disk**: ~3.9 GB
 - **Task**: V-JEPA2 video feature extractor for JEDi
 - **Notes**: Requires trust_remote_code
@@ -472,7 +472,7 @@
 > zero-shot-image-classification · apache-2.0
 
 - **Used by**: `verse_bench`
-- **Parameters**: 878M · **Downloads**: 1.2M
+- **Parameters**: 878M · **Downloads**: 1.1M
 - **Disk**: ~3.3 GB
 - **Task**: SigLIP vision encoder for Aesthetic Predictor V2.5
 - **Source**: <a href="https://arxiv.org/abs/2303.15343" target="_blank">arXiv</a>
@@ -481,7 +481,7 @@
 > zero-shot-image-classification · apache-2.0
 
 - **Used by**: `masc`
-- **Parameters**: 1.1B · **Downloads**: 394K
+- **Parameters**: 1.1B · **Downloads**: 395K
 - **Disk**: ~4.2 GB
 - **Task**: Frozen SigLIP2 NaFlex patch embeddings for MaSC
 - **Notes**: Apache-2.0; pinned to revision cc24074f717b612951c2dead130904ab9b65a81e
@@ -500,7 +500,7 @@
 > zero-shot-image-classification · mit
 
 - **Used by**: `pickscore`
-- **Parameters**: 986M · **Downloads**: 512K
+- **Parameters**: 986M · **Downloads**: 504K
 - **Disk**: ~3.7 GB
 - **Source**: <a href="https://arxiv.org/abs/1910.04867" target="_blank">arXiv</a>
 
@@ -517,7 +517,7 @@
 > video-text-to-text · llama2
 
 - **Used by**: `vlm_phy`
-- **Parameters**: 7.1B · **Downloads**: 89K
+- **Parameters**: 7.1B · **Downloads**: 85K
 - **Disk**: ~26.3 GB
 - **Source**: <a href="https://arxiv.org/abs/2405.21075" target="_blank">arXiv</a>
 
@@ -525,14 +525,14 @@
 > image-text-to-text · llama2
 
 - **Used by**: `commonsense`, `creativity`, `opens2v`, `vlm_judge`
-- **Parameters**: 7.1B · **Downloads**: 1.4M
+- **Parameters**: 7.1B · **Downloads**: 1.3M
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 
 ### <a href="https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf" target="_blank">`llava-hf/llava-v1.6-mistral-7b-hf`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
 
 - **Used by**: `llm_descriptive_qa`
-- **Parameters**: 7.6B · **Downloads**: 368K
+- **Parameters**: 7.6B · **Downloads**: 360K
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: <a href="https://arxiv.org/abs/2310.03744" target="_blank">arXiv</a>
 
@@ -540,7 +540,7 @@
 > audio-classification · cc-by-nc-4.0
 
 - **Used by**: `mauve_audio_divergence`
-- **Downloads**: 113K
+- **Downloads**: 111K
 - **Task**: Self-supervised music embeddings used by MAD
 - **Source**: <a href="https://arxiv.org/abs/2306.00107" target="_blank">arXiv</a>
 
@@ -555,7 +555,7 @@
 > feature-extraction · CC BY-SA 3.0
 
 - **Used by**: `speech_bert_score`
-- **Downloads**: 589K
+- **Downloads**: 654K
 - **Disk**: 1,261,990,257 bytes
 - **Task**: Matching-content reference speech similarity
 - **Notes**: CC BY-SA 3.0; WavLM-Large at 16 kHz; SHA-256 fdee460e529396ddb2f8c8e8ce0ad74cfb747b726bc6f612e666c7c1e1963c9d; official license: https://github.com/microsoft/UniSpeech/blob/8f8cbd22d352fc59dfd5bf19de979b05bb5c7938/LICENSE; weights are downloaded at runtime and not bundled
@@ -565,7 +565,7 @@
 > video-classification · mit
 
 - **Used by**: `embedding`, `video_text_matching`
-- **Parameters**: 197M · **Downloads**: 103K
+- **Parameters**: 197M · **Downloads**: 102K
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.02816" target="_blank">arXiv</a>
 
@@ -573,7 +573,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 87
+- **Parameters**: 65M · **Downloads**: 86
 - **Disk**: 261.0 MB
 - **Task**: AdaFace ir101_ms1mv2 face-recognition embedding
 - **Notes**: MIT (CVLface); pinned to revision afdb94f8190f4cd8ea1467258ce65f1d76033b63
@@ -593,7 +593,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 273
+- **Parameters**: 65M · **Downloads**: 269
 - **Disk**: 261.0 MB
 - **Task**: AdaFace ir101_webface4m face-recognition embedding
 - **Notes**: MIT (CVLface); pinned to revision f2b38d9e24bfe301490d8dd081d8924b102333dd
@@ -603,7 +603,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 24M · **Downloads**: 120
+- **Parameters**: 24M · **Downloads**: 126
 - **Disk**: 97.1 MB
 - **Task**: AdaFace ir18_webface4m face-recognition embedding
 - **Notes**: MIT (CVLface); pinned to revision 0dd53f188fa27968b0a1326970ebf4aeb37ce2ca
@@ -613,7 +613,7 @@
 > feature-extraction
 
 - **Used by**: `adaface`
-- **Parameters**: 44M · **Downloads**: 239
+- **Parameters**: 44M · **Downloads**: 242
 - **Disk**: 175.4 MB
 - **Task**: AdaFace ir50_webface4m face-recognition embedding
 - **Notes**: MIT (CVLface); pinned to revision 60a65befbcf7e19284c4f3ac730f56867ed29594
@@ -631,7 +631,7 @@
 > image-segmentation · other
 
 - **Used by**: `semantic_segmentation_consistency`
-- **Parameters**: 4M · **Downloads**: 346K
+- **Parameters**: 4M · **Downloads**: 340K
 - **Disk**: ~14 MB
 - **Source**: <a href="https://arxiv.org/abs/2105.15203" target="_blank">arXiv</a>
 
@@ -639,7 +639,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `action_recognition`, `clip_event_order`, `clip_feel`, `clip_image_similarity`, `clip_prompt_check`, `clip_temporal`, `concept_presence`, `dataset_analytics`, `deepfake_detection`, `entity_consistency`, `harmful_content`, `i2i_learned`, `opens2v`, `scene_tagging`, `sd_reference`, `semantic_alignment`, `umap_projection`, `video_text_matching`, `video_type_classifier`, `world_consistency`
-- **Downloads**: 20.2M
+- **Downloads**: 19.9M
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Task**: CLIP embedding extractor for projection
 - **Source**: <a href="https://arxiv.org/abs/2103.00020" target="_blank">arXiv</a>
@@ -648,7 +648,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `aesthetic_scoring`, `background_consistency`
-- **Parameters**: 428M · **Downloads**: 8.4M
+- **Parameters**: 428M · **Downloads**: 8.0M
 - **VRAM**: ~1.5 GB · **Disk**: ~1.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2103.00020" target="_blank">arXiv</a>
 
@@ -656,14 +656,14 @@
 > zero-shot-image-classification
 
 - **Used by**: `cmmd`
-- **Downloads**: 2.3M
+- **Downloads**: 2.2M
 - **Task**: CLIP image encoder for CMMD features
 
 ### <a href="https://huggingface.co/q-future/VQA-UGC-Scorer-llava_qwen" target="_blank">`q-future/VQA-UGC-Scorer-llava_qwen`</a> [↑](#categories)
 > apache-2.0
 
 - **Used by**: `vqa2`
-- **Parameters**: 8.1B · **Downloads**: 29
+- **Parameters**: 8.1B · **Downloads**: 28
 - **VRAM**: ~18 GB · **Disk**: 16.2 GB
 - **Task**: VQA² UGC image/video quality scorer
 - **Notes**: Apache-2.0; pinned revision 297de10254d0b4d435db436e1fcaacce5d976fd6
@@ -692,7 +692,7 @@
 ### <a href="https://huggingface.co/sarulab-speech/human-clap-wsce-mae" target="_blank">`sarulab-speech/human-clap-wsce-mae`</a> [↑](#categories)
 
 - **Used by**: `human_clap`, `ms_clap_score`
-- **Parameters**: 154M · **Downloads**: 296
+- **Parameters**: 154M · **Downloads**: 343
 - **Disk**: ~586 MB
 - **Task**: Human-CLAP audio-text encoder (official fine-tuned weights)
 
@@ -700,7 +700,7 @@
 > sentence-similarity · apache-2.0
 
 - **Used by**: `tifa`
-- **Parameters**: 109M · **Downloads**: 19.0M
+- **Parameters**: 109M · **Downloads**: 18.6M
 - **Disk**: ~418 MB
 - **Task**: SBERT multiple-choice answer matching
 - **Source**: <a href="https://arxiv.org/abs/1904.06472" target="_blank">arXiv</a>
@@ -709,7 +709,7 @@
 > apache-2.0
 
 - **Used by**: `voice_identity`, `voice_identity_drift`
-- **Downloads**: 2.1M
+- **Downloads**: 2.0M
 - **Task**: ECAPA-TDNN speaker embeddings trained on VoxCeleb
 - **Notes**: Shared with the voice_identity module; weights are downloaded at runtime.
 - **Source**: <a href="https://arxiv.org/abs/2106.04624" target="_blank">arXiv</a>
@@ -718,7 +718,7 @@
 > text-to-image · openrail++
 
 - **Used by**: `sd_reference`
-- **Parameters**: 2.6B · **Downloads**: 4.4M
+- **Parameters**: 2.6B · **Downloads**: 4.3M
 - **Disk**: ~9.6 GB
 - **Source**: <a href="https://arxiv.org/abs/2307.01952" target="_blank">arXiv</a>
 
@@ -726,7 +726,7 @@
 > text-generation · apache-2.0
 
 - **Used by**: `tifa`
-- **Parameters**: 6.7B · **Downloads**: 291
+- **Parameters**: 6.7B · **Downloads**: 304
 - **Disk**: ~25.1 GB
 - **Task**: TIFA question generation (fine-tuned LLaMA-2)
 - **Source**: <a href="https://arxiv.org/abs/2303.11897" target="_blank">arXiv</a>
@@ -735,7 +735,7 @@
 > zero-shot-image-classification
 
 - **Used by**: `pickscore`
-- **Parameters**: 986M · **Downloads**: 548K
+- **Parameters**: 986M · **Downloads**: 541K
 - **Disk**: ~3.7 GB
 - **Source**: <a href="https://arxiv.org/abs/2305.01569" target="_blank">arXiv</a>
 
@@ -1007,6 +1007,13 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `sama`
 - **Task**: SAMA LSVQ baseline video quality checkpoint
 
+### <a href="https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/sfd_face.pth" target="_blank">`sfd_face.pth`</a> [↑](#categories)
+
+- **Used by**: `lip_sync_syncnet`
+- **Task**: S3FD face detector
+- **Disk**: 89.8 MB
+- **Notes**: Author-hosted checkpoint bytes are identity-pinned; checkpoint license is not established.
+
 ### `song_eval/model.safetensors` [↑](#categories)
 
 - **Used by**: `song_eval`
@@ -1019,10 +1026,12 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Disk**: 29,584,237 bytes (28.213727 MiB)
 - **Notes**: DNS 2020 weights; SHA-256 2c54586fea83fb5eb5394d710038ee89f55cab7011a5bf730bebed4c8777e828; license https://github.com/microsoft/DNS-Challenge/blob/interspeech2020/master/LICENSE
 
-### `syncnet_v2.model` [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-runtime-assets/resolve/main/lip_sync/syncnet_v2.model" target="_blank">`syncnet_v2.model`</a> [↑](#categories)
 
-- **Used by**: `verse_bench`
+- **Used by**: `lip_sync_syncnet`, `lip_sync_verse`, `verse_bench`
 - **Task**: SyncNet v2 lip-sync model
+- **Disk**: 54.6 MB
+- **Notes**: Checkpoint bytes are identity-pinned; checkpoint license is not established.
 
 ### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/aggregation_net.pth" target="_blank">`uvq1p5/aggregation_net.pth`</a> [↑](#categories)
 

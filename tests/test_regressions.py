@@ -256,15 +256,10 @@ def test_semantic_alignment_process_batch_batches_clip_images(
     from ayase.modules.semantic_alignment import SemanticAlignmentModule
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
-        frames = [
-            np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8)
-            for i in range(max_frames)
-        ]
+        frames = [np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8) for i in range(max_frames)]
         return frames, len(frames)
 
-    monkeypatch.setattr(
-        image_utils, "_sample_frames_uncached_detailed", fake_sample_frames
-    )
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_sample_frames)
 
     first_path = tmp_path / "first.mp4"
     second_path = tmp_path / "second.mp4"
@@ -313,15 +308,10 @@ def test_clip_temporal_process_batch_batches_clip_images(
     from ayase.modules.clip_temporal import CLIPTemporalModule
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
-        frames = [
-            np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8)
-            for i in range(max_frames)
-        ]
+        frames = [np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8) for i in range(max_frames)]
         return frames, len(frames)
 
-    monkeypatch.setattr(
-        image_utils, "_sample_frames_uncached_detailed", fake_sample_frames
-    )
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_sample_frames)
 
     first_path = tmp_path / "first.mp4"
     second_path = tmp_path / "second.mp4"
@@ -380,9 +370,7 @@ def test_pipeline_frame_cache_reuses_decoded_frames(
         calls["count"] += 1
         return [np.zeros((2, 2, 3), dtype=np.uint8)], 1
 
-    monkeypatch.setattr(
-        image_utils, "_sample_frames_uncached_detailed", fake_sample_frames
-    )
+    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_sample_frames)
 
     pipeline = Pipeline([_FrameCacheProbeModule()])
     pipeline.start()
@@ -427,6 +415,7 @@ def test_pipeline_shares_runtime_resources_between_modules():
 
 class _MissingPkgModule(PipelineModule):
     """Module whose on_mount() reports missing packages and stays unmounted."""
+
     name = "missing_pkg_test"
     description = "Simulates missing dependency"
     required_packages = ["nonexistent_pkg_xyz_42"]
@@ -635,7 +624,9 @@ class _CaptionScoreModule(PipelineModule):
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.motion_score = float(len(sample.caption.text)) if sample.caption else 0.0
+        sample.quality_metrics.motion_score = (
+            float(len(sample.caption.text)) if sample.caption else 0.0
+        )
         return sample
 
 
@@ -835,8 +826,8 @@ def test_sanitize_cached_sample_drops_unknown_metric_keys(caplog):
         "is_video": True,
         "quality_metrics": {
             "motion_score": 3.0,
-            "perceptual_hash": None,        # since-removed legacy field
-            "some_future_metric": 1.5,      # unknown field
+            "perceptual_hash": None,  # since-removed legacy field
+            "some_future_metric": 1.5,  # unknown field
         },
     }
     with caplog.at_level(logging.WARNING):
@@ -1046,7 +1037,9 @@ def test_pipeline_reprocesses_same_path_when_reference_file_changes(tmp_path: Pa
 
     first = pipeline.process_sample(Sample(path=media_path, is_video=True, reference_path=ref_path))
     ref_path.write_bytes(b"123456")
-    second = pipeline.process_sample(Sample(path=media_path, is_video=True, reference_path=ref_path))
+    second = pipeline.process_sample(
+        Sample(path=media_path, is_video=True, reference_path=ref_path)
+    )
 
     assert first is not second
     assert first.quality_metrics is not None
@@ -1285,96 +1278,98 @@ def test_removed_successful_plugin_is_unregistered(tmp_path: Path):
         ModuleRegistry._external_plugin_modules.update(original_external_modules)
 
 
-def test_stats_counts_image_only_dataset():
+def test_stats_counts_image_only_dataset(tmp_path, monkeypatch: pytest.MonkeyPatch):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        dataset = Path("dataset")
-        dataset.mkdir()
-        image = np.zeros((32, 32, 3), dtype=np.uint8)
-        cv2.imwrite(str(dataset / "photo.png"), image)
+    monkeypatch.chdir(tmp_path)
+    dataset = Path("dataset")
+    dataset.mkdir()
+    image = np.zeros((32, 32, 3), dtype=np.uint8)
+    cv2.imwrite(str(dataset / "photo.png"), image)
 
-        result = runner.invoke(app, ["stats", str(dataset)])
+    result = runner.invoke(app, ["stats", str(dataset)])
 
-        assert result.exit_code == 0
-        assert "Total samples: 1" in result.output
+    assert result.exit_code == 0
+    assert "Total samples: 1" in result.output
 
 
-def test_filter_list_mode_does_not_require_output():
+def test_filter_list_mode_does_not_require_output(tmp_path, monkeypatch: pytest.MonkeyPatch):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        dataset = Path("dataset")
-        dataset.mkdir()
-        image = np.zeros((32, 32, 3), dtype=np.uint8)
-        cv2.imwrite(str(dataset / "photo.png"), image)
+    monkeypatch.chdir(tmp_path)
+    dataset = Path("dataset")
+    dataset.mkdir()
+    image = np.zeros((32, 32, 3), dtype=np.uint8)
+    cv2.imwrite(str(dataset / "photo.png"), image)
 
-        result = runner.invoke(app, ["filter", str(dataset), "--mode", "list"])
+    result = runner.invoke(app, ["filter", str(dataset), "--mode", "list"])
 
-        assert result.exit_code == 0
-        assert "photo.png" in result.output
+    assert result.exit_code == 0
+    assert "photo.png" in result.output
 
 
-def test_scan_with_explicit_output_does_not_create_implicit_artifact_dir():
+def test_scan_with_explicit_output_does_not_create_implicit_artifact_dir(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        dataset = Path("dataset")
-        dataset.mkdir()
-        image = np.zeros((32, 32, 3), dtype=np.uint8)
-        cv2.imwrite(str(dataset / "photo.png"), image)
+    monkeypatch.chdir(tmp_path)
+    dataset = Path("dataset")
+    dataset.mkdir()
+    image = np.zeros((32, 32, 3), dtype=np.uint8)
+    cv2.imwrite(str(dataset / "photo.png"), image)
 
-        result = runner.invoke(
-            app,
-            [
-                "scan",
-                str(dataset),
-                "--modules",
-                "metadata",
-                "--format",
-                "json",
-                "--output",
-                "report.json",
-            ],
-        )
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            str(dataset),
+            "--modules",
+            "metadata",
+            "--format",
+            "json",
+            "--output",
+            "report.json",
+        ],
+    )
 
-        assert result.exit_code == 0
-        assert Path("report.json").exists()
-        assert not Path("reports").exists()
+    assert result.exit_code == 0
+    assert Path("report.json").exists()
+    assert not Path("reports").exists()
 
 
-def test_run_stops_pipeline_when_no_valid_inputs(monkeypatch: pytest.MonkeyPatch):
+def test_run_stops_pipeline_when_no_valid_inputs(tmp_path, monkeypatch: pytest.MonkeyPatch):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        Path("note.txt").write_text("not media", encoding="utf-8")
-        stop_calls = []
+    monkeypatch.chdir(tmp_path)
+    Path("note.txt").write_text("not media", encoding="utf-8")
+    stop_calls = []
 
-        monkeypatch.setattr("ayase.cli._parse_pipeline_str", lambda *args, **kwargs: [])
+    monkeypatch.setattr("ayase.cli._parse_pipeline_str", lambda *args, **kwargs: [])
 
-        def _stop(self):
-            stop_calls.append(self)
+    def _stop(self):
+        stop_calls.append(self)
 
-        monkeypatch.setattr("ayase.cli.Pipeline.stop", _stop)
+    monkeypatch.setattr("ayase.cli.Pipeline.stop", _stop)
 
-        result = runner.invoke(app, ["run", "note.txt", "--pipeline", "metadata"])
+    result = runner.invoke(app, ["run", "note.txt", "--pipeline", "metadata"])
 
-        assert result.exit_code == 0
-        assert len(stop_calls) == 1
+    assert result.exit_code == 0
+    assert len(stop_calls) == 1
 
 
-def test_scan_stops_pipeline_when_scanning_raises(monkeypatch: pytest.MonkeyPatch):
+def test_scan_stops_pipeline_when_scanning_raises(tmp_path, monkeypatch: pytest.MonkeyPatch):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        stop_calls = []
-        monkeypatch.setattr("ayase.cli._select_modules", lambda *args, **kwargs: [])
+    monkeypatch.chdir(tmp_path)
+    stop_calls = []
+    monkeypatch.setattr("ayase.cli._select_modules", lambda *args, **kwargs: [])
 
-        def _stop(self):
-            stop_calls.append(self)
+    def _stop(self):
+        stop_calls.append(self)
 
-        monkeypatch.setattr("ayase.cli.Pipeline.stop", _stop)
+    monkeypatch.setattr("ayase.cli.Pipeline.stop", _stop)
 
-        result = runner.invoke(app, ["scan", "missing_dataset"])
+    result = runner.invoke(app, ["scan", "missing_dataset"])
 
-        assert result.exit_code != 0
-        assert isinstance(result.exception, FileNotFoundError)
-        assert len(stop_calls) == 1
+    assert result.exit_code != 0
+    assert isinstance(result.exception, FileNotFoundError)
+    assert len(stop_calls) == 1
 
 
 class _BrokenReadinessModule(PipelineModule):
@@ -1399,7 +1394,9 @@ def test_modules_check_fails_when_module_mount_fails(monkeypatch: pytest.MonkeyP
     _BrokenReadinessModule.cleanup_calls = 0
     try:
         ModuleRegistry._modules = {_BrokenReadinessModule.name: _BrokenReadinessModule}
-        ModuleRegistry._readiness = {_BrokenReadinessModule.name: {"status": "ready", "error": None}}
+        ModuleRegistry._readiness = {
+            _BrokenReadinessModule.name: {"status": "ready", "error": None}
+        }
         monkeypatch.setattr("ayase.cli._discover_all_modules", lambda config: None)
         monkeypatch.setattr("ayase.cli.AyaseConfig.load", classmethod(lambda cls: AyaseConfig()))
 
@@ -1413,30 +1410,30 @@ def test_modules_check_fails_when_module_mount_fails(monkeypatch: pytest.MonkeyP
         ModuleRegistry._readiness = original_readiness
 
 
-def test_run_rejects_unknown_format(monkeypatch: pytest.MonkeyPatch):
+def test_run_rejects_unknown_format(tmp_path, monkeypatch: pytest.MonkeyPatch):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        Path("clip.jpg").write_bytes(b"image")
-        monkeypatch.setattr("ayase.cli._parse_pipeline_str", lambda *args, **kwargs: [])
+    monkeypatch.chdir(tmp_path)
+    Path("clip.jpg").write_bytes(b"image")
+    monkeypatch.setattr("ayase.cli._parse_pipeline_str", lambda *args, **kwargs: [])
 
-        result = runner.invoke(app, ["run", "clip.jpg", "--pipeline", "metadata", "--format", "xml"])
+    result = runner.invoke(app, ["run", "clip.jpg", "--pipeline", "metadata", "--format", "xml"])
 
-        assert result.exit_code == 1
-        assert "Unknown format: xml" in result.output
+    assert result.exit_code == 1
+    assert "Unknown format: xml" in result.output
 
 
-def test_stats_rejects_unknown_format():
+def test_stats_rejects_unknown_format(tmp_path, monkeypatch: pytest.MonkeyPatch):
     runner = CliRunner()
-    with runner.isolated_filesystem():
-        dataset = Path("dataset")
-        dataset.mkdir()
-        image = np.zeros((32, 32, 3), dtype=np.uint8)
-        cv2.imwrite(str(dataset / "photo.png"), image)
+    monkeypatch.chdir(tmp_path)
+    dataset = Path("dataset")
+    dataset.mkdir()
+    image = np.zeros((32, 32, 3), dtype=np.uint8)
+    cv2.imwrite(str(dataset / "photo.png"), image)
 
-        result = runner.invoke(app, ["stats", str(dataset), "--format", "xml"])
+    result = runner.invoke(app, ["stats", str(dataset), "--format", "xml"])
 
-        assert result.exit_code == 1
-        assert "Unknown format: xml" in result.output
+    assert result.exit_code == 1
+    assert "Unknown format: xml" in result.output
 
 
 class _ConfigAwareReadinessModule(PipelineModule):
@@ -1462,9 +1459,7 @@ def test_modules_check_uses_loaded_runtime_config(monkeypatch: pytest.MonkeyPatc
     original_readiness = dict(ModuleRegistry._readiness)
     _ConfigAwareReadinessModule.cleanup_calls = 0
     try:
-        ModuleRegistry._modules = {
-            _ConfigAwareReadinessModule.name: _ConfigAwareReadinessModule
-        }
+        ModuleRegistry._modules = {_ConfigAwareReadinessModule.name: _ConfigAwareReadinessModule}
         ModuleRegistry._readiness = {
             _ConfigAwareReadinessModule.name: {"status": "ready", "error": None}
         }
@@ -1472,9 +1467,7 @@ def test_modules_check_uses_loaded_runtime_config(monkeypatch: pytest.MonkeyPatc
         monkeypatch.setattr(
             "ayase.cli.AyaseConfig.load",
             classmethod(
-                lambda cls: AyaseConfig.model_validate(
-                    {"general": {"models_dir": "custom_models"}}
-                )
+                lambda cls: AyaseConfig.model_validate({"general": {"models_dir": "custom_models"}})
             ),
         )
 
@@ -1576,6 +1569,8 @@ def test_pipeline_repeated_start_resets_previous_run_state(tmp_path: Path):
     assert second_result.quality_metrics is not None
     assert pipeline.stats.total_samples == 1
     assert sorted(pipeline.results) == [str(second_image)]
+
+
 def test_download_hf_snapshot_uses_stable_models_dir(monkeypatch, tmp_path):
     import huggingface_hub
 
@@ -1626,9 +1621,7 @@ class TestNoSourceCodeDownloads:
         pattern = re.compile(r"https?://(github\.com|gitlab\.com)[^\s\"']*\.zip")
         offenders = []
         for path in Path(ayase.modules.__file__).parent.glob("*.py"):
-            for number, line in enumerate(
-                path.read_text(encoding="utf-8").splitlines(), 1
-            ):
+            for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
                 if pattern.search(line):
                     offenders.append(f"{path.name}:{number}")
         assert not offenders, "code archive URLs: " + "; ".join(offenders)
