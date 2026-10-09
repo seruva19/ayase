@@ -42,7 +42,12 @@ class DreamSimModule(PipelineModule):
         self._backend = "unavailable"
 
     def setup(self) -> None:
+        torch = None
+        original_hub_dir = None
         try:
+            import torch
+
+            original_hub_dir = torch.hub.get_dir()
             self._ensure_dino_cached()
             from dreamsim import dreamsim
 
@@ -54,6 +59,15 @@ class DreamSimModule(PipelineModule):
             logger.info("DreamSim model loaded")
         except (ImportError, Exception) as e:
             logger.warning("DreamSim unavailable: %s", e)
+        finally:
+            # DreamSim 0.2.1 calls torch.hub.set_dir("./models") while loading its
+            # ensemble. Keep that package-local choice from leaking into later Ayase
+            # modules (notably DINOv2 and DOVER) in the same process.
+            if torch is not None and original_hub_dir is not None:
+                try:
+                    torch.hub.set_dir(original_hub_dir)
+                except Exception as e:
+                    logger.warning("Failed to restore torch.hub directory: %s", e)
 
     def _prep_batch(self, pil_images):
         """Preprocess a list of PIL images into one ``(N, 3, H, W)`` device tensor.

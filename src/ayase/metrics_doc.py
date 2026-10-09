@@ -68,11 +68,35 @@ _IMPORT_TO_PIP = {
 }
 
 _STDLIB_MODULES = {
-    "os", "sys", "re", "json", "math", "logging", "pathlib", "typing",
-    "collections", "functools", "itertools", "abc", "copy", "io",
-    "tempfile", "subprocess", "shutil", "hashlib", "warnings", "time",
-    "dataclasses", "enum", "contextlib", "textwrap", "statistics",
-    "struct", "base64", "threading", "ast",
+    "os",
+    "sys",
+    "re",
+    "json",
+    "math",
+    "logging",
+    "pathlib",
+    "typing",
+    "collections",
+    "functools",
+    "itertools",
+    "abc",
+    "copy",
+    "io",
+    "tempfile",
+    "subprocess",
+    "shutil",
+    "hashlib",
+    "warnings",
+    "time",
+    "dataclasses",
+    "enum",
+    "contextlib",
+    "textwrap",
+    "statistics",
+    "struct",
+    "base64",
+    "threading",
+    "ast",
 }
 
 # ── VRAM estimate by model pattern ──────────────────────────────────────────
@@ -94,10 +118,10 @@ _VRAM_PATTERNS = {
 }
 
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # Source inspection helpers
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _get_source(cls) -> str:
     try:
@@ -118,35 +142,102 @@ def _get_group(name: str, input_type: str) -> str:
         return "Distribution (batch)"
     kw_map = {
         "Motion & Temporal": (
-            "motion", "temporal", "flicker", "flow", "subject_consist",
-            "background_consist", "scene_detect", "jump_cut", "playback",
-            "camera_jitter", "camera_motion", "flow_coherence",
-            "object_permanence", "stabilized", "warping", "raft_motion",
-            "ptlflow", "judder", "vfr",
+            "motion",
+            "temporal",
+            "flicker",
+            "flow",
+            "subject_consist",
+            "background_consist",
+            "scene_detect",
+            "jump_cut",
+            "playback",
+            "camera_jitter",
+            "camera_motion",
+            "flow_coherence",
+            "object_permanence",
+            "stabilized",
+            "warping",
+            "raft_motion",
+            "ptlflow",
+            "judder",
+            "vfr",
         ),
         "Video Quality Assessment": (
-            "dover", "fast_vqa", "mdtvsfa", "svr60_vq", "resnet_svr_vq", "c3dvqa",
-            "cover", "finevq_raw", "kvq", "rqvqa", "funque", "mscn_entropy",
-            "hdr_subband_flicker_score", "cgvqm", "gabor_flow_vq",
+            "dover",
+            "fast_vqa",
+            "mdtvsfa",
+            "svr60_vq",
+            "resnet_svr_vq",
+            "c3dvqa",
+            "cover",
+            "finevq_raw",
+            "kvq",
+            "rqvqa",
+            "funque",
+            "mscn_entropy",
+            "hdr_subband_flicker_score",
+            "cgvqm",
+            "gabor_flow_vq",
         ),
         "Video Generation": (
-            "videoscore", "videoscore2", "video_reward", "aigv", "chronomagic",
-            "t2v_comp", "video_type", "video_memor", "t2v_generic_score",
+            "videoscore",
+            "videoscore2",
+            "video_reward",
+            "aigv",
+            "chronomagic",
+            "t2v_comp",
+            "video_type",
+            "video_memor",
+            "t2v_generic_score",
         ),
         "Audio-Visual": ("av_sync", "audio_visual"),
         "Full-Reference & Distribution": (
-            "vmaf", "ssimulacra", "butteraugli", "flip", "psnr", "ssim",
-            "ciede", "pieapp", "cw_ssim", "nlpd", "ahiq", "topiq_fr",
-            "dreamsim", "dmm", "wadiqam_fr", "ssimc", "xpsnr", "hdr_vdp",
-            "delta_ictcp", "ckdn", "deepwsd", "strred", "flolpips",
-            "stlpips_selfdist", "vif", "fvd", "fvmd", "kvd", "mad",
+            "vmaf",
+            "ssimulacra",
+            "butteraugli",
+            "flip",
+            "psnr",
+            "ssim",
+            "ciede",
+            "pieapp",
+            "cw_ssim",
+            "nlpd",
+            "ahiq",
+            "topiq_fr",
+            "dreamsim",
+            "dmm",
+            "wadiqam_fr",
+            "ssimc",
+            "xpsnr",
+            "hdr_vdp",
+            "delta_ictcp",
+            "ckdn",
+            "deepwsd",
+            "strred",
+            "flolpips",
+            "stlpips_selfdist",
+            "vif",
+            "fvd",
+            "fvmd",
+            "kvd",
+            "mad",
         ),
         "HDR & Color": ("hdr_", "pu_metric", "tonal"),
         "Safety & Content": ("nsfw", "harmful", "deepfake", "watermark", "bias"),
         "Text & Semantic": (
-            "semantic", "caption", "clip_temp", "clip_iqa", "sd_reference",
-            "ocr", "vqa_score", "tifa", "nemo", "text_", "video_text",
-            "ram_tag", "promptiqa",
+            "semantic",
+            "caption",
+            "clip_temp",
+            "clip_iqa",
+            "sd_reference",
+            "ocr",
+            "vqa_score",
+            "tifa",
+            "nemo",
+            "text_",
+            "video_text",
+            "ram_tag",
+            "promptiqa",
         ),
         "Codec & Technical": ("codec", "compression", "letterbox"),
     }
@@ -301,11 +392,12 @@ def _detect_paper(cls) -> Optional[str]:
     doc = cls.__doc__ or ""
     # Look for common citation patterns
     for m in re.finditer(
-        r"(?:References?:?\s*[-–]\s*)?(\w[\w\s&]+?et al\.?\s*\(\d{4}\)[^)\n]*)",
-        doc
+        r"(?:References?:?\s*[-–]\s*)?(\w[\w\s&]+?et al\.?\s*\(\d{4}\)[^)\n]*)", doc
     ):
         return m.group(1).strip()
-    for m in re.finditer(r"((?:CVPR|ICCV|ECCV|NeurIPS|ICML|ICLR|AAAI|WACV|TIP|TPAMI)\s*\d{4})", doc):
+    for m in re.finditer(
+        r"((?:CVPR|ICCV|ECCV|NeurIPS|ICML|ICLR|AAAI|WACV|TIP|TPAMI)\s*\d{4})", doc
+    ):
         return m.group(1)
     return None
 
@@ -516,17 +608,19 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
         getattr(cls, "metric_groups", None) or getattr(cls, "metric_info", None)
     )
     honestly_unavailable = (
-        '_backend = "unavailable"' in full_source
-        or "_ml_available = False" in full_source
+        '_backend = "unavailable"' in full_source or "_ml_available = False" in full_source
     )
-    if meta["output_fields"] and not writes_metrics and not (
-        declares_ownership and honestly_unavailable
+    if (
+        meta["output_fields"]
+        and not writes_metrics
+        and not (declares_ownership and honestly_unavailable)
     ):
         warnings.append("declares output fields but never assigns quality_metrics")
     return warnings
 
 
 # ── Chart helpers ───────────────────────────────────────────────────────────
+
 
 def _generate_charts(
     cat_items: List[Tuple[str, Dict]],
@@ -544,14 +638,27 @@ def _generate_charts(
     paths: Dict[str, str] = {}
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import seaborn as sns
 
         output_dir.mkdir(parents=True, exist_ok=True)
-        _colors = ['#6C5CE7', '#00B894', '#FD79A8', '#0984E3', '#FDCB6E',
-                    '#E17055', '#00CEC9', '#636E72', '#A29BFE', '#FAB1A0',
-                    '#55EFC4', '#DFE6E9', '#74B9FF']
+        _colors = [
+            "#6C5CE7",
+            "#00B894",
+            "#FD79A8",
+            "#0984E3",
+            "#FDCB6E",
+            "#E17055",
+            "#00CEC9",
+            "#636E72",
+            "#A29BFE",
+            "#FAB1A0",
+            "#55EFC4",
+            "#DFE6E9",
+            "#74B9FF",
+        ]
 
         _W = 5  # uniform width for all charts (paired 2-per-row)
 
@@ -559,10 +666,11 @@ def _generate_charts(
             sns.set_theme(style="whitegrid", font_scale=0.9)
             labels = [label for label, _ in items]
             values = [value for _, value in items]
-            cols = (palette or _colors)[:len(items)]
+            cols = (palette or _colors)[: len(items)]
             fig, ax = plt.subplots(figsize=(_W, max(2.5, len(items) * 0.32)))
-            bars = ax.barh(labels[::-1], values[::-1], color=cols[::-1],
-                           height=0.65, edgecolor="none")
+            bars = ax.barh(
+                labels[::-1], values[::-1], color=cols[::-1], height=0.65, edgecolor="none"
+            )
             ax.bar_label(bars, padding=4, fontsize=9, color="#333")
             ax.set_xlim(0, max(values) * 1.12)
             ax.xaxis.set_visible(False)
@@ -583,10 +691,14 @@ def _generate_charts(
             palette = colors or sns.color_palette("husl", len(items))
             fig, ax = plt.subplots(figsize=(_W, _W * 0.6))
             wedges, texts, autotexts = ax.pie(
-                values, labels=labels, autopct="%1.0f%%",
+                values,
+                labels=labels,
+                autopct="%1.0f%%",
                 colors=palette,
                 wedgeprops=dict(width=0.45, edgecolor="white", linewidth=2),
-                textprops=dict(fontsize=10), pctdistance=0.75, startangle=90,
+                textprops=dict(fontsize=10),
+                pctdistance=0.75,
+                startangle=90,
             )
             for t in autotexts:
                 t.set_fontsize(9)
@@ -598,12 +710,11 @@ def _generate_charts(
 
         # 1. Modules by category
         paths["categories"] = _save_bar(
-            [(g, s["modules"]) for g, s in cat_items],
-            "chart_categories.png")
+            [(g, s["modules"]) for g, s in cat_items], "chart_categories.png"
+        )
 
         # 2. Input types
-        paths["input_types"] = _save_bar(
-            input_counts.most_common(), "chart_input_types.png")
+        paths["input_types"] = _save_bar(input_counts.most_common(), "chart_input_types.png")
 
         # 3. Speed tiers
         tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
@@ -612,29 +723,31 @@ def _generate_charts(
         paths["speed"] = _save_bar(
             [(tier_map.get(t, t), c) for t, c in s_items],
             "chart_speed.png",
-            palette=[tier_colors.get(t, "#74B9FF") for t, _ in s_items])
+            palette=[tier_colors.get(t, "#74B9FF") for t, _ in s_items],
+        )
 
         # 4. Backend usage
         paths["backends"] = _save_bar(
-            all_backends.most_common(10), "chart_backends.png",
-            palette=["#74B9FF"] * 10)
+            all_backends.most_common(10), "chart_backends.png", palette=["#74B9FF"] * 10
+        )
 
         # 5. Top packages
         if all_packages:
             paths["packages"] = _save_bar(
-                all_packages.most_common(12), "chart_packages.png",
-                palette=["#A29BFE"] * 12)
+                all_packages.most_common(12), "chart_packages.png", palette=["#A29BFE"] * 12
+            )
 
         # 6. Metrics per category
         if metrics_per_cat:
             mc_items = sorted(metrics_per_cat.items(), key=lambda x: -x[1])
             mc_display = [(_CATEGORY_DISPLAY.get(k, k), v) for k, v in mc_items]
             paths["metrics_per_cat"] = _save_bar(
-                mc_display, "chart_metrics_per_cat.png",
-                palette=["#00B894"] * len(mc_items))
+                mc_display, "chart_metrics_per_cat.png", palette=["#00B894"] * len(mc_items)
+            )
 
     except ImportError as exc:
         import logging
+
         logging.getLogger(__name__).warning(
             "Chart generation skipped: matplotlib/seaborn not installed (%s). "
             "Install with `pip install matplotlib seaborn` to embed charts.",
@@ -642,6 +755,7 @@ def _generate_charts(
         )
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning(f"Chart generation failed: {exc}")
 
     return paths
@@ -699,18 +813,33 @@ def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
         return {}
 
     import subprocess
+
     result: Dict[str, Dict[str, bool]] = {}
     project_root = str(Path(__file__).parent.parent.parent)
 
     try:
         # Run per-module basics tests (ultra-fast, ~1s for all 312)
         import os as _os
+
         env = {**_os.environ, "AYASE_TEST_MODE": "1"}
         proc = subprocess.run(
-            ["python", "-m", "pytest", "tests/modules/per_module/",
-             "-k", "basics", "--tb=no", "--no-header", "-v"],
-            capture_output=True, text=True, timeout=30,
-            cwd=project_root, encoding="utf-8", errors="replace",
+            [
+                "python",
+                "-m",
+                "pytest",
+                "tests/modules/per_module/",
+                "-k",
+                "basics",
+                "--tb=no",
+                "--no-header",
+                "-v",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd=project_root,
+            encoding="utf-8",
+            errors="replace",
             env=env,
         )
         for line in proc.stdout.splitlines():
@@ -731,10 +860,20 @@ def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
 
             # Strip known suffixes to get module name
             suffixes = [
-                "_basics", "_image", "_video", "_no_reference", "_with_reference",
-                "_no_metadata", "_with_metadata", "_image_skipped",
-                "_is_batch", "_extract", "_fields_exist", "_fields",
-                "_no_pointcloud", "_config",
+                "_basics",
+                "_image",
+                "_video",
+                "_no_reference",
+                "_with_reference",
+                "_no_metadata",
+                "_with_metadata",
+                "_image_skipped",
+                "_is_batch",
+                "_extract",
+                "_fields_exist",
+                "_fields",
+                "_no_pointcloud",
+                "_config",
             ]
             mod_name = name
             for suffix in sorted(suffixes, key=len, reverse=True):
@@ -752,6 +891,7 @@ def _collect_test_status(run_tests: bool = True) -> Dict[str, Dict[str, bool]]:
 
     except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as exc:
         import logging
+
         logging.getLogger(__name__).debug(f"Test collection failed: {exc}")
 
     return result
@@ -795,10 +935,10 @@ def _format_test_coverage(
     return coverage
 
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # QualityMetrics introspection
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _get_quality_metrics_fields() -> Dict[str, Dict]:
     """Extract all QualityMetrics fields with metadata and inline comments."""
@@ -889,24 +1029,30 @@ def _get_score_direction(field_name: str, desc: str) -> str:
     desc_lower = (desc or "").lower()
     name_lower = field_name.lower()
     # Explicit markers
-    if "lower=better" in desc_lower or "lower = better" in desc_lower:
+    if re.search(r"\blower\s*=\s*worse\b", desc_lower):
+        return "↑ higher=better"
+    if re.search(r"\bhigher\s*=\s*worse\b", desc_lower):
         return "↓ lower=better"
-    if "higher=better" in desc_lower or "higher = better" in desc_lower:
+    if re.search(r"\blower\s*=\s*better\b", desc_lower):
+        return "↓ lower=better"
+    if re.search(r"\bhigher\s*=\s*better\b", desc_lower):
         return "↑ higher=better"
     # Common patterns
     if any(kw in name_lower for kw in ("error", "distortion", "distance", "loss", "jitter")):
         return "↓ lower=better"
     if any(kw in desc_lower for kw in ("lower", "error", "distortion", "distance")):
         return "↓ lower=better"
-    if any(kw in name_lower for kw in ("score", "quality", "consistency", "fidelity", "similarity")):
+    if any(
+        kw in name_lower for kw in ("score", "quality", "consistency", "fidelity", "similarity")
+    ):
         return "↑ higher=better"
     return "—"
-
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Main generator
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) -> str:
     """Generate METRICS.md content with charts, test status, and version header.
@@ -928,9 +1074,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     qm_fields = _get_quality_metrics_fields()
     ds_fields = _get_dataset_stats_fields()
     # Metric fields that belong to the delivered set (used for headline counts).
-    delivered_qm_fields = {
-        fn for fn in qm_fields if fn not in external_only_fields
-    }
+    delivered_qm_fields = {fn for fn in qm_fields if fn not in external_only_fields}
 
     # ── Collect module data ──────────────────────────────────────────────
     results: List[Dict] = []
@@ -1011,7 +1155,9 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         written = _detect_fields_written(source)
         for f in written:
             field_writers[f].append(name)
-        dataset_written = set(meta.get("dataset_output_fields", {})) | _detect_dataset_fields_written(source)
+        dataset_written = set(
+            meta.get("dataset_output_fields", {})
+        ) | _detect_dataset_fields_written(source)
         for f in dataset_written:
             if f in ds_fields:
                 dataset_field_writers[f].append(name)
@@ -1040,8 +1186,8 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     group_stats = defaultdict(lambda: {"modules": 0, "fields": 0})
     for r in results:
         group_stats[r["group"]]["modules"] += 1
-        group_stats[r["group"]]["fields"] += (
-            len(r["output_fields"]) + len(r.get("dataset_output_fields", {}))
+        group_stats[r["group"]]["fields"] += len(r["output_fields"]) + len(
+            r.get("dataset_output_fields", {})
         )
 
     input_counts: Counter = Counter()
@@ -1073,12 +1219,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     # Fields owned only by requires_external_backend modules are intentionally undocumented in
     # the delivered body (they live in the External backend required section), so they are
     # NOT orphans — don't flag them as declared-but-never-written.
-    orphaned = (
-        all_qm_field_names
-        - written_fields
-        - declared_output_fields
-        - external_only_fields
-    )
+    orphaned = all_qm_field_names - written_fields - declared_output_fields - external_only_fields
     collisions = {f: writers for f, writers in field_writers.items() if len(writers) > 1}
 
     # Module dependencies (modules that read fields written by other modules)
@@ -1108,7 +1249,11 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             metrics_per_cat_count[info["group"]] += 1
 
     chart_paths = _generate_charts(
-        cat_items, input_counts, speed_counts, all_backends, docs_dir,
+        cat_items,
+        input_counts,
+        speed_counts,
+        all_backends,
+        docs_dir,
         all_packages=all_packages,
         metrics_per_cat=dict(metrics_per_cat_count),
     )
@@ -1121,48 +1266,50 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
 
     # ── Header with version + date ────────────────────────────────────────
     from datetime import datetime
+
     try:
         from ayase import __version__
     except ImportError:
         __version__ = "dev"
     a("# Ayase Metrics Reference")
     a("")
-    a(f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
-      f"· **{total_modules} modules** · **{len(delivered_qm_fields)} metrics**")
+    a(
+        f"> **Version {__version__}** · Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} "
+        f"· **{total_modules} modules** · **{len(delivered_qm_fields)} metrics**"
+    )
     a(">")
     a("> `ayase modules docs -o METRICS.md` to regenerate")
     a(">")
-    a(f"> Tests: **{covered_modules}/{total_modules} modules** have static test references · "
-      "`pytest tests/` (light) · `pytest tests/ --full` (with ML models)")
-    if not run_tests:
-        a("")
-        a("> [!NOTE]")
-        a("> Static test coverage links are included below. Live pass/fail status "
-          "was not collected for this regeneration (`--no-tests` was passed). "
-          "Re-run with `ayase modules docs --run-tests` to add live status.")
+    a(
+        f"> Tests: **{covered_modules}/{total_modules} modules** have static test references · "
+        "`pytest tests/` (light) · `pytest tests/ --full` (with ML models)"
+    )
+    a("")
+    a("> [!NOTE]")
+    a(
+        "> Coverage links identify tests that reference each module. "
+        "Test execution results are reported by the test runner."
+    )
 
     # ── 1. Summary ─────────────────────────────────────────────────────
     # Count categories that will actually be rendered (metric sections + utility).
-    rendered_cat_keys = {
-        qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields
-    }
+    rendered_cat_keys = {qm_fields[fn]["group"] for fn in field_writers if fn in qm_fields}
     has_dataset_outputs = bool(dataset_field_writers)
     no_output_count = sum(
-        1 for r in results
-        if not r["output_fields"] and not r.get("dataset_output_fields")
+        1 for r in results if not r["output_fields"] and not r.get("dataset_output_fields")
     )
     total_categories = (
-        len(rendered_cat_keys)
-        + (1 if has_dataset_outputs else 0)
-        + (1 if no_output_count else 0)
+        len(rendered_cat_keys) + (1 if has_dataset_outputs else 0) + (1 if no_output_count else 0)
     )
 
     a("")
     a("## Summary")
     a("")
-    a(f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
-      f"· **{len(delivered_qm_fields)}** metrics · **{tiered_count}** tiered "
-      f"· **{gpu_count}** GPU · **{total_categories}** categories")
+    a(
+        f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
+        f"· **{len(delivered_qm_fields)}** metrics · **{tiered_count}** tiered "
+        f"· **{gpu_count}** GPU · **{total_categories}** categories"
+    )
 
     a("")
     a("## Provenance")
@@ -1172,14 +1319,18 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a("| Class | Meaning |")
     a("|---|---|")
     a("| `published` | Implements the cited definition and protocol. |")
-    a("| `adapted` | Uses a published definition with the stated model, preprocessing, sampling or aggregation deviations. |")
+    a(
+        "| `adapted` | Uses a published definition with the stated model, preprocessing, sampling or aggregation deviations. |"
+    )
     a("| `own` | Ayase-defined quantity without a matching published definition. |")
     a("| `utility` | Metadata, coverage, detection or other non-quality output. |")
     a("")
-    a("Default selections allow `published` and `utility`; explicit module selection opts "
-      "into `adapted` and `own`. A source citation does not establish numerical "
-      "interchangeability. Protocol deviations and backend requirements are listed "
-      "with each metric. Migration changes are documented in [MIGRATION.md](MIGRATION.md).")
+    a(
+        "Default selections allow `published` and `utility`; explicit module selection opts "
+        "into `adapted` and `own`. A source citation does not establish numerical "
+        "interchangeability. Protocol deviations and backend requirements are listed "
+        "with each metric. Migration changes are documented in [MIGRATION.md](MIGRATION.md)."
+    )
 
     # ── 2. Charts ─────────────────────────────────────────────────────
     chart_titles = {
@@ -1190,9 +1341,13 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         "packages": "Top Packages",
         "metrics_per_cat": "Metrics per Category",
     }
-    chart_order = [k for k in ("categories", "input_types", "speed", "backends", "packages", "metrics_per_cat") if k in chart_paths]
+    chart_order = [
+        k
+        for k in ("categories", "input_types", "speed", "backends", "packages", "metrics_per_cat")
+        if k in chart_paths
+    ]
     for i in range(0, len(chart_order), 2):
-        pair = chart_order[i:i+2]
+        pair = chart_order[i : i + 2]
         if len(pair) == 2:
             t1, t2 = chart_titles[pair[0]], chart_titles[pair[1]]
             p1, p2 = chart_paths[pair[0]], chart_paths[pair[1]]
@@ -1206,7 +1361,6 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             a(f"<h4>{chart_titles[pair[0]]}</h4>")
             a("")
             a(f"![]({chart_paths[pair[0]]})")
-
 
     # ── Integrity warnings (stderr only, not in output) ────────────────
     import sys
@@ -1229,17 +1383,18 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         print(f"WARNING: {len(real_collisions)} field collision(s):", file=sys.stderr)
         for field, writers in sorted(real_collisions.items()):
             print(f"  {field}: {', '.join(writers)}", file=sys.stderr)
-    real_orphans = {f for f in orphaned
-                    if qm_fields.get(f, {}).get("type") == "float"}
+    real_orphans = {f for f in orphaned if qm_fields.get(f, {}).get("type") == "float"}
     if real_orphans:
         print(f"WARNING: {len(real_orphans)} orphaned QualityMetrics field(s):", file=sys.stderr)
         for f in sorted(real_orphans):
             print(f"  {f}", file=sys.stderr)
         a("")
         a("> [!WARNING]")
-        a(f"> **{len(real_orphans)} orphaned QualityMetrics field(s)** — declared "
-          "in `QualityMetrics` but never written by any module. Either wire a "
-          "module to populate them or drop the field from the model:")
+        a(
+            f"> **{len(real_orphans)} orphaned QualityMetrics field(s)** — declared "
+            "in `QualityMetrics` but never written by any module. Either wire a "
+            "module to populate them or drop the field from the model:"
+        )
         a(">")
         a("> " + ", ".join(f"`{f}`" for f in sorted(real_orphans)))
 
@@ -1357,7 +1512,11 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 if range_match:
                     raw = range_match.group(1)
                     # Strip direction text to avoid "↑ higher=better · higher=better"
-                    raw = re.sub(r",?\s*(?:higher|lower)\s*=\s*better", "", raw).strip(" ,")
+                    raw = re.sub(
+                        r",?\s*(?:higher|lower)\s*=\s*(?:better|worse)",
+                        "",
+                        raw,
+                    ).strip(" ,")
                     range_str = raw
                 else:
                     # Try bare range like "0-10" or "1-5"
@@ -1441,9 +1600,12 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 a(f"- **Tests**: {test_coverage_text}")
 
                 cfg = mod.get("default_config", {})
-                cfg_items = {k: v for k, v in cfg.items()
-                             if k not in ("weights_path", "preferred_backend", "models_dir")
-                             and v is not None}
+                cfg_items = {
+                    k: v
+                    for k, v in cfg.items()
+                    if k not in ("weights_path", "preferred_backend", "models_dir")
+                    and v is not None
+                }
                 if cfg_items:
                     cfg_str = ", ".join(f"`{k}={v}`" for k, v in cfg_items.items())
                     a(f"- **Config**: {cfg_str}")
@@ -1517,8 +1679,10 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     if no_output:
         a(f"## Utility & Validation ({len(no_output)} modules)")
         a("")
-        a("Modules that perform validation, embedding, deduplication, or dataset-level "
-          "analysis without writing individual QualityMetrics fields.")
+        a(
+            "Modules that perform validation, embedding, deduplication, or dataset-level "
+            "analysis without writing individual QualityMetrics fields."
+        )
         a("")
         for r in sorted(no_output, key=lambda x: x["name"]):
             extra = mod_extra.get(r["name"], {})
@@ -1543,14 +1707,16 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         a("")
         a(f"## External backend required — pending real backend ({len(prov_sorted)} modules)")
         a("")
-        a("These modules ship in the package and stay registered, but currently "
-          "have **no turnkey real backend** in a standard `pip install ayase` + "
-          "network environment (uninstallable dependency, unreleased weights, "
-          "needs training or a native build, or architecturally impossible). "
-          "They are **excluded from the module/metric/category counts above** and "
-          "produce no values until a real backend is wired. The "
-          f"**{len(external_only_fields)}** metric field(s) below stay in the "
-          "`QualityMetrics` schema, reserved for that revival.")
+        a(
+            "These modules ship in the package and stay registered, but currently "
+            "have **no turnkey real backend** in a standard `pip install ayase` + "
+            "network environment (uninstallable dependency, unreleased weights, "
+            "needs training or a native build, or architecturally impossible). "
+            "They are **excluded from the module/metric/category counts above** and "
+            "produce no values until a real backend is wired. The "
+            f"**{len(external_only_fields)}** metric field(s) below stay in the "
+            "`QualityMetrics` schema, reserved for that revival."
+        )
         a("")
         for name in prov_sorted:
             cls = ModuleRegistry.get_module(name)

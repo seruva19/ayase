@@ -100,9 +100,7 @@ class PipelineModule(ABC):
 
     # Declare a media type when source inference cannot identify the contract.
     input_type: ClassVar[Optional[str]] = None
-    _metadata_field_descriptions: ClassVar[
-        tuple[Dict[str, str], Dict[str, str]]
-    ]
+    _metadata_field_descriptions: ClassVar[tuple[Dict[str, str], Dict[str, str]]]
     _metadata_cache: ClassVar[Dict[str, Any]]
     _metadata_cache_key: ClassVar[tuple[Any, ...]]
     _resolved_field_provenance: ClassVar[Dict[str, str]]
@@ -153,6 +151,7 @@ class PipelineModule(ABC):
         or class-level ``set_test_mode(True)`` is active.
         """
         import os
+
         return (
             self.config.get("test_mode", False)
             or self._global_test_mode
@@ -194,9 +193,7 @@ class PipelineModule(ABC):
                 processed = self.process(sample)
             except Exception as e:
                 logger.error(f"Error in module {self.name} for {sample.path}: {e}")
-                Pipeline._register_module_failure(
-                    sample, self.name, f"{type(e).__name__}: {e}"
-                )
+                Pipeline._register_module_failure(sample, self.name, f"{type(e).__name__}: {e}")
                 processed_samples.append(sample)
                 continue
             if not isinstance(processed, Sample):
@@ -307,21 +304,18 @@ class PipelineModule(ABC):
             repr(cls.deviations),
             repr(cls.metric_info),
             repr(cls.metric_groups),
+            repr(getattr(cls, "metric_field", None)),
+            repr(getattr(cls, "metric_field_name", None)),
             cls.requires_external_backend,
             cls.deprecated,
             cls.input_type,
         )
-        if (
-            cached_metadata is not None
-            and cls.__dict__.get("_metadata_cache_key") == cache_key
-        ):
+        if cached_metadata is not None and cls.__dict__.get("_metadata_cache_key") == cache_key:
             return deepcopy(cached_metadata)
 
         # Field descriptions from QualityMetrics / DatasetStats
         # (source comments + pydantic fields).
-        cached_descriptions = PipelineModule.__dict__.get(
-            "_metadata_field_descriptions"
-        )
+        cached_descriptions = PipelineModule.__dict__.get("_metadata_field_descriptions")
         if cached_descriptions is not None:
             field_descs, dataset_field_descs = deepcopy(cached_descriptions)
         else:
@@ -334,15 +328,11 @@ class PipelineModule(ABC):
                 dataset_field_descs[fname] = ""
             # Enrich with inline comments from source
             src_models = inspect.getsource(QualityMetrics)
-            for m in _re.finditer(
-                r"(\w+):\s*Optional\[.*?#\s*(.*)", src_models
-            ):
+            for m in _re.finditer(r"(\w+):\s*Optional\[.*?#\s*(.*)", src_models):
                 if m.group(1) in field_descs:
                     field_descs[m.group(1)] = m.group(2).strip()
             src_stats = inspect.getsource(DatasetStats)
-            for m in _re.finditer(
-                r"(\w+):\s*Optional\[.*?#\s*(.*)", src_stats
-            ):
+            for m in _re.finditer(r"(\w+):\s*Optional\[.*?#\s*(.*)", src_stats):
                 if m.group(1) in dataset_field_descs:
                     dataset_field_descs[m.group(1)] = m.group(2).strip()
             PipelineModule._metadata_field_descriptions = deepcopy(
@@ -360,18 +350,35 @@ class PipelineModule(ABC):
             except (TypeError, OSError):
                 src = ""
 
+        # Output declarations belong to the class being documented.  Scanning
+        # the whole module here leaks fields from sibling module classes that
+        # happen to share the same file.  Sources from the effective processing
+        # methods preserve inherited implementations without pulling in
+        # overridden parent behavior; resolved metric-field attributes and
+        # ``metric_info`` preserve dynamic setters.
+        try:
+            class_src = inspect.getsource(cls)
+        except (TypeError, OSError):
+            class_src = src
+        output_sources = [class_src]
+        for method_name in ("process", "process_batch", "post_process"):
+            try:
+                method_src = inspect.getsource(getattr(cls, method_name))
+            except (AttributeError, TypeError, OSError):
+                continue
+            if method_src not in output_sources:
+                output_sources.append(method_src)
+        output_src = "\n".join(output_sources)
+
         # Input type: infer from process() checks
         needs_ref = "reference_path" in src
-        needs_cap = bool(
-            _re.search(r"caption.*\.text|\.caption", src[:3000])
-        )
+        needs_cap = bool(_re.search(r"caption.*\.text|\.caption", src[:3000]))
         video_only = bool(_re.search(r"not\s+sample\.is_video", src))
         audio_module = bool(
             _re.search(r"soundfile|librosa\.load|pesq|pystoi", src)
         ) or cls.name.startswith("audio_")
         batch_module = bool(
-            _re.search(r"post_process.*all_samples|batch", src[:500])
-            and "def post_process" in src
+            _re.search(r"post_process.*all_samples|batch", src[:500]) and "def post_process" in src
         )
 
         if cls.input_type is not None:
@@ -393,30 +400,30 @@ class PipelineModule(ABC):
         # Output fields: find quality_metrics.FIELD = ... assignments
         outputs: Dict[str, str] = {}
         # Pattern 1: quality_metrics.FIELD =
-        for m in _re.finditer(r"quality_metrics\.(\w+)\s*=", src):
+        for m in _re.finditer(r"quality_metrics\.(\w+)\s*=", output_src):
             field = m.group(1)
             if field not in outputs and field in field_descs:
                 outputs[field] = field_descs[field]
         # Pattern 2: metric_field = "FIELD" / metric_field_name = "FIELD"
         # (base class or lightweight subclass auto-assignment)
-        for m in _re.finditer(r'metric_field(?:_name)?\s*=\s*["\'](\w+)["\']', src):
+        for m in _re.finditer(r'metric_field(?:_name)?\s*=\s*["\'](\w+)["\']', class_src):
             field = m.group(1)
             if field not in outputs and field in field_descs:
                 outputs[field] = field_descs[field]
+        for attr in ("metric_field", "metric_field_name"):
+            field = getattr(cls, attr, None)
+            if isinstance(field, str) and field in field_descs and field not in outputs:
+                outputs[field] = field_descs[field]
         # Pattern 3: local aliases explicitly bound to ``quality_metrics``.
-        aliases = set(
-            _re.findall(
-                r"\b(\w+)\s*=\s*(?:\w+\.)?quality_metrics\b", src
-            )
-        )
+        aliases = set(_re.findall(r"\b(\w+)\s*=\s*(?:\w+\.)?quality_metrics\b", output_src))
         for alias in aliases:
-            for m in _re.finditer(rf"\b{_re.escape(alias)}\.(\w+)\s*=", src):
+            for m in _re.finditer(rf"\b{_re.escape(alias)}\.(\w+)\s*=", output_src):
                 field = m.group(1)
                 if field not in outputs and field in field_descs:
                     outputs[field] = field_descs[field]
             for m in _re.finditer(
                 rf"setattr\(\s*{_re.escape(alias)}\s*,\s*[\"'](\w+)[\"']\s*,",
-                src,
+                output_src,
             ):
                 field = m.group(1)
                 if field not in outputs and field in field_descs:
@@ -429,7 +436,7 @@ class PipelineModule(ABC):
                 outputs[field] = description or field_descs[field]
 
         dataset_outputs: Dict[str, str] = {}
-        for m in _re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', src):
+        for m in _re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', output_src):
             field = m.group(1)
             if field not in dataset_outputs and field in dataset_field_descs:
                 dataset_outputs[field] = dataset_field_descs[field]
@@ -439,9 +446,7 @@ class PipelineModule(ABC):
 
         # Provenance metadata is always resolved per field (field -> class /
         # source / deviation), even when the module used a shorthand form.
-        all_fields = list(outputs) + [
-            f for f in dataset_outputs if f not in outputs
-        ]
+        all_fields = list(outputs) + [f for f in dataset_outputs if f not in outputs]
         provenance_map = cls._resolve_field_map("provenance", all_fields)
         sources_map = cls._resolve_field_map("sources", all_fields)
         deviations_map = cls._resolve_field_map("deviations", all_fields)
@@ -466,9 +471,7 @@ class PipelineModule(ABC):
         return deepcopy(metadata)
 
     @classmethod
-    def _resolve_field_map(
-        cls, attr: str, fields: Iterable[str]
-    ) -> Dict[str, str]:
+    def _resolve_field_map(cls, attr: str, fields: Iterable[str]) -> Dict[str, str]:
         """Resolve a per-field class attribute to an explicit field->value map.
 
         A plain string applies to every declared field; a dict may carry a
@@ -602,9 +605,7 @@ class Pipeline:
         if isinstance(allow_provenance, str):
             allow_provenance = [allow_provenance]
         if allow_provenance:
-            requested = {
-                str(c).strip() for c in allow_provenance if str(c).strip()
-            }
+            requested = {str(c).strip() for c in allow_provenance if str(c).strip()}
             unknown = requested - valid_provenance
             if unknown:
                 raise ValueError(f"Unknown provenance classes: {sorted(unknown)}")
@@ -616,9 +617,7 @@ class Pipeline:
             if isinstance(extra, str):
                 extra = [extra]
             if isinstance(extra, (list, tuple, set)):
-                requested = {
-                    str(c).strip() for c in extra if str(c).strip()
-                }
+                requested = {str(c).strip() for c in extra if str(c).strip()}
                 unknown = requested - valid_provenance
                 if unknown:
                     raise ValueError(
@@ -646,9 +645,7 @@ class Pipeline:
             # module with a utility role stays enabled even when its metrics
             # are own-class.
             classes = set(prov_map.values())
-            if not classes and isinstance(
-                getattr(type(module), "provenance", None), str
-            ):
+            if not classes and isinstance(getattr(type(module), "provenance", None), str):
                 classes = {type(module).provenance}
             for f in meta.get("dataset_output_fields", {}):
                 if f in prov_map and f not in self._dataset_field_provenance:
@@ -680,19 +677,26 @@ class Pipeline:
         # benchmark profile that turned it off everywhere).
         # ``content_hash_keys: true`` (off by default) makes media cache keys
         # depend on a content digest rather than size+mtime.
-        self._cache_enabled = any(
-            bool(module.config.get("cache_enabled", True)) for module in self.modules
-        ) if self.modules else True
-        self._content_hash_keys = any(
-            bool(module.config.get("content_hash_keys", False)) for module in self.modules
-        ) if self.modules else False
+        self._cache_enabled = (
+            any(bool(module.config.get("cache_enabled", True)) for module in self.modules)
+            if self.modules
+            else True
+        )
+        self._content_hash_keys = (
+            any(bool(module.config.get("content_hash_keys", False)) for module in self.modules)
+            if self.modules
+            else False
+        )
         self._frame_cache_enabled = (
             any(bool(module.config.get("frame_cache_enabled", True)) for module in self.modules)
-            if self.modules else True
+            if self.modules
+            else True
         ) and self._cache_enabled
-        self._timing_enabled = any(
-            bool(module.config.get("timing_enabled", True)) for module in self.modules
-        ) if self.modules else True
+        self._timing_enabled = (
+            any(bool(module.config.get("timing_enabled", True)) for module in self.modules)
+            if self.modules
+            else True
+        )
         # Maps stats field name -> (QualityMetrics field name, count)
         self._AVG_METRIC_MAP: Dict[str, str] = {
             "avg_technical_score": "technical_score",
@@ -768,10 +772,7 @@ class Pipeline:
 
         full = entry["colors"].get(color)
         if full is None:
-            full = [
-                readonly_view(_convert_frame_color(frame, color))
-                for frame in entry["bgr"]
-            ]
+            full = [readonly_view(_convert_frame_color(frame, color)) for frame in entry["bgr"]]
             entry["colors"][color] = full
 
         return [readonly_view(frame) for frame in full]
@@ -885,8 +886,7 @@ class Pipeline:
 
     def _module_is_excluded(self, module_name: str) -> bool:
         return (
-            module_name in self._provenance_excluded
-            or module_name in self._availability_excluded
+            module_name in self._provenance_excluded or module_name in self._availability_excluded
         )
 
     @classmethod
@@ -982,7 +982,7 @@ class Pipeline:
                     "test_mode": module.test_mode,
                 }
                 for module in self.modules
-            ]
+            ],
         }
 
     @staticmethod
@@ -1026,10 +1026,7 @@ class Pipeline:
             stat = path.stat()
         except OSError:
             return False
-        return (
-            stat.st_size == snapshot.get("size")
-            and stat.st_mtime_ns == snapshot.get("mtime_ns")
-        )
+        return stat.st_size == snapshot.get("size") and stat.st_mtime_ns == snapshot.get("mtime_ns")
 
     @classmethod
     def _sample_matches_manifest(cls, manifest: Dict[str, Any]) -> bool:
@@ -1319,10 +1316,7 @@ class Pipeline:
             ):
                 self.module_failures.setdefault(module.name, "backend unavailable")
         for module in self.modules:
-            if (
-                module.name in self.module_failures
-                or self._module_is_excluded(module.name)
-            ):
+            if module.name in self.module_failures or self._module_is_excluded(module.name):
                 continue
             on_execute = getattr(module, "on_execute", None)
             if not callable(on_execute):
@@ -1331,9 +1325,7 @@ class Pipeline:
                 on_execute()
             except Exception as e:
                 logger.error(f"Error in on_execute for module {module.name}: {e}")
-                self.module_failures[module.name] = (
-                    f"on_execute failed: {type(e).__name__}: {e}"
-                )
+                self.module_failures[module.name] = f"on_execute failed: {type(e).__name__}: {e}"
 
     def get_run_status(self) -> Dict[str, Any]:
         """Return requested/mounted module coverage for the current run."""
@@ -1345,7 +1337,12 @@ class Pipeline:
             if sample.failed_modules
         }
         return {
-            "complete": not failed and not failed_samples and not self._availability_excluded,
+            "complete": (
+                not failed
+                and not failed_samples
+                and not self._availability_excluded
+                and not self._provenance_excluded
+            ),
             "requested_modules": requested,
             "mounted_modules": [
                 name
@@ -1371,9 +1368,7 @@ class Pipeline:
         preserved.
         """
         previous = self.stats
-        self.stats = DatasetStats(
-            total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
-        )
+        self.stats = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
         self._metric_counts = {k: 0 for k in self._AVG_METRIC_MAP}
         for field in DatasetStats.model_fields:
             if field in self._REBUILT_STATS_FIELDS:
@@ -1388,10 +1383,7 @@ class Pipeline:
 
         # Call post_process on all modules first
         for module in self.modules:
-            if (
-                module.name in self.module_failures
-                or self._module_is_excluded(module.name)
-            ):
+            if module.name in self.module_failures or self._module_is_excluded(module.name):
                 continue
             post_process = getattr(module, "post_process", None)
             if not callable(post_process):
@@ -1607,10 +1599,7 @@ class Pipeline:
                 continue
             final = getattr(qm, field, None)
             if cls._metric_values_equal(process_end.get(field), final):
-                if (
-                    isinstance(provenance_process_end, dict)
-                    and field in provenance_process_end
-                ):
+                if isinstance(provenance_process_end, dict) and field in provenance_process_end:
                     qm.metric_provenance[field] = provenance_process_end[field]
                 else:
                     qm.metric_provenance.pop(field, None)
@@ -1755,6 +1744,7 @@ class Pipeline:
                             sample = hooked
 
                         metric_state = self._metric_state(sample)
+
                         def record_write(metrics: QualityMetrics, field: str) -> None:
                             written_by_model.setdefault(id(metrics), set()).add(field)
 
@@ -1826,9 +1816,7 @@ class Pipeline:
                                 )
                             if isinstance(restored, Sample):
                                 sample = restored
-                                self._restore_failure_state(
-                                    sample, pre_failed, pre_issues
-                                )
+                                self._restore_failure_state(sample, pre_failed, pre_issues)
                             elif restored is not None:
                                 logger.error(
                                     "After-hook for module %s returned %s for %s; "
@@ -1892,8 +1880,7 @@ class Pipeline:
                     except Exception as e:
                         hook_raised = True
                         logger.error(
-                            "Before-hook for module %s raised for %s: %s; "
-                            "skipping module",
+                            "Before-hook for module %s raised for %s: %s; " "skipping module",
                             module.name,
                             str_path,
                             e,
@@ -1907,8 +1894,7 @@ class Pipeline:
                     if not isinstance(hooked, Sample):
                         if hooked is not None:
                             logger.error(
-                                "Before-hook for module %s returned %s for %s; "
-                                "skipping module",
+                                "Before-hook for module %s returned %s for %s; " "skipping module",
                                 module.name,
                                 type(hooked).__name__,
                                 str_path,
@@ -1916,8 +1902,7 @@ class Pipeline:
                             self._register_module_failure(
                                 working[idx],
                                 module.name,
-                                f"before hook returned {type(hooked).__name__}, "
-                                "expected Sample",
+                                f"before hook returned {type(hooked).__name__}, " "expected Sample",
                             )
                         elif not hook_raised:
                             self._register_module_failure(
@@ -1935,6 +1920,7 @@ class Pipeline:
 
             if eligible_samples:
                 try:
+
                     def record_write(metrics: QualityMetrics, field: str) -> None:
                         written_by_model.setdefault(id(metrics), set()).add(field)
 
@@ -1950,9 +1936,7 @@ class Pipeline:
                         self._register_module_failure(
                             working[pos], module.name, f"{type(e).__name__}: {e}"
                         )
-                        self._restore_metric_state(
-                            working[pos], module, metric_states.get(pos, {})
-                        )
+                        self._restore_metric_state(working[pos], module, metric_states.get(pos, {}))
                 else:
                     if not isinstance(processed_batch, list):
                         logger.error(
@@ -2039,8 +2023,7 @@ class Pipeline:
                         restored = hooks["after"](working[pos])
                     except Exception as e:
                         logger.error(
-                            "After-hook for module %s raised for %s: %s; "
-                            "keeping module output",
+                            "After-hook for module %s raised for %s: %s; " "keeping module output",
                             module.name,
                             working[pos].path,
                             e,
@@ -2053,13 +2036,10 @@ class Pipeline:
                         )
                     if isinstance(restored, Sample):
                         working[pos] = restored
-                        self._restore_failure_state(
-                            working[pos], pre_failed, pre_issues
-                        )
+                        self._restore_failure_state(working[pos], pre_failed, pre_issues)
                     elif restored is not None:
                         logger.error(
-                            "After-hook for module %s returned %s for %s; "
-                            "keeping module output",
+                            "After-hook for module %s returned %s for %s; " "keeping module output",
                             module.name,
                             type(restored).__name__,
                             working[pos].path,
@@ -2200,7 +2180,11 @@ class Pipeline:
                     recs_str = "; ".join(
                         [i.recommendation for i in s.validation_issues if i.recommendation]
                     )
-                    score = (s.quality_metrics.model_dump().get("technical_score") if s.quality_metrics else None) or 0.0
+                    score = (
+                        s.quality_metrics.model_dump().get("technical_score")
+                        if s.quality_metrics
+                        else None
+                    ) or 0.0
 
                     writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, f"{score:.2f}"])
 
@@ -2312,9 +2296,7 @@ class Pipeline:
             path.parent.mkdir(parents=True, exist_ok=True)
             data = {
                 "pipeline_fingerprint": self._pipeline_fingerprint(),
-                "results": {
-                    k: self._dump_sample_state(k, v) for k, v in self.results.items()
-                },
+                "results": {k: self._dump_sample_state(k, v) for k, v in self.results.items()},
                 "stats": self.stats.model_dump(mode="json"),
                 "cache_manifest": {
                     k: self._result_manifests.get(k) or self._sample_state_manifest(v)
@@ -2413,7 +2395,9 @@ class Pipeline:
                         manifest = manifests.get(k) if isinstance(manifests, dict) else None
                         if isinstance(manifest, dict):
                             if not self._sample_matches_manifest(manifest):
-                                logger.info(f"Skipping stale cache for {k} (state manifest changed)")
+                                logger.info(
+                                    f"Skipping stale cache for {k} (state manifest changed)"
+                                )
                                 partial_restore = True
                                 continue
                         elif not self._sample_matches_basic_cache(sample):
@@ -2423,14 +2407,20 @@ class Pipeline:
                         self.results[k] = sample
                         self._result_signatures[k] = self._sample_cache_signature(sample)
                         self._result_manifests[k] = (
-                            manifest if isinstance(manifest, dict) else self._sample_state_manifest(sample)
+                            manifest
+                            if isinstance(manifest, dict)
+                            else self._sample_state_manifest(sample)
                         )
                         self._apply_sample_stats(sample, 1)
                     except Exception as e:
                         partial_restore = True
                         logger.warning(f"Failed to load sample {k}: {e}")
 
-            if saved_stats is not None and not partial_restore and len(self.results) == len(results_data):
+            if (
+                saved_stats is not None
+                and not partial_restore
+                and len(self.results) == len(results_data)
+            ):
                 self._restore_saved_stats(saved_stats)
 
             logger.info(f"State loaded from {path}")
@@ -2532,7 +2522,9 @@ class ModuleRegistry:
         Unknown names return False.
         """
         module_cls = cls._modules.get(name)
-        return bool(module_cls is not None and getattr(module_cls, "requires_external_backend", False))
+        return bool(
+            module_cls is not None and getattr(module_cls, "requires_external_backend", False)
+        )
 
     @classmethod
     def list_modules(
@@ -2547,7 +2539,10 @@ class ModuleRegistry:
             name: cls._modules[name].description
             for name in sorted(cls._modules)
             if (not packaged_only or cls.is_packaged_module(cls._modules[name]))
-            and (include_external_backends or not getattr(cls._modules[name], "requires_external_backend", False))
+            and (
+                include_external_backends
+                or not getattr(cls._modules[name], "requires_external_backend", False)
+            )
         }
 
     @classmethod
@@ -2790,10 +2785,7 @@ class AyasePipeline:
     ) -> List[PipelineModule]:
         """Recreate module instances so each run starts from clean module state."""
         source = self._modules if templates is None else templates
-        return [
-            module.__class__(config=deepcopy(module.config))
-            for module in source
-        ]
+        return [module.__class__(config=deepcopy(module.config)) for module in source]
 
     def _build_modules(self, names: List[str]) -> List[PipelineModule]:
         # Modules named via ``modules=`` or ``pipeline.modules`` are an explicit
@@ -2803,9 +2795,7 @@ class AyasePipeline:
             cls = ModuleRegistry.get_module(name)
             if cls is None:
                 raise ValueError(f"Unknown module: {name}")
-            result.append(
-                cls(config=opt_in_all_provenance(runtime_module_config(self.config)))
-            )
+            result.append(cls(config=opt_in_all_provenance(runtime_module_config(self.config))))
         return result
 
     @staticmethod

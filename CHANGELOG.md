@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.82] - 2026-10-09
+
+### Fixed
+
+- Module metadata isolates sibling classes' outputs and preserves inherited processing fields and dynamic metric field declarations.
+- Pipeline run coverage is incomplete when requested modules are excluded by provenance policy.
+- Generated metric documentation correctly interprets explicit higher/lower-is-worse descriptions, including ColorVideoVDP JOD scores.
+- **clap_score**: fields describe raw audio-text cosine values in the range -1..1.
+- **subject_consistency**: supports an explicit Hugging Face revision for both model and processor loading and isolates pinned revisions in the shared model cache.
+- **dino_face_identity**: supports pinning DINOv2 architecture code to a full commit; separately downloaded checkpoint weights remain on the documented mutable mirror revision.
+- **dreamsim**: loading preserves the process-wide PyTorch Hub cache directory for later modules and repeated pipeline runs.
+- **lip_sync**: classifies the bundled VERSE-Bench face-preparation and segment aggregation as adapted SyncNet outputs, requiring explicit adapted-provenance opt-in.
+
 ## [0.1.81] - 2026-10-08
 
 ### Fixed

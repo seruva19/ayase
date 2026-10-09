@@ -30,12 +30,32 @@ _SYNCNET_REL = "lip_sync/syncnet_v2.model"
 
 class LipSyncModule(PipelineModule):
     name = "lip_sync"
-    provenance = "published"
+    provenance = "adapted"
     sources = {
-        "lse_c": "LSE-C/LSE-D on SyncNet (Chung & Zisserman 2016; Wav2Lip protocol) — https://github.com/joonson/syncnet_python",
-        "lse_d": "LSE-C/LSE-D on SyncNet (Chung & Zisserman 2016; Wav2Lip protocol) — https://github.com/joonson/syncnet_python",
+        "lse_c": "SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python",
+        "lse_d": "SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python",
     }
-    description = "LSE-D/LSE-C lip sync error (SyncNet, reference-free; no dataset required)"
+    deviations = {
+        "lse_c": (
+            "Bundled VERSE-Bench preprocessing resamples to 25 fps and mono 16 kHz, "
+            "uses the first InsightFace detection per frame, splits tracks when no face is "
+            "detected, discards segments shorter than two seconds, applies an unsmoothed "
+            "0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 "
+            "frames, and averages confidence across retained segments."
+        ),
+        "lse_d": (
+            "Bundled VERSE-Bench preprocessing resamples to 25 fps and mono 16 kHz, "
+            "uses the first InsightFace detection per frame, splits tracks when no face is "
+            "detected, discards segments shorter than two seconds, applies an unsmoothed "
+            "0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 "
+            "frames, and averages distance vectors across retained segments before taking "
+            "their minimum."
+        ),
+    }
+    description = (
+        "Adapted LSE-D/LSE-C lip-sync scores using SyncNet with bundled VERSE-Bench "
+        "face preparation"
+    )
     default_config = {
         "models_dir": "models",   # weights land under models_dir/lip_sync/
         "device": "auto",
