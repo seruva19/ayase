@@ -350,7 +350,8 @@ backend that produced each field.
 ## Integration actions
 
 - Update serialized dictionary keys using the rename tables. Attribute aliases
-  do not add legacy keys to JSON or CSV.
+  do not add legacy keys to JSON or CSV, except for the protocol-aware lip-sync
+  compatibility exports described below.
 - Replace aesthetic percentage thresholds with thresholds calibrated for the
   native model scale. OCR thresholds must use an upper error bound; a larger
   value now means worse text fidelity.
@@ -377,3 +378,36 @@ backend that produced each field.
   complete, matching reference sets. Old extraction caches are invalidated.
 - Record the Ayase version, module configuration, field provenance and backend
   with evaluation results. Do not pool values across incompatible protocols.
+
+## Lip-sync protocols
+
+Two modules expose distinct adapted SyncNet protocols:
+
+| Module | Preparation and aggregation | Outputs |
+| --- | --- | --- |
+| `lip_sync_verse` | Bundled VERSE-Bench face preparation and segment aggregation | `lse_c_verse`, `lse_d_verse` |
+| `lip_sync_syncnet` | S3FD face tracks, 25 fps preparation and an unweighted mean over eligible tracks | `lse_c_syncnet`, `lse_d_syncnet` |
+
+LSE-C is confidence (higher is better); LSE-D is distance (lower is better).
+The two protocols are different measurements. Compare results only within the
+same protocol and configuration.
+
+The `lip_sync` request remains supported. Its default or `protocol="verse_bench"`
+selects `lip_sync_verse`; `protocol="wav2lip"` selects `lip_sync_syncnet`.
+Results produced through this request preserve `lse_c` and `lse_d` attribute
+access and public JSON output keys. Canonical module requests use the qualified
+fields. An alias and its canonical module with equivalent configuration execute
+once; conflicting configurations are rejected. Requesting both canonical
+protocols produces four scalar measurements, without duplicate alias fields.
+
+Context-free dictionaries containing `lse_c` and `lse_d` are interpreted as
+VERSE results. To load such a dictionary as the tracked-face protocol, use
+`Sample.model_validate(data, context={"lip_sync_protocol": "wav2lip"})` or the
+corresponding `QualityMetrics.model_validate` call. Pipeline state restoration
+and isolated requests apply the selected compatibility protocol automatically.
+Internal state and metric counts use canonical fields.
+
+Both protocols require adapted-provenance permission. Explicit module selection
+provides that opt-in. Missing models, audio or usable face tracks leave scores
+unset. Checkpoint hashes establish byte identity; source-code licensing does not
+establish a license for external checkpoint files.

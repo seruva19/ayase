@@ -29,6 +29,7 @@ from .config import AyaseConfig
 from .models import Sample
 from .pipeline import AyasePipeline
 
+
 class _WorkerState:
     def __init__(self, token: str) -> None:
         self.token = token
@@ -100,7 +101,11 @@ class _Handler(BaseHTTPRequestHandler):
                 samples_data = payload.get("samples")
                 samples = None
                 if samples_data is not None:
-                    samples = [Sample.model_validate(item) for item in samples_data]
+                    protocol = pipeline.pipeline._legacy_lip_sync_protocol
+                    context = {"lip_sync_protocol": protocol} if protocol is not None else None
+                    samples = [
+                        Sample.model_validate(item, context=context) for item in samples_data
+                    ]
                 results = pipeline.run(
                     payload["dataset_path"],
                     samples=samples,
@@ -114,7 +119,8 @@ class _Handler(BaseHTTPRequestHandler):
                     {
                         "session_id": session_id,
                         "results": {
-                            key: value.model_dump(mode="json") for key, value in results.items()
+                            key: pipeline.pipeline.dump_sample(value)
+                            for key, value in results.items()
                         },
                         "stats": pipeline.stats.model_dump(mode="json"),
                     },

@@ -1,6 +1,5 @@
 """CLI interface for Ayase using Typer."""
 
-
 import csv
 import datetime
 import json
@@ -19,7 +18,7 @@ from typing_extensions import Annotated
 
 from . import __version__
 from .config import AyaseConfig
-from .pipeline import Pipeline, ModuleRegistry, PipelineModule
+from .pipeline import Pipeline, ModuleRegistry, PipelineModule, instantiate_module_requests
 from .runtime import opt_in_all_provenance, runtime_module_config
 from .scanner import DatasetScanner, scan_dataset, sample_from_path
 from .models import Sample
@@ -123,7 +122,7 @@ def _select_modules(quick: bool, deep: bool, config: AyaseConfig) -> List[str]:
 def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[PipelineModule]:
     """Parse a pipeline string like 'metadata,motion{sample_rate=10}'."""
     _discover_all_modules(config)
-    modules = []
+    requests: List[tuple[str, Dict[str, Any]]] = []
 
     if not pipeline_str.strip():
         console.print("[red]Pipeline must contain at least one module.[/red]")
@@ -172,7 +171,7 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
                 # A pipeline string is an explicit module choice, which is the
                 # provenance opt-in: adapted/own modules named here may run.
                 opt_in_all_provenance(params)
-                modules.append(module_cls(config=params))
+                requests.append((name, params))
             except Exception as e:
                 console.print(f"[red]Error initializing module '{name}': {e}[/red]")
                 raise typer.Exit(code=1)
@@ -180,11 +179,14 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
             console.print(f"[red]Unknown module: {name}[/red]")
             raise typer.Exit(code=1)
 
-    if not modules:
+    if not requests:
         console.print("[red]Pipeline must contain at least one module.[/red]")
         raise typer.Exit(code=1)
-
-    return modules
+    try:
+        return instantiate_module_requests(requests)
+    except Exception as e:
+        console.print(f"[red]Error resolving pipeline modules: {e}[/red]")
+        raise typer.Exit(code=1)
 
 
 def _pipeline_sample_batch_size(pipeline: Pipeline) -> int:
@@ -199,7 +201,8 @@ def _pipeline_sample_batch_size(pipeline: Pipeline) -> int:
 
 
 def _process_samples(
-    pipeline: Pipeline, samples: Iterable[Sample],
+    pipeline: Pipeline,
+    samples: Iterable[Sample],
     *,
     checkpoint_every: int = 0,
     checkpoint_fn=None,
@@ -225,9 +228,7 @@ def _process_samples(
             checkpoint_fn(pipeline, processed_count)
             last_written = processed_count
         except Exception as e:
-            console.print(
-                f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]"
-            )
+            console.print(f"[yellow]checkpoint write failed at {processed_count}: {e}[/yellow]")
         next_checkpoint = ((processed_count // checkpoint_every) + 1) * checkpoint_every
 
     batch_size = _pipeline_sample_batch_size(pipeline)
@@ -359,7 +360,7 @@ def _instantiate_modules(
     provenance_opt_in: bool = False,
 ) -> List[PipelineModule]:
     """Instantiate every requested module, failing rather than silently omitting one."""
-    modules = []
+    requests: List[tuple[str, Dict[str, Any]]] = []
     if not module_names and not allow_empty:
         console.print("[red]At least one module must be specified.[/red]")
         raise typer.Exit(code=1)
@@ -372,11 +373,15 @@ def _instantiate_modules(
         if provenance_opt_in:
             params = opt_in_all_provenance(params)
         try:
-            modules.append(module_cls(config=params))
+            requests.append((name, params))
         except Exception as e:
             console.print(f"[red]Error initializing module '{name}': {e}[/red]")
             raise typer.Exit(code=1)
-    return modules
+    try:
+        return instantiate_module_requests(requests)
+    except Exception as e:
+        console.print(f"[red]Error resolving modules: {e}[/red]")
+        raise typer.Exit(code=1)
 
 
 def version_callback(value: bool) -> None:
@@ -397,6 +402,7 @@ def main(
     """Ayase - Modular media quality metrics toolkit."""
     if verbose:
         import logging
+
         logging.basicConfig(level=logging.DEBUG, format="%(name)s %(levelname)s: %(message)s")
         console.print("[dim]Verbose mode enabled[/dim]")
 
@@ -425,9 +431,7 @@ def metric_help(
     else:
         providers = index.metric(name)
         if providers:
-            catalog = build_metric_catalog(
-                [owner.name for owner, _ in providers], detailed=True
-            )
+            catalog = build_metric_catalog([owner.name for owner, _ in providers], detailed=True)
         else:
             catalog = index
     if not render_metric_help(console, catalog, name):
@@ -548,7 +552,7 @@ def scan(
         if format == "json":
             data = {
                 "stats": p.stats.model_dump(),
-                "samples": [s.model_dump(mode="json") for s in p.results.values()],
+                "samples": [p.dump_sample(s) for s in p.results.values()],
             }
             console.print_json(data=data)
         elif format == "csv":
@@ -559,11 +563,16 @@ def scan(
                 recs_str = "; ".join(
                     [i.recommendation for i in s.validation_issues if i.recommendation]
                 )
-                score = s.quality_metrics.model_dump().get("technical_score") if s.quality_metrics else None
+                score = (
+                    s.quality_metrics.model_dump().get("technical_score")
+                    if s.quality_metrics
+                    else None
+                )
                 score_str = f"{score:.2f}" if score is not None else "NA"
                 writer.writerow([str(s.path), s.is_valid, issues_str, recs_str, score_str])
         elif format == "html":
             import tempfile
+
             with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as tmp:
                 tmp_path = Path(tmp.name)
             try:
@@ -629,15 +638,17 @@ def run(
 
     checkpoint_fn = None
     if checkpoint_every > 0 and format == "json" and output is not None:
+
         def _write_checkpoint(pipeline: Pipeline, count: int) -> None:
             data = {
                 "stats": pipeline.stats.model_dump(),
-                "samples": [s.model_dump(mode="json") for s in pipeline.results.values()],
+                "samples": [pipeline.dump_sample(s) for s in pipeline.results.values()],
             }
             tmp = output.with_suffix(output.suffix + ".tmp")
             tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
             tmp.replace(output)
             console.print(f"[dim]checkpoint: {count} samples written to {output}[/dim]")
+
         checkpoint_fn = _write_checkpoint
 
     processed_count = _run_pipeline(
@@ -653,7 +664,7 @@ def run(
     if format == "json":
         data = {
             "stats": p.stats.model_dump(),
-            "samples": [s.model_dump(mode="json") for s in p.results.values()],
+            "samples": [p.dump_sample(s) for s in p.results.values()],
         }
         if output:
             output.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -673,7 +684,11 @@ def run(
             writer.writerow(["Path", "Valid", "Issues", "Technical Score"])
             for s in p.results.values():
                 issues = "; ".join([i.message for i in s.validation_issues])
-                score = s.quality_metrics.model_dump().get("technical_score") if s.quality_metrics else None
+                score = (
+                    s.quality_metrics.model_dump().get("technical_score")
+                    if s.quality_metrics
+                    else None
+                )
                 score_str = f"{score:.2f}" if score is not None else "NA"
                 writer.writerow([str(s.path), s.is_valid, issues, score_str])
     else:
@@ -688,14 +703,21 @@ def run(
 @app.command()
 def filter(
     dataset_path: Annotated[Path, typer.Argument(help="Path to dataset directory")],
-    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output directory")] = None,
+    output: Annotated[
+        Optional[Path], typer.Option("--output", "-o", help="Output directory")
+    ] = None,
     min_score: Annotated[
         Optional[float],
-        typer.Option("--min-score", help="Keep samples with metric >= this (higher-is-better metrics)"),
+        typer.Option(
+            "--min-score", help="Keep samples with metric >= this (higher-is-better metrics)"
+        ),
     ] = None,
     max_score: Annotated[
         Optional[float],
-        typer.Option("--max-score", help="Keep samples with metric <= this (lower-is-better metrics, e.g. niqe/brisque/lpips)"),
+        typer.Option(
+            "--max-score",
+            help="Keep samples with metric <= this (lower-is-better metrics, e.g. niqe/brisque/lpips)",
+        ),
     ] = None,
     metric: Annotated[
         str,
@@ -780,9 +802,7 @@ def filter(
             # A missing metric is excluded (not treated as 0.0) and reported,
             # so it never silently passes or fails a score threshold.
             score = (
-                sample.quality_metrics.model_dump().get(metric)
-                if sample.quality_metrics
-                else None
+                sample.quality_metrics.model_dump().get(metric) if sample.quality_metrics else None
             )
             if score is None:
                 skipped_missing += 1
@@ -878,6 +898,7 @@ def stats(
         return
     if format == "html":
         import tempfile
+
         with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w") as tmp:
             tmp_path = Path(tmp.name)
         try:
@@ -981,9 +1002,7 @@ def modules_check() -> None:
         cls = ModuleRegistry.get_module(name)
         module = None
         try:
-            module = cls(
-                config=runtime_module_config(config)
-            )
+            module = cls(config=runtime_module_config(config))
             missing = module._check_required_packages()
             if missing:
                 console.print(
@@ -1016,8 +1035,12 @@ def modules_check() -> None:
 
 @modules_app.command("docs")
 def modules_docs(
-    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: METRICS.md)")] = None,
-    run_tests: Annotated[bool, typer.Option("--run-tests/--no-tests", help="Run tests and show pass/fail status")] = True,
+    output: Annotated[
+        Optional[Path], typer.Option("--output", "-o", help="Output file (default: METRICS.md)")
+    ] = None,
+    run_tests: Annotated[
+        bool, typer.Option("--run-tests/--no-tests", help="Run tests and show pass/fail status")
+    ] = True,
 ) -> None:
     """Generate METRICS.md with charts, test status, and version info.
 
@@ -1051,7 +1074,9 @@ def modules_docs(
 
 @modules_app.command("models")
 def modules_models(
-    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file (default: stdout)")] = None,
+    output: Annotated[
+        Optional[Path], typer.Option("--output", "-o", help="Output file (default: stdout)")
+    ] = None,
     fetch_licenses: Annotated[
         bool,
         typer.Option(
@@ -1080,7 +1105,9 @@ def modules_models(
 
 @modules_app.command("sync-readme")
 def modules_sync_readme(
-    readme: Annotated[Path, typer.Option("--readme", "-r", help="README.md path")] = Path("README.md"),
+    readme: Annotated[Path, typer.Option("--readme", "-r", help="README.md path")] = Path(
+        "README.md"
+    ),
 ) -> None:
     """Update module/field counts in README.md to match reality.
 
@@ -1121,7 +1148,9 @@ def release_prepare(
     ] = None,
     regenerate_docs: Annotated[
         bool,
-        typer.Option("--docs/--no-docs", help="Regenerate METRICS.md, MODELS.md, and README counts"),
+        typer.Option(
+            "--docs/--no-docs", help="Regenerate METRICS.md, MODELS.md, and README counts"
+        ),
     ] = True,
     run_doc_tests: Annotated[
         bool,
@@ -1129,7 +1158,9 @@ def release_prepare(
     ] = False,
     fetch_licenses: Annotated[
         bool,
-        typer.Option("--fetch-licenses/--no-fetch-licenses", help="Query HF metadata for MODELS.md"),
+        typer.Option(
+            "--fetch-licenses/--no-fetch-licenses", help="Query HF metadata for MODELS.md"
+        ),
     ] = False,
 ) -> None:
     """Bump version, promote CHANGELOG.md, and refresh generated release docs."""

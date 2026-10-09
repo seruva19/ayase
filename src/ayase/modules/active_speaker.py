@@ -79,9 +79,9 @@ class ActiveSpeakerModule(PipelineModule):
             return
 
         try:
-            from ayase.modules.lip_sync import LipSyncModule
+            from ayase.modules.lip_sync import LipSyncVerseModule
 
-            lip = LipSyncModule({"models_dir": self.config.get("models_dir", "models"),
+            lip = LipSyncVerseModule({"models_dir": self.config.get("models_dir", "models"),
                                  "device": self.config.get("device", "auto")})
             lip.setup()
             self._lip = lip
@@ -144,7 +144,7 @@ class ActiveSpeakerModule(PipelineModule):
                 inner = InnerSample(path=path, is_video=True)
                 self._lip.process(inner)
                 metrics = getattr(inner, "quality_metrics", None)
-                value = getattr(metrics, "lse_c", None) if metrics else None
+                value = getattr(metrics, "lse_c_verse", None) if metrics else None
                 if value is None:
                     silent += 1
                     scores.append(0.0)

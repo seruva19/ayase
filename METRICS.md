@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.1.82** · Generated 2026-10-09 09:50 · **384 modules** · **565 metrics**
+> **Version 0.1.82** · Generated 2026-10-09 13:51 · **385 modules** · **567 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **376/384 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **377/385 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**384** modules · **653** output fields · **565** metrics · **275** tiered · **181** GPU · **20** categories
+**385** modules · **655** output fields · **567** metrics · **274** tiered · **181** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-35-metrics) (35) · [Motion & Dynamics](#motion--dynamics-71-metrics) (71) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-75-metrics) (75) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-89-fields) (89) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-71-metrics) (71) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-75-metrics) (75) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-89-fields) (89) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2680,7 +2680,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 
-## Temporal Consistency (35 metrics)
+## Temporal Consistency (37 metrics)
 
 ### `aigv_temporal_est` [↑](#categories)
 > AI video temporal smoothness
@@ -2878,30 +2878,48 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_long_form_transition_stability.py`](tests/modules/per_module/test_long_form_transition_stability.py)
 - **Config**: `analysis_fps=8.0`, `boundary_margin_sec=2.0`, `boundaries_sec=[]`, `cut_threshold=0.25`, `minimum_boundary_gap_sec=1.0`, `max_frames=2400`
 
-### `lse_c` [↑](#categories)
-> LSE-C lip sync error confidence (higher=better) · ↑ higher=better
+### `lse_c_syncnet` [↑](#categories)
+> SyncNet LSE-C confidence (higher=better) · ↑ higher=better
 
-**[`lip_sync`](src/ayase/modules/lip_sync.py)** — Adapted LSE-D/LSE-C lip-sync scores using SyncNet with bundled VERSE-Bench face preparation
+**[`lip_sync_syncnet`](src/ayase/modules/lip_sync.py)** — MIT SyncNet reference protocol with S3FD face tracks
 
 - **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: syncnet
-- **Provenance**: `adapted` — Bundled VERSE-Bench preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages confidence across retained segments. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python
-- **Packages**: syncnet
+- **Provenance**: `adapted` — Adapted for checked I/O and configured device execution. By default, input is prepared at 25 fps with mono 16 kHz audio, S3FD scene-aware face tracking, a 0.40-scale crop with 13-tap median box smoothing, and vshift=15; confidence is the unweighted mean across eligible tracks. Tracking, crop, batch, and shift configuration changes alter preparation or aggregation. — source: SyncNet and S3FD source (MIT), commit 6efbb1c305c23f47a62b09cf4215a8ac45e97d49 — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_provenance.py`](tests/test_provenance.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
+- **Config**: `device=auto`, `min_face_size=100`, `facedet_scale=0.25`, `min_track=100`, `crop_scale=0.4`, `num_failed_det=25`, `batch_size=20`, `vshift=15`
+
+### `lse_c_verse` [↑](#categories)
+> VERSE LSE-C confidence (higher=better) · ↑ higher=better
+
+**[`lip_sync_verse`](src/ayase/modules/lip_sync.py)** — VERSE-Bench SyncNet lip-sync confidence and distance
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — VERSE preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages confidence across retained segments. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
+- **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py), [`test_profiles.py`](tests/test_profiles.py)
 - **Config**: `device=auto`
 
-### `lse_d` [↑](#categories)
-> LSE-D lip sync error distance (lower=better) · ↓ lower=better
+### `lse_d_syncnet` [↑](#categories)
+> SyncNet LSE-D distance (lower=better) · ↓ lower=better
 
-**[`lip_sync`](src/ayase/modules/lip_sync.py)** — Adapted LSE-D/LSE-C lip-sync scores using SyncNet with bundled VERSE-Bench face preparation
+**[`lip_sync_syncnet`](src/ayase/modules/lip_sync.py)** — MIT SyncNet reference protocol with S3FD face tracks
 
 - **Input**: vid · **Speed**: ⚡ fast
-- **Backend**: syncnet
-- **Provenance**: `adapted` — Bundled VERSE-Bench preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages distance vectors across retained segments before taking their minimum. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python
-- **Packages**: syncnet
+- **Provenance**: `adapted` — Adapted for checked I/O and configured device execution. By default, input is prepared at 25 fps with mono 16 kHz audio, S3FD scene-aware face tracking, a 0.40-scale crop with 13-tap median box smoothing, and vshift=15; distance is the unweighted mean across eligible tracks. Tracking, crop, batch, and shift configuration changes alter preparation or aggregation. — source: SyncNet and S3FD source (MIT), commit 6efbb1c305c23f47a62b09cf4215a8ac45e97d49 — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_provenance.py`](tests/test_provenance.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
+- **Config**: `device=auto`, `min_face_size=100`, `facedet_scale=0.25`, `min_track=100`, `crop_scale=0.4`, `num_failed_det=25`, `batch_size=20`, `vshift=15`
+
+### `lse_d_verse` [↑](#categories)
+> VERSE LSE-D distance (lower=better) · ↓ lower=better
+
+**[`lip_sync_verse`](src/ayase/modules/lip_sync.py)** — VERSE-Bench SyncNet lip-sync confidence and distance
+
+- **Input**: vid · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — VERSE preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages distance vectors across retained segments before taking their minimum. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
+- **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py), [`test_profiles.py`](tests/test_profiles.py)
 - **Config**: `device=auto`
 
 ### `mj_video_coherence_score` [↑](#categories)
@@ -7817,7 +7835,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Provenance**: `own` — source: unconfirmed — https://huggingface.co/datasets/dorni/Verse-Bench
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
 
 ### `verse_bench_metrics` [↑](#categories)
 > Raw Verse-Bench component metrics · type: float
@@ -7826,7 +7844,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Provenance**: `published` — source: Verse-Bench (UniVerse-1, arXiv:2509.06155) — https://arxiv.org/abs/2509.06155
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
 
 ### `verse_bench_overall_est` [↑](#categories)
 > Verse-Bench final score · type: float
@@ -7835,7 +7853,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow
 - **Provenance**: `own` — source: unconfirmed — https://huggingface.co/datasets/dorni/Verse-Bench
-- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py)
+- **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
 
 ### `worldmodelbench_aesthetics_adherence` [↑](#categories)
 > type: float

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 import threading
+import urllib.request
 from pathlib import Path
 
+import pytest
 
 PROJECT_ROOT = Path(__file__).parents[1]
 CLIENT_SRC = PROJECT_ROOT / "src"
@@ -139,3 +142,75 @@ def test_client_to_worker_end_to_end(tmp_path):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+@pytest.mark.parametrize("legacy", [True, False])
+def test_worker_run_uses_protocol_context_and_public_dump_boundary(tmp_path, monkeypatch, legacy):
+    from ayase.models import DatasetStats
+    from ayase.pipeline import Pipeline, instantiate_module_requests
+    import ayase.isolated_worker as worker
+
+    core = (
+        Pipeline(
+            instantiate_module_requests([("lip_sync", {"test_mode": True, "protocol": "wav2lip"})])
+        )
+        if legacy
+        else Pipeline([])
+    )
+    received = []
+
+    class FakePipeline:
+        pipeline = core
+        stats = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
+
+        def run(self, _dataset_path, *, samples, recursive):
+            assert recursive is True
+            received.extend(samples)
+            return {str(sample.path): sample for sample in samples}
+
+    monkeypatch.setattr(worker, "_build_pipeline", lambda _payload: FakePipeline())
+    token = "compat-token"
+    server = worker._WorkerServer(("127.0.0.1", 0), token)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        metrics = (
+            {"lse_c": 3.0, "lse_d": 4.0} if legacy else {"lse_c_syncnet": 3.0, "lse_d_syncnet": 4.0}
+        )
+        body = json.dumps(
+            {
+                "dataset_path": str(tmp_path),
+                "samples": [
+                    {
+                        "path": str(tmp_path / "clip.mp4"),
+                        "is_video": True,
+                        "quality_metrics": metrics,
+                    }
+                ],
+            }
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{server.server_address[1]}/v1/run",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request) as response:
+            payload = json.loads(response.read())
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+    restored = received[0].quality_metrics
+    assert restored is not None and restored.lse_c_syncnet == 3.0
+    returned = next(iter(payload["results"].values()))["quality_metrics"]
+    if legacy:
+        assert returned["lse_c"] == 3.0
+        assert "lse_c_syncnet" not in returned
+    else:
+        assert returned["lse_c_syncnet"] == 3.0
+        assert "lse_c" not in returned
