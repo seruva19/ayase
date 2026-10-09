@@ -30,7 +30,8 @@ def test_load_profile_from_json(tmp_path: Path):
             '"module_config":{"metadata":{"sample_rate":2}}'
             "}"
         ),
-        encoding="utf-8")
+        encoding="utf-8",
+    )
     profile = load_profile(profile_path)
     assert profile.name == "json_profile"
     assert profile.modules == ["metadata", "basic_quality"]
@@ -47,7 +48,8 @@ def test_load_profile_from_toml(tmp_path: Path):
             "[module_config.metadata]\n"
             "sample_rate = 3\n"
         ),
-        encoding="utf-8")
+        encoding="utf-8",
+    )
     profile = load_profile(profile_path)
     assert profile.name == "toml_profile"
     assert profile.modules == ["metadata", "basic_quality"]
@@ -61,7 +63,8 @@ def test_instantiate_profile_modules():
             "modules": ["metadata", "basic_quality"],
             "module_config": {"metadata": {"sample_rate": 5}},
         },
-        config=config)
+        config=config,
+    )
     assert len(modules) == 2
     assert modules[0].name == "metadata"
     assert modules[1].name == "basic_quality"
@@ -72,3 +75,31 @@ def test_instantiate_profile_modules_unknown_module():
     config = AyaseConfig()
     with pytest.raises(ValueError, match="Unknown module in profile"):
         instantiate_profile_modules({"modules": ["no_such_module"]}, config=config)
+
+
+def test_profile_deduplicates_legacy_and_canonical_lip_sync_requests():
+    modules = instantiate_profile_modules(
+        {
+            "modules": ["lip_sync", "lip_sync_verse"],
+            "module_config": {
+                "lip_sync": {"test_mode": True},
+                "lip_sync_verse": {"test_mode": True},
+            },
+        },
+        config=AyaseConfig(),
+    )
+    assert [module.name for module in modules] == ["lip_sync_verse"]
+
+
+def test_profile_rejects_conflicting_alias_and_canonical_configs():
+    with pytest.raises(ValueError, match="Conflicting configurations"):
+        instantiate_profile_modules(
+            {
+                "modules": ["lip_sync", "lip_sync_verse"],
+                "module_config": {
+                    "lip_sync": {"test_mode": True},
+                    "lip_sync_verse": {"test_mode": True, "window_size": 99},
+                },
+            },
+            config=AyaseConfig(),
+        )

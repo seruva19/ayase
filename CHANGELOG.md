@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **lip_sync_syncnet**: tracked-face SyncNet LSE-C and LSE-D using S3FD detection, 25 fps preparation and an unweighted mean over eligible tracks.
+
+### Changed
+
+- **lip sync**: separate VERSE and tracked-face protocols into `lip_sync_verse` and `lip_sync_syncnet`, each with qualified output fields and adapted provenance.
+
+### Fixed
+
+- **lip sync**: preserve `lip_sync` protocol inputs and historical output keys across direct, pipeline and isolated-client APIs; equivalent alias and canonical requests execute once.
+- **lip sync**: verify downloaded and cached SyncNet/S3FD checkpoints against pinned SHA-256 identities.
+
 ## [0.1.82] - 2026-10-09
 
 ### Fixed

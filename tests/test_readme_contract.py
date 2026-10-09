@@ -20,17 +20,18 @@ from ayase.config import (
     GeneralConfig,
     OutputConfig,
     PipelineConfig,
-    QualityConfig)
+    QualityConfig,
+)
 from ayase.models import (
     CaptionMetadata,
     QualityMetrics,
     Sample,
     ValidationIssue,
-    ValidationSeverity)
+    ValidationSeverity,
+)
 from ayase.pipeline import AyasePipeline, ModuleRegistry, Pipeline, PipelineModule
 from ayase.profile import PipelineProfile, instantiate_profile_modules, load_profile
 from ayase.scanner import IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, scan_dataset
-
 
 # ── Fixtures ─────────────────────────────────────────────────────
 
@@ -111,10 +112,8 @@ class TestMetricCount:
         # those owned only by requires_external_backend (no-backend) modules. Provenance
         # fields (metric_backends) are excluded. This is the full schema and is
         # deliberately unchanged by the requires_external_backend flag.
-        field_count = len(QualityMetrics.model_fields) - len(
-            QualityMetrics._NON_METRIC_FIELDS
-        )
-        assert field_count == 612, f"Expected 612, got {field_count}"
+        field_count = len(QualityMetrics.model_fields) - len(QualityMetrics._NON_METRIC_FIELDS)
+        assert field_count == 614, f"Expected 614, got {field_count}"
 
     def test_readme_metric_count_matches_code(self):
         """README's headline "N metrics" claim = the DELIVERED metric count.
@@ -136,9 +135,9 @@ class TestMetricCount:
             - len(external_only_fields)
         )
         readme = (Path(__file__).parent.parent / "README.md").read_text(encoding="utf-8")
-        assert f"{delivered} metrics" in readme, (
-            f"README says different metric count, delivered={delivered}"
-        )
+        assert (
+            f"{delivered} metrics" in readme
+        ), f"README says different metric count, delivered={delivered}"
 
     def test_all_metric_fields_default_to_none(self):
         qm = QualityMetrics()
@@ -172,9 +171,7 @@ class TestQualityMetricsValidation:
 # All QualityMetrics *metric* field names (sorted), kept in sync with the model.
 # Provenance/bookkeeping fields (e.g. metric_backends) are not metrics.
 README_METRICS = sorted(
-    f
-    for f in QualityMetrics.model_fields.keys()
-    if f not in QualityMetrics._NON_METRIC_FIELDS
+    f for f in QualityMetrics.model_fields.keys() if f not in QualityMetrics._NON_METRIC_FIELDS
 )
 
 
@@ -183,14 +180,14 @@ class TestMetricsTable:
         # SCHEMA field count — every QualityMetrics metric field, delivered and
         # requires_external_backend alike. Unchanged by the requires_external_backend flag (the model keeps
         # all fields); the delivered subset is what the README headline claims.
-        assert len(README_METRICS) == 612
+        assert len(README_METRICS) == 614
 
     @pytest.mark.parametrize("field_name", README_METRICS)
     def test_readme_metric_exists_in_model(self, field_name):
         """Every metric listed in the README table must be a QualityMetrics field."""
-        assert field_name in QualityMetrics.model_fields, (
-            f"README lists '{field_name}' but it is not a QualityMetrics field"
-        )
+        assert (
+            field_name in QualityMetrics.model_fields
+        ), f"README lists '{field_name}' but it is not a QualityMetrics field"
 
 
 # =====================================================================
@@ -381,9 +378,7 @@ class TestPipelineReadmePattern:
         pipeline = Pipeline(modules)
         pipeline.start()
 
-        sample = Sample(
-            path=synthetic_video, is_video=True, quality_metrics=QualityMetrics()
-        )
+        sample = Sample(path=synthetic_video, is_video=True, quality_metrics=QualityMetrics())
         processed = pipeline.process_sample(sample)
         assert isinstance(processed, Sample)
 
@@ -404,9 +399,8 @@ class TestProfileAPI:
         """README: load_profile('my_profile.toml')."""
         profile_path = tmp_dir / "my_profile.toml"
         profile_path.write_text(
-            'name = "readme_test"\n'
-            'modules = ["metadata", "basic_quality"]\n',
-            encoding="utf-8")
+            'name = "readme_test"\n' 'modules = ["metadata", "basic_quality"]\n', encoding="utf-8"
+        )
         profile = load_profile(profile_path)
         assert isinstance(profile, PipelineProfile)
         assert profile.modules == ["metadata", "basic_quality"]
@@ -414,10 +408,8 @@ class TestProfileAPI:
     def test_load_profile_from_json(self, tmp_dir):
         profile_path = tmp_dir / "profile.json"
         profile_path.write_text(
-            json.dumps(
-                {"name": "json_test", "modules": ["metadata"]}
-            ),
-            encoding="utf-8")
+            json.dumps({"name": "json_test", "modules": ["metadata"]}), encoding="utf-8"
+        )
         profile = load_profile(profile_path)
         assert profile.name == "json_test"
 
@@ -433,8 +425,8 @@ class TestProfileAPI:
         """README: instantiate_profile_modules(profile) -> list of PipelineModule."""
         config = AyaseConfig()
         modules = instantiate_profile_modules(
-            {"modules": ["metadata", "basic_quality"]},
-            config=config)
+            {"modules": ["metadata", "basic_quality"]}, config=config
+        )
         assert isinstance(modules, list)
         assert len(modules) == 2
         assert all(isinstance(m, PipelineModule) for m in modules)
@@ -443,22 +435,18 @@ class TestProfileAPI:
     def test_instantiate_unknown_module_raises(self):
         config = AyaseConfig()
         with pytest.raises(ValueError, match="Unknown module"):
-            instantiate_profile_modules(
-                {"modules": ["does_not_exist"]}, config=config
-            )
+            instantiate_profile_modules({"modules": ["does_not_exist"]}, config=config)
 
     def test_profile_modules_into_pipeline(self, synthetic_video):
         """Full round-trip: profile -> modules -> Pipeline -> process."""
         config = AyaseConfig()
         modules = instantiate_profile_modules(
-            {"modules": ["metadata", "basic_quality"]},
-            config=config)
+            {"modules": ["metadata", "basic_quality"]}, config=config
+        )
         pipeline = Pipeline(modules)
         pipeline.start()
 
-        sample = Sample(
-            path=synthetic_video, is_video=True, quality_metrics=QualityMetrics()
-        )
+        sample = Sample(path=synthetic_video, is_video=True, quality_metrics=QualityMetrics())
         result = pipeline.process_sample(sample)
         pipeline.stop()
 
@@ -531,9 +519,7 @@ class TestConfiguration:
 
     def test_config_load_from_toml(self, tmp_dir):
         toml_path = tmp_dir / "ayase.toml"
-        toml_path.write_text(
-            "[general]\nparallel_jobs = 16\n",
-            encoding="utf-8")
+        toml_path.write_text("[general]\nparallel_jobs = 16\n", encoding="utf-8")
         cfg = AyaseConfig.load(toml_path)
         assert cfg.general.parallel_jobs == 16
 
@@ -581,8 +567,8 @@ class TestPluginSystem:
             def process(self, sample: Sample) -> Sample:
                 sample.validation_issues.append(
                     ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message="Quality below threshold")
+                        severity=ValidationSeverity.WARNING, message="Quality below threshold"
+                    )
                 )
                 return sample
 
@@ -664,14 +650,17 @@ class TestSampleModel:
 class TestRemovedTypes:
     def test_no_model_type_in_models(self):
         from ayase import models
+
         assert not hasattr(models, "ModelType")
 
     def test_no_validation_result_in_models(self):
         from ayase import models
+
         assert not hasattr(models, "ValidationResult")
 
     def test_no_model_requirements_in_models(self):
         from ayase import models
+
         assert not hasattr(models, "ModelRequirements")
 
     def test_no_validator_module(self):
@@ -691,16 +680,19 @@ class TestRemovedTypes:
 class TestPublicAPI:
     def test_version(self):
         import ayase
+
         assert hasattr(ayase, "__version__")
         assert isinstance(ayase.__version__, str)
 
     def test_description(self):
         """README: 'Modular media quality metrics toolkit'."""
         import ayase
+
         assert ayase.__description__ == "Modular media quality metrics toolkit"
 
     def test_exports(self):
         from ayase import PipelineProfile, instantiate_profile_modules, load_profile
+
         assert callable(load_profile)
         assert callable(instantiate_profile_modules)
 
@@ -756,38 +748,47 @@ class TestCLICommands:
 
     def test_cli_app_exists(self):
         from ayase.cli import app
+
         assert app is not None
 
     def test_scan_command_exists(self):
         from ayase.cli import scan
+
         assert callable(scan)
 
     def test_run_command_exists(self):
         from ayase.cli import run
+
         assert callable(run)
 
     def test_filter_command_exists(self):
         from ayase.cli import filter
+
         assert callable(filter)
 
     def test_stats_command_exists(self):
         from ayase.cli import stats
+
         assert callable(stats)
 
     def test_tui_command_exists(self):
         from ayase.cli import tui
+
         assert callable(tui)
 
     def test_modules_list_command_exists(self):
         from ayase.cli import modules_list
+
         assert callable(modules_list)
 
     def test_modules_check_command_exists(self):
         from ayase.cli import modules_check
+
         assert callable(modules_check)
 
     def test_config_subcommands_exist(self):
         from ayase.cli import config_init, config_show, config_edit, config_validate
+
         assert callable(config_init)
         assert callable(config_show)
         assert callable(config_validate)
@@ -795,6 +796,7 @@ class TestCLICommands:
     def test_no_validate_command(self):
         """The 'validate' command was removed in the refactoring."""
         from ayase import cli
+
         assert not hasattr(cli, "validate") or not callable(getattr(cli, "validate", None))
 
 
@@ -814,6 +816,7 @@ def _make_dataset(tmp_path: Path) -> Path:
 
 class _AlwaysFailsMount(PipelineModule):
     """Module whose setup() always raises, simulating missing ML dep."""
+
     name = "always_fails_mount_test"
     description = "Always fails to mount"
 
@@ -834,6 +837,7 @@ class TestAyasePipeline:
 
     def test_import_from_ayase(self):
         from ayase import AyasePipeline
+
         assert AyasePipeline is not None
 
     def test_init_no_modules(self):
@@ -899,6 +903,7 @@ class TestAyasePipeline:
         ayase.export(out)
         assert out.exists()
         import json
+
         data = json.loads(out.read_text(encoding="utf-8"))
         assert "stats" in data
         assert "samples" in data
