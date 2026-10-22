@@ -416,6 +416,8 @@ class FADModule(BatchMetricModule):
         convention) — never linear interpolation. Video inputs are decoded to
         a temporary WAV via ffmpeg first.
         """
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         import soundfile as sf
 
         audio = None
@@ -432,7 +434,7 @@ class FADModule(BatchMetricModule):
                 with tempfile.TemporaryDirectory() as tmpdir:
                     tmp = Path(tmpdir) / "audio.wav"
                     cmd = [
-                        "ffmpeg", "-y", "-i", str(path),
+                        str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-y", "-i", str(path),
                         "-vn", "-ac", "1", "-sample_fmt", "s16", str(tmp),
                     ]
                     result = subprocess.run(cmd, capture_output=True, timeout=30)

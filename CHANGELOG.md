@@ -13,8 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **videophy2_autoeval**: official VideoPhy-2 semantic/physical ratings and joint success indicator, using the bundled inference runtime and pinned checkpoint.
 - **t2v_compbench_official**: all seven author evaluators with benchmark ID/prompt validation, native per-video scores and category averages.
 
+### Changed
+
+- **installation**: include every metric dependency in the standard install, with development tools in a separate dependency group.
+- **official evaluators**: automatically provision private Python environments, pinned source snapshots and checkpoints; backend paths remain expert overrides.
+- **metric runtimes**: manage isolated dependency stacks and native binaries for existing metrics without changing the application's Python environment.
+
 ### Fixed
 
+- **brightrate**: resolve assets through configured paths and managed downloads without a machine-specific model directory.
+- **vmaf**: automatically use packaged FFmpeg with libvmaf when the system binary lacks it, and resolve the built-in model correctly.
+- **visqol**: provide a cross-platform managed numerical backend with the official models and require the lattice mapper for speech.
+- **audio_log_f0_dtw**: remove the SPTK compiler requirement with an exact, validated NumPy transform.
 - **pipeline**: reload disposed modules on subsequent runs, including custom disposal hooks and failed teardown.
 - **filter**: resolve relative source paths before creating symbolic links.
 - **cli**: identify the requested module when its constructor fails before pipeline execution.

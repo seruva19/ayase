@@ -24,7 +24,9 @@ class _Pipeline:
 def test_category_commands_use_real_scripts_and_no_shell(tmp_path):
     from ayase.modules.t2v_compbench import T2VCompBenchOfficialModule
 
-    module = T2VCompBenchOfficialModule({"upstream_root": str(tmp_path), "category": "motion_binding"})
+    module = T2VCompBenchOfficialModule(
+        {"upstream_root": str(tmp_path), "category": "motion_binding"}
+    )
     commands = module._commands(tmp_path, "motion_binding", tmp_path / "run")
     assert commands[0][0][1].endswith("compbench_motion_binding_seg.py")
     assert commands[1][0][1].endswith("compbench_eval_motion_binding.py")
@@ -43,7 +45,9 @@ def test_parse_official_consistent_attribute_normalization(tmp_path):
         writer.writerow(["0001_grid.jpg", "one", "15"])
         writer.writerow(["0002_grid.jpg", "two", "1"])
         writer.writerow(["score: ", "0.5"])
-    scores, average = T2VCompBenchOfficialModule._parse_scores(output, "consistent_attribute_binding", records)
+    scores, average = T2VCompBenchOfficialModule._parse_scores(
+        output, "consistent_attribute_binding", records
+    )
     assert scores == {1: 1.0, 2: 0.0}
     assert average == 0.5
 
@@ -55,7 +59,9 @@ def test_parse_rejects_prompt_id_mismatch(tmp_path):
     output = tmp_path / "score.csv"
     output.write_text("id,prompt,Score\n0001,wrong,1\nscore: ,1\n", encoding="utf-8")
     with pytest.raises(ValueError, match="does not match"):
-        T2VCompBenchOfficialModule._parse_scores(output, "dynamic_attribute_binding", [{"prompt": "right"}])
+        T2VCompBenchOfficialModule._parse_scores(
+            output, "dynamic_attribute_binding", [{"prompt": "right"}]
+        )
 
 
 def test_process_requires_benchmark_id_and_category(tmp_path):
@@ -81,18 +87,22 @@ def test_nonprefix_subset_keeps_authoritative_ids_and_prompts(tmp_path):
     root = tmp_path / "upstream"
     root.mkdir()
     records = _metadata(root, "generative_numeracy")
-    module = T2VCompBenchOfficialModule({
-        "upstream_root": str(root),
-        "category": "generative_numeracy",
-    })
+    module = T2VCompBenchOfficialModule(
+        {
+            "upstream_root": str(root),
+            "category": "generative_numeracy",
+        }
+    )
     for identifier in (7, 199):
         path = tmp_path / f"{identifier:04d}.mp4"
         path.touch()
-        module.process(Sample(
-            path=path,
-            is_video=True,
-            caption=CaptionMetadata(text=records[identifier - 1]["prompt"], length=10),
-        ))
+        module.process(
+            Sample(
+                path=path,
+                is_video=True,
+                caption=CaptionMetadata(text=records[identifier - 1]["prompt"], length=10),
+            )
+        )
 
     accepted = module._validated_samples(root, "generative_numeracy")
     assert [identifier for identifier, _sample in accepted] == [7, 199]
@@ -113,11 +123,13 @@ def test_fresh_run_stages_only_validated_samples_and_parses_native_csv(tmp_path)
     script.touch()
     video = tmp_path / "0001.mp4"
     video.touch()
-    module = T2VCompBenchOfficialModule({
-        "upstream_root": str(root),
-        "category": "dynamic_attribute_binding",
-        "temp_root": str(tmp_path / "runs"),
-    })
+    module = T2VCompBenchOfficialModule(
+        {
+            "upstream_root": str(root),
+            "category": "dynamic_attribute_binding",
+            "temp_root": str(tmp_path / "runs"),
+        }
+    )
     module._available = True
     module._backend = "official_t2v_compbench"
     module.pipeline = _Pipeline()
@@ -129,6 +141,7 @@ def test_fresh_run_stages_only_validated_samples_and_parses_native_csv(tmp_path)
     module.process(sample)
 
     calls = []
+
     def runner(command, **kwargs):
         calls.append((command, kwargs))
         output = Path(command[command.index("--output-path") + 1])
@@ -138,6 +151,7 @@ def test_fresh_run_stages_only_validated_samples_and_parses_native_csv(tmp_path)
             writer.writerow(["name", "prompt", "Score"])
             writer.writerow(["0001_frames.jpg", records[0]["prompt"], "0.75"])
             writer.writerow(["score: ", "0.75"])
+
     module._runner = runner
     module.post_process([])
     assert len(calls) == 1
@@ -219,11 +233,13 @@ def test_incomplete_output_does_not_publish_sample_or_average(tmp_path):
     records = _metadata(root, "dynamic_attribute_binding")
     video = tmp_path / "0001.mp4"
     video.touch()
-    module = T2VCompBenchOfficialModule({
-        "upstream_root": str(root),
-        "category": "dynamic_attribute_binding",
-        "temp_root": str(tmp_path / "runs"),
-    })
+    module = T2VCompBenchOfficialModule(
+        {
+            "upstream_root": str(root),
+            "category": "dynamic_attribute_binding",
+            "temp_root": str(tmp_path / "runs"),
+        }
+    )
     module._available = True
     module._backend = "official_t2v_compbench"
     module.pipeline = _Pipeline()
@@ -271,10 +287,12 @@ def test_command_failure_reports_only_bounded_log_tail(tmp_path):
 
     root = tmp_path / "upstream"
     root.mkdir()
-    module = T2VCompBenchOfficialModule({
-        "upstream_root": str(root),
-        "category": "dynamic_attribute_binding",
-    })
+    module = T2VCompBenchOfficialModule(
+        {
+            "upstream_root": str(root),
+            "category": "dynamic_attribute_binding",
+        }
+    )
 
     def runner(command, **kwargs):
         kwargs["stdout"].write("x" * 3000 + "TAIL_MARKER")
@@ -287,3 +305,72 @@ def test_command_failure_reports_only_bounded_log_tail(tmp_path):
     message = str(caught.value)
     assert "TAIL_MARKER" in message
     assert message.count("x") <= 2048
+
+
+def test_setup_auto_provisions_source_assets_and_environments(tmp_path, monkeypatch):
+    from ayase.modules import t2v_compbench
+    from ayase.modules.t2v_compbench import T2VCompBenchOfficialModule
+
+    monkeypatch.setenv("AYASE_TEST_MODE", "0")
+    monkeypatch.setattr(T2VCompBenchOfficialModule, "_global_test_mode", False)
+
+    root = tmp_path / "source"
+    root.mkdir()
+    records = _metadata(root, "dynamic_attribute_binding")
+    script = root / "LLaVA/llava/eval/compbench_eval_dynamic_attr.py"
+    script.parent.mkdir(parents=True)
+    script.write_text(
+        "import argparse\np=argparse.ArgumentParser()\n"
+        + "\n".join(
+            f'p.add_argument("{name}")'
+            for name in (
+                "--video-path",
+                "--read-prompt-file",
+                "--model-path",
+                "--output-path",
+                "--t2v-model",
+            )
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(t2v_compbench.managed, "gpu_is_available", lambda: True)
+    monkeypatch.setattr(t2v_compbench.managed, "ensure_source", lambda _models: root)
+    assets = []
+    monkeypatch.setattr(
+        t2v_compbench.managed,
+        "ensure_assets",
+        lambda source, categories: assets.append((source, categories)),
+    )
+    monkeypatch.setattr(
+        t2v_compbench.managed,
+        "ensure_environments",
+        lambda *_args, **_kwargs: {"llava": tmp_path / "managed-python"},
+    )
+    monkeypatch.setattr(T2VCompBenchOfficialModule, "_verify_pinned_sources", lambda *_args: None)
+    module = T2VCompBenchOfficialModule(
+        {
+            "category": "dynamic_attribute_binding",
+            "models_dir": str(tmp_path / "models"),
+            "check_fixed_assets": False,
+        }
+    )
+    module.setup()
+    assert module._available is True
+    assert module._python("dynamic_attribute_binding") == str(tmp_path / "managed-python")
+    assert assets == [(root, ("dynamic_attribute_binding",))]
+    assert len(records) == 200
+
+
+def test_setup_checks_gpu_before_any_download(tmp_path, monkeypatch):
+    from ayase.modules import t2v_compbench
+    from ayase.modules.t2v_compbench import T2VCompBenchOfficialModule
+
+    monkeypatch.setattr(t2v_compbench.managed, "gpu_is_available", lambda: False)
+    monkeypatch.setattr(
+        t2v_compbench.managed,
+        "ensure_source",
+        lambda _models: (_ for _ in ()).throw(AssertionError("must not download")),
+    )
+    module = T2VCompBenchOfficialModule({"models_dir": str(tmp_path)})
+    module.setup()
+    assert module._available is False

@@ -2,7 +2,7 @@
 
 Supports HDR-VMAF, SSIM-HDRMAX, and MS-SSIM-HDRMAX modes and reports a higher-is-better
 prediction with no fixed range. It requires a reference video, usable frame-rate metadata,
-FFmpeg, the selected model files, and HDRMAX dependencies; non-YUV inputs are converted to
+the selected model files and HDRMAX dependencies; non-YUV inputs are converted with managed FFmpeg to
 3840x2160 10-bit YUV. Basis: https://github.com/utlive/HDRMAX
 """
 
@@ -61,7 +61,17 @@ class HDRMAXModule(PipelineModule):
         self.python_bin = _python_executable(self.config.get("python_executable"))
         self.mode = str(self.config.get("mode", "hdrvmaf"))
         self.timeout_sec = int(self.config.get("timeout_sec", 3600))
-        self.ffmpeg_bin = str(self.config.get("ffmpeg_bin", "ffmpeg"))
+        configured_ffmpeg = self.config.get("ffmpeg_bin")
+        if configured_ffmpeg and str(configured_ffmpeg) != "ffmpeg":
+            self.ffmpeg_bin = str(configured_ffmpeg)
+        else:
+            from ayase.managed_ffmpeg import resolve_media_tool
+
+            self.ffmpeg_bin = str(
+                resolve_media_tool(
+                    "ffmpeg", models_dir=self.config.get("models_dir", "models")
+                )
+            )
         self.njobs = int(self.config.get("njobs", 1))
         self.fps_override = self.config.get("fps")
         self.warning_threshold = self.config.get("warning_threshold")

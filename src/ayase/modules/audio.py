@@ -1,7 +1,7 @@
 """Audio stream presence and quality validation via ffprobe/ffmpeg.
 
 Checks for audio stream existence, sample rate, bit rate, and silence.
-Emits audio tags for downstream modules. Requires ffprobe in PATH."""
+Emits audio tags for downstream modules. Ayase resolves private FFmpeg tools automatically."""
 
 import logging
 import os
@@ -39,16 +39,20 @@ class AudioModule(PipelineModule):
         self._ffmpeg_available = False
 
     def on_mount(self) -> None:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         super().on_mount()
         import shutil
-        self._ffprobe_available = shutil.which("ffprobe") is not None
-        self._ffmpeg_available = shutil.which("ffmpeg") is not None
+        self._ffprobe_available = shutil.which(str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models")))) is not None
+        self._ffmpeg_available = shutil.which(str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models")))) is not None
         if not self._ffprobe_available:
             logger.warning("ffprobe not found in PATH. Audio validation disabled.")
         if self.check_silence and not self._ffmpeg_available:
             logger.warning("ffmpeg not found in PATH. Silence check disabled.")
 
     def process(self, sample: Sample) -> Sample:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         if not sample.is_video:
             return sample
         if not self._ffprobe_available:
@@ -57,7 +61,7 @@ class AudioModule(PipelineModule):
         try:
             # Use ffprobe to get audio info
             cmd = [
-                "ffprobe", "-v", "quiet", "-print_format", "json",
+                str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-v", "quiet", "-print_format", "json",
                 "-show_streams", str(sample.path)
             ]
             result = subprocess.run(cmd, capture_output=True, text=True)
@@ -131,10 +135,12 @@ class AudioModule(PipelineModule):
         return sample
 
     def _check_audio_energy(self, sample: Sample):
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             # Use ffmpeg volumedetect filter as it's fast
             cmd = [
-                "ffmpeg", "-i", str(sample.path), "-af", "volumedetect",
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-i", str(sample.path), "-af", "volumedetect",
                 "-vn", "-sn", "-dn", "-f", "null", "NUL" if os.name == 'nt' else "/dev/null"
             ]
             result = subprocess.run(cmd, capture_output=True, text=True)

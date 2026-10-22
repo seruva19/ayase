@@ -43,11 +43,15 @@ class VFRDetectionModule(PipelineModule):
         self._backend = "algorithmic"
 
     def setup(self) -> None:
-        self._ffprobe_available = shutil.which("ffprobe") is not None
+        from ayase.managed_ffmpeg import resolve_media_tool
+
+        self._ffprobe_available = shutil.which(str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models")))) is not None
         if not self._ffprobe_available:
             logger.warning("ffprobe not found. VFRDetectionModule disabled.")
 
     def process(self, sample: Sample) -> Sample:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         if not self._ffprobe_available or not sample.is_video:
             return sample
 
@@ -55,7 +59,7 @@ class VFRDetectionModule(PipelineModule):
             # ffprobe -show_frames -select_streams v -print_format json 
             # This is slow for long videos. We sample the first 100 frames.
             cmd = [
-                "ffprobe", "-v", "error",
+                str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-v", "error",
                 "-select_streams", "v:0",
                 "-show_entries", "frame=best_effort_timestamp_time",
                 "-read_intervals", "%+10", # First 10 seconds of data

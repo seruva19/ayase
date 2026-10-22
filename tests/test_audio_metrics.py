@@ -49,7 +49,7 @@ class TestAudioSISDR:
 
 
 class TestAudioMCD:
-    def test_unavailable_without_pymcd(self, synthetic_wav, monkeypatch):
+    def test_unavailable_without_native_audio_backend(self, synthetic_wav, monkeypatch):
         import builtins
 
         from ayase.modules.audio_mcd import AudioMCDModule
@@ -57,8 +57,8 @@ class TestAudioMCD:
         original_import = builtins.__import__
 
         def import_without_pymcd(name, *args, **kwargs):
-            if name == "pymcd.mcd" or name.startswith("pymcd."):
-                raise ImportError("simulated missing pymcd")
+            if name in {"pyworld", "fastdtw"}:
+                raise ImportError("simulated missing native audio backend")
             return original_import(name, *args, **kwargs)
 
         monkeypatch.setattr(builtins, "__import__", import_without_pymcd)
@@ -82,33 +82,56 @@ class TestAudioMCD:
         assert "pymcd 0.2.1" in protocol
         assert "c1-c13" in protocol
         assert "c0-c13" in protocol
-        assert AudioMCDModule.models[0]["install"] == "pip install pymcd==0.2.1"
+        assert AudioMCDModule.models[0]["install"] == "managed automatically by Ayase"
 
-    def test_self_mcd_zero_with_mocked_pymcd(self, synthetic_wav, monkeypatch):
+    def test_self_mcd_zero_with_mocked_features(self, synthetic_wav, monkeypatch):
         import sys
         import types
 
-        from ayase.modules.audio_mcd import AudioMCDModule
+        from ayase.modules.audio_mcd import AudioMCDModule, _PyMCD021
 
-        class _Calc:
-            def __init__(self, MCD_mode="dtw"):
-                self.mode = MCD_mode
-
-            def calculate_mcd(self, ref, deg):
-                return 0.0  # identical files
-
-        fake_mod = types.ModuleType("pymcd.mcd")
-        fake_mod.Calculate_MCD = _Calc
-        fake_pkg = types.ModuleType("pymcd")
-        fake_pkg.mcd = fake_mod
-        monkeypatch.setitem(sys.modules, "pymcd", fake_pkg)
-        monkeypatch.setitem(sys.modules, "pymcd.mcd", fake_mod)
+        monkeypatch.setattr(
+            _PyMCD021,
+            "_features",
+            lambda _self, _path: np.arange(42, dtype=float).reshape(3, 14),
+        )
+        fake_fastdtw = types.ModuleType("fastdtw")
+        fake_fastdtw.fastdtw = lambda left, right, dist: (
+            0.0,
+            [(index, index) for index in range(min(len(left), len(right)))],
+        )
+        monkeypatch.setitem(sys.modules, "fastdtw", fake_fastdtw)
 
         mod = AudioMCDModule()
-        mod.setup()
+        mod._ml_available = True
+        mod._backend = "pymcd_0_2_1_port"
         sample = Sample(path=synthetic_wav, is_video=False, reference_path=synthetic_wav)
         mod.process(sample)
         assert sample.quality_metrics.mcd_score == 0.0
+
+    def test_zero_iteration_mcep_matches_sptk_golden(self):
+        from ayase.modules.audio_mcd import _pymcd_mcep
+
+        spectrum = np.linspace(0.25, 2.0, 257, dtype=np.float64)[None, :]
+        expected = np.array(
+            [
+                -0.6124890014713906,
+                -0.7380488198682818,
+                0.15105879967436936,
+                -0.14527030448416361,
+                0.049983657561173706,
+                -0.05542661589467337,
+                0.021496038515093512,
+                -0.027334949919300695,
+                0.011011846786718489,
+                -0.015821142151043008,
+                0.006443293972305832,
+                -0.010236493191407478,
+                0.004171622672886693,
+                -0.007171775095520033,
+            ]
+        )
+        np.testing.assert_allclose(_pymcd_mcep(spectrum)[0], expected, rtol=0.0, atol=1e-14)
 
 
 class TestAudioLPDist:
@@ -127,6 +150,7 @@ class TestAudioESTOI:
     def test_import(self):
         try:
             from ayase.modules.audio_estoi import AudioESTOIModule
+
             mod = AudioESTOIModule()
             assert mod.name == "audio_estoi"
         except ImportError:
@@ -136,5 +160,6 @@ class TestAudioESTOI:
 class TestAudioUTMOS:
     def test_import(self):
         from ayase.modules.audio_utmos import AudioUTMOSModule
+
         mod = AudioUTMOSModule()
         assert mod.name == "audio_utmos"

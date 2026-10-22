@@ -34,13 +34,16 @@ class SyncnetInferencer:
             os.remove(os.path.join(work_dir, "images", frame))
 
     def video_to_frames_audio(self, video_path, work_dir):
+        from ayase.managed_ffmpeg import resolve_media_tool
+
+        ffmpeg = str(resolve_media_tool("ffmpeg"))
         # Argument lists, not a shell string: a path with spaces was split by the shell, ffmpeg
         # failed without a trace, and the clip read as "no talking face".
         os.makedirs(f"{work_dir}/images", exist_ok=True)
         commands = (
-            ["ffmpeg", "-y", "-threads", "1", "-i", str(video_path), "-q:v", "2", "-r", str(self.fps),
+            [ffmpeg, "-y", "-threads", "1", "-i", str(video_path), "-q:v", "2", "-r", str(self.fps),
              "-filter:v", f"fps={self.fps}", os.path.join(work_dir, "images", "frame-%05d.jpg")],
-            ["ffmpeg", "-y", "-threads", "1", "-i", str(video_path), "-q:a", "0", "-ac", "1", "-ar", str(self.sr),
+            [ffmpeg, "-y", "-threads", "1", "-i", str(video_path), "-q:a", "0", "-ac", "1", "-ar", str(self.sr),
              "-acodec", "pcm_s16le", "-threads", "1", os.path.join(work_dir, "audio.wav")],
         )
         for command in commands:

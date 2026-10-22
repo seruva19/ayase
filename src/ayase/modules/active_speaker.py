@@ -164,6 +164,8 @@ class ActiveSpeakerModule(PipelineModule):
 
     def _crop_track(self, video: str, track: Dict[str, Any], out_path: str) -> bool:
         """Write a face-following crop of ``track`` with the original audio."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         import subprocess
 
         import cv2
@@ -217,7 +219,7 @@ class ActiveSpeakerModule(PipelineModule):
             return False
 
         command = [
-            "ffmpeg", "-y", "-v", "error", "-i", silent_path, "-i", video,
+            str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-y", "-v", "error", "-i", silent_path, "-i", video,
             "-map", "0:v:0", "-map", "1:a:0", "-r", str(self.fps),
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
             "-c:a", "aac", "-ar", "16000", "-ac", "1", "-shortest", out_path,

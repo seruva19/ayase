@@ -21,18 +21,20 @@ import numpy as np
 
 from ayase.models import Sample, QualityMetrics
 from ayase.base_modules import ReferenceBasedModule
+from ayase.managed_ffmpeg import resolve_ffmpeg
 
 logger = logging.getLogger(__name__)
 
 
 class VMAFPhoneModule(ReferenceBasedModule):
     name = "vmaf_phone"
+    implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {
         "vmaf_phone": "VMAF phone model; libvmaf — https://github.com/Netflix/vmaf",
     }
     description = "VMAF phone model for mobile viewing (0-100, higher=better)"
-    default_config = {}
+    default_config = {"ffmpeg_path": None}
     metric_groups = {
         "vmaf_phone": "fr_quality",
     }
@@ -41,19 +43,16 @@ class VMAFPhoneModule(ReferenceBasedModule):
         super().__init__(config)
         self._ml_available = False
         self._backend = None
+        self._ffmpeg_path: Optional[Path] = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
         try:
-            result = subprocess.run(
-                ["ffmpeg", "-filters"], capture_output=True, text=True, timeout=5
-            )
-            if "libvmaf" in result.stdout:
-                self._ml_available = True
-                self._backend = "ffmpeg_libvmaf"
-                logger.info("VMAF Phone module initialised")
-            else:
-                self._backend = "unavailable"
-                logger.warning("FFmpeg libvmaf not available for VMAF Phone")
+            self._ffmpeg_path = resolve_ffmpeg(self.config.get("ffmpeg_path"))
+            self._ml_available = True
+            self._backend = "ffmpeg_libvmaf"
+            logger.info("VMAF Phone module initialised")
         except Exception as e:
             self._backend = "unavailable"
             logger.warning(f"VMAF Phone setup failed: {e}")
@@ -61,11 +60,13 @@ class VMAFPhoneModule(ReferenceBasedModule):
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        if self._ffmpeg_path is None:
+            return None
         try:
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
                 out = tmp.name
             cmd = [
-                "ffmpeg", "-i", str(sample_path), "-i", str(reference_path),
+                str(self._ffmpeg_path), "-i", str(sample_path), "-i", str(reference_path),
                 # libvmaf v2 removed the `phone_model` flag; the phone
                 # viewing transform is `enable_transform` on the model.
                 "-lavfi", f"[0:v][1:v]libvmaf=model=version=vmaf_v0.6.1:enable_transform=true:log_path={out}:log_fmt=json",

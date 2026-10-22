@@ -65,9 +65,11 @@ class CodecSpecificQualityModule(PipelineModule):
 
     def setup(self) -> None:
         # Check ffprobe availability
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             subprocess.run(
-                ["ffprobe", "-version"],
+                [str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-version"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 timeout=5,
@@ -83,11 +85,13 @@ class CodecSpecificQualityModule(PipelineModule):
 
     def _ffprobe_json(self, path: Path, *args: str) -> Optional[dict]:
         """Run ffprobe and return parsed JSON."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         if not self._ffprobe_available:
             return None
         try:
             cmd = [
-                "ffprobe", "-v", "quiet", "-print_format", "json",
+                str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-v", "quiet", "-print_format", "json",
                 *args, str(path),
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)

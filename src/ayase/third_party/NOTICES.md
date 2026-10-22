@@ -4,6 +4,12 @@ Ayase's MIT license applies to Ayase-authored code. Bundled upstream code and
 model assets retain their own notices and terms. Backend availability and metric
 provenance do not change those terms.
 
+Managed-runtime integration also changes only executable resolution in
+`../vendor/t2v_metrics/__init__.py` and
+`../vendor/verse_bench/syncnet/syncnet_inferencer.py`: these use Ayase's FFmpeg
+resolver instead of requiring FFmpeg on the system PATH. Their scoring and model
+implementations are unchanged.
+
 | Directory or file | Upstream | Retained notice |
 |---|---|---|
 | `cover/` | [COVER](https://github.com/taco-group/COVER) | `cover/LICENSE` (MIT) |
@@ -15,6 +21,8 @@ provenance do not change those terms.
 | `idreveal/` | [ID-Reveal](https://github.com/grip-unina/id-reveal), [POI-Forensics](https://github.com/grip-unina/poi-forensics) | `idreveal/LICENSE.txt` (informational and nonprofit use only) |
 | `idreveal/TDDFA/` | [3DDFA_V2](https://github.com/cleardusk/3DDFA_V2) | `idreveal/TDDFA/LICENSE` (MIT); model asset restrictions below |
 | `idreveal/retinaface/` | RetinaFace implementation bundled by upstream | `idreveal/retinaface/LICENSE.MIT` |
+| `../utils/sptk.py` | [pysptk / SPTK 3](https://github.com/r9y9/pysptk) | MIT notice below |
+| `../modules/audio_mcd.py` | [PyMCD 0.2.1](https://github.com/chenqi008/pymcd) | MIT notice below |
 
 `idreveal/TDDFA/configs/bfm_noneck_v3.pkl` is a modified Basel Face Model
 asset, restricted to academic use by its upstream notice. Commercial use
@@ -34,3 +42,52 @@ every bundled implementation file matches those revisions byte for byte.
 Other pre-existing bundled packages retain their notices within their own
 directories. Model checkpoint terms are listed separately in `MODELS.md` and
 in module `models` declarations where available.
+
+## pysptk / SPTK frequency transform
+
+The `ayase.utils.sptk` frequency-transform recurrence is derived from pysptk's
+bundled SPTK 3 implementation.
+
+Copyright (c) 2015 Ryuichi Yamamoto.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## PyMCD 0.2.1 metric protocol
+
+The `ayase.modules.audio_mcd` implementation is adapted from PyMCD 0.2.1.
+
+Copyright (c) 2021 QiChen and PyMCD contributors.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

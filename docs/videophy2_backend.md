@@ -30,12 +30,15 @@ By default, Ayase imports the pinned runtime from
 revision `ca38370e1dcc79c99c7017dd8755d0a087299afc`. Set `auto_download=false` to require a
 pre-populated local checkpoint and avoid the multi-gigabyte download.
 
-Install the optional tokenizer dependency with `pip install 'ayase[videophy2]'`.
+The tokenizer dependency is included in `pip install ayase`. Ayase provisions a
+private runtime with the upstream Transformers 4.28.1 stack automatically, so
+the host application's Transformers version does not affect this evaluator.
 Select the module with `ayase scan ./generated --modules videophy2_autoeval`;
 same-directory text sidecars supply the caption for semantic adherence. Python
 applications can use `AyasePipeline(modules=["videophy2_autoeval"])`.
 
-For an independently checked-out copy of the upstream runtime, clone the pinned repository:
+Expert override only: for an independently checked-out copy of the upstream runtime,
+clone the pinned repository:
 
 ```text
 git clone https://github.com/Hritikbansal/videophy.git
@@ -45,9 +48,8 @@ git -C videophy checkout 01d366c979e4a82875852adbf427ccc036e7373a
 Set `official_source_dir` to the checkout (or its `VIDEOPHY2` directory) to override the bundled
 runtime. Ayase verifies the checkout revision before loading it. Runtime dependencies are
 PyTorch, Decord, SentencePiece, Einops, and the packages imported by the official
-mPLUG-Owl-Video source. Upstream pins `transformers==4.28.1`; its model and processor classes
-also import successfully with Ayase's tested Transformers 4.57.6 environment, though a full
-checkpoint run still requires GPU validation. A
+mPLUG-Owl-Video source. Ayase uses the upstream `transformers==4.28.1` runtime;
+full checkpoint inference still requires GPU validation. A
 CUDA device with bfloat16 support is required by the released inference path.
 
 This score predicts the released judge's ratings for action-centric generated videos. It is

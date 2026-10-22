@@ -11,6 +11,7 @@ import json
 import logging
 import math
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -23,12 +24,22 @@ logger = logging.getLogger(__name__)
 
 _VIDEO_SUFFIXES = frozenset({".avi", ".m4v", ".mkv", ".mov", ".mp4", ".webm"})
 _UPSTREAM_REVISION = "e64f3fe8572b89ea904d161def44b419024e31a0"
+_MANAGED_REQUIREMENTS = (
+    "videojedi==1.1.0",
+    "vjepa==0.1.2",
+    "torch==2.4.1+cu124",
+    "torchvision==0.19.1+cu124",
+    "pandas==2.2.2",
+    "numpy==1.26.4",
+)
+_PYTORCH_INDEX = "https://download.pytorch.org/whl/cu124"
 
 
 class OfficialJEDiModule(PipelineModule):
     """Run the official JEDi backend on generated and reference collections."""
 
     name = "jedi_official"
+    implementation_sources = ("../managed_runtime.py", "../_jedi_worker.py")
     provenance = {
         "jedi_score": "adapted",
         "jedi_generated_count": "utility",
@@ -70,7 +81,7 @@ class OfficialJEDiModule(PipelineModule):
         {
             "id": "videojedi==1.1.0",
             "type": "pip_package",
-            "install": "Install videojedi==1.1.0 in a dedicated backend_python environment",
+            "install": "Automatically installed into Ayase's private managed JEDi environment",
             "task": "Official JEDi feature extraction and polynomial MMD",
             "notes": "Apache-2.0; source revision " + _UPSTREAM_REVISION,
         },
@@ -104,6 +115,7 @@ class OfficialJEDiModule(PipelineModule):
         self._model_dir = self.config.get("model_dir")
         self._config_path = self.config.get("config_path")
         self._backend_version = None
+        self._managed_python: Optional[Path] = None
         self._generated_paths: List[Path] = []
         self._paired_reference_paths: List[Path] = []
         self.last_metadata = {}
@@ -119,15 +131,70 @@ class OfficialJEDiModule(PipelineModule):
                 )
             if int(self.config["num_frames"]) != 16 or int(self.config["resolution"]) != 224:
                 raise ValueError("the pinned JEDi encoder configuration requires 16 frames at 224px")
+            self._resolve_backend_python()
             status = self._invoke_worker(check=True)
             self._backend_version = status["videojedi_version"]
             self._prepare_assets()
             self._ml_available = True
             self._backend = "videojedi_isolated"
         except Exception as exc:
-            logger.warning("jedi_official requires videojedi==1.1.0: %s", exc)
+            logger.warning("jedi_official automatic backend setup failed: %s", exc)
             self._ml_available = False
             self._backend = "unavailable"
+
+    @staticmethod
+    def _host_cuda_available() -> bool:
+        """Check CUDA without assuming Ayase's host Torch installation is GPU-enabled."""
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                return True
+        except Exception:
+            pass
+        executable = shutil.which("nvidia-smi")
+        if executable is None:
+            return False
+        try:
+            result = subprocess.run(
+                [executable, "--query-gpu=name", "--format=csv,noheader"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                shell=False,
+                timeout=10,
+                check=False,
+                text=True,
+                creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
+            )
+        except (OSError, subprocess.SubprocessError):
+            return False
+        return result.returncode == 0 and bool(result.stdout.strip())
+
+    def _resolve_backend_python(self) -> Path:
+        """Resolve an expert override or provision Ayase's private official backend."""
+        override = self.config.get("backend_python")
+        if override:
+            return Path(override)
+        if self._managed_python is not None:
+            return self._managed_python
+        if not self._host_cuda_available():
+            raise RuntimeError(
+                "JEDi requires a host-visible NVIDIA GPU; automatic environment installation "
+                "was skipped"
+            )
+        try:
+            from ayase.managed_runtime import ensure_managed_environment
+
+            self._managed_python = ensure_managed_environment(
+                "jedi-videojedi-1.1.0",
+                _MANAGED_REQUIREMENTS,
+                models_dir=self.config["models_dir"],
+                pip_options=("--extra-index-url", _PYTORCH_INDEX),
+                python_version="3.11",
+            )
+        except Exception as exc:
+            raise RuntimeError(f"automatic JEDi environment installation failed: {exc}") from exc
+        return self._managed_python
 
     def _prepare_assets(self) -> None:
         from ayase.config import download_model_file
@@ -146,9 +213,7 @@ class OfficialJEDiModule(PipelineModule):
         ))
 
     def _invoke_worker(self, payload: Optional[dict] = None, check: bool = False) -> dict:
-        executable = self.config.get("backend_python")
-        if not executable:
-            raise ValueError("jedi_official requires a dedicated backend_python interpreter")
+        executable = self._resolve_backend_python()
         worker = Path(__file__).with_name("_jedi_worker.py")
         environment = os.environ.copy()
         visible_devices = self.config.get("backend_cuda_visible_devices")
@@ -170,6 +235,7 @@ class OfficialJEDiModule(PipelineModule):
                     command, env=environment, stdout=log, stderr=subprocess.STDOUT,
                     shell=False, timeout=60 if check else float(self.config["timeout"]),
                     check=False,
+                    creationflags=int(getattr(subprocess, "CREATE_NO_WINDOW", 0)),
                 )
             if not result_file.is_file():
                 with log_path.open("rb") as log:

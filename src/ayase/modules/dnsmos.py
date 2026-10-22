@@ -110,11 +110,13 @@ class DNSMOSModule(PipelineModule):
 
     def _ffmpeg_pipe_pcm(self, path: Path, sr: int = 16000) -> Optional[tuple]:
         """Decode mono float32 PCM from any container via ffmpeg stdout pipe."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         import subprocess
         try:
             proc = subprocess.run(
                 [
-                    "ffmpeg", "-v", "error", "-nostdin",
+                    str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-v", "error", "-nostdin",
                     "-i", str(path),
                     "-vn", "-ac", "1", "-ar", str(sr),
                     "-f", "s16le", "-",

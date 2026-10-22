@@ -17,6 +17,7 @@ import re
 import urllib.request
 import urllib.error
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set
@@ -39,20 +40,32 @@ def _validate_urls(entries: Dict[str, "ModelEntry"]) -> List[str]:
         return warnings
 
     print(f"Validating {len(urls_to_check)} model URLs...", file=sys.stderr)
-    for key, url in urls_to_check:
+
+    def validate_one(item: tuple) -> Optional[str]:
+        key, url = item
+        resp = None
         try:
             req = urllib.request.Request(url, method="HEAD")
             req.add_header("User-Agent", "ayase-models-doc/1.0")
             resp = urllib.request.urlopen(req, timeout=10)
             if resp.status >= 400:
-                warnings.append(f"  {key}: HTTP {resp.status} — {url}")
+                return f"  {key}: HTTP {resp.status} — {url}"
         except urllib.error.HTTPError as e:
-            warnings.append(f"  {key}: HTTP {e.code} — {url}")
+            return f"  {key}: HTTP {e.code} — {url}"
         except urllib.error.URLError:
-            return ["__NETWORK_UNAVAILABLE__"]
+            return "__NETWORK_UNAVAILABLE__"
         except Exception as e:
-            warnings.append(f"  {key}: {type(e).__name__} — {url}")
-    return warnings
+            return f"  {key}: {type(e).__name__} — {url}"
+        finally:
+            if resp is not None:
+                resp.close()
+        return None
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(validate_one, urls_to_check))
+    if "__NETWORK_UNAVAILABLE__" in results:
+        return ["__NETWORK_UNAVAILABLE__"]
+    return [warning for warning in results if warning is not None]
 
 
 logger = logging.getLogger(__name__)

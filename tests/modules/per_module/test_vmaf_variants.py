@@ -18,8 +18,10 @@ import pytest
 
 from ayase.models import QualityMetrics, Sample
 from ayase.modules.vmaf import VMAFModule
+from ayase.modules.vmaf_4k import VMAF4KModule
 from ayase.modules.vmaf_neg import VMAFNEGModule
 from ayase.modules.vmaf_phone import VMAFPhoneModule
+from ayase.pipeline import PipelineModule
 
 
 def _video_sample(tmp_path):
@@ -37,20 +39,45 @@ def _fake_ffmpeg_run(calls, returncode=0, metrics=None, fail_pred=None):
             if m:
                 Path(m.group(1)).write_text(json.dumps(metrics or {}))
         return subprocess.CompletedProcess(cmd, returncode, "", "")
+
     return fake_run
 
 
 def test_vmaf_no_dead_python_backend(monkeypatch, tmp_path):
     """No libvmaf → module unavailable; a nonexistent ``vmaf.compute_vmaf``
     python path must not be claimed as a fallback."""
+    monkeypatch.setattr(PipelineModule, "_global_test_mode", False)
     monkeypatch.setattr(
-        "ayase.modules.vmaf.subprocess.run",
-        lambda *a, **k: (_ for _ in ()).throw(FileNotFoundError()),
+        "ayase.modules.vmaf.resolve_ffmpeg",
+        lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("unavailable")),
     )
     m = VMAFModule()
     m.setup()
     assert m._backend == "unavailable"
     assert not hasattr(m, "_compute_vmaf_python")
+
+
+@pytest.mark.parametrize(
+    ("module_class", "resolver_target"),
+    [
+        (VMAFNEGModule, "ayase.modules.vmaf_neg.resolve_ffmpeg"),
+        (VMAFPhoneModule, "ayase.modules.vmaf_phone.resolve_ffmpeg"),
+        (VMAF4KModule, "ayase.modules.vmaf_4k.resolve_ffmpeg"),
+    ],
+)
+def test_vmaf_variant_setup_stores_resolved_private_binary(
+    monkeypatch, tmp_path, module_class, resolver_target
+):
+    executable = tmp_path / "private-ffmpeg"
+    executable.touch()
+    monkeypatch.setattr(PipelineModule, "_global_test_mode", False)
+    monkeypatch.setattr(resolver_target, lambda configured: executable)
+    module = module_class({"ffmpeg_path": "configured-ffmpeg"})
+
+    module.setup()
+
+    assert module._ffmpeg_path == executable
+    assert module._backend == "ffmpeg_libvmaf"
 
 
 def test_vmaf_neg_no_fallback_command(monkeypatch, tmp_path):
@@ -67,6 +94,7 @@ def test_vmaf_neg_no_fallback_command(monkeypatch, tmp_path):
     m = VMAFNEGModule()
     m._ml_available = True
     m._ffmpeg_available = True
+    m._ffmpeg_path = Path("private-ffmpeg")
     sample = _video_sample(tmp_path)
     sample.reference_path = tmp_path / "ref.mp4"
     sample.reference_path.touch()
@@ -81,16 +109,13 @@ def test_vmaf_neg_no_arbitrary_metric_key(monkeypatch, tmp_path):
     pooled metric and label it NEG."""
     monkeypatch.setattr(
         "ayase.modules.vmaf_neg.subprocess.run",
-        _fake_ffmpeg_run(
-            [], metrics={"pooled_metrics": {"psnr_y": {"mean": 33.0}}}
-        ),
+        _fake_ffmpeg_run([], metrics={"pooled_metrics": {"psnr_y": {"mean": 33.0}}}),
     )
     m = VMAFNEGModule()
     m._ml_available = True
     m._ffmpeg_available = True
-    assert m.compute_reference_score(
-        tmp_path / "v.mp4", tmp_path / "ref.mp4"
-    ) is None
+    m._ffmpeg_path = Path("private-ffmpeg")
+    assert m.compute_reference_score(tmp_path / "v.mp4", tmp_path / "ref.mp4") is None
 
 
 def test_vmaf_phone_uses_enable_transform(monkeypatch, tmp_path):
@@ -99,12 +124,11 @@ def test_vmaf_phone_uses_enable_transform(monkeypatch, tmp_path):
     calls = []
     monkeypatch.setattr(
         "ayase.modules.vmaf_phone.subprocess.run",
-        _fake_ffmpeg_run(
-            calls, metrics={"pooled_metrics": {"vmaf": {"mean": 91.0}}}
-        ),
+        _fake_ffmpeg_run(calls, metrics={"pooled_metrics": {"vmaf": {"mean": 91.0}}}),
     )
     m = VMAFPhoneModule()
     m._ml_available = True
+    m._ffmpeg_path = Path("private-ffmpeg")
     sample = _video_sample(tmp_path)
     sample.reference_path = tmp_path / "ref.mp4"
     sample.reference_path.touch()

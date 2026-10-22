@@ -12,9 +12,9 @@ Full metric catalog: [METRICS.md](METRICS.md). Pretrained model catalog: [MODELS
 
 Video generation evaluation includes [JEDi](docs/jedi_backend.md),
 [VideoPhy-2 AutoEval](docs/videophy2_backend.md), and all seven
-[T2V-CompBench categories](docs/t2v_compbench_backend.md). JEDi uses a dedicated
-backend environment; T2V-CompBench requires the prepared author checkout and
-evaluator environments. Missing backends leave scores unset. Legacy
+[T2V-CompBench categories](docs/t2v_compbench_backend.md). Ayase provisions
+their backend environments, source snapshots, and checkpoints automatically.
+Legacy
 `mmd_selfsplit` and `vlm_phy` diagnostics remain separate.
 
 ## Install
@@ -24,7 +24,13 @@ pip install ayase
 ```
 
 Ayase is distributed as a single install. Runtime dependencies are managed by the
-project itself, and model weights are downloaded and cached on first use.
+project itself. On first use, Ayase downloads model weights and provisions private
+Python runtimes for backends with incompatible dependencies. These runtimes,
+source snapshots, and installation logs are cached below `models_dir/.ayase`;
+they do not change the application's Python environment. No metric extras are
+needed. Hardware requirements still depend on the selected metric.
+See [managed backend infrastructure](docs/managed_backends.md) for cache layout,
+runtime behavior, and expert overrides.
 
 ### Isolated installation
 
@@ -140,7 +146,7 @@ Modules auto-register via `__init_subclass__`. Config is available as `self.conf
 
 ```bash
 git clone <repo-url> && cd ayase
-pip install -e ".[dev]"
+pip install -e . --group dev
 pytest                    # 8000+ tests, ~4 min
 pytest tests/ --full      # with ML model loading
 ```

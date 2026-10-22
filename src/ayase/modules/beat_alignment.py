@@ -32,10 +32,12 @@ logger = logging.getLogger(__name__)
 
 def _extract_audio_to_wav(video_path: str, wav_path: str) -> bool:
     """Use ffmpeg to extract audio track to a mono 22050 Hz WAV file."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffmpeg", "-y", "-i", video_path,
+                str(resolve_media_tool('ffmpeg')), "-y", "-i", video_path,
                 "-vn", "-ac", "1", "-ar", "22050", "-f", "wav", wav_path,
             ],
             capture_output=True, timeout=60,
@@ -47,10 +49,12 @@ def _extract_audio_to_wav(video_path: str, wav_path: str) -> bool:
 
 def _has_audio_stream(video_path: str) -> bool:
     """Check whether the video file contains an audio stream."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-select_streams", "a",
+                str(resolve_media_tool('ffprobe')), "-v", "error", "-select_streams", "a",
                 "-show_entries", "stream=codec_type", "-of", "csv=p=0",
                 video_path,
             ],

@@ -24,8 +24,10 @@ def get_audio_metadata(path: Path) -> Optional[AudioMetadata]:
         AudioMetadata object or None if no audio or error
     """
     try:
+        from .managed_ffmpeg import resolve_media_tool
+
         cmd = [
-            "ffprobe",
+            str(resolve_media_tool("ffprobe")),
             "-v",
             "quiet",
             "-print_format",
@@ -141,20 +143,24 @@ def extract_audio_with_ffmpeg(
     """Extract audio with ffmpeg as mono or time-first stereo float32 samples."""
     tmp = None
     try:
+        from .managed_ffmpeg import resolve_media_tool
+
         tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
         tmp.close()
-        cmd = ["ffmpeg", "-y", "-i", str(path), "-vn"]
+        cmd = [str(resolve_media_tool("ffmpeg")), "-y", "-i", str(path), "-vn"]
         if duration is not None:
             cmd.extend(["-t", str(float(duration))])
-        cmd.extend([
-            "-ac",
-            "1" if mono else "2",
-            "-ar",
-            str(target_sr),
-            "-sample_fmt",
-            "s16",
-            tmp.name,
-        ])
+        cmd.extend(
+            [
+                "-ac",
+                "1" if mono else "2",
+                "-ar",
+                str(target_sr),
+                "-sample_fmt",
+                "s16",
+                tmp.name,
+            ]
+        )
         result = subprocess.run(cmd, capture_output=True, timeout=60)
         if result.returncode != 0:
             return None
@@ -183,7 +189,7 @@ def audio_feature_summary(audio: np.ndarray, sr: int = 16000) -> Dict[str, float
         return _empty_audio_summary()
 
     peak = float(np.max(np.abs(audio)))
-    rms = float(np.sqrt(np.mean(audio ** 2)))
+    rms = float(np.sqrt(np.mean(audio**2)))
     clipping_ratio = float(np.mean(np.abs(audio) >= 0.995))
     silence_ratio = float(np.mean(np.abs(audio) < 1e-4))
 
@@ -193,15 +199,12 @@ def audio_feature_summary(audio: np.ndarray, sr: int = 16000) -> Dict[str, float
         padded = np.pad(audio, (0, frame - len(audio)))
         frames = padded[None, :]
     else:
-        frames = np.stack([
-            audio[i:i + frame]
-            for i in range(0, len(audio) - frame + 1, hop)
-        ])
+        frames = np.stack([audio[i : i + frame] for i in range(0, len(audio) - frame + 1, hop)])
     windowed = frames * np.hanning(frame)
     spectrum = np.abs(np.fft.rfft(windowed, axis=1)) + 1e-8
     freqs = np.fft.rfftfreq(frame, d=1.0 / sr)
 
-    frame_rms = np.sqrt(np.mean(frames ** 2, axis=1))
+    frame_rms = np.sqrt(np.mean(frames**2, axis=1))
     dynamic_range = float(np.percentile(np.abs(audio), 95) - np.percentile(np.abs(audio), 5))
     noise_floor = float(np.percentile(frame_rms, 10))
     signal_level = float(np.percentile(frame_rms, 90))
@@ -236,15 +239,19 @@ def speech_quality_proxy(audio: np.ndarray, sr: int = 16000, mos: bool = False) 
     """Map signal health indicators to a bounded speech-quality proxy."""
     f = audio_feature_summary(audio, sr=sr)
     snr = np.clip((f["snr_proxy"] + 5.0) / 35.0, 0.0, 1.0)
-    level = np.clip(f["rms"] / 0.08, 0.0, 1.0) * np.clip(1.0 - max(f["rms"] - 0.35, 0.0) / 0.35, 0.0, 1.0)
+    level = np.clip(f["rms"] / 0.08, 0.0, 1.0) * np.clip(
+        1.0 - max(f["rms"] - 0.35, 0.0) / 0.35, 0.0, 1.0
+    )
     non_silence = 1.0 - np.clip(f["silence_ratio"], 0.0, 1.0)
     anti_noise = 1.0 - np.clip(f["spectral_flatness"], 0.0, 1.0)
     anti_clip = 1.0 - np.clip(f["clipping_ratio"] * 20.0, 0.0, 1.0)
-    score = float(np.clip(
-        0.35 * snr + 0.20 * level + 0.20 * non_silence + 0.15 * anti_noise + 0.10 * anti_clip,
-        0.0,
-        1.0,
-    ))
+    score = float(
+        np.clip(
+            0.35 * snr + 0.20 * level + 0.20 * non_silence + 0.15 * anti_noise + 0.10 * anti_clip,
+            0.0,
+            1.0,
+        )
+    )
     if mos:
         return float(1.0 + 4.0 * score)
     return score
@@ -255,18 +262,21 @@ def audio_distribution_features(audio: np.ndarray, sr: int = 16000) -> Optional[
     if audio is None or len(audio) < 256:
         return None
     f = audio_feature_summary(audio, sr=sr)
-    return np.array([
-        f["rms"],
-        f["peak"],
-        f["dynamic_range"],
-        f["snr_proxy"],
-        f["spectral_centroid"] / max(sr / 2, 1),
-        f["spectral_bandwidth"] / max(sr / 2, 1),
-        f["spectral_flatness"],
-        f["spectral_flux"],
-        f["clipping_ratio"],
-        f["silence_ratio"],
-    ], dtype=np.float64)
+    return np.array(
+        [
+            f["rms"],
+            f["peak"],
+            f["dynamic_range"],
+            f["snr_proxy"],
+            f["spectral_centroid"] / max(sr / 2, 1),
+            f["spectral_bandwidth"] / max(sr / 2, 1),
+            f["spectral_flatness"],
+            f["spectral_flux"],
+            f["clipping_ratio"],
+            f["silence_ratio"],
+        ],
+        dtype=np.float64,
+    )
 
 
 def _linear_resample(audio: np.ndarray, sr: int, target_sr: int) -> np.ndarray:
@@ -283,8 +293,7 @@ def _linear_resample(audio: np.ndarray, sr: int, target_sr: int) -> np.ndarray:
 
     flat_audio = audio.reshape(len(audio), -1)
     channels = [
-        np.interp(target, source, flat_audio[:, index])
-        for index in range(flat_audio.shape[1])
+        np.interp(target, source, flat_audio[:, index]) for index in range(flat_audio.shape[1])
     ]
     return np.stack(channels, axis=1).reshape((n_samples,) + audio.shape[1:]).astype(np.float32)
 

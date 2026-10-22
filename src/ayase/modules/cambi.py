@@ -46,9 +46,11 @@ class CAMBIModule(PipelineModule):
         self._backend = None
 
     def setup(self) -> None:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             result = subprocess.run(
-                ["ffmpeg", "-filters"], capture_output=True, text=True, timeout=5
+                [str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-filters"], capture_output=True, text=True, timeout=5
             )
             if "libvmaf" in result.stdout:
                 self._ml_available = True
@@ -93,6 +95,8 @@ class CAMBIModule(PipelineModule):
         return sample
 
     def _compute_cambi(self, video_path: Path) -> Optional[float]:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
                 output_path = tmp.name
@@ -100,7 +104,7 @@ class CAMBIModule(PipelineModule):
             # libvmaf is a two-input filter even for no-reference features
             # like CAMBI — feed the same video as both inputs.
             cmd = [
-                "ffmpeg", "-i", str(video_path), "-i", str(video_path),
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-i", str(video_path), "-i", str(video_path),
                 "-lavfi", f"[0:v][1:v]libvmaf=feature=name=cambi:log_path={output_path}:log_fmt=json",
                 "-f", "null", "-",
             ]

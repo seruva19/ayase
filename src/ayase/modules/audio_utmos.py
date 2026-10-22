@@ -115,6 +115,8 @@ class AudioUTMOSModule(PipelineModule):
 
     def _extract_audio_from_video(self, path: Path) -> Optional[np.ndarray]:
         """Extract audio from a video file via ffmpeg, return as float32 array."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         import subprocess
         import tempfile
 
@@ -122,7 +124,7 @@ class AudioUTMOSModule(PipelineModule):
             tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             tmp.close()
             cmd = [
-                "ffmpeg", "-y", "-i", str(path),
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-y", "-i", str(path),
                 "-vn", "-ac", "1", "-ar", str(self.target_sr),
                 "-sample_fmt", "s16", tmp.name,
             ]

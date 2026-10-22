@@ -47,10 +47,12 @@ class CodecCompatibilityModule(PipelineModule):
     }
 
     def __init__(self, config=None):
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         super().__init__(config)
         self.min_bitrate_kbps = self.config.get("min_bitrate_kbps", 500)
         self.min_bpp = self.config.get("min_bpp", 0.02)
-        self._ffprobe = shutil.which("ffprobe")
+        self._ffprobe = shutil.which(str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))))
 
     def process(self, sample: Sample) -> Sample:
         if not sample.is_video:

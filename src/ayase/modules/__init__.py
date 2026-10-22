@@ -5,7 +5,8 @@ This file exports the most commonly-used modules for direct import convenience::
 
     from ayase.modules import DOVERModule, VMAFModule, VideoScoreModule
 
-Modules whose optional dependencies are not installed are silently skipped.
+Backend dependencies are supplied by the standard install or provisioned in
+Ayase-managed environments when the module is mounted.
 """
 
 import importlib as _importlib

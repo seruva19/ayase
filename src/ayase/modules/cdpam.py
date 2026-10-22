@@ -42,7 +42,7 @@ class CDPAMModule(PipelineModule):
             "id": "cdpam==0.0.6",
             "type": "pip_package",
             "url": "https://pypi.org/project/cdpam/0.0.6/",
-            "install": "pip install cdpam==0.0.6",
+            "install": "pip install ayase",
             "task": "Full-reference learned perceptual audio similarity",
             "size": "98.3 MB",
             "notes": (
@@ -88,8 +88,8 @@ class CDPAMModule(PipelineModule):
             logger.info("CDPAM initialised on %s", device)
         except ImportError:
             logger.warning(
-                "CDPAM package not installed; install the optional dependency "
-                "with `pip install ayase[cdpam]`."
+                "CDPAM runtime dependency is missing from the Ayase installation. "
+                "Reinstall Ayase to restore its managed dependencies."
             )
         except Exception as exc:
             logger.warning("CDPAM setup failed: %s", exc)

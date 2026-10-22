@@ -11,6 +11,16 @@ Ayase is a modular media quality metrics toolkit for analyzing video/image quali
 - **Source layout:** `src/ayase/` (src-layout)
 - **Version:** defined in `src/ayase/__init__.py` AND `pyproject.toml` — keep both in sync
 
+## Installation Contract
+
+`pip install ayase` exposes every implemented metric. Metric dependencies must
+not be placed behind extras or require manual installation, source checkouts,
+or user-prepared Python environments. Ayase provisions incompatible backends in
+private managed environments and resolves their pinned source and model assets
+automatically. Explicit backend paths are expert overrides, never prerequisites.
+Test mode must skip provisioning and downloads. Development tools belong in the
+`dev` dependency group, separately from metric runtime dependencies.
+
 ## Directory Structure
 
 ```

@@ -330,8 +330,10 @@ class P1204Module(PipelineModule):
     # ------------------------------------------------------- feature pipeline
     @staticmethod
     def _ffprobe(path: str) -> Optional[dict]:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         cmd = [
-            "ffprobe",
+            str(resolve_media_tool('ffprobe')),
             "-v",
             "quiet",
             "-print_format",

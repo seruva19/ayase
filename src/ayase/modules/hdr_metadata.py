@@ -49,10 +49,12 @@ def _pq_eotf(signal: np.ndarray) -> np.ndarray:
 
 def _color_transfer(path: Path) -> Optional[str]:
     """Probe the video's color transfer characteristic via ffprobe."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         out = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                str(resolve_media_tool('ffprobe')), "-v", "error", "-select_streams", "v:0",
                 "-show_entries", "stream=color_transfer,pix_fmt",
                 "-of", "json", str(path),
             ],
@@ -85,8 +87,10 @@ class HDRMetadataModule(PipelineModule):
     }
 
     def __init__(self, config=None):
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         super().__init__(config)
-        self._ml_available = shutil.which("ffmpeg") is not None
+        self._ml_available = shutil.which(str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models")))) is not None
         self._backend = "algorithmic"
 
     def process(self, sample: Sample) -> Sample:
@@ -118,9 +122,11 @@ class HDRMetadataModule(PipelineModule):
 
     def _analyze_video(self, path: Path):
         """Stream every frame as rgb48le and accumulate CTA-861.3 statistics."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         probe = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-v", "error", "-select_streams", "v:0",
                 "-show_entries", "stream=width,height", "-of", "json", str(path),
             ],
             capture_output=True, text=True, timeout=30,
@@ -134,7 +140,7 @@ class HDRMetadataModule(PipelineModule):
 
         proc = subprocess.Popen(
             [
-                "ffmpeg", "-v", "error", "-i", str(path),
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-v", "error", "-i", str(path),
                 "-f", "rawvideo", "-pix_fmt", "rgb48le", "-",
             ],
             stdout=subprocess.PIPE,

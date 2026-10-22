@@ -2,8 +2,8 @@
 
 A valid reference_path is mandatory and still images are skipped. Ayase prefers
 FFmpeg libvmaf, which evaluates the aligned streams and returns their pooled
-score; its subsample option applies only to the secondary Python frame-pair
-fallback. VMAF conventionally reports higher-is-better scores on an approximate
+score; its subsample option is forwarded to libvmaf's ``n_subsample``. VMAF
+conventionally reports higher-is-better scores on an approximate
 0--100 scale, but this adapter does not clamp outputs. It performs no temporal
 alignment, resizing, or pixel-format normalization, so reference and distorted
 videos must already be compatible.
@@ -18,9 +18,9 @@ from pathlib import Path
 from typing import Optional
 import json
 
-import cv2
 import numpy as np
 
+from ayase.managed_ffmpeg import resolve_ffmpeg
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.base_modules import ReferenceBasedModule
 
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class VMAFModule(ReferenceBasedModule):
     name = "vmaf"
+    implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {
         "vmaf": "VMAF v0.6.1, Netflix; FFmpeg libvmaf — https://github.com/Netflix/vmaf",
@@ -38,6 +39,7 @@ class VMAFModule(ReferenceBasedModule):
         "vmaf_model": "vmaf_v0.6.1",  # or "vmaf_4k_v0.6.1" for 4K content
         "subsample": 1,  # Process every Nth frame (1=all frames)
         "warning_threshold": 70.0,  # Warn if VMAF < 70
+        "ffmpeg_path": None,
     }
     metric_groups = {
         "vmaf": "fr_quality",
@@ -50,27 +52,16 @@ class VMAFModule(ReferenceBasedModule):
         self.warning_threshold = self.config.get("warning_threshold", 70.0)
         self._ml_available = False
         self._backend = None
+        self._ffmpeg_path: Optional[Path] = None
 
     def setup(self) -> None:
-        # FFmpeg's libvmaf filter is the only real backend — the `vmaf` pip
-        # package exposes no `compute_vmaf` function.
+        if self.test_mode:
+            return
         try:
-            result = subprocess.run(
-                ["ffmpeg", "-filters"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if "libvmaf" in result.stdout or "vmaf" in result.stdout:
-                self._ml_available = True
-                self._backend = "ffmpeg_libvmaf"
-                logger.info("FFmpeg with libvmaf support detected")
-            else:
-                self._backend = "unavailable"
-                logger.warning(
-                    "FFmpeg found but libvmaf not available. "
-                    "VMAF requires FFmpeg built with libvmaf."
-                )
+            self._ffmpeg_path = resolve_ffmpeg(self.config.get("ffmpeg_path"))
+            self._ml_available = True
+            self._backend = "ffmpeg_libvmaf"
+            logger.info("FFmpeg with libvmaf support detected at %s", self._ffmpeg_path)
         except Exception as e:
             self._backend = "unavailable"
             logger.warning(f"Failed to setup VMAF: {e}")
@@ -107,19 +98,20 @@ class VMAFModule(ReferenceBasedModule):
 
             # Build FFmpeg command
             # FFmpeg VMAF filter: -lavfi "[0:v][1:v]libvmaf=model=version={model}:log_path={output}"
-            model_version = self.vmaf_model.replace("vmaf_", "").replace("_", ".")
+            model_version = self.vmaf_model
             subsample_opt = (
                 f":n_subsample={self.subsample}" if self.subsample > 1 else ""
             )
 
+            escaped_output = output_path.replace("\\", "/").replace(":", r"\:")
             cmd = [
-                "ffmpeg",
+                str(self._ffmpeg_path),
                 "-i",
                 str(sample_path),  # Distorted video (input 0)
                 "-i",
                 str(reference_path),  # Reference video (input 1)
                 "-lavfi",
-                f"[0:v][1:v]libvmaf=model=version={model_version}{subsample_opt}:log_path={output_path}:log_fmt=json",
+                f"[0:v][1:v]libvmaf=model=version={model_version}{subsample_opt}:log_path='{escaped_output}':log_fmt=json",
                 "-f",
                 "null",
                 "-",
@@ -150,9 +142,6 @@ class VMAFModule(ReferenceBasedModule):
                 logger.warning("Unexpected VMAF JSON format")
                 return None
 
-            # Clean up temp file
-            Path(output_path).unlink(missing_ok=True)
-
             return float(vmaf_score)
 
         except subprocess.TimeoutExpired:
@@ -161,6 +150,9 @@ class VMAFModule(ReferenceBasedModule):
         except Exception as e:
             logger.warning(f"FFmpeg VMAF failed: {e}")
             return None
+        finally:
+            if "output_path" in locals():
+                Path(output_path).unlink(missing_ok=True)
 
     def process(self, sample: Sample) -> Sample:
         """Process sample with VMAF metric.

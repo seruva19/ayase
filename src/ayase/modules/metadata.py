@@ -175,10 +175,12 @@ class MetadataModule(PipelineModule):
 
     def _probe_audio(self, sample: Sample, fallback_duration: float = 0.0) -> None:
         """Populate sample.audio_metadata via ffprobe if the file has an audio stream."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             result = subprocess.run(
                 [
-                    "ffprobe", "-v", "error",
+                    str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-v", "error",
                     "-select_streams", "a:0",
                     "-show_entries", "stream=codec_name,channels,sample_rate,bit_rate,duration",
                     "-of", "json",

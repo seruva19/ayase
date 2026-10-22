@@ -1,10 +1,10 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.0** · Generated 2026-10-22 11:50 · **388 modules** · **577 metrics**
+> **Version 0.2.0** · Generated 2026-10-22 15:48 · **388 modules** · **577 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **379/388 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **383/388 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
@@ -256,7 +256,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: onnxruntime, torch
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
+- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `warning_threshold=0.4`
 
 ### `dover_technical` [↑](#categories)
@@ -270,7 +270,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: onnxruntime, torch
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
+- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `warning_threshold=0.4`
 
 ### `evoquality_score` [↑](#categories)
@@ -505,7 +505,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: inspect, mmengine, mmyolo, openai, opencv-python, torch, torchvision, transformers
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://github.com/PKU-YuanGroup/OpenS2V-Nexus" target="_blank">GitHub</a> · <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `nexus_backend=auto`, `natural_judge=auto`, `nexus_frames=32`, `yolo_checkpoint=yolo_world_v2_l_image_prompt_adapter-719a7afb.pth`, `yolo_clip_model=openai/clip-vit-base-patch32`, `gme_model=Alibaba-NLP/gme-Qwen2-VL-7B-Instruct`, `det_score_thr=0.5`, `det_nms_thr=0.7`, `det_max_boxes=100`, `keep_box_conf=0.6`, `keep_text_sim=0.3`, `detector_model=IDEA-Research/grounding-dino-tiny`, `box_threshold=0.3`, `text_threshold=0.25`, `gdino_keep_box_conf=0.3`, `gdino_keep_text_sim=0.2`, `encoder=clip`, `clip_model=openai/clip-vit-base-patch32`, `dino_model=dinov2_vitb14`, `max_frames=16`, `openai_model=gpt-4o-2024-11-20`, `natural_frames=16`, `natural_runs=3`, `vlm_model=llava-hf/llava-1.5-7b-hf`, `vlm_max_frames=4`, `vlm_max_new_tokens=8`, `warning_threshold=0.0`
 
 ### `paq2piq_score` [↑](#categories)
@@ -1099,11 +1099,10 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`butteraugli`](src/ayase/modules/butteraugli.py)** — Butteraugli perceptual distance (Google/JPEG XL, lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: jxlpy → butteraugli → unavailable
-- **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: Butteraugli (Google/libjxl) via jxlpy or butteraugli — https://github.com/google/butteraugli
-- **Packages**: butteraugli, jxlpy
-- **Source**: <a href="https://github.com/google/butteraugli" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_butteraugli.py`](tests/modules/per_module/test_butteraugli.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py)
+- **Backend**: butteraugli_cli → unavailable
+- **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: Butteraugli (Google/libjxl official CLI) — https://github.com/libjxl/libjxl/releases/tag/v0.12.0
+- **Source**: <a href="https://github.com/libjxl/libjxl" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_butteraugli.py`](tests/modules/per_module/test_butteraugli.py), [`test_perceptual_metrics.py`](tests/modules/test_perceptual_metrics.py), [`test_managed_native_tools.py`](tests/test_managed_native_tools.py)
 - **Config**: `subsample=5`, `warning_threshold=2.0`
 
 ### `cgvqm` [↑](#categories)
@@ -1130,7 +1129,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `own` — source: PointSSIM (Alexiou & Ebrahimi, 2020) claimed — https://github.com/mmspg/pointssim
 - **Packages**: open3d, scipy
 - **Source**: <a href="https://github.com/mmspg/pointssim" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_chamfer_sim.py`](tests/modules/per_module/test_chamfer_sim.py)
+- **Tests**: covered by [`test_chamfer_sim.py`](tests/modules/per_module/test_chamfer_sim.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `ciede2000` [↑](#categories)
 > CIEDE2000 perceptual color difference (lower=better) · ↓ lower=better
@@ -1256,7 +1255,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: dreamsim, torch
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://github.com/ssundaram21/dreamsim" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dreamsim.py`](tests/modules/per_module/test_dreamsim.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Tests**: covered by [`test_dreamsim.py`](tests/modules/per_module/test_dreamsim.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **Config**: `subsample=8`, `model_type=ensemble`
 
 ### `erqa_score` [↑](#categories)
@@ -1453,7 +1452,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `own` — source: named after GraphSIM (Yang et al., TPAMI 2020); the docstring acknowledges it is a proxy — https://arxiv.org/abs/2006.12447
 - **Packages**: open3d, scipy
 - **Source**: <a href="https://arxiv.org/abs/2006.12447" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_local_std_uniformity.py`](tests/modules/per_module/test_local_std_uniformity.py)
+- **Tests**: covered by [`test_local_std_uniformity.py`](tests/modules/per_module/test_local_std_uniformity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `mad` [↑](#categories)
 > Most Apparent Distortion (lower=better) · ↓ lower=better
@@ -1504,7 +1503,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `own` — source: PCQM (Meynet et al., 2020) claimed — https://github.com/MEPP-team/PCQM
 - **Packages**: open3d, scipy
 - **Source**: <a href="https://github.com/MEPP-team/PCQM" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_mse_color.py`](tests/modules/per_module/test_mse_color.py)
+- **Tests**: covered by [`test_mse_color.py`](tests/modules/per_module/test_mse_color.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `nlpd` [↑](#categories)
 > Normalized Laplacian Pyramid Distance (lower=better) · ↓ lower=better
@@ -1529,7 +1528,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `published` — source: MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric
 - **Packages**: open3d, scipy
 - **Source**: <a href="https://github.com/MPEGGroup/mpeg-pcc-tmc13" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_pc_psnr.py`](tests/modules/per_module/test_pc_psnr.py)
+- **Tests**: covered by [`test_pc_psnr.py`](tests/modules/per_module/test_pc_psnr.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `pc_d2_psnr` [↑](#categories)
 > Point-to-plane PSNR (dB) · dB
@@ -1541,7 +1540,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `published` — at least one of the clouds needs normals; without normals the metric is not emitted — source: MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric
 - **Packages**: open3d, scipy
 - **Source**: <a href="https://github.com/MPEGGroup/mpeg-pcc-tmc13" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_pc_psnr.py`](tests/modules/per_module/test_pc_psnr.py)
+- **Tests**: covered by [`test_pc_psnr.py`](tests/modules/per_module/test_pc_psnr.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `physics_iq_mse` [↑](#categories)
 > MSE vs real continuation (lower=better) · ↓ lower=better
@@ -1908,7 +1907,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF v0.6.1, Netflix; FFmpeg libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_vmaf.py`](tests/modules/per_module/test_vmaf.py), [`test_vmaf_variants.py`](tests/modules/per_module/test_vmaf_variants.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +3 more
+- **Tests**: covered by [`test_vmaf.py`](tests/modules/per_module/test_vmaf.py), [`test_vmaf_variants.py`](tests/modules/per_module/test_vmaf_variants.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +4 more
 - **Config**: `vmaf_model=vmaf_v0.6.1`, `subsample=1`, `warning_threshold=70.0`
 
 ### `vmaf_4k` [↑](#categories)
@@ -1920,7 +1919,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF 4K v0.6.1; libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_vmaf_4k.py`](tests/modules/per_module/test_vmaf_4k.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
+- **Tests**: covered by [`test_vmaf_4k.py`](tests/modules/per_module/test_vmaf_4k.py), [`test_vmaf_variants.py`](tests/modules/per_module/test_vmaf_variants.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 ### `vmaf_neg` [↑](#categories)
 > VMAF NEG (no enhancement gain, 0-100, higher=better) · ↑ higher=better · no enhancement gain, 0-100
@@ -2030,7 +2029,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `published` — source: EvalCrafter BLIP-BLEU — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py
 - **Packages**: Pillow, opencv-python, pycocoevalcap, torch, transformers
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a> · <a href="https://huggingface.co/Salesforce/blip2-opt-2.7b" target="_blank">HF</a>
-- **Tests**: covered by [`test_captioning.py`](tests/modules/per_module/test_captioning.py)
+- **Tests**: covered by [`test_captioning.py`](tests/modules/per_module/test_captioning.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=Salesforce/blip2-opt-2.7b`, `num_frames=5`
 
 ### `blip_score` [↑](#categories)
@@ -2245,7 +2244,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `published` — source: CycleReward-Combo (Bahng et al., ICCV 2025), the cyclereward package — https://github.com/hjbahng/cyclereward
 - **Packages**: cyclereward, torch
 - **Source**: <a href="https://github.com/hjbahng/cyclereward" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_cycle_reward.py`](tests/modules/per_module/test_cycle_reward.py)
+- **Tests**: covered by [`test_cycle_reward.py`](tests/modules/per_module/test_cycle_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_type=CycleReward-Combo`, `num_frames=5`, `device=auto`
 
 ### `dice_edit_coherence_score` [↑](#categories)
@@ -2298,7 +2297,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: ImageReward (Xu et al., NeurIPS 2023) — https://github.com/THUDM/ImageReward
 - **Packages**: ImageReward, transformers
 - **Source**: <a href="https://github.com/THUDM/ImageReward" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_image_reward.py`](tests/modules/per_module/test_image_reward.py)
+- **Tests**: covered by [`test_image_reward.py`](tests/modules/per_module/test_image_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=ImageReward-v1.0`, `num_frames=5`, `warning_threshold=0.0`
 
 ### `imagebind_av_score` [↑](#categories)
@@ -2445,9 +2444,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_compbench_consistent_attribute_binding` [↑](#categories)
 
@@ -2456,9 +2455,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_compbench_dynamic_attribute_binding` [↑](#categories)
 
@@ -2467,9 +2466,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_compbench_generative_numeracy` [↑](#categories)
 > EntityBench cross-shot identity persistence (0-1, higher=better; batch metric)
@@ -2479,9 +2478,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_compbench_motion_binding` [↑](#categories)
 
@@ -2490,9 +2489,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_compbench_object_interactions` [↑](#categories)
 
@@ -2501,9 +2500,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_compbench_spatial_relationships` [↑](#categories)
 
@@ -2512,9 +2511,9 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: video · **Speed**: 🐌 slow
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
-- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
-- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `llava_model_id=liuhaotian/llava-v1.6-34b`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`, `manage_runtime=True`, `manage_assets=True`, `require_gpu=True`
 
 ### `t2v_generic_alignment` [↑](#categories)
 > Text-video semantic alignment
@@ -2668,7 +2667,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: unavailable → official
 - **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
 - **Packages**: torch, transformers
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
 ### `videoscore2_alignment` [↑](#categories)
@@ -2894,7 +2893,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2605.15199" target="_blank">arXiv</a> · <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py)
+- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `entity_identity_cos` [↑](#categories)
@@ -2907,7 +2906,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2605.15199" target="_blank">arXiv</a> · <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py)
+- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `flicker_score` [↑](#categories)
@@ -3126,7 +3125,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `own`
 - **Packages**: opencv-python, transnetv2
 - **Source**: <a href="https://github.com/soCzech/TransNetV2" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_scene_detection.py`](tests/modules/per_module/test_scene_detection.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
+- **Tests**: covered by [`test_scene_detection.py`](tests/modules/per_module/test_scene_detection.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `threshold=0.5`
 
 ### `semantic_consistency` [↑](#categories)
@@ -3387,7 +3386,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs (depth-scale from the second video) do not apply to the target trajectory — source: CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py
 - **Packages**: opencv-python, torch, vggt
 - **Source**: <a href="https://github.com/ZGCTroy/CamI2V" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/VGGT-1B" target="_blank">HF</a>
-- **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py)
+- **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_managed_native_tools.py`](tests/test_managed_native_tools.py)
 - **Config**: `num_frames=0`, `trajectory_key=camera_trajectory`, `trajectory_suffix=.camera.json`, `pose_backend=auto`, `model_id=facebook/VGGT-1B`, `sfm_timeout=600`
 
 ### `camera_traj_consistency` [↑](#categories)
@@ -3400,7 +3399,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs do not apply to the target trajectory — source: CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py
 - **Packages**: opencv-python, torch, vggt
 - **Source**: <a href="https://github.com/ZGCTroy/CamI2V" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/VGGT-1B" target="_blank">HF</a>
-- **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py)
+- **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_managed_native_tools.py`](tests/test_managed_native_tools.py)
 - **Config**: `num_frames=0`, `trajectory_key=camera_trajectory`, `trajectory_suffix=.camera.json`, `pose_backend=auto`, `model_id=facebook/VGGT-1B`, `sfm_timeout=600`
 
 ### `camera_trans_error` [↑](#categories)
@@ -3413,7 +3412,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs do not apply to the target trajectory — source: CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py
 - **Packages**: opencv-python, torch, vggt
 - **Source**: <a href="https://github.com/ZGCTroy/CamI2V" target="_blank">GitHub</a> · <a href="https://huggingface.co/facebook/VGGT-1B" target="_blank">HF</a>
-- **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py)
+- **Tests**: covered by [`test_camera_trajectory.py`](tests/modules/per_module/test_camera_trajectory.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_managed_native_tools.py`](tests/test_managed_native_tools.py)
 - **Config**: `num_frames=0`, `trajectory_key=camera_trajectory`, `trajectory_suffix=.camera.json`, `pose_backend=auto`, `model_id=facebook/VGGT-1B`, `sfm_timeout=600`
 
 ### `commonsense_adherence_score` [↑](#categories)
@@ -3800,7 +3799,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — VBench uses the AMT-S interpolator; this implementation uses RIFE HD v3 under the same even/odd-frame reconstruction protocol — source: VBench Motion Smoothness (Huang et al., CVPR 2024) — https://github.com/Vchitect/VBench
 - **Packages**: rife_model, torch
 - **Source**: <a href="https://github.com/Vchitect/VBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/rife/flownet.pkl" target="_blank">HF</a>
-- **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py), [`test_video_audit_regressions.py`](tests/test_video_audit_regressions.py)
+- **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py), +1 more
 - **Config**: `vfi_error_threshold=0.08`, `max_frames=0`
 
 ### `object_integrity_score` [↑](#categories)
@@ -3813,7 +3812,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — backend='mmpose' replicates upstream (RTMDet-m person + RTMPose-m body8, all frames); backend='rtmlib' uses ONNX YOLOX-m/RTMPose-m instead of mmdet/mmpose (documented runtime substitution) — source: VMBench OIS (Ling et al., ICCV 2025, arXiv 2503.10076) — https://github.com/AMAP-ML/VMBench
 - **Packages**: mmdet, mmpose, rtmlib
 - **Source**: <a href="https://github.com/AMAP-ML/VMBench" target="_blank">GitHub</a>
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `backend=auto`, `max_frames=0`, `det_input_size=[640, 640]`, `pose_input_size=[192, 256]`, `det_checkpoint=https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth`, `pose_checkpoint=https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/rtmpose-m_simcc-body7_pt-body7_420e-256x192-e48f03d0_20230504.pth`, `det_cat_id=0`, `bbox_thr=0.3`, `nms_thr=0.3`, `warn_threshold=0.6`, `device=auto`
 
 ### `perceptible_amplitude_score` [↑](#categories)
@@ -3999,7 +3998,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: unavailable → official
 - **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
 - **Packages**: torch, transformers
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
 ### `videophy2_pc_rating` [↑](#categories)
@@ -4011,7 +4010,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: unavailable → official
 - **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
 - **Packages**: torch, transformers
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
 ### `videoscore_dynamic` [↑](#categories)
@@ -4315,7 +4314,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric. — source: Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Source**: <a href="https://github.com/discus0434/aesthetic-predictor-v2-5" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_image_metric_provenance.py`](tests/test_image_metric_provenance.py)
+- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
 ### `aesthetic_v25_score` [↑](#categories)
@@ -4329,7 +4328,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `adapted` — The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric. — source: Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Source**: <a href="https://github.com/discus0434/aesthetic-predictor-v2-5" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_image_metric_provenance.py`](tests/test_image_metric_provenance.py)
+- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
 ### `cover_aesthetic` [↑](#categories)
@@ -4383,7 +4382,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: onnxruntime, torch
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
+- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `warning_threshold=0.4`
 
 ### `laion_aesthetic` [↑](#categories)
@@ -4475,7 +4474,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_faces=3`, `crop_size=256`, `crop_pad=0.8`, `fps=25`
 
 ### `active_speaker_margin` [↑](#categories)
@@ -4485,7 +4484,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_faces=3`, `crop_size=256`, `crop_pad=0.8`, `fps=25`
 
 ### `active_speaker_silent_faces` [↑](#categories)
@@ -4495,7 +4494,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_faces=3`, `crop_size=256`, `crop_pad=0.8`, `fps=25`
 
 ### `aqascore_score` [↑](#categories)
@@ -4562,9 +4561,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → espnet_f0
 - **Provenance**: `own` — fraction of the DTW path with mismatched voiced flags — an own metric (not VDE)
-- **Packages**: fastdtw, pysptk, pyworld, scipy
+- **Packages**: fastdtw, pyworld, scipy
 - **Source**: <a href="https://github.com/espnet/espnet" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py)
+- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `audio_log_f0_rmse_cents` [↑](#categories)
 > DTW-aligned log-F0 RMSE (cents, lower=better) · ↓ lower=better · 0+
@@ -4574,9 +4573,9 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio +ref · **Speed**: ⚡ fast
 - **Backend**: unavailable → espnet_f0
 - **Provenance**: `published` — units are cents (ESPnet emits ln-RMSE; pure 1200/ln2 conversion); input resampled to 16 kHz; coverage/duration thresholds are own guards — source: ESPnet evaluate_f0.py (WORLD Harvest + mel-cepstrum fastdtw + ln-F0 RMSE) — https://github.com/espnet/espnet/tree/master/egs2/TEMPLATE/asr1/pyscripts/utils/evaluate_f0.py
-- **Packages**: fastdtw, pysptk, pyworld, scipy
+- **Packages**: fastdtw, pyworld, scipy
 - **Source**: <a href="https://github.com/espnet/espnet" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py)
+- **Tests**: covered by [`test_audio_log_f0_dtw.py`](tests/modules/per_module/test_audio_log_f0_dtw.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `audio_prosody_warp_ratio` [↑](#categories)
 > 0-1, higher=less repeated-frame warping; path-efficiency diagnostic
@@ -4699,7 +4698,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: CDPAM (Manocha et al. 2021), the cdpam 0.0.6 package — https://github.com/pranaymanocha/PerceptualAudio
 - **Packages**: cdpam, torch
 - **Source**: <a href="https://github.com/pranaymanocha/PerceptualAudio" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_cdpam.py`](tests/modules/per_module/test_cdpam.py)
+- **Tests**: covered by [`test_cdpam.py`](tests/modules/per_module/test_cdpam.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_installation_contract.py`](tests/test_installation_contract.py)
 - **Config**: `device=auto`, `target_sr=22050`
 
 ### `clap_score` [↑](#categories)
@@ -4723,7 +4722,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: DeSync (Movie Gen/MMAudio) on Synchformer — https://github.com/hkchengrex/MMAudio
 - **Packages**: syncformer, torch
 - **Source**: <a href="https://github.com/hkchengrex/MMAudio" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_av_desync.py`](tests/modules/per_module/test_av_desync.py)
+- **Tests**: covered by [`test_av_desync.py`](tests/modules/per_module/test_av_desync.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `allow_download=True`
 
 ### `distill_mos_score` [↑](#categories)
@@ -4797,7 +4796,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: ESTOI (Jensen & Taal 2016), pystoi extended=True — https://github.com/mpariente/pystoi
 - **Packages**: librosa, pystoi, soundfile
 - **Source**: <a href="https://github.com/mpariente/pystoi" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_audio_estoi.py`](tests/modules/per_module/test_audio_estoi.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py)
+- **Tests**: covered by [`test_audio_estoi.py`](tests/modules/per_module/test_audio_estoi.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `target_sr=10000`, `warning_threshold=0.5`
 
 ### `human_clap_score` [↑](#categories)
@@ -4855,11 +4854,11 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_mcd`](src/ayase/modules/audio_mcd.py)** — Mel Cepstral Distortion for TTS/VC quality (full-reference, pymcd)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
-- **Backend**: unavailable → pymcd
+- **Backend**: unavailable → pymcd_0_2_1_port
 - **Provenance**: `adapted` — pymcd 0.2.1 uses FastDTW on SPTK mel-cepstral coefficients c1-c13 but includes c0-c13 in the final distance; results are not interchangeable with c0-excluding or exact-DTW MCD protocols — source: MCD-DTW via pymcd 0.2.1 — https://github.com/chenqi008/pymcd
-- **Packages**: pymcd
+- **Packages**: fastdtw, pyworld
 - **Source**: <a href="https://github.com/chenqi008/pymcd" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_audio_mcd.py`](tests/modules/per_module/test_audio_mcd.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py)
+- **Tests**: covered by [`test_audio_mcd.py`](tests/modules/per_module/test_audio_mcd.py), [`test_audio_metrics.py`](tests/test_audio_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `warning_threshold=8.0`
 
 ### `ms_clap_score` [↑](#categories)
@@ -4962,7 +4961,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `adapted` — Uses the upstream calculator with a synthesized single-segment mode-0 report built from container metadata. The input has no audio, observed stalling, or representation-switch history, so O46 is an adapted video-only session estimate rather than a complete measured streaming session score. — source: ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203
 - **Packages**: itu_p1203
 - **Source**: <a href="https://github.com/itu-p1203/itu-p1203" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_p1203.py`](tests/modules/per_module/test_p1203.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
+- **Tests**: covered by [`test_p1203.py`](tests/modules/per_module/test_p1203.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `display_size=phone`
 
 ### `pam_score` [↑](#categories)
@@ -5014,7 +5013,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: ITU-T P.862 (the pesq package), WB at 16 kHz — https://github.com/ludlows/PESQ
 - **Packages**: librosa, pesq, soundfile
 - **Source**: <a href="https://github.com/ludlows/PESQ" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_audio_pesq.py`](tests/modules/per_module/test_audio_pesq.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
+- **Tests**: covered by [`test_audio_pesq.py`](tests/modules/per_module/test_audio_pesq.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
 
 ### `scoreq_score` [↑](#categories)
@@ -5266,7 +5265,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: UTMOSv2 (sarulab-speech) — https://github.com/sarulab-speech/UTMOSv2
 - **Packages**: utmosv2
 - **Source**: <a href="https://github.com/sarulab-speech/UTMOSv2" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_audio_utmos_v2.py`](tests/modules/per_module/test_audio_utmos_v2.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **Tests**: covered by [`test_audio_utmos_v2.py`](tests/modules/per_module/test_audio_utmos_v2.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `target_sr=16000`, `warning_threshold=3.0`
 
 ### `visqol` [↑](#categories)
@@ -5274,13 +5273,13 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 
 **[`visqol`](src/ayase/modules/visqol.py)** — ViSQOL audio quality MOS (Google, 1-5, higher=better)
 
-- **Input**: img/vid +ref · **Speed**: ⚡ fast
-- **Backend**: visqol_python → visqol_cli → unavailable
+- **Input**: audio +ref · **Speed**: ⚡ fast
+- **Backend**: visqol_python_port → visqol_python_official → visqol_cli → unavailable
 - **Provenance**: `published` — source: ViSQOL v3, Google — https://github.com/google/visqol
-- **Packages**: visqol
+- **Packages**: soundfile, visqol
 - **Source**: <a href="https://github.com/google/visqol" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_visqol.py`](tests/modules/per_module/test_visqol.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
-- **Config**: `mode=audio`
+- **Tests**: covered by [`test_visqol.py`](tests/modules/per_module/test_visqol.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
+- **Config**: `mode=audio`, `visqol_executable=visqol`
 
 ### `voice_identity` [↑](#categories)
 > ↑ higher=better
@@ -5290,7 +5289,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `adapted` — clip-reference pair is the standard cosine SV score; averaging over a set of references is an own aggregation — source: ECAPA-TDNN (Desplanques et al. 2020), SpeechBrain cosine verification — https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb
 - **Packages**: soundfile, speechbrain, torch
-- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py)
+- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 ### `voice_identity_below_threshold_fraction` [↑](#categories)
@@ -5303,7 +5302,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_coverage` [↑](#categories)
@@ -5314,7 +5313,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `utility`
 - **Packages**: soundfile, speechbrain, torch
-- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py)
+- **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `min_seconds=1.0`, `warning_threshold=0.25`, `max_references=32`
 
 ### `voice_identity_drift_slope` [↑](#categories)
@@ -5326,7 +5325,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_longest_below_threshold_run_fraction` [↑](#categories)
@@ -5339,7 +5338,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_reference_coverage` [↑](#categories)
@@ -5352,7 +5351,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility`
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_similarity_min` [↑](#categories)
@@ -5365,7 +5364,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_similarity_p05` [↑](#categories)
@@ -5378,7 +5377,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 ### `voice_identity_window_coverage` [↑](#categories)
@@ -5391,7 +5390,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility`
 - **Packages**: speechbrain, torch
 - **Source**: <a href="https://arxiv.org/abs/2005.07143" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py)
+- **Tests**: covered by [`test_voice_identity_drift.py`](tests/modules/per_module/test_voice_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 
@@ -5407,7 +5406,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `adapted` — AdaFace is a model for single aligned faces; here it averages over video frames and uses InsightFace norm_crop (the same 112x112 template as the authors' MTCNN pipeline) — source: AdaFace (Kim et al., CVPR 2022), official CVLface weights — https://github.com/mk-minchul/AdaFace
 - **Packages**: gc, insightface, safetensors, torch
 - **Source**: <a href="https://github.com/mk-minchul/AdaFace" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_adaface.py`](tests/modules/test_adaface.py)
+- **Tests**: covered by [`test_adaface.py`](tests/modules/test_adaface.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `checkpoint=ir101_webface12m`, `face_model=buffalo_l`, `subsample=8`, `warning_threshold=0.3`, `pad_retry=0.25`, `device=auto`
 
 ### `aed` [↑](#categories)
@@ -5474,7 +5473,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py)
+- **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `detection_mode=auto`, `clip_model=openai/clip-vit-base-patch32`, `clip_threshold=0.25`, `face_detection_confidence=0.5`, `concepts=[]`, `num_frames=5`
 
 ### `crfiqa_score` [↑](#categories)
@@ -5500,7 +5499,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `adapted` — Uses InsightFace buffalo_l ArcFace embeddings instead of the cited evaluations' recognition networks; gray-padding detection retry, skipped undetected frames, and optional averaging of reference-image embeddings are Ayase protocol choices. Absolute scores are not comparable to those evaluations. — source: Zakharov et al. 2019 (arXiv:1905.08233); SadTalker (arXiv:2211.12194); InsightFace ArcFace — https://github.com/deepinsight/insightface
 - **Packages**: Pillow, huggingface_hub, insightface, opencv-python, torch
 - **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
-- **Tests**: covered by [`test_csim.py`](tests/modules/per_module/test_csim.py), [`test_image_metric_provenance.py`](tests/test_image_metric_provenance.py)
+- **Tests**: covered by [`test_csim.py`](tests/modules/per_module/test_csim.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_image_metric_provenance.py`](tests/test_image_metric_provenance.py)
 - **Config**: `max_frames=0`, `det_size=640`, `device=auto`
 
 ### `csim_face_frames` [↑](#categories)
@@ -5513,7 +5512,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility`
 - **Packages**: Pillow, huggingface_hub, insightface, opencv-python, torch
 - **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
-- **Tests**: covered by [`test_csim.py`](tests/modules/per_module/test_csim.py), [`test_image_metric_provenance.py`](tests/test_image_metric_provenance.py)
+- **Tests**: covered by [`test_csim.py`](tests/modules/per_module/test_csim.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_image_metric_provenance.py`](tests/test_image_metric_provenance.py)
 - **Config**: `max_frames=0`, `det_size=640`, `device=auto`
 
 ### `dino_face_identity` [↑](#categories)
@@ -5526,7 +5525,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: gc, insightface, torch, torchvision
 - **VRAM**: ~400 MB
 - **Source**: <a href="https://github.com/facebookresearch/dinov2" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py)
+- **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=dinov2_vitb14`, `face_model=buffalo_l`, `subsample=8`, `face_margin=0.3`, `warning_threshold=0.3`, `pad_retry=0.25`
 
 ### `dino_face_identity_max` [↑](#categories)
@@ -5539,7 +5538,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: gc, insightface, torch, torchvision
 - **VRAM**: ~400 MB
 - **Source**: <a href="https://github.com/facebookresearch/dinov2" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py)
+- **Tests**: covered by [`test_dino_face_identity.py`](tests/modules/per_module/test_dino_face_identity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=dinov2_vitb14`, `face_model=buffalo_l`, `subsample=8`, `face_margin=0.3`, `warning_threshold=0.3`, `pad_retry=0.25`
 
 ### `expr_var_3dmm` [↑](#categories)
@@ -5716,7 +5715,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Packages**: Pillow, deepface, insightface
 - **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py)
+- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `max_faces_per_image=5`, `similarity_threshold=0.3`, `subsample=8`, `max_cache_size=10000`, `device=auto`
 
 ### `face_emb_norm` [↑](#categories)
@@ -5729,7 +5728,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: named after MagFace (Meng et al., CVPR 2021); the MagFace model is not used — https://github.com/IrvingMeng/MagFace
 - **Packages**: gc, insightface
 - **Source**: <a href="https://github.com/IrvingMeng/MagFace" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_emb_norm.py`](tests/modules/per_module/test_face_emb_norm.py)
+- **Tests**: covered by [`test_face_emb_norm.py`](tests/modules/per_module/test_face_emb_norm.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`, `norm_min=10.0`, `norm_max=30.0`
 
 ### `face_expression_smoothness` [↑](#categories)
@@ -5766,7 +5765,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
 - **Source**: <a href="https://arxiv.org/abs/1801.07698" target="_blank">arXiv</a> · <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_consistency` [↑](#categories)
@@ -5791,7 +5790,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility`
 - **Packages**: Pillow, deepface, insightface
 - **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py)
+- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `max_faces_per_image=5`, `similarity_threshold=0.3`, `subsample=8`, `max_cache_size=10000`, `device=auto`
 
 ### `face_identity_detection_coverage` [↑](#categories)
@@ -5804,7 +5803,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
 - **Source**: <a href="https://arxiv.org/abs/1801.07698" target="_blank">arXiv</a> · <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_drift_slope` [↑](#categories)
@@ -5816,7 +5815,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
 - **Source**: <a href="https://arxiv.org/abs/1801.07698" target="_blank">arXiv</a> · <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_longest_below_threshold_run_fraction` [↑](#categories)
@@ -5829,7 +5828,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
 - **Source**: <a href="https://arxiv.org/abs/1801.07698" target="_blank">arXiv</a> · <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_similarity_min` [↑](#categories)
@@ -5842,7 +5841,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
 - **Source**: <a href="https://arxiv.org/abs/1801.07698" target="_blank">arXiv</a> · <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_identity_similarity_p05` [↑](#categories)
@@ -5855,7 +5854,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
 - **Source**: <a href="https://arxiv.org/abs/1801.07698" target="_blank">arXiv</a> · <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py)
+- **Tests**: covered by [`test_face_identity_drift.py`](tests/modules/per_module/test_face_identity_drift.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `face_model=buffalo_l`, `subsample=32`, `device=auto`, `pad_retry=0.25`
 
 ### `face_iqa_score` [↑](#categories)
@@ -5981,7 +5980,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `adapted` — mean cosine similarity over subsampled video frames — the video aggregation is an extension of the image metric — source: ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface
 - **Packages**: insightface
 - **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_identity_loss.py`](tests/modules/per_module/test_identity_loss.py), [`test_identity_loss.py`](tests/modules/test_identity_loss.py)
+- **Tests**: covered by [`test_identity_loss.py`](tests/modules/per_module/test_identity_loss.py), [`test_identity_loss.py`](tests/modules/test_identity_loss.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`, `pad_retry=0.25`
 
 ### `facesim_arc` [↑](#categories)
@@ -5994,7 +5993,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: ConsisID (arXiv:2411.17440); OpenS2V-Eval (arXiv:2505.20292); ports of the official eval scripts — https://github.com/PKU-YuanGroup/ConsisID
 - **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
 - **Source**: <a href="https://github.com/PKU-YuanGroup/ConsisID" target="_blank">GitHub</a> · <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
-- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_provenance.py`](tests/test_provenance.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `protocol=consisid`, `device=auto`
 
 ### `facesim_cur` [↑](#categories)
@@ -6007,7 +6006,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: ConsisID (arXiv:2411.17440); OpenS2V-Eval (arXiv:2505.20292); ports of the official eval scripts — https://github.com/PKU-YuanGroup/ConsisID
 - **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
 - **Source**: <a href="https://github.com/PKU-YuanGroup/ConsisID" target="_blank">GitHub</a> · <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
-- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_provenance.py`](tests/test_provenance.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `protocol=consisid`, `device=auto`
 
 ### `facesim_face_frames` [↑](#categories)
@@ -6020,7 +6019,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility`
 - **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
 - **Source**: <a href="https://github.com/PKU-YuanGroup/ConsisID" target="_blank">GitHub</a> · <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">HF</a>
-- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_provenance.py`](tests/test_provenance.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `protocol=consisid`, `device=auto`
 
 ### `gaze_blendshape_binocular_disagreement_difference` [↑](#categories)
@@ -6116,7 +6115,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: facexlib, gc, insightface, torch
 - **VRAM**: ~200 MB
 - **Source**: <a href="https://github.com/jankolf/GraFIQs" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_grafiqs.py`](tests/modules/per_module/test_grafiqs.py)
+- **Tests**: covered by [`test_grafiqs.py`](tests/modules/per_module/test_grafiqs.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `subsample=4`, `face_model=buffalo_l`, `det_size=640`
 
 ### `head_beat_align` [↑](#categories)
@@ -6198,7 +6197,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `adapted` — mean 1-cos over subsampled video frames — the video aggregation is an extension of the image metric — source: ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface
 - **Packages**: insightface
 - **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_identity_loss.py`](tests/modules/per_module/test_identity_loss.py), [`test_identity_loss.py`](tests/modules/test_identity_loss.py)
+- **Tests**: covered by [`test_identity_loss.py`](tests/modules/per_module/test_identity_loss.py), [`test_identity_loss.py`](tests/modules/test_identity_loss.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `subsample=8`, `warning_threshold=0.5`, `pad_retry=0.25`
 
 ### `lip_dynamics_score` [↑](#categories)
@@ -6233,7 +6232,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `multi_subject_identity_mean` [↑](#categories)
@@ -6243,7 +6242,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `multi_subject_identity_tracks` [↑](#categories)
@@ -6253,7 +6252,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `multi_subject_identity_worst` [↑](#categories)
@@ -6263,7 +6262,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Input**: vid · **Speed**: ⚡ fast
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
-- **Tests**: no dedicated test reference found
+- **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_frames=200`, `min_track_length=3`
 
 ### `nearid_identity_similarity` [↑](#categories)
@@ -6345,7 +6344,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility` — source: TransNetV2 — https://github.com/soCzech/TransNetV2
 - **Packages**: opencv-python, transnetv2
 - **Source**: <a href="https://github.com/soCzech/TransNetV2" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_scene_detection.py`](tests/modules/per_module/test_scene_detection.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
+- **Tests**: covered by [`test_scene_detection.py`](tests/modules/per_module/test_scene_detection.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `threshold=0.5`
 
 ### `color_score` [↑](#categories)
@@ -6383,7 +6382,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py)
+- **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `detection_mode=auto`, `clip_model=openai/clip-vit-base-patch32`, `clip_threshold=0.25`, `face_detection_confidence=0.5`, `concepts=[]`, `num_frames=5`
 
 ### `concept_presence` [↑](#categories)
@@ -6396,7 +6395,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: insightface, mediapipe, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py)
+- **Tests**: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `detection_mode=auto`, `clip_model=openai/clip-vit-base-patch32`, `clip_threshold=0.25`, `face_detection_confidence=0.5`, `concepts=[]`, `num_frames=5`
 
 ### `count_score` [↑](#categories)
@@ -6494,7 +6493,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility` — source: RAM++ (Recognize Anything) — https://github.com/xinyu1205/recognize-anything
 - **Packages**: Pillow, huggingface_hub, ram, torch
 - **Source**: <a href="https://github.com/xinyu1205/recognize-anything" target="_blank">GitHub</a> · <a href="https://huggingface.co/xinyu1205/recognize-anything-plus-model" target="_blank">HF</a>
-- **Tests**: covered by [`test_ram_tagging.py`](tests/modules/per_module/test_ram_tagging.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
+- **Tests**: covered by [`test_ram_tagging.py`](tests/modules/per_module/test_ram_tagging.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `repo_id=xinyu1205/recognize-anything-plus-model`, `checkpoint_filename=ram_plus_swin_large_14m.pth`, `image_size=384`, `vit=swin_l`, `subsample=4`
 
 ### `scene_complexity` [↑](#categories)
@@ -6883,7 +6882,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `utility`
 - **Packages**: Pillow, opencv-python, pycocoevalcap, torch, transformers
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a> · <a href="https://huggingface.co/Salesforce/blip2-opt-2.7b" target="_blank">HF</a>
-- **Tests**: covered by [`test_captioning.py`](tests/modules/per_module/test_captioning.py)
+- **Tests**: covered by [`test_captioning.py`](tests/modules/per_module/test_captioning.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=Salesforce/blip2-opt-2.7b`, `num_frames=5`
 
 ### `ocr_area_ratio` [↑](#categories)
@@ -7166,7 +7165,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: inspect, mmengine, mmyolo, openai, opencv-python, torch, torchvision, transformers
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://github.com/PKU-YuanGroup/OpenS2V-Nexus" target="_blank">GitHub</a> · <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
-- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py)
+- **Tests**: covered by [`test_facesim.py`](tests/modules/per_module/test_facesim.py), [`test_opens2v.py`](tests/modules/per_module/test_opens2v.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device=auto`, `nexus_backend=auto`, `natural_judge=auto`, `nexus_frames=32`, `yolo_checkpoint=yolo_world_v2_l_image_prompt_adapter-719a7afb.pth`, `yolo_clip_model=openai/clip-vit-base-patch32`, `gme_model=Alibaba-NLP/gme-Qwen2-VL-7B-Instruct`, `det_score_thr=0.5`, `det_nms_thr=0.7`, `det_max_boxes=100`, `keep_box_conf=0.6`, `keep_text_sim=0.3`, `detector_model=IDEA-Research/grounding-dino-tiny`, `box_threshold=0.3`, `text_threshold=0.25`, `gdino_keep_box_conf=0.3`, `gdino_keep_text_sim=0.2`, `encoder=clip`, `clip_model=openai/clip-vit-base-patch32`, `dino_model=dinov2_vitb14`, `max_frames=16`, `openai_model=gpt-4o-2024-11-20`, `natural_frames=16`, `natural_runs=3`, `vlm_model=llava-hf/llava-1.5-7b-hf`, `vlm_max_frames=4`, `vlm_max_new_tokens=8`, `warning_threshold=0.0`
 
 
@@ -7271,7 +7270,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
-- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py)
+- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `class_balance_score` [↑](#categories)
 > Category balance 0-1 (higher=balanced) · ↑ higher=better · type: float
@@ -7346,7 +7345,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
-- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py)
+- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `fad` [↑](#categories)
 > Frechet Audio Distance (lower=better) · ↓ lower=better · type: float
@@ -7472,7 +7471,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
-- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +4 more
+- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +5 more
 
 ### `fvmd` [↑](#categories)
 > Fréchet Video Motion Distance · ↓ lower=better · type: float
@@ -7490,7 +7489,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
-- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py)
+- **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `is_score` [↑](#categories)
 > Dataset-level Inception Score (higher=better) · ↑ higher=better · type: float
@@ -7506,45 +7505,45 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`jedi_official`](src/ayase/modules/jedi.py)** — Number of generated videos supplied to JEDi
 
-- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Input**: video +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `jedi_preprocessing_sha256` [↑](#categories)
 > type: str
 
 **[`jedi_official`](src/ayase/modules/jedi.py)** — SHA-256 of Ayase's fixed JEDi loader policy
 
-- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Input**: video +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `jedi_reference_count` [↑](#categories)
 > type: int
 
 **[`jedi_official`](src/ayase/modules/jedi.py)** — Number of reference videos supplied to JEDi
 
-- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Input**: video +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `jedi_reference_manifest_sha256` [↑](#categories)
 > type: str
 
 **[`jedi_official`](src/ayase/modules/jedi.py)** — SHA-256 of the ordered reference path manifest
 
-- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Input**: video +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `jedi_score` [↑](#categories)
 > Official V-JEPA polynomial MMD (lower=better) · ↓ lower=better · type: float
 
 **[`jedi_official`](src/ayase/modules/jedi.py)** — Official two-distribution JEDi (polynomial MMD x100, lower=better)
 
-- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Input**: video +ref · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `adapted` — Uses the official V-JEPA encoder/probe and JEDi kernel, with Ayase's uniform full-video 16-frame sampling and square bilinear resize. Upstream accepts caller-defined loaders; benchmark-specific decoding/sampling is not reproduced. — source: Official JEDi implementation at commit e64f3fe8572b89ea904d161def44b419024e31a0 — https://github.com/oooolga/JEDi
-- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `kad` [↑](#categories)
 > Kernel Audio Distance (lower=better) · ↓ lower=better · type: float
@@ -7580,7 +7579,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
 - **Provenance**: `adapted` — Uses Ayase's StyleGAN-V-derived 16-frame I3D feature path; without a reference the metric is not emitted — source: KVD (Unterthiner et al. 2018) — https://arxiv.org/abs/1812.01717
-- **Tests**: covered by [`test_kvd.py`](tests/modules/per_module/test_kvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +3 more
+- **Tests**: covered by [`test_kvd.py`](tests/modules/per_module/test_kvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +4 more
 
 ### `l1_diversity` [↑](#categories)
 > type: float
@@ -7607,7 +7606,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `published` — source: MAD: Huang et al., Aligning Text-to-Music Evaluation with Human Preferences (ISMIR 2025) — https://arxiv.org/abs/2503.16669
-- **Tests**: covered by [`test_mauve_audio_divergence.py`](tests/modules/per_module/test_mauve_audio_divergence.py)
+- **Tests**: covered by [`test_mauve_audio_divergence.py`](tests/modules/per_module/test_mauve_audio_divergence.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `mmd_selfsplit` [↑](#categories)
 > Within-dataset V-JEPA2 self-split diagnostic · type: float
@@ -8084,7 +8083,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_common_sense_score` [↑](#categories)
 > Sum of two rates, 0-2 · ↑ higher=better · type: float
@@ -8093,7 +8092,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_fluid_adherence` [↑](#categories)
 > type: float
@@ -8102,7 +8101,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_gravity_adherence` [↑](#categories)
 > type: float
@@ -8111,7 +8110,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_instruction_score` [↑](#categories)
 > Range 0-3 · ↑ higher=better · type: float
@@ -8120,7 +8119,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_mass_solid_adherence` [↑](#categories)
 > type: float
@@ -8129,7 +8128,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_newton_adherence` [↑](#categories)
 > Fraction without violation · type: float
@@ -8138,7 +8137,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_penetration_adherence` [↑](#categories)
 > type: float
@@ -8147,7 +8146,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_physical_score` [↑](#categories)
 > Sum of five adherence rates, 0-5 · ↑ higher=better · type: float
@@ -8156,7 +8155,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_temporal_adherence` [↑](#categories)
 > type: float
@@ -8165,7 +8164,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `worldmodelbench_total_score` [↑](#categories)
 > Raw total, 0-10 · ↑ higher=better · type: float
@@ -8174,20 +8173,20 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
-- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py)
+- **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ## Utility & Validation (29 modules)
 
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
 - **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +6 more
+- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +7 more
 - **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
-- **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py)
+- **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 - **[`codec_compatibility`](src/ayase/modules/codec_compatibility.py)** — Validates codec, pixel format, and container for ML dataloader compatibility · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_codec_compatibility.py`](tests/modules/per_module/test_codec_compatibility.py)
 - **[`decoder_stress`](src/ayase/modules/decoder_stress.py)** — Random access decoder stress test · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_decoder_stress.py`](tests/modules/per_module/test_decoder_stress.py)
-- **[`dedup`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_dedup.py`](tests/modules/per_module/test_dedup.py), [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **[`dedup`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_dedup.py`](tests/modules/per_module/test_dedup.py), [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **[`deduplication`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **[`diversity`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_diversity.py`](tests/modules/per_module/test_diversity.py)
 - **[`diversity_selection`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_diversity.py`](tests/modules/per_module/test_diversity.py), [`test_diversity_selection.py`](tests/modules/per_module/test_diversity_selection.py)

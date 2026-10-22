@@ -53,6 +53,8 @@ class HDRSDRVQAModule(PipelineModule):
 
     def _detect_hdr(self, frame: np.ndarray, video_path=None) -> bool:
         """Detect if content is HDR based on pixel dtype and (for video) ffprobe metadata."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         # Fast path: dtype-based detection
         # Note: cv2.VideoCapture usually returns uint8, but some builds
         # may return float32 for HDR content.
@@ -65,7 +67,7 @@ class HDRSDRVQAModule(PipelineModule):
                 import subprocess
                 result = subprocess.run(
                     [
-                        "ffprobe", "-v", "quiet",
+                        str(resolve_media_tool('ffprobe', models_dir=self.config.get("models_dir", "models"))), "-v", "quiet",
                         "-select_streams", "v:0",
                         "-show_entries", "stream=color_space,color_transfer,color_primaries",
                         "-of", "csv=p=0",

@@ -75,12 +75,14 @@ class AudioPESQModule(PipelineModule):
 
         Returns path to the temp WAV, or None on failure.
         """
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             tmp.close()
 
             cmd = [
-                "ffmpeg", "-y", "-i", str(media_path),
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-y", "-i", str(media_path),
                 "-vn",  # no video
                 "-ac", "1",  # mono
                 "-ar", str(self.target_sr),

@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.2.0** · Generated 2026-10-22 11:45 · **316 models** across **9 sources**
+> **Version 0.2.0** · Generated 2026-10-22 15:55 · **316 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -48,7 +48,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `nearid`
-- **Parameters**: 428M · **Downloads**: 71
+- **Parameters**: 428M · **Downloads**: 67
 - **Disk**: ~1.6 GB
 - **Task**: NearID identity-aware SigLIP2 image embeddings
 - **Notes**: Apache-2.0; pinned to revision 7f69f4a0c753297de708a0217ef32659fe12a008
@@ -77,7 +77,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 166
+- **Parameters**: 8.3B · **Downloads**: 162
 - **Disk**: 7B
 - **Task**: Self-evolving Qwen2.5-VL NR-IQA rating model
 - **Notes**: Loaded through transformers or served through an endpoint.
@@ -212,7 +212,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `qwen_image_bench`
-- **Parameters**: 27.4B · **Downloads**: 31K
+- **Parameters**: 27.4B · **Downloads**: 30K
 - **Disk**: 27B BF16
 - **Task**: Q-Judger text-to-image evaluation model
 - **Notes**: Can also be served through vLLM/SGLang with an OpenAI-compatible endpoint.
@@ -365,7 +365,7 @@
 > image-feature-extraction · mit
 
 - **Used by**: `id_sim`
-- **Downloads**: 46
+- **Downloads**: 47
 - **Task**: Official ID-Sim adapter and projection heads
 - **Notes**: MIT; pinned to revision bcd3f388bec7db42e75b165e235196833111c4ae
 - **Source**: <a href="https://arxiv.org/abs/2604.05039" target="_blank">arXiv</a>
@@ -1111,7 +1111,7 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `t2v_compbench_official`
 - **Task**: Official LLaVA, GroundingDINO/SAM/Depth Anything, and DOT evaluators
-- **Notes**: User-prepared checkout and the evaluator-specific environments are required
+- **Notes**: Pinned source, private runtimes, and checkpoints are managed by Ayase
 
 ### <a href="https://github.com/TAILab-W/Ref4D-VideoBench" target="_blank">`TAILab-W/Ref4D-VideoBench@6f79f08b359053f2697e1b91b9e38be29baf4d7e`</a> [↑](#categories)
 
@@ -1150,7 +1150,7 @@ Model backends declared by modules that are not distributed through the sources 
 ### `colmap` [↑](#categories)
 
 - **Used by**: `camera_trajectory`
-- **Task**: SfM feature extraction/matching frontend (external binary)
+- **Task**: SfM feature extraction/matching frontend (Ayase-managed CPU binary)
 
 ### `damo/mplug_visual-question-answering_coco_large_en` [↑](#categories)
 
@@ -1160,7 +1160,7 @@ Model backends declared by modules that are not distributed through the sources 
 ### `glomap` [↑](#categories)
 
 - **Used by**: `camera_trajectory`
-- **Task**: Global structure-from-motion mapper (upstream backend, external binary)
+- **Task**: Global structure-from-motion mapper (Ayase-managed CPU binary)
 
 ### `gpt-4o-2024-11-20` [↑](#categories)
 
@@ -1372,7 +1372,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `ffmpeg/libvmaf` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
 
-- **Used by**: `cambi`, `vmaf`, `vmaf_4k`, `vmaf_neg`, `vmaf_phone`
+- **Used by**: `cambi`
 
 ### `ffmpeg/vmaf_4k_v0.6.1` [↑](#categories)
 > built-in · BSD-2-Clause (Netflix)
@@ -1416,7 +1416,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 > Official package with bundled scratchJNDdefault_best_model.pth; checkpoint SHA-256 453c8b6edee1a94f0120236156436ff28fe4d8d884485e4a67695c8e8570bdfe; source provenance: pranaymanocha/PerceptualAudio commit 4bd0a842b3d7a196b0e15398b761525482b11640
 
 - **Used by**: `cdpam`
-- **Install**: `pip install cdpam==0.0.6`
+- **Install**: `pip install ayase`
 
 ### `cleanfid` [↑](#categories)
 
@@ -1462,6 +1462,11 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 - **Used by**: `audio_log_f0_dtw`
 - **Install**: `pip install fastdtw`
 
+### `fastdtw==0.3.4` [↑](#categories)
+
+- **Used by**: `audio_mcd`
+- **Install**: `pip install ayase`
+
 ### `faster-whisper` [↑](#categories)
 
 - **Used by**: `asr_transcribe`
@@ -1500,12 +1505,6 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 - **Used by**: `brightrate`, `chipqa`, `hdr_chipqa`, `hdrmax`, `resnet_svr_vq`, `svr60_vq`
 - **Install**: `pip install joblib`
 
-### `jxlpy` [↑](#categories)
-> JPEG XL codec library
-
-- **Used by**: `butteraugli`
-- **Install**: `pip install jxlpy`
-
 ### `kadtk` [↑](#categories)
 
 - **Used by**: `kad`
@@ -1516,10 +1515,10 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 - **Used by**: `i2i_learned`, `image_lpips`
 - **Install**: `pip install lpips`
 
-### `mad_metric` [↑](#categories)
+### `mauve-text==0.4.0` [↑](#categories)
 
 - **Used by**: `mauve_audio_divergence`
-- **Install**: `pip install mad_metric`
+- **Install**: `pip install ayase`
 
 ### `mediapipe` [↑](#categories)
 > MediaPipe (face/pose/hand detection)
@@ -1606,21 +1605,16 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 - **Used by**: `captioning`
 - **Install**: `pip install pycocoevalcap`
 
-### `pymcd` [↑](#categories)
-> Validated against pymcd 0.2.1; later versions may change the metric protocol
-
-- **Used by**: `audio_mcd`
-- **Install**: `pip install pymcd==0.2.1`
-
-### `pysptk` [↑](#categories)
-
-- **Used by**: `audio_log_f0_dtw`
-- **Install**: `pip install pysptk`
-
 ### `pyworld` [↑](#categories)
 
 - **Used by**: `audio_log_f0_dtw`
 - **Install**: `pip install pyworld`
+
+### `pyworld==0.3.5` [↑](#categories)
+> The zero-iteration SPTK transform is implemented in NumPy
+
+- **Used by**: `audio_mcd`
+- **Install**: `pip install ayase`
 
 ### `rife_model` [↑](#categories)
 
@@ -1692,7 +1686,13 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 > Apache-2.0; source revision e64f3fe8572b89ea904d161def44b419024e31a0
 
 - **Used by**: `jedi_official`
-- **Install**: `Install videojedi==1.1.0 in a dedicated backend_python environment`
+- **Install**: `Automatically installed into Ayase's private managed JEDi environment`
+
+### `visqol-python==3.8.0` [↑](#categories)
+> Ayase-managed numerical transcription of the published protocol; backend identity visqol_python_port; 12 official conformance cases verified
+
+- **Used by**: `visqol`
+- **Install**: `pip install ayase`
 
 ### `word2number` [↑](#categories)
 

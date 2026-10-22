@@ -39,9 +39,11 @@ class XPSNRModule(ReferenceBasedModule):
         self._backend = None
 
     def setup(self) -> None:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             result = subprocess.run(
-                ["ffmpeg", "-filters"], capture_output=True, text=True, timeout=5
+                [str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-filters"], capture_output=True, text=True, timeout=5
             )
             if "xpsnr" in result.stdout:
                 self._ml_available = True
@@ -60,9 +62,11 @@ class XPSNRModule(ReferenceBasedModule):
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         try:
             cmd = [
-                "ffmpeg",
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))),
                 "-i", str(sample_path),
                 "-i", str(reference_path),
                 "-lavfi", "[0:v][1:v]xpsnr",

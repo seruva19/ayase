@@ -39,10 +39,12 @@ logger = logging.getLogger(__name__)
 
 def _has_audio_stream(video_path: str) -> bool:
     """Return True iff *video_path* contains an audio stream (via ffprobe)."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-select_streams", "a",
+                str(resolve_media_tool('ffprobe')), "-v", "error", "-select_streams", "a",
                 "-show_entries", "stream=codec_type", "-of", "csv=p=0",
                 video_path,
             ],
@@ -55,10 +57,12 @@ def _has_audio_stream(video_path: str) -> bool:
 
 def _video_duration_sec(video_path: str) -> Optional[float]:
     """Return container duration in seconds via ffprobe, or None."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-show_entries", "format=duration",
+                str(resolve_media_tool('ffprobe')), "-v", "error", "-show_entries", "format=duration",
                 "-of", "csv=p=0", video_path,
             ],
             capture_output=True, text=True, timeout=10,
@@ -73,10 +77,12 @@ _WINDOW_SEC = 4.8
 
 def _cut_window(video_path: Path, start_sec: float, dst: Path) -> bool:
     """Cut a ``_WINDOW_SEC`` clip starting at *start_sec* into *dst* via ffmpeg."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffmpeg", "-y", "-v", "error", "-ss", f"{start_sec:.3f}",
+                str(resolve_media_tool('ffmpeg')), "-y", "-v", "error", "-ss", f"{start_sec:.3f}",
                 "-t", f"{_WINDOW_SEC:.3f}", "-i", str(video_path),
                 "-c", "copy", str(dst),
             ],

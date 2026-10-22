@@ -46,6 +46,7 @@ import numpy as np
 from ayase.audio import load_audio
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.utils.sptk import sp2mc
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ class AudioLogF0DTWModule(PipelineModule):
     """Measure paired pitch-contour error (ESPnet evaluate_f0 protocol)."""
 
     name = "audio_log_f0_dtw"
+    implementation_sources = ("../utils/sptk.py",)
     provenance = {
         "audio_f0_voiced_mismatch": "own",
         "audio_log_f0_rmse_cents": "published",
@@ -91,7 +93,6 @@ class AudioLogF0DTWModule(PipelineModule):
     default_config = {}
     models = [
         {"id": "pyworld", "type": "pip_package", "install": "pip install pyworld", "task": "WORLD Harvest F0 + cheaptrick"},
-        {"id": "pysptk", "type": "pip_package", "install": "pip install pysptk", "task": "SPTK sp2mc mel-cepstrum"},
         {"id": "fastdtw", "type": "pip_package", "install": "pip install fastdtw", "task": "mel-cepstrum DTW"},
     ]
     metric_info = {
@@ -116,7 +117,6 @@ class AudioLogF0DTWModule(PipelineModule):
     def setup(self) -> None:
         try:
             import fastdtw
-            import pysptk  # noqa: F401
             import pyworld  # noqa: F401
             from scipy.spatial import distance as _spdist
 
@@ -127,7 +127,7 @@ class AudioLogF0DTWModule(PipelineModule):
             self._dtw = None
             self._backend = "unavailable"
             logger.warning(
-                "audio_log_f0_dtw unavailable (%s); requires pyworld, pysptk, fastdtw",
+                "audio_log_f0_dtw unavailable (%s); requires pyworld and fastdtw",
                 exc,
             )
 
@@ -204,10 +204,8 @@ class AudioLogF0DTWModule(PipelineModule):
         if int(np.count_nonzero(voiced)) < _MIN_VOICED_FRAMES:
             return None
 
-        import pysptk
-
         sp = pw.cheaptrick(x, f0, time_axis, _SAMPLE_RATE, fft_size=_N_FFT)
-        mcep = pysptk.sp2mc(sp, _MCEP_DIM, _MCEP_ALPHA)  # (T, mcep_dim+1)
+        mcep = sp2mc(sp, _MCEP_DIM, _MCEP_ALPHA)  # (T, mcep_dim+1)
         mcep = np.asarray(mcep, dtype=np.float64).T  # (dim, T)
 
         voiced_indices = np.flatnonzero(voiced)

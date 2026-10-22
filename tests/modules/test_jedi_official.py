@@ -2,6 +2,8 @@
 
 import json
 import subprocess
+import sys
+from types import SimpleNamespace
 from pathlib import Path
 
 
@@ -101,6 +103,94 @@ def test_setup_probes_before_download_and_geometry_before_probe(monkeypatch):
     assert invalid._backend == "unavailable"
 
 
+def test_zero_config_provisions_managed_backend_once(monkeypatch, tmp_path):
+    from ayase.modules.jedi import OfficialJEDiModule
+    import ayase.modules.jedi as jedi
+
+    calls = []
+    executable = tmp_path / "managed" / "python.exe"
+
+    def ensure(name, requirements, **options):
+        calls.append((name, requirements, options))
+        return executable
+
+    monkeypatch.setattr(OfficialJEDiModule, "_host_cuda_available", staticmethod(lambda: True))
+    monkeypatch.setitem(
+        sys.modules,
+        "ayase.managed_runtime",
+        SimpleNamespace(ensure_managed_environment=ensure),
+    )
+    module = OfficialJEDiModule({"models_dir": str(tmp_path / "models")})
+    assert module._resolve_backend_python() == executable
+    assert module._resolve_backend_python() == executable
+    assert len(calls) == 1
+    name, requirements, options = calls[0]
+    assert name == "jedi-videojedi-1.1.0"
+    assert "videojedi==1.1.0" in requirements
+    assert "torch==2.4.1+cu124" in requirements
+    assert "torchvision==0.19.1+cu124" in requirements
+    assert "numpy==1.26.4" in requirements
+    assert options["models_dir"] == str(tmp_path / "models")
+    assert options["pip_options"] == ("--extra-index-url", jedi._PYTORCH_INDEX)
+    assert options["python_version"] == "3.11"
+
+
+def test_backend_python_override_never_provisions(monkeypatch):
+    from ayase.modules.jedi import OfficialJEDiModule
+
+    module = OfficialJEDiModule({"backend_python": "X:/expert/python.exe"})
+    monkeypatch.setattr(
+        module,
+        "_host_cuda_available",
+        lambda: (_ for _ in ()).throw(AssertionError("GPU probe ran")),
+    )
+    assert module._resolve_backend_python() == Path("X:/expert/python.exe")
+
+
+def test_missing_gpu_skips_managed_environment_creation(monkeypatch):
+    from ayase.modules.jedi import OfficialJEDiModule
+
+    monkeypatch.setattr(OfficialJEDiModule, "_host_cuda_available", staticmethod(lambda: False))
+    monkeypatch.setitem(
+        sys.modules,
+        "ayase.managed_runtime",
+        SimpleNamespace(
+            ensure_managed_environment=lambda *a, **k: (_ for _ in ()).throw(
+                AssertionError("provisioned without a GPU")
+            )
+        ),
+    )
+    try:
+        OfficialJEDiModule()._resolve_backend_python()
+    except RuntimeError as exc:
+        assert "host-visible NVIDIA GPU" in str(exc)
+        assert "installation was skipped" in str(exc)
+    else:
+        raise AssertionError("missing GPU accepted")
+
+
+def test_automatic_install_failure_is_actionable(monkeypatch, caplog):
+    from ayase.modules.jedi import OfficialJEDiModule
+
+    monkeypatch.delenv("AYASE_TEST_MODE", raising=False)
+    monkeypatch.setattr(OfficialJEDiModule, "_global_test_mode", False)
+    monkeypatch.setattr(OfficialJEDiModule, "_host_cuda_available", staticmethod(lambda: True))
+    monkeypatch.setitem(
+        sys.modules,
+        "ayase.managed_runtime",
+        SimpleNamespace(
+            ensure_managed_environment=lambda *a, **k: (_ for _ in ()).throw(
+                RuntimeError("pip unavailable")
+            )
+        ),
+    )
+    module = OfficialJEDiModule()
+    module.setup()
+    assert module._backend == "unavailable"
+    assert "automatic JEDi environment installation failed" in caplog.text
+    assert "backend_python" not in caplog.text
+
+
 def test_invoke_worker_json_environment_error_and_timeout(monkeypatch):
     from ayase.modules.jedi import OfficialJEDiModule
     import ayase.modules.jedi as jedi
@@ -121,7 +211,7 @@ def test_invoke_worker_json_environment_error_and_timeout(monkeypatch):
     )
     assert module._invoke_worker({"value": 7})["jedi_score"] == 2.5
     assert captured["payload"] == {"value": 7}
-    assert captured["command"][0] == "X:/jedi/python.exe"
+    assert Path(captured["command"][0]) == Path("X:/jedi/python.exe")
     assert captured["kwargs"]["env"]["CUDA_VISIBLE_DEVICES"] == "3"
     assert captured["kwargs"]["timeout"] == 17.0 and captured["kwargs"]["shell"] is False
 
@@ -226,6 +316,7 @@ def test_test_mode_does_not_probe_or_download():
 
     module = OfficialJEDiModule({"test_mode": True})
     module._invoke_worker = lambda *a, **k: (_ for _ in ()).throw(AssertionError("probe"))
+    module._resolve_backend_python = lambda: (_ for _ in ()).throw(AssertionError("provision"))
     module._prepare_assets = lambda: (_ for _ in ()).throw(AssertionError("download"))
     module.setup()
     assert not module._ml_available

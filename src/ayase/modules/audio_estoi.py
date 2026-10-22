@@ -71,12 +71,14 @@ class AudioESTOIModule(PipelineModule):
 
     def _extract_audio(self, video_path: Path) -> Optional[Path]:
         """Extract audio from a video file to a temporary WAV."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         tmp = None
         try:
             tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             tmp.close()
             result = subprocess.run(
-                ["ffmpeg", "-y", "-i", str(video_path), "-vn", "-ac", "1",
+                [str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-y", "-i", str(video_path), "-vn", "-ac", "1",
                  "-ar", str(self.target_sr), tmp.name],
                 capture_output=True, timeout=30,
             )

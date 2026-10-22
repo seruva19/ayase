@@ -27,7 +27,6 @@ from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
 
-_LOCAL_AYASE_MODELS_REPO = Path(r"H:\models\ayase-models")
 _BRIGHTRATE_MODEL_URL = (
     "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/brightrate_brightvq.pt"
 )
@@ -286,9 +285,6 @@ class BrightRateModule(PipelineModule):
         if configured_path:
             candidate = Path(configured_path)
             return candidate if candidate.exists() else None
-        mirror_candidate = _LOCAL_AYASE_MODELS_REPO / relative_path
-        if mirror_candidate.exists():
-            return mirror_candidate
         try:
             from ayase.config import resolve_assets_url
 
