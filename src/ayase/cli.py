@@ -18,7 +18,13 @@ from typing_extensions import Annotated
 
 from . import __version__
 from .config import AyaseConfig
-from .pipeline import Pipeline, ModuleRegistry, PipelineModule, instantiate_module_requests
+from .pipeline import (
+    Pipeline,
+    ModuleRegistry,
+    PipelineModule,
+    ModuleInitializationError,
+    instantiate_module_requests,
+)
 from .runtime import opt_in_all_provenance, runtime_module_config
 from .scanner import DatasetScanner, scan_dataset, sample_from_path
 from .models import Sample
@@ -184,6 +190,9 @@ def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[Pipeline
         raise typer.Exit(code=1)
     try:
         return instantiate_module_requests(requests)
+    except ModuleInitializationError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"[red]Error resolving pipeline modules: {e}[/red]")
         raise typer.Exit(code=1)
@@ -379,6 +388,9 @@ def _instantiate_modules(
             raise typer.Exit(code=1)
     try:
         return instantiate_module_requests(requests)
+    except ModuleInitializationError as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(code=1)
     except Exception as e:
         console.print(f"[red]Error resolving modules: {e}[/red]")
         raise typer.Exit(code=1)
@@ -858,7 +870,7 @@ def filter(
             shutil.copy2(sample.path, dest)
         else:  # symlink (mode already validated above)
             try:
-                os.symlink(sample.path, dest)
+                os.symlink(sample.path.resolve(), dest)
             except OSError:
                 shutil.copy2(sample.path, dest)
 

@@ -17,8 +17,11 @@ import numpy as np
 
 from ayase.models import Sample, QualityMetrics
 from ayase.base_modules import BatchMetricModule
+from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
+
+_I3D_URL = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt?dl=1"
 
 
 class FVDModule(BatchMetricModule):
@@ -42,7 +45,7 @@ class FVDModule(BatchMetricModule):
         {
             "id": "i3d_torchscript.pt",
             "type": "local",
-            "url": "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt",
+            "url": _I3D_URL,
             "task": "I3D Kinetics-400 video feature extractor (StyleGAN-V FVD)",
         },
     ]
@@ -96,9 +99,23 @@ class FVDModule(BatchMetricModule):
         models_dir = self.config.get("models_dir", "models")
         ckpt = download_model_file(
             "fvd/i3d_torchscript.pt",
-            "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt",
+            _I3D_URL,
             models_dir,
         )
+        # The historical URL without ``?dl=1`` returned a Dropbox HTML page,
+        # which download_model_file then treated as a valid cached checkpoint.
+        # Replace only files positively identified as HTML; preserve all other
+        # existing files, including user-supplied compatible checkpoints.
+        with ckpt.open("rb") as handle:
+            prefix = handle.read(512).lstrip().lower()
+        if prefix.startswith((b"<!doctype html", b"<html")):
+            logger.warning("Replacing cached HTML response at %s", ckpt)
+            ckpt.unlink()
+            ckpt = download_model_file(
+                "fvd/i3d_torchscript.pt",
+                _I3D_URL,
+                models_dir,
+            )
 
         def load_i3d():
             return torch.jit.load(str(ckpt), map_location="cpu").to(self.device).eval()
@@ -121,19 +138,21 @@ class FVDModule(BatchMetricModule):
         if self.subsample_videos is not None and self._processed_count >= self.subsample_videos:
             return None
 
+        features = self._extract_features_unbudgeted(sample)
+        if features is not None:
+            self._processed_count += 1
+        return features
+
+    def _extract_features_unbudgeted(self, sample: Sample) -> Optional[np.ndarray]:
+        """Extract features without applying or consuming the generated-set budget."""
+        if not sample.is_video:
+            return None
+
         try:
             frames = self._load_video_frames(sample.path, self.num_frames)
             if frames is None or len(frames) != self.num_frames:
                 return None
-
-            features = self._extract_i3d_features(frames)
-
-            if features is None:
-                return None
-
-            self._processed_count += 1
-            return features
-
+            return self._extract_i3d_features(frames)
         except Exception as e:
             logger.debug(f"Failed to extract features from {sample.path}: {e}")
             return None
@@ -146,16 +165,17 @@ class FVDModule(BatchMetricModule):
         frames_tensor = frames_tensor.float().to(self.device) / 127.5 - 1.0
 
         with torch.no_grad():
-            features = self._r3d_model(frames_tensor)
+            features = self._r3d_model(
+                frames_tensor,
+                rescale=False,
+                resize=False,
+                return_features=True,
+            )
             return features.cpu().numpy().flatten()
 
     def extract_reference_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract reference features without consuming subsample budget."""
-        previous = self._processed_count
-        try:
-            return self.extract_features(sample)
-        finally:
-            self._processed_count = previous
+        return self._extract_features_unbudgeted(sample)
 
     def _load_video_frames(self, video_path: Path, num_frames: int) -> Optional[np.ndarray]:
         """Load uniformly sampled frames from video.
@@ -214,24 +234,25 @@ class FVDModule(BatchMetricModule):
         try:
             from scipy import linalg
 
-            # Convert to numpy array
-            features_array = np.stack(features, axis=0)
-
-            if reference_features is not None and len(reference_features) > 0:
-                ref_array = np.stack(reference_features, axis=0)
-            else:
-                logger.info(
-                    "FVD: no reference features provided; "
-                    "metric is undefined without a reference set"
-                )
+            if len(features) < 2 or reference_features is None or len(reference_features) < 2:
+                logger.info("FVD requires at least two generated and two reference features")
                 return None
+
+            features_array = np.asarray(np.stack(features, axis=0), dtype=np.float64)
+            ref_array = np.asarray(np.stack(reference_features, axis=0), dtype=np.float64)
+            if features_array.ndim != 2 or ref_array.ndim != 2:
+                raise ValueError("FVD features must be two-dimensional arrays")
+            if features_array.shape[1] == 0 or features_array.shape[1] != ref_array.shape[1]:
+                raise ValueError("FVD feature dimensions must be non-empty and equal")
+            if not np.isfinite(features_array).all() or not np.isfinite(ref_array).all():
+                raise ValueError("FVD features must contain only finite values")
 
             # Compute statistics
             mu1 = np.mean(features_array, axis=0)
-            sigma1 = np.cov(features_array, rowvar=False)
+            sigma1 = np.atleast_2d(np.cov(features_array, rowvar=False))
 
             mu2 = np.mean(ref_array, axis=0)
-            sigma2 = np.cov(ref_array, rowvar=False)
+            sigma2 = np.atleast_2d(np.cov(ref_array, rowvar=False))
 
             # Compute Fréchet distance
             # FD = ||mu1 - mu2||^2 + Tr(sigma1 + sigma2 - 2*sqrt(sigma1*sigma2))
@@ -242,12 +263,14 @@ class FVDModule(BatchMetricModule):
                 covmean = covmean.real
 
             fvd = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
+            if not np.isfinite(fvd):
+                raise ValueError("FVD calculation produced a non-finite result")
 
             return float(fvd)
 
         except Exception as e:
-            logger.error(f"Failed to compute FVD: {e}")
-            return float('inf')
+            logger.warning("Failed to compute FVD: %s", e)
+            return None
 
     def process(self, sample: Sample) -> Sample:
         """Extract and cache features from sample.
@@ -259,8 +282,9 @@ class FVDModule(BatchMetricModule):
             return sample
 
         features = self.extract_features(sample)
-        if features is not None:
-            self._feature_cache.append(features)
+        if features is None:
+            return sample
+        self._feature_cache.append(features)
 
         # Check if sample has reference for paired comparison
         reference_path = getattr(sample, "reference_path", None)
@@ -285,6 +309,8 @@ class FVDModule(BatchMetricModule):
             logger.info(f"FVD: Not enough samples ({len(self._feature_cache)}) for metric computation")
             self._feature_cache = []
             self._reference_cache = []
+            self._processed_count = 0
+            PipelineModule.on_dispose(self)
             return
 
         try:
@@ -313,3 +339,4 @@ class FVDModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._processed_count = 0
+            PipelineModule.on_dispose(self)

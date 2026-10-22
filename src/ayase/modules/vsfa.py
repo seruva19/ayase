@@ -54,11 +54,11 @@ def _tp_pool(q, torch, F, tau=12, beta=0.5):
     q = torch.unsqueeze(torch.t(q), 0)
     qm = -float("inf") * torch.ones((1, 1, tau - 1)).to(q.device)
     qp = 10000.0 * torch.ones((1, 1, tau - 1)).to(q.device)
-    l = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)
+    memory = -F.max_pool1d(torch.cat((qm, -q), 2), tau, stride=1)
     m = F.avg_pool1d(torch.cat((q * torch.exp(-q), qp * torch.exp(-qp)), 2), tau, stride=1)
     n = F.avg_pool1d(torch.cat((torch.exp(-q), torch.exp(-qp)), 2), tau, stride=1)
     m = m / n
-    return beta * m + (1 - beta) * l
+    return beta * m + (1 - beta) * memory
 
 
 class VSFAModule(PipelineModule):

@@ -240,8 +240,11 @@ class PipelineModule(ABC):
     def on_dispose(self) -> None:
         """Called when the pipeline finishes processing all samples. Use for cleanup."""
         # Backward compatibility for existing teardown()
-        self.teardown()
-        self._release_torch_resources()
+        try:
+            self.teardown()
+        finally:
+            self._mounted = False
+            self._release_torch_resources()
 
     def _release_torch_resources(self) -> None:
         """Best-effort release of torch model attrs and CUDA memory.
@@ -1493,6 +1496,7 @@ class Pipeline:
                 for sample in all_samples:
                     self._register_module_failure(sample, module.name, detail)
             finally:
+                module._mounted = False
                 self._active_dataset_module = None
 
         # on_dispose() (e.g. dedup batch modules) can flip validity or write
@@ -2836,6 +2840,14 @@ class ModuleRegistry:
                 logger.warning(f"Failed to scan plugin folder {folder}: {e}")
 
 
+class ModuleInitializationError(RuntimeError):
+    """A requested module could not be constructed."""
+
+    def __init__(self, module_name: str, cause: Exception) -> None:
+        self.module_name = module_name
+        super().__init__(f"Error initializing module '{module_name}': {cause}")
+
+
 def instantiate_module_requests(
     requests: Iterable[tuple[str, Dict[str, Any]]],
 ) -> List[PipelineModule]:
@@ -2845,7 +2857,10 @@ def instantiate_module_requests(
         module_cls = ModuleRegistry.get_module(requested_name)
         if module_cls is None:
             raise ValueError(f"Unknown module: {requested_name}")
-        module = module_cls(config=deepcopy(params))
+        try:
+            module = module_cls(config=deepcopy(params))
+        except Exception as exc:
+            raise ModuleInitializationError(requested_name, exc) from exc
         if requested_name == "lip_sync" and not getattr(module, "_requested_module_name", None):
             setattr(module, "_requested_module_name", "lip_sync")
         modules.append(module)

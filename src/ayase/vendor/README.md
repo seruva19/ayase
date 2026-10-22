@@ -22,6 +22,7 @@ paths are left out. Licence and notice files are kept.
 | `vbench` | Vchitect/VBench, `VBench-2.0` subtree | `45e79ec1` | Apache-2.0, but see below |
 | `verse_bench` | — | — | see tree |
 | `videomae` | OpenGVLab/VideoMAEv2 | — | see tree |
+| [`../third_party/videophy2`](../third_party/videophy2) | Hritikbansal/videophy, VideoPhy-2 inference | `01d366c979e4a82875852adbf427ccc036e7373a` | MIT repository; Apache-2.0 runtime headers and license retained |
 | `vila` | NVlabs/VILA, `llava` package | `0f1426e8` | Apache-2.0 |
 | `vmbench` | GD-ML/VMBench | — | see tree |
 | `vqa2` | Q-Future/Visual-Question-Answering-for-Video-Quality-Assessment | `9087c795` | Apache-2.0 |

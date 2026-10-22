@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **jedi_official**: two-collection JEDi through the pinned author backend in a dedicated Python worker, with reference manifests and isolated feature caches.
+- **videophy2_autoeval**: official VideoPhy-2 semantic/physical ratings and joint success indicator, using the bundled inference runtime and pinned checkpoint.
+- **t2v_compbench_official**: all seven author evaluators with benchmark ID/prompt validation, native per-video scores and category averages.
+
+### Fixed
+
+- **pipeline**: reload disposed modules on subsequent runs, including custom disposal hooks and failed teardown.
+- **filter**: resolve relative source paths before creating symbolic links.
+- **cli**: identify the requested module when its constructor fails before pipeline execution.
+- **fvd / kvd**: preserve references at the video budget boundary, reject insufficient or nonfinite distributions, and release extractor resources after scoring.
+- **fvd**: request pre-softmax I3D features explicitly and use the binary checkpoint download URL.
+- **kvd**: retain negative finite-sample values of the unbiased MMD estimator.
+- **motion_smoothness**: honor the selected device for bundled RIFE weights and warping grids.
+- Synchronize the metric schema contract and resolve import-placement and variable-name lint failures.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added

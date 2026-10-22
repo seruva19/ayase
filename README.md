@@ -6,9 +6,16 @@ Modular media quality metrics for video, image, and audio datasets.
 
 ## What It Does
 
-Ayase runs quality assessment modules over a dataset and writes structured per-sample metrics. 385 modules produce 567 metrics across 22 categories (NR-IQA, FR-IQA, NR-VQA, temporal, motion, audio, face, safety, aesthetics, text-video alignment, and more). Modules are independent - pick only what you need.
+Ayase runs quality assessment modules over a dataset and writes structured per-sample metrics. 388 modules produce 577 metrics across 22 categories (NR-IQA, FR-IQA, NR-VQA, temporal, motion, audio, face, safety, aesthetics, text-video alignment, and more). Modules are independent - pick only what you need.
 
 Full metric catalog: [METRICS.md](METRICS.md). Pretrained model catalog: [MODELS.md](MODELS.md).
+
+Video generation evaluation includes [JEDi](docs/jedi_backend.md),
+[VideoPhy-2 AutoEval](docs/videophy2_backend.md), and all seven
+[T2V-CompBench categories](docs/t2v_compbench_backend.md). JEDi uses a dedicated
+backend environment; T2V-CompBench requires the prepared author checkout and
+evaluator environments. Missing backends leave scores unset. Legacy
+`mmd_selfsplit` and `vlm_phy` diagnostics remain separate.
 
 ## Install
 

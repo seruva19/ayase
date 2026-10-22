@@ -65,6 +65,7 @@ PERMISSIVE_COMPONENTS = {
     "t2v_metrics",
     "verse_bench",
     "videomae",
+    "videophy2",
     "vila",
     "vmbench",
     "vqa2",

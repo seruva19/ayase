@@ -8,14 +8,18 @@ This is a dataset-level metric that compares two distributions of videos.
 """
 
 import logging
+from pathlib import Path
 from typing import Optional, List
 
 import numpy as np
 
 from ayase.models import Sample
 from ayase.base_modules import BatchMetricModule
+from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
+
+_I3D_URL = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt?dl=1"
 
 
 class KVDModule(BatchMetricModule):
@@ -35,7 +39,7 @@ class KVDModule(BatchMetricModule):
         {
             "id": "i3d_torchscript.pt",
             "type": "local",
-            "url": "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt",
+            "url": _I3D_URL,
             "task": "I3D Kinetics-400 video feature extractor (shared with FVD)",
         },
     ]
@@ -85,6 +89,12 @@ class KVDModule(BatchMetricModule):
             return None
         return self._fvd_delegate.extract_features(sample)
 
+    def extract_reference_features(self, sample: Sample) -> Optional[np.ndarray]:
+        """Extract a reference feature without consuming the generated-set budget."""
+        if not sample.is_video or self._fvd_delegate is None:
+            return None
+        return self._fvd_delegate.extract_reference_features(sample)
+
     def _poly_kernel(self, X: np.ndarray, Y: np.ndarray) -> np.ndarray:
         """Published KVD kernel: K(x, y) = (x·y/d + 1)^3 (same as KID)."""
         d = X.shape[1]
@@ -92,20 +102,31 @@ class KVDModule(BatchMetricModule):
 
     def _compute_mmd(self, X: np.ndarray, Y: np.ndarray) -> float:
         """Unbiased MMD² with the polynomial kernel (lower = more similar)."""
+        if X.ndim != 2 or Y.ndim != 2:
+            raise ValueError("KVD features must be two-dimensional arrays")
+        if X.shape[1] == 0 or X.shape[1] != Y.shape[1]:
+            raise ValueError("KVD feature dimensions must be non-empty and equal")
+        if not np.isfinite(X).all() or not np.isfinite(Y).all():
+            raise ValueError("KVD features must contain only finite values")
+
         K_XX = self._poly_kernel(X, X)
         K_YY = self._poly_kernel(Y, Y)
         K_XY = self._poly_kernel(X, Y)
 
         m = X.shape[0]
         n = Y.shape[0]
+        if m < 2 or n < 2:
+            raise ValueError("Unbiased MMD requires at least two samples in each distribution")
         np.fill_diagonal(K_XX, 0)
         np.fill_diagonal(K_YY, 0)
 
         mmd_sq = K_XX.sum() / (m * (m - 1))
         mmd_sq += K_YY.sum() / (n * (n - 1))
         mmd_sq -= 2 * K_XY.mean()
+        if not np.isfinite(mmd_sq):
+            raise ValueError("KVD calculation produced a non-finite result")
 
-        return float(max(mmd_sq, 0.0))
+        return float(mmd_sq)
 
     def compute_distribution_metric(
         self, features: List[np.ndarray], reference_features: Optional[List[np.ndarray]] = None
@@ -120,24 +141,47 @@ class KVDModule(BatchMetricModule):
             KVD score (lower is better), or None without a reference set
         """
         try:
-            # Convert to numpy array
-            features_array = np.stack(features, axis=0)
-
-            if reference_features is not None and len(reference_features) > 0:
-                ref_array = np.stack(reference_features, axis=0)
-            else:
-                logger.info(
-                    "KVD: no reference features provided; "
-                    "metric is undefined without a reference set"
-                )
+            if len(features) < 2 or reference_features is None or len(reference_features) < 2:
+                logger.info("KVD requires at least two generated and two reference features")
                 return None
+
+            features_array = np.asarray(np.stack(features, axis=0), dtype=np.float64)
+            ref_array = np.asarray(np.stack(reference_features, axis=0), dtype=np.float64)
 
             # Published KVD = unbiased polynomial-kernel MMD² (no rescaling).
             return self._compute_mmd(features_array, ref_array)
 
         except Exception as e:
-            logger.error(f"Failed to compute KVD: {e}")
-            return float('inf')
+            logger.warning("Failed to compute KVD: %s", e)
+            return None
+
+    def process(self, sample: Sample) -> Sample:
+        """Cache an aligned generated/reference pair when generated extraction succeeds."""
+        if not self._ml_available:
+            return sample
+
+        features = self.extract_features(sample)
+        if features is None:
+            return sample
+        self._feature_cache.append(features)
+
+        reference_path = getattr(sample, "reference_path", None)
+        if reference_path is not None and isinstance(reference_path, (str, Path)):
+            try:
+                ref_sample = Sample(path=Path(reference_path), is_video=True)
+                ref_features = self.extract_reference_features(ref_sample)
+                if ref_features is not None:
+                    self._reference_cache.append(ref_features)
+            except Exception as exc:
+                logger.debug("Failed to extract KVD reference features: %s", exc)
+
+        return sample
+
+    def _cleanup_delegate(self) -> None:
+        if self._fvd_delegate is not None:
+            PipelineModule.on_dispose(self._fvd_delegate)
+        self._fvd_delegate = None
+        self._feature_model = None
 
     def on_dispose(self) -> None:
         """Compute KVD after all samples processed."""
@@ -145,6 +189,8 @@ class KVDModule(BatchMetricModule):
             logger.info(f"KVD: Not enough samples ({len(self._feature_cache)}) for metric computation")
             self._feature_cache = []
             self._reference_cache = []
+            self._cleanup_delegate()
+            PipelineModule.on_dispose(self)
             return
 
         try:
@@ -172,3 +218,5 @@ class KVDModule(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
+            self._cleanup_delegate()
+            PipelineModule.on_dispose(self)

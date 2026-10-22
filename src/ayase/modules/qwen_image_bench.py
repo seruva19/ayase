@@ -21,9 +21,6 @@ from PIL import Image
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
-logger = logging.getLogger(__name__)
-
-
 from ayase.third_party.qwen_image_bench.checklists import (
     DIM_TO_CHECKLIST,
     SYSTEM_PROMPT,
@@ -41,6 +38,8 @@ from ayase.third_party.qwen_image_bench.score_utils import (
 from ayase.third_party.qwen_image_bench.score_utils import (
     fix_score_json as _fix_score_json,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_dimension_name(value: str) -> str:
