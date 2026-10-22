@@ -2,156 +2,82 @@
 
 Modular media quality metrics for video, image, and audio datasets.
 
-> **Work in progress** - APIs and module interfaces may change before 1.0.
-
-## What It Does
-
-Ayase runs quality assessment modules over a dataset and writes structured per-sample metrics. 388 modules produce 577 metrics across 22 categories (NR-IQA, FR-IQA, NR-VQA, temporal, motion, audio, face, safety, aesthetics, text-video alignment, and more). Modules are independent - pick only what you need.
-
-Full metric catalog: [METRICS.md](METRICS.md). Pretrained model catalog: [MODELS.md](MODELS.md).
-
-Video generation evaluation includes [JEDi](docs/jedi_backend.md),
-[VideoPhy-2 AutoEval](docs/videophy2_backend.md), and all seven
-[T2V-CompBench categories](docs/t2v_compbench_backend.md). Ayase provisions
-their backend environments, source snapshots, and checkpoints automatically.
-Legacy
-`mmd_selfsplit` and `vlm_phy` diagnostics remain separate.
+Ayase scans a dataset, runs the metrics you choose, and exports per-sample
+results and validation issues. 388 modules produce 577 metrics across 22 categories,
+covering perceptual quality, text alignment, motion, temporal consistency,
+audio, safety, and more.
 
 ## Install
+
+Requires Python 3.9+.
 
 ```bash
 pip install ayase
 ```
 
-Ayase is distributed as a single install. Runtime dependencies are managed by the
-project itself. On first use, Ayase downloads model weights and provisions private
-Python runtimes for backends with incompatible dependencies. These runtimes,
-source snapshots, and installation logs are cached below `models_dir/.ayase`;
-they do not change the application's Python environment. No metric extras are
-needed. Hardware requirements still depend on the selected metric.
-See [managed backend infrastructure](docs/managed_backends.md) for cache layout,
-runtime behavior, and expert overrides.
+One install provides the metric runtime infrastructure. Ayase downloads weights
+and provisions private Python environments or native tools as needed on first
+use, then caches them for later runs. No per-metric extras are required.
+Uncached setup needs internet access; hardware requirements depend on the metric.
 
-### Isolated installation
+## Quick start
 
-Applications that already have their own PyTorch, NumPy, or media dependency
-constraints can keep Ayase completely outside their environment:
+Scan a dataset with a small, explicit set of modules and save a report:
 
 ```bash
-pip install ayase --no-deps
+ayase scan ./dataset --modules metadata,basic_quality --format json --output report.json
 ```
 
-```python
-from ayase_client import AyasePipeline
-
-pipeline = AyasePipeline(modules=["basic", "metadata", "motion"])
-results = pipeline.run("./my_dataset")
-pipeline.export("report.json")
-pipeline.close()
-```
-
-This installs the same Ayase wheel without ML dependencies. On first use the
-client creates a private full-runtime venv and starts a loopback worker. Media is
-passed by local path. Regular `pip install ayase` remains unchanged.
-
-Optional check: `ayase-client doctor`. To use an existing runtime, set
-`AYASE_RUNTIME_PYTHON`.
-
-## CLI
+Find metrics or open the terminal interface:
 
 ```bash
-ayase scan ./dataset                                    # default balanced pipeline
-ayase scan ./dataset --deep                             # run default-eligible packaged metrics
-ayase scan ./dataset --modules metadata,basic_quality   # selected modules
-ayase help                                              # list every metric and provider
-ayase help rqvqa_score                                  # metric/module models, config, and usage
-ayase modules list                                      # show registry provenance and backend requirements
-ayase modules check                                     # import/dependency readiness
-ayase filter ./dataset --min-score 70 --output ./good   # filter by quality
-ayase stats ./dataset                                   # dataset statistics for images/video
-ayase tui                                               # terminal UI
+ayase help                      # browse metrics and providers
+ayase help rqvqa_score           # inspect a metric's models, config, and usage
+ayase tui                       # interactive terminal UI
 ```
 
-## Python API
+### Python
 
 ```python
 from ayase import AyasePipeline
 
-pipeline = AyasePipeline(modules=["basic", "metadata", "motion"])
-results = pipeline.run("./my_dataset")
+pipeline = AyasePipeline(modules=["metadata", "basic_quality"])
+results = pipeline.run("./dataset")
 
-for path, sample in results.items():
-    qm = sample.quality_metrics
-    if qm:
-        print(f"{sample.path.name}: technical={qm.technical_score} blur={qm.blur_score}")
+for sample in results.values():
+    if sample.quality_metrics is not None:
+        print(sample.path.name, sample.quality_metrics.blur_score)
 
-pipeline.export("report.json")   # also: report.csv, report.html
+pipeline.export("report.json")   # also supports CSV and HTML
 ```
 
-## Configuration
+## Choose metrics
 
-`ayase.toml` in project root:
+Use the [metric catalog](METRICS.md) to compare inputs, score ranges,
+configuration, and backend requirements. The [model catalog](MODELS.md) lists
+weights and their licenses. Metrics use different scales and may require
+captions, reference media, or a compatible GPU; check the selected metric's entry.
 
-```toml
-[general]
-parallel_jobs = 8  # concurrency hint passed to capable modules/backends
-assets_repo = "AkaneTendo25/ayase-assets"  # owner/repo or its huggingface.co URL
+Video-generation evaluation includes [JEDi](docs/jedi_backend.md),
+[VideoPhy-2](docs/videophy2_backend.md), and all seven
+[T2V-CompBench categories](docs/t2v_compbench_backend.md), with automatically
+managed backend environments and assets.
 
-[pipeline]
-modules = ["metadata", "basic_quality", "motion"]
+## Guides
 
-[output]
-default_format = "json"
-artifacts_dir = "reports"
-```
+| Task | Guide |
+| --- | --- |
+| Scan, filter, export, or configure a dataset run | [Usage and configuration](docs/usage.md) |
+| Understand downloads, caches, and backend environments | [Managed backends](docs/managed_backends.md) |
+| Integrate without changing an application's ML dependencies | [Isolated client](docs/isolated_client.md) |
+| Add a metric or external plugin | [Custom modules](docs/custom_modules.md) |
+| Work on Ayase itself | [Contributing](CONTRIBUTING.md) |
+| Review changes between versions | [Changelog](CHANGELOG.md) |
 
-`assets_repo` selects the Hugging Face repository used for Ayase-managed
-checkpoints and source archives. It can also be set with
-`AYASE_GENERAL__ASSETS_REPO`; a module profile's `assets_repo` value takes
-precedence for that module.
-
-## Custom Modules
-
-```python
-from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
-from ayase.pipeline import PipelineModule
-import cv2
-
-class BlurCheck(PipelineModule):
-    name = "blur_check"
-    description = "Flag blurry frames via Laplacian variance"
-    default_config = {"threshold": 100.0}
-
-    def process(self, sample: Sample) -> Sample:
-        img = cv2.imread(str(sample.path), cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            return sample
-        score = float(cv2.Laplacian(img, cv2.CV_64F).var())
-        if sample.quality_metrics is None:
-            sample.quality_metrics = QualityMetrics()
-        sample.quality_metrics.blur_score = score
-        if score < self.config.get("threshold", 100.0):
-            sample.validation_issues.append(
-                ValidationIssue(
-                    severity=ValidationSeverity.WARNING,
-                    message=f"Blurry ({score:.0f})",
-                )
-            )
-        return sample
-```
-
-Modules auto-register via `__init_subclass__`. Config is available as `self.config`.
-
-## Development
-
-```bash
-git clone <repo-url> && cd ayase
-pip install -e . --group dev
-pytest                    # 8000+ tests, ~4 min
-pytest tests/ --full      # with ML model loading
-```
+APIs and module interfaces may change before 1.0.
 
 ## License
 
-Ayase's own code is MIT. Model weights downloaded at runtime carry their own licenses -
-see [MODELS.md](MODELS.md).
+Ayase's own code is MIT. Bundled components and downloaded model weights retain
+their own terms; see [third-party notices](src/ayase/third_party/NOTICES.md)
+and the [model catalog](MODELS.md).
