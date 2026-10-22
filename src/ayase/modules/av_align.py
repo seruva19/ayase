@@ -45,10 +45,12 @@ logger = logging.getLogger(__name__)
 
 def _has_audio_stream(video_path: str) -> bool:
     """Return True iff *video_path* contains an audio stream (via ffprobe)."""
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffprobe", "-v", "error", "-select_streams", "a",
+                str(resolve_media_tool('ffprobe')), "-v", "error", "-select_streams", "a",
                 "-show_entries", "stream=codec_type", "-of", "csv=p=0",
                 video_path,
             ],
@@ -65,10 +67,12 @@ def _extract_audio_to_wav(video_path: str, wav_path: str) -> bool:
     22050 Hz matches ``librosa.load``'s default sample rate, so the subsequent
     onset detection sees the audio exactly as the reference does.
     """
+    from ayase.managed_ffmpeg import resolve_media_tool
+
     try:
         result = subprocess.run(
             [
-                "ffmpeg", "-y", "-i", video_path,
+                str(resolve_media_tool('ffmpeg')), "-y", "-i", video_path,
                 "-vn", "-ac", "1", "-ar", "22050", "-f", "wav", wav_path,
             ],
             capture_output=True, timeout=60,

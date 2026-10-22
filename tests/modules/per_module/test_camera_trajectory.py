@@ -42,6 +42,45 @@ def test_camera_trajectory_basics():
     _test_module_basics(CameraTrajectoryModule, "camera_trajectory")
 
 
+@pytest.mark.parametrize(
+    ("feature_help", "matching_help", "expected"),
+    [
+        (
+            "--SiftExtraction.use_gpu arg (=1)",
+            "--SiftMatching.use_gpu arg (=1)",
+            ("--SiftExtraction.use_gpu", "--SiftMatching.use_gpu"),
+        ),
+        (
+            "--FeatureExtraction.use_gpu arg (=1)",
+            "--FeatureMatching.use_gpu arg (=1)",
+            ("--FeatureExtraction.use_gpu", "--FeatureMatching.use_gpu"),
+        ),
+    ],
+)
+def test_colmap_gpu_options_follow_advertised_cli(
+    monkeypatch, feature_help, matching_help, expected
+):
+    import subprocess
+    import ayase.modules.camera_trajectory as ct
+
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        output = feature_help if cmd[1] == "feature_extractor" else matching_help
+        return subprocess.CompletedProcess(cmd, 0, stdout=output, stderr="")
+
+    ct._COLMAP_GPU_OPTIONS.clear()
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    assert ct._colmap_gpu_options("configured-colmap.exe") == expected
+    assert ct._colmap_gpu_options("configured-colmap.exe") == expected
+    assert calls == [
+        ["configured-colmap.exe", "feature_extractor", "-h"],
+        ["configured-colmap.exe", "sequential_matcher", "-h"],
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Pure math: RotErr / TransErr / CamMC on known simple cases
 # ---------------------------------------------------------------------------
@@ -182,6 +221,10 @@ def test_graceful_unavailable(monkeypatch, video_sample):
     # Force both backends absent: vggt is not installed (ImportError), and no
     # COLMAP/GLOMAP binary is discoverable.
     monkeypatch.setattr("shutil.which", lambda name: None)
+    monkeypatch.setattr(
+        "ayase.managed_native_tools.resolve_native_tool",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("unavailable")),
+    )
 
     m = ct.CameraTrajectoryModule()
     m.setup()
@@ -194,3 +237,25 @@ def test_graceful_unavailable(monkeypatch, video_sample):
     assert video_sample.quality_metrics.camera_rot_error is None
     assert video_sample.quality_metrics.camera_trans_error is None
     assert video_sample.quality_metrics.camera_traj_consistency is None
+
+
+def test_setup_provisions_colmap_and_glomap_in_separate_environments(monkeypatch):
+    import ayase.modules.camera_trajectory as ct
+
+    calls = []
+
+    def fake_resolve(tool, packages, models_dir, **kwargs):
+        calls.append((tool, packages))
+        return f"managed/{tool}.exe"
+
+    monkeypatch.setattr(ct.CameraTrajectoryModule, "_detect_sfm_binaries", lambda self: None)
+    monkeypatch.setattr("ayase.managed_native_tools.resolve_native_tool", fake_resolve)
+
+    module = ct.CameraTrajectoryModule({"pose_backend": "glomap"})
+    module.setup()
+
+    assert module._backend == "glomap"
+    assert calls == [
+        ("colmap", ("colmap=4.2.1=cpu_*",)),
+        ("glomap", ("glomap=1.2.0=cpu_*",)),
+    ]

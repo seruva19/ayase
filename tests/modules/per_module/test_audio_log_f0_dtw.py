@@ -118,6 +118,7 @@ def test_fewer_than_twenty_voiced_frames_is_no_result():
 
 
 def test_extract_features_uses_espnet_world_params_and_trims_edges(monkeypatch):
+    import ayase.modules.audio_log_f0_dtw as implementation
     from ayase.modules.audio_log_f0_dtw import AudioLogF0DTWModule
 
     calls = {}
@@ -142,7 +143,7 @@ def test_extract_features_uses_espnet_world_params_and_trims_edges(monkeypatch):
         "pyworld",
         SimpleNamespace(harvest=harvest, cheaptrick=cheaptrick),
     )
-    monkeypatch.setitem(__import__("sys").modules, "pysptk", SimpleNamespace(sp2mc=sp2mc))
+    monkeypatch.setattr(implementation, "sp2mc", sp2mc)
 
     module = AudioLogF0DTWModule()
     result = module._extract_features(np.ones(16000, dtype=np.float32))
@@ -272,9 +273,7 @@ def test_missing_reference_and_overlong_audio_are_no_ops(monkeypatch, tmp_path):
     assert sample.quality_metrics is None
 
 
-def test_backend_unavailable_and_runtime_failure_degrade_gracefully(
-    monkeypatch, tmp_path
-):
+def test_backend_unavailable_and_runtime_failure_degrade_gracefully(monkeypatch, tmp_path):
     import ayase.modules.audio_log_f0_dtw as implementation
     from ayase.modules.audio_log_f0_dtw import AudioLogF0DTWModule
 

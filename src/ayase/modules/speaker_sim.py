@@ -147,6 +147,8 @@ class SpeakerSimModule(PipelineModule):
 
     def _load(self, path: Path):
         """(waveform [channels, samples] at 16 kHz on device) as in the official code, or None."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         import torchaudio
 
         src = path
@@ -154,7 +156,7 @@ class SpeakerSimModule(PipelineModule):
         if path.suffix.lower() not in _AUDIO_SUFFIXES:
             tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
             tmp.close()
-            done = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(path), "-vn",
+            done = subprocess.run([str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-y", "-loglevel", "error", "-i", str(path), "-vn",
                                    "-acodec", "pcm_s16le", tmp.name], capture_output=True, text=True)
             if done.returncode != 0:
                 Path(tmp.name).unlink(missing_ok=True)

@@ -175,13 +175,12 @@ def test_butteraugli_no_reference(image_sample):
 
 
 def test_butteraugli_setup_real_or_unavailable():
-    """The Laplacian 'approx' tier was removed: real jxlpy/butteraugli
-    backend or honest unavailable."""
+    """The approximation tier is absent: canonical CLI or honest unavailable."""
     from ayase.modules.butteraugli import ButteraugliModule
 
     m = ButteraugliModule()
     m.setup()
-    if m._backend in ("jxlpy", "butteraugli"):
+    if m._backend == "butteraugli_cli":
         assert m._ml_available is True
     else:
         assert m._backend == "unavailable"
@@ -203,7 +202,7 @@ def test_butteraugli_reference_real_or_none(tmp_dir):
     cv2.imwrite(str(ref_path), ref_img)
     cv2.imwrite(str(dist_path), dist_img)
     score = m.compute_reference_score(dist_path, ref_path)
-    if m._backend in ("jxlpy", "butteraugli"):
+    if m._backend == "butteraugli_cli":
         assert score is not None
         assert score >= 0.0
     else:

@@ -24,9 +24,10 @@ summed over the relative poses, in radians for RotErr exactly as upstream.
 
 Pose estimation follows the upstream ``run_glomap`` pipeline — COLMAP
 ``feature_extractor`` + ``sequential_matcher`` feeding the ``glomap`` binary as
-the global mapper — when both binaries are on PATH (upstream stage options are
-reproduced verbatim). A plain COLMAP incremental ``mapper`` is used when only
-``colmap`` is present (documented deviation: upstream always runs glomap).
+the global mapper. Ayase provisions private CPU builds when the binaries are
+absent, while also accepting user-provided binaries discovered on ``PATH`` or
+configured paths. A plain COLMAP incremental ``mapper`` is used when only
+``colmap`` is available (documented deviation: upstream always runs glomap).
 ``pose_backend="vggt"`` is an explicitly opt-in learned estimator
 (facebook/VGGT-1B) — a documented deviation from upstream SfM; it is never
 selected automatically unless ``pose_backend="auto"`` and no SfM binaries exist.
@@ -57,7 +58,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -65,6 +66,49 @@ from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
 
 logger = logging.getLogger(__name__)
+
+_COLMAP_GPU_OPTIONS: Dict[str, Tuple[str, str]] = {}
+
+
+def _colmap_gpu_options(executable: str, timeout: int = 30) -> Tuple[str, str]:
+    """Return the GPU option names advertised by this COLMAP executable."""
+    cached = _COLMAP_GPU_OPTIONS.get(executable)
+    if cached is not None:
+        return cached
+
+    import subprocess
+
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    advertised = []
+    for command in ("feature_extractor", "sequential_matcher"):
+        result = subprocess.run(
+            [executable, command, "-h"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=min(timeout, 30),
+            creationflags=creationflags,
+        )
+        advertised.append((result.stdout or "") + "\n" + (result.stderr or ""))
+
+    feature_help, matching_help = advertised
+    if "FeatureExtraction.use_gpu" in feature_help:
+        feature_option = "--FeatureExtraction.use_gpu"
+    elif "SiftExtraction.use_gpu" in feature_help:
+        feature_option = "--SiftExtraction.use_gpu"
+    else:
+        raise RuntimeError("COLMAP feature_extractor help does not advertise a GPU option")
+
+    if "FeatureMatching.use_gpu" in matching_help:
+        matching_option = "--FeatureMatching.use_gpu"
+    elif "SiftMatching.use_gpu" in matching_help:
+        matching_option = "--SiftMatching.use_gpu"
+    else:
+        raise RuntimeError("COLMAP sequential_matcher help does not advertise a GPU option")
+
+    options = (feature_option, matching_option)
+    _COLMAP_GPU_OPTIONS[executable] = options
+    return options
 
 
 # ---------------------------------------------------------------------------
@@ -192,6 +236,7 @@ def _parse_colmap_images_txt(path: str) -> dict:
 
 
 class CameraTrajectoryModule(PipelineModule):
+    implementation_sources = ("../managed_native_tools.py", "../managed_native.py")
     name = "camera_trajectory"
     provenance = "adapted"
     sources = {
@@ -244,12 +289,12 @@ class CameraTrajectoryModule(PipelineModule):
         {
             "id": "glomap",
             "type": "other",
-            "task": "Global structure-from-motion mapper (upstream backend, external binary)",
+            "task": "Global structure-from-motion mapper (Ayase-managed CPU binary)",
         },
         {
             "id": "colmap",
             "type": "other",
-            "task": "SfM feature extraction/matching frontend (external binary)",
+            "task": "SfM feature extraction/matching frontend (Ayase-managed CPU binary)",
         },
     ]
 
@@ -272,6 +317,28 @@ class CameraTrajectoryModule(PipelineModule):
 
         # Canonical tier: upstream's colmap feature/match + glomap mapper.
         sfm = self._detect_sfm_binaries()
+        if backend in ("auto", "glomap", "colmap") and sfm is None:
+            try:
+                from ayase.managed_native_tools import resolve_native_tool
+
+                models_dir = self.config.get("models_dir", "models")
+                colmap = resolve_native_tool(
+                    "colmap",
+                    ("colmap=4.2.1=cpu_*",),
+                    models_dir,
+                    configured=self.config.get("colmap_path"),
+                )
+                glomap = None
+                if backend != "colmap":
+                    glomap = resolve_native_tool(
+                        "glomap",
+                        ("glomap=1.2.0=cpu_*",),
+                        models_dir,
+                        configured=self.config.get("glomap_path"),
+                    )
+                sfm = {"colmap": str(colmap), "glomap": str(glomap) if glomap else None}
+            except (OSError, RuntimeError) as exc:
+                logger.warning("camera_trajectory: private SfM provisioning failed: %s", exc)
         if backend in ("auto", "glomap") and sfm and sfm.get("glomap"):
             self._sfm_bin = sfm
             self._backend = "glomap"
@@ -551,9 +618,17 @@ class CameraTrajectoryModule(PipelineModule):
         if not colmap:
             return None, None
         timeout = int(self.config.get("sfm_timeout", 600))
+        feature_gpu_option, matching_gpu_option = _colmap_gpu_options(colmap, timeout)
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
         def run(cmd: List[str]) -> None:
-            subprocess.run(cmd, check=True, capture_output=True, timeout=timeout)
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                timeout=timeout,
+                creationflags=creationflags,
+            )
 
         with tempfile.TemporaryDirectory() as tmp:
             img_dir = os.path.join(tmp, "images")
@@ -579,6 +654,7 @@ class CameraTrajectoryModule(PipelineModule):
                 "--ImageReader.camera_model", "SIMPLE_PINHOLE",
                 "--SiftExtraction.estimate_affine_shape", "1",
                 "--SiftExtraction.domain_size_pooling", "1",
+                feature_gpu_option, "0",
             ]
             if self._intrinsics is not None:
                 f, cx, cy = self._intrinsics
@@ -591,6 +667,7 @@ class CameraTrajectoryModule(PipelineModule):
                     "--database_path", db,
                     "--SiftMatching.guided_matching", "1",
                     "--SiftMatching.max_num_matches", "65536",
+                    matching_gpu_option, "0",
                 ]
             )
             if glomap and self._backend == "glomap":

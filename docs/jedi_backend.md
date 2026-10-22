@@ -13,14 +13,13 @@ Apache-2.0. Its runtime dependencies are `vjepa==0.1.2`, scikit-learn, PyAV,
 PyTorch and the V-JEPA encoder/probe checkpoints `vith16.pth.tar` and
 `ssv2-probe.pth.tar`.
 
-Run the backend in a dedicated Python environment and configure `backend_python`
-to that environment's interpreter. Install the official `videojedi==1.1.0` and
-its pinned dependencies only in that environment. Do not install it into Ayase's
-main environment or weaken its dependency pins: `vjepa==0.1.2` requires an older
-Torch/torchvision pair and pins pandas. The worker receives pre-resolved checkpoint
-and YAML paths, so it never downloads weights.
+On first use, Ayase detects a host-visible NVIDIA GPU and creates a private managed
+environment containing `videojedi==1.1.0`, `vjepa==0.1.2`, their compatible
+Torch 2.4/torchvision 0.19 stack, pandas 2.2.2, and NumPy 1.26. Later runs reuse
+that environment. These pins remain isolated from Ayase's main environment. The
+worker receives pre-resolved checkpoint and YAML paths, so it never downloads weights.
 
-Example Ayase profile (replace both paths):
+Example Ayase profile:
 
 ```json
 {
@@ -28,7 +27,6 @@ Example Ayase profile (replace both paths):
   "modules": ["jedi_official"],
   "module_config": {
     "jedi_official": {
-      "backend_python": "/path/to/jedi-env/bin/python",
       "reference_dir": "/path/to/reference-videos",
       "num_samples": 5000
     }
@@ -37,9 +35,10 @@ Example Ayase profile (replace both paths):
 ```
 
 Load it with `AyasePipeline(profile="jedi-profile.json")` and run the generated
-collection. On Windows, `backend_python` points to the environment's
-`Scripts/python.exe`. `backend_cuda_visible_devices` optionally selects a
-physical GPU for the child without changing the main process environment.
+collection. `backend_python` remains available as an expert override for an
+existing compatible interpreter. Normal use requires no environment configuration.
+`backend_cuda_visible_devices` optionally selects a physical GPU for the child
+without changing the main process environment.
 
 The upstream `vjepa` package declares the Creative Commons Attribution-NonCommercial
 4.0 license. The isolated environment uses the published package without redistributing
@@ -77,7 +76,7 @@ valid array for the other distribution is preserved.
 
 Upstream currently moves input batches to CUDA unconditionally and initializes
 distributed state while loading V-JEPA. Ayase therefore launches `_jedi_worker.py`
-as a fresh process using the configured `backend_python`. A CUDA-capable runtime is therefore the
+as a fresh process using the managed environment. A CUDA-capable runtime is therefore the
 supported path for real feature extraction, despite parts of the model loader
 having CPU branches. Unit tests mock only this heavyweight boundary and verify
 the real public API contract and Ayase's deterministic collection handling.

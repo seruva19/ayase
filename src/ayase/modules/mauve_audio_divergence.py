@@ -37,9 +37,9 @@ class MAUVEAudioDivergenceModule(BatchMetricModule):
     }
     models = [
         {
-            "id": "mad_metric",
+            "id": "mauve-text==0.4.0",
             "type": "pip_package",
-            "install": "pip install mad_metric",
+            "install": "pip install ayase",
             "task": "MAUVE Audio Divergence implementation",
         },
         {
@@ -119,7 +119,7 @@ class MAUVEAudioDivergenceModule(BatchMetricModule):
             self._backend = "mad_mert_mauve"
             logger.info("MAD initialised with upstream MERT/MAUVE setup on %s", device)
         except ImportError as exc:
-            logger.warning("MAD requires `pip install mad_metric`: %s", exc)
+            logger.warning("MAD managed runtime could not load: %s", exc)
         except Exception as exc:
             logger.warning("MAD backend initialisation failed: %s", exc)
 

@@ -34,6 +34,32 @@ def test_vmaf_config():
     assert m.subsample == 2
 
 
+def test_vmaf_setup_uses_managed_ffmpeg_and_test_mode_skips(monkeypatch, tmp_path):
+    from ayase.modules import vmaf
+    from ayase.modules.vmaf import VMAFModule
+
+    monkeypatch.setenv("AYASE_TEST_MODE", "0")
+    monkeypatch.setattr(VMAFModule, "_global_test_mode", False)
+
+    executable = tmp_path / "ffmpeg.exe"
+    executable.touch()
+    calls = []
+    monkeypatch.setattr(
+        vmaf, "resolve_ffmpeg", lambda configured: calls.append(configured) or executable
+    )
+
+    module = VMAFModule({"ffmpeg_path": "expert-ffmpeg"})
+    module.setup()
+    assert module._ml_available is True
+    assert module._ffmpeg_path == executable
+    assert calls == ["expert-ffmpeg"]
+
+    skipped = VMAFModule({"test_mode": True})
+    skipped.setup()
+    assert skipped._ml_available is False
+    assert calls == ["expert-ffmpeg"]
+
+
 def test_ms_ssim_basics():
     from ayase.modules.ms_ssim import MSSSIMModule
     from .conftest import _test_module_basics
@@ -177,8 +203,7 @@ def test_naturalness_real_backend_or_unset(image_sample):
     else:
         # Honest state: pyiqa missing → no fabricated naturalness
         assert m._backend == "unavailable"
-        assert (result.quality_metrics is None
-                or result.quality_metrics.brisque_inverted is None)
+        assert result.quality_metrics is None or result.quality_metrics.brisque_inverted is None
 
 
 def test_hdr_sdr_vqa_basics():
@@ -273,8 +298,7 @@ def test_usability_rate_no_metrics(image_sample):
 
     m = UsabilityRateModule()
     result = m.process(image_sample)
-    assert (result.quality_metrics is None
-            or result.quality_metrics.usability_rate is None)
+    assert result.quality_metrics is None or result.quality_metrics.usability_rate is None
 
 
 def test_usability_rate_with_metrics(image_sample):

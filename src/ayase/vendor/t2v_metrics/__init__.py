@@ -7,17 +7,11 @@ import os
 import subprocess
 import shutil
 
-# Check for ffmpeg on import - REQUIRED system dependency
-try:
-    if shutil.which("ffmpeg") is None:
-        raise FileNotFoundError
-    subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True)
-except (FileNotFoundError, subprocess.CalledProcessError):
-    raise RuntimeError(
-        "ffmpeg is a required system requirement but not found. Install with:\n"
-        "conda install ffmpeg=6.1.2 -c conda-forge\n"
-        "or visit: https://ffmpeg.org/download.html"
-    )
+# Ayase integration: use the managed executable rather than requiring a system
+# installation. No scoring or model code is changed.
+from ayase.managed_ffmpeg import resolve_media_tool
+
+subprocess.run([str(resolve_media_tool("ffmpeg")), "-version"], capture_output=True, check=True)
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/clipscore_models/InternVideo2/multi_modality/'))
 

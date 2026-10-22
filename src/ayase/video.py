@@ -37,6 +37,10 @@ def split_video_by_scenes(
 
     segment_paths = []
 
+    from .managed_ffmpeg import resolve_media_tool
+
+    ffmpeg = str(resolve_media_tool("ffmpeg"))
+
     for i in range(len(intervals)):
         start = intervals[i]
         end = intervals[i + 1] if i + 1 < len(intervals) else None
@@ -45,7 +49,7 @@ def split_video_by_scenes(
         segment_path = output_dir / segment_name
 
         cmd = [
-            "ffmpeg",
+            ffmpeg,
             "-y",
             "-ss",
             str(start),

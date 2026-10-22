@@ -1,12 +1,10 @@
 """Runner for the seven official T2V-CompBench category evaluators.
 
-This adapter invokes a user-prepared checkout of the official repository. It
-does not replace any learned evaluator with an Ayase approximation.
+Ayase acquires a verified pinned snapshot and provisions its isolated runtimes.
 """
 
 import csv
 import ast
-import hashlib
 import json
 import logging
 import math
@@ -20,6 +18,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from ayase.models import QualityMetrics, Sample
 from ayase.pipeline import PipelineModule
+from ayase.modules import _t2v_compbench_runtime as managed
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +79,7 @@ _PINNED_BLOBS = {
 
 class T2VCompBenchOfficialModule(PipelineModule):
     name = "t2v_compbench_official"
+    implementation_sources = ("_t2v_compbench_runtime.py",)
     provenance = "adapted"
     input_type = "video"
     description = "Official seven-category T2V-CompBench evaluator runner"
@@ -124,6 +124,7 @@ class T2VCompBenchOfficialModule(PipelineModule):
         "category": None,
         "python_executables": {},
         "model_name": "ayase",
+        "llava_model_id": "liuhaotian/llava-v1.6-34b",
         "timeout": 7200,
         "temp_root": None,
         "total_frames": 16,
@@ -131,6 +132,10 @@ class T2VCompBenchOfficialModule(PipelineModule):
         "strict_prompt_match": True,
         "verify_revision": True,
         "check_fixed_assets": True,
+        "models_dir": "models",
+        "manage_runtime": True,
+        "manage_assets": True,
+        "require_gpu": True,
     }
     models = [
         {
@@ -138,7 +143,7 @@ class T2VCompBenchOfficialModule(PipelineModule):
             "type": "other",
             "url": "https://github.com/KaiyueSun98/T2V-CompBench",
             "task": "Official LLaVA, GroundingDINO/SAM/Depth Anything, and DOT evaluators",
-            "notes": "User-prepared checkout and the evaluator-specific environments are required",
+            "notes": "Pinned source, private runtimes, and checkpoints are managed by Ayase",
         }
     ]
     metric_info = {
@@ -165,6 +170,7 @@ class T2VCompBenchOfficialModule(PipelineModule):
         self._runner = subprocess.run
         self._available = False
         self._backend = None
+        self._managed_pythons: Dict[str, Path] = {}
 
     @staticmethod
     def _canonical_category(value: str) -> str:
@@ -180,9 +186,25 @@ class T2VCompBenchOfficialModule(PipelineModule):
             return
         self._available = False
         self._backend = "unavailable"
-        root = self._root()
-        if root is None:
-            logger.warning("t2v_compbench_official requires config upstream_root")
+        if self.config.get("require_gpu", True) and not managed.gpu_is_available():
+            logger.warning("T2V-CompBench official evaluators require a CUDA GPU")
+            return
+        try:
+            root = self._ensure_root()
+            if self.config.get("manage_assets", True):
+                managed.ensure_assets(root, self.categories)
+            if self.config.get("manage_runtime", True):
+                configured = self.config.get("python_executables", {})
+                self._managed_pythons = managed.ensure_environments(
+                    root,
+                    self.categories,
+                    Path(self.config.get("models_dir", "models")),
+                    python_overrides={
+                        key: value for key, value in configured.items() if key in {"llava", "vision"}
+                    },
+                )
+        except (OSError, RuntimeError, ValueError) as exc:
+            logger.warning("T2V-CompBench provisioning failed: %s", exc)
             return
         missing = [spec[0] for name in self.categories for spec in self._command_specs(name) if not (root / spec[0]).is_file()]
         if missing:
@@ -229,12 +251,7 @@ class T2VCompBenchOfficialModule(PipelineModule):
 
     @staticmethod
     def _git_blob_hash(path: Path) -> str:
-        payload = path.read_bytes()
-        # Git's text checkout may materialize CRLF on Windows while the pinned
-        # blob is stored with LF. Match Git's normalized source identity.
-        payload = payload.replace(b"\r\n", b"\n")
-        header = f"blob {len(payload)}\0".encode("ascii")
-        return hashlib.sha1(header + payload).hexdigest()  # noqa: S324 - Git object identity
+        return managed.git_blob_hash(path)
 
     def _verify_pinned_sources(self, root: Path) -> None:
         metadata_root = self._metadata_dir(root)
@@ -281,6 +298,12 @@ class T2VCompBenchOfficialModule(PipelineModule):
             return None
         root = Path(value).resolve()
         return root if root.is_dir() else None
+
+    def _ensure_root(self) -> Path:
+        configured = self._root()
+        if configured is not None:
+            return configured
+        return managed.ensure_source(Path(self.config.get("models_dir", "models")))
 
     def _metadata_dir(self, root: Path) -> Path:
         configured = self.config.get("metadata_dir")
@@ -356,7 +379,13 @@ class T2VCompBenchOfficialModule(PipelineModule):
 
     def _python(self, category: str) -> str:
         configured = self.config.get("python_executables", {})
-        return str(configured.get(category, configured.get("default", sys.executable)))
+        if category in configured or "default" in configured:
+            return str(configured.get(category, configured.get("default")))
+        group = "llava" if category in {
+            "consistent_attribute_binding", "dynamic_attribute_binding",
+            "action_binding", "object_interactions",
+        } else "vision"
+        return str(self._managed_pythons.get(group, sys.executable))
 
     @staticmethod
     def _command_specs(category: str) -> List[Tuple[str, str]]:
@@ -387,7 +416,9 @@ class T2VCompBenchOfficialModule(PipelineModule):
         model = str(self.config["model_name"])
         scripts = self._command_specs(category)
         if category in {"consistent_attribute_binding", "dynamic_attribute_binding", "action_binding", "object_interactions"}:
-            return [([python, str(root / scripts[0][0]), *common, "--output-path", str(output), "--t2v-model", model], root)]
+            return [([python, str(root / scripts[0][0]), *common,
+                      "--model-path", str(self.config["llava_model_id"]),
+                      "--output-path", str(output), "--t2v-model", model], root)]
         if category == "spatial_relationships":
             command = [python, str(root / scripts[0][0]), *common, "--depth_folder", str(run_dir / "depth"), "--output-path", str(output), "--t2v-model", model, "--output_dir", str(artifacts)]
             return [(command, root)]
@@ -416,6 +447,7 @@ class T2VCompBenchOfficialModule(PipelineModule):
                         stdout=log_file,
                         stderr=subprocess.STDOUT,
                         text=True,
+                        env=self._runtime_env(root),
                     )
             except (OSError, subprocess.SubprocessError) as exc:
                 tail = b""
@@ -434,6 +466,25 @@ class T2VCompBenchOfficialModule(PipelineModule):
                     ) from exc
                 raise RuntimeError(f"official evaluator command failed: {exc}") from exc
         return output / _OUTPUTS[category].replace("ayase", str(self.config["model_name"]), 1)
+
+    def _runtime_env(self, root: Path) -> Dict[str, str]:
+        environment = os.environ.copy()
+        paths = [
+            root / "LLaVA",
+            root / "Grounded-Segment-Anything",
+            root / "Grounded-Segment-Anything" / "GroundingDINO",
+            root / "Grounded-Segment-Anything" / "segment_anything",
+            root / "Depth-Anything",
+            root / "dot",
+        ]
+        existing = environment.get("PYTHONPATH")
+        environment["PYTHONPATH"] = os.pathsep.join(
+            [*(str(path) for path in paths), *((existing,) if existing else ())]
+        )
+        hf_home = Path(self.config.get("models_dir", "models")).resolve() / "huggingface"
+        hf_home.mkdir(parents=True, exist_ok=True)
+        environment.setdefault("HF_HOME", str(hf_home))
+        return environment
 
     @staticmethod
     def _row_id(value: str) -> Optional[int]:
@@ -487,6 +538,8 @@ class T2VCompBenchOfficialModule(PipelineModule):
     def post_process(self, all_samples: List[Sample]) -> None:
         del all_samples
         root = self._root()
+        if root is None and self._available:
+            root = managed.ensure_source(Path(self.config.get("models_dir", "models")))
         if not self._available or root is None:
             return
         configured_temp = self.config.get("temp_root")

@@ -18,18 +18,20 @@ from typing import Optional
 
 from ayase.models import Sample, QualityMetrics
 from ayase.base_modules import ReferenceBasedModule
+from ayase.managed_ffmpeg import resolve_ffmpeg
 
 logger = logging.getLogger(__name__)
 
 
 class VMAF4KModule(ReferenceBasedModule):
     name = "vmaf_4k"
+    implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {
         "vmaf_4k": "VMAF 4K v0.6.1; libvmaf — https://github.com/Netflix/vmaf",
     }
     description = "VMAF 4K model for UHD content (0-100, higher=better)"
-    default_config = {}
+    default_config = {"ffmpeg_path": None}
     metric_groups = {
         "vmaf_4k": "fr_quality",
     }
@@ -38,19 +40,16 @@ class VMAF4KModule(ReferenceBasedModule):
         super().__init__(config)
         self._ml_available = False
         self._backend = None
+        self._ffmpeg_path: Optional[Path] = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
         try:
-            result = subprocess.run(
-                ["ffmpeg", "-filters"], capture_output=True, text=True, timeout=5
-            )
-            if "libvmaf" in result.stdout:
-                self._ml_available = True
-                self._backend = "ffmpeg_libvmaf"
-                logger.info("VMAF 4K module initialised")
-            else:
-                self._backend = "unavailable"
-                logger.warning("FFmpeg libvmaf not available for VMAF 4K")
+            self._ffmpeg_path = resolve_ffmpeg(self.config.get("ffmpeg_path"))
+            self._ml_available = True
+            self._backend = "ffmpeg_libvmaf"
+            logger.info("VMAF 4K module initialised")
         except Exception as e:
             self._backend = "unavailable"
             logger.warning(f"VMAF 4K setup failed: {e}")
@@ -58,11 +57,13 @@ class VMAF4KModule(ReferenceBasedModule):
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
+        if self._ffmpeg_path is None:
+            return None
         try:
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
                 out = tmp.name
             cmd = [
-                "ffmpeg", "-i", str(sample_path), "-i", str(reference_path),
+                str(self._ffmpeg_path), "-i", str(sample_path), "-i", str(reference_path),
                 "-lavfi", f"[0:v][1:v]libvmaf=model=version=vmaf_4k_v0.6.1:log_path={out}:log_fmt=json",
                 "-f", "null", "-",
             ]

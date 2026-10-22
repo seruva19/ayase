@@ -22,12 +22,14 @@ import numpy as np
 
 from ayase.models import Sample, QualityMetrics, ValidationIssue, ValidationSeverity
 from ayase.base_modules import ReferenceBasedModule
+from ayase.managed_ffmpeg import resolve_ffmpeg
 
 logger = logging.getLogger(__name__)
 
 
 class VMAFNEGModule(ReferenceBasedModule):
     name = "vmaf_neg"
+    implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {
         "vmaf_neg": "VMAF NEG v0.6.1neg; libvmaf — https://github.com/Netflix/vmaf",
@@ -36,6 +38,7 @@ class VMAFNEGModule(ReferenceBasedModule):
     default_config = {
         "subsample": 1,
         "warning_threshold": 70.0,
+        "ffmpeg_path": None,
     }
     metric_groups = {
         "vmaf_neg": "fr_quality",
@@ -48,29 +51,17 @@ class VMAFNEGModule(ReferenceBasedModule):
         self._ml_available = False
         self._ffmpeg_available = False
         self._backend = None
+        self._ffmpeg_path: Optional[Path] = None
 
     def setup(self) -> None:
+        if self.test_mode:
+            return
         try:
-            result = subprocess.run(
-                ["ffmpeg", "-filters"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if "libvmaf" in result.stdout or "vmaf" in result.stdout:
-                self._ffmpeg_available = True
-                self._ml_available = True
-                self._backend = "ffmpeg_libvmaf"
-                logger.info("VMAF NEG module initialised (FFmpeg libvmaf)")
-            else:
-                self._backend = "unavailable"
-                logger.warning(
-                    "FFmpeg found but libvmaf not available. "
-                    "VMAF NEG requires FFmpeg with libvmaf support."
-                )
-        except FileNotFoundError:
-            self._backend = "unavailable"
-            logger.warning("FFmpeg not found. VMAF NEG requires FFmpeg with libvmaf.")
+            self._ffmpeg_path = resolve_ffmpeg(self.config.get("ffmpeg_path"))
+            self._ffmpeg_available = True
+            self._ml_available = True
+            self._backend = "ffmpeg_libvmaf"
+            logger.info("VMAF NEG module initialised (FFmpeg libvmaf)")
         except Exception as e:
             self._backend = "unavailable"
             logger.warning(f"Failed to setup VMAF NEG: {e}")
@@ -78,7 +69,7 @@ class VMAFNEGModule(ReferenceBasedModule):
     def compute_reference_score(
         self, sample_path: Path, reference_path: Path
     ) -> Optional[float]:
-        if not self._ffmpeg_available:
+        if not self._ffmpeg_available or self._ffmpeg_path is None:
             return None
 
         try:
@@ -91,7 +82,7 @@ class VMAFNEGModule(ReferenceBasedModule):
             # No fallback to the plain model: a normal VMAF score must never
             # be written under the vmaf_neg field.
             cmd = [
-                "ffmpeg",
+                str(self._ffmpeg_path),
                 "-i", str(sample_path),
                 "-i", str(reference_path),
                 "-lavfi",

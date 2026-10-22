@@ -6,12 +6,12 @@ spectro-temporal similarity analysis.
 
 Range: 1-5 MOS (higher = better).
 
-Requires the ``visqol`` Python package or CLI.
+The default managed backend uses ``visqol-python`` with the published SVR and
+deep-lattice models. Google's native Python binding and CLI remain expert options.
 """
 
 import logging
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -28,8 +28,22 @@ class ViSQOLModule(PipelineModule):
         "visqol": "ViSQOL v3, Google — https://github.com/google/visqol",
     }
     description = "ViSQOL audio quality MOS (Google, 1-5, higher=better)"
+    models = [
+        {
+            "id": "visqol-python==3.8.0",
+            "type": "pip_package",
+            "install": "pip install ayase",
+            "url": "https://github.com/talker93/visqol-python",
+            "task": "Bundled ViSQOL audio SVR and speech deep-lattice mapping models",
+            "notes": (
+                "Ayase-managed numerical transcription of the published protocol; "
+                "backend identity visqol_python_port; 12 official conformance cases verified"
+            ),
+        },
+    ]
     default_config = {
         "mode": "audio",  # "audio" or "speech"
+        "visqol_executable": "visqol",
     }
     metric_groups = {
         "visqol": "audio",
@@ -40,14 +54,39 @@ class ViSQOLModule(PipelineModule):
         self.mode = self.config.get("mode", "audio")
         self._ml_available = False
         self._backend = None
+        self._visqol_api = None
 
     def setup(self) -> None:
-        # Try Python bindings
+        # Cross-platform transcription of the published ViSQOL v3 protocol.
+        try:
+            from visqol import VisqolApi
+
+            api = VisqolApi()
+            if self.mode == "speech":
+                # Never accept the package's polynomial fallback: Ayase speech
+                # scores must use the C++-default deep-lattice mapper.
+                api.create(mode="speech", use_lattice_model=True)
+            elif self.mode == "audio":
+                api.create(mode="audio")
+            else:
+                raise ValueError(f"Unsupported ViSQOL mode: {self.mode!r}")
+            self._visqol_api = api
+            self._backend = "visqol_python_port"
+            self._ml_available = True
+            logger.info("ViSQOL module initialised (visqol-python port)")
+            return
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.warning("visqol-python backend unavailable: %s", e)
+
+        # Google's native Python bindings, retained as an expert backend.
         try:
             from visqol import visqol_lib_py
-            self._backend = "visqol_python"
+
+            self._backend = "visqol_python_official"
             self._ml_available = True
-            logger.info("ViSQOL module initialised (Python bindings)")
+            logger.info("ViSQOL module initialised (official Python bindings)")
             return
         except ImportError:
             pass
@@ -55,7 +94,10 @@ class ViSQOLModule(PipelineModule):
         # Try CLI
         try:
             result = subprocess.run(
-                ["visqol", "--help"], capture_output=True, text=True, timeout=5
+                [self.config.get("visqol_executable", "visqol"), "--help"],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0 or "visqol" in result.stdout.lower():
                 self._backend = "visqol_cli"
@@ -68,14 +110,26 @@ class ViSQOLModule(PipelineModule):
             pass
 
         self._backend = "unavailable"
-        logger.warning("ViSQOL not available. Install from: https://github.com/google/visqol")
+        logger.warning("ViSQOL managed backend could not load; see the backend installation log")
 
-    def _compute_visqol_python(
+    def _compute_visqol_port(self, reference_path: str, degraded_path: str) -> Optional[float]:
+        try:
+            if self._visqol_api is None:
+                return None
+            result = self._visqol_api.measure(reference_path, degraded_path)
+            return float(result.moslqo)
+        except Exception as e:
+            logger.warning("visqol-python scoring failed: %s", e)
+            return None
+
+    def _compute_visqol_official(
         self, reference_path: str, degraded_path: str
     ) -> Optional[float]:
         try:
+            import numpy as np
+            import soundfile as sf
             from visqol import visqol_lib_py
-            from visqol.pb2 import visqol_config_pb2, similarity_result_pb2
+            from visqol.pb2 import visqol_config_pb2
 
             config = visqol_config_pb2.VisqolConfig()
             if self.mode == "speech":
@@ -86,11 +140,24 @@ class ViSQOLModule(PipelineModule):
                 config.audio.sample_rate = 48000
                 config.options.use_speech_scoring = False
                 svr_model = "libsvm_nu_svr_model.txt"
-            config.options.svr_model_path = svr_model
+            config.options.svr_model_path = str(
+                Path(visqol_lib_py.__file__).resolve().parent / "model" / svr_model
+            )
+
+            reference, reference_rate = sf.read(reference_path, dtype="float64")
+            degraded, degraded_rate = sf.read(degraded_path, dtype="float64")
+            if reference_rate != config.audio.sample_rate or degraded_rate != config.audio.sample_rate:
+                raise ValueError(
+                    f"ViSQOL {self.mode} mode requires {config.audio.sample_rate} Hz inputs"
+                )
+            if reference.ndim > 1:
+                reference = np.mean(reference, axis=1)
+            if degraded.ndim > 1:
+                degraded = np.mean(degraded, axis=1)
 
             api = visqol_lib_py.VisqolApi()
             api.Create(config)
-            result = api.Measure(reference_path, degraded_path)
+            result = api.Measure(reference, degraded)
             return float(result.moslqo)
         except Exception as e:
             logger.debug(f"ViSQOL Python scoring failed: {e}")
@@ -101,7 +168,7 @@ class ViSQOLModule(PipelineModule):
     ) -> Optional[float]:
         try:
             cmd = [
-                "visqol",
+                self.config.get("visqol_executable", "visqol"),
                 "--reference_file", reference_path,
                 "--degraded_file", degraded_path,
                 "--use_speech_scoring" if self.mode == "speech" else "",
@@ -130,8 +197,10 @@ class ViSQOLModule(PipelineModule):
             return sample
 
         try:
-            if self._backend == "visqol_python":
-                score = self._compute_visqol_python(str(reference), str(sample.path))
+            if self._backend == "visqol_python_port":
+                score = self._compute_visqol_port(str(reference), str(sample.path))
+            elif self._backend == "visqol_python_official":
+                score = self._compute_visqol_official(str(reference), str(sample.path))
             else:
                 score = self._compute_visqol_cli(str(reference), str(sample.path))
 

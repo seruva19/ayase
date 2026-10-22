@@ -19,7 +19,7 @@ Thank you for your interest in contributing to Ayase! This guide covers everythi
 2. Install the package in editable mode with development dependencies:
 
    ```bash
-   pip install -e ".[dev]"
+   pip install -e . --group dev
    ```
 
 3. Verify the installation by running the test suite:

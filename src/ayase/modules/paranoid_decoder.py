@@ -34,11 +34,15 @@ class ParanoidDecoderModule(PipelineModule):
         self._ffmpeg_available = False
 
     def setup(self) -> None:
-        self._ffmpeg_available = shutil.which("ffmpeg") is not None
+        from ayase.managed_ffmpeg import resolve_media_tool
+
+        self._ffmpeg_available = shutil.which(str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models")))) is not None
         if not self._ffmpeg_available:
             logger.warning("ffmpeg not found. ParanoidDecoderModule disabled.")
 
     def process(self, sample: Sample) -> Sample:
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         if not self._ffmpeg_available or not sample.is_video:
             return sample
 
@@ -46,7 +50,7 @@ class ParanoidDecoderModule(PipelineModule):
             # ffmpeg -v error -xerror -i input -f null -
             # -xerror makes it exit with non-zero on any error
             cmd = [
-                "ffmpeg", "-v", "error",
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-v", "error",
                 "-i", str(sample.path),
                 "-f", "null", "-"
             ]

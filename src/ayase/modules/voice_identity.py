@@ -173,12 +173,14 @@ class VoiceIdentityModule(PipelineModule):
 
     def _embed(self, path: Path, workdir: Path, tag: str) -> Optional[np.ndarray]:
         """Speaker embedding of one file, or ``None`` when it carries no usable speech."""
+        from ayase.managed_ffmpeg import resolve_media_tool
+
         import torch
 
         wav = workdir / f"{tag}.wav"
         result = subprocess.run(
             [
-                "ffmpeg", "-v", "error", "-y", "-i", str(path),
+                str(resolve_media_tool('ffmpeg', models_dir=self.config.get("models_dir", "models"))), "-v", "error", "-y", "-i", str(path),
                 "-ac", "1", "-ar", str(TARGET_RATE), "-vn", str(wav),
             ],
             capture_output=True,

@@ -225,6 +225,12 @@ class PipelineModule(ABC):
         if self.test_mode:
             self._mounted = True
             return
+        if not self.config.get("_ayase_managed_worker", False):
+            from .managed_module import attach_managed_backend
+
+            if attach_managed_backend(self):
+                self._mounted = True
+                return
         missing = self._check_required_packages()
         if missing:
             logger.warning(f"Missing packages for {self.name}: {', '.join(missing)}")
@@ -1002,16 +1008,89 @@ class Pipeline:
 
     @staticmethod
     def _module_source_digest(module: PipelineModule) -> str:
-        """Return a stable digest of the module implementation used for scoring."""
+        """Return a stable digest of every implementation input used for scoring.
+
+        Managed modules execute outside the host interpreter, so their dependency
+        specification and bridge/worker implementation are part of the metric just
+        as surely as the module class itself.  This method deliberately only reads
+        source and registry data; cache fingerprinting must never provision a runtime.
+        """
+        digest = hashlib.sha256()
+
+        def add_file(path: Path, label: str) -> None:
+            try:
+                content = path.read_bytes()
+            except OSError:
+                content = b"<missing>"
+            digest.update(label.encode("utf-8", errors="replace"))
+            digest.update(b"\0")
+            digest.update(content)
+            digest.update(b"\0")
+
         try:
             module_path = Path(inspect.getfile(module.__class__))
-            source = module_path.read_text(encoding="utf-8", errors="replace")
+            add_file(module_path, "module")
         except (OSError, TypeError):
+            module_path = None
             try:
                 source = inspect.getsource(module.__class__)
             except (OSError, TypeError):
                 source = f"{module.__class__.__module__}.{module.__class__.__qualname__}"
-        return hashlib.sha256(source.encode("utf-8")).hexdigest()
+            digest.update(b"module\0" + source.encode("utf-8", errors="replace") + b"\0")
+
+        if module_path is not None:
+            for source_name in sorted(
+                (str(item) for item in getattr(module.__class__, "implementation_sources", ()))
+            ):
+                source_path = (module_path.parent / source_name).resolve()
+                if source_path.is_dir():
+                    for child in sorted(
+                        path
+                        for path in source_path.rglob("*")
+                        if path.is_file()
+                        and path.suffix.lower() in {".py", ".json", ".toml", ".yaml", ".yml"}
+                    ):
+                        add_file(
+                            child,
+                            f"implementation:{source_name}/{child.relative_to(source_path).as_posix()}",
+                        )
+                else:
+                    add_file(source_path, f"implementation:{source_name}")
+
+        try:
+            from dataclasses import asdict
+
+            from .backend_dependencies import (
+                get_backend_dependency,
+                managed_pip_options,
+                managed_requirements,
+            )
+
+            dependency = get_backend_dependency(module.name)
+            if dependency is not None:
+                spec = asdict(dependency)
+                spec["managed_requirements"] = list(managed_requirements(dependency))
+                spec["managed_pip_options"] = list(managed_pip_options(dependency))
+                digest.update(
+                    b"managed-spec\0"
+                    + json.dumps(spec, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                    + b"\0"
+                )
+                package_root = Path(__file__).parent
+                for helper in (
+                    "backend_dependencies.py",
+                    "managed_runtime.py",
+                    "managed_native.py",
+                    "managed_module.py",
+                    "_managed_module_worker.py",
+                ):
+                    add_file(package_root / helper, f"managed-helper:{helper}")
+        except (ImportError, TypeError, ValueError):
+            # Source digesting remains usable for plugin modules that run without
+            # Ayase's managed-runtime catalog.
+            pass
+
+        return digest.hexdigest()
 
     def _runtime_environment_fingerprint(self) -> Dict[str, Any]:
         """Capture runtime versions that can materially change metric values."""
