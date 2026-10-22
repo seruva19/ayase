@@ -1262,6 +1262,16 @@ class QualityMetrics(BaseModel):
     # VideoPhy-2 VLM-based physics adherence (0-1, higher=better)
     vlm_pc_likert: Optional[float] = None  # Physical commonsense
     vlm_sa_likert: Optional[float] = None  # Semantic adherence
+    videophy2_sa_rating: Optional[float] = None  # Native AutoEval semantic adherence, 1-5
+    videophy2_pc_rating: Optional[float] = None  # Native AutoEval physical commonsense, 1-5
+    videophy2_joint_pass: Optional[float] = None  # SA >= 4 and PC >= 4
+    t2v_compbench_consistent_attribute_binding: Optional[float] = None
+    t2v_compbench_dynamic_attribute_binding: Optional[float] = None
+    t2v_compbench_spatial_relationships: Optional[float] = None
+    t2v_compbench_motion_binding: Optional[float] = None
+    t2v_compbench_action_binding: Optional[float] = None
+    t2v_compbench_object_interactions: Optional[float] = None
+    t2v_compbench_generative_numeracy: Optional[float] = None
 
     # EntityBench cross-shot identity persistence (0-1, higher=better; batch metric)
     entity_identity_cos: Optional[float] = None  # Face/identity persistence across shots
@@ -1895,7 +1905,19 @@ class DatasetStats(BaseModel):
     fvmd: Optional[float] = None  # Fréchet Video Motion Distance
     fid: Optional[float] = None  # Fréchet Inception Distance
     cmmd: Optional[float] = None  # CLIP Maximum Mean Discrepancy (lower=better)
-    mmd_selfsplit: Optional[float] = None  # JEDi (V-JEPA + MMD, ICLR 2025)
+    mmd_selfsplit: Optional[float] = None  # Within-dataset V-JEPA2 self-split diagnostic
+    jedi_score: Optional[float] = None  # Official V-JEPA polynomial MMD (lower=better)
+    jedi_generated_count: Optional[int] = None
+    jedi_reference_count: Optional[int] = None
+    jedi_reference_manifest_sha256: Optional[str] = None
+    jedi_preprocessing_sha256: Optional[str] = None
+    t2v_compbench_consistent_attribute_binding_avg: Optional[float] = None
+    t2v_compbench_dynamic_attribute_binding_avg: Optional[float] = None
+    t2v_compbench_spatial_relationships_avg: Optional[float] = None
+    t2v_compbench_motion_binding_avg: Optional[float] = None
+    t2v_compbench_action_binding_avg: Optional[float] = None
+    t2v_compbench_object_interactions_avg: Optional[float] = None
+    t2v_compbench_generative_numeracy_avg: Optional[float] = None
     kid: Optional[float] = None  # Kernel Inception Distance (lower=better)
     kid_std: Optional[float] = None  # KID standard deviation
     prdc_precision: Optional[float] = None  # PRDC precision in DINOv2 space (0-1)

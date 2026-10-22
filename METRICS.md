@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.0** · Generated 2026-10-09 16:52 · **385 modules** · **567 metrics**
+> **Version 0.2.0** · Generated 2026-10-22 11:50 · **388 modules** · **577 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **377/385 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **379/388 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**385** modules · **655** output fields · **567** metrics · **274** tiered · **181** GPU · **20** categories
+**388** modules · **677** output fields · **577** metrics · **277** tiered · **183** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-51-metrics) (51) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-71-metrics) (71) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-75-metrics) (75) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-89-fields) (89) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-59-metrics) (59) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-73-metrics) (73) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-75-metrics) (75) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-101-fields) (101) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2006,7 +2006,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (51 metrics)
+## Text-Video Alignment (59 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2438,6 +2438,84 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_sd_reference.py`](tests/modules/per_module/test_sd_reference.py)
 - **Config**: `clip_model=openai/clip-vit-base-patch32`, `sdxl_model=stabilityai/stable-diffusion-xl-base-1.0`, `num_sd_images=5`, `num_video_frames=0`, `sd_steps=20`, `cache_dir=.ayase_sd_cache`
 
+### `t2v_compbench_action_binding` [↑](#categories)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
+### `t2v_compbench_consistent_attribute_binding` [↑](#categories)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
+### `t2v_compbench_dynamic_attribute_binding` [↑](#categories)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
+### `t2v_compbench_generative_numeracy` [↑](#categories)
+> EntityBench cross-shot identity persistence (0-1, higher=better; batch metric)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
+### `t2v_compbench_motion_binding` [↑](#categories)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
+### `t2v_compbench_object_interactions` [↑](#categories)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
+### `t2v_compbench_spatial_relationships` [↑](#categories)
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Backend**: unavailable → official_t2v_compbench
+- **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/Grounded-Segment-Anything/compbench_eval_spatial_relationships.py" target="_blank">HF</a>
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+- **Config**: `categories=['consistent_attribute_binding', 'dynamic_attribute_binding', 'spatial_relationships', 'motion_binding', 'action_binding', 'object_interactions', 'generative_numeracy']`, `python_executables={}`, `model_name=ayase`, `timeout=7200`, `total_frames=16`, `fps=8`, `strict_prompt_match=True`, `verify_revision=True`, `check_fixed_assets=True`
+
 ### `t2v_generic_alignment` [↑](#categories)
 > Text-video semantic alignment
 
@@ -2580,6 +2658,18 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_video_text_matching.py`](tests/modules/per_module/test_video_text_matching.py)
 - **Config**: `use_xclip=False`, `model_name=openai/clip-vit-base-patch32`, `xclip_model_name=microsoft/xclip-base-patch32`, `min_score_threshold=0.2`, `consistency_std_threshold=0.1`
+
+### `videophy2_sa_rating` [↑](#categories)
+> Native AutoEval semantic adherence, 1-5 · ↑ higher=better · 1-5
+
+**[`videophy2_autoeval`](src/ayase/modules/videophy2.py)** — Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → official
+- **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
+- **Packages**: torch, transformers
+- **Tests**: no dedicated test reference found
+- **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
 ### `videoscore2_alignment` [↑](#categories)
 > VideoScore2 text-video alignment · ↑ higher=better · 1-5
@@ -3131,7 +3221,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (71 metrics)
+## Motion & Dynamics (73 metrics)
 
 ### `aigv_dynamic_est` [↑](#categories)
 > AI video dynamic degree
@@ -3710,7 +3800,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — VBench uses the AMT-S interpolator; this implementation uses RIFE HD v3 under the same even/odd-frame reconstruction protocol — source: VBench Motion Smoothness (Huang et al., CVPR 2024) — https://github.com/Vchitect/VBench
 - **Packages**: rife_model, torch
 - **Source**: <a href="https://github.com/Vchitect/VBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/rife/flownet.pkl" target="_blank">HF</a>
-- **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py), [`test_video_audit_regressions.py`](tests/test_video_audit_regressions.py)
 - **Config**: `vfi_error_threshold=0.08`, `max_frames=0`
 
 ### `object_integrity_score` [↑](#categories)
@@ -3899,6 +3989,30 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_video_edit_motion_fidelity.py`](tests/modules/per_module/test_video_edit_motion_fidelity.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `max_frames=0`, `long_side=0`, `grid_size=50`
+
+### `videophy2_joint_pass` [↑](#categories)
+> SA >= 4 and PC >= 4
+
+**[`videophy2_autoeval`](src/ayase/modules/videophy2.py)** — Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → official
+- **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
+- **Packages**: torch, transformers
+- **Tests**: no dedicated test reference found
+- **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
+
+### `videophy2_pc_rating` [↑](#categories)
+> Native AutoEval physical commonsense, 1-5 · ↑ higher=better · 1-5
+
+**[`videophy2_autoeval`](src/ayase/modules/videophy2.py)** — Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → official
+- **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
+- **Packages**: torch, transformers
+- **Tests**: no dedicated test reference found
+- **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
 ### `videoscore_dynamic` [↑](#categories)
 > VideoScore dynamic degree · ↑ higher=better
@@ -7119,7 +7233,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (89 fields)
+## Dataset-Level Metrics (101 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -7358,7 +7472,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
-- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +3 more
+- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +4 more
 
 ### `fvmd` [↑](#categories)
 > Fréchet Video Motion Distance · ↓ lower=better · type: float
@@ -7386,6 +7500,51 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: ⏱️ medium
 - **Provenance**: `adapted` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
 - **Tests**: covered by [`test_inception_score.py`](tests/modules/per_module/test_inception_score.py)
+
+### `jedi_generated_count` [↑](#categories)
+> type: int
+
+**[`jedi_official`](src/ayase/modules/jedi.py)** — Number of generated videos supplied to JEDi
+
+- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Provenance**: `utility`
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+
+### `jedi_preprocessing_sha256` [↑](#categories)
+> type: str
+
+**[`jedi_official`](src/ayase/modules/jedi.py)** — SHA-256 of Ayase's fixed JEDi loader policy
+
+- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Provenance**: `utility`
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+
+### `jedi_reference_count` [↑](#categories)
+> type: int
+
+**[`jedi_official`](src/ayase/modules/jedi.py)** — Number of reference videos supplied to JEDi
+
+- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Provenance**: `utility`
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+
+### `jedi_reference_manifest_sha256` [↑](#categories)
+> type: str
+
+**[`jedi_official`](src/ayase/modules/jedi.py)** — SHA-256 of the ordered reference path manifest
+
+- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Provenance**: `utility`
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
+
+### `jedi_score` [↑](#categories)
+> Official V-JEPA polynomial MMD (lower=better) · ↓ lower=better · type: float
+
+**[`jedi_official`](src/ayase/modules/jedi.py)** — Official two-distribution JEDi (polynomial MMD x100, lower=better)
+
+- **Input**: video +ref · **Speed**: ⚡ fast · GPU
+- **Provenance**: `adapted` — Uses the official V-JEPA encoder/probe and JEDi kernel, with Ayase's uniform full-video 16-frame sampling and square bilinear resize. Upstream accepts caller-defined loaders; benchmark-specific decoding/sampling is not reproduced. — source: Official JEDi implementation at commit e64f3fe8572b89ea904d161def44b419024e31a0 — https://github.com/oooolga/JEDi
+- **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py)
 
 ### `kad` [↑](#categories)
 > Kernel Audio Distance (lower=better) · ↓ lower=better · type: float
@@ -7419,9 +7578,9 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 **[`kvd`](src/ayase/modules/kvd.py)** — Kernel Video Distance via MMD over video features (lower=better)
 
-- **Input**: vid · **Speed**: ⚡ fast
+- **Input**: vid +ref · **Speed**: ⚡ fast
 - **Provenance**: `adapted` — Uses Ayase's StyleGAN-V-derived 16-frame I3D feature path; without a reference the metric is not emitted — source: KVD (Unterthiner et al. 2018) — https://arxiv.org/abs/1812.01717
-- **Tests**: covered by [`test_kvd.py`](tests/modules/per_module/test_kvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +2 more
+- **Tests**: covered by [`test_kvd.py`](tests/modules/per_module/test_kvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +3 more
 
 ### `l1_diversity` [↑](#categories)
 > type: float
@@ -7451,7 +7610,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_mauve_audio_divergence.py`](tests/modules/per_module/test_mauve_audio_divergence.py)
 
 ### `mmd_selfsplit` [↑](#categories)
-> JEDi (V-JEPA + MMD, ICLR 2025) · type: float
+> Within-dataset V-JEPA2 self-split diagnostic · type: float
 
 **[`mmd_selfsplit`](src/ayase/modules/mmd_selfsplit.py)** — V-JEPA self-split embedding MMD (own metric, lower=better)
 
@@ -7584,6 +7743,69 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
 - **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
+
+### `t2v_compbench_action_binding_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official action binding score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+
+### `t2v_compbench_consistent_attribute_binding_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official consistent attribute binding score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+
+### `t2v_compbench_dynamic_attribute_binding_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official dynamic attribute binding score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+
+### `t2v_compbench_generative_numeracy_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official generative numeracy score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+
+### `t2v_compbench_motion_binding_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official motion binding score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+
+### `t2v_compbench_object_interactions_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official object interactions score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
+
+### `t2v_compbench_spatial_relationships_avg` [↑](#categories)
+> type: float
+
+**[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official spatial relationships score over evaluated videos
+
+- **Input**: video · **Speed**: 🐌 slow
+- **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
+- **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
 ### `umap_coverage` [↑](#categories)
 > UMAP projection coverage (0-1) · type: float

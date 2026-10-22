@@ -64,7 +64,20 @@ class MotionSmoothnessModule(PipelineModule):
         self._rife_model = None
         self._device = "cpu"
         self._rife_available = False
+        self._bundled_rife = False
         self._backend = None
+
+    def _configure_bundled_rife_device(self) -> None:
+        """Keep the bundled warping-grid cache on the configured inference device."""
+        if not self._bundled_rife:
+            return
+        import torch
+        from ayase.third_party.rife import warplayer
+
+        selected = torch.device(self._device)
+        if warplayer.device != selected:
+            warplayer.device = selected
+            warplayer.backwarp_tenGrid.clear()
 
     def setup(self):
         try:
@@ -94,7 +107,10 @@ class MotionSmoothnessModule(PipelineModule):
 
                 self._rife_model = RIFEModel()
                 self._rife_model.load_model(rife_dir, rank=-1)
+                self._rife_model.flownet.to(self._device)
                 self._rife_model.eval()
+                self._bundled_rife = True
+                self._configure_bundled_rife_device()
                 self._rife_available = True
                 self._backend = "rife"
                 logger.info("RIFE HD v3 loaded on %s", self._device)
@@ -169,6 +185,7 @@ class MotionSmoothnessModule(PipelineModule):
         need_pad = (ph != h or pw != w)
 
         diffs = []
+        self._configure_bundled_rife_device()
         with torch.no_grad():
             for i in range(len(odd)):
                 I0 = torch.from_numpy(even[i]).permute(2, 0, 1).float().unsqueeze(0).to(self._device) / 255.0
