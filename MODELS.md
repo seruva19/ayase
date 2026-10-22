@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.2.0** · Generated 2026-10-22 15:55 · **316 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-22 17:51 · **316 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
