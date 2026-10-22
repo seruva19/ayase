@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-22
+
 ### Added
 
 - **jedi_official**: two-collection JEDi through the pinned author backend in a dedicated Python worker, with reference manifests and isolated feature caches.

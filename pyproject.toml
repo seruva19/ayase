@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ayase"
-version = "0.2.0"
+version = "0.2.1"
 description = "Modular media quality metrics toolkit"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -150,6 +150,12 @@ include = [
     "/src",
     "/tests",
     "/README.md",
+    "/CONTRIBUTING.md",
+    "/docs/*_backend.md",
+    "/docs/managed_backends.md",
+    "/docs/usage.md",
+    "/docs/isolated_client.md",
+    "/docs/custom_modules.md",
     "/CHANGELOG.md",
     "/MIGRATION.md",
     "/METRICS.md",
