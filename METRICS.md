@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 18:34 · **391 modules** · **582 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 19:01 · **392 modules** · **583 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **386/391 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **387/392 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**391** modules · **685** output fields · **582** metrics · **280** tiered · **185** GPU · **20** categories
+**392** modules · **686** output fields · **583** metrics · **281** tiered · **186** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -4517,7 +4517,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (76 metrics)
+## Audio Quality (77 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 
@@ -4548,6 +4548,19 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: insightface, opencv-python
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=buffalo_l`, `stride=2`, `max_faces=3`, `crop_size=256`, `crop_pad=0.8`, `fps=25`
+
+### `anyaudio_judge_score` [↑](#categories)
+> AnyAudio-Judge rubric satisfaction (0-1) · ↑ higher=better · 0-1
+
+**[`anyaudio_judge`](src/ayase/modules/anyaudio_judge.py)** — AnyAudio-Judge author-logits audio-instruction alignment
+
+- **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — source: AnyAudio-Judge source b3a22a78c7407b3f7eb8dd5ae18c0bacde895f52 — https://github.com/CuCl-2/AnyAudio-Judge/tree/b3a22a78c7407b3f7eb8dd5ae18c0bacde895f52
+- **Packages**: torch
+- **Source**: <a href="https://github.com/CuCl-2/AnyAudio-Judge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_anyaudio_judge.py`](tests/modules/test_anyaudio_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `model_size=7b`, `device_map=auto`, `dtype=bfloat16`, `subset=mix`, `clean_rubric=True`
 
 ### `aqascore_score` [↑](#categories)
 > AQAScore audio question-answering alignment (0-1) · ↑ higher=better · 0-1

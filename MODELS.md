@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 18:34 · **322 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 19:02 · **325 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**322** models · **128** HuggingFace · **45** pyiqa · **9** sources
+**325** models · **131** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~616 GB
+**Estimated total download size (all models):** ~729 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (93)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (96)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -251,6 +251,16 @@
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2309.00071" target="_blank">arXiv</a>
 
+### <a href="https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507" target="_blank">`Qwen/Qwen3-30B-A3B-Instruct-2507`</a> [↑](#categories)
+> text-generation · apache-2.0
+
+- **Used by**: `anyaudio_judge`
+- **Parameters**: 30.5B · **Downloads**: 1.1M
+- **Disk**: ~113.7 GB
+- **Task**: Caption decomposition and rubric cleaning
+- **Notes**: Loaded only for caption inputs without a supplied rubric
+- **Source**: <a href="https://arxiv.org/abs/2402.17463" target="_blank">arXiv</a>
+
 ### <a href="https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct" target="_blank">`Qwen/Qwen3-VL-8B-Instruct`</a> [↑](#categories)
 > image-text-to-text · apache-2.0
 
@@ -393,6 +403,22 @@
 - **Parameters**: 8.3B · **Downloads**: 230
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2404.01291" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/cucl2/AnyAudio-Judge-30B" target="_blank">`cucl2/AnyAudio-Judge-30B`</a> [↑](#categories)
+> audio-text-to-text · apache-2.0
+
+- **Used by**: `anyaudio_judge`
+- **Parameters**: 1M · **Downloads**: 254
+- **Disk**: ~5 MB
+- **Task**: AnyAudio-Judge audio rubric scorer
+
+### <a href="https://huggingface.co/cucl2/AnyAudio-Judge-7B" target="_blank">`cucl2/AnyAudio-Judge-7B`</a> [↑](#categories)
+> audio-text-to-text · apache-2.0
+
+- **Used by**: `anyaudio_judge`
+- **Parameters**: 1M · **Downloads**: 384
+- **Disk**: ~5 MB
+- **Task**: AnyAudio-Judge audio rubric scorer
 
 ### <a href="https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf" target="_blank">`depth-anything/Depth-Anything-V2-Small-hf`</a> [↑](#categories)
 > depth-estimation · apache-2.0

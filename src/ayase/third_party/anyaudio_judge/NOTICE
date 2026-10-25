@@ -1,0 +1,14 @@
+AnyAudio-Judge integration
+
+Ayase automatically acquires the AnyAudio-Judge source from
+https://github.com/CuCl-2/AnyAudio-Judge at revision
+b3a22a78c7407b3f7eb8dd5ae18c0bacde895f52.
+
+The upstream README declares the source code and the cucl2/AnyAudio-Judge model
+weights to be licensed under the Apache License 2.0. The inspected revision does
+not contain a separate LICENSE or NOTICE file. Ayase does not redistribute the
+AnyAudio-Judge source or weights; it downloads the pinned snapshots at runtime.
+
+The optional caption decomposition model Qwen/Qwen3-30B-A3B-Instruct-2507 is
+also declared Apache-2.0 by its model metadata. Benchmark audio is not acquired
+or redistributed by this integration and retains its respective dataset terms.

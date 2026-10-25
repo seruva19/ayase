@@ -63,6 +63,12 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 
 _ENTRIES = (
+    _pypi(
+        "anyaudio_judge",
+        "accelerate==1.12.0",
+        "sentencepiece==0.2.0",
+        "ftfy==6.3.1",
+    ),
     _pypi("active_speaker", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi("adaface", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi("aesthetic", "aesthetic-predictor-v2-5==2024.12.18.1"),

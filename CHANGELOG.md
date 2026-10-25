@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **anyaudio_judge**: evaluate audio instruction satisfaction with the released rubric judge and caption decomposition pipeline.
+
 - **morpheus**: evaluate physical invariants and dynamics fitting from scenario-labelled videos with SAM2 tracking and Depth Anything.
 
 - **geneval2**: evaluate compositional image instructions with Soft-TIFA atomic probabilities and complete-benchmark GenEval2 aggregates.

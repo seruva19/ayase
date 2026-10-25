@@ -113,6 +113,16 @@ def test_morpheus_provisions_native_tracking_and_numerical_runtime():
     assert not dependency.unsupported_platforms
 
 
+def test_anyaudio_provisions_omni_and_local_decomposition_runtime():
+    requirements = managed_requirements(BACKEND_DEPENDENCIES["anyaudio_judge"])
+    assert "torch==2.6.0+cu124" in requirements
+    assert "transformers==4.57.6" in requirements
+    assert "accelerate==1.12.0" in requirements
+    assert "soundfile==0.12.1" in requirements
+    assert "librosa==0.10.2.post1" in requirements
+    assert "ftfy==6.3.1" in requirements
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

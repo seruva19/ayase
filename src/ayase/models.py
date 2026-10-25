@@ -932,6 +932,7 @@ class QualityMetrics(BaseModel):
         None  # PAM anti-prompt perceptual audio quality (0-1, higher=better)
     )
     aqascore_score: Optional[float] = None  # AQAScore audio question-answering alignment (0-1)
+    anyaudio_judge_score: Optional[float] = None  # AnyAudio-Judge rubric satisfaction (0-1)
     av_sync_offset: Optional[float] = None  # Audio-video sync offset in ms
 
     # No-reference VQA
