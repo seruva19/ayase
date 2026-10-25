@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **deqa_score**: assess image quality with the released DeQA-Score Mix3 model in an isolated native runtime.
+
 - **anyaudio_judge**: evaluate audio instruction satisfaction with the released rubric judge and caption decomposition pipeline.
 
 - **morpheus**: evaluate physical invariants and dynamics fitting from scenario-labelled videos with SAM2 tracking and Depth Anything.

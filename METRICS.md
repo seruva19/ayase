@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 19:01 · **392 modules** · **583 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 19:28 · **393 modules** · **584 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **387/392 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **388/393 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**392** modules · **686** output fields · **583** metrics · **281** tiered · **186** GPU · **20** categories
+**393** modules · **687** output fields · **584** metrics · **282** tiered · **187** GPU · **20** categories
 
 ## Provenance
 
@@ -43,11 +43,11 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-79-metrics) (79) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
-## No-Reference Quality (78 metrics)
+## No-Reference Quality (79 metrics)
 
 ### `aigv_static_est` [↑](#categories)
 > AI video static quality
@@ -244,6 +244,19 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_deepdc.py`](tests/modules/per_module/test_deepdc.py)
 - **Config**: `subsample=8`
+
+### `deqa_score` [↑](#categories)
+> DeQA-Score Mix3 image quality MOS (1-5, higher=better) · ↑ higher=better · 1-5
+
+**[`deqa_score`](src/ayase/modules/deqa_score.py)** — Official DeQA-Score Mix3 native image-quality rating
+
+- **Input**: image · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — source: You et al., DeQA-Score; https://github.com/zhiyuanyou/DeQA-Score at 4342013af7fa5f450bb3a0cc8e135a61928d50bf
+- **Packages**: Pillow, gc, torch, transformers
+- **Source**: <a href="https://github.com/zhiyuanyou/DeQA-Score" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_deqa_score.py`](tests/modules/test_deqa_score.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `auto_download=True`, `device=auto`
 
 ### `dover_score` [↑](#categories)
 > DOVER overall (higher=better) · ↑ higher=better · 0-1 sigmoid

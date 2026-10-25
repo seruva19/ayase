@@ -81,6 +81,7 @@ _IMPORTS = [
     ("UVQModule", ".uvq"),
     ("FastVQAModule", ".fast_vqa"),
     ("QAlignModule", ".q_align"),
+    ("DeQAScoreModule", ".deqa_score"),
     ("TOPIQModule", ".topiq"),
     ("MUSIQModule", ".musiq"),
     ("MANIQAModule", ".maniqa"),

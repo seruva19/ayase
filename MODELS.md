@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 19:02 · **325 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 19:22 · **326 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**325** models · **131** HuggingFace · **45** pyiqa · **9** sources
+**326** models · **132** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~729 GB
+**Estimated total download size (all models):** ~746 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (96)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (97)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -814,6 +814,16 @@
 - **Disk**: 351.1 MB total
 - **Task**: Official DWPose detector and 133-keypoint COCO-WholeBody estimator
 - **Notes**: SHA-256 yolox_l.onnx=7860ae79de6c89a3c1eb72ae9a2756c0ccfbe04b7791bb5880afabd97855a411; dw-ll_ucoco_384.onnx=724f4ff2439ed61afb86fb8a1951ec39c6220682803b4a8bd4f598cd913b1843
+
+### <a href="https://huggingface.co/zhiyuanyou/DeQA-Score-Mix3" target="_blank">`zhiyuanyou/DeQA-Score-Mix3`</a> [↑](#categories)
+> image-to-text · mit
+
+- **Used by**: `deqa_score`
+- **Parameters**: 8.2B · **Downloads**: 2K
+- **VRAM**: CUDA model; approximately 16.4 GB of weights plus activations · **Disk**: 16.4 GB parameters (four safetensors shards)
+- **Task**: No-reference image quality assessment
+- **Notes**: Full Mix3 revision 246e219b7e3bc9b5dff5269c1a8564087aefca3f; source revision 4342013af7fa5f450bb3a0cc8e135a61928d50bf; native Transformers 4.36.1, eager attention, float16; MIT model/source with Apache-2.0 notices retained for derived mPLUG-Owl/LLaVA code
+- **Source**: <a href="https://arxiv.org/abs/2501.11561" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/zhudi2825/MuQ-Eval-A1" target="_blank">`zhudi2825/MuQ-Eval-A1`</a> [↑](#categories)
 > audio-classification · mit

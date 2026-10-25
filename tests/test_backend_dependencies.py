@@ -123,6 +123,19 @@ def test_anyaudio_provisions_omni_and_local_decomposition_runtime():
     assert "ftfy==6.3.1" in requirements
 
 
+def test_deqa_isolates_the_native_legacy_stack():
+    dependency = BACKEND_DEPENDENCIES["deqa_score"]
+    requirements = managed_requirements(dependency)
+    assert "torch==2.0.1+cu118" in requirements
+    assert "transformers==4.36.1" in requirements
+    assert "tokenizers==0.15.0" in requirements
+    assert "protobuf==3.20.3" in requirements
+    assert "icecream==2.1.3" in requirements
+    assert "torch==2.6.0+cu124" not in requirements
+    assert "transformers==4.57.6" not in requirements
+    assert managed_pip_options(dependency)[-1].endswith("/cu118")
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

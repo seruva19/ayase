@@ -1,0 +1,15 @@
+DeQA-Score provenance notice
+
+Ayase's DeQA-Score adapter follows the public DeQA-Score source at commit
+4342013af7fa5f450bb3a0cc8e135a61928d50bf and the full-tuned Mix3 model at
+Hugging Face revision 246e219b7e3bc9b5dff5269c1a8564087aefca3f.
+
+DeQA-Score is distributed under the accompanying MIT license. The model's
+Hugging Face custom code contains Apache License 2.0 notices inherited from
+LLaVA/mPLUG-Owl components. Ayase downloads that revision-pinned custom code
+with the model snapshot and preserves those upstream file-header notices.
+
+Sources:
+https://github.com/zhiyuanyou/DeQA-Score
+https://huggingface.co/zhiyuanyou/DeQA-Score-Mix3
+https://huggingface.co/MAGAer13/mplug-owl2-llama2-7b

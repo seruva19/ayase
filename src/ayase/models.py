@@ -1170,6 +1170,7 @@ class QualityMetrics(BaseModel):
     nrqm: Optional[float] = None  # NRQM No-Reference Quality Metric (higher=better)
     pi_score: Optional[float] = None  # Perceptual Index (PIRM challenge, lower=better)
     piqe: Optional[float] = None  # PIQE perception-based NR-IQA (lower=better)
+    deqa_score: Optional[float] = None  # DeQA-Score Mix3 image quality MOS (1-5, higher=better)
     maclip_score: Optional[float] = None  # MACLIP multi-attribute CLIP NR-IQA (higher=better)
 
     # pyiqa FR-IQA (full-reference)
