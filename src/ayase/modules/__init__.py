@@ -63,6 +63,7 @@ _IMPORTS = [
     ("VQAScoreModule", ".vqa_score"),
     ("BLIPScoreModule", ".blip_score"),
     ("TIFAModule", ".tifa"),
+    ("GenEval2Module", ".geneval2"),
     ("DSGModule", ".dsg"),
     ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),

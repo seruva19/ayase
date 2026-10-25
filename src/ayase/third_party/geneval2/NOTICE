@@ -1,0 +1,12 @@
+GenEval 2 source and benchmark attribution
+
+Copyright: Meta Platforms, Inc. and affiliates.
+Upstream: https://github.com/facebookresearch/GenEval2
+Source revision: a6e82d2289e8d418f27f0adee77908b07060eea3
+License: CC BY-NC 4.0 (see LICENSE).
+
+The evaluation and analysis scripts are retained unchanged with .source
+suffixes so the source remains available without Python 3.9 byte-compilation.
+geneval2_data.jsonl is the unmodified author benchmark.
+The protocol port in ../../modules/_geneval2_protocol.py retains the same
+noncommercial license and attribution.

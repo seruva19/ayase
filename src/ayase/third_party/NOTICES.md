@@ -12,6 +12,8 @@ implementations are unchanged.
 
 | Directory or file | Upstream | Retained notice |
 |---|---|---|
+| `geneval2/` | [GenEval 2](https://github.com/facebookresearch/GenEval2) | `geneval2/LICENSE` (CC BY-NC 4.0); code and benchmark retain noncommercial terms |
+| `../modules/_geneval2_protocol.py` | GenEval 2 protocol port | `geneval2/LICENSE` (CC BY-NC 4.0) |
 | `syncreward/` | [SyncReward](https://github.com/WeChatCV/SyncReward) | `syncreward/LICENSE` (Apache-2.0); pinned source in `syncreward/UPSTREAM.md` |
 | `cover/` | [COVER](https://github.com/taco-group/COVER) | `cover/LICENSE` (MIT) |
 | `opens2v/` | [OpenS2V-Nexus](https://github.com/PKU-YuanGroup/OpenS2V-Nexus) | `opens2v/LICENSE` (Apache-2.0) |

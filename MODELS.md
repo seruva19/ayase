@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 17:00 · **318 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 18:00 · **319 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**318** models · **126** HuggingFace · **45** pyiqa · **9** sources
+**319** models · **127** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~582 GB
+**Estimated total download size (all models):** ~614 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (91)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (92)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -250,6 +250,16 @@
 - **Parameters**: 8.3B · **Downloads**: 5.1M
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2309.00071" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct" target="_blank">`Qwen/Qwen3-VL-8B-Instruct`</a> [↑](#categories)
+> image-text-to-text · apache-2.0
+
+- **Used by**: `geneval2`
+- **Parameters**: 8.8B · **Downloads**: 5.5M
+- **Disk**: ~32.7 GB
+- **Task**: GenEval2 Soft-TIFA visual question answering
+- **Notes**: Apache-2.0 model; GenEval2 code/data are CC-BY-NC-4.0
+- **Source**: <a href="https://arxiv.org/abs/2505.09388" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Salesforce/blip-itm-large-coco" target="_blank">`Salesforce/blip-itm-large-coco`</a> [↑](#categories)
 > bsd-3-clause

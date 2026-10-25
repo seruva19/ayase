@@ -158,6 +158,12 @@ _ENTRIES = (
     _pypi("face_identity_drift", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi("facesim", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi("grafiqs", "insightface==2.1", "onnxruntime==1.31.0"),
+    _pypi(
+        "geneval2",
+        "transformers==4.57.0",
+        "accelerate==1.12.0",
+        "ftfy==6.3.1",
+    ),
     _pypi("hpsv2", "hpsv2==1.2.0"),
     _pypi("hpsv2_const", "hpsv2==1.2.0"),
     BackendDependency(

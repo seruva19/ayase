@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **geneval2**: evaluate compositional image instructions with Soft-TIFA atomic probabilities and complete-benchmark GenEval2 aggregates.
+
 - **syncreward**: score audio-video synchronization with the released human-aligned reward model, automatically managed dependencies and model downloads.
 
 ### Removed

@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 16:59 · **389 modules** · **578 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 17:59 · **390 modules** · **580 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **384/389 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **385/390 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**389** modules · **678** output fields · **578** metrics · **278** tiered · **184** GPU · **20** categories
+**390** modules · **683** output fields · **580** metrics · **279** tiered · **184** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-59-metrics) (59) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-73-metrics) (73) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-101-fields) (101) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-73-metrics) (73) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2005,7 +2005,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (59 metrics)
+## Text-Video Alignment (61 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2436,6 +2436,32 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/evalcrafter/EvalCrafter" target="_blank">GitHub</a> · <a href="https://huggingface.co/openai/clip-vit-base-patch32" target="_blank">HF</a>
 - **Tests**: covered by [`test_sd_reference.py`](tests/modules/per_module/test_sd_reference.py)
 - **Config**: `clip_model=openai/clip-vit-base-patch32`, `sdxl_model=stabilityai/stable-diffusion-xl-base-1.0`, `num_sd_images=5`, `num_video_frames=0`, `sd_steps=20`, `cache_dir=.ayase_sd_cache`
+
+### `soft_tifa_am_score` [↑](#categories)
+> GenEval2 arithmetic atom probability mass · ↑ higher=better
+
+**[`geneval2`](src/ayase/modules/geneval2.py)** — GenEval2 Soft-TIFA image-prompt alignment (raw AM and GM)
+
+- **Input**: image · **Speed**: ⏱️ medium
+- **Backend**: unavailable → qwen3_vl
+- **Provenance**: `published` — source: GenEval2 Soft-TIFA — https://github.com/facebookresearch/GenEval2
+- **Packages**: torch, transformers
+- **Source**: <a href="https://github.com/facebookresearch/GenEval2" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device=auto`, `dtype=auto`, `device_map=auto`
+
+### `soft_tifa_gm_score` [↑](#categories)
+> GenEval2 geometric atom probability mass · ↑ higher=better
+
+**[`geneval2`](src/ayase/modules/geneval2.py)** — GenEval2 Soft-TIFA image-prompt alignment (raw AM and GM)
+
+- **Input**: image · **Speed**: ⏱️ medium
+- **Backend**: unavailable → qwen3_vl
+- **Provenance**: `published` — source: GenEval2 Soft-TIFA — https://github.com/facebookresearch/GenEval2
+- **Packages**: torch, transformers
+- **Source**: <a href="https://github.com/facebookresearch/GenEval2" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device=auto`, `dtype=auto`, `device_map=auto`
 
 ### `t2v_compbench_action_binding` [↑](#categories)
 
@@ -7245,7 +7271,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (101 fields)
+## Dataset-Level Metrics (104 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -7494,6 +7520,33 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: vid · **Speed**: ⏱️ medium
 - **Provenance**: `published` — source: FVMD (Liu et al., arXiv 2407.16124), official evaluator — https://github.com/ljh0v0/FVMD-frechet-video-motion-distance
 - **Tests**: covered by [`test_fvmd.py`](tests/modules/per_module/test_fvmd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +1 more
+
+### `geneval2_am_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`geneval2`](src/ayase/modules/geneval2.py)** — Official 800-prompt benchmark mean Soft-TIFA AM ×100
+
+- **Input**: image · **Speed**: ⏱️ medium
+- **Provenance**: `published` — source: GenEval2 full-benchmark Soft-TIFA AM — https://github.com/facebookresearch/GenEval2
+- **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `geneval2_coverage` [↑](#categories)
+> Fraction of benchmark prompts scored · type: float
+
+**[`geneval2`](src/ayase/modules/geneval2.py)** — Unique successfully scored official prompts / benchmark prompts
+
+- **Input**: image · **Speed**: ⏱️ medium
+- **Provenance**: `utility` — source: Ayase completion diagnostic for https://github.com/facebookresearch/GenEval2
+- **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `geneval2_gm_score` [↑](#categories)
+> ↑ higher=better · type: float
+
+**[`geneval2`](src/ayase/modules/geneval2.py)** — Official 800-prompt benchmark mean Soft-TIFA GM ×100
+
+- **Input**: image · **Speed**: ⏱️ medium
+- **Provenance**: `published` — source: GenEval2 full-benchmark Soft-TIFA GM — https://github.com/facebookresearch/GenEval2
+- **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `identity_cluster_count` [↑](#categories)
 > Number of identity clusters · type: int

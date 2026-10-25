@@ -90,6 +90,16 @@ def test_syncreward_isolates_peav_and_supplies_ffmpeg_for_decoding():
     assert managed_pip_options(dependency)[-1].endswith("/cu128")
 
 
+def test_geneval2_uses_the_published_qwen_runtime_in_managed_python():
+    dependency = BACKEND_DEPENDENCIES["geneval2"]
+    requirements = managed_requirements(dependency)
+    assert dependency.python_version == "3.11"
+    assert "transformers==4.57.0" in requirements
+    assert "transformers==4.57.6" not in requirements
+    assert "accelerate==1.12.0" in requirements
+    assert "ftfy==6.3.1" in requirements
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

@@ -1091,6 +1091,8 @@ class QualityMetrics(BaseModel):
 
     # TIFA (ICCV 2023) — Text-to-Image Faithfulness Assessment
     tifa_score: Optional[float] = None  # VQA faithfulness (0-1, higher=better)
+    soft_tifa_am_score: Optional[float] = None  # GenEval2 arithmetic atom probability mass
+    soft_tifa_gm_score: Optional[float] = None  # GenEval2 geometric atom probability mass
 
     # ImageReward (human preference for text-to-image)
     image_reward_score: Optional[float] = None  # Human preference reward (-2..+2, higher=better)
@@ -2035,6 +2037,11 @@ class DatasetStats(BaseModel):
     worldmodelbench_physical_score: Optional[float] = None  # Sum of five adherence rates, 0-5
     worldmodelbench_common_sense_score: Optional[float] = None  # Sum of two rates, 0-2
     worldmodelbench_total_score: Optional[float] = None  # Raw total, 0-10
+
+    # GenEval2 benchmark (complete prompt set, percentage scale)
+    geneval2_am_score: Optional[float] = None
+    geneval2_gm_score: Optional[float] = None
+    geneval2_coverage: Optional[float] = None  # Fraction of benchmark prompts scored
 
     # Codec comparison (dataset-level)
     bd_rate: Optional[float] = None  # BD-Rate compression efficiency (%, negative=better)
