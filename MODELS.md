@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 21:03 · **333 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 21:22 · **334 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**333** models · **136** HuggingFace · **45** pyiqa · **9** sources
+**334** models · **137** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (101)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (102)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -836,6 +836,16 @@
 - **Downloads**: 353
 - **Task**: VideoPhy-2 semantic adherence and physical commonsense AutoEval
 - **Notes**: Official mPLUG-Owl-Video checkpoint revision ca38370e1dcc79c99c7017dd8755d0a087299afc; source revision 01d366c979e4a82875852adbf427ccc036e7373a
+
+### <a href="https://huggingface.co/yucornetto/tokenizer_titok_l32_imagenet" target="_blank">`yucornetto/tokenizer_titok_l32_imagenet`</a> [↑](#categories)
+> apache-2.0
+
+- **Used by**: `chd`
+- **Parameters**: 641M · **Downloads**: 560
+- **Disk**: 2,564,295,300 bytes
+- **Task**: ImageNet TiTok-L-32 tokenizer for released CHD-1D
+- **Notes**: Apache-2.0; model.safetensors SHA256 fecb8ed7aa6f2a620269b0ad141098ba1628f4a41290b6057dd91dbf5e9bf840
+- **Source**: <a href="https://arxiv.org/abs/2406.07550" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/yuvalkirstain/PickScore_v1" target="_blank">`yuvalkirstain/PickScore_v1`</a> [↑](#categories)
 > zero-shot-image-classification

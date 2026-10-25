@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **chd**: compare generated and reference image distributions with the released TiTok-L32 unigram CHD-1D distance; the paper's spatial composite is not available in the released backend.
+
 - **vgif_score**: evaluate video instruction following with dependency-gated questions and prompt-specific quality rubrics through a Gemini-compatible API.
 
 - **beyond_time_shifts**: score audio-video synchronization with the trained author's 60-frame and five-second-audio protocol.

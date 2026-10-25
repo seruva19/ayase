@@ -20,6 +20,17 @@ def test_inventory_keys_match_module_names_and_are_unique():
     assert get_backend_dependency("not_a_module") is None
 
 
+def test_chd_provisions_the_native_titok_runtime():
+    dependency = BACKEND_DEPENDENCIES["chd"]
+    requirements = managed_requirements(dependency)
+    assert dependency.python_version == "3.11"
+    assert "torch==2.6.0+cu124" in requirements
+    assert "huggingface-hub==0.36.0" in requirements
+    assert "einops==0.8.1" in requirements
+    assert "omegaconf==2.3.0" in requirements
+    assert "safetensors==0.4.5" in requirements
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:

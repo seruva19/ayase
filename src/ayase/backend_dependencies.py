@@ -64,6 +64,14 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 _ENTRIES = (
     _pypi(
+        "chd",
+        "einops==0.8.1",
+        "omegaconf==2.3.0",
+        "safetensors==0.4.5",
+        "tqdm==4.66.5",
+        "ftfy==6.3.1",
+    ),
+    _pypi(
         "beyond_time_shifts",
         "transformers==4.57.1",
         "qwen-omni-utils==0.0.8",

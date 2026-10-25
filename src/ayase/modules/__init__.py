@@ -213,6 +213,7 @@ _IMPORTS = [
     ("BrightRateModule", ".brightrate"),
     ("ProductionQualityModule", ".production_quality"),
     # --- Dataset operations ---
+    ("CHDModule", ".chd"),
     ("DeduplicationModule", ".dedup"),
     ("EmbeddingModule", ".embedding"),
     ("DiversitySelectionModule", ".diversity_selection"),

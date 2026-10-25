@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 21:02 · **396 modules** · **596 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 21:21 · **397 modules** · **596 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **391/396 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **392/397 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**396** modules · **699** output fields · **596** metrics · **285** tiered · **189** GPU · **20** categories
+**397** modules · **701** output fields · **596** metrics · **286** tiered · **189** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-71-metrics) (71) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-71-metrics) (71) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-106-fields) (106) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -7479,7 +7479,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (104 fields)
+## Dataset-Level Metrics (106 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -7518,6 +7518,24 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `chd_1d` [↑](#categories)
+> Released TiTok-L32 unigram Hellinger distance (0-1) · ↓ lower=better · type: float
+
+**[`chd`](src/ayase/modules/chd.py)** — Released unigram codebook Hellinger distance (0-1, lower=better)
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — Uses the released CHD-1D unigram algorithm and public ImageNet TiTok-L-32. It does not claim the paper's CHD-1D/CHD-2D composite or retrained tokenizer. Ayase adds strict set validation and isolated pinned asset provisioning. — source: Released CHD-1D source at https://github.com/zexiJia/1d-Distance/tree/06c3f986cb37188a59596ba6fc2e6ad6cc5665d5
+- **Tests**: covered by [`test_chd.py`](tests/modules/test_chd.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `chd_metadata` [↑](#categories)
+> CHD set counts and pinned protocol identity · type: str
+
+**[`chd`](src/ayase/modules/chd.py)** — Structured CHD protocol, asset identity, device, and set counts
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `utility` — Ayase-added runtime trace; not an upstream CHD scalar. — source: Ayase runtime trace for the released CHD-1D integration
+- **Tests**: covered by [`test_chd.py`](tests/modules/test_chd.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `class_balance_score` [↑](#categories)
 > Category balance 0-1 (higher=balanced) · ↑ higher=better · type: float

@@ -1,0 +1,14 @@
+Ayase CHD attribution notice
+
+The released CHD-1D protocol was inspected at zexiJia/1d-Distance commit
+06c3f986cb37188a59596ba6fc2e6ad6cc5665d5. That repository declares Apache-2.0
+in its README but does not contain a root LICENSE file at this revision. Ayase
+therefore does not copy its chd_metric.py; the Hellinger reduction is an
+independent implementation of the published mathematical definition. The pinned
+source archive is downloaded at runtime solely to load its TiTok implementation.
+
+The downloaded modeling/TiTok files contain Bytedance Ltd. Apache-2.0 notices.
+The tokenizer asset yucornetto/tokenizer_titok_l32_imagenet at revision
+1c9a2084c59112fd415b7ed97d4c200e864a95de declares Apache-2.0.
+
+Copyright (2024) Bytedance Ltd. and/or its affiliates
