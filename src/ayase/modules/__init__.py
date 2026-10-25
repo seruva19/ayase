@@ -214,6 +214,7 @@ _IMPORTS = [
     ("ProductionQualityModule", ".production_quality"),
     # --- Dataset operations ---
     ("CHDModule", ".chd"),
+    ("PALATEModule", ".palate"),
     ("DeduplicationModule", ".dedup"),
     ("EmbeddingModule", ".embedding"),
     ("DiversitySelectionModule", ".diversity_selection"),

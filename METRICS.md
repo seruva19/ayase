@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 21:21 · **397 modules** · **596 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 21:48 · **398 modules** · **596 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **392/397 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **393/398 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**397** modules · **701** output fields · **596** metrics · **286** tiered · **189** GPU · **20** categories
+**398** modules · **706** output fields · **596** metrics · **287** tiered · **189** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-71-metrics) (71) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-106-fields) (106) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-71-metrics) (71) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -7479,7 +7479,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (106 fields)
+## Dataset-Level Metrics (111 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -7891,6 +7891,15 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Provenance**: `published` — source: LPIPS-diversity (BicycleGAN/MUNIT) — https://arxiv.org/abs/1711.11586
 - **Tests**: covered by [`test_image_lpips.py`](tests/modules/per_module/test_image_lpips.py)
 
+### `m_palate_score` [↑](#categories)
+> M_PALATE holistic distribution score (lower=better) · ↓ lower=better · type: float
+
+**[`palate`](src/ayase/modules/palate.py)** — Holistic score (lower=better)
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
+- **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
 ### `mauve_audio_divergence` [↑](#categories)
 > MAD -log(MAUVE), lower=better · ↓ lower=better · type: float
 
@@ -7923,6 +7932,42 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
 - **Provenance**: `own`
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
+
+### `palate_baseline_score` [↑](#categories)
+> Scaled test/generated Gaussian MMD · ↑ higher=better · type: float
+
+**[`palate`](src/ayase/modules/palate.py)** — Scaled full-set MMD baseline
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
+- **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `palate_metadata` [↑](#categories)
+> PALATE components and three-set protocol · type: str
+
+**[`palate`](src/ayase/modules/palate.py)** — Protocol and diagnostics
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `utility` — Ayase runtime diagnostics. — source: https://arxiv.org/abs/2503.18462
+- **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `palate_retained_fraction` [↑](#categories)
+> Generated fraction retained by KDE · type: float
+
+**[`palate`](src/ayase/modules/palate.py)** — KDE-retained generated fraction
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
+- **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `palate_score` [↑](#categories)
+> PALATE training memorization ratio (0-1) · ↑ higher=better · type: float
+
+**[`palate`](src/ayase/modules/palate.py)** — Training-vs-heldout memorization ratio (balanced generalization near 0.5)
+
+- **Input**: image +ref · **Speed**: ⚡ fast
+- **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
+- **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
 ### `prdc_coverage` [↑](#categories)
 > PRDC coverage in DINOv2 space (0-1) · type: float

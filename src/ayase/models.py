@@ -1928,6 +1928,11 @@ class DatasetStats(BaseModel):
     cmmd: Optional[float] = None  # CLIP Maximum Mean Discrepancy (lower=better)
     chd_1d: Optional[float] = None  # Released TiTok-L32 unigram Hellinger distance (0-1)
     chd_metadata: Optional[Dict[str, Any]] = None  # CHD set counts and pinned protocol identity
+    palate_score: Optional[float] = None  # PALATE training memorization ratio (0-1)
+    m_palate_score: Optional[float] = None  # M_PALATE holistic distribution score (lower=better)
+    palate_baseline_score: Optional[float] = None  # Scaled test/generated Gaussian MMD
+    palate_retained_fraction: Optional[float] = None  # Generated fraction retained by KDE
+    palate_metadata: Optional[Dict[str, Any]] = None  # PALATE components and three-set protocol
     mmd_selfsplit: Optional[float] = None  # Within-dataset V-JEPA2 self-split diagnostic
     jedi_score: Optional[float] = None  # Official V-JEPA polynomial MMD (lower=better)
     jedi_generated_count: Optional[int] = None

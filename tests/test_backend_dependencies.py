@@ -31,6 +31,15 @@ def test_chd_provisions_the_native_titok_runtime():
     assert "safetensors==0.4.5" in requirements
 
 
+def test_palate_provisions_native_dinov2_without_jax_or_transformer_substitution():
+    dependency = BACKEND_DEPENDENCIES["palate"]
+    requirements = managed_requirements(dependency)
+    assert "torch==2.6.0+cu124" in requirements
+    assert "torchvision==0.21.0+cu124" in requirements
+    assert "omegaconf==2.3.0" in requirements
+    assert not any(item.startswith(("jax", "xformers")) for item in requirements)
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:

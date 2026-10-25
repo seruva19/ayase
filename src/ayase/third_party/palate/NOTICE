@@ -1,0 +1,10 @@
+PALATE integration notice
+
+Ayase independently implements the published PALATE mathematics described in
+"PALATE: A Metric for Assessing Memorization in Generative Models" and informed
+by released behavior at revision 34568dd9c5bc8952fb9ae70e334ae57b485aedb0.
+No source from that repository, which has no root license, is copied here.
+
+The feature extractor is official DINOv2 from Meta Platforms, Inc., pinned to
+7764ea0f912e53c92e82eb78a2a1631e92725fc8 under Apache License 2.0. Its license
+is reproduced in LICENSE.

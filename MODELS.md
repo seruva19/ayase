@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 21:22 · **334 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 21:49 · **335 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**334** models · **137** HuggingFace · **45** pyiqa · **9** sources
+**335** models · **137** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (102)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (102)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1483,6 +1483,12 @@ Bundled with `pip install torchvision`. Weights download on first use.
 > torch.hub · Apache-2.0
 
 - **Used by**: `dino_face_identity`, `opens2v`, `spectral_complexity`, `world_consistency`
+
+### `facebookresearch/dinov2:dinov2_vitl14` [↑](#categories)
+> torch.hub
+
+- **Used by**: `palate`
+- **VRAM**: ~1.22 GB weights plus inference activations (not benchmarked) · **Disk**: 1,217,586,395 bytes
 
 ### `intel-isl/MiDaS` [↑](#categories)
 > torch.hub · MIT
