@@ -40,6 +40,17 @@ def test_palate_provisions_native_dinov2_without_jax_or_transformer_substitution
     assert not any(item.startswith(("jax", "xformers")) for item in requirements)
 
 
+def test_avc_reward_provisions_native_omni_instead_of_a_manual_vllm_server():
+    dependency = BACKEND_DEPENDENCIES["avc_reward"]
+    requirements = managed_requirements(dependency)
+    assert "transformers==4.57.6" in requirements
+    assert "qwen-omni-utils==0.0.8" in requirements
+    assert "av==15.1.0" in requirements
+    assert "accelerate==1.12.0" in requirements
+    assert dependency.conda_packages == ("ffmpeg=7.1.1",)
+    assert not any(item.startswith(("vllm", "flash-attn")) for item in requirements)
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:

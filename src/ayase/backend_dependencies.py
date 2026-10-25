@@ -63,6 +63,17 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 
 _ENTRIES = (
+    BackendDependency(
+        "avc_reward",
+        (
+            "qwen-omni-utils==0.0.8",
+            "av==15.1.0",
+            "accelerate==1.12.0",
+            "tqdm==4.66.5",
+            "ftfy==6.3.1",
+        ),
+        conda_packages=("ffmpeg=7.1.1",),
+    ),
     _pypi(
         "palate",
         "omegaconf==2.3.0",

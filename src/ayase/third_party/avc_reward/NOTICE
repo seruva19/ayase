@@ -1,0 +1,19 @@
+AVC-Reward integration notice
+
+Ayase contains an independently authored runtime wrapper for AVC-Reward. It does
+not redistribute the AVC-Reward source code, prompt, or model weights. At runtime,
+the wrapper downloads the pinned author-served protocol file from:
+
+https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
+
+and the trained checkpoint from:
+
+https://huggingface.co/Tsuki0512/AVC-Reward/tree/84dd3998ecc6070925f08dca37132a424e667a52
+
+The upstream project states "Research use only." The Hugging Face checkpoint is
+tagged license "other" and supplies no more specific model-license text. Those
+terms apply to the downloaded assets; Ayase's MIT license does not replace them.
+
+
+Frame selection follows the independently reproduced OpenCV defaults in vLLM
+v0.12.0 (Apache-2.0): https://github.com/vllm-project/vllm/blob/v0.12.0/vllm/multimodal/video.py

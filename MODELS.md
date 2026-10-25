@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 21:49 · **335 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 22:29 · **336 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**335** models · **137** HuggingFace · **45** pyiqa · **9** sources
+**336** models · **138** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~783 GB
+**Estimated total download size (all models):** ~846 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (102)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (103)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -351,6 +351,16 @@
 - **VRAM**: ~16 GB · **Disk**: ~15 GB
 - **Task**: VideoScore2 VLM for 3D generative video evaluation
 - **Source**: <a href="https://arxiv.org/abs/2509.22799" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/Tsuki0512/AVC-Reward" target="_blank">`Tsuki0512/AVC-Reward`</a> [↑](#categories)
+> other · other
+
+- **Used by**: `avc_reward`
+- **Parameters**: 31.7B · **Downloads**: 60
+- **VRAM**: BF16 weights are 63.44 GB plus activations (CPU float32 is about 126.9 GB) · **Disk**: 63.44 GB
+- **Task**: AVC-Reward audio-video consistency judge
+- **Notes**: Research use only; checkpoint license metadata is 'other' and incomplete.
+- **Source**: <a href="https://arxiv.org/abs/2610.22321" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Vchitect/VBench-2.0_models" target="_blank">`Vchitect/VBench-2.0_models`</a> [↑](#categories)
 

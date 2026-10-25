@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **avc_reward**: assess audio-video semantic, temporal, and event consistency with the research-use AVC-Reward model in a managed native runtime.
+
 - **palate**: assess generation quality and training-set memorization with the original DINOv2 PALATE variant and explicit training, held-out, and generated image sets.
 
 - **chd**: compare generated and reference image distributions with the released TiTok-L32 unigram CHD-1D distance; the paper's spatial composite is not available in the released backend.

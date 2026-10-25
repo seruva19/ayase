@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 21:48 · **398 modules** · **596 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 22:28 · **399 modules** · **600 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **393/398 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **394/399 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**398** modules · **706** output fields · **596** metrics · **287** tiered · **189** GPU · **20** categories
+**399** modules · **710** output fields · **600** metrics · **288** tiered · **190** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-71-metrics) (71) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-75-metrics) (75) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2031,7 +2031,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (71 metrics)
+## Text-Video Alignment (75 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2045,6 +2045,58 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/IntMeGroup/AIGV-Assessor" target="_blank">GitHub</a> · <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">HF</a>
 - **Tests**: covered by [`test_aigv_assessor.py`](tests/modules/per_module/test_aigv_assessor.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 - **Config**: `subsample=8`, `trust_remote_code=True`
+
+### `avc_event_correspondence_score` [↑](#categories)
+> Fine-grained event compatibility (0-1) · ↑ higher=better · 0-1
+
+**[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
+
+- **Input**: video · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
+- **Packages**: opencv-python, qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/Tsuki0512/AVC-Reward" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_avc_reward.py`](tests/modules/test_avc_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=auto`, `max_new_tokens=4096`
+
+### `avc_macro_semantic_score` [↑](#categories)
+> Global audio-video semantic harmony (0-1) · ↑ higher=better · 0-1
+
+**[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
+
+- **Input**: video · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
+- **Packages**: opencv-python, qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/Tsuki0512/AVC-Reward" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_avc_reward.py`](tests/modules/test_avc_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=auto`, `max_new_tokens=4096`
+
+### `avc_reward_score` [↑](#categories)
+> Mean AVC-Reward consistency score (0-1) · ↑ higher=better · 0-1
+
+**[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
+
+- **Input**: video · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
+- **Packages**: opencv-python, qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/Tsuki0512/AVC-Reward" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_avc_reward.py`](tests/modules/test_avc_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=auto`, `max_new_tokens=4096`
+
+### `avc_temporal_score` [↑](#categories)
+> Audio-video event synchronization (0-1) · ↑ higher=better · 0-1
+
+**[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
+
+- **Input**: video · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
+- **Packages**: opencv-python, qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/Tsuki0512/AVC-Reward" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_avc_reward.py`](tests/modules/test_avc_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=auto`, `max_new_tokens=4096`
 
 ### `blip_bleu` [↑](#categories)
 
@@ -8517,7 +8569,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
 - **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +7 more
+- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +8 more
 - **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
 - **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
