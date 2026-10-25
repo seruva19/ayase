@@ -76,6 +76,20 @@ def test_videophy2_uses_the_upstream_transformers_runtime():
     assert "sentencepiece==0.1.99" in dependency.requirements
 
 
+def test_syncreward_isolates_peav_and_supplies_ffmpeg_for_decoding():
+    dependency = BACKEND_DEPENDENCIES["syncreward"]
+    requirements = managed_requirements(dependency)
+    assert "transformers==5.1.0" in requirements
+    assert "torch==2.9.1+cu128" in requirements
+    assert "torchaudio==2.9.1+cu128" in requirements
+    assert "torchcodec==0.8.1" in requirements
+    assert "ftfy==6.3.1" in requirements  # Ayase's compatibility imports load CLIP.
+    assert "transformers==4.57.6" not in requirements
+    assert "torch==2.6.0+cu124" not in requirements
+    assert dependency.conda_packages == ("ffmpeg=7.1.1",)
+    assert managed_pip_options(dependency)[-1].endswith("/cu128")
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

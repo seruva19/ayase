@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-22 17:50 · **388 modules** · **577 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 16:59 · **389 modules** · **578 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **383/388 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **384/389 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**388** modules · **677** output fields · **577** metrics · **277** tiered · **183** GPU · **20** categories
+**389** modules · **678** output fields · **578** metrics · **278** tiered · **184** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-59-metrics) (59) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-73-metrics) (73) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-75-metrics) (75) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-101-fields) (101) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-59-metrics) (59) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-73-metrics) (73) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-101-fields) (101) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2765,7 +2765,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 
@@ -3786,7 +3786,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
 - **Provenance**: `own`
-- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +5 more
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +4 more
 - **Config**: `sample_rate=5`, `low_motion_threshold=0.5`, `high_motion_threshold=20.0`
 
 ### `motion_smoothness` [↑](#categories)
@@ -4131,7 +4131,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: variance of the Laplacian (Pech-Pacheco et al., ICPR 2000, DOI:10.1109/ICPR.2000.903548)
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `brightness` [↑](#categories)
@@ -4141,7 +4141,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `compression_artifacts` [↑](#categories)
@@ -4162,7 +4162,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `cpbd_score` [↑](#categories)
@@ -4245,7 +4245,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `spatial_information` [↑](#categories)
@@ -4465,7 +4465,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (75 metrics)
+## Audio Quality (76 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 
@@ -5241,6 +5241,19 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://github.com/microsoft/DNS-Challenge" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_audio_squim_objective.py`](tests/modules/per_module/test_audio_squim_objective.py)
 - **Config**: `device=auto`, `min_duration_seconds=1.0`, `silence_rms_threshold=1e-05`
+
+### `syncreward_score` [↑](#categories)
+> SyncReward human-aligned AV sync (0-2, higher=better) · ↑ higher=better · 0-2
+
+**[`syncreward`](src/ayase/modules/syncreward.py)** — SyncReward learned audio-video synchronization reward (0-2, higher is better)
+
+- **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Backend**: syncreward → unavailable
+- **Provenance**: `published` — source: SyncReward, Guan et al. arXiv:2610.16338 — https://arxiv.org/abs/2610.16338
+- **Packages**: torch
+- **Source**: <a href="https://arxiv.org/abs/2610.16338" target="_blank">arXiv</a> · <a href="https://huggingface.co/Guan123/SyncReward" target="_blank">HF</a>
+- **Tests**: covered by [`test_syncreward.py`](tests/modules/per_module/test_syncreward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device=auto`, `num_segments=18`, `segment_duration=0.5`, `segment_stride=0.25`, `encode_batch_size=18`
 
 ### `utmos_score` [↑](#categories)
 > UTMOS predicted MOS (1-5, higher=better) · ↑ higher=better · 1-5
@@ -8193,7 +8206,7 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 - **[`embedding`](src/ayase/modules/embedding.py)** — Calculates X-CLIP embeddings for similarity search · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_embedding.py`](tests/modules/per_module/test_embedding.py)
 - **[`knowledge_graph`](src/ayase/modules/knowledge_graph.py)** — Generates a conceptual knowledge graph of the video dataset · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_knowledge_graph.py`](tests/modules/per_module/test_knowledge_graph.py)
 - **[`llm_advisor`](src/ayase/modules/llm_advisor.py)** — Rule-based improvement recommendations derived from quality metrics (no LLM used) · Input: img/vid · Speed: 🐌 slow · Tests: covered by [`test_llm_advisor.py`](tests/modules/per_module/test_llm_advisor.py)
-- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +9 more
+- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +8 more
 - **[`msswd`](src/ayase/modules/msswd.py)** — MS-SWD multiscale sliced Wasserstein colour distance via pyiqa (batch, lower=better) · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_msswd.py`](tests/modules/per_module/test_msswd.py), [`test_provenance.py`](tests/test_provenance.py)
 - **[`object_count_check`](src/ayase/modules/object_count_check.py)** — Caption object-count check (own, VBench-dimension-inspired) · Input: img/vid +cap · Speed: ⚡ fast · Tests: covered by [`test_object_count_check.py`](tests/modules/per_module/test_object_count_check.py)
 - **[`paranoid_decoder`](src/ayase/modules/paranoid_decoder.py)** — Deep bitstream validation using FFmpeg (Paranoid Mode) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_paranoid_decoder.py`](tests/modules/per_module/test_paranoid_decoder.py)

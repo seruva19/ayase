@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **syncreward**: score audio-video synchronization with the released human-aligned reward model, automatically managed dependencies and model downloads.
+
 ### Removed
 
 - **tui**: remove the `ayase tui` command and Textual terminal interface; use the command-line workflows or Python API instead.

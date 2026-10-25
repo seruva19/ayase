@@ -1517,6 +1517,7 @@ class QualityMetrics(BaseModel):
     # Audio-visual generation sync
     desync_score: Optional[float] = None  # Synchformer predicted AV offset (seconds, lower=better)
     av_align_score: Optional[float] = None  # AV-Align onset/flow-peak IoU (0-1, higher=better)
+    syncreward_score: Optional[float] = None  # SyncReward human-aligned AV sync (0-2, higher=better)
 
     # Subject-driven generation consistency (OpenS2V-Eval)
     opens2v_nexus_score: Optional[float] = (

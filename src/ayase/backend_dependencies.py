@@ -297,6 +297,23 @@ _ENTRIES = (
         "ai-edge-litert==2.3.0",
         cpu_only=True,
     ),
+    BackendDependency(
+        "syncreward",
+        (
+            "torch==2.9.1+cu128",
+            "torchvision==0.24.1+cu128",
+            "torchaudio==2.9.1+cu128",
+            "torchcodec==0.8.1",
+            "transformers==5.1.0",
+            "timm==1.0.26",
+            "safetensors==0.8.0",
+            "huggingface-hub==1.33.0",
+            "PyYAML==6.0.2",
+            "ftfy==6.3.1",
+        ),
+        pip_options=("--extra-index-url", "https://download.pytorch.org/whl/cu128"),
+        conda_packages=("ffmpeg=7.1.1",),
+    ),
     _pypi("vif", "piq==0.8.0"),
     _pypi(
         "verse_bench",

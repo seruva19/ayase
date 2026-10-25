@@ -12,6 +12,7 @@ implementations are unchanged.
 
 | Directory or file | Upstream | Retained notice |
 |---|---|---|
+| `syncreward/` | [SyncReward](https://github.com/WeChatCV/SyncReward) | `syncreward/LICENSE` (Apache-2.0); pinned source in `syncreward/UPSTREAM.md` |
 | `cover/` | [COVER](https://github.com/taco-group/COVER) | `cover/LICENSE` (MIT) |
 | `opens2v/` | [OpenS2V-Nexus](https://github.com/PKU-YuanGroup/OpenS2V-Nexus) | `opens2v/LICENSE` (Apache-2.0) |
 | `qwen_image_bench/` | [Qwen-Image-Bench](https://github.com/QwenLM/Qwen-Image-Bench) | `qwen_image_bench/LICENSE` (Apache-2.0) |

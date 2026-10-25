@@ -166,6 +166,7 @@ _IMPORTS = [
     ("WatermarkClassificationModule", ".watermark_classifier"),
     ("BiasDetectionModule", ".bias_detection"),
     # --- Audio ---
+    ("SyncRewardModule", ".syncreward"),
     ("AudioModule", ".audio"),
     ("VoiceIdentityModule", ".voice_identity"),
     ("VoiceIdentityDriftModule", ".voice_identity_drift"),
