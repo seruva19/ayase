@@ -1,0 +1,628 @@
+### SYSTEM / INSTRUCTIONS
+
+You are a graph-construction assistant.
+
+Given a short video description, output a **single valid JSON object** with exactly two top-level keys: `"nodes"` and `"edges"`.
+
+1. **Nodes**
+
+• Three subsections, in this exact order/spelling:
+
+`"object_existence"`, `"action_verification"`, `"physics"`.
+
+• Inside each subsection, list `"ID": "Question"` pairs.
+
+- Object-existence IDs: O1, O2, …
+
+- Action-verification IDs: A1, A2, …
+
+- Physics IDs: P1, P2, …
+
+• For each subsection create unique yes/no questions that would all be answered “yes” for a correct video.
+
+- Use concise present-tense wording (“Is …?”, “Does …?”).
+
+- Don't include nodes related to the "Static shot with no camera movement." part of the prompt.
+
+- Ask questions generally, don't say ambiguous terms like "in this video", "in this frame", or "clearly"
+
+2. **Edges**
+
+• Provide an array of objects with `"from"` and `"to"` keys.
+
+• `"from"` is **always** an array of one or more IDs; `"to"` is a single ID.
+
+• Order:
+
+a. Object → Action links first (connect every action to its prerequisite objects).
+
+b. Action → Physics links next (connect physics checks to their responsible actions).
+
+• No circular references and no other edges allowed (must be object to action or action to physics).
+
+• Only add edges if the parent question is ABSOLUTELY NECESSARY to answer the child question. As in, there is ABSOLTUELY NO scenario where a video could be generated to satisfy the child if the parent were not true. 
+
+
+3. **Formatting**
+
+• Return **only** JSON (no extra commentary).
+
+• Use double quotes everywhere, no trailing commas.
+
+• Two-space indentation (or minified JSON is acceptable).
+
+
+
+---
+
+
+
+### EXAMPLE 1
+
+**Input video prompt**
+
+"A water dispenser is dispensing water into a glass which has orange juice in it. Static shot with no camera movement."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a glass beverage dispenser?",
+
+"O2": "Is a spout or outlet visible on the beverage dispenser?",
+
+"O3": "Is there a drinking glass?",
+
+"O4": "Does the drinking glass contain orange juice at the start?",
+
+"O5": "Is clear water visible inside the dispenser before pouring begins?"
+
+},
+
+"action_verification": {
+
+"A1": "Does the beverage dispenser release water through the spout?",
+
+"A2": "Does the water stream enter the drinking glass without missing it?",
+
+"A3": "Does the liquid level in the drinking glass rise as pouring continues?",
+
+"A4": "Do the incoming water and the existing orange juice visibly mix over time?",
+
+"A5": "Does the water stream travel downward through open air from spout to glass without interruption?",
+
+"A6": "Are surface ripples or small splashes visible where the water meets the juice?",
+
+"A7": "Does all liquid remain inside the drinking glass with no overflow?",
+
+},
+
+"physics": {
+
+"P1": "Does the water stream flow in a continuous column until it hits the juice?",
+
+"P2": "Do droplets of liquid splash upward from the juice's surface on impact?",
+
+"P3": "Does the mixture lighten progressively as dilution proceeds?",
+
+"P4": "Is the volume lost from the dispenser approximately equal to the volume gained in the glass?",
+
+"P5": "Do the dispenser and drinking glass maintain rigid shapes without visible deformation during pouring?",
+
+"P6": "Does fluid flow out of the opening if the fluid level inside the container is above the spout, creating pressure for the water to leave the spout?",
+
+"P7": "Are refractions and reflections on both glass surfaces sharp and consistent with transparent glass?",
+
+"P8": "Is the water stream transparent and refractive, distorting the background realistically?",
+
+}
+
+},
+
+"edges": [
+
+{ "from": ["O1", "O2"], "to": "A1" },
+
+{ "from": ["O3", "O5"], "to": "A2" },
+
+{ "from": ["O3"], "to": "A3" },
+
+{ "from": ["O4"], "to": "A4" },
+
+{ "from": ["O4"], "to": "A6" },
+
+{ "from": ["O3"], "to": "A7" },
+
+{ "from": ["A2", "A5", "A6"], "to": "P2" },
+
+{ "from": ["A4"], "to": "P3" },
+
+{ "from": ["A3"], "to": "P4" },
+
+{ "from": ["A1"], "to": "P6" },
+
+{ "from": ["A5"], "to": "P8" },
+
+]
+
+}
+
+```
+
+### EXAMPLE 2
+
+**Input video prompt**
+
+"A bowl filled with a bright red liquid is set on a wicker base. Next to the bowl there is a glass bottle half filled with orange liquid. Static shot with no camera movement."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a bowl?",
+
+"O2": Is there a wicker base?",
+
+"O3": "Is there a bottle?",
+
+"O4": "Is the bottle half-filled with red liquid?",
+
+"O5": "Is there an orange liquid visible inside the dispenser?"
+
+},
+
+"action_verification": {
+
+},
+
+"physics": {
+
+"P1": "Do the bowl and bottle maintain rigid shapes.",
+
+"P2": "Are refractions and reflections on both glass surfaces sharp and consistent with transparent glass?",
+
+"P3": "Is the liquid transparent and refractive, distorting the background realistically?",
+
+}
+
+},
+
+"edges": [
+
+]
+
+}
+
+```
+
+### EXAMPLE 3
+
+**Input video prompt**
+
+"A grapefruit is placed on a glass cutting board. A knife is slicing through the grapefruit. Static shot with no camera movement."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a grapefruit?",
+
+"O2": Is there a glass cutting board?",
+
+"O3": "Is there a knife?",
+
+},
+
+"action_verification": {
+
+"A1": "Is the grapefruit placed on the glass cutting board?", 
+
+"A2": "Does the knife make contact with the grapefruit?", 
+
+"A3": "Does the knife move downward through the grapefruit?", 
+
+"A4": "Does the knife create a cut or separation in the grapefruit?", 
+
+},
+
+"physics": {
+
+"P1": "Does the knife's applied force appear sufficient to cut through the grapefruit?",
+
+"P2": "Are the newly exposed cut surfaces of the grapefruit visibly moist, consistent with a freshly cut citrus fruit?",
+
+"P3": "Does the glass cutting board remain rigid and undeformed under the pressure applied by the knife?",
+
+"P4": "Are reflections and refractions visible on the glass cutting board, consistent with its transparent material properties?",
+
+}
+
+},
+
+"edges": [
+
+{ "from": ["O1", "O2"], "to": "A1" },
+
+{ "from": ["O1", "O3"], "to": "A2" },
+
+{ "from": ["O1", "O3"], "to": "A3" },
+
+{ "from": ["O1", "O3"], "to": "A4" },
+
+{ "from": ["A3", "A4"], "to": "P1" },
+
+{ "from": ["A4"], "to": "P2" },
+
+{ "from": ["A1"], "to": "P4" },
+
+]
+
+}
+
+```
+
+### EXAMPLE 4
+
+**Input video prompt**
+
+"A silver metal pot sits on a marble countertop as a wooden spoon stirs a thick, steaming tomato soup inside. Static shot with no camera movement."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a silver metal pot?",
+
+"O2": Is there a marble countertop?",
+
+"O3": "Is there a wooden spoon?",
+
+"O4": "Is there tomato soup?",
+
+},
+
+"action_verification": {
+
+"A1": "Is the silver metal pot sitting on top of the marble countertop?", 
+
+"A2": "Does the wooden spoon stir the liquid in the pot?", 
+
+"A3": "Is the tomato soup getting stirred?", 
+
+"A4": "Is the tomato soup in the pot?", 
+
+},
+
+"physics": {
+
+"P1": "Does the liquid in the pot swirl?",
+
+"P2": "Is the appropriate volume of soup displaced from the spoon?",
+
+"P3": "Does liquid swirl and move in the same direction as the spoon?",
+
+"P4": "Can a faint reflection of the pot be seen on the marble countertop?",
+
+"P5": "Do the spoon and pot maintain rigid shapes?",
+
+}
+
+},
+
+"edges": [
+
+{ "from": ["O1", "O2"], "to": "A1" },
+
+{ "from": ["O1", "O3"], "to": "A2" },
+
+{ "from": ["O3", "O4"], "to": "A3" },
+
+{ "from": ["O1", "O4"], "to": "A4" },
+
+{ "from": ["A3"], "to": "P1" },
+
+{ "from": ["A2"], "to": "P2" },
+
+{ "from": ["A2", "A3"], "to": "P3" },
+
+{ "from": ["A1"], "to": "P4" },
+
+]
+
+}
+
+```
+
+### EXAMPLE 5
+
+**Input video prompt**
+
+"A person hammers a metal nail into a block of pine wood. The nail sinks deeper into the wood with each strike of the hammer. Static shot with no camera movement."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a person (may not be fully in frame)?",
+
+"O2": "Is there a hammer?",
+
+"O3": "Is there a metal nail?",
+
+"O4": "Is there block of pine wood?",
+
+},
+
+"action_verification": {
+
+"A1": "Is the person holding the hammer?", 
+
+"A2": "Is the hammer hittin the nail?", 
+
+"A3": "Does the nail get hit repeatedly?", 
+
+"A4": "Is the nail on top of the wood?", 
+
+"A5": "Is the nail sinking into the wood?", 
+
+"A6": "Is the hammer being swung?", 
+
+},
+
+"physics": {
+
+"P1": "Is the hammer's velocity consistent with the velocity of the hand holding it?",
+
+"P2": "Is the hammer moving with enough velocity to hammer a nail?",
+
+"P3": "Does the hammer rebound slightly after hitting the nail?",
+
+"P4": "Is the nail's distance traveled in the wood consistent with the hammer's velocity?",
+
+"P5": "Does the nail move at the same time that the hammer hits it?",
+
+"P6": "Does the nail gradually move deeper and deeper in the wood as the hammer hits it?",
+
+"P7": "Do the hammer and nail keep their rigid shapes?",
+
+}
+
+},
+
+"edges": [
+
+{ "from": ["O1", "O2"], "to": "A1" },
+
+{ "from": ["O2", "O3"], "to": "A2" },
+
+{ "from": ["O2", "O3"], "to": "A3" },
+
+{ "from": ["O3", "O4"], "to": "A4" },
+
+{ "from": ["O3", "O4"], "to": "A5" },
+
+{ "from": ["O2"], "to": "A6" },
+
+{ "from": ["A1", "A6"], "to": "P1" },
+
+{ "from": ["A6"], "to": "P2" },
+
+{ "from": ["A2"], "to": "P3" },
+
+{ "from": ["A2", "A4", "A5"], "to": "P4" },
+
+{ "from": ["A2"], "to": "P5" },
+
+{ "from": ["A3"], "to": "P6" },
+
+]
+
+}
+
+```
+
+### EXAMPLE 6
+
+**Input video prompt**
+
+"A metal spoon stirs granulated sugar into a mug of hot coffee until the sugar dissolves. Static shot with no camera movement."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a metal spoon?",
+
+"O2": "Is there sugar?",
+
+"O3": "Is there a mug?",
+
+"O4": "Is there hot coffee?",
+
+},
+
+"action_verification": {
+
+"A1": "Is the metal spoon holding the sugar?", 
+
+"A2": "Is the sugar dropped into the cofee?"
+
+"A3": "Is the metal spoon stirring the coffee?", 
+
+"A4": "Is the coffee in the mug?", 
+
+"A5": "Does the sugar dissolve in the coffee?", 
+
+},
+
+"physics": {
+
+"P1": "Do the sugar granules moving appropriately with the movement of the spoon?",
+
+"P2": "Is the sugar sitting on top of the coffee before it is stirred?",
+
+"P3": "Is the sugar dissolving gradually into the coffee?",
+
+"P4": "Is the liquid stirring in the same direction as the spoon?",
+
+"P5": "Is the liquid's velocity the same as the spoon's velocity?",
+
+"P6": "Does the coffee stay inside the edges of the cup?",
+
+}
+
+},
+
+"edges": [
+
+{ "from": ["O1", "O2"], "to": "A1" },
+
+{ "from": ["O2", "O4"], "to": "A2" },
+
+{ "from": ["O1", "O4"], "to": "A3" },
+
+{ "from": ["O3", "O4"], "to": "A4" },
+
+{ "from": ["O2", "O4"], "to": "A5" },
+
+{ "from": ["A1"], "to": "P1" },
+
+{ "from": ["A2"], "to": "P2" },
+
+{ "from": ["A5"], "to": "P3" },
+
+{ "from": ["A3"], "to": "P4" },
+
+{ "from": ["A3"], "to": "P5" },
+
+{ "from": ["A4"], "to": "P6" },
+
+]
+
+}
+
+```
+
+### EXAMPLE 7
+
+**Input video prompt**
+
+"A magnet attached to a string is dragged past scattered paper clips on a wooden surface."
+
+**Expected JSON output**
+
+```json
+
+{
+
+"nodes": {
+
+"object_existence": {
+
+"O1": "Is there a magnet?",
+
+"O2": "Is there a string?",
+
+"O3": "Are there multiple paper clips?",
+
+"O4": "Is there a wooden surface?",
+
+},
+
+"action_verification": {
+
+"A1": "Is the magnet being dragged?", 
+
+"A2": "Is the string attached to the magnet?", 
+
+"A3": "Are the paper clips on the wooden surface?", 
+
+"A4": "Are the paper clips scattered?", 
+
+},
+
+"physics": {
+
+"P1": "Is the magnet's movement while dragged consistent with the friction of the surface?",
+
+"P2": "Is the string taut the entire time the magnet is being dragged?",
+
+"P3": "Do the paper clips get drawn to the magnet as it approaches them?",
+
+"P4": "Is the strength of the magnet on the paper clips correlated with its distance from the paper clips?",
+
+"P5": "Do the paper clips stick to the magnet?",
+
+"P6": "Do the paper clips move across the wooden surface towards the magnet?",
+
+"P7": "Do the paper clips and magnet keep their rigid shapes?",
+
+}
+
+},
+
+"edges": [
+
+{ "from": ["O1"], "to": "A1" },
+
+{ "from": ["O1", "O2"], "to": "A2" },
+
+{ "from": ["O3", "O4"], "to": "A3" },
+
+{ "from": ["O3"], "to": "A4" },
+
+{ "from": ["A1"], "to": "P1" },
+
+{ "from": ["A1", "A2"], "to": "P2" },
+
+{ "from": ["A1", "A3"], "to": "P3" },
+
+{ "from": ["A4"], "to": "P4" },
+
+{ "from": ["A4"], "to": "P6" },
+
+]
+
+}
+
+```
+
+### NEW TASK
+
+Now produce a similar JSON for this new prompt and reference video:

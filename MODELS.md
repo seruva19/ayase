@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 22:29 · **336 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 22:55 · **338 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**336** models · **138** HuggingFace · **45** pyiqa · **9** sources
+**338** models · **138** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (103)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (103)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (26)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1296,6 +1296,12 @@ Model backends declared by modules that are not distributed through the sources 
 - **Used by**: `tifa`
 - **Task**: mPLUG-large VQA via modelscope
 
+### <a href="https://ai.google.dev/gemini-api/docs/models#gemini-2.5-flash" target="_blank">`gemini-2.5-flash`</a> [↑](#categories)
+
+- **Used by**: `pqsg`
+- **Task**: Hosted PQSG graph generation and video QA; configurable OpenAI route also supported
+- **Notes**: Released default. Google access may be limited to projects that previously used Gemini 2.5; configure a currently available compatible model when needed.
+
 ### <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">`gemini-3-pro-preview`</a> [↑](#categories)
 
 - **Used by**: `vgif_score`
@@ -1317,6 +1323,11 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `opens2v`
 - **Task**: NaturalScore judge via OpenAI API (canonical)
+
+### <a href="https://platform.openai.com/docs/models/gpt-5" target="_blank">`gpt-5`</a> [↑](#categories)
+
+- **Used by**: `pqsg`
+- **Task**: Hosted PQSG graph generation and frame-based video QA
 
 ### <a href="https://raw.githubusercontent.com/grip-unina/id-reveal/main/model.th" target="_blank">`grip-unina/id-reveal model.th`</a> [↑](#categories)
 

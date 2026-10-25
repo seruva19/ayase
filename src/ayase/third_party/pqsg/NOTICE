@@ -1,0 +1,11 @@
+PQSG adapted source and prompt
+Copyright (c) 2026
+
+This directory contains an adapted implementation and the complete released
+question-generation prompt from:
+https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
+
+Licensed under the MIT License included in LICENSE. Ayase preserves the
+released batched two-call/single-video procedure and seven-example prompt.
+The accompanying paper describes individual question answering and one
+in-context example; model and FPS choices are configurable in this adapter.

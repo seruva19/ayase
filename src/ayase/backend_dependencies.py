@@ -63,6 +63,7 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 
 _ENTRIES = (
+    _pypi("pqsg", "google-genai==1.31.0", "openai==2.7.2", cpu_only=True),
     BackendDependency(
         "avc_reward",
         (

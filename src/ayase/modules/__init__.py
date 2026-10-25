@@ -67,6 +67,7 @@ _IMPORTS = [
     ("DSGModule", ".dsg"),
     ("VGIFScoreModule", ".vgif_score"),
     ("AVCRewardModule", ".avc_reward"),
+    ("PQSGModule", ".pqsg"),
     ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),
     ("HPSv2Module", ".hpsv2"),

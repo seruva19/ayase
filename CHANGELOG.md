@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **pqsg**: evaluate prompted videos with generated object, action, and physics question graphs, two-pass API judging, and dependency-aware scores.
+
 - **avc_reward**: assess audio-video semantic, temporal, and event consistency with the research-use AVC-Reward model in a managed native runtime.
 
 - **palate**: assess generation quality and training-set memorization with the original DINOv2 PALATE variant and explicit training, held-out, and generated image sets.

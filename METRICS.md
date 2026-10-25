@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 22:28 · **399 modules** · **600 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 22:54 · **400 modules** · **605 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **394/399 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **395/400 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**399** modules · **710** output fields · **600** metrics · **288** tiered · **190** GPU · **20** categories
+**400** modules · **715** output fields · **605** metrics · **289** tiered · **190** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-75-metrics) (75) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-80-metrics) (80) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2031,7 +2031,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (75 metrics)
+## Text-Video Alignment (80 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2504,6 +2504,71 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/yuvalkirstain/PickScore" target="_blank">GitHub</a> · <a href="https://huggingface.co/yuvalkirstain/PickScore_v1" target="_blank">HF</a>
 - **Tests**: covered by [`test_pickscore.py`](tests/modules/per_module/test_pickscore.py)
 - **Config**: `model_name=yuvalkirstain/PickScore_v1`, `processor_name=laion/CLIP-ViT-H-14-laion2B-s32B-b79K`, `num_frames=5`, `device=auto`
+
+### `pqsg_action_score` [↑](#categories)
+> Conditional action-verification accuracy (0-1) · ↑ higher=better
+
+**[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: api → unavailable
+- **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/atinpothiraj/pqsg" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_pqsg.py`](tests/modules/test_pqsg.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `qg_backend=gemini`, `qa_backend=gemini`
+
+### `pqsg_object_score` [↑](#categories)
+> Conditional object-existence accuracy (0-1) · ↑ higher=better
+
+**[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: api → unavailable
+- **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/atinpothiraj/pqsg" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_pqsg.py`](tests/modules/test_pqsg.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `qg_backend=gemini`, `qa_backend=gemini`
+
+### `pqsg_physics_score` [↑](#categories)
+> Conditional physics accuracy (0-1) · ↑ higher=better
+
+**[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: api → unavailable
+- **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/atinpothiraj/pqsg" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_pqsg.py`](tests/modules/test_pqsg.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `qg_backend=gemini`, `qa_backend=gemini`
+
+### `pqsg_raw_score` [↑](#categories)
+> Raw PQSG yes-answer fraction before propagation (0-1) · ↑ higher=better · 0-1
+
+**[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: api → unavailable
+- **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/atinpothiraj/pqsg" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_pqsg.py`](tests/modules/test_pqsg.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `qg_backend=gemini`, `qa_backend=gemini`
+
+### `pqsg_score` [↑](#categories)
+> Dependency-propagated physics graph score (0-1) · ↑ higher=better · 0-1
+
+**[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: api → unavailable
+- **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/atinpothiraj/pqsg" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_pqsg.py`](tests/modules/test_pqsg.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `qg_backend=gemini`, `qa_backend=gemini`
 
 ### `qwen_image_bench_alignment` [↑](#categories)
 > Prompt-image alignment L1 score · 0-100
@@ -4096,7 +4161,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: cotracker → lk → unavailable
 - **Provenance**: `own`
 - **Packages**: torch
-- **Tests**: covered by [`test_physics.py`](tests/modules/per_module/test_physics.py), [`test_regressions.py`](tests/test_regressions.py)
+- **Tests**: covered by [`test_physics.py`](tests/modules/per_module/test_physics.py), [`test_pqsg.py`](tests/modules/test_pqsg.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `subsample=16`, `accel_threshold=50.0`
 
 ### `playback_speed_score` [↑](#categories)

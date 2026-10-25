@@ -51,6 +51,15 @@ def test_avc_reward_provisions_native_omni_instead_of_a_manual_vllm_server():
     assert not any(item.startswith(("vllm", "flash-attn")) for item in requirements)
 
 
+def test_pqsg_provisions_both_hosted_sdks_without_cuda_dependencies():
+    dependency = BACKEND_DEPENDENCIES["pqsg"]
+    requirements = managed_requirements(dependency)
+    assert dependency.cpu_only
+    assert "google-genai==1.31.0" in requirements
+    assert "openai==2.7.2" in requirements
+    assert not any(item.startswith(("torch", "transformers", "nvidia-")) for item in requirements)
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:
