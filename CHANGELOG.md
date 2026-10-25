@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **beyond_time_shifts**: score audio-video synchronization with the trained author's 60-frame and five-second-audio protocol.
+
 - **edit_score**: assess instruction-based image edits with the released EditScore model, rejecting fabricated parser fallback scores.
 
 - **deqa_score**: assess image quality with the released DeQA-Score Mix3 model in an isolated native runtime.

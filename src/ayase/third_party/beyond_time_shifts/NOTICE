@@ -1,0 +1,23 @@
+Beyond Time Shifts source and checkpoint provenance
+===================================================
+
+Author inference source:
+  https://github.com/chenhaoqcdyq/BeyondTimeShifts
+  revision f93e5ffaf8af144d37c39784426a8e0029734026
+  MIT License, Copyright (c) 2026 The AV-Sync Evaluator Authors.
+
+Trained evaluator checkpoint:
+  https://huggingface.co/qianyijie/avsync-evaluator
+  revision 5b88707fd6facf12fe627c5ed44196c0e689e467
+  The model card labels the checkpoint MIT and states that base-model terms survive.
+
+Required base model:
+  Qwen/Qwen2.5-Omni-3B
+  revision f75b40e3da2003cdd6e1829b1f420ca70797c34e
+  Qwen Research License. The pinned license permits non-commercial purposes only;
+  commercial use requires separate permission from the Qwen licensor. The author
+  source and checkpoint metadata do not replace or broaden those base-model terms.
+
+Ayase downloads the immutable author source archive and pinned model assets on
+demand. This notice records provenance and restrictions; it is not an additional
+license grant.

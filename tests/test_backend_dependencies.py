@@ -146,6 +146,17 @@ def test_edit_score_provisions_native_lora_and_parser_stack():
     assert "ftfy==6.3.1" in requirements
 
 
+def test_beyond_time_shifts_pins_native_omni_and_video_decoder():
+    requirements = managed_requirements(BACKEND_DEPENDENCIES["beyond_time_shifts"])
+    assert "transformers==4.57.1" in requirements
+    assert "transformers==4.57.6" not in requirements
+    assert "qwen-omni-utils==0.0.8" in requirements
+    assert "av==15.1.0" in requirements
+    assert "torchvision==0.21.0+cu124" in requirements
+    assert "accelerate==1.12.0" in requirements
+    assert "ftfy==6.3.1" in requirements
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

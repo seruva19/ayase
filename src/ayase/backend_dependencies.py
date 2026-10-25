@@ -64,6 +64,15 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 _ENTRIES = (
     _pypi(
+        "beyond_time_shifts",
+        "transformers==4.57.1",
+        "qwen-omni-utils==0.0.8",
+        "av==15.1.0",
+        "accelerate==1.12.0",
+        "tqdm==4.66.5",
+        "ftfy==6.3.1",
+    ),
+    _pypi(
         "anyaudio_judge",
         "accelerate==1.12.0",
         "sentencepiece==0.2.0",

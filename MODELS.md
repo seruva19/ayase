@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 19:56 · **328 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 20:36 · **331 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**328** models · **134** HuggingFace · **45** pyiqa · **9** sources
+**331** models · **136** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~762 GB
+**Estimated total download size (all models):** ~783 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (99)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (101)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -241,6 +241,16 @@
 - **VRAM**: ~16 GB · **Disk**: ~15 GB
 - **Task**: Vision-language backbone used by HPSv3
 - **Source**: <a href="https://arxiv.org/abs/2409.12191" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-3B" target="_blank">`Qwen/Qwen2.5-Omni-3B`</a> [↑](#categories)
+> any-to-any · other
+
+- **Used by**: `beyond_time_shifts`
+- **Parameters**: 5.5B · **Downloads**: 137K
+- **Disk**: ~20.6 GB
+- **Task**: Qwen2.5-Omni-3B backbone for the AV-sync evaluator
+- **Notes**: Qwen Research License; non-commercial use only
+- **Source**: <a href="https://arxiv.org/abs/2503.20215" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-7B" target="_blank">`Qwen/Qwen2.5-Omni-7B`</a> [↑](#categories)
 > any-to-any · other
@@ -755,6 +765,15 @@
 - **Task**: OneAlign (mPLUG-Owl2) per-frame quality scorer
 - **Notes**: Loaded via vendored ayase.vendor.q_align
 - **Source**: <a href="https://arxiv.org/abs/2312.17090" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/qianyijie/avsync-evaluator" target="_blank">`qianyijie/avsync-evaluator`</a> [↑](#categories)
+> video-classification · mit
+
+- **Used by**: `beyond_time_shifts`
+- **VRAM**: ~18.8 GB weights during default SDPA/eager FP32 CUDA transfer; ~9.4 GB BF16 weights afterward, plus activations · **Disk**: 9,407,345,470 bytes
+- **Task**: Full trained Beyond Time Shifts AV-sync evaluator state
+- **Notes**: SHA256 ba36a405792367a15ee1ff69ac167ec4644bd2f09d87ed3286c1e0aecf10c0e6; 4,703,464,448 parameters initialized FP32 on CPU; exact 1,442-tensor transformer state plus two-tensor trained head; high host/GPU peak memory; base-model terms survive
+- **Source**: <a href="https://arxiv.org/abs/2607.09091" target="_blank">arXiv</a>
 
 ### `roberta-base` [↑](#categories)
 
@@ -1363,6 +1382,11 @@ Model backends declared by modules that are not distributed through the sources 
 ## torchvision Models
 
 Bundled with `pip install torchvision`. Weights download on first use.
+
+### `torchvision/evaluator` [↑](#categories)
+> torchvision
+
+- **Used by**: `beyond_time_shifts`
 
 ### `torchvision/idefics2` [↑](#categories)
 > torchvision

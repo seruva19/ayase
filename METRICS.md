@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 19:55 · **394 modules** · **588 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 20:35 · **395 modules** · **589 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **389/394 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **390/395 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**394** modules · **691** output fields · **588** metrics · **283** tiered · **188** GPU · **20** categories
+**395** modules · **692** output fields · **589** metrics · **284** tiered · **189** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-64-metrics) (64) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-64-metrics) (64) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -4582,7 +4582,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (77 metrics)
+## Audio Quality (78 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 
@@ -4817,6 +4817,19 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://github.com/v-iashin/Synchformer" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
 - **Config**: `warning_threshold_ms=80.0`
+
+### `beyond_time_shifts_score` [↑](#categories)
+> Beyond Time Shifts raw AV sync (higher=better) · ↑ higher=better · nominally 5s;
+
+**[`beyond_time_shifts`](src/ayase/modules/beyond_time_shifts.py)** — Beyond Time Shifts native audio-video synchronization score
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — source: Beyond Time Shifts source f93e5ffaf8af144d37c39784426a8e0029734026 — https://github.com/chenhaoqcdyq/BeyondTimeShifts/tree/f93e5ffaf8af144d37c39784426a8e0029734026
+- **Packages**: torch
+- **Source**: <a href="https://github.com/chenhaoqcdyq/BeyondTimeShifts" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_beyond_time_shifts.py`](tests/modules/test_beyond_time_shifts.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `auto_download=True`, `device=auto`, `precision_mode=bf16`, `attention=sdpa`
 
 ### `cdpam_score` [↑](#categories)
 > CDPAM perceptual audio distance (lower=better) · ↓ lower=better

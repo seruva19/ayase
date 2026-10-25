@@ -171,6 +171,7 @@ _IMPORTS = [
     ("BiasDetectionModule", ".bias_detection"),
     # --- Audio ---
     ("SyncRewardModule", ".syncreward"),
+    ("BeyondTimeShiftsModule", ".beyond_time_shifts"),
     ("AnyAudioJudgeModule", ".anyaudio_judge"),
     ("AudioModule", ".audio"),
     ("VoiceIdentityModule", ".voice_identity"),
