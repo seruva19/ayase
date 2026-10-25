@@ -1,0 +1,10 @@
+Morpheus native metric integration
+
+Morpheus source is acquired at runtime from
+https://github.com/physics-from-video/Morpheus at revision
+ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc and is licensed under the MIT
+License reproduced in this directory.
+
+Its SAM2 fork is acquired from https://github.com/physics-from-video/sam2_local
+at revision 412c70ccf2e9ff47798d052d93cd5aab1eb39351 and remains licensed under
+the Apache License 2.0 included in that acquired source archive.

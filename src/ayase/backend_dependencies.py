@@ -179,6 +179,22 @@ _ENTRIES = (
     ),
     _pypi("inception_score", "torch-fidelity==0.4.0"),
     _pypi("kad", "kadtk==1.1.0"),
+    BackendDependency(
+        "morpheus",
+        (
+            "pandas==2.2.3",
+            "matplotlib==3.9.4",
+            "scikit-learn==1.6.1",
+            "scikit-image==0.24.0",
+            "natsort==8.4.0",
+            "imageio==2.37.0",
+            "imageio-ffmpeg==0.6.0",
+            "hydra-core==1.3.2",
+            "iopath==0.1.10",
+            "tqdm==4.67.1",
+            "ftfy==6.3.1",
+        ),
+    ),
     _pypi("kid", "clean-fid==0.1.35", "torch-fidelity==0.4.0"),
     _pypi("identity_loss", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi(

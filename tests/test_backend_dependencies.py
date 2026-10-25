@@ -100,6 +100,19 @@ def test_geneval2_uses_the_published_qwen_runtime_in_managed_python():
     assert "ftfy==6.3.1" in requirements
 
 
+def test_morpheus_provisions_native_tracking_and_numerical_runtime():
+    dependency = BACKEND_DEPENDENCIES["morpheus"]
+    requirements = managed_requirements(dependency)
+    assert dependency.python_version == "3.11"
+    assert "torch==2.6.0+cu124" in requirements
+    assert "transformers==4.57.6" in requirements
+    assert "hydra-core==1.3.2" in requirements
+    assert "iopath==0.1.10" in requirements
+    assert "scikit-image==0.24.0" in requirements
+    assert "ftfy==6.3.1" in requirements
+    assert not dependency.unsupported_platforms
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

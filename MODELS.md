@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 18:00 · **319 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 18:34 · **322 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**319** models · **127** HuggingFace · **45** pyiqa · **9** sources
+**322** models · **128** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~614 GB
+**Estimated total download size (all models):** ~616 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (92)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (93)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -644,6 +644,15 @@
 - **Notes**: MIT (CVLface); pinned to revision 60a65befbcf7e19284c4f3ac730f56867ed29594
 - **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
+### <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">`nielsr/depth-anything-large`</a> [↑](#categories)
+> depth-estimation · apache-2.0
+
+- **Used by**: `morpheus`
+- **Parameters**: 335M · **Downloads**: 209K
+- **Disk**: ~1.2 GB
+- **Task**: Depth Anything V1 normalized display-depth estimation
+- **Source**: <a href="https://arxiv.org/abs/2401.10891" target="_blank">arXiv</a>
+
 ### <a href="https://huggingface.co/nvidia/quality-classifier-deberta" target="_blank">`nvidia/quality-classifier-deberta`</a> [↑](#categories)
 > apache-2.0
 
@@ -920,6 +929,12 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `verse_bench`
 - **Task**: MANIQA Swin-T quality assessment (KonIQ-10k)
 
+### <a href="https://raw.githubusercontent.com/physics-from-video/Morpheus/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc/morpheus/scoring/collision_mass_mlp.pt" target="_blank">`collision_mass_mlp.pt`</a> [↑](#categories)
+
+- **Used by**: `morpheus`
+- **Task**: Released Morpheus collision mass estimator
+- **Notes**: Acquired inside the pinned Morpheus source archive
+
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth" target="_blank">`convnext_tiny_1k_224_ema.pth`</a> [↑](#categories)
 
 - **Used by**: `dover`
@@ -1034,6 +1049,11 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `body_motion_kinematics`, `object_integrity`
 - **Task**: RTMPose keypoint estimator (rtmlib opt-in backend)
 - **Notes**: Shared with rtmpose_fidelity
+
+### <a href="https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt" target="_blank">`sam2.1_hiera_large.pt`</a> [↑](#categories)
+
+- **Used by**: `morpheus`
+- **Task**: SAM2.1 Hiera-L checkpoint
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth" target="_blank">`sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth`</a> [↑](#categories)
 

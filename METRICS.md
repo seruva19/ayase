@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 17:59 · **390 modules** · **580 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 18:34 · **391 modules** · **582 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **385/390 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **386/391 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**390** modules · **683** output fields · **580** metrics · **279** tiered · **184** GPU · **20** categories
+**391** modules · **685** output fields · **582** metrics · **280** tiered · **185** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-73-metrics) (73) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-78-metrics) (78) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-76-metrics) (76) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -3246,7 +3246,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (73 metrics)
+## Motion & Dynamics (75 metrics)
 
 ### `aigv_dynamic_est` [↑](#categories)
 > AI video dynamic degree
@@ -3719,6 +3719,32 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `utility` — source: ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor
 - **Source**: <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">HF</a>
 - **Tests**: covered by [`test_kandinsky_motion.py`](tests/modules/per_module/test_kandinsky_motion.py)
+
+### `morpheus_dynamical_score` [↑](#categories)
+> Dynamics fit (higher=better) · ↑ higher=better · 0-1
+
+**[`morpheus`](src/ayase/modules/morpheus.py)** — Morpheus native annotated-video physical and dynamical physics evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — SAM2 runs without its optional compiled _C connected-component/small-hole postprocessing; the upstream supported fallback leaves masks unchanged. — source: Morpheus source ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc — https://github.com/physics-from-video/Morpheus/tree/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc
+- **Packages**: huggingface_hub, morpheus, sam2, torch, transformers
+- **Source**: <a href="https://github.com/physics-from-video/Morpheus" target="_blank">GitHub</a> · <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">HF</a>
+- **Tests**: covered by [`test_morpheus.py`](tests/modules/test_morpheus.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `source_category=generated`, `conditioning=single_frame_conditioning`, `prompt_type=plain`, `device=auto`
+
+### `morpheus_physical_score` [↑](#categories)
+> Physical invariants (higher=better) · ↑ higher=better · 0-1; author MAX-window recipes
+
+**[`morpheus`](src/ayase/modules/morpheus.py)** — Morpheus native annotated-video physical and dynamical physics evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — SAM2 runs without its optional compiled _C connected-component/small-hole postprocessing; the upstream supported fallback leaves masks unchanged. — source: Morpheus source ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc — https://github.com/physics-from-video/Morpheus/tree/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc
+- **Packages**: huggingface_hub, morpheus, sam2, torch, transformers
+- **Source**: <a href="https://github.com/physics-from-video/Morpheus" target="_blank">GitHub</a> · <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">HF</a>
+- **Tests**: covered by [`test_morpheus.py`](tests/modules/test_morpheus.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `source_category=generated`, `conditioning=single_frame_conditioning`, `prompt_type=plain`, `device=auto`
 
 ### `motion_ac_score` [↑](#categories)
 > ↑ higher=better

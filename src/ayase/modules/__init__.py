@@ -128,6 +128,7 @@ _IMPORTS = [
     ("I2VSimilarityModule", ".i2v_similarity"),
     ("SDReferenceModule", ".sd_reference"),
     ("PROVEModule", ".prove"),
+    ("MorpheusModule", ".morpheus"),
     # --- Face & human ---
     ("HumanFidelityModule", ".human_fidelity"),
     ("FaceFidelityModule", ".face_fidelity"),

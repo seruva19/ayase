@@ -1216,6 +1216,10 @@ class QualityMetrics(BaseModel):
     commonsense_score: Optional[float] = None  # Common sense adherence (0-1, higher=better)
     creativity_score: Optional[float] = None  # Artistic novelty (0-1, higher=better)
 
+    # Morpheus annotated-video mechanics
+    morpheus_physical_score: Optional[float] = None  # Physical invariants (higher=better)
+    morpheus_dynamical_score: Optional[float] = None  # Dynamics fit (higher=better)
+
     # ChronoMagic-Bench (NeurIPS 2024, arXiv:2406.18522)
     chronomagic_mt_score: Optional[float] = None  # Metamorphic temporal (0-1, higher=better)
     chronomagic_ch_score: Optional[float] = (
