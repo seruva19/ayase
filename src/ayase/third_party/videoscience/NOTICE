@@ -1,0 +1,13 @@
+VideoScience-Judge protocol adapter
+
+This directory contains an adaptation of prompts and evaluation protocol from:
+  VideoScience, Hao AI Lab
+  https://github.com/hao-ai-lab/VideoScience
+  commit 0b3bb2da74388991bf842bca1096a6a25d3c9311
+
+The upstream work is licensed under the MIT License. The complete upstream
+license text is preserved in LICENSE in this directory.
+
+Ayase adaptations include strict JSON validation, explicit provenance and
+input-mode metadata, and provider lifecycle/resource cleanup. The scorer is a
+reusable VLM judge protocol; it is not a downloadable trained VideoScience model.

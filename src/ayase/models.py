@@ -1114,6 +1114,12 @@ class QualityMetrics(BaseModel):
     speechjudge_comparator_score: Optional[float] = None  # Contextual comparator speech rating (1-10)
     speechjudge_margin: Optional[float] = None  # Candidate minus comparator rating (-9 to 9)
     speechjudge_preference: Optional[float] = None  # Candidate preference: -1, 0 (tie), or 1
+    videoscience_score: Optional[float] = None  # Weighted scientific experiment score (1-4)
+    videoscience_prompt_score: Optional[float] = None  # Experiment setup/procedure consistency (1-4)
+    videoscience_phenomenon_score: Optional[float] = None  # Expected scientific outcome accuracy (1-4)
+    videoscience_coherence_score: Optional[float] = None  # Spatiotemporal coherence (1-4)
+    videoscience_immutability_score: Optional[float] = None  # Correctly unchanged properties (1-4)
+    videoscience_dynamism_score: Optional[float] = None  # Consistency with physical laws (1-4)
     edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
     edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
     edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)

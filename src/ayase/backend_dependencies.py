@@ -63,6 +63,7 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 
 _ENTRIES = (
+    _pypi("videoscience_judge", "google-genai==1.31.0", cpu_only=True),
     BackendDependency(
         "speechjudge",
         (

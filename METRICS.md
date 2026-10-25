@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 23:21 · **401 modules** · **609 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 23:52 · **402 modules** · **615 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **396/401 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **397/402 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**401** modules · **719** output fields · **609** metrics · **290** tiered · **191** GPU · **20** categories
+**402** modules · **725** output fields · **615** metrics · **291** tiered · **191** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-80-metrics) (80) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-82-metrics) (82) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-83-metrics) (83) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-82-metrics) (82) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2031,7 +2031,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (80 metrics)
+## Text-Video Alignment (83 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2969,6 +2969,45 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
+### `videoscience_phenomenon_score` [↑](#categories)
+> Expected scientific outcome accuracy (1-4) · ↑ higher=better · 1-4
+
+**[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
+
+- **Input**: video +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
+- **Packages**: google
+- **Source**: <a href="https://github.com/hao-ai-lab/VideoScience" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_videoscience_judge.py`](tests/modules/test_videoscience_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
+
+### `videoscience_prompt_score` [↑](#categories)
+> Experiment setup/procedure consistency (1-4) · ↑ higher=better · 1-4
+
+**[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
+
+- **Input**: video +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
+- **Packages**: google
+- **Source**: <a href="https://github.com/hao-ai-lab/VideoScience" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_videoscience_judge.py`](tests/modules/test_videoscience_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
+
+### `videoscience_score` [↑](#categories)
+> Weighted scientific experiment score (1-4) · ↑ higher=better · 1-4
+
+**[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
+
+- **Input**: video +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
+- **Packages**: google
+- **Source**: <a href="https://github.com/hao-ai-lab/VideoScience" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_videoscience_judge.py`](tests/modules/test_videoscience_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
+
 ### `videoscore2_alignment` [↑](#categories)
 > VideoScore2 text-video alignment · ↑ higher=better · 1-5
 
@@ -3068,7 +3107,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 
-## Temporal Consistency (37 metrics)
+## Temporal Consistency (39 metrics)
 
 ### `aigv_temporal_est` [↑](#categories)
 > AI video temporal smoothness
@@ -3478,6 +3517,32 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_video_text_matching.py`](tests/modules/per_module/test_video_text_matching.py)
 - **Config**: `use_xclip=False`, `model_name=openai/clip-vit-base-patch32`, `xclip_model_name=microsoft/xclip-base-patch32`, `min_score_threshold=0.2`, `consistency_std_threshold=0.1`
 
+### `videoscience_coherence_score` [↑](#categories)
+> Spatiotemporal coherence (1-4) · ↑ higher=better · 1-4
+
+**[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
+
+- **Input**: video +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
+- **Packages**: google
+- **Source**: <a href="https://github.com/hao-ai-lab/VideoScience" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_videoscience_judge.py`](tests/modules/test_videoscience_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
+
+### `videoscience_immutability_score` [↑](#categories)
+> Correctly unchanged properties (1-4) · ↑ higher=better · 1-4
+
+**[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
+
+- **Input**: video +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
+- **Packages**: google
+- **Source**: <a href="https://github.com/hao-ai-lab/VideoScience" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_videoscience_judge.py`](tests/modules/test_videoscience_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
+
 ### `videoscore_temporal` [↑](#categories)
 > VideoScore temporal consistency · ↑ higher=better
 
@@ -3519,7 +3584,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `subsample=12`, `permanence_weight=0.4`, `stability_weight=0.3`, `causal_weight=0.3`
 
 
-## Motion & Dynamics (75 metrics)
+## Motion & Dynamics (76 metrics)
 
 ### `aigv_dynamic_est` [↑](#categories)
 > AI video dynamic degree
@@ -4337,6 +4402,19 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: torch, transformers
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
+
+### `videoscience_dynamism_score` [↑](#categories)
+> Consistency with physical laws (1-4) · ↑ higher=better · 1-4
+
+**[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
+
+- **Input**: video +ref · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
+- **Packages**: google
+- **Source**: <a href="https://github.com/hao-ai-lab/VideoScience" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_videoscience_judge.py`](tests/modules/test_videoscience_judge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
 
 ### `videoscore_dynamic` [↑](#categories)
 > VideoScore dynamic degree · ↑ higher=better

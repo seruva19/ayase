@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **videoscience_judge**: judge scientific experiment videos against authoritative expected outcomes, with optional checklists and five weighted criteria.
+
 - **speechjudge**: compare two speech recordings against their intended text with the noncommercial SpeechJudge-GRM model and contextual ratings.
 
 - **pqsg**: evaluate prompted videos with generated object, action, and physics question graphs, two-pass API judging, and dependency-aware scores.

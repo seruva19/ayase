@@ -70,6 +70,14 @@ def test_speechjudge_provisions_its_published_native_runtime():
     assert dependency.conda_packages == ("ffmpeg=7.1.1",)
 
 
+def test_videoscience_provisions_native_gemini_without_cuda_dependencies():
+    dependency = BACKEND_DEPENDENCIES["videoscience_judge"]
+    requirements = managed_requirements(dependency)
+    assert dependency.cpu_only
+    assert "google-genai==1.31.0" in requirements
+    assert not any(item.startswith(("torch", "transformers", "nvidia-")) for item in requirements)
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 23:21 · **339 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 23:53 · **344 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**339** models · **139** HuggingFace · **45** pyiqa · **9** sources
+**344** models · **139** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (104)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (26)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (104)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (30)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1291,6 +1291,12 @@ Model backends declared by modules that are not distributed through the sources 
 - **Used by**: `face_cross_similarity`
 - **Task**: InsightFace ArcFace face embedding model
 
+### <a href="https://docs.anthropic.com/en/docs/about-claude/models/overview" target="_blank">`claude-sonnet-4-5`</a> [↑](#categories)
+
+- **Used by**: `videoscience_judge`
+- **Task**: Anthropic frame-based VLM judge
+- **Notes**: Historical provider alias; Anthropic has announced retirement on 2026-11-30. Configure a compatible replacement explicitly when needed.
+
 ### `clip-flant5-xxl` [↑](#categories)
 
 - **Used by**: `vqa_score`
@@ -1311,6 +1317,12 @@ Model backends declared by modules that are not distributed through the sources 
 - **Used by**: `pqsg`
 - **Task**: Hosted PQSG graph generation and video QA; configurable OpenAI route also supported
 - **Notes**: Released default. Google access may be limited to projects that previously used Gemini 2.5; configure a currently available compatible model when needed.
+
+### <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">`gemini-2.5-pro`</a> [↑](#categories)
+
+- **Used by**: `videoscience_judge`
+- **Task**: Google native-video VLM judge
+- **Notes**: Google limits Gemini 2.5 access to prior active users; no shutdown date was announced as of 2026-10-25.
 
 ### <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">`gemini-3-pro-preview`</a> [↑](#categories)
 
@@ -1338,6 +1350,12 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `pqsg`
 - **Task**: Hosted PQSG graph generation and frame-based video QA
+
+### <a href="https://platform.openai.com/docs/models/gpt-5-pro" target="_blank">`gpt-5-pro`</a> [↑](#categories)
+
+- **Used by**: `videoscience_judge`
+- **Task**: Default OpenAI Responses VLM judge
+- **Notes**: Released judge model; OpenAI has announced shutdown on 2026-12-11. Configure a compatible replacement explicitly when needed.
 
 ### <a href="https://raw.githubusercontent.com/grip-unina/id-reveal/main/model.th" target="_blank">`grip-unina/id-reveal model.th`</a> [↑](#categories)
 
@@ -1369,6 +1387,12 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `vsfa`
 - **Task**: Trained VSFA head (ANN+GRU+q) on KoNViD-1k
+
+### <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">`models/gemini-2.5-flash`</a> [↑](#categories)
+
+- **Used by**: `videoscience_judge`
+- **Task**: Optional checklist generation
+- **Notes**: Google limits Gemini 2.5 access to prior active users; no shutdown date was announced as of 2026-10-25.
 
 ### <a href="https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth" target="_blank">`rtmdet_m_8xb32-100e_coco-obj365-person-235e8209.pth`</a> [↑](#categories)
 
@@ -1440,6 +1464,11 @@ Bundled with `pip install torchvision`. Weights download on first use.
 > torchvision
 
 - **Used by**: `beyond_time_shifts`
+
+### `torchvision/generate_content` [↑](#categories)
+> torchvision
+
+- **Used by**: `videoscience_judge`
 
 ### `torchvision/idefics2` [↑](#categories)
 > torchvision
