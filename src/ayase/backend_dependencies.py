@@ -161,6 +161,14 @@ _ENTRIES = (
     _pypi("dedup", "ImageHash==4.3.2", cpu_only=True),
     _pypi("dino_face_identity", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi("dreamsim", "dreamsim==0.2.1"),
+    _pypi(
+        "edit_score",
+        "accelerate==1.12.0",
+        "peft==0.17.1",
+        "json-repair==0.30.3",
+        "regex==2024.11.6",
+        "ftfy==6.3.1",
+    ),
     _pypi("entity_consistency", "insightface==2.1", "onnxruntime==1.31.0"),
     _pypi("erqa", "erqa==1.1.2"),
     _pypi(

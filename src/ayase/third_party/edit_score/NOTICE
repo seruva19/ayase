@@ -1,0 +1,7 @@
+EditScore inference excerpts are adapted from VectorSpaceLab/EditScore,
+commit 4609c5d2ebb62fdebf665d3c924686d896ef1f74.
+Upstream source: https://github.com/VectorSpaceLab/EditScore
+
+The upstream source code is Apache-2.0 licensed. The separately downloaded
+EditScore/EditScore-Qwen3-VL-4B-Instruct adapter is marked license "other" on
+Hugging Face and its terms are not clarified by the source-code license.

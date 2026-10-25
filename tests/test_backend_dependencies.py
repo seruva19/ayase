@@ -136,6 +136,16 @@ def test_deqa_isolates_the_native_legacy_stack():
     assert managed_pip_options(dependency)[-1].endswith("/cu118")
 
 
+def test_edit_score_provisions_native_lora_and_parser_stack():
+    requirements = managed_requirements(BACKEND_DEPENDENCIES["edit_score"])
+    assert "torch==2.6.0+cu124" in requirements
+    assert "transformers==4.57.6" in requirements
+    assert "peft==0.17.1" in requirements
+    assert "json-repair==0.30.3" in requirements
+    assert "regex==2024.11.6" in requirements
+    assert "ftfy==6.3.1" in requirements
+
+
 def test_native_binary_packages_are_declared_for_managed_conda_prefixes():
     assert BACKEND_DEPENDENCIES["audio_pesq"].conda_packages == ("pesq=0.0.4",)
     f0 = BACKEND_DEPENDENCIES["audio_log_f0_dtw"]

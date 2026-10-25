@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 19:22 · **326 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 19:56 · **328 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**326** models · **132** HuggingFace · **45** pyiqa · **9** sources
+**328** models · **134** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~746 GB
+**Estimated total download size (all models):** ~762 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (97)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (99)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (11)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -88,6 +88,15 @@
 
 - **Used by**: `vqinsight`
 - **Source**: <a href="https://arxiv.org/abs/2503.22679" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/EditScore/EditScore-Qwen3-VL-4B-Instruct" target="_blank">`EditScore/EditScore-Qwen3-VL-4B-Instruct`</a> [↑](#categories)
+> text-generation · other
+
+- **Used by**: `edit_score`
+- **Downloads**: 301
+- **Task**: EditScore Qwen3-VL-4B LoRA adapter
+- **Notes**: Hugging Face metadata says license:other; no standalone adapter license was identified; terms require clarification
+- **Source**: <a href="https://arxiv.org/abs/2509.23909" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b" target="_blank">`Efficient-Large-Model/vila-ewm-qwen2-1.5b`</a> [↑](#categories)
 
@@ -260,6 +269,16 @@
 - **Task**: Caption decomposition and rubric cleaning
 - **Notes**: Loaded only for caption inputs without a supplied rubric
 - **Source**: <a href="https://arxiv.org/abs/2402.17463" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/Qwen/Qwen3-VL-4B-Instruct" target="_blank">`Qwen/Qwen3-VL-4B-Instruct`</a> [↑](#categories)
+> image-text-to-text · apache-2.0
+
+- **Used by**: `edit_score`
+- **Parameters**: 4.4B · **Downloads**: 3.8M
+- **Disk**: ~16.5 GB
+- **Task**: Qwen3-VL-4B base for EditScore
+- **Notes**: Apache-2.0; pinned local snapshot
+- **Source**: <a href="https://arxiv.org/abs/2505.09388" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Qwen/Qwen3-VL-8B-Instruct" target="_blank">`Qwen/Qwen3-VL-8B-Instruct`</a> [↑](#categories)
 > image-text-to-text · apache-2.0

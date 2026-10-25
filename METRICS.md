@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 19:28 · **393 modules** · **584 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 19:55 · **394 modules** · **588 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **388/393 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **389/394 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**393** modules · **687** output fields · **584** metrics · **282** tiered · **187** GPU · **20** categories
+**394** modules · **691** output fields · **588** metrics · **283** tiered · **188** GPU · **20** categories
 
 ## Provenance
 
@@ -43,11 +43,11 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-79-metrics) (79) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-61-metrics) (61) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-64-metrics) (64) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-77-metrics) (77) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
-## No-Reference Quality (79 metrics)
+## No-Reference Quality (80 metrics)
 
 ### `aigv_static_est` [↑](#categories)
 > AI video static quality
@@ -285,6 +285,19 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `warning_threshold=0.4`
+
+### `edit_score_perceptual_quality` [↑](#categories)
+> Edited image perceptual quality (0-10) · ↑ higher=better · 0-10
+
+**[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
+
+- **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
+- **Packages**: Pillow, torch
+- **Source**: <a href="https://github.com/VectorSpaceLab/EditScore" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_edit_score.py`](tests/modules/test_edit_score.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `auto_download=True`, `device=auto`, `temperature=0.7`, `num_pass=1`, `reduction=average_last`, `seed=42`, `score_range=25`
 
 ### `evoquality_score` [↑](#categories)
 > ↑ higher=better · 1-5
@@ -2018,7 +2031,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (61 metrics)
+## Text-Video Alignment (64 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2272,6 +2285,45 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/aimagelab/DICE" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dice_edit.py`](tests/modules/per_module/test_dice_edit.py)
 - **Config**: `device=auto`, `dtype=bfloat16`, `processor_longest_edge=1456`, `max_new_tokens=500`, `store_raw_outputs=False`
+
+### `edit_score_consistency` [↑](#categories)
+> Preservation of unedited content (0-10) · ↑ higher=better · 0-10
+
+**[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
+
+- **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
+- **Packages**: Pillow, torch
+- **Source**: <a href="https://github.com/VectorSpaceLab/EditScore" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_edit_score.py`](tests/modules/test_edit_score.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `auto_download=True`, `device=auto`, `temperature=0.7`, `num_pass=1`, `reduction=average_last`, `seed=42`, `score_range=25`
+
+### `edit_score_overall` [↑](#categories)
+> EditScore image editing quality (0-10) · ↑ higher=better · 0-10
+
+**[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
+
+- **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
+- **Packages**: Pillow, torch
+- **Source**: <a href="https://github.com/VectorSpaceLab/EditScore" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_edit_score.py`](tests/modules/test_edit_score.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `auto_download=True`, `device=auto`, `temperature=0.7`, `num_pass=1`, `reduction=average_last`, `seed=42`, `score_range=25`
+
+### `edit_score_prompt_following` [↑](#categories)
+> Edit instruction following (0-10) · ↑ higher=better · 0-10
+
+**[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
+
+- **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable
+- **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
+- **Packages**: Pillow, torch
+- **Source**: <a href="https://github.com/VectorSpaceLab/EditScore" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_edit_score.py`](tests/modules/test_edit_score.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `auto_download=True`, `device=auto`, `temperature=0.7`, `num_pass=1`, `reduction=average_last`, `seed=42`, `score_range=25`
 
 ### `hpsv2_score` [↑](#categories)
 > HPSv2 prompt-image preference score (higher=better) · ↑ higher=better

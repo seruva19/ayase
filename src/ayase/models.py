@@ -1094,6 +1094,10 @@ class QualityMetrics(BaseModel):
     tifa_score: Optional[float] = None  # VQA faithfulness (0-1, higher=better)
     soft_tifa_am_score: Optional[float] = None  # GenEval2 arithmetic atom probability mass
     soft_tifa_gm_score: Optional[float] = None  # GenEval2 geometric atom probability mass
+    edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
+    edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
+    edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)
+    edit_score_perceptual_quality: Optional[float] = None  # Edited image perceptual quality (0-10)
 
     # ImageReward (human preference for text-to-image)
     image_reward_score: Optional[float] = None  # Human preference reward (-2..+2, higher=better)
