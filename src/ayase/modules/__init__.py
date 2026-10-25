@@ -65,6 +65,7 @@ _IMPORTS = [
     ("TIFAModule", ".tifa"),
     ("GenEval2Module", ".geneval2"),
     ("DSGModule", ".dsg"),
+    ("VGIFScoreModule", ".vgif_score"),
     ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),
     ("HPSv2Module", ".hpsv2"),

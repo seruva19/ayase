@@ -1,0 +1,6 @@
+VGIF-Score protocol helpers are adapted from PRIS-CV/VGIF-SCORE
+(https://github.com/PRIS-CV/VGIF-SCORE), commit
+b7558fe27bb13b97cd6039dfa421da4d11c4f2bc, licensed under Apache-2.0.
+
+VGIF-Bench annotations are not included. The separately distributed dataset is
+CC BY-NC 4.0 and must be obtained and used under its own terms.

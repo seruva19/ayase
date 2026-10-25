@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 20:36 · **331 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 21:03 · **333 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**331** models · **136** HuggingFace · **45** pyiqa · **9** sources
+**333** models · **136** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (101)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (22)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (101)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (5)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (24)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1275,6 +1275,18 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `tifa`
 - **Task**: mPLUG-large VQA via modelscope
+
+### <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">`gemini-3-pro-preview`</a> [↑](#categories)
+
+- **Used by**: `vgif_score`
+- **Task**: VGIF AutoRubric video judge
+- **Notes**: Remote preview alias; returned modelVersion is recorded per call.
+
+### <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">`gemini-3.1-pro-preview`</a> [↑](#categories)
+
+- **Used by**: `vgif_score`
+- **Task**: VGIF objective video QA judge
+- **Notes**: Remote preview alias; returned modelVersion is recorded per call.
 
 ### `glomap` [↑](#categories)
 

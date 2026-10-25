@@ -1094,6 +1094,13 @@ class QualityMetrics(BaseModel):
     tifa_score: Optional[float] = None  # VQA faithfulness (0-1, higher=better)
     soft_tifa_am_score: Optional[float] = None  # GenEval2 arithmetic atom probability mass
     soft_tifa_gm_score: Optional[float] = None  # GenEval2 geometric atom probability mass
+    vgif_score: Optional[float] = None  # VGIF combined dependency-QA and rubric score (0-1)
+    vgif_objective_score: Optional[float] = None  # Dependency-gated QA accuracy (0-1)
+    vgif_subjective_score: Optional[float] = None  # Mean rubric rating divided by 5 (0.2-1)
+    vgif_cinematography_score: Optional[float] = None  # Raw prompt-conditioned rubric (1-5)
+    vgif_purity_score: Optional[float] = None  # Raw prompt-conditioned purity rubric (1-5)
+    vgif_motion_score: Optional[float] = None  # Raw prompt-conditioned motion rubric (1-5)
+    vgif_physics_score: Optional[float] = None  # Raw prompt-conditioned physics rubric (1-5)
     edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
     edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
     edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)

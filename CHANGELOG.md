@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **vgif_score**: evaluate video instruction following with dependency-gated questions and prompt-specific quality rubrics through a Gemini-compatible API.
+
 - **beyond_time_shifts**: score audio-video synchronization with the trained author's 60-frame and five-second-audio protocol.
 
 - **edit_score**: assess instruction-based image edits with the released EditScore model, rejecting fabricated parser fallback scores.

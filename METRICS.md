@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 20:35 · **395 modules** · **589 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 21:02 · **396 modules** · **596 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **390/395 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **391/396 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**395** modules · **692** output fields · **589** metrics · **284** tiered · **189** GPU · **20** categories
+**396** modules · **699** output fields · **596** metrics · **285** tiered · **189** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-64-metrics) (64) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-71-metrics) (71) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-104-fields) (104) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2031,7 +2031,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (64 metrics)
+## Text-Video Alignment (71 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2721,6 +2721,97 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: torch, transformers, vebench
 - **Source**: <a href="https://github.com/littlespray/VE-Bench" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_vebench.py`](tests/modules/per_module/test_vebench.py)
+
+### `vgif_cinematography_score` [↑](#categories)
+> Raw prompt-conditioned rubric (1-5) · ↑ higher=better · 1-5
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
+
+### `vgif_motion_score` [↑](#categories)
+> Raw prompt-conditioned motion rubric (1-5) · ↑ higher=better · 1-5
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
+
+### `vgif_objective_score` [↑](#categories)
+> Dependency-gated QA accuracy (0-1) · ↑ higher=better · 0-1
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
+
+### `vgif_physics_score` [↑](#categories)
+> Raw prompt-conditioned physics rubric (1-5) · ↑ higher=better · 1-5
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
+
+### `vgif_purity_score` [↑](#categories)
+> Raw prompt-conditioned purity rubric (1-5) · ↑ higher=better · 1-5
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
+
+### `vgif_score` [↑](#categories)
+> VGIF combined dependency-QA and rubric score (0-1) · ↑ higher=better · 0-1
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
+
+### `vgif_subjective_score` [↑](#categories)
+> Mean rubric rating divided by 5 (0.2-1) · ↑ higher=better · 0.2-1
+
+**[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
+
+- **Input**: video · **Speed**: ⚡ fast
+- **Backend**: unavailable → gemini_api
+- **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
+- **Packages**: requests
+- **Source**: <a href="https://github.com/PRIS-CV/VGIF-SCORE" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_vgif_score.py`](tests/modules/test_vgif_score.py)
+- **Config**: `base_url=`, `objective_model=gemini-3.1-pro-preview`, `rubric_model=gemini-3-pro-preview`, `timeout=180`, `retries=2`, `format_retries=2`
 
 ### `video_reward_score` [↑](#categories)
 > Human preference reward · ↑ higher=better
@@ -3916,7 +4007,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — VBench uses the AMT-S interpolator; this implementation uses RIFE HD v3 under the same even/odd-frame reconstruction protocol — source: VBench Motion Smoothness (Huang et al., CVPR 2024) — https://github.com/Vchitect/VBench
 - **Packages**: rife_model, torch
 - **Source**: <a href="https://github.com/Vchitect/VBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/rife/flownet.pkl" target="_blank">HF</a>
-- **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py), +1 more
+- **Tests**: covered by [`test_motion_smoothness.py`](tests/modules/per_module/test_motion_smoothness.py), [`test_vgif_score.py`](tests/modules/test_vgif_score.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +2 more
 - **Config**: `vfi_error_threshold=0.08`, `max_frames=0`
 
 ### `object_integrity_score` [↑](#categories)
