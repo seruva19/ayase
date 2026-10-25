@@ -1,0 +1,19 @@
+SpeechJudge integration notice
+==============================
+
+Ayase independently implements a Transformers adapter for the public
+RMSnow/SpeechJudge-GRM checkpoint. The model checkpoint is distributed under
+CC-BY-NC-4.0 and is restricted to non-commercial use:
+https://huggingface.co/RMSnow/SpeechJudge-GRM
+
+The upstream SpeechJudge repository does not declare a source-code license at
+the pinned revision 1fbd1c883b03f3f7437506b421f7cf57bad78071. Its inference
+source is therefore not redistributed here. At runtime Ayase downloads the
+pinned infer/utils.py file, verifies its SHA-256, parses the literal return data
+of build_cot_conversation with a restricted AST reader, and never imports or
+executes that source file. The runtime asset remains subject to its upstream
+terms:
+https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
+
+The SpeechJudge paper is separately published under CC-BY-NC-SA-4.0. None of
+these third-party terms are replaced by Ayase's MIT license.

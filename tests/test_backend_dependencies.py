@@ -60,6 +60,16 @@ def test_pqsg_provisions_both_hosted_sdks_without_cuda_dependencies():
     assert not any(item.startswith(("torch", "transformers", "nvidia-")) for item in requirements)
 
 
+def test_speechjudge_provisions_its_published_native_runtime():
+    dependency = BACKEND_DEPENDENCIES["speechjudge"]
+    requirements = managed_requirements(dependency)
+    assert "transformers==4.52.3" in requirements
+    assert "transformers==4.57.6" not in requirements
+    assert "accelerate==1.10.0" in requirements
+    assert "qwen-omni-utils==0.0.8" in requirements
+    assert dependency.conda_packages == ("ffmpeg=7.1.1",)
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:

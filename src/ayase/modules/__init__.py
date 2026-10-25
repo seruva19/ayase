@@ -188,6 +188,7 @@ _IMPORTS = [
     ("SpeechBERTScoreModule", ".speech_bert_score"),
     ("AudioUTMOSv2Module", ".audio_utmos_v2"),
     ("AudioDistillMOSModule", ".audio_distill_mos"),
+    ("SpeechJudgeModule", ".speechjudge"),
     ("AudioISCModule", ".audio_isc"),
     ("AudioKLModule", ".audio_kl"),
     ("SCOREQModule", ".scoreq"),

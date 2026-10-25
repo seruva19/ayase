@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 22:54 · **400 modules** · **605 metrics**
+> **Version 0.2.1** · Generated 2026-10-25 23:21 · **401 modules** · **609 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **395/400 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **396/401 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**400** modules · **715** output fields · **605** metrics · **289** tiered · **190** GPU · **20** categories
+**401** modules · **719** output fields · **609** metrics · **290** tiered · **191** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-80-metrics) (80) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-78-metrics) (78) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-80-metrics) (80) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-82-metrics) (82) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -4790,7 +4790,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (78 metrics)
+## Audio Quality (82 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 
@@ -5553,6 +5553,58 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: silero_vad, torch
 - **Source**: <a href="https://github.com/snakers4/silero-vad" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_speech_pause_rhythm.py`](tests/modules/per_module/test_speech_pause_rhythm.py)
+
+### `speechjudge_candidate_score` [↑](#categories)
+> Contextual candidate speech rating (1-10) · ↑ higher=better · 1-10
+
+**[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → deferred
+- **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
+- **Packages**: qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/AmphionTeam/SpeechJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_speechjudge.py`](tests/modules/test_speechjudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=bfloat16`, `protocol=hf`, `max_new_tokens=1024`, `managed_operation_timeout=7200`
+
+### `speechjudge_comparator_score` [↑](#categories)
+> Contextual comparator speech rating (1-10) · ↑ higher=better · 1-10
+
+**[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → deferred
+- **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
+- **Packages**: qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/AmphionTeam/SpeechJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_speechjudge.py`](tests/modules/test_speechjudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=bfloat16`, `protocol=hf`, `max_new_tokens=1024`, `managed_operation_timeout=7200`
+
+### `speechjudge_margin` [↑](#categories)
+> Candidate minus comparator rating (-9 to 9)
+
+**[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → deferred
+- **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
+- **Packages**: qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/AmphionTeam/SpeechJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_speechjudge.py`](tests/modules/test_speechjudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=bfloat16`, `protocol=hf`, `max_new_tokens=1024`, `managed_operation_timeout=7200`
+
+### `speechjudge_preference` [↑](#categories)
+> Candidate preference: -1, 0 (tie), or 1
+
+**[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
+
+- **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Backend**: unavailable → deferred
+- **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
+- **Packages**: qwen_omni_utils, torch, transformers
+- **Source**: <a href="https://github.com/AmphionTeam/SpeechJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_speechjudge.py`](tests/modules/test_speechjudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `device_map=auto`, `dtype=bfloat16`, `protocol=hf`, `max_new_tokens=1024`, `managed_operation_timeout=7200`
 
 ### `squim_pesq_score` [↑](#categories)
 > SQUIM WB-PESQ estimate (~1-4.64, higher=better) · ↑ higher=better · approximately 1-4.6439
@@ -8634,7 +8686,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
 - **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +8 more
+- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +9 more
 - **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
 - **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)

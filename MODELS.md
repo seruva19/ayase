@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 22:55 · **338 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-25 23:21 · **339 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**338** models · **138** HuggingFace · **45** pyiqa · **9** sources
+**339** models · **139** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~846 GB
+**Estimated total download size (all models):** ~869 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (103)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (26)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (104)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (26)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -299,6 +299,16 @@
 - **Task**: GenEval2 Soft-TIFA visual question answering
 - **Notes**: Apache-2.0 model; GenEval2 code/data are CC-BY-NC-4.0
 - **Source**: <a href="https://arxiv.org/abs/2505.09388" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/RMSnow/SpeechJudge-GRM" target="_blank">`RMSnow/SpeechJudge-GRM`</a> [↑](#categories)
+> cc-by-nc-4.0
+
+- **Used by**: `speechjudge`
+- **Parameters**: 10.7B · **Downloads**: 690
+- **Disk**: 22.36 GB (five safetensors shards)
+- **Task**: Pairwise target-text-conditioned speech naturalness judge
+- **Notes**: CC-BY-NC-4.0 model; non-commercial use only
+- **Source**: <a href="https://arxiv.org/abs/2511.07931" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/Salesforce/blip-itm-large-coco" target="_blank">`Salesforce/blip-itm-large-coco`</a> [↑](#categories)
 > bsd-3-clause

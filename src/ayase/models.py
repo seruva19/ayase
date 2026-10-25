@@ -1110,6 +1110,10 @@ class QualityMetrics(BaseModel):
     pqsg_object_score: Optional[float] = None  # Conditional object-existence accuracy (0-1)
     pqsg_action_score: Optional[float] = None  # Conditional action-verification accuracy (0-1)
     pqsg_physics_score: Optional[float] = None  # Conditional physics accuracy (0-1)
+    speechjudge_candidate_score: Optional[float] = None  # Contextual candidate speech rating (1-10)
+    speechjudge_comparator_score: Optional[float] = None  # Contextual comparator speech rating (1-10)
+    speechjudge_margin: Optional[float] = None  # Candidate minus comparator rating (-9 to 9)
+    speechjudge_preference: Optional[float] = None  # Candidate preference: -1, 0 (tie), or 1
     edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
     edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
     edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)

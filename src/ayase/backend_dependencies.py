@@ -63,6 +63,17 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 
 _ENTRIES = (
+    BackendDependency(
+        "speechjudge",
+        (
+            "transformers==4.52.3",
+            "accelerate==1.10.0",
+            "qwen-omni-utils==0.0.8",
+            "av==15.1.0",
+            "ftfy==6.3.1",
+        ),
+        conda_packages=("ffmpeg=7.1.1",),
+    ),
     _pypi("pqsg", "google-genai==1.31.0", "openai==2.7.2", cpu_only=True),
     BackendDependency(
         "avc_reward",
