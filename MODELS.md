@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 23:53 · **344 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 00:32 · **347 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**344** models · **139** HuggingFace · **45** pyiqa · **9** sources
+**347** models · **139** HuggingFace · **45** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (104)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (30)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (104)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (33)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1336,6 +1336,12 @@ Model backends declared by modules that are not distributed through the sources 
 - **Task**: VGIF objective video QA judge
 - **Notes**: Remote preview alias; returned modelVersion is recorded per call.
 
+### <a href="https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash" target="_blank">`gemini-3.8-flash`</a> [↑](#categories)
+
+- **Used by**: `audiojudge`
+- **Task**: Optional caller-selected Gemini audio-understanding transport
+- **Notes**: Requires explicit provider/model configuration; compatibility is not a numerical-equivalence claim.
+
 ### `glomap` [↑](#categories)
 
 - **Used by**: `camera_trajectory`
@@ -1345,6 +1351,12 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `opens2v`
 - **Task**: NaturalScore judge via OpenAI API (canonical)
+
+### <a href="https://developers.openai.com/api/docs/deprecations" target="_blank">`gpt-4o-audio-preview`</a> [↑](#categories)
+
+- **Used by**: `audiojudge`
+- **Task**: Historical released AudioJudge default
+- **Notes**: Retired 2026-05-07; retained only as provenance and never selected by default.
 
 ### <a href="https://platform.openai.com/docs/models/gpt-5" target="_blank">`gpt-5`</a> [↑](#categories)
 
@@ -1356,6 +1368,12 @@ Model backends declared by modules that are not distributed through the sources 
 - **Used by**: `videoscience_judge`
 - **Task**: Default OpenAI Responses VLM judge
 - **Notes**: Released judge model; OpenAI has announced shutdown on 2026-12-11. Configure a compatible replacement explicitly when needed.
+
+### <a href="https://developers.openai.com/api/docs/models/gpt-audio-1.5" target="_blank">`gpt-audio-1.5`</a> [↑](#categories)
+
+- **Used by**: `audiojudge`
+- **Task**: Default hosted AudioJudge audio/text evaluation transport
+- **Notes**: Operational successor adaptation; API access and billing are user-provided, and historical AudioJudge numbers are not reproduced by this model substitution.
 
 ### <a href="https://raw.githubusercontent.com/grip-unina/id-reveal/main/model.th" target="_blank">`grip-unina/id-reveal model.th`</a> [↑](#categories)
 
@@ -1468,7 +1486,7 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `torchvision/generate_content` [↑](#categories)
 > torchvision
 
-- **Used by**: `videoscience_judge`
+- **Used by**: `audiojudge`, `videoscience_judge`
 
 ### `torchvision/idefics2` [↑](#categories)
 > torchvision

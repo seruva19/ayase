@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **audiojudge**: evaluate individual or paired audio with published task prompts, labelled examples, and explicit quality, match, and descriptive-choice outputs.
+
 - **videoscience_judge**: judge scientific experiment videos against authoritative expected outcomes, with optional checklists and five weighted criteria.
 
 - **speechjudge**: compare two speech recordings against their intended text with the noncommercial SpeechJudge-GRM model and contextual ratings.

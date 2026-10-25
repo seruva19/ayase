@@ -78,6 +78,17 @@ def test_videoscience_provisions_native_gemini_without_cuda_dependencies():
     assert not any(item.startswith(("torch", "transformers", "nvidia-")) for item in requirements)
 
 
+def test_audiojudge_provisions_audio_sdks_and_decoder_without_cuda_dependencies():
+    dependency = BACKEND_DEPENDENCIES["audiojudge"]
+    requirements = managed_requirements(dependency)
+    assert dependency.python_version == "3.11"
+    assert dependency.cpu_only
+    assert "openai==2.7.2" in requirements
+    assert "google-genai==1.31.0" in requirements
+    assert dependency.conda_packages == ("ffmpeg=7.1.1",)
+    assert not any(item.startswith(("torch", "transformers", "nvidia-")) for item in requirements)
+
+
 def test_pypi_requirements_are_exactly_pinned():
     for dependency in BACKEND_DEPENDENCIES.values():
         for spec in dependency.requirements:

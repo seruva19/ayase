@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-25 23:52 · **402 modules** · **615 metrics**
+> **Version 0.2.1** · Generated 2026-10-26 00:31 · **403 modules** · **619 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **397/402 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **398/403 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**402** modules · **725** output fields · **615** metrics · **291** tiered · **191** GPU · **20** categories
+**403** modules · **729** output fields · **619** metrics · **292** tiered · **191** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-83-metrics) (83) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-82-metrics) (82) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-83-metrics) (83) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-86-metrics) (86) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -4868,7 +4868,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (82 metrics)
+## Audio Quality (86 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 
@@ -5077,6 +5077,58 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://github.com/facebookresearch/audiobox-aesthetics" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_audiobox_aesthetics.py`](tests/modules/per_module/test_audiobox_aesthetics.py)
 - **Config**: `sample_rate=16000`
+
+### `audiojudge_choice` [↑](#categories)
+> Descriptive audio selection: 1 or 2
+
+**[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/Woodygan/AudioJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_audiojudge.py`](tests/modules/per_module/test_audiojudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `model=gpt-audio-1.5`, `timeout_s=900`, `temperature=1e-08`, `max_tokens=800`, `mode=pairwise`, `task=somos`, `variant=standard_cot`, `examples=[]`
+
+### `audiojudge_match` [↑](#categories)
+> Pronunciation/speaker match: 0 or 1
+
+**[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/Woodygan/AudioJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_audiojudge.py`](tests/modules/per_module/test_audiojudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `model=gpt-audio-1.5`, `timeout_s=900`, `temperature=1e-08`, `max_tokens=800`, `mode=pairwise`, `task=somos`, `variant=standard_cot`, `examples=[]`
+
+### `audiojudge_preference` [↑](#categories)
+> Candidate preference: -1, 0 (tie), or 1
+
+**[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/Woodygan/AudioJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_audiojudge.py`](tests/modules/per_module/test_audiojudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `model=gpt-audio-1.5`, `timeout_s=900`, `temperature=1e-08`, `max_tokens=800`, `mode=pairwise`, `task=somos`, `variant=standard_cot`, `examples=[]`
+
+### `audiojudge_score` [↑](#categories)
+> AudioJudge pointwise ordinal rating (1-5) · ↑ higher=better · 1-5; not calibrated MOS
+
+**[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
+
+- **Input**: audio · **Speed**: ⚡ fast
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
+- **Packages**: google, openai
+- **Source**: <a href="https://github.com/Woodygan/AudioJudge" target="_blank">GitHub</a>
+- **Tests**: covered by [`test_audiojudge.py`](tests/modules/per_module/test_audiojudge.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Config**: `provider=openai`, `model=gpt-audio-1.5`, `timeout_s=900`, `temperature=1e-08`, `max_tokens=800`, `mode=pairwise`, `task=somos`, `variant=standard_cot`, `examples=[]`
 
 ### `av_align_score` [↑](#categories)
 > AV-Align onset/flow-peak IoU (0-1, higher=better) · ↑ higher=better · 0-1

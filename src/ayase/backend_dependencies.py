@@ -63,6 +63,12 @@ def _archive(module: str, package: str, repository: str, revision: str) -> Backe
 
 
 _ENTRIES = (
+    BackendDependency(
+        "audiojudge",
+        ("openai==2.7.2", "google-genai==1.31.0"),
+        conda_packages=("ffmpeg=7.1.1",),
+        cpu_only=True,
+    ),
     _pypi("videoscience_judge", "google-genai==1.31.0", cpu_only=True),
     BackendDependency(
         "speechjudge",

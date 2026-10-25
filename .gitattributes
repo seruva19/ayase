@@ -1,1 +1,4 @@
 src/ayase/third_party/pqsg/qg_prompt.txt text eol=lf -whitespace
+src/ayase/third_party/audiojudge/system_prompts.py text eol=lf
+src/ayase/third_party/audiojudge/system_prompts_pointwise.py text eol=lf
+src/ayase/third_party/audiojudge/LICENSE text eol=lf

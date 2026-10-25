@@ -190,6 +190,7 @@ _IMPORTS = [
     ("AudioUTMOSv2Module", ".audio_utmos_v2"),
     ("AudioDistillMOSModule", ".audio_distill_mos"),
     ("SpeechJudgeModule", ".speechjudge"),
+    ("AudioJudgeModule", ".audiojudge"),
     ("AudioISCModule", ".audio_isc"),
     ("AudioKLModule", ".audio_kl"),
     ("SCOREQModule", ".scoreq"),

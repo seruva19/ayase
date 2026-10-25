@@ -1120,6 +1120,10 @@ class QualityMetrics(BaseModel):
     videoscience_coherence_score: Optional[float] = None  # Spatiotemporal coherence (1-4)
     videoscience_immutability_score: Optional[float] = None  # Correctly unchanged properties (1-4)
     videoscience_dynamism_score: Optional[float] = None  # Consistency with physical laws (1-4)
+    audiojudge_score: Optional[float] = None  # AudioJudge pointwise ordinal rating (1-5)
+    audiojudge_preference: Optional[float] = None  # Candidate preference: -1, 0 (tie), or 1
+    audiojudge_match: Optional[float] = None  # Pronunciation/speaker match: 0 or 1
+    audiojudge_choice: Optional[float] = None  # Descriptive audio selection: 1 or 2
     edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
     edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
     edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)
