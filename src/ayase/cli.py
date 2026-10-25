@@ -707,8 +707,7 @@ def run(
         console.print(f"[red]Unknown format: {format}[/red]")
         raise typer.Exit(code=1)
 
-    # Persist a standalone artifact report to output.artifacts_dir, mirroring the
-    # TUI run path. Honors config.output.artifacts_dir / artifacts_format.
+    # Persist a standalone report using the configured artifact directory and format.
     _export_artifacts(p, config, "run")
 
 
@@ -1263,25 +1262,6 @@ def config_validate() -> None:
         console.print("[green]Configuration is valid.[/green]")
     except Exception as e:
         console.print(f"[red]Configuration invalid: {e}[/red]")
-        raise typer.Exit(code=1)
-
-
-@app.command()
-def tui() -> None:
-    """Launch the Terminal User Interface (TUI)."""
-    try:
-        from .tui import AyaseApp
-
-        app = AyaseApp()
-        app.run()
-    except ImportError as e:
-        console.print(f"[red]Error launching TUI: {e}[/red]")
-        console.print(
-            "[yellow]This install is missing required runtime dependencies. Reinstall with: pip install --upgrade --force-reinstall ayase[/yellow]"
-        )
-        raise typer.Exit(code=1)
-    except Exception as e:
-        console.print(f"[red]Unexpected error: {e}[/red]")
         raise typer.Exit(code=1)
 
 

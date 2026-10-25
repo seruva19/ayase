@@ -27,14 +27,13 @@ Test mode must skip provisioning and downloads. Development tools belong in the
 src/ayase/
 ├── __init__.py          # Public API: AyasePipeline, PipelineProfile, load_profile, instantiate_profile_modules
 ├── __main__.py          # python -m ayase
-├── cli.py               # Typer CLI (scan, run, filter, stats, tui, modules, config)
+├── cli.py               # Typer CLI (scan, run, filter, stats, modules, config)
 ├── config.py            # AyaseConfig (pydantic-settings), resolve_model_path, download_model_file
 ├── models.py            # Sample, QualityMetrics, ValidationIssue, DatasetStats
 ├── pipeline.py          # Pipeline, PipelineModule (ABC), ModuleRegistry, AyasePipeline
 ├── profile.py           # PipelineProfile, load_profile, instantiate_profile_modules
 ├── scanner.py           # DatasetScanner, scan_dataset
 ├── base_modules.py      # ReferenceBasedModule, BatchMetricModule, NoReferenceModule
-├── tui.py               # Textual TUI (6 screens)
 ├── video.py             # Video utilities
 ├── audio.py             # Audio utilities
 ├── modules/             # All pipeline modules (auto-discovered at runtime)
@@ -59,7 +58,6 @@ tests/
 ├── test_profiles.py
 ├── test_readme_contract.py
 ├── test_regressions.py
-├── test_tui.py
 └── modules/
     ├── conftest.py      # Shared fixtures: synthetic_image, synthetic_video, image_sample, video_sample
     └── test_*.py        # Per-category module tests (19 files)
@@ -84,7 +82,7 @@ Before setting `sample.quality_metrics.my_field = value`, the field must exist i
 
 ### 4. Never Break Existing Tests
 
-Run relevant **light tests** before considering any change complete. By default, use focused unit/contract tests for the files or modules you changed. Do **not** run `pytest tests/ -x -q` unless the user explicitly asks for the full suite. The TUI has 39 tests with specific widget ID contracts — see "TUI Contracts" section below.
+Run relevant **light tests** before considering any change complete. By default, use focused unit/contract tests for the files or modules you changed. Do **not** run `pytest tests/ -x -q` unless the user explicitly asks for the full suite.
 
 ### 5. Module `__init__.py` vs Auto-Discovery
 
@@ -408,20 +406,6 @@ Rules for plugin files:
 - Subclass `PipelineModule` and set `name` — registration is automatic
 - No need to modify any ayase source files
 
-## TUI Contracts (for test compatibility)
-
-All 39 TUI tests depend on these. Do NOT rename or remove:
-
-**Widget IDs:** `#btn_folder`, `#btn_config`, `#module_list`, `#btn_start`, `#path_label`, `#config_panel`, `#progress`, `#log`, `#status_title`, `#btn_results`, `#results_table`, `#btn_export`, `#btn_back`, `#tree`, `#select_btn`, `#cancel_btn`, `#btn_continue`, `#readiness_table`, `#btn_json`, `#btn_csv`, `#btn_html`, `#btn_cancel`
-
-**CSS class:** `.no-config`
-
-**Exported classes:** `AyaseApp`, `WelcomeScreen`, `ConfigScreen`, `ExecutionScreen`, `ResultsScreen`, `FolderSelectionScreen`, `ReadinessScreen`, `ExportDialog`, `ModuleConfigWidget`
-
-**App config:** `AyaseApp.MODES = {"welcome", "config", "execution", "results"}`, `app.theme == "monokai"`
-
-**Results table columns:** must include `"FILE"`, `"SCORE"`, `"ISSUES"`
-
 ## Testing
 
 ### Running Tests
@@ -433,9 +417,6 @@ pytest tests/test_readme_contract.py tests/modules/test_metrics_table.py -q
 
 # Specific category
 pytest tests/modules/test_motion_scene_semantic_metrics.py -v
-
-# TUI tests only
-pytest tests/test_tui.py -v
 
 # Full suite (run only when the user explicitly asks for it)
 pytest tests/ -x -q
@@ -602,7 +583,7 @@ ayase modules sync-readme               # Update module/field counts in README.m
    - `test_no_unlisted_fields()` — every QualityMetrics field appears in the list
 3. **`tests/modules/test_metrics_table.py`** — parses README `## Metrics` table and verifies 1:1 match with QualityMetrics fields in order
 
-Other contract tests: golden values (`test_golden_values.py`, ±2% tolerance), public API surface (`TestPipelineAPI`, `TestProfileAPI`, `TestSampleModel`), CLI commands, TUI widget IDs.
+Other contract tests: golden values (`test_golden_values.py`, ±2% tolerance), public API surface (`TestPipelineAPI`, `TestProfileAPI`, `TestSampleModel`), and CLI commands.
 
 ## Dependency Conflicts: Vendoring Policy
 

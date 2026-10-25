@@ -14,7 +14,6 @@ ayase modules list                                      # show registry provenan
 ayase modules check                                     # import/dependency readiness
 ayase filter ./dataset --min-score 70 --output ./good   # filter by quality
 ayase stats ./dataset                                   # dataset statistics for images/video
-ayase tui                                               # terminal UI
 ```
 
 Use `ayase scan --help` for scan options and `ayase help <metric-or-module>`

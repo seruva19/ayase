@@ -190,12 +190,9 @@ def test_run_creates_output_parent_before_pipeline_execution(
     assert not output.exists()
 
 
-def test_tui_exception_returns_nonzero(monkeypatch: pytest.MonkeyPatch) -> None:
-    from ayase.tui import AyaseApp
-
-    monkeypatch.setattr(AyaseApp, "run", lambda self: (_ for _ in ()).throw(RuntimeError("boom")))
-
+def test_removed_tui_command_returns_usage_error() -> None:
     result = CliRunner().invoke(app, ["tui"])
 
-    assert result.exit_code == 1
-    assert "Unexpected error: boom" in result.output
+    assert result.exit_code == 2
+    assert "No such command" in result.output
+    assert "tui" in result.output

@@ -28,12 +28,11 @@ Scan a dataset with a small, explicit set of modules and save a report:
 ayase scan ./dataset --modules metadata,basic_quality --format json --output report.json
 ```
 
-Find metrics or open the terminal interface:
+Find and inspect metrics from the command line:
 
 ```bash
 ayase help                      # browse metrics and providers
 ayase help rqvqa_score           # inspect a metric's models, config, and usage
-ayase tui                       # interactive terminal UI
 ```
 
 ### Python

@@ -771,11 +771,6 @@ class TestCLICommands:
 
         assert callable(stats)
 
-    def test_tui_command_exists(self):
-        from ayase.cli import tui
-
-        assert callable(tui)
-
     def test_modules_list_command_exists(self):
         from ayase.cli import modules_list
 

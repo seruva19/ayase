@@ -45,7 +45,6 @@ dependencies = [
     "pandas>=2.1.0,<3.0",
     "imageio>=2.33.0,<3.0",
     "imageio-ffmpeg>=0.6.0,<1.0",
-    "textual>=0.52.0",
     "torch>=2.1.0,<2.11",
     "torchvision>=0.16.0,<0.26",
     "torchaudio>=2.1.0,<2.11",
@@ -123,7 +122,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=7.4.0",
-    "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
     "pytest-sugar>=1.0.0",
     "black>=24.0.0",

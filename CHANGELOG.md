@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **tui**: remove the `ayase tui` command and Textual terminal interface; use the command-line workflows or Python API instead.
+
 ## [0.2.1] - 2026-10-22
 
 ### Added
