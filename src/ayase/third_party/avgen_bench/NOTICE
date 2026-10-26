@@ -1,0 +1,19 @@
+AVGen-Bench protocol and canonical metadata
+
+This directory contains an Ayase-owned, standard-library-only implementation of
+the dataset aggregation protocol and exact canonical prompt/face-annotation JSON
+files from Microsoft AVGen-Bench at revision
+1049eabac472d479fe5feeb1ee202961f8e0982a.
+
+Upstream source: https://github.com/microsoft/AVGen-Bench
+Copyright (c) Microsoft Corporation.
+License: MIT; see LICENSE in this directory.
+
+The JSON assets under assets/prompts and assets/face_annotations are copied from
+immutable Git blobs. assets/manifest.json records their upstream paths, Git blob
+identities, byte lengths, record counts, and SHA-256 digests. The generated
+manifest and Ayase integration code are part of Ayase; they are not upstream
+AVGen-Bench files.
+
+This foundation does not bundle model weights or third-party evaluator code and
+does not alter the separate terms that may apply to those components.

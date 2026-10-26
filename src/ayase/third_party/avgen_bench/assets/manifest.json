@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "generated_from": "immutable Git blobs",
+  "source_repository": "https://github.com/microsoft/AVGen-Bench",
+  "source_revision": "1049eabac472d479fe5feeb1ee202961f8e0982a",
+  "files": [
+    {
+      "path": "LICENSE",
+      "kind": "license",
+      "source_path": "LICENSE",
+      "git_blob_sha1": "9e841e7a26e4eb057b24511e7b92d42b257a80e5",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "assets/prompts/ads.json",
+      "kind": "prompts",
+      "category": "ads",
+      "source_path": "prompts/ads.json",
+      "git_blob_sha1": "2f7ff1544d00c9f33c830fc3bf764167419984c7",
+      "sha256": "97a2ef8d5c9038f620c88e4b4e29f1397123ba6b80625094bcf05742f45c7605",
+      "bytes": 11811,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/animals.json",
+      "kind": "prompts",
+      "category": "animals",
+      "source_path": "prompts/animals.json",
+      "git_blob_sha1": "fbb3e4e1a0bb0df4e0b6fc13cfe4876001b4fc94",
+      "sha256": "7cdc73742f3f9f01b9a7826fb77c56c0f7f69eef4063c928c3c57782fbd5c640",
+      "bytes": 8663,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/asmr.json",
+      "kind": "prompts",
+      "category": "asmr",
+      "source_path": "prompts/asmr.json",
+      "git_blob_sha1": "db6c31e689d074ce767b623ce65990d052a4e10f",
+      "sha256": "ad194ee510cf80c7444cb1e092950b9eb2814ec1fdf76ae0f8ca698a08fd73d9",
+      "bytes": 8662,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/chemical_reaction.json",
+      "kind": "prompts",
+      "category": "chemical_reaction",
+      "source_path": "prompts/chemical_reaction.json",
+      "git_blob_sha1": "bd63794883f80a9a5a9391763e0c1bcfe2ebdc43",
+      "sha256": "9c20b2d481bae75230a89d9c3f4ab62d2c8e98307e9befb49b64d32e4850a662",
+      "bytes": 10279,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/cooking.json",
+      "kind": "prompts",
+      "category": "cooking",
+      "source_path": "prompts/cooking.json",
+      "git_blob_sha1": "d074a0e6cbbb2f38c14e85df2c66c4c6bd695a77",
+      "sha256": "62996c8ea1a1a3af13f1c380c1f326eda19fccdce335b0c92c96bc09db27ab26",
+      "bytes": 10134,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/gameplays.json",
+      "kind": "prompts",
+      "category": "gameplays",
+      "source_path": "prompts/gameplays.json",
+      "git_blob_sha1": "57a68674031f0d4581ec03dce9c8ad79b9c63756",
+      "sha256": "7e8b9a646e12f8f19159f497a79e5854163035eeaec81c56b5ad28fb04c9f2b4",
+      "bytes": 10689,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/movie_trailer.json",
+      "kind": "prompts",
+      "category": "movie_trailer",
+      "source_path": "prompts/movie_trailer.json",
+      "git_blob_sha1": "bec7d6e27f7275ac912feb56b81b69470b72d600",
+      "sha256": "c4a3d8f6f836d5a65d688dee175f4d4b5f3a12f1ebe990845fac1362cd31036d",
+      "bytes": 14692,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/musical_instrument_tutorial.json",
+      "kind": "prompts",
+      "category": "musical_instrument_tutorial",
+      "source_path": "prompts/musical_instrument_tutorial.json",
+      "git_blob_sha1": "0da8de2d4aa1ebc78952fd4765ba0adfa24d2d43",
+      "sha256": "e138f017d6dfc5c77c8424796d70552daaba2b9f6ae125c5289d29d098f63d54",
+      "bytes": 13203,
+      "records": 35
+    },
+    {
+      "path": "assets/prompts/news.json",
+      "kind": "prompts",
+      "category": "news",
+      "source_path": "prompts/news.json",
+      "git_blob_sha1": "69d313801a3de140133bcddb30196891c3d263ab",
+      "sha256": "a2766c5ded55133ff177b36136ab79ad28ece90e27e40ea140149b9b28f42e4d",
+      "bytes": 8529,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/physical_experiment.json",
+      "kind": "prompts",
+      "category": "physical_experiment",
+      "source_path": "prompts/physical_experiment.json",
+      "git_blob_sha1": "b99e55bebc1f8efacf312fdd5b0983fb5c34a45a",
+      "sha256": "e6ce7ba9018fedd8bf1dfc3afb129eb13091dcfe98cc8a1e80d0d2676fb0c1da",
+      "bytes": 8595,
+      "records": 20
+    },
+    {
+      "path": "assets/prompts/sports.json",
+      "kind": "prompts",
+      "category": "sports",
+      "source_path": "prompts/sports.json",
+      "git_blob_sha1": "46718572d3d1def3152f9988b99180b500afe462",
+      "sha256": "2f04007b151085940d2734ab089c75762d19a6f11f340e267074d0d1db9f63c8",
+      "bytes": 10603,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/ads.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "ads",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/ads.expected_faces.json",
+      "git_blob_sha1": "46c94405ddde5502b69521acff9f3819cb59f0eb",
+      "sha256": "bdc7e7eae9ec5103b2155a4026638a723fff4b78d9282501d29dd8b5473be06c",
+      "bytes": 27766,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/animals.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "animals",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/animals.expected_faces.json",
+      "git_blob_sha1": "dd7a60b9f1ce054cfccc4df854342a8cf036a92c",
+      "sha256": "dfdfdb0a1e7c86936a3d0609d0784207a6add23c5e313f4efac2def2e98335e0",
+      "bytes": 25808,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/asmr.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "asmr",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/asmr.expected_faces.json",
+      "git_blob_sha1": "8c0f8f66193ebc95eac16e49eb1d9612f3c0acc9",
+      "sha256": "5ea2609f61c2aa74a6d8d15f2fb46306d39fee7b294d3976f1d1273197950bd5",
+      "bytes": 23553,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/chemical_reaction.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "chemical_reaction",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/chemical_reaction.expected_faces.json",
+      "git_blob_sha1": "a030dd87fd8b682ee00bfe6c4983eeb72e97380f",
+      "sha256": "9568b3b33f63d2927e534c611aab59a69d48037414be3de815edc542d1e9db37",
+      "bytes": 24533,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/cooking.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "cooking",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/cooking.expected_faces.json",
+      "git_blob_sha1": "dbbc06ed90c2ab66a0900cb071a4e41f7a78aa46",
+      "sha256": "40c6dab5a24861d89694c840e92122a0fc03d1d0ed7764da43e7ac1f4e899917",
+      "bytes": 26700,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/gameplays.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "gameplays",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/gameplays.expected_faces.json",
+      "git_blob_sha1": "f2524132b2f223ef35e110296432ae578f84ff4e",
+      "sha256": "068c18b098ff1429fd1c29422299d44a6595333a6e4b71ebe76815195633f053",
+      "bytes": 29288,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/movie_trailer.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "movie_trailer",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/movie_trailer.expected_faces.json",
+      "git_blob_sha1": "c785ca57e382e7eb2425ad915c1e047dcbbc3a6d",
+      "sha256": "dcefffc2872671cdc441ec204bae89307015eed1531509aea1ba7ca395e47756",
+      "bytes": 33235,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/musical_instrument_tutorial.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "musical_instrument_tutorial",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/musical_instrument_tutorial.expected_faces.json",
+      "git_blob_sha1": "6eba29e9b15d3bcc7846f7636c8be46e2d431143",
+      "sha256": "380a15275c9c3bcad5b3751f9a643262d8307e8fe2bdf595f99b6a1de0655a57",
+      "bytes": 21945,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/news.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "news",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/news.expected_faces.json",
+      "git_blob_sha1": "c45766b599994320c4f033d96baf44bb549c1128",
+      "sha256": "8e7437f31571b9c6bc7a04ff723fc917f4e18934d2f921c575a3bb252b4696c0",
+      "bytes": 25497,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/physical_experiment.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "physical_experiment",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/physical_experiment.expected_faces.json",
+      "git_blob_sha1": "e326c8085d1a80a8529b81136db907b09d0d2463",
+      "sha256": "78d671ddfb2d5ccff50732896850fa4766213d8c0a57b2600d70d283e0cc7223",
+      "bytes": 22986,
+      "records": 20
+    },
+    {
+      "path": "assets/face_annotations/sports.expected_faces.json",
+      "kind": "face_annotations",
+      "category": "sports",
+      "source_path": "eval/facial_consistency/prompts_expected_faces/sports.expected_faces.json",
+      "git_blob_sha1": "99a05ee234fb849944442ce4398910fded013cda",
+      "sha256": "f6cef098059e2c2216bf918165b3f72a6b4d25e3a93eb6356773b8aa461449ba",
+      "bytes": 28085,
+      "records": 20
+    }
+  ]
+}

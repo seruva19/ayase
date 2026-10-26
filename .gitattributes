@@ -2,3 +2,8 @@ src/ayase/third_party/pqsg/qg_prompt.txt text eol=lf -whitespace
 src/ayase/third_party/audiojudge/system_prompts.py text eol=lf
 src/ayase/third_party/audiojudge/system_prompts_pointwise.py text eol=lf
 src/ayase/third_party/audiojudge/LICENSE text eol=lf
+src/ayase/third_party/avgen_bench/assets/**/*.json -text
+src/ayase/third_party/avgen_bench/LICENSE -text
+src/ayase/third_party/avgen_bench/source_manifest.json text eol=lf
+src/ayase/third_party/avgen_bench/runtime_manifest.json text eol=lf
+src/ayase/vendor/insightface/** -text

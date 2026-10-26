@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "source_revision": "1049eabac472d479fe5feeb1ee202961f8e0982a",
+  "cache_namespace": ".ayase/avgen-bench/assets",
+  "dimensions": {
+    "Vis": ["onealign_model_dir"],
+    "Aud": ["audiobox_checkpoint"],
+    "AV": ["synchformer_checkpoint", "synchformer_config"],
+    "Lip": ["syncnet_checkpoint", "s3fd_checkpoint"],
+    "Text": ["ocr_det_dir", "ocr_rec_dir"],
+    "Face": ["buffalo_dir"],
+    "Music": ["basic_pitch_model"],
+    "Speech": ["whisper_model_dir"],
+    "Lo-Phy": ["videophy_model_dir"],
+    "Hi-Phy": [],
+    "Holistic": []
+  },
+  "assets": {
+    "onealign_model_dir": {
+      "kind": "hf_snapshot",
+      "cache_name": "onealign",
+      "repo_id": "q-future/one-align",
+      "revision": "dcc603b95aa0ebd82afa696d4a1e20d11fc80ddb",
+      "asset_id": "q-future/one-align@dcc603b95aa0ebd82afa696d4a1e20d11fc80ddb",
+      "license": "HF card: MIT; bundled Q-Align/S-Lab evaluator terms are non-commercial and the upstream model zoo separately references Llama 2 terms",
+      "files": {
+        "__init__.py": {"bytes": 112, "git_blob_sha1": "6d6f0775a0abb2c3e220343a4feb05c70c2c7779"},
+        "config.json": {"bytes": 5598, "git_blob_sha1": "d8ef730f7a97cfaedda9bd8f16d63ff8eb98a994"},
+        "configuration_mplug_owl2.py": {"bytes": 15561, "git_blob_sha1": "81362a6ce798063942bba6319971390cb4f3428c"},
+        "generation_config.json": {"bytes": 162, "git_blob_sha1": "57dbab308581e71f2adb7e9335aad7bc02cf3bb4"},
+        "modeling_attn_mask_utils.py": {"bytes": 14728, "git_blob_sha1": "76435ed5172d751069f22527d21e870204366ba6"},
+        "modeling_llama2.py": {"bytes": 36728, "git_blob_sha1": "d185dc4d4f874d160dc5bab096d2eefa10e05548"},
+        "modeling_mplug_owl2.py": {"bytes": 20284, "git_blob_sha1": "3dd9f1ca5ea573a6e80bfb05b64d6a6b5f1bae53"},
+        "preprocessor_config.json": {"bytes": 317, "git_blob_sha1": "d546b79a6216564dd358211d7d8348a52c4c308f"},
+        "pytorch_model-00001-of-00002.bin": {"bytes": 9991591698, "sha256": "ca4cdc96237832a9eb3486274de0b10fa7235d5007ee6cff49320c7250970fe3"},
+        "pytorch_model-00002-of-00002.bin": {"bytes": 6417830970, "sha256": "d445a50608f025a39ac75c6da13cb9d12a4cc923f6e1b9abc4b767408eac0729"},
+        "pytorch_model.bin.index.json": {"bytes": 87828, "git_blob_sha1": "7724e925a2b5616e646156f6866d1a8bceb25696"},
+        "special_tokens_map.json": {"bytes": 438, "git_blob_sha1": "14761dcf1466dc232bd41de9c21d4c617b15755e"},
+        "tokenizer.model": {"bytes": 499723, "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"},
+        "tokenizer_config.json": {"bytes": 749, "git_blob_sha1": "740756b4bef305e27d0bb4d2e1a40dd8847797f7"},
+        "visual_encoder.py": {"bytes": 38105, "git_blob_sha1": "5bd346890a39a3ae6760291fd17741f91fac8cc1"}
+      }
+    },
+    "audiobox_checkpoint": {
+      "kind": "direct_file",
+      "cache_name": "audiobox-aesthetics",
+      "filename": "checkpoint.pt",
+      "url": "https://dl.fbaipublicfiles.com/audiobox-aesthetics/checkpoint.pt",
+      "bytes": 415520834,
+      "sha256": "a4931a7a01c3e6733352e9d85371835f03bf9135f8b31e1583c23538811d4a32",
+      "asset_id": "facebook/audiobox-aesthetics:checkpoint.pt@9b1dd8e5df9af7216e836a98974fe3b82c56ded6",
+      "license": "CC BY 4.0; bundled WavLM portions are separately MIT"
+    },
+    "synchformer_checkpoint": {
+      "kind": "direct_file",
+      "cache_name": "synchformer-24-01-04T16-39-21-checkpoint",
+      "filename": "24-01-04T16-39-21.pt",
+      "url": "https://a3s.fi/swift/v1/AUTH_a235c0f452d648828f745589cde1219a/sync/sync_models/24-01-04T16-39-21/24-01-04T16-39-21.pt",
+      "bytes": 1131153989,
+      "expected_etag": "54037d261253aad8bd8ba82cdd7e71a7",
+      "record_first_download_sha256": true,
+      "asset_id": "Synchformer:24-01-04T16-39-21.pt",
+      "license": "MIT source; no publisher SHA-256 is published for this checkpoint"
+    },
+    "synchformer_config": {
+      "kind": "direct_file",
+      "cache_name": "synchformer-24-01-04T16-39-21-config",
+      "filename": "cfg-24-01-04T16-39-21.yaml",
+      "url": "https://a3s.fi/swift/v1/AUTH_a235c0f452d648828f745589cde1219a/sync/sync_models/24-01-04T16-39-21/cfg-24-01-04T16-39-21.yaml",
+      "bytes": 6883,
+      "sha256": "4785fa7f341e038c1a947d55eebc056a0807975731d71fede813a5d65924a60f",
+      "asset_id": "Synchformer:cfg-24-01-04T16-39-21.yaml",
+      "license": "MIT"
+    },
+    "syncnet_checkpoint": {
+      "kind": "direct_file",
+      "cache_name": "syncnet-v2",
+      "filename": "syncnet_v2.model",
+      "url": "https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/syncnet_v2.model",
+      "bytes": 54573114,
+      "record_first_download_sha256": true,
+      "asset_id": "Oxford-SyncNet:syncnet_v2.model",
+      "license": "Oxford model page limits use to research and links CC BY 4.0"
+    },
+    "s3fd_checkpoint": {
+      "kind": "direct_file",
+      "cache_name": "syncnet-s3fd",
+      "filename": "sfd_face.pth",
+      "url": "https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/sfd_face.pth",
+      "bytes": 89844381,
+      "record_first_download_sha256": true,
+      "asset_id": "Oxford-SyncNet:sfd_face.pth",
+      "license": "A separate pretrained-weight grant was not established; do not infer it from the SyncNet source license"
+    },
+    "buffalo_dir": {
+      "kind": "zip_directory",
+      "cache_name": "insightface-buffalo-l-v0.7",
+      "url": "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip",
+      "bytes": 288621354,
+      "record_first_download_sha256": true,
+      "asset_id": "insightface/buffalo_l@v0.7",
+      "license": "InsightFace code is MIT; the buffalo_l pretrained pack is non-commercial research only",
+      "output_subdir": "models/buffalo_l",
+      "members": {
+        "genderage.onnx": {"bytes": 1322532, "crc32": "5f7cd633"},
+        "2d106det.onnx": {"bytes": 5030888, "crc32": "8664693e"},
+        "det_10g.onnx": {"bytes": 16923827, "crc32": "df529b9e"},
+        "1k3d68.onnx": {"bytes": 143607619, "crc32": "3d2d8cff"},
+        "w600k_r50.onnx": {"bytes": 174383860, "crc32": "707f504c"}
+      }
+    },
+    "videophy_model_dir": {
+      "kind": "hf_snapshot",
+      "cache_name": "videophy-2-auto",
+      "repo_id": "videophysics/videophy_2_auto",
+      "revision": "ca38370e1dcc79c99c7017dd8755d0a087299afc",
+      "asset_id": "videophysics/videophy_2_auto@ca38370e1dcc79c99c7017dd8755d0a087299afc",
+      "license": "HF card: MIT; base mPLUG/Llama-derived model terms remain separate",
+      "files": {
+        "config.json": {"bytes": 7036, "git_blob_sha1": "f640d897e9609bbfb0caec78743ffe7155fb883f"},
+        "generation_config.json": {"bytes": 179, "git_blob_sha1": "b892a4ae8fddda096b4f73f3ca4e722815228404"},
+        "preprocessor_config.json": {"bytes": 163, "git_blob_sha1": "ce99e71cc1b0d54c392c0489b704ca5249ff939f"},
+        "pytorch_model-00001-of-00002.bin": {"bytes": 9995752315, "sha256": "466479884912c43c11d06f85fc9cdca9ad5080cb18297fd11fb3fef753037138"},
+        "pytorch_model-00002-of-00002.bin": {"bytes": 4309856976, "sha256": "e08ad83c91e5d7978988ab6263c0b294ad04ba2baa564340a3eaede10a11127a"},
+        "pytorch_model.bin.index.json": {"bytes": 92527, "git_blob_sha1": "c7905cd2b73a0275fa29387a8f57a5e04893b39c"},
+        "tokenizer.model": {"bytes": 499723, "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"},
+        "tokenizer_config.json": {"bytes": 176, "git_blob_sha1": "b6039adac3bb632a4da662f6f0c7d4038cf234f3"}
+      }
+    },
+    "ocr_det_dir": {
+      "kind": "hf_snapshot",
+      "cache_name": "pp-ocrv5-server-det",
+      "repo_id": "PaddlePaddle/PP-OCRv5_server_det",
+      "revision": "ca867c897ecbca8873081573a802ad70d499cb94",
+      "asset_id": "PaddlePaddle/PP-OCRv5_server_det@ca867c897ecbca8873081573a802ad70d499cb94",
+      "license": "Apache-2.0",
+      "files": {
+        "config.json": {"bytes": 2871, "git_blob_sha1": "5d2c6fed3aaf956367278c018e6d04b05fbd3eea"},
+        "inference.json": {"bytes": 402480, "git_blob_sha1": "7b582d63397b09eea2b3ee8c7c7e4efae5d0ccff"},
+        "inference.pdiparams": {"bytes": 87932887, "sha256": "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"},
+        "inference.yml": {"bytes": 903, "git_blob_sha1": "c4f16313e7e2c567da8e9fa8f4aeba14a307786e"}
+      }
+    },
+    "ocr_rec_dir": {
+      "kind": "hf_snapshot",
+      "cache_name": "pp-ocrv5-server-rec",
+      "repo_id": "PaddlePaddle/PP-OCRv5_server_rec",
+      "revision": "b26c3587fda8da3c8ec0ce357214b4d661ff1558",
+      "asset_id": "PaddlePaddle/PP-OCRv5_server_rec@b26c3587fda8da3c8ec0ce357214b4d661ff1558",
+      "license": "Apache-2.0",
+      "files": {
+        "config.json": {"bytes": 352253, "git_blob_sha1": "02221e994d4da4e8acee4b789c7d77ac3e33add4"},
+        "inference.json": {"bytes": 325204, "git_blob_sha1": "67011337d66c66562b8a719c70e40cfcc242ac9e"},
+        "inference.pdiparams": {"bytes": 84390117, "sha256": "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"},
+        "inference.yml": {"bytes": 148345, "git_blob_sha1": "f5156e77296f540e963bdf4f89be90153234a90e"}
+      }
+    },
+    "basic_pitch_model": {
+      "kind": "direct_file",
+      "cache_name": "basic-pitch-0.4.0",
+      "filename": "nmp.onnx",
+      "url": "https://raw.githubusercontent.com/spotify/basic-pitch/v0.4.0/basic_pitch/saved_models/icassp_2022/nmp.onnx",
+      "bytes": 230444,
+      "sha256": "2c3c1d144bfa61ad236e92e169c13535c880469a12a047d4e73451f2c059a0ec",
+      "asset_id": "spotify/basic-pitch:nmp.onnx@v0.4.0",
+      "license": "Apache-2.0"
+    },
+    "whisper_model_dir": {
+      "kind": "hf_snapshot",
+      "cache_name": "faster-whisper-large-v3",
+      "repo_id": "Systran/faster-whisper-large-v3",
+      "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+      "asset_id": "Systran/faster-whisper-large-v3@edaa852ec7e145841d8ffdb056a99866b5f0a478",
+      "license": "MIT",
+      "files": {
+        "config.json": {"bytes": 2394, "git_blob_sha1": "75336feae814999bae6ccccdecf177639ffc6f9d"},
+        "model.bin": {"bytes": 3087284237, "sha256": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1"},
+        "preprocessor_config.json": {"bytes": 340, "git_blob_sha1": "931c77a740890c46365c7ae0c9d350ba3cca908f"},
+        "tokenizer.json": {"bytes": 2480617, "git_blob_sha1": "3a5e2ba63acdcac9a19ba56cf9bd27f185bfff61"},
+        "vocabulary.json": {"bytes": 1068114, "git_blob_sha1": "0adcd01e7c237205d593b707e66dd5d7bc785d2d"}
+      }
+    }
+  },
+  "source_bundled_assets": {
+    "synchformer_s3d": {
+      "path": "eval/Syncformer/model/modules/feat_extractors/visual/S3D_kinetics400_torchified.pt",
+      "bytes": 33520289,
+      "git_blob_sha1": "65b27cbb412937b3dd705f4216cb822d679535df",
+      "sha256": "d34e7463855a0541bd2ba6e73c6c62be8ad5a11a8e8c5480b4e36fc875bbe770",
+      "note": "Already acquired and verified with the pinned AVGen-Bench source; it must not be replaced by a separate model download."
+    }
+  }
+}

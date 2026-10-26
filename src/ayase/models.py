@@ -1124,6 +1124,17 @@ class QualityMetrics(BaseModel):
     audiojudge_preference: Optional[float] = None  # Candidate preference: -1, 0 (tie), or 1
     audiojudge_match: Optional[float] = None  # Pronunciation/speaker match: 0 or 1
     audiojudge_choice: Optional[float] = None  # Descriptive audio selection: 1 or 2
+    avgen_bench_visual_score: Optional[float] = None  # Joint-video visual quality (0-100)
+    avgen_bench_audio_score: Optional[float] = None  # Audio production quality (0-100)
+    avgen_bench_av_sync_score: Optional[float] = None  # Audiovisual synchronization (0-100)
+    avgen_bench_lip_sync_score: Optional[float] = None  # Passing-track lip synchronization (0-100)
+    avgen_bench_text_score: Optional[float] = None  # Visible-text fidelity (0-100)
+    avgen_bench_face_score: Optional[float] = None  # Expected-face count and consistency (0-100)
+    avgen_bench_music_score: Optional[float] = None  # Musical instruction correctness (0-100)
+    avgen_bench_speech_score: Optional[float] = None  # Speech instruction compliance (0-100)
+    avgen_bench_low_physics_score: Optional[float] = None  # Low-level physical plausibility (0-100)
+    avgen_bench_high_physics_score: Optional[float] = None  # High-level physical plausibility (0-100)
+    avgen_bench_holistic_score: Optional[float] = None  # Holistic audiovisual plot alignment (0-100)
     edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
     edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
     edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)
@@ -1956,6 +1967,12 @@ class DatasetStats(BaseModel):
     palate_baseline_score: Optional[float] = None  # Scaled test/generated Gaussian MMD
     palate_retained_fraction: Optional[float] = None  # Generated fraction retained by KDE
     palate_metadata: Optional[Dict[str, Any]] = None  # PALATE components and three-set protocol
+    avgen_bench_score: Optional[float] = None  # Dataset Scheme-2 score (0-100, higher=better)
+    avgen_bench_basic_score: Optional[float] = None  # Available visual/audio mean (0-100)
+    avgen_bench_cross_score: Optional[float] = None  # Available AV/lip synchronization mean (0-100)
+    avgen_bench_fine_score: Optional[float] = None  # Available fine-grained dimension mean (0-100)
+    avgen_bench_coverage: Optional[float] = None  # Available global dimension weight (0-1)
+    avgen_bench_metrics: Optional[Dict[str, Any]] = None  # Raw means, counts, identities and evidence
     mmd_selfsplit: Optional[float] = None  # Within-dataset V-JEPA2 self-split diagnostic
     jedi_score: Optional[float] = None  # Official V-JEPA polynomial MMD (lower=better)
     jedi_generated_count: Optional[int] = None

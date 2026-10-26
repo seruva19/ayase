@@ -1,0 +1,26 @@
+InsightFace 0.7.3
+=================
+
+This directory vendors the complete Python package and package data from the
+InsightFace 0.7.3 PyPI source distribution:
+
+  https://files.pythonhosted.org/packages/0b/8d/0f4af90999ca96cf8cb846eb5ae27c5ef5b390f9c090dd19e4fa76364c13/insightface-0.7.3.tar.gz
+  SHA-256: f191f719612ebb37018f41936814500544cd0f86e6fcd676c023f354c668ddf7
+
+The corresponding upstream release commit is
+668e8d474267bdd2c9769c2cbbab3fe4d1db15a6. InsightFace is authored by the
+InsightFace contributors. The bundled face3d sources identify Yao Feng as
+their author. The upstream project distributes this code under the MIT License;
+see LICENSE in this directory.
+
+Ayase packaging adaptation: insightface/app/__init__.py imports MaskRenderer
+only when that optional symbol is requested. This keeps FaceAnalysis and the
+complete model-zoo graph importable without compiling the unused face3d Cython
+renderer. All other upstream package code and data are retained byte-for-byte.
+Upstream build metadata, generated egg-info, and README.md are not runtime
+package contents and are not included in this vendored package directory.
+
+No pretrained model weights are included here. InsightFace's upstream notice
+states that pretrained models supplied by the project, including automatically
+and manually downloaded models, are available for non-commercial research
+purposes only. Model users must comply with the applicable model license.

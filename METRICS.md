@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 00:31 · **403 modules** · **619 metrics**
+> **Version 0.2.1** · Generated 2026-10-26 11:21 · **404 modules** · **630 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **398/403 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **399/404 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**403** modules · **729** output fields · **619** metrics · **292** tiered · **191** GPU · **20** categories
+**404** modules · **746** output fields · **630** metrics · **293** tiered · **192** GPU · **20** categories
 
 ## Provenance
 
@@ -43,11 +43,11 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-80-metrics) (80) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-83-metrics) (83) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-86-metrics) (86) · [Face & Identity](#face--identity-75-metrics) (75) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-81-metrics) (81) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-87-metrics) (87) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-91-metrics) (91) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-117-fields) (117) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
-## No-Reference Quality (80 metrics)
+## No-Reference Quality (81 metrics)
 
 ### `aigv_static_est` [↑](#categories)
 > AI video static quality
@@ -74,6 +74,19 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/miccunifi/ARNIQA" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_arniqa.py`](tests/modules/per_module/test_arniqa.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
 - **Config**: `subsample=8`
+
+### `avgen_bench_visual_score` [↑](#categories)
+> Joint-video visual quality (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
 
 ### `brisque` [↑](#categories)
 > BRISQUE (0-100, lower=better) · ↓ lower=better · 0-100
@@ -644,7 +657,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: Pillow, torch
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://github.com/Q-Future/Q-Align" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
-- **Tests**: covered by [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
+- **Tests**: covered by [`test_avgen_bench_native.py`](tests/modules/per_module/test_avgen_bench_native.py), [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 ### `qualiclip_score` [↑](#categories)
@@ -893,7 +906,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: UNIQUE, Zhang et al. TIP 2021; pyiqa — https://github.com/zwx8981/UNIQUE
 - **Packages**: opencv-python, pyiqa, torch
 - **Source**: <a href="https://github.com/zwx8981/UNIQUE" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_unique.py`](tests/modules/per_module/test_unique.py), [`test_image_iqa_metrics.py`](tests/modules/test_image_iqa_metrics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Tests**: covered by [`test_avgen_bench_runtime.py`](tests/modules/per_module/test_avgen_bench_runtime.py), [`test_unique.py`](tests/modules/per_module/test_unique.py), [`test_image_iqa_metrics.py`](tests/modules/test_image_iqa_metrics.py), +1 more
 - **Config**: `subsample=4`
 
 ### `uvq1p5_score` [↑](#categories)
@@ -2031,7 +2044,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (83 metrics)
+## Text-Video Alignment (87 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2097,6 +2110,58 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/Tsuki0512/AVC-Reward" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_avc_reward.py`](tests/modules/test_avc_reward.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `device_map=auto`, `dtype=auto`, `max_new_tokens=4096`
+
+### `avgen_bench_high_physics_score` [↑](#categories)
+> High-level physical plausibility (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_holistic_score` [↑](#categories)
+> Holistic audiovisual plot alignment (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_low_physics_score` [↑](#categories)
+> Low-level physical plausibility (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_text_score` [↑](#categories)
+> Visible-text fidelity (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
 
 ### `blip_bleu` [↑](#categories)
 
@@ -3095,7 +3160,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), +2 more
+- **Tests**: covered by [`test_avgen_bench_protocol.py`](tests/modules/per_module/test_avgen_bench_protocol.py), [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), +3 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
@@ -4825,7 +4890,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Packages**: Pillow, torch
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://github.com/Q-Future/Q-Align" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
-- **Tests**: covered by [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
+- **Tests**: covered by [`test_avgen_bench_native.py`](tests/modules/per_module/test_avgen_bench_native.py), [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
 - **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 ### `qwen_image_bench_aesthetics` [↑](#categories)
@@ -4868,7 +4933,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `backend=auto`, `model_name=UnifiedReward-2.0-qwen35-9b`, `device=auto`, `dtype=bfloat16`, `max_new_tokens=1024`, `temperature=0.0`, `top_p=1.0`, `max_image_size=1024`, `resize_to_square=False`, `store_raw_outputs=False`
 
 
-## Audio Quality (86 metrics)
+## Audio Quality (91 metrics)
 
 ### `active_speaker_best_conf` [↑](#categories)
 
@@ -5153,8 +5218,73 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Provenance**: `published` — source: Synchformer (Iashin et al., ICASSP 2024) — https://github.com/v-iashin/Synchformer
 - **Packages**: syncformer
 - **Source**: <a href="https://github.com/v-iashin/Synchformer" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **Tests**: covered by [`test_av_sync.py`](tests/modules/per_module/test_av_sync.py), [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_assets.py`](tests/modules/per_module/test_avgen_bench_assets.py), +3 more
 - **Config**: `warning_threshold_ms=80.0`
+
+### `avgen_bench_audio_score` [↑](#categories)
+> Audio production quality (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_av_sync_score` [↑](#categories)
+> Audiovisual synchronization (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_lip_sync_score` [↑](#categories)
+> Passing-track lip synchronization (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_music_score` [↑](#categories)
+> Musical instruction correctness (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
+
+### `avgen_bench_speech_score` [↑](#categories)
+> Speech instruction compliance (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
 
 ### `beyond_time_shifts_score` [↑](#categories)
 > Beyond Time Shifts raw AV sync (higher=better) · ↑ higher=better · nominally 5s;
@@ -5940,7 +6070,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `window_seconds=3.0`, `hop_seconds=1.5`, `min_window_seconds=1.0`, `silence_rms_threshold=0.0001`, `max_references=32`
 
 
-## Face & Identity (75 metrics)
+## Face & Identity (76 metrics)
 
 ### `adaface_identity_similarity` [↑](#categories)
 > ↑ higher=better · −1..1
@@ -6007,6 +6137,19 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Source**: <a href="https://github.com/cosanlab/py-feat" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_aucon_prmse.py`](tests/modules/per_module/test_aucon_prmse.py)
 - **Config**: `fps=5.0`, `max_frames=300`, `au_threshold=0.5`, `device=auto`
+
+### `avgen_bench_face_score` [↑](#categories)
+> Expected-face count and consistency (0-100) · ↑ higher=better · 0-100
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Backend**: unavailable
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **VRAM**: ~14 GB
+- **Source**: <a href="https://github.com/deepinsight/insightface" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+- **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
 
 ### `concept_face_count` [↑](#categories)
 > Number of faces detected · type: int
@@ -7778,7 +7921,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (111 fields)
+## Dataset-Level Metrics (117 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -7817,6 +7960,60 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Input**: img/vid · **Speed**: ⚡ fast
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+
+### `avgen_bench_basic_score` [↑](#categories)
+> Available visual/audio mean (0-100) · ↑ higher=better · type: float
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Mean available visual/audio component score (0-100)
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+
+### `avgen_bench_coverage` [↑](#categories)
+> Available global dimension weight (0-1) · type: float
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Available fixed AVGen-Bench dimension weight (0-1)
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+
+### `avgen_bench_cross_score` [↑](#categories)
+> Available AV/lip synchronization mean (0-100) · ↑ higher=better · type: float
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Mean available AV/lip synchronization score (0-100)
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+
+### `avgen_bench_fine_score` [↑](#categories)
+> Available fine-grained dimension mean (0-100) · ↑ higher=better · type: float
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Mean available fine-grained component score (0-100)
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+
+### `avgen_bench_metrics` [↑](#categories)
+> Raw means, counts, identities and evidence · type: str
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Structured component evidence, counts, and protocol identities
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Provenance**: `utility` — Ayase-owned structured execution and evidence metadata. — source: Ayase AVGen-Bench runtime and evidence ledger
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
+
+### `avgen_bench_score` [↑](#categories)
+> Dataset Scheme-2 score (0-100, higher=better) · ↑ higher=better · type: float
+
+**[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — AVGen-Bench Scheme-2 dataset score (0-100, higher=better)
+
+- **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
+- **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py)
 
 ### `chd_1d` [↑](#categories)
 > Released TiTok-L32 unigram Hellinger distance (0-1) · ↓ lower=better · type: float
@@ -8816,7 +9013,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
 - **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +9 more
+- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +12 more
 - **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
 - **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)

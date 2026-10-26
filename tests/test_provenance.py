@@ -361,6 +361,182 @@ class _FinalFailureBatchWriterModule(_FailingWriterModule):
         raise RuntimeError("batch failed after write")
 
 
+class _DeferredSampleWriter(PipelineModule):
+    name = "test_deferred_sample_writer"
+    provenance = {"vmaf": "adapted", "palate_metadata": "utility"}
+
+    def __init__(self, phase="post", value=75.0, fail=False):
+        super().__init__()
+        self.phase = phase
+        self.value = value
+        self.fail = fail
+        self.samples = []
+        self._backend = "fixture"
+
+    def process(self, sample):
+        self.samples.append(sample)
+        return sample
+
+    def _write(self, samples):
+        for sample in samples:
+            if sample.quality_metrics is None:
+                sample.quality_metrics = QualityMetrics()
+            sample.quality_metrics.vmaf = self.value
+            sample.quality_metrics.metric_provenance.pop("vmaf", None)
+        if self.fail:
+            raise RuntimeError("failed after deferred write")
+
+    def post_process(self, samples):
+        if self.phase == "post":
+            self._write(samples)
+
+    def on_dispose(self):
+        if self.phase == "dispose":
+            self._write(self.samples)
+        super().on_dispose()
+
+
+class _LegacyDeferredWriter(_DeferredSampleWriter):
+    name = "test_legacy_deferred_writer"
+    on_dispose = PipelineModule.on_dispose
+
+    def teardown(self):
+        self._write(self.samples)
+
+
+@pytest.mark.parametrize("phase", ["post", "dispose", "teardown"])
+@pytest.mark.parametrize("allow_adapted", [False, True])
+def test_deferred_sample_writes_obey_provenance_policy(tmp_path, phase, allow_adapted):
+    cls = _LegacyDeferredWriter if phase == "teardown" else _DeferredSampleWriter
+    module = cls(phase=phase)
+    module._mounted = True
+    pipeline = Pipeline([module], allow_provenance=["adapted"] if allow_adapted else None)
+    sample = Sample(path=tmp_path / "deferred.png", is_video=False)
+    assert pipeline.process_sample(sample) is sample
+    pipeline.stop()
+    if allow_adapted:
+        assert sample.quality_metrics.vmaf == 75.0
+        assert sample.quality_metrics.metric_provenance["vmaf"] == "adapted"
+    else:
+        assert sample.quality_metrics.vmaf is None
+        assert "vmaf" not in sample.quality_metrics.metric_provenance
+
+
+@pytest.mark.parametrize("phase", ["post", "dispose", "teardown"])
+def test_rejected_deferred_write_restores_prior_value_and_lineage(tmp_path, phase):
+    cls = _LegacyDeferredWriter if phase == "teardown" else _DeferredSampleWriter
+    module = cls(phase=phase)
+    module._mounted = True
+    pipeline = Pipeline([module])
+    sample = Sample(
+        path=tmp_path / "prior.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(
+            vmaf=50.0, brisque=12.0, metric_provenance={"vmaf": "published", "brisque": "published"}
+        ),
+    )
+    pipeline.process_sample(sample)
+    pipeline.stop()
+    assert sample.quality_metrics.vmaf == 50.0
+    assert sample.quality_metrics.brisque == 12.0
+    assert sample.quality_metrics.metric_provenance == {"vmaf": "published", "brisque": "published"}
+
+
+def test_same_value_deferred_write_gets_new_lineage(tmp_path):
+    module = _DeferredSampleWriter(value=50.0)
+    module._mounted = True
+    pipeline = Pipeline([module], allow_provenance=["adapted"])
+    sample = Sample(
+        path=tmp_path / "same.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(vmaf=50.0, metric_provenance={"vmaf": "published"}),
+    )
+    pipeline.process_sample(sample)
+    pipeline.stop()
+    assert sample.quality_metrics.vmaf == 50.0
+    assert sample.quality_metrics.metric_provenance["vmaf"] == "adapted"
+
+
+@pytest.mark.parametrize("phase", ["post", "dispose", "teardown"])
+def test_failed_deferred_write_rolls_back_to_prior_metric(tmp_path, phase):
+    cls = _LegacyDeferredWriter if phase == "teardown" else _DeferredSampleWriter
+    module = cls(phase=phase, fail=True)
+    module._mounted = True
+    pipeline = Pipeline([module], allow_provenance=["adapted"])
+    sample = Sample(
+        path=tmp_path / "failure.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(vmaf=50.0, metric_provenance={"vmaf": "published"}),
+    )
+    pipeline.process_sample(sample)
+    pipeline.stop()
+    assert sample.quality_metrics.vmaf == 50.0
+    assert sample.quality_metrics.metric_provenance["vmaf"] == "published"
+    assert module.name in sample.failed_modules
+
+
+@pytest.mark.parametrize("phase", ["post", "dispose", "teardown"])
+@pytest.mark.parametrize("allow_adapted", [False, True])
+def test_replaced_same_value_deferred_metric_preserves_lineage(
+    tmp_path, monkeypatch, phase, allow_adapted
+):
+    cls = _LegacyDeferredWriter if phase == "teardown" else _DeferredSampleWriter
+    module = cls(phase=phase)
+    module._mounted = True
+
+    def replace_metrics(samples):
+        for sample in samples:
+            sample.quality_metrics = QualityMetrics(vmaf=50.0)
+
+    monkeypatch.setattr(module, "_write", replace_metrics)
+    pipeline = Pipeline([module], allow_provenance=["adapted"] if allow_adapted else None)
+    sample = Sample(
+        path=tmp_path / "replacement.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(vmaf=50.0, metric_provenance={"vmaf": "published"}),
+    )
+    pipeline.process_sample(sample)
+    pipeline.stop()
+    assert sample.quality_metrics.vmaf == 50.0
+    assert sample.quality_metrics.metric_provenance["vmaf"] == (
+        "adapted" if allow_adapted else "published"
+    )
+
+
+@pytest.mark.parametrize("phase", ["post", "dispose", "teardown"])
+def test_failed_deferred_callback_restores_removed_metrics(tmp_path, monkeypatch, phase):
+    cls = _LegacyDeferredWriter if phase == "teardown" else _DeferredSampleWriter
+    module = cls(phase=phase)
+    module._mounted = True
+
+    def remove_metrics_then_fail(samples):
+        for sample in samples:
+            sample.quality_metrics = None
+        raise RuntimeError("failed after removing metrics")
+
+    monkeypatch.setattr(module, "_write", remove_metrics_then_fail)
+    pipeline = Pipeline([module], allow_provenance=["adapted"])
+    sample = Sample(
+        path=tmp_path / "removed.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(
+            vmaf=50.0,
+            brisque=12.0,
+            metric_provenance={"vmaf": "published", "brisque": "published"},
+        ),
+    )
+    pipeline.process_sample(sample)
+    pipeline.stop()
+    assert sample.quality_metrics is not None
+    assert sample.quality_metrics.vmaf == 50.0
+    assert sample.quality_metrics.brisque == 12.0
+    assert sample.quality_metrics.metric_provenance == {
+        "vmaf": "published",
+        "brisque": "published",
+    }
+    assert module.name in sample.failed_modules
+
+
 def test_default_pipeline_excludes_own_and_adapted():
     p = Pipeline([_OwnModule(), _PublishedModule()])
     assert "test_own_only" in p._provenance_excluded

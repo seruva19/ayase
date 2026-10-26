@@ -1544,7 +1544,7 @@ class Pipeline:
                 continue
             try:
                 self._active_dataset_module = module
-                post_process(all_samples)
+                self._call_metric_finalizer(module, all_samples, post_process, all_samples)
             except Exception as e:
                 logger.error(f"Error in post_process for module {module.name}: {e}")
                 detail = f"post_process failed: {type(e).__name__}: {e}"
@@ -1567,7 +1567,7 @@ class Pipeline:
                 continue
             try:
                 self._active_dataset_module = module
-                on_dispose()
+                self._call_metric_finalizer(module, all_samples, on_dispose)
             except Exception as e:
                 logger.error(f"Error in on_dispose for module {module.name}: {e}")
                 detail = f"on_dispose failed: {type(e).__name__}: {e}"
@@ -1602,6 +1602,62 @@ class Pipeline:
         permanently baked in as a "successful" (but empty) result.
         """
         return not getattr(sample, "failed_modules", None)
+
+    def _call_metric_finalizer(
+        self,
+        module: "PipelineModule",
+        samples: List[Sample],
+        callback: Callable[..., Any],
+        *args: Any,
+    ) -> None:
+        """Apply normal metric lineage and policy to deferred sample writes."""
+        base_post_process = getattr(callback, "__func__", None) is PipelineModule.post_process
+        base_cleanup = (
+            getattr(callback, "__func__", None) is PipelineModule.on_dispose
+            and getattr(module.teardown, "__func__", None) is PipelineModule.teardown
+            and getattr(module._release_torch_resources, "__func__", None)
+            is PipelineModule._release_torch_resources
+        )
+        if base_post_process or base_cleanup:
+            callback(*args)
+            return
+        before = {id(sample): self._metric_state(sample) for sample in samples}
+        previous_models = {id(sample): sample.quality_metrics for sample in samples}
+        written_by_model: Dict[int, Set[str]] = {}
+
+        def record_write(metrics: QualityMetrics, field: str) -> None:
+            written_by_model.setdefault(id(metrics), set()).add(field)
+
+        try:
+            with observe_metric_writes(record_write):
+                callback(*args)
+        except Exception:
+            for sample in samples:
+                self._restore_metric_state(sample, module, before.get(id(sample), {}))
+            raise
+        provenance = type(module).field_provenance()
+        for sample in samples:
+            baseline = before.get(id(sample), {})
+            if module.name in sample.failed_modules:
+                self._restore_metric_state(sample, module, baseline)
+                continue
+            metrics = sample.quality_metrics
+            written = written_by_model.get(id(metrics)) if metrics is not None else None
+            if metrics is not None and metrics is not previous_models.get(id(sample)):
+                written = set(written or ()) | {
+                    field for field in metrics.model_fields_set if field in provenance
+                }
+            self._persist_provenance(sample, module, baseline, written)
+            if metrics is not None and any(
+                field in type(metrics).model_fields
+                and getattr(metrics, field, None) is not None
+                and (
+                    (written is not None and field in written)
+                    or not self._metric_values_equal(baseline.get(field), getattr(metrics, field))
+                )
+                for field in provenance
+            ):
+                self._persist_backend(sample, module)
 
     @staticmethod
     def _register_module_failure(sample: Sample, module_name: str, detail: str) -> None:
@@ -1724,7 +1780,10 @@ class Pipeline:
         """Roll back declared metric fields after a failed module execution."""
         qm = sample.quality_metrics
         if qm is None:
-            return
+            if not before:
+                return
+            qm = QualityMetrics(**deepcopy(before))
+            sample.quality_metrics = qm
         provenance_before = before.get("metric_provenance", {})
         for field in type(module).field_provenance():
             if field not in type(qm).model_fields or field in qm._NON_METRIC_FIELDS:
@@ -1808,7 +1867,14 @@ class Pipeline:
                 continue
             if cls_value not in allowed:
                 setattr(qm, field, deepcopy(before.get(field)))
-                if field not in before or before.get(field) is None:
+                previous_provenance = before.get("metric_provenance", {})
+                if (
+                    before.get(field) is not None
+                    and isinstance(previous_provenance, dict)
+                    and field in previous_provenance
+                ):
+                    qm.metric_provenance[field] = previous_provenance[field]
+                else:
                     qm.metric_provenance.pop(field, None)
                 continue
             if current is None:
