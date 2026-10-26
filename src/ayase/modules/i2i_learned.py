@@ -44,7 +44,7 @@ class I2ILearnedModule(PipelineModule):
     implementation_status = "approximate"
     implementation_notes = "CLIP/SigLIP/LPIPS paths are concrete, but fields named DINOv2 use default facebook/dino-vits16 (DINO v1). This materially substitutes feature backbone for declared DINOv2 scores."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."
-    input_type = "img"
+    input_type = "img +ref"
     provenance = {
         "i2i_clip_similarity": "adapted",
         "i2i_dinov2_cls_similarity": "adapted",

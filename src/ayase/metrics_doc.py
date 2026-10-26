@@ -8,13 +8,14 @@ Integrity issues (field collisions, orphans, static checks) are reported as
 stderr warnings during generation, not included in the output.
 """
 
+import ast
 import inspect
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
-from .pipeline import ModuleRegistry, PipelineModule
+from .pipeline import ModuleRegistry, PipelineModule, _metadata_tree, _metric_source_fields
 
 # ── pip package mapping ─────────────────────────────────────────────────────
 # Maps Python import names to pip install names
@@ -124,6 +125,8 @@ _VRAM_PATTERNS = {
 
 
 def _get_source(cls) -> str:
+    if isinstance(cls, type) and issubclass(cls, PipelineModule):
+        return cls._get_metadata_source()
     try:
         return inspect.getsource(cls)
     except (TypeError, OSError):
@@ -302,7 +305,14 @@ def _detect_packages(source: str) -> List[str]:
 
 
 def _detect_gpu(source: str) -> bool:
-    return "cuda" in source or ".to(device)" in source or ".to(self._device)" in source
+    """Detect CUDA references; a generic tensor device is not evidence of GPU use."""
+    for node in ast.walk(_metadata_tree(source)):
+        if isinstance(node, ast.Attribute) and node.attr == "cuda":
+            return True
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if node.value == "cuda" or node.value.startswith("cuda:"):
+                return True
+    return False
 
 
 def _detect_speed_tier(source: str, backends: List[str]) -> str:
@@ -315,16 +325,19 @@ def _detect_speed_tier(source: str, backends: List[str]) -> str:
     return "fast"
 
 
-def _detect_hf_models(source: str) -> List[str]:
-    """Extract HuggingFace model identifiers."""
-    models = []
-    for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
-        candidate = m.group(1)
-        # Filter likely HF repos (org/model format)
-        if _is_likely_hf_model_id(candidate):
-            if candidate not in models:
-                models.append(candidate)
-    return models[:3]  # Cap at 3
+def _detect_hf_models(source: str, cls: type = None) -> List[str]:
+    """Use the model catalog's loader analysis and explicit HF declarations."""
+    # Local import: models_doc also uses shared formatting helpers from this file.
+    from .models_doc import _extract_hf_models, _get_model_analysis_source
+
+    if cls is not None:
+        source = _get_model_analysis_source(cls) or source
+    models = _extract_hf_models(source, getattr(cls, "default_config", None))
+    for model in getattr(cls, "models", None) or []:
+        candidate = model.get("id")
+        if model.get("type") == "huggingface" and candidate and candidate not in models:
+            models.append(candidate)
+    return models[:3]
 
 
 _NON_HF_ID_OWNERS = {
@@ -404,35 +417,30 @@ def _detect_paper(cls) -> Optional[str]:
 
 def _detect_fields_read(source: str) -> Set[str]:
     """Find QualityMetrics fields that a module reads (dependencies)."""
-    reads: Set[str] = set()
-    # Pattern: sample.quality_metrics.FIELD (in a read context, not assignment)
-    for m in re.finditer(r"quality_metrics\.(\w+)(?!\s*=)", source):
-        field = m.group(1)
-        if field not in ("__class__", "model_dump", "non_null_metrics"):
-            reads.add(field)
-    return reads
+    reads, _, _ = _metric_source_fields(source)
+    return reads - {"__class__", "model_dump", "non_null_metrics"}
 
 
 def _detect_fields_written(source: str) -> Set[str]:
-    """Find QualityMetrics fields that a module writes."""
-    writes: Set[str] = set()
-    # Pattern 1: sample.quality_metrics.FIELD =
-    for m in re.finditer(r"quality_metrics\.(\w+)\s*=", source):
-        writes.add(m.group(1))
-    # Pattern 2: metric_field = "FIELD" / metric_field_name = "FIELD"
-    # (ReferenceBasedModule/NoReferenceModule or lightweight subclass auto-assignment)
-    for m in re.finditer(r'metric_field(?:_name)?\s*=\s*["\'](\w+)["\']', source):
-        writes.add(m.group(1))
-    # Pattern 3: qm.FIELD = (variable alias for quality_metrics)
-    if re.search(r"\bqm\s*=\s*\w*\.?quality_metrics", source):
-        for m in re.finditer(r"\bqm\.(\w+)\s*=", source):
-            writes.add(m.group(1))
+    """Find observed writes and literal dynamic-setter field declarations."""
+    _, writes, _ = _metric_source_fields(source)
+    for node in ast.walk(_metadata_tree(source)):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        value = node.value
+        if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        for target in targets:
+            name = target.id if isinstance(target, ast.Name) else getattr(target, "attr", "")
+            if name in {"metric_field", "metric_field_name"}:
+                writes.add(value.value)
     return writes
 
 
 def _detect_dataset_fields_written(source: str) -> Set[str]:
     """Find DatasetStats fields written through pipeline.add_dataset_metric()."""
-    return set(re.findall(r'add_dataset_metric\(\s*["\'](\w+)["\']', source))
+    return _metric_source_fields(source)[2]
 
 
 def _module_owned_qm_fields(cls) -> Set[str]:
@@ -483,14 +491,18 @@ def compute_external_backend_partition(module_names: Iterable[str]) -> Tuple[Set
             if cls.resolved_metric_status(field) != "unimplemented":
                 delivered_fields.add(field)
     external_only_fields = {
-        field
-        for field, owners in field_owners.items()
-        if owners and field not in delivered_fields
+        field for field, owners in field_owners.items() if owners and field not in delivered_fields
     }
     return external_backend_modules, external_only_fields
 
 
-_UTILITY_MODULES = {"embedding", "dedup", "diversity_selection", "knowledge_graph"}
+_UTILITY_MODULES = {
+    "embedding",
+    "dedup",
+    "diversity_selection",
+    "knowledge_graph",
+    "asr_transcribe",
+}
 
 # ── Metric category display names and ordering ────────────────────────────
 _CATEGORY_DISPLAY = {
@@ -536,11 +548,6 @@ def _get_module_file_link(cls: type) -> str:
 def _detect_source_links(source: str, cls: type) -> str:
     """Extract source links (paper, GitHub, HF) as compact markdown."""
     links = []
-    declared_non_hf_ids = {
-        str(model.get("id"))
-        for model in (getattr(cls, "models", None) or [])
-        if model.get("id") and model.get("type") != "huggingface"
-    }
     # arXiv
     for m in re.finditer(r"(https?://arxiv\.org/abs/[\w.]+)", source):
         links.append(f'<a href="{m.group(1)}" target="_blank">arXiv</a>')
@@ -550,11 +557,20 @@ def _detect_source_links(source: str, cls: type) -> str:
         links.append(f'<a href="{m.group(1)}" target="_blank">GitHub</a>')
         break
     # HuggingFace
-    for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
-        candidate = m.group(1)
-        if candidate not in declared_non_hf_ids and _is_likely_hf_model_id(candidate):
-            links.append(f'<a href="https://huggingface.co/{candidate}" target="_blank">HF</a>')
-            break
+    models = _detect_hf_models(source, cls)
+    if models:
+        candidate = models[0]
+        declared_url = next(
+            (
+                model["url"]
+                for model in (getattr(cls, "models", None) or [])
+                if model.get("type") == "huggingface"
+                and model.get("id") == candidate
+                and model.get("url")
+            ),
+            f"https://huggingface.co/{candidate}",
+        )
+        links.append(f'<a href="{declared_url}" target="_blank">HF</a>')
     # Paper citation from docstring
     if not links:
         doc = cls.__doc__ or ""
@@ -586,10 +602,23 @@ def _static_checks(source: str, meta: Dict, cls: type = None) -> List[str]:
     if "def on_mount(" in full_source and "def setup(" not in full_source:
         if "super().on_mount()" not in full_source:
             warnings.append("uses `on_mount()` instead of `setup()`")
+    # Caption and media-metadata updates are useful non-metric outputs too.
+    from .models import Sample
+
+    sample_fields = set(Sample.model_fields) - {"quality_metrics", "validation_issues"}
+    updates_sample = any(
+        isinstance(node, ast.Attribute)
+        and isinstance(node.ctx, ast.Store)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "sample"
+        and node.attr in sample_fields
+        for node in ast.walk(_metadata_tree(full_source))
+    )
     # A module "produces output" if it has output_fields, validation_issues,
     # metric_field, add_dataset_metric, or is a batch/dataset-level module.
     has_output = (
         meta["output_fields"]
+        or updates_sample
         or meta.get("dataset_output_fields")
         or "validation_issues" in full_source
         or re.search(r'metric_field(?:_name)?\s*=\s*["\']', full_source)
@@ -721,7 +750,11 @@ def _generate_charts(
         paths["input_types"] = _save_bar(input_counts.most_common(), "chart_input_types.png")
 
         # 3. Speed tiers
-        tier_map = {"fast": "Fast (CPU)", "medium": "Medium (GPU)", "slow": "Slow (LLM/VLM)"}
+        tier_map = {
+            "fast": "Fast (estimated)",
+            "medium": "Medium (estimated)",
+            "slow": "Slow (estimated)",
+        }
         tier_colors = {"fast": "#00B894", "medium": "#FDCB6E", "slow": "#E17055"}
         s_items = speed_counts.most_common()
         paths["speed"] = _save_bar(
@@ -1105,7 +1138,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         meta["packages"] = _detect_packages(source)
         meta["gpu"] = _detect_gpu(source)
         meta["speed"] = _detect_speed_tier(source, meta["backends"])
-        meta["hf_models"] = _detect_hf_models(source)
+        meta["hf_models"] = _detect_hf_models(source, cls)
         meta["vram"] = _estimate_vram(source)
         meta["paper"] = _detect_paper(cls)
 
@@ -1322,7 +1355,11 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a(
         f"**{total_modules}** modules · **{len(unique_outputs)}** output fields "
         f"· **{len(delivered_qm_fields)}** metrics · **{tiered_count}** tiered "
-        f"· **{gpu_count}** GPU · **{total_categories}** categories"
+        f"· **{gpu_count}** with GPU code detected · **{total_categories}** categories"
+    )
+    a("")
+    a(
+        "Speed and memory values are source-based estimates, not benchmarks. GPU detection indicates code paths, not a GPU requirement. Imports and backend labels do not verify successful inference."
     )
 
     a("")
@@ -1332,11 +1369,19 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a("")
     a("Readiness is a separate module-level classification:")
     a("")
-    a("- `implemented`: the declared backend and computation are wired, including complete Ayase-defined methods.")
-    a("- `approximate`: a material substitute or partial protocol is implemented; consult the readiness notes and field deviations.")
-    a("- `unimplemented`: no supported complete backend is available in a standard install; excluded from delivered counts. Inert implementations never mount. Existing expert adapters may try a real externally provided backend, as indicated in their entries.")
+    a(
+        "- `implemented`: the declared backend and computation are wired, including complete Ayase-defined methods."
+    )
+    a(
+        "- `approximate`: a material substitute or partial protocol is implemented; consult the readiness notes and field deviations."
+    )
+    a(
+        "- `unimplemented`: no supported complete backend is available in a standard install; excluded from delivered counts. Inert implementations never mount. Existing expert adapters may try a real externally provided backend, as indicated in their entries."
+    )
     a("")
-    a("Source review checks method fidelity and backend wiring. Its confidence describes static evidence, not successful inference with pretrained weights or numerical validation. Runtime requirements such as model downloads, reference inputs and API credentials still apply.")
+    a(
+        "Source review checks method fidelity and backend wiring. Its confidence describes static evidence, not successful inference with pretrained weights or numerical validation. Runtime requirements such as model downloads, reference inputs and API credentials still apply."
+    )
     a("")
     a("| Class | Meaning |")
     a("|---|---|")
@@ -1601,15 +1646,17 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 # Info as bullet list
                 speed_str = f"{badge} {mod['speed']}"
                 if mod["gpu"]:
-                    speed_str += " · GPU"
-                a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
+                    speed_str += " · GPU code detected"
+                a(f"- **Input**: {mod['input_type']} · **Estimated speed**: {speed_str}")
                 readiness = mod.get("implementation_status", "implemented")
                 readiness_notes = mod.get("implementation_notes", "")
                 readiness_text = f"`{readiness}`"
                 if readiness_notes:
                     readiness_text += f" — {readiness_notes}"
                 a(f"- **Readiness**: {readiness_text}")
-                a(f"- **Field readiness**: `{mod.get('metric_status', {}).get(field_name, readiness)}`")
+                a(
+                    f"- **Field readiness**: `{mod.get('metric_status', {}).get(field_name, readiness)}`"
+                )
                 a(f"- **Review evidence**: {mod.get('implementation_review', 'unreviewed')}")
                 if chain:
                     a(f"- **Backend**: {chain}")
@@ -1686,10 +1733,10 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 badge = speed_badges.get(mod["speed"], "")
                 speed_str = f"{badge} {mod['speed']}"
                 if mod["gpu"]:
-                    speed_str += " · GPU"
+                    speed_str += " · GPU code detected"
                 a(f"**{mod_link}** — {desc}")
                 a("")
-                a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
+                a(f"- **Input**: {mod['input_type']} · **Estimated speed**: {speed_str}")
                 readiness = mod.get("implementation_status", "implemented")
                 readiness_notes = mod.get("implementation_notes", "")
                 readiness_text = f"`{readiness}`"
@@ -1697,7 +1744,9 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                     readiness_text += f" — {readiness_notes}"
                 a(f"- **Readiness**: {readiness_text}")
                 a(f"- **Review evidence**: {mod.get('implementation_review', 'unreviewed')}")
-                a(f"- **Field readiness**: `{mod.get('metric_status', {}).get(field_name, readiness)}`")
+                a(
+                    f"- **Field readiness**: `{mod.get('metric_status', {}).get(field_name, readiness)}`"
+                )
                 prov = (mod.get("provenance") or {}).get(field_name)
                 if prov:
                     prov_parts = [f"`{prov}`"]
@@ -1729,14 +1778,14 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             file_path = extra.get("file_path", "")
             mod_link = f"[`{r['name']}`]({file_path})" if file_path else f"`{r['name']}`"
             badge = speed_badges.get(r["speed"], "")
-            items = [f"Input: {r['input_type']}", f"Speed: {badge} {r['speed']}"]
+            items = [f"Input: {r['input_type']}", f"Estimated speed: {badge} {r['speed']}"]
             readiness = f"Readiness: `{r.get('implementation_status', 'implemented')}`"
             if r.get("implementation_notes"):
                 readiness += f" — {r['implementation_notes']}"
             items.append(readiness)
             items.append(f"Review evidence: {r.get('implementation_review', 'unreviewed')}")
             if r["gpu"]:
-                items.append("GPU")
+                items.append("GPU code detected")
             items.append(f"Tests: {_format_test_coverage(r['name'], test_coverage, test_results)}")
             a(f"- **{mod_link}** — {r['description']} · {' · '.join(items)}")
         a("")
@@ -1782,7 +1831,9 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             parts.append(readiness_text)
             parts.append(f"Review evidence: {cls.implementation_review}")
             if cls.supports_expert_backend:
-                parts.append("Expert adapter: may try a real externally provided backend; standard-install readiness remains unimplemented")
+                parts.append(
+                    "Expert adapter: may try a real externally provided backend; standard-install readiness remains unimplemented"
+                )
             if owned:
                 parts.append("Metrics: " + ", ".join(f"`{f}`" for f in owned))
             else:
@@ -1813,7 +1864,9 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     if partial_unavailable:
         a("## Unimplemented outputs in partial modules")
         a("")
-        a("These reserved fields are excluded from delivered metric counts; other outputs of their modules remain available.")
+        a(
+            "These reserved fields are excluded from delivered metric counts; other outputs of their modules remain available."
+        )
         a("")
         for name, field, cls in partial_unavailable:
             a(f"- `{field}` — **unimplemented**, module `{name}`: {cls.implementation_notes}")

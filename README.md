@@ -57,11 +57,6 @@ configuration, and backend requirements. The [model catalog](MODELS.md) lists
 weights and their licenses. Metrics use different scales and may require
 captions, reference media, or a compatible GPU; check the selected metric's entry.
 
-Video-generation evaluation includes [JEDi](docs/jedi_backend.md),
-[VideoPhy-2](docs/videophy2_backend.md), and all seven
-[T2V-CompBench categories](docs/t2v_compbench_backend.md), with automatically
-managed backend environments and assets.
-
 ## Guides
 
 | Task | Guide |

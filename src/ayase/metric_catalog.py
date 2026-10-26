@@ -11,9 +11,10 @@ import difflib
 import inspect
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from urllib.parse import quote
 
 from rich.console import Console
 from rich.table import Table
@@ -37,15 +38,18 @@ from .metrics_doc import (
 )
 from .models_doc import (
     _MODULE_MODEL_HINTS,
+    _TASK_DB,
+    _checkpoint_key,
     _extract_clip_models,
     _extract_ffmpeg_models,
-    _extract_hf_direct_urls,
+    _extract_hf_checkpoint_urls,
     _extract_hf_models,
     _extract_pyiqa_metrics,
     _extract_required_files,
     _extract_torch_hub,
     _extract_torchvision_models,
-    _get_module_source,
+    _get_model_analysis_source,
+    _hf_checkpoint_reference,
 )
 from .pipeline import ModuleRegistry, PipelineModule
 
@@ -170,9 +174,7 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
     metrics: List[MetricCatalogItem] = []
     for field in sample_fields:
         description = _metric_description(field, sample_fields, declared_info, quality_schema)
-        group = declared_groups.get(field) or quality_schema.get(field, {}).get(
-            "group", "other"
-        )
+        group = declared_groups.get(field) or quality_schema.get(field, {}).get("group", "other")
         category = _CATEGORY_DISPLAY.get(group, group.replace("_", " ").title())
         metrics.append(
             MetricCatalogItem(
@@ -207,33 +209,7 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
 
 
 def _detect_input_type(cls: type, source: str) -> str:
-    needs_reference = "reference_path" in source
-    needs_caption = bool(re.search(r"caption.*\.text|\.caption", source[:3000]))
-    video_only = bool(re.search(r"not\s+sample\.is_video", source))
-    audio_module = bool(
-        re.search(r"soundfile|librosa\.load|pesq|pystoi", source)
-    ) or cls.name.startswith("audio_")
-    batch_module = bool(
-        re.search(r"post_process.*all_samples|batch", source[:500])
-        and "def post_process" in source
-    )
-
-    declared_input_type = getattr(cls, "input_type", None)
-    if declared_input_type is not None:
-        input_type = str(declared_input_type)
-    elif batch_module:
-        input_type = "batch"
-    elif audio_module:
-        input_type = "audio"
-    elif video_only:
-        input_type = "vid"
-    else:
-        input_type = "img/vid"
-    if needs_reference:
-        input_type += " +ref"
-    if needs_caption:
-        input_type += " +cap"
-    return input_type
+    return cls.infer_input_type(source)
 
 
 def _module_details(cls: type, fallback: str) -> str:
@@ -245,9 +221,40 @@ def _module_details(cls: type, fallback: str) -> str:
 
 
 def _model_key(item: ModelCatalogItem) -> Tuple[str, str]:
+    checkpoint = _hf_checkpoint_reference(item.url)
+    if checkpoint is not None:
+        return "hf_checkpoint", _checkpoint_key(checkpoint)
+    # Provider documentation URLs identify the provider, not individual models.
+    if item.source in {"pyiqa", "torchvision", "clip", "torch_hub", "pip_package"}:
+        name = item.name
+        if item.source in {"pyiqa", "torchvision"}:
+            name = name.removeprefix(item.source + "/")
+        elif item.source == "clip":
+            name = name.removeprefix("CLIP ")
+        return item.source, name
     if item.url:
-        return "url", item.url
+        return "url", item.url.rstrip("/")
     return item.source, item.name.casefold()
+
+
+def _provider_url(source: str, name: str) -> str:
+    """Return a provider reference without inventing model-specific pages."""
+    if source == "pyiqa":
+        return "https://github.com/chaofengc/IQA-PyTorch"
+    if source == "torchvision":
+        return "https://docs.pytorch.org/vision/stable/models.html"
+    if source == "clip":
+        return (
+            "https://github.com/mlfoundations/open_clip"
+            if "open_clip:" in name
+            else "https://github.com/openai/CLIP"
+        )
+    if source == "torch_hub":
+        repository, _, revision = name.partition(":")
+        if re.fullmatch(r"[\w.-]+/[\w.-]+", repository):
+            url = "https://github.com/" + repository
+            return url + "/tree/" + quote(revision, safe="") if revision else url
+    return ""
 
 
 def _collect_models(
@@ -255,9 +262,13 @@ def _collect_models(
     metadata: Dict[str, Any],
     source: str,
 ) -> Tuple[ModelCatalogItem, ...]:
+    source = _get_model_analysis_source(cls) or source
     found: Dict[Tuple[str, str], ModelCatalogItem] = {}
 
     def add(item: ModelCatalogItem) -> None:
+        checkpoint = _hf_checkpoint_reference(item.url)
+        if checkpoint is not None and item.name == checkpoint[0]:
+            item = replace(item, name=checkpoint[2])
         key = _model_key(item)
         previous = found.get(key)
         if previous is None:
@@ -315,6 +326,8 @@ def _collect_models(
             ModelCatalogItem(
                 name=f"pyiqa/{metric}",
                 source="pyiqa",
+                task=_TASK_DB.get(metric, ""),
+                url=_provider_url("pyiqa", metric),
                 install="pip install pyiqa",
             )
         )
@@ -323,6 +336,7 @@ def _collect_models(
             ModelCatalogItem(
                 name=repository,
                 source="torch_hub",
+                url=_provider_url("torch_hub", repository),
                 install="pip install torch",
             )
         )
@@ -331,6 +345,7 @@ def _collect_models(
             ModelCatalogItem(
                 name=f"torchvision/{model_name}",
                 source="torchvision",
+                url=_provider_url("torchvision", model_name),
                 install="pip install torchvision",
             )
         )
@@ -339,6 +354,7 @@ def _collect_models(
             ModelCatalogItem(
                 name=f"CLIP {model_name}",
                 source="clip",
+                url=_provider_url("clip", model_name),
                 install="pip install open-clip-torch",
             )
         )
@@ -352,13 +368,15 @@ def _collect_models(
             )
         )
 
-    full_source = _get_module_source(cls)
-    for repository, path in _extract_hf_direct_urls(full_source):
+    for url in _extract_hf_checkpoint_urls(source):
+        checkpoint = _hf_checkpoint_reference(url)
+        if checkpoint is None:
+            continue
         add(
             ModelCatalogItem(
-                name=path,
+                name=checkpoint[2],
                 source="huggingface_file",
-                url=f"https://huggingface.co/{repository}/resolve/main/{path}",
+                url=url,
             )
         )
     for filename, url in _extract_required_files(cls).items():
@@ -370,7 +388,19 @@ def _collect_models(
             )
         )
 
-    return tuple(sorted(found.values(), key=lambda item: (item.source, item.name.casefold())))
+    return tuple(
+        sorted(
+            (
+                replace(
+                    item,
+                    task=item.task or f"Used by {cls.name}: {cls.description}",
+                    url=item.url or _provider_url(item.source, item.name),
+                )
+                for item in found.values()
+            ),
+            key=lambda item: (item.source, item.name.casefold()),
+        )
+    )
 
 
 def _build_module_item(cls: type, detailed: bool) -> ModuleCatalogItem:
@@ -382,9 +412,7 @@ def _build_module_item(cls: type, detailed: bool) -> ModuleCatalogItem:
         packages.update(str(name) for name in getattr(cls, "required_packages", []) or [])
     else:
         sample_fields = {field: "" for field in _detect_fields_written(source)}
-        dataset_fields = {
-            field: "" for field in _detect_dataset_fields_written(source)
-        }
+        dataset_fields = {field: "" for field in _detect_dataset_fields_written(source)}
         metadata = {
             "description": cls.description,
             "input_type": _detect_input_type(cls, source),
@@ -435,16 +463,12 @@ class MetricCatalog:
             name: tuple(sorted(providers, key=lambda pair: pair[0].name))
             for name, providers in sorted(metric_map.items())
         }
-        self._metric_by_normalized = {
-            _normalize_name(name): name for name in self.metrics
-        }
+        self._metric_by_normalized = {_normalize_name(name): name for name in self.metrics}
 
     def module(self, name: str) -> Optional[ModuleCatalogItem]:
         return self._module_by_normalized.get(_normalize_name(name))
 
-    def metric(
-        self, name: str
-    ) -> Tuple[Tuple[ModuleCatalogItem, MetricCatalogItem], ...]:
+    def metric(self, name: str) -> Tuple[Tuple[ModuleCatalogItem, MetricCatalogItem], ...]:
         canonical = self._metric_by_normalized.get(_normalize_name(name))
         return self.metrics.get(canonical, ()) if canonical else ()
 
@@ -535,8 +559,8 @@ def _render_module(
     if module.implementation_notes:
         summary.add_row("Readiness notes", module.implementation_notes)
     summary.add_row("Input", module.input_type)
-    summary.add_row("Speed", module.speed)
-    summary.add_row("GPU", "yes" if module.gpu else "no")
+    summary.add_row("Estimated speed", module.speed)
+    summary.add_row("GPU code detected", "yes" if module.gpu else "not detected")
     summary.add_row("Estimated VRAM", module.vram)
     if module.paper:
         summary.add_row("Paper", module.paper)
@@ -604,7 +628,7 @@ def _render_module(
         model_table.add_column("Purpose")
         model_table.add_column("URL / install", overflow="fold")
         for model in module.models:
-            location = model.url or model.install
+            location = "\n".join(value for value in (model.url, model.install) if value)
             model_table.add_row(
                 model.name,
                 model.source,
@@ -627,9 +651,11 @@ def _render_module(
     else:
         console.print("[dim]No module-specific configuration.[/dim]")
 
-    placeholder = "DATASET_PATH" if any(
-        metric.scope == "dataset" for metric in module.metrics
-    ) else "MEDIA_PATH"
+    placeholder = (
+        "DATASET_PATH"
+        if any(metric.scope == "dataset" for metric in module.metrics)
+        else "MEDIA_PATH"
+    )
     profile = {
         "name": f"{module.name}_evaluation",
         "modules": [module.name],

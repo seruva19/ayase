@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 20:06 · **321 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 23:35 · **326 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**321** models · **125** HuggingFace · **37** pyiqa · **9** sources
+**326** models · **125** HuggingFace · **37** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~805 GB
+**Estimated total download size (all models):** ~863 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (92)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (92)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
 
-- **Used by**: `id_sim`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `id_sim`, `vbench2`, `vebench`
 - **VRAM**: ~6 GB total evaluator peak · **Disk**: 5.65 GB
 - **Task**: Six VE-Bench evaluator checkpoints
 - **Notes**: Pinned revision 377ac94f1fadca1e35b7171c7860ccad6ae9fd1a; SHA-256-verified files under vebench/ckpts/
@@ -236,6 +236,14 @@
 - **Task**: Vision-language backbone used by HPSv3
 - **Source**: <a href="https://arxiv.org/abs/2409.12191" target="_blank">arXiv</a>
 
+### <a href="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct" target="_blank">`Qwen/Qwen2.5-7B-Instruct`</a> [↑](#categories)
+> text-generation · apache-2.0
+
+- **Used by**: `vbench2`
+- **Parameters**: 7.6B · **Downloads**: 5.7M
+- **Disk**: ~28.4 GB
+- **Source**: <a href="https://arxiv.org/abs/2309.00071" target="_blank">arXiv</a>
+
 ### <a href="https://huggingface.co/Qwen/Qwen2.5-Omni-3B" target="_blank">`Qwen/Qwen2.5-Omni-3B`</a> [↑](#categories)
 > any-to-any · other
 
@@ -326,11 +334,6 @@
 - **Used by**: `avgen_bench`
 - **Downloads**: 1.3M
 - **Task**: AVGen speech transcription
-
-### <a href="https://huggingface.co/THUDM/VisionReward-Image" target="_blank">`THUDM/VisionReward-Image`</a> [↑](#categories)
-> text-generation · other
-
-- **Used by**: `vision_reward`
 
 ### <a href="https://huggingface.co/THUDM/VisionReward-Video" target="_blank">`THUDM/VisionReward-Video`</a> [↑](#categories)
 > text-generation · other
@@ -448,14 +451,6 @@
 - **Parameters**: 1M · **Downloads**: 387
 - **Disk**: ~5 MB
 - **Task**: AnyAudio-Judge audio rubric scorer
-
-### <a href="https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf" target="_blank">`depth-anything/Depth-Anything-V2-Small-hf`</a> [↑](#categories)
-> depth-estimation · apache-2.0
-
-- **Used by**: `depth_anything`
-- **Parameters**: 25M · **Downloads**: 1.5M
-- **VRAM**: ~200 MB · **Disk**: ~100 MB
-- **Source**: <a href="https://arxiv.org/abs/2406.09414" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/facebook/VGGT-1B" target="_blank">`facebook/VGGT-1B`</a> [↑](#categories)
 > image-to-3d · cc-by-nc-4.0
@@ -603,6 +598,14 @@
 - **VRAM**: ~14 GB · **Disk**: ~14 GB
 - **Source**: <a href="https://arxiv.org/abs/2310.03744" target="_blank">arXiv</a>
 
+### <a href="https://huggingface.co/lmms-lab/LLaVA-Video-7B-Qwen2" target="_blank">`lmms-lab/LLaVA-Video-7B-Qwen2`</a> [↑](#categories)
+> video-text-to-text · apache-2.0
+
+- **Used by**: `vbench2`
+- **Parameters**: 8.0B · **Downloads**: 10K
+- **Disk**: ~29.9 GB
+- **Source**: <a href="https://arxiv.org/abs/2410.02713" target="_blank">arXiv</a>
+
 ### <a href="https://huggingface.co/m-a-p/MERT-v1-330M" target="_blank">`m-a-p/MERT-v1-330M`</a> [↑](#categories)
 > audio-classification · cc-by-nc-4.0
 
@@ -713,7 +716,7 @@
 
 ### <a href="https://huggingface.co/sarulab-speech/human-clap-wsce-mae" target="_blank">`sarulab-speech/human-clap-wsce-mae`</a> [↑](#categories)
 
-- **Used by**: `human_clap`, `ms_clap_score`
+- **Used by**: `human_clap`
 - **Parameters**: 154M · **Downloads**: 459
 - **Disk**: ~586 MB
 - **Task**: Human-CLAP audio-text encoder (official fine-tuned weights)
@@ -812,7 +815,7 @@
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- [`24-01-04T16-39-21.pt`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/synchformer/24-01-04T16-39-21.pt) — used by `audio_visual_sync`, `av_desync`, `av_sync`; From `AkaneTendo25/ayase-assets` repo
+- [`24-01-04T16-39-21.pt`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/synchformer/24-01-04T16-39-21.pt) — used by `av_desync`, `av_sync`; From `AkaneTendo25/ayase-assets` repo
 - [`CLIPIQA+_ViTL14_512-e66488f2.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/CLIPIQA+_ViTL14_512-e66488f2.pth) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
 - [`CONTRIQUE_checkpoint25.tar`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/CONTRIQUE_checkpoint25.tar) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
 - [`ViT-B-32.safetensors`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/ViT-B-32.safetensors) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
@@ -821,7 +824,7 @@
 - [`alex.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/alex.pth) — used by `i2v_similarity`; From `AkaneTendo25/ayase-assets` repo
 - [`brightrate_brightvq.pt`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/brightrate_brightvq.pt) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
 - [`convnext_tiny_1k_224_ema.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth) — used by `cover`, `dover`; ConvNeXt-Tiny aesthetic backbone; From `AkaneTendo25/ayase-assets` repo
-- [`dino_vitbase16_pretrain.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dreamsim/dino_vitbase16_pretrain.pth) — used by `dreamsim`, `dreamsim_metric`; From `AkaneTendo25/ayase-assets` repo
+- [`dino_vitbase16_pretrain.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dreamsim/dino_vitbase16_pretrain.pth) — used by `dreamsim`; From `AkaneTendo25/ayase-assets` repo
 - [`dinov2_vitb14_pretrain.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth) — used by `i2v_similarity`; From `AkaneTendo25/ayase-assets` repo
 - [`expression_following/face_landmarker.task`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task) — used by `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `face_motion_preservation`, `gaze_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`; MediaPipe face landmarks; Shared pinned Face Landmarker bundle; upstream Blendshape V2 model card is Apache-2.0 and outputs are not gaze angles
 - [`frames_modelparameters.mat`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/frames_modelparameters.mat) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
@@ -1383,17 +1386,17 @@ Model backends declared by modules that are not distributed through the sources 
 | `laion_aes` | LAION aesthetic scoring (CLIP-based) | MIT | Yes | `laion_aesthetic` |
 | `liqe` | Learned image quality evaluator (multi-task) | research | — | `liqe` |
 | `maclip` | Multi-attribute CLIP quality scoring | research | — | `maclip` |
-| `mad` | Most apparent distortion FR-IQA | research | — | `mad` |
+| `mad` | Most apparent distortion FR-IQA | research | — | `mad`, `mad_metric` |
 | `maniqa` | Multi-dimension attention NR-IQA | Apache-2.0 | Yes | `maniqa` |
 | `msswd` | Multi-scale sliced Wasserstein distance | research | — | `msswd` |
 | `musiq` | Multi-scale image quality transformer | Apache-2.0 (Google) | Yes | `musiq` |
 | `musiq-spaq` | MUSIQ pretrained on SPAQ — the THEval mouth-crop scorer | research | — | `mouth_quality` |
 | `nima` | Neural image assessment (aesthetic + technical) | Apache-2.0 (Google) | Yes | `nima` |
 | `niqe` | Natural image quality evaluator (statistics-based) | BSD-2-Clause (OpenCV) | Yes | `niqe` |
-| `nlpd` | Normalized Laplacian pyramid distance | research | — | `nlpd` |
+| `nlpd` | Normalized Laplacian pyramid distance | research | — | `nlpd`, `nlpd_metric` |
 | `nrqm` | No-reference quality metric | research | — | `nrqm` |
 | `paq2piq` | Patches-as-questions for image quality | research | — | `paq2piq` |
-| `pi` | Perceptual index (PIRM challenge) | research | — | `pi` |
+| `pi` | Perceptual index (PIRM challenge) | research | — | `pi`, `pi_metric` |
 | `pieapp` | Pairwise learned perceptual distance | research | — | `pieapp` |
 | `piqe` | Perception-based blind NR-IQA | BSD-2-Clause | Yes | `piqe` |
 | `qualiclip` | Quality-aware CLIP embeddings | research | — | `qualiclip` |
@@ -1402,13 +1405,18 @@ Model backends declared by modules that are not distributed through the sources 
 | `topiq_nr` | Transformer-based NR image quality | MIT (pyiqa) | Yes | `topiq` |
 | `topiq_nr-face` | TOPIQ face-specific quality | MIT (pyiqa) | Yes | `face_iqa` |
 | `tres` | Transformer relative quality estimation | research | — | `tres` |
-| `unique` | Unified NR-IQA with contrastive learning | research | — | `unique` |
+| `unique` | Unified NR-IQA with contrastive learning | research | — | `unique`, `unique_iqa` |
 | `wadiqam_fr` | Weighted average deep FR-IQA | research | — | `wadiqam_fr` |
 | `wadiqam_nr` | Weighted average deep NR-IQA | research | — | `wadiqam` |
 
 ## torchvision Models
 
 Bundled with `pip install torchvision`. Weights download on first use.
+
+### `torchvision/efficientnet_v2_s` [↑](#categories)
+> torchvision
+
+- **Used by**: `mdvqa`
 
 ### `torchvision/evaluator` [↑](#categories)
 > torchvision
@@ -1420,6 +1428,11 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 - **Used by**: `audiojudge`, `videoscience_judge`
 
+### `torchvision/hub` [↑](#categories)
+> torchvision
+
+- **Used by**: `rqvqa`, `simplevqa`
+
 ### `torchvision/idefics2` [↑](#categories)
 > torchvision
 
@@ -1429,6 +1442,11 @@ Bundled with `pip install torchvision`. Weights download on first use.
 > torchvision
 
 - **Used by**: `imagebind_score`
+
+### `torchvision/layers` [↑](#categories)
+> torchvision
+
+- **Used by**: `vfips`
 
 ### `torchvision/llama` [↑](#categories)
 > torchvision
@@ -1459,12 +1477,17 @@ Bundled with `pip install torchvision`. Weights download on first use.
 ### `torchvision/vgg16` [↑](#categories)
 > torchvision
 
-- **Used by**: `generative_distribution`
+- **Used by**: `generative_distribution`, `generative_distribution_metrics`
 
 ### `torchvision/vggt` [↑](#categories)
 > torchvision
 
 - **Used by**: `camera_trajectory`
+
+### `torchvision/video` [↑](#categories)
+> torchvision · BSD-3-Clause
+
+- **Used by**: `mdvqa`
 
 ### `torchvision/zip` [↑](#categories)
 > torchvision
@@ -1481,12 +1504,16 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 - **Used by**: `semantic_alignment`
 
+### `CLIP open_clip:ViT-B-32` [↑](#categories)
+
+- **Used by**: `rqvqa`
+
 ## torch.hub
 
 ### `facebookresearch/dinov2` [↑](#categories)
 > torch.hub · Apache-2.0
 
-- **Used by**: `dino_face_identity`, `opens2v`, `spectral_complexity`, `world_consistency`
+- **Used by**: `dino_face_identity`, `opens2v`, `spectral`, `spectral_complexity`, `world_consistency`
 
 ### `facebookresearch/dinov2:dinov2_vitl14` [↑](#categories)
 > torch.hub
@@ -1584,7 +1611,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `dreamsim` [↑](#categories)
 > DreamSim CLIP+DINO similarity
 
-- **Used by**: `dreamsim`
+- **Used by**: `dreamsim`, `dreamsim_metric`
 - **Install**: `pip install dreamsim`
 
 ### `erqa` [↑](#categories)
@@ -1809,7 +1836,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `ultralytics` [↑](#categories)
 > YOLOv8 object detection
 
-- **Used by**: `body_motion_kinematics`, `clip_prompt_check`, `object_detection`, `object_integrity`, `object_permanence`, `opens2v`, `rtmpose_fidelity`, `vbench2`
+- **Used by**: `body_motion_kinematics`, `clip_prompt_check`, `object_detection`, `object_integrity`, `object_permanence`, `opens2v`, `pose_heat_ssim`, `rtmpose_fidelity`, `vbench2`
 - **Install**: `pip install ultralytics`
 
 ### `vebench==1.0.0` [↑](#categories)

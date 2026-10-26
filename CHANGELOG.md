@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Build catalog entries from executable loader calls and metric assignments, excluding examples, unrelated paths and sibling module definitions; preserve inherited implementations and input dependencies.
+- Preserve checkpoint filenames and pinned revisions in model links, and keep distinct backend models separate when they share a documentation URL.
+- Metric help includes model purpose descriptions and provider links; speed and detected GPU code are labelled as static estimates rather than hardware requirements.
 - Preserve existing expert-provided backend execution separately from standard-install readiness; retain Transformers 4.45 compatibility for LLaVA model dispatch.
 - Audit readiness for every packaged module with explicit reasons and source-review confidence; distinguish unavailable outputs of partial modules and exclude them from delivered metric counts.
 - Correct field provenance where clipping, substituted representations or evaluation protocols differ from the cited method; expose readiness and review evidence in metric help and the generated reference.

@@ -1,3 +1,4 @@
+import ast
 import hashlib
 import importlib
 import importlib.util
@@ -8,13 +9,29 @@ import os
 import pkgutil
 import sys
 import tempfile
+import textwrap
 from time import perf_counter
 import urllib.request
 import warnings
 from abc import ABC, abstractmethod
-from copy import deepcopy
+from copy import copy, deepcopy
+from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, Iterable, List, Optional, Set, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from .models import (
     Sample,
@@ -34,6 +51,180 @@ from .runtime import (
 )
 
 logger = logging.getLogger(__name__)
+
+_METADATA_MODULE_CACHE: Dict[str, Tuple[int, int, str, ast.Module]] = {}
+_METADATA_FUNCTION_CACHE: Dict[str, Tuple[int, int, Dict[int, str]]] = {}
+
+
+@lru_cache(maxsize=2048)
+def _metadata_tree(source: str) -> ast.Module:
+    """Parse inspected source without treating comments or prose as executable evidence."""
+    try:
+        return ast.parse(textwrap.dedent(source))
+    except (SyntaxError, ValueError):
+        return ast.Module(body=[], type_ignores=[])
+
+
+def _metadata_module_source(module: Any) -> Tuple[str, ast.Module]:
+    """Share parsed literal globals across classes defined in the same source file."""
+    path = Path(inspect.getfile(module))
+    stat = path.stat()
+    key = str(path)
+    cached = _METADATA_MODULE_CACHE.get(key)
+    if cached is not None and cached[:2] == (stat.st_mtime_ns, stat.st_size):
+        return cached[2], cached[3]
+    source = inspect.getsource(module)
+    tree = _metadata_tree(source)
+    _METADATA_MODULE_CACHE[key] = (stat.st_mtime_ns, stat.st_size, source, tree)
+    return source, tree
+
+
+def _metadata_function_source(function: Callable[..., Any]) -> str:
+    """Slice cached module lines instead of repeatedly tokenizing every method."""
+    module = inspect.getmodule(function)
+    if module is None:
+        return textwrap.dedent(inspect.getsource(function))
+    source, tree = _metadata_module_source(module)
+    path = Path(inspect.getfile(module))
+    stat = path.stat()
+    cached = _METADATA_FUNCTION_CACHE.get(str(path))
+    if cached is None or cached[:2] != (stat.st_mtime_ns, stat.st_size):
+        lines = source.splitlines(keepends=True)
+        functions = {}
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                start = min([node.lineno] + [decorator.lineno for decorator in node.decorator_list])
+                functions[start] = textwrap.dedent("".join(lines[start - 1 : node.end_lineno]))
+        cached = (stat.st_mtime_ns, stat.st_size, functions)
+        _METADATA_FUNCTION_CACHE[str(path)] = cached
+    code = getattr(function, "__code__", None)
+    if code is not None and code.co_firstlineno in cached[2]:
+        return cached[2][code.co_firstlineno]
+    return textwrap.dedent(inspect.getsource(function))
+
+
+def _metadata_class_tree(cls: type) -> ast.Module:
+    """Find top-level/nested classes in the already parsed defining module."""
+    module = inspect.getmodule(cls)
+    if module is not None and "<locals>" not in cls.__qualname__:
+        _, tree = _metadata_module_source(module)
+        body = tree.body
+        declaration = None
+        for name in cls.__qualname__.split("."):
+            declaration = next(
+                (node for node in body if isinstance(node, ast.ClassDef) and node.name == name),
+                None,
+            )
+            if declaration is None:
+                break
+            body = declaration.body
+        if declaration is not None:
+            return ast.Module(body=[copy(declaration)], type_ignores=[])
+    tree = copy(_metadata_tree(inspect.getsource(cls)))
+    tree.body = [copy(node) for node in tree.body]
+    return tree
+
+
+@lru_cache(maxsize=1024)
+def _metric_source_fields_cached(
+    source: str,
+) -> Tuple[FrozenSet[str], FrozenSet[str], FrozenSet[str]]:
+    """Return statically observed metric reads, writes, and dataset writes.
+
+    Literal field declarations remain separate from observed writes. Local aliases
+    are tracked within each function, including literal getattr/setattr calls.
+    This is source evidence, not proof that a branch runs or produces a value.
+    """
+    reads: Set[str] = set()
+    writes: Set[str] = set()
+    dataset_writes: Set[str] = set()
+
+    class Visitor(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self.aliases: Set[str] = set()
+
+        def is_metrics(self, node: ast.AST) -> bool:
+            return (isinstance(node, ast.Attribute) and node.attr == "quality_metrics") or (
+                isinstance(node, ast.Name) and node.id in self.aliases
+            )
+
+        def visit_FunctionDef(self, node: Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> None:
+            previous = self.aliases
+            self.aliases = set()
+            for statement in node.body:
+                self.visit(statement)
+            self.aliases = previous
+
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_Assign(self, node: ast.Assign) -> None:
+            self.visit(node.value)
+            is_alias = self.is_metrics(node.value)
+            for target in node.targets:
+                self.visit(target)
+                if isinstance(target, ast.Name):
+                    if is_alias:
+                        self.aliases.add(target.id)
+                    else:
+                        self.aliases.discard(target.id)
+
+        def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+            if node.value is not None:
+                self.visit_Assign(ast.Assign(targets=[node.target], value=node.value))
+
+        def visit_If(self, node: ast.If) -> None:
+            self.visit(node.test)
+            initial = set(self.aliases)
+            for statement in node.body:
+                self.visit(statement)
+            body_aliases = set(self.aliases)
+            self.aliases = initial
+            for statement in node.orelse:
+                self.visit(statement)
+            self.aliases |= body_aliases
+
+        def visit_Attribute(self, node: ast.Attribute) -> None:
+            if self.is_metrics(node.value):
+                if isinstance(node.ctx, ast.Load):
+                    reads.add(node.attr)
+                elif isinstance(node.ctx, ast.Store):
+                    writes.add(node.attr)
+            self.generic_visit(node)
+
+        def visit_AugAssign(self, node: ast.AugAssign) -> None:
+            if isinstance(node.target, ast.Attribute) and self.is_metrics(node.target.value):
+                reads.add(node.target.attr)
+            self.generic_visit(node)
+
+        def visit_Call(self, node: ast.Call) -> None:
+            if (
+                isinstance(node.func, ast.Name)
+                and node.func.id in {"getattr", "setattr"}
+                and len(node.args) >= 2
+                and self.is_metrics(node.args[0])
+                and isinstance(node.args[1], ast.Constant)
+                and isinstance(node.args[1].value, str)
+            ):
+                target = writes if node.func.id == "setattr" else reads
+                target.add(node.args[1].value)
+            if (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add_dataset_metric"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+            ):
+                dataset_writes.add(node.args[0].value)
+            self.generic_visit(node)
+
+    Visitor().visit(_metadata_tree(source))
+    return frozenset(reads), frozenset(writes), frozenset(dataset_writes)
+
+
+def _metric_source_fields(source: str) -> Tuple[Set[str], Set[str], Set[str]]:
+    """Return isolated copies of cached source evidence for documentation callers."""
+    reads, writes, dataset_writes = _metric_source_fields_cached(source)
+    return set(reads), set(writes), set(dataset_writes)
 
 
 class PipelineModule(ABC):
@@ -118,6 +309,11 @@ class PipelineModule(ABC):
     _metadata_field_descriptions: ClassVar[tuple[Dict[str, str], Dict[str, str]]]
     _metadata_cache: ClassVar[Dict[str, Any]]
     _metadata_cache_key: ClassVar[tuple[Any, ...]]
+    _metadata_source_cache: ClassVar[str]
+    _metadata_source_cache_key: ClassVar[tuple[Any, ...]]
+    _metadata_source_dependencies: ClassVar[List[Tuple[Dict[str, Any], str, Any]]]
+    _metadata_input_cache: ClassVar[str]
+    _metadata_input_cache_key: ClassVar[tuple[Any, ...]]
     _resolved_field_provenance: ClassVar[Dict[str, str]]
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -307,6 +503,262 @@ class PipelineModule(ABC):
         return None
 
     @classmethod
+    def _get_metadata_source(cls) -> str:
+        """Inspect the class and its effective inherited methods, never sibling classes."""
+        seen: Set[str] = set()
+        effective_methods: Dict[str, Callable[..., Any]] = {}
+        method_identity = []
+        for base in cls.__mro__:
+            if base is PipelineModule:
+                break
+            for name, member in vars(base).items():
+                identity_member = (
+                    member.__func__ if isinstance(member, (staticmethod, classmethod)) else member
+                )
+                if inspect.isfunction(identity_member):
+                    method_identity.append((base, name, identity_member))
+                if name in seen:
+                    continue
+                seen.add(name)
+                if isinstance(member, (staticmethod, classmethod)):
+                    member = member.__func__
+                if inspect.isfunction(member):
+                    effective_methods[name] = member
+        cache_key = (cls.__mro__, cls.__module__, cls.__qualname__, tuple(method_identity))
+        if cls.__dict__.get("_metadata_source_cache_key") == cache_key and all(
+            scope.get(name) is value
+            for scope, name, value in cls.__dict__.get("_metadata_source_dependencies", [])
+        ):
+            return str(cls.__dict__["_metadata_source_cache"])
+        sources: List[str] = []
+        dependencies: List[Tuple[Dict[str, Any], str, Any]] = []
+        try:
+            class_tree = _metadata_class_tree(cls)
+            for declaration in class_tree.body:
+                if isinstance(declaration, ast.ClassDef):
+                    declaration.body = [
+                        member
+                        for member in declaration.body
+                        if not isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    ] or [ast.Pass()]
+            # Methods are appended from their effective function objects below,
+            # so replacing a method cannot leave its old class-body writes behind.
+            sources.append(ast.unparse(class_tree))
+        except (TypeError, OSError):
+            pass
+        lifecycle_methods = {
+            "__init__",
+            "process",
+            "process_batch",
+            "post_process",
+            "setup",
+            "teardown",
+            "on_mount",
+            "on_execute",
+            "on_dispose",
+        }
+        functions = [
+            function
+            for name, function in effective_methods.items()
+            if name in cls.__dict__ or name in lifecycle_methods
+        ]
+        module_sources: Dict[str, Tuple[str, ast.Module, Set[str]]] = {}
+        cls_module = inspect.getmodule(cls)
+        if cls_module is not None and sources:
+            try:
+                module_sources[cls_module.__name__] = (
+                    *_metadata_module_source(cls_module),
+                    {
+                        node.id
+                        for node in ast.walk(_metadata_tree(sources[0]))
+                        if isinstance(node, ast.Name)
+                    },
+                )
+            except (TypeError, OSError):
+                pass
+        # Include local free-function helpers called by the effective methods.
+        # Imported libraries and unrelated module-level functions are not evidence.
+        visited: Set[Callable[..., Any]] = set()
+        while functions:
+            function = functions.pop(0)
+            if function in visited:
+                continue
+            visited.add(function)
+            try:
+                source = _metadata_function_source(function)
+            except (TypeError, OSError):
+                continue
+            if source not in sources:
+                sources.append(source)
+            function_module = inspect.getmodule(function)
+            if function_module is not None:
+                try:
+                    if function_module.__name__ not in module_sources:
+                        module_sources[function_module.__name__] = (
+                            *_metadata_module_source(function_module),
+                            set(),
+                        )
+                    module_sources[function_module.__name__][2].update(
+                        node.id
+                        for node in ast.walk(_metadata_tree(source))
+                        if isinstance(node, ast.Name)
+                    )
+                except (TypeError, OSError):
+                    pass
+            for node in ast.walk(_metadata_tree(source)):
+                if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                    helper = function.__globals__.get(node.func.id)
+                    dependencies.append((function.__globals__, node.func.id, helper))
+                    if inspect.isfunction(helper) and (
+                        helper.__module__ == function.__module__
+                        or helper.__module__.startswith("ayase.modules.")
+                    ):
+                        functions.append(helper)
+                elif (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id in {"self", "cls"}
+                    and node.func.attr in effective_methods
+                ):
+                    functions.append(effective_methods[node.func.attr])
+                elif (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and isinstance(node.func.value, ast.Call)
+                    and isinstance(node.func.value.func, ast.Name)
+                    and node.func.value.func.id == "super"
+                ):
+                    after_owner = False
+                    for base in cls.__mro__:
+                        if base is PipelineModule:
+                            break
+                        owner_member = vars(base).get(function.__name__)
+                        if isinstance(owner_member, (staticmethod, classmethod)):
+                            owner_member = owner_member.__func__
+                        if not after_owner:
+                            after_owner = owner_member is function
+                            continue
+                        parent_method = vars(base).get(node.func.attr)
+                        if isinstance(parent_method, (staticmethod, classmethod)):
+                            parent_method = parent_method.__func__
+                        if inspect.isfunction(parent_method):
+                            functions.append(parent_method)
+                            break
+        # Referenced literal globals (MODEL_ID, config maps) retain loader defaults
+        # without bringing sibling classes or unrelated module code into analysis.
+        for module_source, module_tree, needed in module_sources.values():
+            assignments = []
+            for node in module_tree.body:
+                if not isinstance(node, (ast.Assign, ast.AnnAssign)) or node.value is None:
+                    continue
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                names = {target.id for target in targets if isinstance(target, ast.Name)}
+                if names and not any(isinstance(child, ast.Call) for child in ast.walk(node.value)):
+                    assignments.append((node, names))
+            included: Set[int] = set()
+            while True:
+                added = False
+                for node, names in assignments:
+                    if id(node) in included or not names & needed:
+                        continue
+                    literal_source = ast.get_source_segment(module_source, node)
+                    if literal_source:
+                        sources.append(literal_source)
+                    if node.value is not None:
+                        needed.update(
+                            child.id
+                            for child in ast.walk(node.value)
+                            if isinstance(child, ast.Name)
+                        )
+                    included.add(id(node))
+                    added = True
+                if not added:
+                    break
+        source = "\n".join(sources)
+        cls._metadata_source_cache_key = cache_key
+        cls._metadata_source_dependencies = dependencies
+        cls._metadata_source_cache = source
+        return source
+
+    @classmethod
+    def infer_input_type(cls, source: Optional[str] = None) -> str:
+        """Return declared media types with source-observed reference/caption hints.
+
+        Inferred suffixes indicate consumed inputs, which may be optional at runtime.
+        Explicit media types override media inference; existing suffixes are preserved.
+        """
+        source = source if source is not None else cls._get_metadata_source()
+        cache_key = (source, cls.input_type, cls.name, repr(cls.metric_groups))
+        if cls.__dict__.get("_metadata_input_cache_key") == cache_key:
+            return str(cls.__dict__["_metadata_input_cache"])
+        tree = _metadata_tree(source)
+        attributes: Set[str] = set()
+        imports: Set[str] = set()
+        video_only = False
+        batch_module = False
+        reference_inputs = {"reference_path", "reference_paths", "reference_dir"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Attribute):
+                attributes.add(node.attr)
+            elif (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "getattr"
+                and len(node.args) > 1
+                and isinstance(node.args[1], ast.Constant)
+                and isinstance(node.args[1].value, str)
+            ):
+                attributes.add(node.args[1].value)
+            elif (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "get"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+                and isinstance(node.args[0].value, str)
+                and node.args[0].value in reference_inputs
+            ):
+                attributes.add(node.args[0].value)
+            elif isinstance(node, ast.Import):
+                imports.update(alias.name.split(".")[0] for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imports.add(node.module.split(".")[0])
+            elif isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+                video_only |= (
+                    isinstance(node.operand, ast.Attribute) and node.operand.attr == "is_video"
+                )
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                batch_module |= node.name == "post_process" and any(
+                    isinstance(child, ast.Call)
+                    and isinstance(child.func, ast.Attribute)
+                    and child.func.attr == "add_dataset_metric"
+                    for child in ast.walk(node)
+                )
+        batch_module |= any(base.__name__ == "BatchMetricModule" for base in cls.__mro__)
+        if cls.input_type is not None:
+            input_type = cls.input_type
+        elif batch_module:
+            input_type = "batch"
+        elif video_only:
+            input_type = "vid"
+        elif (
+            imports & {"soundfile", "librosa", "pesq", "pystoi"}
+            or cls.name.startswith("audio_")
+            or set(cls.metric_groups.values()) == {"audio"}
+        ):
+            input_type = "audio"
+        else:
+            input_type = "img/vid"
+        if reference_inputs & attributes and "+ref" not in input_type:
+            input_type += " +ref"
+        if "caption" in attributes and "+cap" not in input_type:
+            input_type += " +cap"
+        cls._metadata_input_cache_key = cache_key
+        cls._metadata_input_cache = input_type
+        return input_type
+
+    @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
         """Introspect module source to extract metadata without instantiation.
 
@@ -317,8 +769,10 @@ class PipelineModule(ABC):
         import re as _re
         from .models import QualityMetrics, DatasetStats
 
+        source = cls._get_metadata_source()
         cached_metadata = cls.__dict__.get("_metadata_cache")
         cache_key = (
+            source,
             cls.name,
             cls.description,
             repr(cls.default_config),
@@ -368,95 +822,17 @@ class PipelineModule(ABC):
                 (field_descs, dataset_field_descs)
             )
 
-        # Source of the entire module file (not just the class)
-        try:
-            module_file = inspect.getfile(cls)
-            with open(module_file, "r", encoding="utf-8", errors="replace") as _f:
-                src = _f.read()
-        except (TypeError, OSError):
-            try:
-                src = inspect.getsource(cls)
-            except (TypeError, OSError):
-                src = ""
-
-        # Output declarations belong to the class being documented.  Scanning
-        # the whole module here leaks fields from sibling module classes that
-        # happen to share the same file.  Sources from the effective processing
-        # methods preserve inherited implementations without pulling in
-        # overridden parent behavior; resolved metric-field attributes and
-        # ``metric_info`` preserve dynamic setters.
-        try:
-            class_src = inspect.getsource(cls)
-        except (TypeError, OSError):
-            class_src = src
-        output_sources = [class_src]
-        for method_name in ("process", "process_batch", "post_process"):
-            try:
-                method_src = inspect.getsource(getattr(cls, method_name))
-            except (AttributeError, TypeError, OSError):
-                continue
-            if method_src not in output_sources:
-                output_sources.append(method_src)
-        output_src = "\n".join(output_sources)
-
-        # Input type: infer from process() checks
-        needs_ref = "reference_path" in src
-        needs_cap = bool(_re.search(r"caption.*\.text|\.caption", src[:3000]))
-        video_only = bool(_re.search(r"not\s+sample\.is_video", src))
-        audio_module = bool(
-            _re.search(r"soundfile|librosa\.load|pesq|pystoi", src)
-        ) or cls.name.startswith("audio_")
-        batch_module = bool(
-            _re.search(r"post_process.*all_samples|batch", src[:500]) and "def post_process" in src
-        )
-
-        if cls.input_type is not None:
-            input_type = cls.input_type
-        elif batch_module:
-            input_type = "batch"
-        elif audio_module:
-            input_type = "audio"
-        elif video_only:
-            input_type = "vid"
-        else:
-            input_type = "img/vid"
-
-        if needs_ref:
-            input_type += " +ref"
-        if needs_cap:
-            input_type += " +cap"
-
-        # Output fields: find quality_metrics.FIELD = ... assignments
-        outputs: Dict[str, str] = {}
-        # Pattern 1: quality_metrics.FIELD =
-        for m in _re.finditer(r"quality_metrics\.(\w+)\s*=", output_src):
-            field = m.group(1)
-            if field not in outputs and field in field_descs:
-                outputs[field] = field_descs[field]
-        # Pattern 2: metric_field = "FIELD" / metric_field_name = "FIELD"
-        # (base class or lightweight subclass auto-assignment)
-        for m in _re.finditer(r'metric_field(?:_name)?\s*=\s*["\'](\w+)["\']', class_src):
-            field = m.group(1)
-            if field not in outputs and field in field_descs:
-                outputs[field] = field_descs[field]
+        input_type = cls.infer_input_type(source)
+        _, written_fields, written_dataset_fields = _metric_source_fields(source)
+        outputs: Dict[str, str] = {
+            field: field_descs[field] for field in sorted(written_fields) if field in field_descs
+        }
+        # Resolved attributes preserve base-class dynamic setters. Merely mentioning
+        # a field in a comment, comparison, or string is not an observed write.
         for attr in ("metric_field", "metric_field_name"):
             field = getattr(cls, attr, None)
             if isinstance(field, str) and field in field_descs and field not in outputs:
                 outputs[field] = field_descs[field]
-        # Pattern 3: local aliases explicitly bound to ``quality_metrics``.
-        aliases = set(_re.findall(r"\b(\w+)\s*=\s*(?:\w+\.)?quality_metrics\b", output_src))
-        for alias in aliases:
-            for m in _re.finditer(rf"\b{_re.escape(alias)}\.(\w+)\s*=", output_src):
-                field = m.group(1)
-                if field not in outputs and field in field_descs:
-                    outputs[field] = field_descs[field]
-            for m in _re.finditer(
-                rf"setattr\(\s*{_re.escape(alias)}\s*,\s*[\"'](\w+)[\"']\s*,",
-                output_src,
-            ):
-                field = m.group(1)
-                if field not in outputs and field in field_descs:
-                    outputs[field] = field_descs[field]
         # Explicit declarations cover dynamic/local aliases that the source
         # scanner cannot safely infer.  Only accept actual QualityMetrics
         # fields so dataset-level declarations remain separate below.
@@ -464,11 +840,11 @@ class PipelineModule(ABC):
             if field in field_descs:
                 outputs[field] = description or outputs.get(field) or field_descs[field]
 
-        dataset_outputs: Dict[str, str] = {}
-        for m in _re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', output_src):
-            field = m.group(1)
-            if field not in dataset_outputs and field in dataset_field_descs:
-                dataset_outputs[field] = dataset_field_descs[field]
+        dataset_outputs: Dict[str, str] = {
+            field: dataset_field_descs[field]
+            for field in sorted(written_dataset_fields)
+            if field in dataset_field_descs
+        }
         for field, description in cls.metric_info.items():
             if field in dataset_field_descs:
                 dataset_outputs[field] = (

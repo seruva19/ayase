@@ -451,15 +451,62 @@ def _fetch_hf_info_batch(model_ids: List[str]) -> Dict[str, dict]:
     return result
 
 
-def _get_source(cls) -> str:
+def _get_model_analysis_source(cls) -> str:
+    """Keep selected metadata methods in their class scope, with referenced globals.
+
+    Metadata field analysis flattens methods, whereas model default resolution
+    needs Python's distinction between class attributes and module variables.
+    The metadata helper supplies only effective/reachable methods and referenced
+    module constants, so sibling classes and their checkpoint URLs stay excluded.
+    """
+    metadata_source = getattr(cls, "_get_metadata_source", None)
+    if callable(metadata_source):
+        try:
+            tree = ast.parse(metadata_source())
+            declaration = next(
+                node
+                for node in tree.body
+                if isinstance(node, ast.ClassDef) and node.name == cls.__name__
+            )
+            method_trees = set()
+            for base in cls.__mro__:
+                if base.__name__ == "PipelineModule":
+                    break
+                for member in vars(base).values():
+                    if isinstance(member, (staticmethod, classmethod)):
+                        member = member.__func__
+                    if not inspect.isfunction(member):
+                        continue
+                    try:
+                        method = ast.parse(textwrap.dedent(inspect.getsource(member))).body[0]
+                    except (TypeError, OSError, SyntaxError):
+                        continue
+                    method_trees.add(ast.dump(method))
+            selected_methods = [
+                node
+                for node in tree.body
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and ast.dump(node) in method_trees
+            ]
+            declaration.body.extend(selected_methods)
+            tree.body = [node for node in tree.body if node not in selected_methods]
+            return ast.unparse(tree)
+        except (TypeError, OSError, SyntaxError, StopIteration):
+            pass
     try:
         return inspect.getsource(cls)
     except (TypeError, OSError):
         return ""
 
 
+def _get_source(cls) -> str:
+    return _get_model_analysis_source(cls)
+
+
 def _get_module_source(cls) -> str:
-    """Get full module-level source (includes module-level constants/dicts)."""
+    """Get relevant model source; retain full-file fallback for non-module fixtures."""
+    if callable(getattr(cls, "_get_metadata_source", None)):
+        return _get_model_analysis_source(cls)
     try:
         mod = inspect.getmodule(cls)
         if mod is not None:
@@ -499,7 +546,7 @@ _NON_HF_REPO_SUFFIXES = {
 
 
 def _is_likely_hf_model_id(candidate: str) -> bool:
-    """Return True for real HF repo IDs, False for MIME types/local asset paths."""
+    """Check repo-ID syntax; source context still determines whether it is a model."""
     if (
         not candidate
         or "/" not in candidate
@@ -510,9 +557,9 @@ def _is_likely_hf_model_id(candidate: str) -> bool:
         return False
 
     owner, repo = candidate.split("/", 1)
-    # Real HF org/repo names are at least two chars each; single-char segments
-    # are false positives from prose like "n/a" or "either/or".
-    if len(owner) < 2 or len(repo) < 2:
+    if not all(re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", part) for part in (owner, repo)):
+        return False
+    if any(part.endswith((".", "-")) or ".." in part or "--" in part for part in (owner, repo)):
         return False
     if owner.lower() in _NON_HF_ID_OWNERS:
         return False
@@ -522,50 +569,209 @@ def _is_likely_hf_model_id(candidate: str) -> bool:
 
 
 def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
-    """Extract HuggingFace model IDs from from_pretrained() calls and config defaults."""
-    models = set()
-    # Direct from_pretrained calls with string literals
-    for m in re.finditer(r'from_pretrained\s*\(\s*["\']([a-zA-Z0-9_/-]+)["\']', source):
-        candidate = m.group(1)
-        if _is_likely_hf_model_id(candidate):
-            models.add(candidate)
-    # Variable-based: model_name = "org/model" followed by from_pretrained(model_name)
-    for m in re.finditer(r'model_name\s*=\s*["\']([a-zA-Z0-9_/-]+)["\']', source):
-        candidate = m.group(1)
-        if _is_likely_hf_model_id(candidate) and "from_pretrained" in source:
-            models.add(candidate)
-    # Quoted org/model strings near from_pretrained (catches indirect references)
-    for m in re.finditer(r'["\']([a-zA-Z0-9_-]+/[a-zA-Z0-9._-]+)["\']', source):
-        candidate = m.group(1)
-        if (
-            _is_likely_hf_model_id(candidate)
-            and ("from_pretrained" in source or "AutoModel" in source)
-            and not any(
-                x in candidate
-                for x in (
-                    "ayase-models",
-                    "facebookresearch/",
-                    "intel-isl/",
-                    "resolve/main",
-                    "subfolder",
-                    "tarepan/",
+    """Trace literal defaults actually passed to HF loaders, without executing source.
+
+    Comments, prose, unused config entries and unrelated local paths are not model
+    evidence. Resolve the project's path/snapshot wrappers and simple aliases;
+    dynamic loaders still use explicit ``models`` declarations.
+    """
+    try:
+        tree = ast.parse(textwrap.dedent(source))
+    except SyntaxError:
+        return []
+
+    def symbol(node):
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            parent = symbol(node.value)
+            return f"{parent}.{node.attr}" if parent else None
+        return None
+
+    # Keep local variables in separate function scopes. Instance attributes are
+    # shared across methods of their class, as in __init__ -> setup.
+    scopes = {}
+    parents = {tree: None}
+    bindings = defaultdict(lambda: defaultdict(list))
+
+    def binding_scope(scope, key):
+        if key and key.startswith("self."):
+            while scope is not None and not isinstance(scope, ast.ClassDef):
+                scope = parents[scope]
+            return scope or tree
+        return scope
+
+    def collect(node, scope):
+        scopes[node] = scope
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            parents[node] = scope
+            scope = node
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                for arg in node.args.posonlyargs + node.args.args + node.args.kwonlyargs:
+                    bindings[scope][arg.arg]  # Parameters shadow outer variables.
+        if isinstance(node, (ast.Assign, ast.AnnAssign)) and node.value is not None:
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                key = symbol(target)
+                if key:
+                    bindings[binding_scope(scope, key)][key].append(node.value)
+        for child in ast.iter_child_nodes(node):
+            collect(child, scope)
+
+    collect(tree, tree)
+
+    # Snapshot local reaching assignments at each expression. Straight-line
+    # reassignment replaces earlier evidence; alternate branches retain both
+    # possible values. Module globals are resolved after module initialization.
+    states = {}
+    final_states = {}
+
+    def merge_states(*branches):
+        merged = defaultdict(list)
+        for branch in branches:
+            for key, assigned in branch.items():
+                merged[key].extend(value for value in assigned if value not in merged[key])
+        return dict(merged)
+
+    def flow_block(body, state, scope, captures=None):
+        captures = captures or {}
+        state = dict(state)
+        for statement in body:
+            snapshot = {**captures, scope: dict(state)}
+            for child in ast.walk(statement):
+                states[child] = snapshot
+            if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                arguments = (
+                    statement.args.posonlyargs + statement.args.args + statement.args.kwonlyargs
                 )
-            )
-        ):
-            models.add(candidate)
-    # Model names from default_config
-    if default_config:
-        for key in (
-            "model_name",
-            "vlm_model",
-            "vlm_model_name",
-            "sdxl_model",
-            "vqa_model",
-            "xclip_model_name",
-        ):
-            val = default_config.get(key, "")
-            if isinstance(val, str) and _is_likely_hf_model_id(val):
-                models.add(val)
+                function_state = {arg.arg: [] for arg in arguments}
+                flow_block(statement.body, function_state, statement, snapshot)
+            elif isinstance(statement, ast.ClassDef):
+                flow_block(statement.body, {}, statement, captures)
+            elif isinstance(statement, (ast.Assign, ast.AnnAssign)):
+                targets = (
+                    statement.targets if isinstance(statement, ast.Assign) else [statement.target]
+                )
+                for target in targets:
+                    if isinstance(target, ast.Name) and statement.value is not None:
+                        state[target.id] = [statement.value]
+            elif isinstance(statement, ast.If):
+                state = merge_states(
+                    flow_block(statement.body, state, scope, captures),
+                    flow_block(statement.orelse, state, scope, captures),
+                )
+            elif isinstance(statement, (ast.For, ast.AsyncFor, ast.While)):
+                state = merge_states(state, flow_block(statement.body, state, scope, captures))
+                state = flow_block(statement.orelse, state, scope, captures)
+            elif isinstance(statement, (ast.With, ast.AsyncWith)):
+                state = flow_block(statement.body, state, scope, captures)
+            elif isinstance(statement, ast.Try):
+                success = flow_block(statement.body, state, scope, captures)
+                success = flow_block(statement.orelse, success, scope, captures)
+                alternatives = [
+                    flow_block(handler.body, state, scope, captures)
+                    for handler in statement.handlers
+                ]
+                state = merge_states(success, *alternatives)
+                state = flow_block(statement.finalbody, state, scope, captures)
+        final_states[scope] = state
+        return state
+
+    flow_block(tree.body, {}, tree)
+
+    def values(node, seen=frozenset()):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return {node.value}
+        key = symbol(node)
+        if key:
+            scope = binding_scope(scopes[node], key)
+            instance_attribute = key.startswith("self.")
+            while scope is not None:
+                # Python methods close over functions/modules, never the class
+                # namespace. Class defaults require an explicit self.attribute.
+                if (
+                    isinstance(scope, ast.ClassDef)
+                    and not instance_attribute
+                    and scopes[node] is not scope
+                ):
+                    scope = parents[scope]
+                    continue
+                bound_key = key
+                if (
+                    isinstance(scope, ast.ClassDef)
+                    and key.startswith("self.")
+                    and key not in bindings[scope]
+                ):
+                    bound_key = key[5:]  # Class-level defaults accessed through self.
+                if bound_key in bindings[scope]:
+                    if instance_attribute and bound_key == key:
+                        assigned = bindings[scope][bound_key]
+                    elif isinstance(scope, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        assigned = states.get(node, {}).get(scope, {}).get(bound_key, [])
+                    else:
+                        assigned = final_states.get(scope, {}).get(bound_key, [])
+                    identity = (scope, bound_key, tuple(assigned))
+                    if identity in seen:
+                        return set()
+                    result = set()
+                    for value in assigned:
+                        result.update(values(value, seen | {identity}))
+                    return result
+                scope = parents[scope]
+            return set()
+        if isinstance(node, ast.Call):
+            function = symbol(node.func) or ""
+            if function.endswith("config.get") and node.args:
+                config_key = node.args[0]
+                if isinstance(config_key, ast.Constant) and default_config:
+                    default = default_config.get(config_key.value)
+                    if isinstance(default, str):
+                        return {default}
+                return values(node.args[1], seen) if len(node.args) > 1 else set()
+            if function.rsplit(".", 1)[-1] in {
+                "resolve_model_path",
+                "download_hf_snapshot",
+                "snapshot_download",
+                "str",
+            }:
+                argument = (
+                    node.args[0]
+                    if node.args
+                    else next((kw.value for kw in node.keywords if kw.arg == "repo_id"), None)
+                )
+                return values(argument, seen)
+        if isinstance(node, ast.IfExp):
+            return values(node.body, seen) | values(node.orelse, seen)
+        if isinstance(node, ast.BoolOp):
+            return set().union(*(values(value, seen) for value in node.values))
+        return set()
+
+    models = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        function = (symbol(node.func) or "").rsplit(".", 1)[-1]
+        if function == "from_pretrained":
+            index, keyword = 0, "pretrained_model_name_or_path"
+        elif function == "from_pretrained_with_attention":
+            index, keyword = 1, "model_id"
+        elif function in {"download_hf_snapshot", "snapshot_download"}:
+            if any(
+                kw.arg == "repo_type"
+                and isinstance(kw.value, ast.Constant)
+                and kw.value.value in {"dataset", "space"}
+                for kw in node.keywords
+            ):
+                continue
+            index, keyword = 0, "repo_id"
+        else:
+            continue
+        argument = (
+            node.args[index]
+            if len(node.args) > index
+            else next((kw.value for kw in node.keywords if kw.arg == keyword), None)
+        )
+        models.update(value for value in values(argument) if _is_likely_hf_model_id(value))
     return sorted(models)
 
 
@@ -686,21 +892,52 @@ def _extract_ffmpeg_models(source: str) -> List[str]:
 
 
 def _extract_hf_direct_urls(source: str) -> List[tuple]:
-    """Extract direct HuggingFace download URLs (resolve/main pattern).
+    """Return legacy (repo, path) pairs for direct downloads from ``main`` only.
 
-    Also handles Python implicit string concatenation across lines.
+    Revision-aware consumers should use ``_extract_hf_checkpoint_urls`` instead.
     """
-    # Pre-process: join adjacent string literals ("a" "b" → "ab")
-    joined = re.sub(r'"\s*\n\s*"', "", source)
     results = []
-    for m in re.finditer(
-        r'https://huggingface\.co/([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)/resolve/main/([^\s"\']+)',
-        joined,
-    ):
-        repo = m.group(1)
-        path = m.group(2)
-        results.append((repo, path))
+    for url in _extract_hf_checkpoint_urls(source):
+        repo, revision, path = _hf_checkpoint_reference(url)
+        if revision == "main" and "/resolve/" in url:
+            results.append((repo, path))
     return results
+
+
+def _extract_hf_checkpoint_urls(source: str) -> List[str]:
+    """Extract complete literal HF file URLs, preserving revisions and query strings.
+
+    Parsing joins adjacent Python literals without accidentally joining comments
+    or treating a documented example as a checkpoint used by the module.
+    Dynamic URLs remain the responsibility of explicit model declarations.
+    """
+    try:
+        tree = ast.parse(textwrap.dedent(source))
+    except SyntaxError:
+        return []
+    docstrings = {
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Expr)
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    }
+    dynamic_parts = {
+        part
+        for node in ast.walk(tree)
+        if isinstance(node, ast.JoinedStr)
+        for part in ast.walk(node)
+    }
+    urls = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Constant) or not isinstance(node.value, str):
+            continue
+        value = node.value
+        if node in docstrings or node in dynamic_parts or any(char.isspace() for char in value):
+            continue
+        if _hf_checkpoint_reference(value) is not None:
+            urls.add(value)
+    return sorted(urls)
 
 
 def _extract_required_files(cls) -> Dict[str, str]:
@@ -1088,13 +1325,15 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
         # Direct HF download URLs (AkaneTendo25/ayase-assets etc.)
         # Use full module source to catch module-level URL constants
         full_source = _get_module_source(cls)
-        for repo, path in _extract_hf_direct_urls(full_source):
-            key = _checkpoint_key((repo, "main", path))
+        for url in _extract_hf_checkpoint_urls(full_source):
+            reference = _hf_checkpoint_reference(url)
+            repo, revision, path = reference
+            key = _checkpoint_key(reference)
             if key not in entries:
                 entries[key] = ModelEntry(
                     name=path.split("/")[-1],
                     source="huggingface",
-                    url=f"https://huggingface.co/{repo}/resolve/main/{path}",
+                    url=url,
                     notes=f"From `{repo}` repo",
                 )
             if mod_name not in entries[key].modules:
