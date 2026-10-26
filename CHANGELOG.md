@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **cmms**: expose the published metric as `unimplemented` until compatible trained regression weights are available; metric help distinguishes implemented, approximate, and unimplemented modules.
+
 - **avgen_bench**: evaluate all eleven released audio-video dimensions with managed specialist backends, per-component evidence, coverage-aware dataset aggregates, and canonical benchmark annotations; adapted outputs require explicit provenance opt-in.
 
 - **audiojudge**: evaluate individual or paired audio with published task prompts, labelled examples, and explicit quality, match, and descriptive-choice outputs.

@@ -956,6 +956,7 @@ def modules_list(
     table = Table(title="Available Modules")
     table.add_column("Name", style="cyan")
     table.add_column("Provenance", style="magenta")
+    table.add_column("Readiness", style="yellow")
     table.add_column("Availability", style="yellow")
     table.add_column("Description", style="white")
     shown = 0
@@ -978,7 +979,8 @@ def modules_list(
             if cls is not None and cls.requires_external_backend
             else "check dependencies"
         )
-        table.add_row(name, prov_label, availability, all_modules[name])
+        readiness = cls.resolved_implementation_status() if cls is not None else "unknown"
+        table.add_row(name, prov_label, readiness, availability, all_modules[name])
         shown += 1
     console.print(table)
     if provenance:

@@ -1124,6 +1124,7 @@ class QualityMetrics(BaseModel):
     audiojudge_preference: Optional[float] = None  # Candidate preference: -1, 0 (tie), or 1
     audiojudge_match: Optional[float] = None  # Pronunciation/speaker match: 0 or 1
     audiojudge_choice: Optional[float] = None  # Descriptive audio selection: 1 or 2
+    cmms_score: Optional[float] = None  # Reserved CMMS score; unimplemented, never populated
     avgen_bench_visual_score: Optional[float] = None  # Joint-video visual quality (0-100)
     avgen_bench_audio_score: Optional[float] = None  # Audio production quality (0-100)
     avgen_bench_av_sync_score: Optional[float] = None  # Audiovisual synchronization (0-100)

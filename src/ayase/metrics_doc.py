@@ -454,15 +454,16 @@ def _module_owned_qm_fields(cls) -> Set[str]:
 
 
 def compute_external_backend_partition(module_names: Iterable[str]) -> Tuple[Set[str], Set[str]]:
-    """Partition modules/fields into delivered vs requires_external_backend.
+    """Partition modules/fields into delivered vs resolved unimplemented status.
 
     Returns ``(external_backend_modules, external_only_fields)`` where:
 
-    - ``external_backend_modules`` — names flagged ``requires_external_backend`` among *module_names*.
+    - ``external_backend_modules`` — names whose resolved readiness is
+      ``unimplemented`` among *module_names*.
     - ``external_only_fields`` — QualityMetrics metric fields whose EVERY
-      owning module is requires_external_backend (a field kept alive by at least one delivered
-      module stays delivered). These are excluded from the documented metric
-      count and moved to the External backend required section.
+      owning module resolves to ``unimplemented`` (a field kept alive by at
+      least one delivered module stays delivered). These are excluded from the
+      documented metric count and moved to the external/unimplemented section.
 
     Fields with no owner at all (schema orphans) are NOT reported here; they
     stay counted the way they always were.
@@ -473,7 +474,7 @@ def compute_external_backend_partition(module_names: Iterable[str]) -> Tuple[Set
         cls = ModuleRegistry.get_module(name)
         if cls is None:
             continue
-        is_prov = bool(getattr(cls, "requires_external_backend", False))
+        is_prov = cls.resolved_implementation_status() == "unimplemented"
         if is_prov:
             external_backend_modules.add(name)
         for field in _module_owned_qm_fields(cls):
@@ -1579,6 +1580,12 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 if mod["gpu"]:
                     speed_str += " · GPU"
                 a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
+                readiness = mod.get("implementation_status", "implemented")
+                readiness_notes = mod.get("implementation_notes", "")
+                readiness_text = f"`{readiness}`"
+                if readiness_notes:
+                    readiness_text += f" — {readiness_notes}"
+                a(f"- **Readiness**: {readiness_text}")
                 if chain:
                     a(f"- **Backend**: {chain}")
                 prov = (mod.get("provenance") or {}).get(field_name)
@@ -1658,6 +1665,12 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 a(f"**{mod_link}** — {desc}")
                 a("")
                 a(f"- **Input**: {mod['input_type']} · **Speed**: {speed_str}")
+                readiness = mod.get("implementation_status", "implemented")
+                readiness_notes = mod.get("implementation_notes", "")
+                readiness_text = f"`{readiness}`"
+                if readiness_notes:
+                    readiness_text += f" — {readiness_notes}"
+                a(f"- **Readiness**: {readiness_text}")
                 prov = (mod.get("provenance") or {}).get(field_name)
                 if prov:
                     prov_parts = [f"`{prov}`"]
@@ -1690,6 +1703,10 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             mod_link = f"[`{r['name']}`]({file_path})" if file_path else f"`{r['name']}`"
             badge = speed_badges.get(r["speed"], "")
             items = [f"Input: {r['input_type']}", f"Speed: {badge} {r['speed']}"]
+            readiness = f"Readiness: `{r.get('implementation_status', 'implemented')}`"
+            if r.get("implementation_notes"):
+                readiness += f" — {r['implementation_notes']}"
+            items.append(readiness)
             if r["gpu"]:
                 items.append("GPU")
             items.append(f"Tests: {_format_test_coverage(r['name'], test_coverage, test_results)}")
@@ -1729,6 +1746,12 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             src = _get_source(cls)
             pkgs = _detect_packages(src)
             parts = [f"**{mod_link}** — {cls.description}"]
+            readiness = cls.resolved_implementation_status()
+            readiness_notes = str(getattr(cls, "implementation_notes", "") or "")
+            readiness_text = f"Readiness: `{readiness}`"
+            if readiness_notes:
+                readiness_text += f" — {readiness_notes}"
+            parts.append(readiness_text)
             if owned:
                 parts.append("Metrics: " + ", ".join(f"`{f}`" for f in owned))
             else:

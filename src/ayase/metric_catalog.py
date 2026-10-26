@@ -96,6 +96,8 @@ class ModuleCatalogItem:
     paper: str
     requires_external_backend: bool
     packaged: bool
+    implementation_status: str = "implemented"
+    implementation_notes: str = ""
 
 
 def _normalize_name(value: str) -> str:
@@ -403,6 +405,8 @@ def _build_module_item(cls: type, detailed: bool) -> ModuleCatalogItem:
         gpu=_detect_gpu(source) if detailed else False,
         vram=(_estimate_vram(source) or "unknown") if detailed else "unknown",
         paper=(_detect_paper(cls) or "") if detailed else "",
+        implementation_status=cls.resolved_implementation_status(),
+        implementation_notes=str(getattr(cls, "implementation_notes", "") or ""),
         requires_external_backend=bool(getattr(cls, "requires_external_backend", False)),
         packaged=ModuleRegistry.is_packaged_module(cls),
     )
@@ -485,9 +489,7 @@ def _render_metric_list(console: Console, catalog: MetricCatalog) -> None:
         definitions = ", ".join(
             sorted({metric.provenance for _, metric in providers if metric.provenance})
         )
-        statuses = {
-            "external-backend" if module.requires_external_backend else "ready" for module, _ in providers
-        }
+        statuses = {module.implementation_status for module, _ in providers}
         description = next(
             (metric.description for _, metric in providers if metric.description), ""
         )
@@ -514,13 +516,14 @@ def _render_module(
     module: ModuleCatalogItem,
     selected_metric: Optional[str] = None,
 ) -> None:
-    status = "external-backend" if module.requires_external_backend else "ready"
     console.print(f"\n[bold cyan]{module.name}[/bold cyan] — {module.description}")
 
     summary = Table(show_header=False, box=None, pad_edge=False)
     summary.add_column("Property", style="bold")
     summary.add_column("Value")
-    summary.add_row("Status", status)
+    summary.add_row("Readiness", module.implementation_status)
+    if module.implementation_notes:
+        summary.add_row("Readiness notes", module.implementation_notes)
     summary.add_row("Input", module.input_type)
     summary.add_row("Speed", module.speed)
     summary.add_row("GPU", "yes" if module.gpu else "no")

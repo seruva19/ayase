@@ -92,6 +92,12 @@ class PipelineModule(ABC):
     # moment a reachable real backend lands.
     requires_external_backend: bool = False
 
+    # Readiness is separate from metric provenance. ``None`` preserves the
+    # legacy contract: ordinary modules are implemented, while modules that
+    # require an external backend are unimplemented until one is wired.
+    implementation_status: ClassVar[Optional[str]] = None
+    implementation_notes: ClassVar[str] = ""
+
     # True = Ayase-defined construct without a published definition, slated for
     # removal in a future release. Instantiating the module emits a
     # DeprecationWarning; the module keeps working until removal.
@@ -317,6 +323,8 @@ class PipelineModule(ABC):
             repr(getattr(cls, "metric_field", None)),
             repr(getattr(cls, "metric_field_name", None)),
             cls.requires_external_backend,
+            cls.implementation_status,
+            cls.implementation_notes,
             cls.deprecated,
             cls.input_type,
         )
@@ -476,11 +484,28 @@ class PipelineModule(ABC):
             "sources": sources_map,
             "deviations": deviations_map,
             "requires_external_backend": bool(cls.requires_external_backend),
+            "implementation_status": cls.resolved_implementation_status(),
+            "implementation_notes": str(cls.implementation_notes or ""),
             "deprecated": bool(cls.deprecated),
         }
         cls._metadata_cache = metadata
         cls._metadata_cache_key = cache_key
         return deepcopy(metadata)
+
+    @classmethod
+    def resolved_implementation_status(cls) -> str:
+        """Return the effective readiness label for this module class."""
+        status = cls.implementation_status
+        if status is None:
+            return "unimplemented" if cls.requires_external_backend else "implemented"
+        normalized = str(status).strip().lower()
+        valid = {"implemented", "approximate", "unimplemented"}
+        if normalized not in valid:
+            raise ValueError(
+                f"Invalid implementation_status {status!r} on {cls.__name__}; "
+                f"expected one of {sorted(valid)}"
+            )
+        return normalized
 
     @classmethod
     def _resolve_field_map(cls, attr: str, fields: Iterable[str]) -> Dict[str, str]:
@@ -1427,6 +1452,13 @@ class Pipeline:
         self._availability_excluded = {}
         self._frame_cache = {}
         self._runtime_value_cache = {}
+        # An explicit unimplemented declaration is a hard runtime gate: do not
+        # mount the module, because setup may provision packages or weights.
+        # Legacy ``requires_external_backend`` modules leave the declaration at
+        # None and retain their expert-backend revival behavior.
+        for module in self.modules:
+            if type(module).implementation_status == "unimplemented":
+                self._availability_excluded[module.name] = "implementation_unavailable"
         if self._provenance_excluded:
             logger.info(
                 "Provenance filter excluded %d module(s) (allowed: %s): %s. "
@@ -1440,7 +1472,7 @@ class Pipeline:
             )
         if self._availability_excluded:
             logger.warning(
-                "External backend required for %d module(s): %s",
+                "Implementation unavailable for %d module(s): %s",
                 len(self._availability_excluded),
                 ", ".join(sorted(self._availability_excluded)),
             )
@@ -2789,13 +2821,23 @@ class ModuleRegistry:
         )
 
     @classmethod
+    def is_unimplemented(cls, name: str) -> bool:
+        """Return whether a registered module has unresolved implementation work."""
+        module_cls = cls._modules.get(name)
+        return bool(
+            module_cls is not None
+            and module_cls.resolved_implementation_status() == "unimplemented"
+        )
+
+    @classmethod
     def list_modules(
         cls, packaged_only: bool = False, include_external_backends: bool = True
     ) -> Dict[str, str]:
         """Return dict of name -> description, sorted by name for stable iteration.
 
-        ``include_external_backends=False`` drops modules flagged ``requires_external_backend`` so
-        doc generators can report only the delivered (real-backend) set.
+        ``include_external_backends=False`` drops unimplemented modules so doc
+        generators can report only the delivered set. Legacy external-backend
+        modules resolve to ``unimplemented`` automatically.
         """
         return {
             name: cls._modules[name].description
@@ -2803,7 +2845,7 @@ class ModuleRegistry:
             if (not packaged_only or cls.is_packaged_module(cls._modules[name]))
             and (
                 include_external_backends
-                or not getattr(cls._modules[name], "requires_external_backend", False)
+                or cls._modules[name].resolved_implementation_status() != "unimplemented"
             )
         }
 

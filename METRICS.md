@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 14:41 · **404 modules** · **630 metrics**
+> **Version 0.2.1** · Generated 2026-10-26 15:42 · **404 modules** · **630 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -55,6 +55,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor InternVL model)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — only static_quality is loaded via AutoModel with no prompt and no official preprocessing; logits are clipped to [0,1]. Official inference is a custom InternVL with a regressor — source: AIGV-Assessor (Wang et al., CVPR 2025) — https://github.com/IntMeGroup/AIGV-Assessor
 - **Packages**: torch, transformers
@@ -68,6 +69,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`arniqa`](src/ayase/modules/arniqa.py)** — ARNIQA no-reference image quality assessment
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: ARNIQA (Agnolucci et al., WACV 2024) via pyiqa — https://github.com/miccunifi/ARNIQA
 - **Packages**: pyiqa, torch
@@ -81,6 +83,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -94,6 +97,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`brisque`](src/ayase/modules/brisque.py)** — BRISQUE no-reference image quality (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: BRISQUE (Mittal et al. 2012) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -107,6 +111,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`brisque_inverted`](src/ayase/modules/brisque_inverted.py)** — Naturalness via BRISQUE natural-scene-statistics (higher=more natural)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa_brisque → unavailable
 - **Provenance**: `own`
 - **Packages**: pyiqa, torch
@@ -119,6 +124,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`chipqa`](src/ayase/modules/chipqa.py)** — ChipQA no-reference video quality via its feature extractor and LIVE-Livestream SVR
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → chipqa
 - **Provenance**: `published` — source: ChipQA (Ebenezer et al.) — https://github.com/JoshuaEbenezer/ChipQA
 - **Packages**: joblib, matplotlib, numba, opencv-python, scikit-learn, scipy
@@ -132,6 +138,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_feel`](src/ayase/modules/clip_feel.py)** — CLIP aesthetic-feel video quality (own, CLiF-VQA-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: clip → unavailable
 - **Provenance**: `own`
 - **Packages**: torch, transformers
@@ -146,6 +153,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_iqa`](src/ayase/modules/clip_iqa.py)** — CLIP-based no-reference image quality assessment
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CLIP-IQA+ (Wang et al., AAAI 2023) via pyiqa — https://github.com/IceClear/CLIP-IQA
 - **Packages**: pyiqa, torch
@@ -159,6 +167,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_slowfast_vq`](src/ayase/modules/clip_slowfast_vq.py)** — CLIP+SlowFast blind VQA with Laplacian rectifiers (own, ModularBVQA-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ModularBVQA (Wen et al., CVPR 2024) claimed — https://github.com/winwinwenwen77/ModularBVQA
 - **Packages**: opencv-python, torch, torchvision
@@ -173,6 +182,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cnniqa`](src/ayase/modules/cnniqa.py)** — CNNIQA blind CNN-based image quality assessment
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CNNIQA (Kang et al., CVPR 2014) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -186,6 +196,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`compare2score`](src/ayase/modules/compare2score.py)** — Compare2Score comparison-based NR image quality
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: Compare2Score (Zhu et al., NeurIPS 2024) via pyiqa — https://github.com/Q-Future/Compare2Score
 - **Packages**: pyiqa, torch
@@ -199,6 +210,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: COVER (He et al., CVPRW 2024) — https://github.com/vztu/COVER
 - **Packages**: torch
 - **VRAM**: ~800 MB
@@ -212,6 +224,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: COVER (He et al., CVPRW 2024) — https://github.com/taco-group/COVER
 - **Packages**: torch
 - **VRAM**: ~800 MB
@@ -225,6 +238,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`crave`](src/ayase/modules/crave.py)** — CRAVE content-rich AIGC video evaluator (2025)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → crave
 - **Provenance**: `utility` — source: CRAVE (2025) — https://github.com/littlespray/CRAVE
 - **Packages**: crave
@@ -238,6 +252,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dbcnn`](src/ayase/modules/dbcnn.py)** — DBCNN deep bilinear CNN for no-reference IQA
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: DBCNN (Zhang et al., TCSVT 2020) via pyiqa — https://github.com/zwx8981/DBCNN
 - **Packages**: pyiqa, torch
@@ -251,6 +266,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`deepdc`](src/ayase/modules/deepdc.py)** — DeepDC distribution conformance NR-IQA via pyiqa (2024, lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: DeepDC (Zhu et al. 2024) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -264,6 +280,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`deqa_score`](src/ayase/modules/deqa_score.py)** — Official DeQA-Score Mix3 native image-quality rating
 
 - **Input**: image · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: You et al., DeQA-Score; https://github.com/zhiyuanyou/DeQA-Score at 4342013af7fa5f450bb3a0cc8e135a61928d50bf
 - **Packages**: Pillow, gc, torch, transformers
@@ -277,6 +294,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dover`](src/ayase/modules/dover.py)** — DOVER disentangled technical + aesthetic VQA (ICCV 2023)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → native → onnx
 - **Provenance**: `published` — Overall fusion weights (0.6104/0.3896) are official; computed over the ported sub-scores above. — source: DOVER (Wu et al., ICCV 2023) — https://github.com/VQAssessment/DOVER/blob/master/evaluate_a_set_of_videos.py
 - **Packages**: onnxruntime, torch
@@ -291,6 +309,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dover`](src/ayase/modules/dover.py)** — DOVER disentangled technical + aesthetic VQA (ICCV 2023)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → native → onnx
 - **Provenance**: `published` — Sigmoid rescaling now uses the official fuse_results constants; backends are a vendored port (native) or ONNX export of the same weights — minor numerical differences vs the upstream repo are possible. — source: DOVER (Wu et al., ICCV 2023) — https://github.com/VQAssessment/DOVER/blob/master/evaluate_a_set_of_videos.py
 - **Packages**: onnxruntime, torch
@@ -305,6 +324,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
 
 - **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
 - **Packages**: Pillow, torch
@@ -318,6 +338,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`evoquality`](src/ayase/modules/evoquality.py)** — EvoQuality self-evolving VLM no-reference quality rating
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → openai → transformers
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: EvoQuality (ByteDance), HF model — https://huggingface.co/ByteDance/EvoQuality
 - **Packages**: torch, transformers
@@ -331,6 +352,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`fast_vqa`](src/ayase/modules/fast_vqa.py)** — Deep Learning Video Quality Assessment (FAST-VQA)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → fastvqa
 - **Provenance**: `published` — source: FAST-VQA / FasterVQA (Wu et al., ECCV 2022 / TPAMI) — https://github.com/VQAssessment/FAST-VQA-and-FasterVQA
 - **Packages**: PyYAML, decord, torch, traceback
@@ -344,6 +366,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`finevq_raw`](src/ayase/modules/finevq_raw.py)** — Raw logit mean of the FineVQ model (adapted)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → finevq
 - **Provenance**: `own` — source: FineVQ model (Duan et al., CVPR 2025); the number is not its score — https://github.com/IntMeGroup/FineVQ
 - **Packages**: Pillow, opencv-python, torch, transformers
@@ -357,6 +380,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hpsv2_const`](src/ayase/modules/hpsv2_const.py)** — HPSv2 constant-prompt quality reward (own metric)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → hpsv2
 - **Provenance**: `own` — source: VADER (a finetuning method, not a metric); HPSv2 — https://github.com/mihirp1998/VADER
 - **Packages**: hpsv2
@@ -371,6 +395,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hyperiqa`](src/ayase/modules/hyperiqa.py)** — HyperIQA adaptive hypernetwork NR image quality
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa_hyperiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: HyperIQA (Su et al., CVPR 2020) via pyiqa — https://github.com/SSL92/hyperIQA
 - **Packages**: pyiqa, torch
@@ -384,6 +409,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ilniqe`](src/ayase/modules/ilniqe.py)** — IL-NIQE integrated local no-reference quality (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: IL-NIQE (Zhang et al., TIP 2015) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -397,6 +423,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`liqe`](src/ayase/modules/liqe.py)** — LIQE lightweight no-reference IQA
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: LIQE (Zhang et al., CVPR 2023) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -410,6 +437,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`love_results`](src/ayase/modules/love_results.py)** — LOVE perception and text-video correspondence result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: imports LOVE results — https://huggingface.co/anonymousdb/LOVE-Perception
 - **Source**: <a href="https://huggingface.co/anonymousdb/LOVE-Perception" target="_blank">HF</a>
@@ -421,6 +449,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`maclip`](src/ayase/modules/maclip.py)** — MACLIP multi-attribute CLIP no-reference quality (higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: MACLIP via pyiqa 'maclip' — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -434,6 +463,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`maniqa`](src/ayase/modules/maniqa.py)** — MANIQA multi-dimension attention no-reference IQA
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: MANIQA (Yang et al., CVPRW 2022) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -447,6 +477,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mc360iqa`](src/ayase/modules/mc360iqa.py)** — MC360IQA blind 360 IQA (2019; real model only, disabled if unavailable)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: MC360IQA (Sun et al., IEEE JSTSP 2019) — https://github.com/sunwei925/MC360IQA
 - **Packages**: Pillow, huggingface_hub, opencv-python, scipy, torch, torchvision
@@ -461,6 +492,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mdvqa`](src/ayase/modules/mdvqa.py)** — MD-VQA multi-dimensional UGC live VQA (CVPR 2023; real model only, disabled if unavailable)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `adapted` — model and head vendored verbatim; upstream protocol: the whole video is read, int(seconds*16) frames sampled uniformly; max_seconds is an optional time limit (upstream time_limit) — source: MD-VQA (Zhang et al., CVPR 2023) — https://github.com/kunyou99/MD-VQA_cvpr2023
 - **Packages**: huggingface_hub, opencv-python, torch, torchvision
@@ -474,6 +506,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
 - **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: mj_video → unavailable
 - **Provenance**: `published` — source: MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
@@ -487,6 +520,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mouth_quality`](src/ayase/modules/mouth_quality.py)** — THEval localized mouth-crop MUSIQ-SPAQ quality
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: THEval (Quignon et al., arXiv 2511.04520) — https://arxiv.org/abs/2511.04520
 - **Packages**: pyiqa, torch
@@ -500,6 +534,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`musiq`](src/ayase/modules/musiq.py)** — Multi-Scale Image Quality Transformer (no-reference)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: MUSIQ (Ke et al., ICCV 2021) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -513,6 +548,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`niqe`](src/ayase/modules/niqe.py)** — Natural Image Quality Evaluator (no-reference)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: NIQE (Mittal et al., 2013) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -526,6 +562,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`nrqm`](src/ayase/modules/nrqm.py)** — NRQM no-reference quality metric for super-resolution (higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: NRQM (Ma et al., 2017) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -539,6 +576,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`opens2v`](src/ayase/modules/opens2v.py)** — OpenS2V-Eval subject-consistency metrics: NexusScore (YOLO-World image-prompt subject crops vs reference subject image, GME embeddings) and NaturalScore (GPT-4o naturalness judge)
 
 - **Input**: vid +ref +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — canonical 'openai' replicates upstream (GPT-4o x3 over 16 stride-sampled frames, verbatim prompt); 'vlm' is a local VLM judge substitute (documented substitution) — source: OpenS2V-Nexus NaturalScore (arXiv 2505.20292) — https://github.com/PKU-YuanGroup/OpenS2V-Nexus
 - **Packages**: inspect, mmengine, mmyolo, openai, opencv-python, torch, torchvision, transformers
@@ -553,6 +591,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`paq2piq`](src/ayase/modules/paq2piq.py)** — PaQ-2-PiQ patch-to-picture NR quality (CVPR 2020)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: PaQ-2-PiQ (Ying et al., CVPR 2020) via pyiqa — https://github.com/baidut/PaQ-2-PiQ
 - **Packages**: opencv-python, pyiqa, torch
@@ -566,6 +605,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`phyground_results`](src/ayase/modules/phyground_results.py)** — PhyGround general and physical-law judge result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround
 - **Source**: <a href="https://github.com/NU-World-Model-Embodied-AI/PhyGround" target="_blank">GitHub</a> · <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
@@ -577,6 +617,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`phyground_results`](src/ayase/modules/phyground_results.py)** — PhyGround general and physical-law judge result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround
 - **Source**: <a href="https://github.com/NU-World-Model-Embodied-AI/PhyGround" target="_blank">GitHub</a> · <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
@@ -588,6 +629,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`phyground_results`](src/ayase/modules/phyground_results.py)** — PhyGround general and physical-law judge result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround
 - **Source**: <a href="https://github.com/NU-World-Model-Embodied-AI/PhyGround" target="_blank">GitHub</a> · <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
@@ -599,6 +641,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pi`](src/ayase/modules/pi_metric.py)** — Perceptual Index (PIRM challenge metric, lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: Perceptual Index, PIRM 2018 (Blau et al.) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -612,6 +655,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`piqe`](src/ayase/modules/piqe.py)** — PIQE perception-based no-reference quality (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: PIQE (Venkatanath et al., 2015) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -625,6 +669,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`prove`](src/ayase/modules/prove.py)** — PROVE masked object-removal spatial and temporal coherence
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: dinov2_giant
 - **Provenance**: `published` — source: PROVE RC-S/RC-T (arXiv 2605.14534, ACM MM 2026) — https://github.com/xiaomi-research/prove
 - **Packages**: torch, transformers
@@ -639,6 +684,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`provqa`](src/ayase/modules/provqa.py)** — ProVQA progressive blind 360° VQA (real model only)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `adapted` — model vendored verbatim; upstream protocol: 6 anchors in [4, N-4] with triplets of neighbouring frames ±3 (interval=3) — our anchors are uniformly deterministic instead of random; output is 1-DMOS — source: ProVQA (Yang et al., TIP 2022) — https://github.com/yanglixiaoshen/ProVQA
 - **Packages**: opencv-python, torch
@@ -652,6 +698,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`q_align`](src/ayase/modules/q_align.py)** — Q-Align unified quality + aesthetic assessment (ICML 2024)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → qalign
 - **Provenance**: `adapted` — video mode input_='video', but on a subset of frames (every subsample-th, <= max_frames) instead of all video frames — source: Q-Align / OneAlign (Wu et al., ICML 2024) — https://github.com/Q-Future/Q-Align
 - **Packages**: Pillow, torch
@@ -666,6 +713,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`qualiclip`](src/ayase/modules/qualiclip.py)** — QualiCLIP opinion-unaware CLIP-based no-reference IQA
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: qualiclip → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: QualiCLIP (Agnolucci et al., 2024) via pyiqa — https://github.com/miccunifi/QualiCLIP
 - **Packages**: pyiqa, torch
@@ -679,6 +727,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → transformers
 - **Provenance**: `adapted` — judge inference via transformers/OpenAI-compatible endpoint instead of the official ms-swift PtEngine — source: Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -692,6 +741,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → transformers
 - **Provenance**: `adapted` — judge inference via transformers/OpenAI-compatible endpoint instead of the official ms-swift PtEngine — source: Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -705,6 +755,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`resnet_svr_vq`](src/ayase/modules/resnet_svr_vq.py)** — ResNet18-feature + SVR video quality regressor (own, TLVQM-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → cnn_svr
 - **Provenance**: `own` — source: CNN-TLVQM, Korhonen ACM MM 2019 — name only — https://github.com/jarikorhonen/cnn-tlvqm
 - **Packages**: joblib, opencv-python, torch, torchvision
@@ -719,6 +770,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`rqvqa`](src/ayase/modules/rqvqa.py)** — RQ-VQA rich quality-aware blind VQA ensemble (raw regression score)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → rqvqa
 - **Provenance**: `published` — source: RQ-VQA (Sun et al., CVPRW/NTIRE 2024) — https://github.com/sunwei925/RQ-VQA
 - **Packages**: Pillow, opencv-python, torch
@@ -733,6 +785,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`sama`](src/ayase/modules/sama.py)** — SAMA scaling+masking VQA (AAAI 2024, real model only)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `published` — source: SAMA (Liu et al., AAAI 2024) — https://github.com/Sissuire/SAMA
 - **Packages**: decord, huggingface_hub, torch
@@ -746,6 +799,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`simplevqa`](src/ayase/modules/simplevqa.py)** — SimpleVQA Swin+SlowFast blind VQA (real model only)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `adapted` — model vendored verbatim; upstream protocol (extract_frame/test_demo): n_frames anchors at one per second (i*fps), motion clip — 32 consecutive frames from the anchor padded by repeating the last; spatial branch — resize/crop per the Swin-384 config — source: SimpleVQA (Sun et al., ACM MM 2022) — https://github.com/sunwei925/SimpleVQA
 - **Packages**: opencv-python, torch
@@ -759,6 +813,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`spectral_complexity`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: torch, torchvision
@@ -773,6 +828,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`spectral_complexity`](src/ayase/modules/spectral.py)** — Analyzes spectral complexity (Effective Rank) of video features (DINOv2)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: torch, torchvision
@@ -787,6 +843,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`stablevqa`](src/ayase/modules/stablevqa.py)** — StableVQA video stability quality assessment (ACM MM 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `published` — source: Kou et al., ACM MM 2023 — https://github.com/QMME/StableVQA
 - **Packages**: huggingface_hub, opencv-python, torch
@@ -800,6 +857,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`svr60_vq`](src/ayase/modules/svr60_vq.py)** — 60-feature ResNet+SVR no-reference VQA (own, VIDEVAL-inspired)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: svr → unavailable
 - **Provenance**: `own` — source: VIDEVAL, Tu et al. TIP 2021 — name only — https://github.com/vztu/VIDEVAL
 - **Packages**: joblib, opencv-python
@@ -814,6 +872,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_generic_score`](src/ayase/modules/t2v_generic_score.py)** — Generic text-video alignment/quality via a configurable HF model (own)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → t2vscore
 - **Provenance**: `own` — source: T2VScore, Wu et al. 2024 — name only — https://github.com/showlab/T2VScore
 - **Packages**: torch, transformers
@@ -827,6 +886,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`topiq`](src/ayase/modules/topiq.py)** — TOPIQ transformer-based no-reference IQA
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: TOPIQ, Chen et al. TIP 2024; pyiqa topiq_nr — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -840,6 +900,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`tres`](src/ayase/modules/tres.py)** — TReS transformer-based NR image quality (WACV 2022)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: TReS, Golestaneh et al. WACV 2022; pyiqa — https://github.com/isalirezag/TReS
 - **Packages**: opencv-python, pyiqa, torch
@@ -853,6 +914,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`uciqe`](src/ayase/modules/uciqe.py)** — UCIQE underwater color image quality evaluation (2015)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: port
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: UCIQE, Yang & Sowmya TIP 2015 — https://github.com/paulwong16/UCIQE
 - **Source**: <a href="https://github.com/paulwong16/UCIQE" target="_blank">GitHub</a>
@@ -865,6 +927,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`uiqm`](src/ayase/modules/uiqm.py)** — UIQM underwater image quality measure (Panetta et al. 2016)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: port
 - **Provenance**: `adapted` — The published metric is image-level; Ayase additionally averages uniformly sampled video frames, and configurable component weights can differ from the published defaults — source: UIQM, Panetta et al. IEEE JOE 2016 (FUnIE-GAN uqim_utils port) — https://ieeexplore.ieee.org/document/7305804
 - **Tests**: covered by [`test_uiqm.py`](tests/modules/per_module/test_uiqm.py)
@@ -876,6 +939,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_2`](src/ayase/modules/unified_reward_2.py)** — UnifiedReward 2.0 multi-dimensional prompt-image reward scoring
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-2.0; DiffSynth-Studio ImageMetrics — https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics
 - **Packages**: diffsynth, torch
@@ -889,6 +953,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_2`](src/ayase/modules/unified_reward_2.py)** — UnifiedReward 2.0 multi-dimensional prompt-image reward scoring
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: Upstream _primary_score: mean of the parsed dimension scores — https://github.com/modelscope/DiffSynth-Studio
 - **Packages**: diffsynth, torch
@@ -902,6 +967,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unique`](src/ayase/modules/unique_iqa.py)** — UNIQUE unified NR image quality (TIP 2021)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: UNIQUE, Zhang et al. TIP 2021; pyiqa — https://github.com/zwx8981/UNIQUE
 - **Packages**: opencv-python, pyiqa, torch
@@ -915,6 +981,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`uvq`](src/ayase/modules/uvq.py)** — Google UVQ 1.5 no-reference perceptual video MOS
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → uvq1p5
 - **Provenance**: `published` — source: Google UVQ 1.5 — https://github.com/google/uvq
 - **Packages**: torch
@@ -928,6 +995,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`video_memorability`](src/ayase/modules/video_memorability.py)** — Content memorability approximation (CLIP/DINOv2 feature statistics)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **VRAM**: ~400 MB
 - **Tests**: covered by [`test_video_memorability.py`](tests/modules/per_module/test_video_memorability.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py), +1 more
@@ -939,6 +1007,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore2`](src/ayase/modules/videoscore2.py)** — VideoScore2 3-dimensional generative video evaluation
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: transformers → unavailable
 - **Provenance**: `published` — source: VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -953,6 +1022,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: videoscore → unavailable
 - **Provenance**: `published` — source: VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore
 - **Packages**: mantis, torch, transformers
@@ -966,6 +1036,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`viideo`](src/ayase/modules/viideo.py)** — VIIDEO blind NR-VQA via natural video statistics (Mittal 2016, lower=better)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: skvideo → unavailable
 - **Provenance**: `published` — source: VIIDEO, Mittal et al. 2016; scikit-video — http://www.scikit-video.org
 - **Packages**: scikit-video
@@ -978,6 +1049,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vqa2`](src/ayase/modules/vqa2.py)** — VQA² LMM image/video quality score (ACM MM 2025)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: vqa2
 - **Provenance**: `published` — source: VQA², ACM MM 2025 — https://github.com/Q-Future/Visual-Question-Answering-for-Video-Quality-Assessment
 - **Packages**: Pillow, decord, llava, torch
@@ -991,6 +1063,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `published` — source: VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -1004,6 +1077,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `published` — source: VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -1017,6 +1091,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `published` — source: VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -1030,6 +1105,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vqinsight`](src/ayase/modules/vqinsight.py)** — VQ-Insight ByteDance multi-dim AIGC scoring (AAAI 2026)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `published` — source: VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -1043,6 +1119,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vsfa`](src/ayase/modules/vsfa.py)** — VSFA quality-aware feature aggregation with GRU (ACMMM 2019)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: vsfa → unavailable
 - **Provenance**: `published` — upstream reads all frames via skvideo at native res; no resize/crop, same as the source (frames are normalized by ImageNet statistics without resizing) — source: VSFA, Li et al. ACM MM 2019 — https://github.com/lidq92/VSFA
 - **Packages**: huggingface_hub, opencv-python, torch, torchvision
@@ -1057,6 +1134,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`wadiqam`](src/ayase/modules/wadiqam.py)** — WaDIQaM-NR weighted averaging deep image quality mapper
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: WaDIQaM-NR, Bosse et al. TIP 2018; pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1070,6 +1148,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`zoomvqa`](src/ayase/modules/zoomvqa.py)** — Zoom-VQA dual-branch IQA+VQA late-fusion blind VQA (CVPRW 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `adapted` — frames at iqa_fps=2 with 512 resize and a 320 center crop; the multi-scale IQA protocol variant is not reproduced — source: Zoom-VQA CPNet IQA branch, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA
 - **Packages**: Pillow, decord, huggingface_hub, opencv-python, timm, torchvision
@@ -1083,6 +1162,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`zoomvqa`](src/ayase/modules/zoomvqa.py)** — Zoom-VQA dual-branch IQA+VQA late-fusion blind VQA (CVPRW 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `adapted` — fusion without z-score+sigmoid (dataset normalization is undefined for a single sample); the branches are published separately in zoomvqa_iqa_score/zoomvqa_vqa_score — source: Zoom-VQA, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA
 - **Packages**: Pillow, decord, huggingface_hub, opencv-python, timm, torchvision
@@ -1096,6 +1176,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`zoomvqa`](src/ayase/modules/zoomvqa.py)** — Zoom-VQA dual-branch IQA+VQA late-fusion blind VQA (CVPRW 2023)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `adapted` — 4 temporal clips of 32 frames with frame_interval=2 and patch_size*8 fragments; other upstream pipeline details not verified line-by-line — source: Zoom-VQA Swin VQA branch, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA
 - **Packages**: Pillow, decord, huggingface_hub, opencv-python, timm, torchvision
@@ -1112,6 +1193,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ahiq`](src/ayase/modules/ahiq.py)** — Attention-based Hybrid IQA full-reference (higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: AHIQ (Lao et al., CVPRW 2022) via pyiqa — https://github.com/IIGROUP/AHIQ
 - **Packages**: opencv-python, pyiqa, torch
@@ -1125,6 +1207,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`artfid`](src/ayase/modules/artfid.py)** — ArtFID style transfer quality (FR, 2022, lower=better; requires art-fid)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: ArtFID (Wright & Ommer, 2022), art-fid package — https://github.com/matthias-wright/art-fid
 - **Packages**: art_fid
@@ -1138,6 +1221,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`butteraugli`](src/ayase/modules/butteraugli.py)** — Butteraugli perceptual distance (Google/JPEG XL, lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: butteraugli_cli → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: Butteraugli (Google/libjxl official CLI) — https://github.com/libjxl/libjxl/releases/tag/v0.12.0
 - **Source**: <a href="https://github.com/libjxl/libjxl" target="_blank">GitHub</a>
@@ -1150,6 +1234,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cgvqm`](src/ayase/modules/cgvqm.py)** — Intel CGVQM full-reference rendered-video quality
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: CGVQM (Intel Labs) — https://github.com/IntelLabs/cgvqm
 - **Packages**: torch
@@ -1164,6 +1249,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`chamfer_sim`](src/ayase/modules/chamfer_sim.py)** — Chamfer-distance point-cloud similarity proxy (own)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `own` — source: PointSSIM (Alexiou & Ebrahimi, 2020) claimed — https://github.com/mmspg/pointssim
 - **Packages**: open3d, scipy
@@ -1176,6 +1262,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ciede2000`](src/ayase/modules/ciede2000.py)** — CIEDE2000 perceptual color difference (lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CIEDE2000 (CIE; Sharma et al. 2005, DOI:10.1002/col.20070)
 - **Tests**: covered by [`test_ciede2000.py`](tests/modules/per_module/test_ciede2000.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -1187,6 +1274,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ckdn`](src/ayase/modules/ckdn.py)** — CKDN knowledge distillation FR image quality
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CKDN (Zheng et al., ICCV 2021) via pyiqa — https://github.com/researchmm/CKDN
 - **Packages**: opencv-python, pyiqa, torch
@@ -1200,6 +1288,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`compressed_vqa_hdr`](src/ayase/modules/compressed_vqa_hdr.py)** — CompressedVQA-HDR FR quality (ICME 2025)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → compressed_vqa_hdr
 - **Provenance**: `utility` — source: CompressedVQA-HDR — https://github.com/sunwei925/CompressedVQA-HDR
 - **Packages**: compressedvqa_hdr
@@ -1213,6 +1302,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cvvdp_ml_saliency`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP
 - **Source**: <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">HF</a>
 - **Tests**: covered by [`test_cvvdp.py`](tests/modules/per_module/test_cvvdp.py)
@@ -1224,6 +1314,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cvvdp_ml_transformer`](src/ayase/modules/cvvdp.py)** — Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: cvvdp
 - **Provenance**: `published` — source: ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP
 - **Packages**: huggingface_hub, pycvvdp, torch
@@ -1237,6 +1328,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cvvdp`](src/ayase/modules/cvvdp.py)** — ColorVideoVDP display-aware color image/video FR quality
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: cvvdp
 - **Provenance**: `published` — source: ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP
 - **Packages**: decord, imageio, pycvvdp, torch
@@ -1250,6 +1342,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cw_ssim`](src/ayase/modules/cw_ssim.py)** — Complex Wavelet SSIM full-reference metric (0-1, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CW-SSIM (Sampat et al. 2009) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1263,6 +1356,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dists`](src/ayase/modules/dists.py)** — Deep Image Structure and Texture Similarity (full-reference)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → piq
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: DISTS (Ding et al., TPAMI 2020) via piq — https://github.com/photosynthesis-team/piq
 - **Packages**: piq, torch
@@ -1276,6 +1370,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dmm`](src/ayase/modules/dmm.py)** — DMM detail model metric full-reference (higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: DMM — FR-IQA with debiased mapping (the pyiqa 'dmm' implementation, added Dec 2025) — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1289,6 +1384,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dreamsim`](src/ayase/modules/dreamsim_metric.py)** — DreamSim foundation model perceptual similarity (CLIP+DINO ensemble)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → dreamsim
 - **Provenance**: `adapted` — DreamSim is defined for image pairs; video is scored as the mean over position-paired uniformly sampled frames. — source: DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim
 - **Packages**: dreamsim, torch
@@ -1303,6 +1399,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`erqa`](src/ayase/modules/erqa.py)** — ERQA edge restoration quality assessment (FR, 2022)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → erqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: ERQA (MSU, 2022), the erqa package — https://github.com/msu-video-group/ERQA
 - **Packages**: erqa
@@ -1316,6 +1413,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`flip`](src/ayase/modules/flip_metric.py)** — NVIDIA FLIP perceptual difference (0-1, lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: flip_evaluator → flip_torch → unavailable
 - **Provenance**: `adapted` — Backend is the `flip-evaluator` pip package (LDR mode); the `flip_torch` backend has no established numerical parity with upstream; unequal inputs are resized to shared minimum dimensions and videos report the mean over every fifth paired frame by default. — source: ꟻLIP (Andersson et al., HPG 2020) — https://github.com/NVlabs/flip
 - **Packages**: flip-evaluator, flip_torch, torch
@@ -1329,6 +1427,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`flolpips`](src/ayase/modules/flolpips.py)** — Flow-weighted LPIPS full-reference video quality (PWC-Net + LPIPS-Alex)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pwcnet_lpips
 - **Provenance**: `published` — PWC-Net — pure-torch port with converted official weights (ptlflow) instead of cupy-CUDA correlation; frame-pair counts use min(len_ref, len_dis) instead of asserting equal length — source: FloLPIPS (Danier et al., PCS 2022) — https://github.com/danier97/flolpips
 - **Packages**: lpips, opencv-python, ptlflow, torch
@@ -1341,6 +1440,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`perceptual_fr`](src/ayase/modules/perceptual_fr.py)** — FSIM + GMSD + VSI full-reference perceptual metrics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → piq
 - **Provenance**: `published` — source: FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq
 - **Packages**: piq, torch
@@ -1354,6 +1454,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`gabor_flow_vq`](src/ayase/modules/gabor_flow_vq.py)** — Video quality via spatiotemporal Gabor decomposition (FR or NR fallback)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → port
 - **Provenance**: `own` — source: MOVIE (Seshadrinathan & Bovik, TIP 2010) claimed — https://live.ece.utexas.edu/research/Quality/movie.html
 - **Packages**: opencv-python
@@ -1366,6 +1467,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`perceptual_fr`](src/ayase/modules/perceptual_fr.py)** — FSIM + GMSD + VSI full-reference perceptual metrics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → piq
 - **Provenance**: `published` — source: FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq
 - **Packages**: piq, torch
@@ -1379,6 +1481,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
 - **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — The CLIP image encoder is configurable, and this module reports one paired-image cosine rather than DreamBooth's aggregate evaluation over generated and reference image sets. — source: CLIP-I (Ruiz et al., DreamBooth, CVPR 2023) — https://arxiv.org/abs/2208.12242
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1392,6 +1495,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
 - **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — The default image protocol uses the DreamBooth DINO v1 ViT-S/16 encoder. The configurable dinov2_model can substitute another CLS encoder; the shared configurable field is classified as adapted. — source: DINO-score (Ruiz et al., DreamBooth) — https://arxiv.org/abs/2208.12242
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1405,6 +1509,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
 - **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1418,6 +1523,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_fidelity`](src/ayase/modules/i2i_fidelity.py)** — Pixel-level MSE/MAE plus published GMSM gradient similarity (FR)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: opencv_numpy
 - **Provenance**: `published` — source: GMSM (Xue et al., IEEE TIP 2014, DOI:10.1109/TIP.2013.2293423)
 - **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
@@ -1428,6 +1534,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
 - **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Both inputs are resized to 256×256 before LPIPS v0.1 AlexNet; the official LPIPS interface accepts equal-sized tensors at their supplied resolution and does not prescribe this fixed resize. — source: LPIPS v0.1 AlexNet (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1441,6 +1548,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_fidelity`](src/ayase/modules/i2i_fidelity.py)** — Pixel-level MSE/MAE plus published GMSM gradient similarity (FR)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: opencv_numpy
 - **Provenance**: `published` — source: standard MAE definition (https://www.itl.nist.gov/div898/handbook/eda/section3/eda3661.htm)
 - **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
@@ -1451,6 +1559,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_fidelity`](src/ayase/modules/i2i_fidelity.py)** — Pixel-level MSE/MAE plus published GMSM gradient similarity (FR)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: opencv_numpy
 - **Provenance**: `published` — source: standard MSE definition (https://www.itl.nist.gov/div898/handbook/eda/section3/eda3661.htm)
 - **Tests**: covered by [`test_i2i_metrics.py`](tests/modules/per_module/test_i2i_metrics.py)
@@ -1461,6 +1570,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`i2i_learned`](src/ayase/modules/i2i_learned.py)** — DINO, CLIP, SigLIP, and LPIPS image-to-image fidelity
 
 - **Input**: img +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: Pillow, lpips, torch, torchvision, transformers
 - **VRAM**: ~600 MB
@@ -1474,6 +1584,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`image_lpips`](src/ayase/modules/image_lpips.py)** — LPIPS perceptual distance between image pairs and diversity metric
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: lpips → unavailable
 - **Provenance**: `published` — source: LPIPS (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity
 - **Packages**: lpips, torch
@@ -1487,6 +1598,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`local_std_uniformity`](src/ayase/modules/local_std_uniformity.py)** — Local-std uniformity point-cloud proxy (own, GraphSIM-inspired)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: named after GraphSIM (Yang et al., TPAMI 2020); the docstring acknowledges it is a proxy — https://arxiv.org/abs/2006.12447
 - **Packages**: open3d, scipy
@@ -1499,6 +1611,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mad`](src/ayase/modules/mad_metric.py)** — Most Apparent Distortion full-reference metric (lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: MAD (Larson & Chandler, 2010) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1512,6 +1625,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ms_ssim`](src/ayase/modules/ms_ssim.py)** — Multi-Scale SSIM perceptual similarity metric (full-reference)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pytorch_msssim → unavailable
 - **Provenance**: `published` — source: MS-SSIM (Wang et al., 2003) via pytorch-msssim — https://github.com/VainF/pytorch-msssim
 - **Packages**: pytorch_msssim, torch
@@ -1525,6 +1639,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mscn_entropy`](src/ayase/modules/mscn_entropy.py)** — Spatial-temporal entropic difference (full-reference)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: greed_fr
 - **Provenance**: `own` — source: GREED (Madhusudana et al. TIP 2021) — name only — https://github.com/pavancm/GREED
 - **Packages**: opencv-python
@@ -1538,6 +1653,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mse_color`](src/ayase/modules/mse_color.py)** — MSE-based point-cloud color quality (own)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `own` — source: PCQM (Meynet et al., 2020) claimed — https://github.com/MEPP-team/PCQM
 - **Packages**: open3d, scipy
@@ -1550,6 +1666,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`nlpd`](src/ayase/modules/nlpd_metric.py)** — Normalized Laplacian Pyramid Distance full-reference (lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: NLPD (Laparra et al., 2016) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1563,6 +1680,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pc_psnr`](src/ayase/modules/pc_psnr.py)** — D1/D2 MPEG point cloud PSNR
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `published` — source: MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric
 - **Packages**: open3d, scipy
@@ -1575,6 +1693,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pc_psnr`](src/ayase/modules/pc_psnr.py)** — D1/D2 MPEG point cloud PSNR
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `published` — at least one of the clouds needs normals; without normals the metric is not emitted — source: MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric
 - **Packages**: open3d, scipy
@@ -1587,6 +1706,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1599,6 +1719,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `own` — source: Physics-IQ score claimed — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1611,6 +1732,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1623,6 +1745,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1635,6 +1758,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1647,6 +1771,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1659,6 +1784,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1671,6 +1797,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1683,6 +1810,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ Verified (calculate_iq_score_stable.py) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1695,6 +1823,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics_iq`](src/ayase/modules/physics_iq.py)** — Physics-IQ physical-understanding protocol (motion-mask IoU + MSE vs real continuation)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → verified_port → port
 - **Provenance**: `published` — source: Physics-IQ (Motamed et al., ICCV 2025) — https://github.com/google-deepmind/physics-IQ-benchmark
 - **Source**: <a href="https://github.com/google-deepmind/physics-IQ-benchmark" target="_blank">GitHub</a>
@@ -1707,6 +1836,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pieapp`](src/ayase/modules/pieapp.py)** — PieAPP full-reference perceptual error via pairwise preference (lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: PieAPP (Prashnani et al., CVPR 2018) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1720,6 +1850,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_heat_ssim`](src/ayase/modules/pose_heat_ssim.py)** — PoseHeat-SSIM against an aligned reference (0-1, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — clean-room from the paper's description (no official code released): Umeyama SIM3 alignment and max heatmap composition are local choices; person correspondence is greedy by centroid — source: DanceTogether PoseHeat (arXiv 2505.18078) — https://arxiv.org/abs/2505.18078
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2505.18078" target="_blank">arXiv</a>
@@ -1732,6 +1863,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_heat_ssim`](src/ayase/modules/pose_heat_ssim.py)** — PoseHeat-SSIM against an aligned reference (0-1, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — clean-room from the paper's description (no official code released): fraction of frames that could be scored — source: DanceTogether PoseHeat (arXiv 2505.18078) — https://arxiv.org/abs/2505.18078
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2505.18078" target="_blank">arXiv</a>
@@ -1744,6 +1876,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`psnr99`](src/ayase/modules/psnr99.py)** — PSNR99 worst-1%-pixel luma PSNR for super-resolution (FR, 2025)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `adapted` — Image inputs use the published per-image formula. Video inputs use Ayase-defined uniform frame subsampling and mean aggregation; the shared image/video field is classified as adapted. — source: PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398
 - **Source**: <a href="https://arxiv.org/abs/2509.26398" target="_blank">arXiv</a>
@@ -1756,6 +1889,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`psnr_hvs_approx`](src/ayase/modules/psnr_hvs_approx.py)** — PSNR-HVS approximation with published CSF + own AC masking (dB, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: dct
 - **Provenance**: `own` — masking by reference AC energy is an own model, not the authors' PSNR-HVS-M — source: PSNR-HVS-M (Ponomarenko et al., 2007) claimed — https://www.ponomarenko.info/psnrhvsm.htm
 - **Tests**: covered by [`test_psnr_hvs_approx.py`](tests/modules/per_module/test_psnr_hvs_approx.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -1767,6 +1901,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`erp_psnr`](src/ayase/modules/erp_psnr.py)** — ERP PSNR with own spherical weightings + adapted WS-PSNR
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Source**: <a href="https://github.com/Samsung/360tools" target="_blank">GitHub</a>
@@ -1779,6 +1914,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`psnr_grad`](src/ayase/modules/psnr_grad.py)** — Sobel-gradient-weighted PSNR (own variant, FR)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: PSNR_DIV (ICIP 2025, arXiv 2510.01361) claimed — https://arxiv.org/abs/2510.01361
 - **Source**: <a href="https://arxiv.org/abs/2510.01361" target="_blank">arXiv</a>
@@ -1791,6 +1927,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`psnr_hvs_approx`](src/ayase/modules/psnr_hvs_approx.py)** — PSNR-HVS approximation with published CSF + own AC masking (dB, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: dct
 - **Provenance**: `adapted` — Ayase reimplements the published CSF-weighted DCT formula; numerical equivalence with the authors' reference implementation has not been established, hence the explicit _approx field name — source: PSNR-HVS (Egiazarian et al., 2006) — https://www.ponomarenko.info/psnrhvsm.htm
 - **Tests**: covered by [`test_psnr_hvs_approx.py`](tests/modules/per_module/test_psnr_hvs_approx.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -1802,6 +1939,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`erp_psnr`](src/ayase/modules/erp_psnr.py)** — ERP PSNR with own spherical weightings + adapted WS-PSNR
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Source**: <a href="https://github.com/Samsung/360tools" target="_blank">GitHub</a>
@@ -1814,6 +1952,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`speedqa`](src/ayase/modules/speedqa.py)** — SpEED-QA spatial+temporal entropic differencing (deterministic port; distortion index, higher=worse)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: port
 - **Provenance**: `adapted` — port of the formulas and protocol (all consecutive frames, fixed down_size); cv2 INTER_AREA is area averaging, not MATLAB imresize's antialiased cubic — small numerical differences; luma via BGR2GRAY — source: Bampis et al., IEEE SPL 2017; SpEED-QA_release (MATLAB) — https://github.com/christosbampis/SpEED-QA_release
 - **Packages**: opencv-python, scipy
@@ -1827,6 +1966,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ssimc`](src/ayase/modules/ssimc.py)** — SSIM-C complex wavelet structural similarity FR (higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: SSIM (Wang et al. 2004) on color channels, pyiqa 'ssimc' — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1840,6 +1980,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ssimulacra2`](src/ayase/modules/ssimulacra2.py)** — SSIMULACRA 2 perceptual similarity (JPEG XL standard, 100=identical, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ssimulacra2 → unavailable
 - **Provenance**: `adapted` — Backend is the pip `ssimulacra2` package (third-party port); numerical equivalence with the reference libjxl implementation is not verified; unequal inputs are resized to their shared minimum dimensions, and video scores are an Ayase mean over subsampled frame pairs. — source: SSIMULACRA 2 (Cloudinary/libjxl) — https://github.com/cloudinary/ssimulacra2
 - **Packages**: ssimulacra2
@@ -1853,6 +1994,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`st_mad`](src/ayase/modules/st_mad.py)** — ST-MAD spatiotemporal MAD (ICIP 2011, deterministic port, lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: port
 - **Provenance**: `adapted` — line-by-line port; upstream reads all video frames — here all consecutive frames up to an optional max_frames; luma via cv2 BGR2GRAY — source: Vu, Vu, Chandler, ICIP 2011; STMAD_2011_MatlabCode — https://github.com/Netflix/vmaf/tree/master/matlab/STMAD_2011_MatlabCode
 - **Packages**: opencv-python
@@ -1866,6 +2008,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`stlpips_selfdist`](src/ayase/modules/stlpips_selfdist.py)** — Spatiotemporal perceptual video quality (Shift-Tolerant LPIPS)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: stlpips → unavailable
 - **Provenance**: `own` — source: ST-LPIPS (Ghildyal & Liu, ECCV 2022) — model only — https://github.com/abhijay9/ShiftTolerant-LPIPS
 - **Packages**: opencv-python, stlpips-pytorch, torch
@@ -1879,6 +2022,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`strred`](src/ayase/modules/strred.py)** — STRRED reduced-reference temporal quality (ITU, lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: skvideo → unavailable
 - **Provenance**: `published` — source: Soundararajan & Bovik, TCSVT 2013; scikit-video — http://www.scikit-video.org/stable/modules/generated/skvideo.measure.strred.html
 - **Packages**: scikit-video
@@ -1891,6 +2035,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`topiq_fr`](src/ayase/modules/topiq_fr.py)** — TOPIQ full-reference top-down semantics-to-distortion IQA (higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: TOPIQ-FR; pyiqa topiq_fr — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -1904,6 +2049,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
 - **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio
 - **Packages**: diffsynth, torch
@@ -1917,6 +2063,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vfips`](src/ayase/modules/vfips.py)** — VFIPS frame interpolation perceptual similarity (ECCV 2022, FR)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → real
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: VFIPS, Hou et al. ECCV 2022 — https://github.com/hqqxyy/VFIPS
 - **Packages**: huggingface_hub, opencv-python, torch
@@ -1930,6 +2077,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vif`](src/ayase/modules/vif.py)** — Visual Information Fidelity metric (full-reference)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: piq → unavailable
 - **Provenance**: `published` — source: VIF, Sheikh & Bovik TIP 2006; piq.vif_p — https://github.com/photosynthesis-team/piq
 - **Packages**: piq, torch
@@ -1943,6 +2091,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmaf`](src/ayase/modules/vmaf.py)** — VMAF perceptual video quality metric (full-reference)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF v0.6.1, Netflix; FFmpeg libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
@@ -1955,6 +2104,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmaf_4k`](src/ayase/modules/vmaf_4k.py)** — VMAF 4K model for UHD content (0-100, higher=better)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF 4K v0.6.1; libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
@@ -1966,6 +2116,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmaf_neg`](src/ayase/modules/vmaf_neg.py)** — VMAF NEG no-enhancement-gain variant (0-100, higher=better)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF NEG v0.6.1neg; libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
@@ -1978,6 +2129,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmaf_phone`](src/ayase/modules/vmaf_phone.py)** — VMAF phone model for mobile viewing (0-100, higher=better)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF phone model; libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
@@ -1989,6 +2141,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`perceptual_fr`](src/ayase/modules/perceptual_fr.py)** — FSIM + GMSD + VSI full-reference perceptual metrics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → piq
 - **Provenance**: `published` — source: FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq
 - **Packages**: piq, torch
@@ -2002,6 +2155,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`wadiqam_fr`](src/ayase/modules/wadiqam_fr.py)** — WaDIQaM full-reference deep quality metric (higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: WaDIQaM-FR; pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -2015,6 +2169,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`erp_psnr`](src/ayase/modules/erp_psnr.py)** — ERP PSNR with own spherical weightings + adapted WS-PSNR
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `adapted` — input is 8-bit luma (GRAYSCALE), the reference is resized to the test size — pipeline assumptions, not part of the WS-PSNR definition — source: WS-PSNR, Sun et al. JVET-D0040; Samsung 360tools — https://github.com/Samsung/360tools
 - **Source**: <a href="https://github.com/Samsung/360tools" target="_blank">GitHub</a>
@@ -2027,6 +2182,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ws_ssim`](src/ayase/modules/ws_ssim.py)** — WS-SSIM weighted spherical SSIM
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `adapted` — weights at pixel centers as in 360tools; SSIM kernel via cv2 GaussianBlur (upstream uses a fixed Gaussian window); video — <=subsample frames with pairwise averaging — source: WS-SSIM, Zhou et al. 2018; 360tools — https://github.com/Samsung/360tools
 - **Source**: <a href="https://github.com/Samsung/360tools" target="_blank">GitHub</a>
@@ -2039,6 +2195,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`xpsnr`](src/ayase/modules/xpsnr.py)** — XPSNR perceptually weighted PSNR (Fraunhofer, dB, higher=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ffmpeg_xpsnr → unavailable
 - **Provenance**: `published` — source: XPSNR, Helmrich et al.; FFmpeg xpsnr — https://ffmpeg.org/ffmpeg-filters.html#xpsnr
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -2052,6 +2209,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor InternVL model)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Packages**: torch, transformers
@@ -2065,6 +2223,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
 
 - **Input**: video · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
 - **Packages**: opencv-python, qwen_omni_utils, torch, transformers
@@ -2078,6 +2237,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
 
 - **Input**: video · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
 - **Packages**: opencv-python, qwen_omni_utils, torch, transformers
@@ -2091,6 +2251,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
 
 - **Input**: video · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
 - **Packages**: opencv-python, qwen_omni_utils, torch, transformers
@@ -2104,6 +2265,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avc_reward`](src/ayase/modules/avc_reward.py)** — AVC-Reward audio-video semantic, temporal, and event consistency
 
 - **Input**: video · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Ayase uses pinned Transformers 4.57.6 with SDPA instead of the released vLLM 0.12 runtime. It reproduces vLLM's at-most-32 uniform raw-frame selection and dropped FPS metadata, but native processing has not been proven numerically identical. Ayase also rejects non-finite/bool scores and a missing explicit audio path instead of falling back. — source: Native Transformers adaptation of AVC-Reward protocol eb0659862ff6888dcc8e92e3bf69c7590d59d54d — https://github.com/Tsuki0512/AVC-Reward/tree/eb0659862ff6888dcc8e92e3bf69c7590d59d54d
 - **Packages**: opencv-python, qwen_omni_utils, torch, transformers
@@ -2117,6 +2279,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -2130,6 +2293,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -2143,6 +2307,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -2156,6 +2321,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -2168,6 +2334,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`captioning`](src/ayase/modules/captioning.py)** — Generates captions using BLIP-2 + computes BLEU score (EvalCrafter blip_bleu)
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: blip2 → unavailable
 - **Provenance**: `published` — source: EvalCrafter BLIP-BLEU — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py
 - **Packages**: Pillow, opencv-python, pycocoevalcap, torch, transformers
@@ -2181,6 +2348,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`blip_score`](src/ayase/modules/blip_score.py)** — BLIP image-text matching alignment score
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: blip_itm → unavailable
 - **Provenance**: `adapted` — the published quantity is the official checkpoint's ITM probability on an image; the video extension (mean over frames) is not from the source — source: BLIP ITM head probability (Li et al. 2022), blip-itm-large-coco — https://huggingface.co/Salesforce/blip-itm-large-coco
 - **Packages**: torch, transformers
@@ -2194,6 +2362,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_image_similarity`](src/ayase/modules/clip_image_similarity.py)** — CLIP image-to-image cosine similarity vs reference image (CLIP-I)
 
 - **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → open_clip → transformers
 - **Provenance**: `adapted` — video extension: mean over frames (CLIP-I is defined for images) — source: CLIP-I (DreamBooth, Ruiz et al. 2023; OpenAI CLIP ViT-B/32) — https://arxiv.org/abs/2208.12242
 - **Packages**: open-clip-torch, torch, transformers
@@ -2208,6 +2377,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`semantic_alignment`](src/ayase/modules/semantic_alignment.py)** — Checks alignment between video and caption (CLIP Score)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: transformers → open_clip
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CLIPSIM (Wu et al., GODIVA 2021) — https://arxiv.org/abs/2104.14806
 - **Packages**: open-clip-torch, torch, transformers
@@ -2222,6 +2392,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2235,6 +2406,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2248,6 +2420,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2261,6 +2434,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2274,6 +2448,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2287,6 +2462,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2300,6 +2476,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_prompt_check`](src/ayase/modules/clip_prompt_check.py)** — CLIP-based T2I compositional checks (own, GenEval-inspired)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval
 - **Packages**: mmdet, torch, transformers, ultralytics
 - **VRAM**: ~600 MB
@@ -2313,6 +2490,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_event_order`](src/ayase/modules/clip_event_order.py)** — CLIP event-order temporal compositionality check (own, TC-Bench-inspired)
 
 - **Input**: vid +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `own` — source: TC-Bench, Feng et al. arXiv:2406.08656 — name only — https://arxiv.org/abs/2406.08656
 - **Packages**: torch, transformers, urllib
@@ -2327,6 +2505,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_event_order`](src/ayase/modules/clip_event_order.py)** — CLIP event-order temporal compositionality check (own, TC-Bench-inspired)
 
 - **Input**: vid +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `own` — source: TC-Bench, Feng et al. arXiv:2406.08656 — name only — https://arxiv.org/abs/2406.08656
 - **Packages**: torch, transformers, urllib
@@ -2341,6 +2520,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_event_order`](src/ayase/modules/clip_event_order.py)** — CLIP event-order temporal compositionality check (own, TC-Bench-inspired)
 
 - **Input**: vid +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `own` — source: TC-Bench, Feng et al. arXiv:2406.08656 — name only — https://arxiv.org/abs/2406.08656
 - **Packages**: torch, transformers, urllib
@@ -2355,6 +2535,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_event_order`](src/ayase/modules/clip_event_order.py)** — CLIP event-order temporal compositionality check (own, TC-Bench-inspired)
 
 - **Input**: vid +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `own` — source: TC-Bench, Feng et al. arXiv:2406.08656 — name only — https://arxiv.org/abs/2406.08656
 - **Packages**: torch, transformers, urllib
@@ -2369,6 +2550,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_event_order`](src/ayase/modules/clip_event_order.py)** — CLIP event-order temporal compositionality check (own, TC-Bench-inspired)
 
 - **Input**: vid +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `own` — source: TC-Bench, Feng et al. arXiv:2406.08656 — name only — https://arxiv.org/abs/2406.08656
 - **Packages**: torch, transformers, urllib
@@ -2383,6 +2565,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cycle_reward`](src/ayase/modules/cycle_reward.py)** — CycleReward-Combo image-text alignment reward (ICCV 2025)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → cyclereward
 - **Provenance**: `published` — source: CycleReward-Combo (Bahng et al., ICCV 2025), the cyclereward package — https://github.com/hjbahng/cyclereward
 - **Packages**: cyclereward, torch
@@ -2396,6 +2579,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dice_edit`](src/ayase/modules/dice_edit.py)** — DICE object-level instruction-guided image-edit coherence (ICCV 2025)
 
 - **Input**: img/vid +ref +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: dice
 - **Provenance**: `adapted` — official weights and verbatim prompts; the final fraction of coherent edits (and 0 when no edits) is own aggregation — the official example emits no single number; box markup via PIL instead of upstream's matplotlib render — source: DICE (ICCV 2025), official aimagelab/DICE_*_Idefics weights and prompts — https://github.com/aimagelab/DICE
 - **Packages**: peft, torch, transformers
@@ -2409,6 +2593,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
 
 - **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
 - **Packages**: Pillow, torch
@@ -2422,6 +2607,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
 
 - **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
 - **Packages**: Pillow, torch
@@ -2435,6 +2621,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`edit_score`](src/ayase/modules/edit_score.py)** — Published EditScore instruction-guided image-edit evaluator
 
 - **Input**: image +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — Author evaluate body, prompts, preprocessing, generation, and aggregation are preserved. A parser gate rejects the author's random give-up scores, invalid raw score arrays, and last-resort zero padding; failures remain missing. — source: EditScore — https://github.com/VectorSpaceLab/EditScore/tree/4609c5d2ebb62fdebf665d3c924686d896ef1f74
 - **Packages**: Pillow, torch
@@ -2448,6 +2635,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hpsv2`](src/ayase/modules/hpsv2.py)** — HPSv2 prompt-image human preference scoring
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → hpsv2 → diffsynth
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: HPSv2 (Wu et al. 2023) — https://github.com/tgxs002/HPSv2
 - **Packages**: diffsynth, hpsv2, torch
@@ -2461,6 +2649,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hpsv3`](src/ayase/modules/hpsv3.py)** — HPSv3 wide-spectrum human preference scoring (frame-averaged on video)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: hpsv3 → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: HPSv3 (MizzenAI, ICCV 2025) — https://huggingface.co/MizzenAI/HPSv3
 - **Packages**: huggingface_hub, safetensors, torch, transformers
@@ -2475,6 +2664,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`image_reward`](src/ayase/modules/image_reward.py)** — Human preference prediction for text-to-image quality (ImageReward)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: image_reward → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: ImageReward (Xu et al., NeurIPS 2023) — https://github.com/THUDM/ImageReward
 - **Packages**: ImageReward, transformers
@@ -2488,6 +2678,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`imagebind_score`](src/ayase/modules/imagebind_score.py)** — ImageBind audio-text and audio-video semantic cosine similarities
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → imagebind
 - **Provenance**: `published` — source: JavisBench sim_av (JavisDiT), ImageBind (Girdhar et al., CVPR 2023) — https://github.com/JavisVerse/JavisDiT
 - **Packages**: imagebind, torch
@@ -2501,6 +2692,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`love_results`](src/ayase/modules/love_results.py)** — LOVE perception and text-video correspondence result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: imports LOVE results — https://huggingface.co/anonymousdb/LOVE-Perception
 - **Source**: <a href="https://huggingface.co/anonymousdb/LOVE-Perception" target="_blank">HF</a>
@@ -2512,6 +2704,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`masc`](src/ayase/modules/masc.py)** — MaSC masked-maxcos concept preservation similarity
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: MaSC (arXiv 2605.22469) — https://arxiv.org/abs/2605.22469
 - **Packages**: torch, transformers
@@ -2525,6 +2718,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
 - **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: mj_video → unavailable
 - **Provenance**: `published` — source: MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
@@ -2538,6 +2732,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
 - **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: mj_video → unavailable
 - **Provenance**: `published` — source: MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
@@ -2551,6 +2746,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`phyground_results`](src/ayase/modules/phyground_results.py)** — PhyGround general and physical-law judge result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround
 - **Source**: <a href="https://github.com/NU-World-Model-Embodied-AI/PhyGround" target="_blank">GitHub</a> · <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
@@ -2562,6 +2758,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pickscore`](src/ayase/modules/pickscore.py)** — PickScore prompt-conditioned human preference scoring (frame-averaged on video)
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pickscore
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: PickScore (Kirstain et al., NeurIPS 2023) — https://github.com/yuvalkirstain/PickScore
 - **Packages**: torch, transformers
@@ -2576,6 +2773,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: api → unavailable
 - **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
 - **Packages**: google, openai
@@ -2589,6 +2787,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: api → unavailable
 - **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
 - **Packages**: google, openai
@@ -2602,6 +2801,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: api → unavailable
 - **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
 - **Packages**: google, openai
@@ -2615,6 +2815,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: api → unavailable
 - **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
 - **Packages**: google, openai
@@ -2628,6 +2829,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pqsg`](src/ayase/modules/pqsg.py)** — Prompt-derived question graph verification with dependency-aware scoring
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: api → unavailable
 - **Provenance**: `adapted` — Ayase follows the released seven-example, two-batched-call implementation rather than the paper's one-example, individual-question prose; rejects malformed, dangling, cyclic, backward, and O-to-O graphs before video upload; and reads prompts/sidecars as UTF-8. Provider model and QA FPS remain configurable. — source: PQSG released source at immutable revision 03afdb0e6f9ed68d363a68eea5ca4fd90d53848e — https://github.com/atinpothiraj/pqsg/tree/03afdb0e6f9ed68d363a68eea5ca4fd90d53848e
 - **Packages**: google, openai
@@ -2641,6 +2843,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → transformers
 - **Provenance**: `adapted` — judge inference via transformers/OpenAI-compatible endpoint instead of the official ms-swift PtEngine — source: Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -2654,6 +2857,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ref4d_results`](src/ayase/modules/ref4d_results.py)** — Ref4D semantic, event, motion, and world result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench
 - **Source**: <a href="https://github.com/TAILab-W/Ref4D-VideoBench" target="_blank">GitHub</a>
@@ -2665,6 +2869,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ref4d_results`](src/ayase/modules/ref4d_results.py)** — Ref4D semantic, event, motion, and world result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench
 - **Source**: <a href="https://github.com/TAILab-W/Ref4D-VideoBench" target="_blank">GitHub</a>
@@ -2676,6 +2881,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`sd_reference`](src/ayase/modules/sd_reference.py)** — SD Score — CLIP similarity between video frames and SDXL-generated reference images (EvalCrafter)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → sdxl_clip
 - **Provenance**: `published` — source: EvalCrafter SD-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py
 - **Packages**: Pillow, diffusers, torch, transformers
@@ -2690,6 +2896,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`geneval2`](src/ayase/modules/geneval2.py)** — GenEval2 Soft-TIFA image-prompt alignment (raw AM and GM)
 
 - **Input**: image · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → qwen3_vl
 - **Provenance**: `published` — source: GenEval2 Soft-TIFA — https://github.com/facebookresearch/GenEval2
 - **Packages**: torch, transformers
@@ -2703,6 +2910,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`geneval2`](src/ayase/modules/geneval2.py)** — GenEval2 Soft-TIFA image-prompt alignment (raw AM and GM)
 
 - **Input**: image · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → qwen3_vl
 - **Provenance**: `published` — source: GenEval2 Soft-TIFA — https://github.com/facebookresearch/GenEval2
 - **Packages**: torch, transformers
@@ -2715,6 +2923,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2726,6 +2935,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2737,6 +2947,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2749,6 +2960,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2760,6 +2972,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2771,6 +2984,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2782,6 +2996,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Official seven-category T2V-CompBench evaluator runner
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official_t2v_compbench
 - **Provenance**: `adapted` — Ayase stages selected benchmark IDs rather than requiring all 200; the upstream evaluator and score formula are unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Source**: <a href="https://github.com/KaiyueSun98/T2V-CompBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/liuhaotian/llava-v1.6-34b" target="_blank">HF</a>
@@ -2794,6 +3009,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_generic_score`](src/ayase/modules/t2v_generic_score.py)** — Generic text-video alignment/quality via a configurable HF model (own)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → t2vscore
 - **Provenance**: `own` — source: T2VScore, Wu et al. 2024 — name only — https://github.com/showlab/T2VScore
 - **Packages**: torch, transformers
@@ -2807,6 +3023,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`t2v_generic_score`](src/ayase/modules/t2v_generic_score.py)** — Generic text-video alignment/quality via a configurable HF model (own)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → t2vscore
 - **Provenance**: `own` — source: T2VScore, Wu et al. 2024 — name only — https://github.com/showlab/T2VScore
 - **Packages**: torch, transformers
@@ -2820,6 +3037,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`tifa`](src/ayase/modules/tifa.py)** — TIFA text-to-image faithfulness via LLM-generated MC questions + UnifiedQA filter + VQA (ICCV 2023)
 
 - **Input**: vid +cap · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Backend**: official → unavailable
 - **Provenance**: `adapted` — TIFA is defined for images; for video it is the mean of the official tifa_score over uniformly sampled frames — source: TIFA, Hu et al. ICCV 2023 — https://github.com/Yushi-Hu/tifa
 - **Packages**: opencv-python
@@ -2833,6 +3051,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_2`](src/ayase/modules/unified_reward_2.py)** — UnifiedReward 2.0 multi-dimensional prompt-image reward scoring
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-2.0; DiffSynth-Studio ImageMetrics — https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics
 - **Packages**: diffsynth, torch
@@ -2846,6 +3065,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
 - **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio
 - **Packages**: diffsynth, torch
@@ -2859,6 +3079,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
 - **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio
 - **Packages**: diffsynth, torch
@@ -2872,6 +3093,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
 - **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio
 - **Packages**: diffsynth, torch
@@ -2885,6 +3107,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`unified_reward_edit`](src/ayase/modules/unified_reward_edit.py)** — UnifiedReward Edit instruction-guided image editing quality scoring
 
 - **Input**: img/vid +ref +cap · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-Edit; DiffSynth-Studio — https://github.com/modelscope/DiffSynth-Studio
 - **Packages**: diffsynth, torch
@@ -2898,6 +3121,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vebench`](src/ayase/modules/vebench.py)** — VE-Bench human-aligned instruction-guided video-edit quality (AAAI 2025)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: vebench
 - **Provenance**: `published` — source: VE-Bench, AAAI 2025; the vebench 1.0.0 package — https://github.com/littlespray/VE-Bench
 - **Packages**: torch, transformers, vebench
@@ -2910,6 +3134,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -2923,6 +3148,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -2936,6 +3162,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -2949,6 +3176,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -2962,6 +3190,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -2975,6 +3204,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -2988,6 +3218,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vgif_score`](src/ayase/modules/vgif_score.py)** — VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric
 
 - **Input**: video · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → gemini_api
 - **Provenance**: `published` — Malformed annotation graphs are rejected before upload; boolean rubric ratings and extra rubric dimensions are rejected instead of coerced. — source: VGIF-Score — https://github.com/PRIS-CV/VGIF-SCORE/tree/b7558fe27bb13b97cd6039dfa421da4d11c4f2bc
 - **Packages**: requests
@@ -3001,6 +3232,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`video_reward`](src/ayase/modules/video_reward.py)** — VideoAlign human preference reward model (NeurIPS 2025)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: videoreward_official → unavailable
 - **Provenance**: `published` — source: VideoAlign/VideoReward, Liu et al. NeurIPS 2025 — https://github.com/KlingAIResearch/VideoAlign
 - **Packages**: torch
@@ -3014,6 +3246,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`video_text_matching`](src/ayase/modules/video_text_matching.py)** — ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: xclip → clip → unavailable
 - **Provenance**: `own`
 - **Packages**: Pillow, torch, transformers
@@ -3028,6 +3261,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videophy2_autoeval`](src/ayase/modules/videophy2.py)** — Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold
 
 - **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official
 - **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
 - **Packages**: torch, transformers
@@ -3040,6 +3274,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
 - **Input**: video +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
 - **Packages**: google
@@ -3053,6 +3288,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
 - **Input**: video +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
 - **Packages**: google
@@ -3066,6 +3302,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
 - **Input**: video +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
 - **Packages**: google
@@ -3079,6 +3316,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore2`](src/ayase/modules/videoscore2.py)** — VideoScore2 3-dimensional generative video evaluation
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: transformers → unavailable
 - **Provenance**: `published` — source: VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -3093,6 +3331,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore2`](src/ayase/modules/videoscore2.py)** — VideoScore2 3-dimensional generative video evaluation
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: transformers → unavailable
 - **Provenance**: `published` — source: VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -3107,6 +3346,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: videoscore → unavailable
 - **Provenance**: `published` — source: VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore
 - **Packages**: mantis, torch, transformers
@@ -3120,6 +3360,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: videoscore → unavailable
 - **Provenance**: `published` — source: VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore
 - **Packages**: mantis, torch, transformers
@@ -3133,6 +3374,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vision_reward`](src/ayase/modules/vision_reward.py)** — VisionReward fine-grained QA-decomposed human preference reward (CogVLM2-Video judgment questions, linearly weighted) — AAAI 2026
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — 29 questions and weights verbatim; images are skipped (VisionReward-Image is a separate sat checkpoint, not implemented); frames uniformly <=24 via sample_frames — source: VisionReward, zai-org (AAAI 2026) — https://github.com/zai-org/VisionReward
 - **Packages**: torch, transformers
@@ -3146,6 +3388,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vqa_score`](src/ayase/modules/vqa_score.py)** — VQAScore text-visual alignment via VQA probability (0-1, higher=better)
 
 - **Input**: img/vid +cap · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: t2v_metrics → unavailable
 - **Provenance**: `published` — source: VQAScore, Lin et al. ECCV 2024; t2v_metrics — https://github.com/linzhiqiu/t2v_metrics
 - **Packages**: Pillow, opencv-python
@@ -3159,6 +3402,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`basic`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_avgen_bench_protocol.py`](tests/modules/per_module/test_avgen_bench_protocol.py), [`test_basic.py`](tests/modules/per_module/test_basic.py), [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), +3 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
@@ -3166,6 +3410,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
@@ -3180,6 +3425,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor InternVL model)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Packages**: torch, transformers
@@ -3193,6 +3439,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`background_consistency`](src/ayase/modules/background_consistency.py)** — Background consistency using CLIP (VBench per-frame protocol)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: clip → unavailable
 - **Provenance**: `adapted` — HF CLIPProcessor (bilinear resize + center crop) vs upstream clip_transform (BICUBIC resize + center crop) — embeddings differ at the ~1e-3 level — source: VBench Background Consistency — https://github.com/Vchitect/VBench/blob/master/vbench/background_consistency.py
 - **Packages**: torch, transformers
@@ -3207,6 +3454,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cdc`](src/ayase/modules/cdc.py)** — CDC color distribution consistency for video colorization
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — the paper does not fix the histogram bin count — 256 is used (the full 8-bit channel resolution) — source: CDC (Liu et al.; NTIRE 2023 Video Colorization Challenge temporal metric) — https://doi.org/10.1109/CVPRW59228.2023.00159
 - **Tests**: covered by [`test_cdc.py`](tests/modules/per_module/test_cdc.py)
@@ -3218,6 +3466,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore (InternVideo2) + CHScore (CoTracker2)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `published` — source: ChronoMagic-Bench CHScore/MTScore (NeurIPS 2024) — https://github.com/PKU-YuanGroup/ChronoMagic-Bench
 - **Packages**: configs, imageio, opencv-python, torch
@@ -3231,6 +3480,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`chronomagic`](src/ayase/modules/chronomagic.py)** — ChronoMagic-Bench MTScore (InternVideo2) + CHScore (CoTracker2)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: real → unavailable
 - **Provenance**: `published` — source: ChronoMagic-Bench CHScore/MTScore (NeurIPS 2024) — https://github.com/PKU-YuanGroup/ChronoMagic-Bench
 - **Packages**: configs, imageio, opencv-python, torch
@@ -3243,6 +3493,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`clip_temporal`](src/ayase/modules/clip_temporal.py)** — CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `adapted` — Frames go through CLIPProcessor normalization; upstream feeds raw 0-255 resized pixels to get_image_features — embeddings differ at the ~1e-3 level — source: EvalCrafter CLIP-Temp — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py
 - **Packages**: torch, transformers
@@ -3257,6 +3508,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`davis_jf`](src/ayase/modules/davis_jf.py)** — DAVIS J&F video segmentation quality (FR, 2016)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — masks are read from a video container (lossy encoding may shift boundaries) — source: DAVIS J&F (Perazzi et al., CVPR 2016) — db_eval_boundary, https://github.com/davisvideochallenge/davis2017-evaluation/blob/master/davis2017/metrics.py
 - **Source**: <a href="https://github.com/davisvideochallenge/davis2017-evaluation" target="_blank">GitHub</a>
@@ -3268,6 +3520,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`davis_jf`](src/ayase/modules/davis_jf.py)** — DAVIS J&F video segmentation quality (FR, 2016)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: DAVIS J&F (Perazzi et al., CVPR 2016) — db_eval_iou, https://github.com/davisvideochallenge/davis2017-evaluation/blob/master/davis2017/metrics.py
 - **Source**: <a href="https://github.com/davisvideochallenge/davis2017-evaluation" target="_blank">GitHub</a>
@@ -3279,6 +3532,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`depth_consistency`](src/ayase/modules/depth_consistency.py)** — Monocular depth temporal consistency
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: MiDaS model (Ranftl et al.); the metric is own — https://github.com/isl-org/MiDaS
 - **Packages**: torch
@@ -3292,6 +3546,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`entity_consistency`](src/ayase/modules/entity_consistency.py)** — Pairwise identity/appearance cosine across shots (own, EntityBench-inspired)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from EntityBench (He et al., arXiv 2605.15199); the definition is not reproduced — https://arxiv.org/abs/2605.15199
 - **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
@@ -3305,6 +3560,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`entity_consistency`](src/ayase/modules/entity_consistency.py)** — Pairwise identity/appearance cosine across shots (own, EntityBench-inspired)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from EntityBench (He et al., arXiv 2605.15199); the definition is not reproduced — https://arxiv.org/abs/2605.15199
 - **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
@@ -3318,6 +3574,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`flicker_detection`](src/ayase/modules/flicker_detection.py)** — Detects temporal luminance flicker
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_flicker_detection.py`](tests/modules/per_module/test_flicker_detection.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -3329,6 +3586,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`flow_coherence`](src/ayase/modules/flow_coherence.py)** — Bidirectional optical flow consistency (0-1, higher=coherent)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: opencv-python
@@ -3341,6 +3599,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`judder_stutter`](src/ayase/modules/judder_stutter.py)** — Detects judder (uneven cadence) and stutter (duplicate frames)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_judder_stutter.py`](tests/modules/per_module/test_judder_stutter.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -3352,6 +3611,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`jump_cut`](src/ayase/modules/jump_cut.py)** — Jump cut / abrupt transition detection (0-1, 1=no cuts)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: — (heuristic; Open-Sora reference) — https://github.com/hpcaitech/Open-Sora
 - **Packages**: opencv-python
@@ -3365,6 +3625,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`long_form_transition_stability`](src/ayase/modules/long_form_transition_stability.py)** — Boundary-local black-frame, flash, duplicate, and freeze stability
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_long_form_transition_stability.py`](tests/modules/per_module/test_long_form_transition_stability.py)
@@ -3376,6 +3637,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`lip_sync_syncnet`](src/ayase/modules/lip_sync.py)** — MIT SyncNet reference protocol with S3FD face tracks
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Adapted for checked I/O and configured device execution. By default, input is prepared at 25 fps with mono 16 kHz audio, S3FD scene-aware face tracking, a 0.40-scale crop with 13-tap median box smoothing, and vshift=15; confidence is the unweighted mean across eligible tracks. Tracking, crop, batch, and shift configuration changes alter preparation or aggregation. — source: SyncNet and S3FD source (MIT), commit 6efbb1c305c23f47a62b09cf4215a8ac45e97d49 — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
@@ -3387,6 +3649,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`lip_sync_verse`](src/ayase/modules/lip_sync.py)** — VERSE-Bench SyncNet lip-sync confidence and distance
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — VERSE preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages confidence across retained segments. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py), [`test_profiles.py`](tests/test_profiles.py)
@@ -3398,6 +3661,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`lip_sync_syncnet`](src/ayase/modules/lip_sync.py)** — MIT SyncNet reference protocol with S3FD face tracks
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Adapted for checked I/O and configured device execution. By default, input is prepared at 25 fps with mono 16 kHz audio, S3FD scene-aware face tracking, a 0.40-scale crop with 13-tap median box smoothing, and vshift=15; distance is the unweighted mean across eligible tracks. Tracking, crop, batch, and shift configuration changes alter preparation or aggregation. — source: SyncNet and S3FD source (MIT), commit 6efbb1c305c23f47a62b09cf4215a8ac45e97d49 — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
@@ -3409,6 +3673,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`lip_sync_verse`](src/ayase/modules/lip_sync.py)** — VERSE-Bench SyncNet lip-sync confidence and distance
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — VERSE preprocessing resamples to 25 fps and mono 16 kHz, uses the first InsightFace detection per frame, splits tracks when no face is detected, discards segments shorter than two seconds, applies an unsmoothed 0.30-scale 224x224 face crop, rejects segments with absolute offset >=14 frames, and averages distance vectors across retained segments before taking their minimum. — source: SyncNet LSE-C/LSE-D (Chung & Zisserman 2016), evaluated through the bundled VERSE-Bench inferencer — https://github.com/joonson/syncnet_python/tree/6efbb1c305c23f47a62b09cf4215a8ac45e97d49
 - **Source**: <a href="https://github.com/joonson/syncnet_python" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py), [`test_profiles.py`](tests/test_profiles.py)
@@ -3420,6 +3685,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
 - **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: mj_video → unavailable
 - **Provenance**: `published` — source: MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
@@ -3432,6 +3698,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: yolo → unavailable → contour
 - **Provenance**: `own`
 - **Packages**: ultralytics
@@ -3443,6 +3710,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: yolo → unavailable → contour
 - **Provenance**: `own`
 - **Packages**: ultralytics
@@ -3454,6 +3722,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: yolo → unavailable → contour
 - **Provenance**: `own`
 - **Packages**: ultralytics
@@ -3466,6 +3735,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`object_permanence`](src/ayase/modules/object_permanence.py)** — Object tracking consistency (ID switches, disappearances)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: yolo → unavailable → contour
 - **Provenance**: `own`
 - **Packages**: ultralytics
@@ -3478,6 +3748,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`phyground_results`](src/ayase/modules/phyground_results.py)** — PhyGround general and physical-law judge result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround
 - **Source**: <a href="https://github.com/NU-World-Model-Embodied-AI/PhyGround" target="_blank">GitHub</a> · <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
@@ -3489,6 +3760,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`phyground_results`](src/ayase/modules/phyground_results.py)** — PhyGround general and physical-law judge result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround
 - **Source**: <a href="https://github.com/NU-World-Model-Embodied-AI/PhyGround" target="_blank">GitHub</a> · <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">HF</a>
@@ -3500,6 +3772,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`prove`](src/ayase/modules/prove.py)** — PROVE masked object-removal spatial and temporal coherence
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: dinov2_giant
 - **Provenance**: `published` — source: PROVE RC-S/RC-T (arXiv 2605.14534, ACM MM 2026) — https://github.com/xiaomi-research/prove
 - **Packages**: torch, transformers
@@ -3514,6 +3787,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ref4d_results`](src/ayase/modules/ref4d_results.py)** — Ref4D semantic, event, motion, and world result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench
 - **Source**: <a href="https://github.com/TAILab-W/Ref4D-VideoBench" target="_blank">GitHub</a>
@@ -3524,6 +3798,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`scene_detection`](src/ayase/modules/scene_detection.py)** — Scene stability metric — penalises rapid cuts (0-1, higher=more stable)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: transnetv2 → unavailable
 - **Provenance**: `own`
 - **Packages**: opencv-python, transnetv2
@@ -3537,6 +3812,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`semantic_segmentation_consistency`](src/ayase/modules/semantic_segmentation_consistency.py)** — Temporal stability of semantic segmentation
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: segformer → unavailable
 - **Provenance**: `own`
 - **Packages**: Pillow, torch, transformers
@@ -3550,6 +3826,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`judder_stutter`](src/ayase/modules/judder_stutter.py)** — Detects judder (uneven cadence) and stutter (duplicate frames)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_judder_stutter.py`](tests/modules/per_module/test_judder_stutter.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -3561,6 +3838,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`subject_consistency`](src/ayase/modules/subject_consistency.py)** — Subject consistency using DINO ViT-B/16 (VBench per-frame protocol)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Preprocessor is HF AutoImageProcessor (resize shortest edge 256 + center crop 224); upstream dino_transform resizes the shortest edge to 224 without cropping — embeddings differ at the ~0.003 level — source: VBench subject consistency (Huang et al. CVPR 2024) — https://github.com/Vchitect/VBench
 - **Packages**: torch, transformers
 - **VRAM**: ~600 MB
@@ -3574,6 +3852,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`video_text_matching`](src/ayase/modules/video_text_matching.py)** — ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: xclip → clip → unavailable
 - **Provenance**: `own`
 - **Packages**: Pillow, torch, transformers
@@ -3588,6 +3867,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
 - **Input**: video +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
 - **Packages**: google
@@ -3601,6 +3881,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
 - **Input**: video +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
 - **Packages**: google
@@ -3614,6 +3895,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: videoscore → unavailable
 - **Provenance**: `published` — source: VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore
 - **Packages**: mantis, torch, transformers
@@ -3627,6 +3909,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`temporal_flickering`](src/ayase/modules/temporal_flickering.py)** — Warping Error using RAFT optical flow with occlusion masking (EvalCrafter)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: raft_large → unavailable
 - **Provenance**: `adapted` — RAFT input normalization is correct here; upstream optical_flow_scores.py divides frames by 255 before the vendored RAFT (which itself expects [0,255]) — their released values are computed on degenerate ~constant input — source: Warping error, EvalCrafter (Liu et al. CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py
 - **Packages**: torch, torchvision
@@ -3640,6 +3923,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`world_consistency`](src/ayase/modules/world_consistency.py)** — World Consistency Score: object permanence + causal compliance (2025)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: dinov2 → clip
 - **Provenance**: `own` — source: concept from arXiv:2508.00144, own implementation — https://arxiv.org/abs/2508.00144
 - **Packages**: torch, torchvision, transformers
@@ -3657,6 +3941,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`aigv_assessor`](src/ayase/modules/aigv_assessor.py)** — AI-generated video quality (AIGV-Assessor InternVL model)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Packages**: torch, transformers
@@ -3670,6 +3955,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`beat_alignment`](src/ayase/modules/beat_alignment.py)** — BAS beat alignment score — audio-motion sync (Bailando/CVPR 2022)
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — the source uses AIST++/OpenPose 3D pose; here MediaPipe 2D pose and joint speed in normalized coordinates — the BAS formula is the same — source: BAS (Li et al., Bailando CVPR 2022 Eq.15; EDGE) — https://github.com/lisiyao21/Bailando
 - **Packages**: librosa, mediapipe
 - **Source**: <a href="https://github.com/lisiyao21/Bailando" target="_blank">GitHub</a>
@@ -3682,6 +3968,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`beat_consistency`](src/ayase/modules/beat_consistency.py)** — Beat Consistency — audio/gesture beat kernel (BEAT, EMAGE)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — the kernel and sigma are the published ones, but joint velocity comes from MediaPipe 33-joint 2D pose instead of the source's SMPL-X skeleton, so absolute values are not comparable — source: BC, BEAT (Liu et al., ECCV 2022, arXiv:2203.05297); EMAGE (arXiv:2401.00374) — https://github.com/PantoMatrix/BEAT
 - **Packages**: librosa, mediapipe, opencv-python
@@ -3694,6 +3981,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3705,6 +3993,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3715,6 +4004,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3725,6 +4015,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3735,6 +4026,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3746,6 +4038,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3756,6 +4049,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3766,6 +4060,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`body_motion_kinematics`](src/ayase/modules/body_motion_kinematics.py)** — Reference-relative 2D body-motion kinematic diagnostics without frame alignment
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py)
@@ -3777,6 +4072,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`camera_jitter`](src/ayase/modules/camera_jitter.py)** — Camera jitter/shake detection (0-1, 1=stable)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: opencv-python
@@ -3788,6 +4084,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`camerabench`](src/ayase/modules/camerabench.py)** — CameraBench camera-motion taxonomy classification via the fine-tuned Qwen2.5-VL model (chancharikm/qwen2.5-vl-7b-cam-motion)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the official 15 per-primitive binary questions (verbatim); the field keeps argmax P(Yes) for compatibility, all primitive probabilities in metadata['camera_motion_primitives'] — source: CameraBench (Lin et al. 2025), chancharikm/qwen2.5-vl-7b-cam-motion model — https://github.com/sy77777en/CameraBench
 - **Packages**: Pillow, qwen-vl-utils, torch, transformers
@@ -3801,6 +4098,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`camera_motion`](src/ayase/modules/camera_motion.py)** — Analyzes camera motion stability (VMBench) using Homography
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_camera_motion.py`](tests/modules/per_module/test_camera_motion.py)
@@ -3811,6 +4109,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`camera_trajectory`](src/ayase/modules/camera_trajectory.py)** — CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP pose re-estimation against a target trajectory
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: glomap → colmap → unavailable → vggt
 - **Provenance**: `adapted` — CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs (depth-scale from the second video) do not apply to the target trajectory — source: CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py
 - **Packages**: opencv-python, torch, vggt
@@ -3824,6 +4123,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`camera_trajectory`](src/ayase/modules/camera_trajectory.py)** — CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP pose re-estimation against a target trajectory
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: glomap → colmap → unavailable → vggt
 - **Provenance**: `adapted` — CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs do not apply to the target trajectory — source: CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py
 - **Packages**: opencv-python, torch, vggt
@@ -3837,6 +4137,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`camera_trajectory`](src/ayase/modules/camera_trajectory.py)** — CamI2V camera-trajectory adherence (RotErr/TransErr/CamMC) via GLOMAP pose re-estimation against a target trajectory
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: glomap → colmap → unavailable → vggt
 - **Provenance**: `adapted` — CamI2V: GLOMAP reconstruction with GT SIMPLE_PINHOLE intrinsics; without a sidecar intrinsics COLMAP estimates the focal itself. Upstream TransErr_abs/CamMC_abs do not apply to the target trajectory — source: CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py
 - **Packages**: opencv-python, torch, vggt
@@ -3850,6 +4151,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmbench_cas`](src/ayase/modules/vmbench_cas.py)** — VMBench Commonsense Adherence — VideoMAEv2 ordinal plausibility rating (0-1, higher=better)
 
 - **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VMBench, Ling et al. ICCV 2025 — cas_utils 30-view protocol, https://github.com/AMAP-ML/VMBench
 - **Packages**: opencv-python
 - **Source**: <a href="https://github.com/AMAP-ML/VMBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
@@ -3862,6 +4164,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`content_variation`](src/ayase/modules/content_variation.py)** — Measures extent of motion and content variation (own heuristic)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: described as 'DEVIL protocol', actually a heuristic — https://arxiv.org/abs/2407.01094
 - **Source**: <a href="https://arxiv.org/abs/2407.01094" target="_blank">arXiv</a>
@@ -3874,6 +4177,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`dynamics_controllability`](src/ayase/modules/dynamics_controllability.py)** — Assesses motion controllability based on text-motion alignment
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: farneback → cotracker
 - **Provenance**: `own`
 - **Packages**: torch
@@ -3886,6 +4190,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`advanced_flow`](src/ayase/modules/advanced_flow.py)** — RAFT optical flow: flow_score, mean magnitude over all consecutive pairs (EvalCrafter)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → raft_large
 - **Provenance**: `published` — source: EvalCrafter Flow Score (RAFT) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py
 - **Packages**: torch, torchvision
@@ -3899,6 +4204,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3911,6 +4217,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3922,6 +4229,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3934,6 +4242,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3945,6 +4254,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3956,6 +4266,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3968,6 +4279,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3980,6 +4292,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: DWPose model (Yang et al. 2023); the descriptors are own — https://arxiv.org/abs/2307.15880
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -3992,6 +4305,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -4004,6 +4318,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -4016,6 +4331,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -4028,6 +4344,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`hand_gesture_dynamics`](src/ayase/modules/hand_gesture_dynamics.py)** — Reference-relative 2D hand/finger distribution and dynamics diagnostics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Packages**: opencv-python, rtmlib
 - **Source**: <a href="https://arxiv.org/abs/2307.15880" target="_blank">arXiv</a>
@@ -4040,6 +4357,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`head_motion_dynamics`](src/ayase/modules/head_motion_dynamics.py)** — THEval pose/derivative/translation head-motion complexity
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the sqrt(σ̄_angle·V̄_Δangle + V̄_trans) formula matches, but angles come from the MediaPipe Face Landmarker matrix instead of FaceXFormer and translation is the landmark-center shift in frame pixels; numbers will not match — source: THEval (arXiv 2511.04520), Eq.26 — https://arxiv.org/abs/2511.04520
 - **Source**: <a href="https://arxiv.org/abs/2511.04520" target="_blank">arXiv</a>
@@ -4052,6 +4370,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
@@ -4063,6 +4382,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
@@ -4074,6 +4394,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
@@ -4085,6 +4406,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`head_pose_similarity`](src/ayase/modules/head_pose_similarity.py)** — Similarity of head-motion manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_head_pose_similarity.py`](tests/modules/test_head_pose_similarity.py)
@@ -4096,6 +4418,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`kandinsky_motion`](src/ayase/modules/kandinsky_motion.py)** — Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2)
 
 - **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → kandinsky_videomae
 - **Provenance**: `utility` — source: ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor
 - **Source**: <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">HF</a>
@@ -4107,6 +4430,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`kandinsky_motion`](src/ayase/modules/kandinsky_motion.py)** — Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2)
 
 - **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → kandinsky_videomae
 - **Provenance**: `utility` — source: ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor
 - **Source**: <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">HF</a>
@@ -4118,6 +4442,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`kandinsky_motion`](src/ayase/modules/kandinsky_motion.py)** — Video/Camera Motion Analysis using Kandinsky Video Tools (VideoMAE-V2)
 
 - **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → kandinsky_videomae
 - **Provenance**: `utility` — source: ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor
 - **Source**: <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">HF</a>
@@ -4129,6 +4454,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`morpheus`](src/ayase/modules/morpheus.py)** — Morpheus native annotated-video physical and dynamical physics evaluation
 
 - **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — SAM2 runs without its optional compiled _C connected-component/small-hole postprocessing; the upstream supported fallback leaves masks unchanged. — source: Morpheus source ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc — https://github.com/physics-from-video/Morpheus/tree/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc
 - **Packages**: huggingface_hub, morpheus, sam2, torch, transformers
@@ -4142,6 +4468,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`morpheus`](src/ayase/modules/morpheus.py)** — Morpheus native annotated-video physical and dynamical physics evaluation
 
 - **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — SAM2 runs without its optional compiled _C connected-component/small-hole postprocessing; the upstream supported fallback leaves masks unchanged. — source: Morpheus source ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc — https://github.com/physics-from-video/Morpheus/tree/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc
 - **Packages**: huggingface_hub, morpheus, sam2, torch, transformers
@@ -4155,6 +4482,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_amplitude`](src/ayase/modules/motion_amplitude.py)** — Motion amplitude classification vs expected label (EvalCrafter motion_ac_score via RAFT)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: raft_large → unavailable
 - **Provenance**: `adapted` — Uses torchvision's port of RAFT things weights with corrected input normalization; expected motion may be inferred from caption keywords instead of EvalCrafter metadata, and max_side can explicitly downsample inputs — source: EvalCrafter Motion AC-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py
 - **Packages**: torch, torchvision
@@ -4167,6 +4495,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4177,6 +4506,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4187,6 +4517,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4197,6 +4528,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4207,6 +4539,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4218,6 +4551,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4228,6 +4562,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_manner_similarity`](src/ayase/modules/motion_manner_similarity.py)** — Similarity of movement manner to a reference clip, compared as distributions
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: covered by [`test_motion_manner_similarity.py`](tests/modules/test_motion_manner_similarity.py)
@@ -4239,6 +4574,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion`](src/ayase/modules/motion.py)** — Analyzes motion dynamics (optical flow, flickering)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +4 more
@@ -4250,6 +4586,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`motion_smoothness`](src/ayase/modules/motion_smoothness.py)** — Motion smoothness via VFI reconstruction error (VBench)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: rife → unavailable
 - **Provenance**: `adapted` — VBench uses the AMT-S interpolator; this implementation uses RIFE HD v3 under the same even/odd-frame reconstruction protocol — source: VBench Motion Smoothness (Huang et al., CVPR 2024) — https://github.com/Vchitect/VBench
 - **Packages**: rife_model, torch
@@ -4263,6 +4600,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`object_integrity`](src/ayase/modules/object_integrity.py)** — VMBench Object Integrity Score — human bone-length/joint-angle temporal integrity (0-1, higher=better)
 
 - **Input**: vid · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mmpose → rtmlib
 - **Provenance**: `adapted` — backend='mmpose' replicates upstream (RTMDet-m person + RTMPose-m body8, all frames); backend='rtmlib' uses ONNX YOLOX-m/RTMPose-m instead of mmdet/mmpose (documented runtime substitution) — source: VMBench OIS (Ling et al., ICCV 2025, arXiv 2503.10076) — https://github.com/AMAP-ML/VMBench
 - **Packages**: mmdet, mmpose, rtmlib
@@ -4276,6 +4614,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmbench_pas`](src/ayase/modules/vmbench_pas.py)** — VMBench Perceptible Amplitude — subject-vs-background tracked-point motion (0-1)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — the subject comes from metadata/prompt (upstream reads the benchmark's structured prompt); without it, falls back to 'person' — source: VMBench PAS — https://github.com/AMAP-ML/VMBench
 - **Packages**: opencv-python, torch
 - **Source**: <a href="https://github.com/AMAP-ML/VMBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
@@ -4288,6 +4627,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`physics`](src/ayase/modules/physics.py)** — Physics plausibility via trajectory analysis (CoTracker / Lucas-Kanade)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: cotracker → lk → unavailable
 - **Provenance**: `own`
 - **Packages**: torch
@@ -4300,6 +4640,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`playback_speed`](src/ayase/modules/playback_speed.py)** — Playback speed normality detection (1.0=normal)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: opencv-python
@@ -4312,6 +4653,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_driver_fidelity`](src/ayase/modules/pose_driver_fidelity.py)** — Body-pose fidelity to a driving video (PCK over normalised skeletons)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: no dedicated test reference found
@@ -4323,6 +4665,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_driver_fidelity`](src/ayase/modules/pose_driver_fidelity.py)** — Body-pose fidelity to a driving video (PCK over normalised skeletons)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: no dedicated test reference found
@@ -4334,6 +4677,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_driver_fidelity`](src/ayase/modules/pose_driver_fidelity.py)** — Body-pose fidelity to a driving video (PCK over normalised skeletons)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: opencv-python
 - **Tests**: no dedicated test reference found
@@ -4345,6 +4689,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ptlflow_motion`](src/ayase/modules/ptlflow_motion.py)** — ptlflow optical flow motion scoring (dpflow model)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → ptlflow
 - **Provenance**: `own`
 - **Packages**: ptlflow, torch
@@ -4357,6 +4702,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`raft_motion`](src/ayase/modules/raft_motion.py)** — RAFT optical flow motion scoring (torchvision)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: torch, torchvision
 - **Tests**: covered by [`test_raft_motion.py`](tests/modules/per_module/test_raft_motion.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
@@ -4368,6 +4714,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ref4d_results`](src/ayase/modules/ref4d_results.py)** — Ref4D semantic, event, motion, and world result adapter
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: imported_results
 - **Provenance**: `utility` — source: Ref4D-VideoBench — https://github.com/TAILab-W/Ref4D-VideoBench
 - **Source**: <a href="https://github.com/TAILab-W/Ref4D-VideoBench" target="_blank">GitHub</a>
@@ -4379,6 +4726,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`rtmpose_fidelity`](src/ayase/modules/rtmpose_fidelity.py)** — RTMPose keypoint-confidence pose/gesture plausibility (rtmlib, local ONNX; 0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → rtmlib
 - **Provenance**: `own`
 - **Packages**: rtmlib
@@ -4391,6 +4739,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`stabilized_motion`](src/ayase/modules/stabilized_motion.py)** — Calculates motion scores with camera stabilization (ORB+Homography)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_stabilized_motion.py`](tests/modules/per_module/test_stabilized_motion.py)
@@ -4402,6 +4751,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`stabilized_motion`](src/ayase/modules/stabilized_motion.py)** — Calculates motion scores with camera stabilization (ORB+Homography)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_stabilized_motion.py`](tests/modules/per_module/test_stabilized_motion.py)
@@ -4413,6 +4763,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmbench_tcs`](src/ayase/modules/vmbench_tcs.py)** — VMBench Temporal Coherence — implausible object vanish/emerge over tracked masks (0-1, higher=better)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — the subject comes from metadata/prompt (upstream reads the benchmark's structured prompt); without it, falls back to 'person' — source: VMBench TCS — https://github.com/AMAP-ML/VMBench
 - **Packages**: opencv-python, torch
 - **Source**: <a href="https://github.com/AMAP-ML/VMBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">HF</a>
@@ -4425,6 +4776,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`trajan`](src/ayase/modules/trajan.py)** — TRAJAN point-track autoencoder motion realism (ICLR 2025, pure-torch)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: port → unavailable
 - **Provenance**: `adapted` — Torch port verified against JAX; takes the first <=150 consecutive frames (the autoencoder's episode length), fixed seed for query points and the support/target split — source: TRAJAN, Allen et al. arXiv:2505.00209 — https://github.com/google-deepmind/tapnet
 - **Packages**: einops, huggingface_hub, opencv-python
@@ -4438,6 +4790,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`video_edit_motion_fidelity`](src/ayase/modules/video_edit_motion_fidelity.py)** — MTBench dense-trajectory motion similarity between source and edited video
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → cotracker3_offline
 - **Provenance**: `adapted` — CoTracker checkpoint from GD-ML/VMBench; upstream's optional bbox segm_mask is not supplied (no markup channel) — otherwise the evaluation.py protocol — source: MTBench, Shi et al. ICCV 2025 — https://openaccess.thecvf.com/content/ICCV2025/html/Shi_Decouple_and_Track_Benchmarking_and_Improving_Video_Diffusion_Transformers_For_ICCV_2025_paper.html
 - **Packages**: opencv-python
@@ -4450,6 +4803,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videophy2_autoeval`](src/ayase/modules/videophy2.py)** — Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold
 
 - **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official
 - **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
 - **Packages**: torch, transformers
@@ -4462,6 +4816,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videophy2_autoeval`](src/ayase/modules/videophy2.py)** — Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold
 
 - **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → official
 - **Provenance**: `published` — source: Bansal et al., VideoPhy-2, arXiv:2503.06800; https://videophy2.github.io/
 - **Packages**: torch, transformers
@@ -4474,6 +4829,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
 - **Input**: video +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the released base/checklist VLM judge and source scoring weights, with strict finite 1-4 parsing and explicit canonical/general input provenance; it does not implement the unreleased salient-frame stage or optional CV pipeline — source: VideoScience source 0b3bb2da74388991bf842bca1096a6a25d3c9311 — https://github.com/hao-ai-lab/VideoScience/tree/0b3bb2da74388991bf842bca1096a6a25d3c9311
 - **Packages**: google
@@ -4487,6 +4843,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`videoscore`](src/ayase/modules/videoscore.py)** — VideoScore 5-dimensional video quality assessment (1-4 scale)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: videoscore → unavailable
 - **Provenance**: `published` — source: VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore
 - **Packages**: mantis, torch, transformers
@@ -4500,6 +4857,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vlm_phy`](src/ayase/modules/vlm_phy.py)** — VLM Likert-scale physics-adherence probing (own, VideoPhy-2-inspired)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: VideoPhy-2, Bansal et al. arXiv:2503.06800 — name only — https://github.com/Hritikbansal/videophy
 - **Packages**: torch, transformers
 - **VRAM**: ~14 GB
@@ -4513,6 +4871,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vlm_phy`](src/ayase/modules/vlm_phy.py)** — VLM Likert-scale physics-adherence probing (own, VideoPhy-2-inspired)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: VideoPhy-2, Bansal et al. arXiv:2503.06800 — name only — https://github.com/Hritikbansal/videophy
 - **Packages**: torch, transformers
 - **VRAM**: ~14 GB
@@ -4526,6 +4885,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`vmbench_mss`](src/ayase/modules/vmbench_mss.py)** — VMBench Motion Smoothness — Q-Align per-frame quality-jump detection (0-1, higher=smoother)
 
 - **Input**: vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VMBench MSS — https://github.com/AMAP-ML/VMBench
 - **Packages**: torch
 - **VRAM**: ~14 GB
@@ -4542,6 +4902,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_fidelity`](src/ayase/modules/pose_fidelity.py)** — AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — keypoints come from MediaPipe BlazePose (33 joints, normalised coords) instead of the official learned 10-kp detector; normalisation by source bbox diagonal matches — source: AKD, FOMM pose-evaluation (Siarohin et al., NeurIPS 2019, arXiv:2003.00196) — https://github.com/AliaksandrSiarohin/pose-evaluation
 - **Packages**: mediapipe
@@ -4555,6 +4916,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_fidelity`](src/ayase/modules/pose_fidelity.py)** — AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — a MediaPipe joint with visibility < threshold counts as missing; the source uses its detector's own detection failure — source: MKR, FOMM pose-evaluation (Siarohin et al., NeurIPS 2019, arXiv:2003.00196) — https://github.com/AliaksandrSiarohin/pose-evaluation
 - **Packages**: mediapipe
@@ -4568,6 +4930,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_fidelity`](src/ayase/modules/pose_fidelity.py)** — AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — computed on MediaPipe 33-joint landmarks in image-normalised coords (proportional to pixels) rather than the paper's pose detector — source: MPJPE, Ginosar et al. (https://arxiv.org/abs/1906.04160)
 - **Packages**: mediapipe
@@ -4581,6 +4944,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`pose_fidelity`](src/ayase/modules/pose_fidelity.py)** — AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — computed on MediaPipe 33-joint landmarks with threshold on bbox-normalised coords rather than the paper's pose detector — source: PCK, Ginosar et al. (https://arxiv.org/abs/1906.04160)
 - **Packages**: mediapipe
@@ -4597,6 +4961,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: variance of the Laplacian (Pech-Pacheco et al., ICPR 2000, DOI:10.1109/ICPR.2000.903548)
 - **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
@@ -4607,6 +4972,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
@@ -4618,6 +4984,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`compression_artifacts`](src/ayase/modules/compression_artifacts.py)** — Detects compression artifacts (blocking, ringing, mosquito noise)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_compression_artifacts.py`](tests/modules/per_module/test_compression_artifacts.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py), +1 more
@@ -4628,6 +4995,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
@@ -4639,6 +5007,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`cpbd`](src/ayase/modules/cpbd.py)** — Cumulative Probability of Blur Detection (Perceptual Blur)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → cpbd
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CPBD (Narvekar & Karam 2011), the cpbd package — https://github.com/0x64746b/python-cpbd
 - **Packages**: cpbd
@@ -4652,6 +5021,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`grid_layout`](src/ayase/modules/grid_layout.py)** — Split-screen/grid-collage detector (0-1, higher=more likely a grid)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py)
@@ -4663,6 +5033,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`imaging_quality`](src/ayase/modules/imaging_quality.py)** — Classical noise/edge/artifact estimation (Immerkaer sigma, edge density, FFT)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: Pillow, brisque, imquality
@@ -4676,6 +5047,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`imaging_quality`](src/ayase/modules/imaging_quality.py)** — Classical noise/edge/artifact estimation (Immerkaer sigma, edge density, FFT)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Packages**: Pillow, brisque, imquality
@@ -4689,6 +5061,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`letterbox`](src/ayase/modules/letterbox.py)** — Border/letterbox detection (0-1, 0=no borders)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Packages**: opencv-python
@@ -4700,6 +5073,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_exposure.py`](tests/modules/per_module/test_exposure.py)
@@ -4711,6 +5085,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`basic_quality`](src/ayase/modules/basic.py)** — Comprehensive technical quality assessment (blur, noise, artifacts, contrast)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_profiles.py`](tests/test_profiles.py), +2 more
@@ -4722,6 +5097,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ti_si`](src/ayase/modules/ti_si.py)** — ITU-T P.910 Temporal & Spatial Information
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: ITU-T P.910 — https://www.itu.int/rec/T-REC-P.910
 - **Tests**: covered by [`test_ti_si.py`](tests/modules/per_module/test_ti_si.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -4733,6 +5109,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`ti_si`](src/ayase/modules/ti_si.py)** — ITU-T P.910 Temporal & Spatial Information
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: ITU-T P.910 — https://www.itu.int/rec/T-REC-P.910
 - **Tests**: covered by [`test_ti_si.py`](tests/modules/per_module/test_ti_si.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -4744,6 +5121,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`tonal_dynamic_range`](src/ayase/modules/tonal_dynamic_range.py)** — Luminance histogram tonal range (0-100)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_tonal_dynamic_range.py`](tests/modules/per_module/test_tonal_dynamic_range.py), [`test_tonal_dynamic_range.py`](tests/modules/test_tonal_dynamic_range.py)
@@ -4754,6 +5132,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`exposure`](src/ayase/modules/exposure.py)** — Checks for overexposure, underexposure, and low contrast using histograms
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_exposure.py`](tests/modules/per_module/test_exposure.py)
@@ -4768,6 +5147,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`aesthetic_scoring`](src/ayase/modules/aesthetic_scoring.py)** — Calculates aesthetic score (1-10) using LAION-Aesthetics MLP
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: LAION improved-aesthetic-predictor (sac+logos+ava1-l14-linearMSE) — https://github.com/christophschuhmann/improved-aesthetic-predictor
 - **Packages**: Pillow, torch, transformers
 - **VRAM**: ~1.5 GB
@@ -4779,6 +5159,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 **[`aesthetic`](src/ayase/modules/aesthetic.py)** — Estimates aesthetic quality using Aesthetic Predictor V2.5
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric. — source: Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Source**: <a href="https://github.com/discus0434/aesthetic-predictor-v2-5" target="_blank">GitHub</a>
@@ -4793,6 +5174,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`aesthetic`](src/ayase/modules/aesthetic.py)** — Estimates aesthetic quality using Aesthetic Predictor V2.5
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric. — source: Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Source**: <a href="https://github.com/discus0434/aesthetic-predictor-v2-5" target="_blank">GitHub</a>
@@ -4805,6 +5187,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: COVER (He et al., CVPRW 2024) — https://github.com/taco-group/COVER
 - **Packages**: torch
 - **VRAM**: ~800 MB
@@ -4818,6 +5201,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`cover`](src/ayase/modules/cover.py)** — COVER 3-branch comprehensive video quality (semantic + aesthetic + technical)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: COVER (He et al., CVPRW 2024) — https://github.com/taco-group/COVER
 - **Packages**: torch
 - **VRAM**: ~800 MB
@@ -4831,6 +5215,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`creativity`](src/ayase/modules/creativity.py)** — Artistic novelty assessment (LLaVA VLM rubric)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: vlm → unavailable
 - **Provenance**: `own`
 - **Packages**: Pillow, torch, transformers
@@ -4845,6 +5230,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dover`](src/ayase/modules/dover.py)** — DOVER disentangled technical + aesthetic VQA (ICCV 2023)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → native → onnx
 - **Provenance**: `published` — Sigmoid rescaling now uses the official fuse_results constants; backends are a vendored port (native) or ONNX export of the same weights — minor numerical differences vs the upstream repo are possible. — source: DOVER (Wu et al., ICCV 2023) — https://github.com/VQAssessment/DOVER/blob/master/evaluate_a_set_of_videos.py
 - **Packages**: onnxruntime, torch
@@ -4859,6 +5245,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`laion_aesthetic`](src/ayase/modules/laion_aesthetic.py)** — LAION Aesthetics V2 predictor (0-10)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: LAION Aesthetics Predictor V2 via pyiqa 'laion_aes' — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: pyiqa, torch
@@ -4872,6 +5259,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`nima`](src/ayase/modules/nima.py)** — NIMA aesthetic and technical image quality (1-10 scale)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: pyiqa → unavailable
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: NIMA (Talebi & Milanfar, TIP 2018) via pyiqa — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: opencv-python, pyiqa, torch
@@ -4885,6 +5273,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`q_align`](src/ayase/modules/q_align.py)** — Q-Align unified quality + aesthetic assessment (ICML 2024)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → qalign
 - **Provenance**: `adapted` — same frame subset as qalign_quality; OneAlign's aesthetic branch is used unchanged — source: Q-Align / OneAlign (Wu et al., ICML 2024) — https://github.com/Q-Future/Q-Align
 - **Packages**: Pillow, torch
@@ -4899,6 +5288,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → transformers
 - **Provenance**: `adapted` — judge inference via transformers/OpenAI-compatible endpoint instead of the official ms-swift PtEngine — source: Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -4912,6 +5302,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → transformers
 - **Provenance**: `adapted` — judge inference via transformers/OpenAI-compatible endpoint instead of the official ms-swift PtEngine — source: Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -4925,6 +5316,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`unified_reward_2`](src/ayase/modules/unified_reward_2.py)** — UnifiedReward 2.0 multi-dimensional prompt-image reward scoring
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: openai → diffsynth
 - **Provenance**: `published` — source: UnifiedReward-2.0; DiffSynth-Studio ImageMetrics — https://modelscope.cn/models/DiffSynth-Studio/ImageMetrics
 - **Packages**: diffsynth, torch
@@ -4940,6 +5332,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`active_speaker`](src/ayase/modules/active_speaker.py)** — Lip-sync separation between faces: is exactly one mouth in sync
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -4950,6 +5343,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`active_speaker`](src/ayase/modules/active_speaker.py)** — Lip-sync separation between faces: is exactly one mouth in sync
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -4960,6 +5354,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`active_speaker`](src/ayase/modules/active_speaker.py)** — Lip-sync separation between faces: is exactly one mouth in sync
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -4971,6 +5366,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`anyaudio_judge`](src/ayase/modules/anyaudio_judge.py)** — AnyAudio-Judge author-logits audio-instruction alignment
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: AnyAudio-Judge source b3a22a78c7407b3f7eb8dd5ae18c0bacde895f52 — https://github.com/CuCl-2/AnyAudio-Judge/tree/b3a22a78c7407b3f7eb8dd5ae18c0bacde895f52
 - **Packages**: torch
@@ -4984,6 +5380,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`aqascore`](src/ayase/modules/aqascore.py)** — AQAScore opt-in audio question-answering alignment (P(Yes) protocol)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → qwen_omni
 - **Provenance**: `published` — source: AQAScore (Kuan, Chang, Lee, 2026) — https://arxiv.org/abs/2601.14728
 - **Packages**: torch, transformers
@@ -4997,6 +5394,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`asr_cer`](src/ayase/modules/asr_cer.py)** — ASR character error rate against expected speech text
 
 - **Input**: img/vid +cap · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: CER (char-level Levenshtein / reference length), Whisper eval normalization — https://github.com/openai/whisper
 - **Source**: <a href="https://github.com/openai/whisper" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
@@ -5008,6 +5406,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`asr_wer`](src/ayase/modules/asr_wer.py)** — ASR word error rate against expected speech text
 
 - **Input**: img/vid +cap · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WER (word-level Levenshtein / reference length), Whisper eval normalization — https://github.com/openai/whisper
 - **Source**: <a href="https://github.com/openai/whisper" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
@@ -5018,6 +5417,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → librosa_pyin_dtw
 - **Provenance**: `own`
 - **Packages**: librosa
@@ -5029,6 +5429,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → librosa_pyin_dtw
 - **Provenance**: `own`
 - **Packages**: librosa
@@ -5040,6 +5441,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_log_f0_dtw`](src/ayase/modules/audio_log_f0_dtw.py)** — WORLD/mcep-DTW-aligned log-F0 RMSE in cents (ESPnet evaluate_f0 protocol)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → espnet_f0
 - **Provenance**: `own` — fraction of the DTW path with mismatched voiced flags — an own metric (not VDE)
 - **Packages**: fastdtw, pyworld, scipy
@@ -5052,6 +5454,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_log_f0_dtw`](src/ayase/modules/audio_log_f0_dtw.py)** — WORLD/mcep-DTW-aligned log-F0 RMSE in cents (ESPnet evaluate_f0 protocol)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → espnet_f0
 - **Provenance**: `published` — units are cents (ESPnet emits ln-RMSE; pure 1200/ln2 conversion); input resampled to 16 kHz; coverage/duration thresholds are own guards — source: ESPnet evaluate_f0.py (WORLD Harvest + mel-cepstrum fastdtw + ln-F0 RMSE) — https://github.com/espnet/espnet/tree/master/egs2/TEMPLATE/asr1/pyscripts/utils/evaluate_f0.py
 - **Packages**: fastdtw, pyworld, scipy
@@ -5064,6 +5467,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → librosa_pyin_dtw
 - **Provenance**: `own`
 - **Packages**: librosa
@@ -5075,6 +5479,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → librosa_pyin_dtw
 - **Provenance**: `own`
 - **Packages**: librosa
@@ -5086,6 +5491,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_prosody_dtw`](src/ayase/modules/audio_prosody_dtw.py)** — MFCC-DTW-aligned relative-energy and voicing diagnostics for paired speech
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → librosa_pyin_dtw
 - **Provenance**: `own`
 - **Packages**: librosa
@@ -5097,6 +5503,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: audiobox → unavailable
 - **Provenance**: `published` — source: Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics
 - **Packages**: audiobox_aesthetics
@@ -5110,6 +5517,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: audiobox → unavailable
 - **Provenance**: `published` — source: Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics
 - **Packages**: audiobox_aesthetics
@@ -5123,6 +5531,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: audiobox → unavailable
 - **Provenance**: `published` — source: Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics
 - **Packages**: audiobox_aesthetics
@@ -5136,6 +5545,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiobox_aesthetics`](src/ayase/modules/audiobox_aesthetics.py)** — Meta Audiobox Aesthetics audio quality (2025)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: audiobox → unavailable
 - **Provenance**: `published` — source: Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics
 - **Packages**: audiobox_aesthetics
@@ -5149,6 +5559,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
 - **Packages**: google, openai
@@ -5162,6 +5573,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
 - **Packages**: google, openai
@@ -5175,6 +5587,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
 - **Packages**: google, openai
@@ -5188,6 +5601,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audiojudge`](src/ayase/modules/audiojudge.py)** — Generic AudioJudge hosted audio evaluator
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Preserves the pinned literal prompts, ICL/message ordering, boundary assets, and concatenation timing; uses gpt-audio-1.5 instead of the retired released preview, modern provider SDKs, managed full-duration media decoding, and a mono PCM16 heterogeneous-input portability repair. The Gemini adaptation explicitly applies temperature, output-token, and JSON MIME controls that the released branch ignored. No numerical reproduction is claimed — source: AudioJudge source fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab — https://github.com/Woodygan/AudioJudge/tree/fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab
 - **Packages**: google, openai
@@ -5201,6 +5615,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`av_align`](src/ayase/modules/av_align.py)** — AV-Align — IoU of audio onsets and optical-flow motion peaks (TempoTokens / Yariv et al. 2024; higher=better)
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → port
 - **Provenance**: `published` — source: AV-Align (Yariv et al., AAAI 2024, TempoTokens) — https://github.com/guyyariv/TempoTokens/blob/master/av_align.py
 - **Packages**: librosa
@@ -5214,6 +5629,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`av_sync`](src/ayase/modules/audio_visual_sync.py)** — Audio-video synchronisation offset detection (Synchformer)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → syncformer
 - **Provenance**: `published` — source: Synchformer (Iashin et al., ICASSP 2024) — https://github.com/v-iashin/Synchformer
 - **Packages**: syncformer
@@ -5227,6 +5643,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -5240,6 +5657,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -5253,6 +5671,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -5266,6 +5685,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -5279,6 +5699,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -5292,6 +5713,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`beyond_time_shifts`](src/ayase/modules/beyond_time_shifts.py)** — Beyond Time Shifts native audio-video synchronization score
 
 - **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: Beyond Time Shifts source f93e5ffaf8af144d37c39784426a8e0029734026 — https://github.com/chenhaoqcdyq/BeyondTimeShifts/tree/f93e5ffaf8af144d37c39784426a8e0029734026
 - **Packages**: torch
@@ -5305,6 +5727,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`cdpam`](src/ayase/modules/cdpam.py)** — CDPAM learned perceptual audio distance (full-reference)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: CDPAM (Manocha et al. 2021), the cdpam 0.0.6 package — https://github.com/pranaymanocha/PerceptualAudio
 - **Packages**: cdpam, torch
@@ -5318,6 +5741,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`clap_score`](src/ayase/modules/clap_score.py)** — Generic CLAP audio-text alignment cosine similarity (configurable backbone)
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), [`test_provenance.py`](tests/test_provenance.py)
@@ -5329,6 +5753,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`av_desync`](src/ayase/modules/av_desync.py)** — DeSync — Synchformer |predicted A/V offset| in seconds (Movie Gen / MMAudio / HunyuanVideo-Foley; real model only, lower=better)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → synchformer
 - **Provenance**: `published` — source: DeSync (Movie Gen/MMAudio) on Synchformer — https://github.com/hkchengrex/MMAudio
 - **Packages**: syncformer, torch
@@ -5342,6 +5767,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_distill_mos`](src/ayase/modules/audio_distill_mos.py)** — Microsoft Distill-MOS compact reference-free speech quality (1-5 MOS)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Uses the official v7 model and windowing, but Ayase skips clips below min_duration_seconds or silence_rms_threshold; max_windows can additionally limit evaluation to uniformly sampled windows — source: Distill-MOS (Stahl & Gamper, ICASSP 2025), official package — https://github.com/microsoft/Distill-MOS
 - **Packages**: distillmos, torch
@@ -5355,6 +5781,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
 
 - **Input**: audio · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → torchmetrics
 - **Provenance**: `published` — source: DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge
 - **Packages**: librosa, soundfile, torch, torchmetrics
@@ -5367,6 +5794,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
 
 - **Input**: audio · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → torchmetrics
 - **Provenance**: `published` — source: DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge
 - **Packages**: librosa, soundfile, torch, torchmetrics
@@ -5379,6 +5807,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
 
 - **Input**: audio · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → torchmetrics
 - **Provenance**: `published` — source: DNSMOS P.808 MOS (official model_v8.onnx via torchmetrics) — https://github.com/microsoft/DNS-Challenge
 - **Packages**: librosa, soundfile, torch, torchmetrics
@@ -5391,6 +5820,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dnsmos`](src/ayase/modules/dnsmos.py)** — DNSMOS non-intrusive audio quality (Microsoft, 1-5 MOS)
 
 - **Input**: audio · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → torchmetrics
 - **Provenance**: `published` — source: DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge
 - **Packages**: librosa, soundfile, torch, torchmetrics
@@ -5403,6 +5833,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_estoi`](src/ayase/modules/audio_estoi.py)** — ESTOI speech intelligibility (full-reference)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: ESTOI (Jensen & Taal 2016), pystoi extended=True — https://github.com/mpariente/pystoi
 - **Packages**: librosa, pystoi, soundfile
@@ -5416,6 +5847,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`human_clap`](src/ayase/modules/human_clap.py)** — Human-CLAP audio-text relevance score
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clap
 - **Provenance**: `published` — source: Human-CLAP (Takano et al., arXiv 2506.23553) — https://github.com/sarulab-speech/Human-CLAP
 - **Packages**: torch, transformers
@@ -5429,6 +5861,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`imagebind_score`](src/ayase/modules/imagebind_score.py)** — ImageBind audio-text and audio-video semantic cosine similarities
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → imagebind
 - **Provenance**: `published` — source: ImageBind audio–text cosine — https://github.com/facebookresearch/ImageBind
 - **Packages**: imagebind, torch
@@ -5442,6 +5875,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`laion_clap_score`](src/ayase/modules/clap_score.py)** — LAION-CLAP audio-text alignment cosine similarity
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused
 - **Source**: <a href="https://huggingface.co/laion/clap-htsat-fused" target="_blank">HF</a>
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
@@ -5453,6 +5887,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_logmel_dist`](src/ayase/modules/audio_logmel_dist.py)** — Log-mel RMSE full-reference audio distance (own)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → algorithmic
 - **Provenance**: `own`
 - **Packages**: librosa
@@ -5465,6 +5900,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_mcd`](src/ayase/modules/audio_mcd.py)** — Mel Cepstral Distortion for TTS/VC quality (full-reference, pymcd)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pymcd_0_2_1_port
 - **Provenance**: `adapted` — pymcd 0.2.1 uses FastDTW on SPTK mel-cepstral coefficients c1-c13 but includes c0-c13 in the final distance; results are not interchangeable with c0-excluding or exact-DTW MCD protocols — source: MCD-DTW via pymcd 0.2.1 — https://github.com/chenqi008/pymcd
 - **Packages**: fastdtw, pyworld
@@ -5478,6 +5914,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`ms_clap_score`](src/ayase/modules/clap_score.py)** — Microsoft CLAP audio-text alignment cosine similarity
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: msclap → unavailable
 - **Provenance**: `published` — source: MS-CLAP audio/text cosine — https://github.com/microsoft/CLAP
 - **Packages**: msclap, soundfile, torch
@@ -5491,6 +5928,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`muq_eval`](src/ayase/modules/muq_eval.py)** — MuQ-Eval A1 per-sample generated-music Musical Impression MOS
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → a1
 - **Provenance**: `published` — source: MuQ-Eval A1 — https://huggingface.co/zhudi2825/MuQ-Eval-A1
 - **Packages**: muq, torch
@@ -5503,6 +5941,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA
 - **Packages**: librosa, soundfile, torch
@@ -5516,6 +5955,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA
 - **Packages**: librosa, soundfile, torch
@@ -5529,6 +5969,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA
 - **Packages**: librosa, soundfile, torch
@@ -5542,6 +5983,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA
 - **Packages**: librosa, soundfile, torch
@@ -5555,6 +5997,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_nisqa`](src/ayase/modules/audio_nisqa.py)** — NISQA multidimensional non-intrusive speech quality (MOS, noisiness, coloration, discontinuity, loudness)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA
 - **Packages**: librosa, soundfile, torch
@@ -5568,6 +6011,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`p1203`](src/ayase/modules/p1203.py)** — ITU-T P.1203 streaming QoE estimation (1-5 MOS)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: itu_p1203 → unavailable
 - **Provenance**: `adapted` — Uses the upstream calculator with a synthesized single-segment mode-0 report built from container metadata. The input has no audio, observed stalling, or representation-switch history, so O46 is an adapted video-only session estimate rather than a complete measured streaming session score. — source: ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203
 - **Packages**: itu_p1203
@@ -5581,6 +6025,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`pam`](src/ayase/modules/pam.py)** — PAM anti-prompt no-reference perceptual audio quality (MS-CLAP)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → msclap
 - **Provenance**: `published` — source: PAM (Deshmukh et al., Interspeech 2024) — https://arxiv.org/abs/2402.00282
 - **Packages**: msclap, soundfile, torch
@@ -5594,6 +6039,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_peaq`](src/ayase/modules/audio_peaq.py)** — PEAQ reference-based audio codec quality (ITU-R BS.1387)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Ayase converts inputs to 48 kHz mono 16-bit PCM; peaqb-fast implements only the BASIC model, performs no Ayase-side time/level alignment, and its BS.1387 conformance is not independently established. — source: PEAQ BASIC via peaqb-fast — https://github.com/akinori-ito/peaqb-fast
 - **Packages**: librosa, soundfile
@@ -5607,6 +6053,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_peaq`](src/ayase/modules/audio_peaq.py)** — PEAQ reference-based audio codec quality (ITU-R BS.1387)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Ayase converts inputs to 48 kHz mono 16-bit PCM; peaqb-fast implements only the BASIC model, performs no Ayase-side time/level alignment, and its BS.1387 conformance is not independently established. — source: PEAQ BASIC via peaqb-fast — https://github.com/akinori-ito/peaqb-fast
 - **Packages**: librosa, soundfile
@@ -5620,6 +6067,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_pesq`](src/ayase/modules/audio_pesq.py)** — PESQ speech quality (full-reference, ITU-T P.862)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: ITU-T P.862 (the pesq package), WB at 16 kHz — https://github.com/ludlows/PESQ
 - **Packages**: librosa, pesq, soundfile
@@ -5633,6 +6081,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`scoreq`](src/ayase/modules/scoreq.py)** — SCOREQ domain-dependent no-reference speech quality MOS
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: scoreq → unavailable
 - **Provenance**: `published` — source: SCOREQ (Ragano et al., NeurIPS 2024) — https://github.com/alessandroragano/scoreq
 - **Source**: <a href="https://github.com/alessandroragano/scoreq" target="_blank">GitHub</a>
@@ -5645,6 +6094,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_si_sdr`](src/ayase/modules/audio_si_sdr.py)** — Scale-Invariant SDR for audio quality (full-reference)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: SI-SDR (Le Roux et al., ICASSP 2019) — https://arxiv.org/abs/1811.02508
 - **Packages**: librosa, soundfile
@@ -5658,6 +6108,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`silent_lip_stability`](src/ayase/modules/silent_lip_stability.py)** — THEval silent-mouth lip-opening MAD during Silero-VAD silence
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: THEval (Quignon et al., arXiv 2511.04520) — https://arxiv.org/abs/2511.04520
 - **Packages**: silero_vad, torch
@@ -5671,6 +6122,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speaker_sim`](src/ayase/modules/speaker_sim.py)** — SIM-o speaker similarity to a reference recording (WavLM-TDNN, UniSpeech / F5-TTS eval)
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → wavlm_tdnn
 - **Provenance**: `published` — source: SIM-o speaker similarity: VALL-E (arXiv:2301.02111), Voicebox (arXiv:2306.15687); port of F5-TTS eval utils_eval.py:run_sim — https://github.com/SWivid/F5-TTS
 - **Packages**: huggingface_hub, soundfile, torch, torchaudio
@@ -5684,6 +6136,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: songeval
 - **Provenance**: `published` — source: SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval
 - **Packages**: librosa, muq, safetensors, torch
@@ -5697,6 +6150,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: songeval
 - **Provenance**: `published` — source: SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval
 - **Packages**: librosa, muq, safetensors, torch
@@ -5710,6 +6164,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: songeval
 - **Provenance**: `published` — source: SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval
 - **Packages**: librosa, muq, safetensors, torch
@@ -5723,6 +6178,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: songeval
 - **Provenance**: `published` — source: SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval
 - **Packages**: librosa, muq, safetensors, torch
@@ -5736,6 +6192,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`song_eval`](src/ayase/modules/song_eval.py)** — SongEval song aesthetic evaluation — Coherence, Musicality, Memorability, Clarity, Naturalness (1-5)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: songeval
 - **Provenance**: `published` — source: SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval
 - **Packages**: librosa, muq, safetensors, torch
@@ -5749,6 +6206,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad
 - **Packages**: silero_vad, torch
@@ -5761,6 +6219,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad
 - **Packages**: silero_vad, torch
@@ -5773,6 +6232,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speech_bert_score`](src/ayase/modules/speech_bert_score.py)** — SpeechBERTScore similarity for matching-content reference speech
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: Saeki et al., Interspeech 2024; DiscreteSpeechMetrics v1.0.1 — https://github.com/Takaaki-Saeki/DiscreteSpeechMetrics
 - **Packages**: huggingface_hub, soundfile, torch, torchaudio, transformers
@@ -5785,6 +6245,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad
 - **Packages**: silero_vad, torch
@@ -5797,6 +6258,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad
 - **Packages**: silero_vad, torch
@@ -5808,6 +6270,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speech_pause_rhythm`](src/ayase/modules/speech_pause_rhythm.py)** — Paired-speech pause and activity timing diagnostics from Silero VAD
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad
 - **Packages**: silero_vad, torch
@@ -5820,6 +6283,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → deferred
 - **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
 - **Packages**: qwen_omni_utils, torch, transformers
@@ -5833,6 +6297,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → deferred
 - **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
 - **Packages**: qwen_omni_utils, torch, transformers
@@ -5846,6 +6311,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → deferred
 - **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
 - **Packages**: qwen_omni_utils, torch, transformers
@@ -5859,6 +6325,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → deferred
 - **Provenance**: `adapted` — Uses the published native thinker-only branch with portable SDPA instead of the source default full-Omni/FlashAttention route; Ayase bounds parsed ratings and exposes numeric pairwise aggregates. scaling_10 follows the released code's mean of valid scores, not the paper's majority-vote Voting@10 protocol — source: SpeechJudge-GRM source 1fbd1c883b03f3f7437506b421f7cf57bad78071 — https://github.com/AmphionTeam/SpeechJudge/tree/1fbd1c883b03f3f7437506b421f7cf57bad78071
 - **Packages**: qwen_omni_utils, torch, transformers
@@ -5872,6 +6339,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_squim_objective`](src/ayase/modules/audio_squim_objective.py)** — TorchAudio-SQUIM reference-free estimates of STOI, WB-PESQ, and SI-SDR
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html
 - **Packages**: torch, torchaudio
@@ -5885,6 +6353,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_squim_objective`](src/ayase/modules/audio_squim_objective.py)** — TorchAudio-SQUIM reference-free estimates of STOI, WB-PESQ, and SI-SDR
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html
 - **Packages**: torch, torchaudio
@@ -5898,6 +6367,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_squim_objective`](src/ayase/modules/audio_squim_objective.py)** — TorchAudio-SQUIM reference-free estimates of STOI, WB-PESQ, and SI-SDR
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html
 - **Packages**: torch, torchaudio
@@ -5911,6 +6381,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`syncreward`](src/ayase/modules/syncreward.py)** — SyncReward learned audio-video synchronization reward (0-2, higher is better)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: syncreward → unavailable
 - **Provenance**: `published` — source: SyncReward, Guan et al. arXiv:2610.16338 — https://arxiv.org/abs/2610.16338
 - **Packages**: torch
@@ -5924,6 +6395,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_utmos`](src/ayase/modules/audio_utmos.py)** — UTMOS no-reference MOS prediction for speech quality
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: UTMOS22 strong (Saeki et al. 2022) via the SpeechMOS port (tarepan) — https://github.com/tarepan/SpeechMOS
 - **Packages**: librosa, soundfile, torch
@@ -5937,6 +6409,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`audio_utmos_v2`](src/ayase/modules/audio_utmos_v2.py)** — UTMOSv2 no-reference MOS prediction for speech quality
 
 - **Input**: audio · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: utmosv2_package → unavailable
 - **Provenance**: `published` — source: UTMOSv2 (sarulab-speech) — https://github.com/sarulab-speech/UTMOSv2
 - **Packages**: utmosv2
@@ -5950,6 +6423,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`visqol`](src/ayase/modules/visqol.py)** — ViSQOL audio quality MOS (Google, 1-5, higher=better)
 
 - **Input**: audio +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: visqol_python_port → visqol_python_official → visqol_cli → unavailable
 - **Provenance**: `published` — source: ViSQOL v3, Google — https://github.com/google/visqol
 - **Packages**: soundfile, visqol
@@ -5963,6 +6437,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — clip-reference pair is the standard cosine SV score; averaging over a set of references is an own aggregation — source: ECAPA-TDNN (Desplanques et al. 2020), SpeechBrain cosine verification — https://huggingface.co/speechbrain/spkrec-ecapa-voxceleb
 - **Packages**: soundfile, speechbrain, torch
 - **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -5974,6 +6449,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
@@ -5987,6 +6463,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity`](src/ayase/modules/voice_identity.py)** — Speaker-verification similarity of the voice to a reference set of the person
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Packages**: soundfile, speechbrain, torch
 - **Tests**: covered by [`test_voice_identity.py`](tests/modules/test_voice_identity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -5997,6 +6474,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
@@ -6010,6 +6488,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
@@ -6023,6 +6502,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Packages**: speechbrain, torch
@@ -6036,6 +6516,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
@@ -6049,6 +6530,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: none (on top of ECAPA-TDNN) — https://arxiv.org/abs/2005.07143
 - **Packages**: speechbrain, torch
@@ -6062,6 +6544,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`voice_identity_drift`](src/ayase/modules/voice_identity_drift.py)** — Temporal ECAPA-TDNN speaker-identity tail, coverage, run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Packages**: speechbrain, torch
@@ -6078,6 +6561,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`adaface`](src/ayase/modules/adaface.py)** — AdaFace identity similarity vs reference face (CVPR 2022, quality-adaptive margin)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — AdaFace is a model for single aligned faces; here it averages over video frames and uses InsightFace norm_crop (the same 112x112 template as the authors' MTCNN pipeline) — source: AdaFace (Kim et al., CVPR 2022), official CVLface weights — https://github.com/mk-minchul/AdaFace
 - **Packages**: gc, insightface, safetensors, torch
@@ -6091,6 +6575,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`aed_apd`](src/ayase/modules/aed_apd.py)** — AED/APD: 3DMM expression and pose distance to a driver video
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → tddfa
 - **Provenance**: `adapted` — the published protocol extracts expression coefficients with Deep3DFaceRecon (BFM09); here TDDFA/3DDFA_V2 62-dim coefficients are used, so absolute values are not comparable to the paper — source: AED, PIRenderer (Ren et al., arXiv:2109.08379) — https://github.com/RenYurui/PIRender
 - **Packages**: torch
@@ -6105,6 +6590,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`anatomy_check`](src/ayase/modules/anatomy_check.py)** — Human anatomy plausibility (extra/duplicated limbs) via DWPose/MediaPipe (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → dwpose → mediapipe
 - **Provenance**: `own`
 - **Packages**: dwpose, mediapipe
@@ -6117,6 +6603,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`aed_apd`](src/ayase/modules/aed_apd.py)** — AED/APD: 3DMM expression and pose distance to a driver video
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → tddfa
 - **Provenance**: `adapted` — the published protocol extracts pose coefficients with Deep3DFaceRecon (BFM09); here TDDFA/3DDFA_V2 62-dim coefficients are used, so absolute values are not comparable to the paper — source: APD, PIRenderer (Ren et al., arXiv:2109.08379) — https://github.com/RenYurui/PIRender
 - **Packages**: torch
@@ -6131,6 +6618,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`aucon_prmse`](src/ayase/modules/aucon_prmse.py)** — AUCON/PRMSE — action-unit and pose agreement with a driver video
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyfeat
 - **Provenance**: `adapted` — AU presence comes from Py-Feat intensities thresholded at 0.5 rather than OpenFace's binary AU labels — source: AUCON, MarioNETte (Ha et al., arXiv:1911.08139); Py-Feat backend (arXiv:2104.03509) — https://github.com/cosanlab/py-feat
 - **Packages**: feat, torch
@@ -6144,6 +6632,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **VRAM**: ~14 GB
@@ -6157,6 +6646,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Packages**: insightface, mediapipe, transformers
@@ -6171,6 +6661,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`crfiqa`](src/ayase/modules/crfiqa.py)** — CR-FIQA face quality via classifiability (CVPR 2023)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → crfiqa
 - **Provenance**: `utility` — source: CR-FIQA (Boutros et al., CVPR 2023) — https://github.com/fdbtrs/CR-FIQA
 - **Packages**: crfiqa, gc
@@ -6184,6 +6675,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`csim`](src/ayase/modules/csim.py)** — CSIM: mean ArcFace cosine similarity to the reference face (Zakharov 2019, SadTalker)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → insightface
 - **Provenance**: `adapted` — Uses InsightFace buffalo_l ArcFace embeddings instead of the cited evaluations' recognition networks; gray-padding detection retry, skipped undetected frames, and optional averaging of reference-image embeddings are Ayase protocol choices. Absolute scores are not comparable to those evaluations. — source: Zakharov et al. 2019 (arXiv:1905.08233); SadTalker (arXiv:2211.12194); InsightFace ArcFace — https://github.com/deepinsight/insightface
 - **Packages**: Pillow, huggingface_hub, insightface, opencv-python, torch
@@ -6197,6 +6689,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`csim`](src/ayase/modules/csim.py)** — CSIM: mean ArcFace cosine similarity to the reference face (Zakharov 2019, SadTalker)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → insightface
 - **Provenance**: `utility`
 - **Packages**: Pillow, huggingface_hub, insightface, opencv-python, torch
@@ -6209,6 +6702,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2
 - **Packages**: gc, insightface, torch, torchvision
@@ -6222,6 +6716,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: DINOv2 model (Oquab et al. 2023); the metric is own — https://github.com/facebookresearch/dinov2
 - **Packages**: gc, insightface, torch, torchvision
@@ -6236,6 +6731,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance and variation on 3DMM expression/pose coefficients
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → tddfa
 - **Provenance**: `adapted` — coefficients come from TDDFA/3DDFA_V2 rather than the source model, so absolute values are not comparable — source: Expr-Var, AniTalker (https://arxiv.org/abs/2408.01121) / Learning to Listen eval protocol
 - **Packages**: torch
@@ -6250,6 +6746,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker
 - **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
@@ -6261,6 +6758,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker
 - **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
@@ -6272,6 +6770,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_following`](src/ayase/modules/expression_following.py)** — Driver-expression fidelity via MediaPipe blendshapes (identity-suppressed)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker
 - **Tests**: covered by [`test_expression_following.py`](tests/modules/test_expression_following.py)
@@ -6283,6 +6782,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py), [`test_backward_compat.py`](tests/test_backward_compat.py)
@@ -6294,6 +6794,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Idea source (not a published metric): Agarwal, Farid et al., 'Protecting World Leaders Against Deep Fakes', CVPRW 2019 — person-specific facial-feature correlations as a behavioural signature. https://doi.org/10.1109/CVPRW.2019.00087
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py), [`test_backward_compat.py`](tests/test_backward_compat.py)
@@ -6305,6 +6806,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py), [`test_backward_compat.py`](tests/test_backward_compat.py)
@@ -6316,6 +6818,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py), [`test_backward_compat.py`](tests/test_backward_compat.py)
@@ -6327,6 +6830,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py), [`test_backward_compat.py`](tests/test_backward_compat.py)
@@ -6338,6 +6842,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`expression_similarity`](src/ayase/modules/expression_similarity.py)** — Time-free facial-expression manner similarity via MediaPipe blendshapes
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_expression_similarity.py`](tests/modules/test_expression_similarity.py), [`test_backward_compat.py`](tests/test_backward_compat.py)
@@ -6349,6 +6854,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`eyebrow_dynamics`](src/ayase/modules/eyebrow_dynamics.py)** — THEval inter-eye-normalized eyebrow micro-expression intensity
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the Eq.28 statistic is reproduced (across-frame std of the vertical brow–eye distance normalized by interocular distance); the detector is MediaPipe Face Landmarker instead of THEval's — source: THEval (Quignon et al., arXiv 2511.04520), Eq.28 — https://arxiv.org/abs/2511.04520
 - **Source**: <a href="https://arxiv.org/abs/2511.04520" target="_blank">arXiv</a>
@@ -6361,6 +6867,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`lmd`](src/ayase/modules/lmd.py)** — LMD/F-LMD: landmark distance of lips and full face to the source video
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — landmarks come from MediaPipe FaceMesh (468 pts) instead of the source's 68-pt dlib landmarks, and coordinates are bbox-normalised rather than raw pixels — source: F-LMD, Chen et al., ECCV 2018 (arXiv:1803.10404) — https://github.com/lelechen63/ATVGnet
 - **Packages**: mediapipe
@@ -6374,6 +6881,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`clip_temporal`](src/ayase/modules/clip_temporal.py)** — CLIP temporal consistency + face/identity consistency (EvalCrafter clip_temp & face_consistency)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → clip
 - **Provenance**: `adapted` — Frames go through CLIPProcessor normalization; upstream feeds raw 0-255 resized pixels to get_image_features — embeddings differ at the ~1e-2 level — source: EvalCrafter Face Consistency — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py
 - **Packages**: torch, transformers
@@ -6388,6 +6896,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_fidelity`](src/ayase/modules/face_fidelity.py)** — Face detection and per-face quality assessment
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe → haar
 - **Provenance**: `utility`
 - **Packages**: mediapipe
@@ -6400,6 +6909,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_cross_similarity`](src/ayase/modules/face_cross_similarity.py)** — Pairwise ArcFace cosine similarity matrix across dataset faces
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: insightface → deepface → unavailable
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Packages**: Pillow, deepface, insightface
@@ -6413,6 +6923,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_emb_norm`](src/ayase/modules/face_emb_norm.py)** — ArcFace embedding-norm face quality (own, MagFace-inspired)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: insightface → unavailable
 - **Provenance**: `own` — source: named after MagFace (Meng et al., CVPR 2021); the MagFace model is not used — https://github.com/IrvingMeng/MagFace
 - **Packages**: gc, insightface
@@ -6425,6 +6936,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_landmark_quality`](src/ayase/modules/face_landmark_quality.py)** — Facial landmark jitter, expression smoothness, identity consistency
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `own`
 - **Packages**: mediapipe
@@ -6437,6 +6949,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`celebrity_id`](src/ayase/modules/celebrity_id.py)** — Face identity verification using DeepFace (own metric)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: deepface → unavailable
 - **Provenance**: `own` — source: inspired by EvalCrafter celebrity_id_score (DeepFace) — https://github.com/evalcrafter/EvalCrafter
 - **Packages**: Pillow, deepface, glob
@@ -6450,6 +6963,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
@@ -6463,6 +6977,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_landmark_quality`](src/ayase/modules/face_landmark_quality.py)** — Facial landmark jitter, expression smoothness, identity consistency
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `own`
 - **Packages**: mediapipe
@@ -6475,6 +6990,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_cross_similarity`](src/ayase/modules/face_cross_similarity.py)** — Pairwise ArcFace cosine similarity matrix across dataset faces
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: insightface → deepface → unavailable
 - **Provenance**: `utility`
 - **Packages**: Pillow, deepface, insightface
@@ -6488,6 +7004,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
@@ -6500,6 +7017,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
@@ -6513,6 +7031,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
@@ -6526,6 +7045,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
@@ -6539,6 +7059,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_identity_drift`](src/ayase/modules/face_identity_drift.py)** — Temporal ArcFace identity tail, coverage, threshold-run, and drift diagnostics
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698
 - **Packages**: insightface, onnxruntime
@@ -6552,6 +7073,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_iqa`](src/ayase/modules/face_iqa.py)** — Face-specific IQA via TOPIQ-face (GFIQA-trained, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — input is a 5-landmark-aligned face as in the training data (GFIQA); the video extension (mean over frames) is not from the source — source: TOPIQ-face (pyiqa topiq_nr-face, Chen et al.) — https://github.com/chaofengc/IQA-PyTorch
 - **Packages**: facexlib, opencv-python, pyiqa, torch
@@ -6566,6 +7088,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_landmark_quality`](src/ayase/modules/face_landmark_quality.py)** — Facial landmark jitter, expression smoothness, identity consistency
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `own`
 - **Packages**: mediapipe
@@ -6578,6 +7101,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper — source: FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6589,6 +7113,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper — source: FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6600,6 +7125,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper — source: FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6611,6 +7137,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6622,6 +7149,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6632,6 +7160,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper — source: FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6642,6 +7171,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_motion_preservation`](src/ayase/modules/face_motion_preservation.py)** — Frame-aligned FaceMotionPreserve landmark, CCA, EAR, and blink metrics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — the docstring itself calls this a clean-room adaptation: 51 MediaPipe points instead of the SBR detector (the authors' indices and code are unpublished), the EAR threshold is uncalibrated — numbers will not match the paper — source: FaceMotionPreserve (Zhu et al., Sci Rep 14:17275, 2024) — https://doi.org/10.1038/s41598-024-67989-5
 - **Tests**: covered by [`test_face_motion_preservation.py`](tests/modules/test_face_motion_preservation.py)
@@ -6653,6 +7183,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`face_fidelity`](src/ayase/modules/face_fidelity.py)** — Face detection and per-face quality assessment
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe → haar
 - **Provenance**: `own`
 - **Packages**: mediapipe
@@ -6665,6 +7196,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`identity_loss`](src/ayase/modules/identity_loss.py)** — Face identity preservation metric (ArcFace cosine distance/similarity vs reference)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: insightface → unavailable
 - **Provenance**: `adapted` — mean cosine similarity over subsampled video frames — the video aggregation is an extension of the image metric — source: ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface
 - **Packages**: insightface
@@ -6678,6 +7210,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → consisid
 - **Provenance**: `published` — source: ConsisID (arXiv:2411.17440); OpenS2V-Eval (arXiv:2505.20292); ports of the official eval scripts — https://github.com/PKU-YuanGroup/ConsisID
 - **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
@@ -6691,6 +7224,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → consisid
 - **Provenance**: `published` — source: ConsisID (arXiv:2411.17440); OpenS2V-Eval (arXiv:2505.20292); ports of the official eval scripts — https://github.com/PKU-YuanGroup/ConsisID
 - **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
@@ -6704,6 +7238,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`facesim`](src/ayase/modules/facesim.py)** — FaceSim-Cur / FaceSim-Arc face identity vs a reference image (ConsisID, OpenS2V)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → consisid
 - **Provenance**: `utility`
 - **Packages**: Pillow, decord, huggingface_hub, insightface, opencv-python, torch
@@ -6716,6 +7251,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6726,6 +7262,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6736,6 +7273,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6747,6 +7285,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6758,6 +7297,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6768,6 +7308,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6778,6 +7319,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6788,6 +7330,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`gaze_dynamics`](src/ayase/modules/gaze_dynamics.py)** — Reference-relative MediaPipe eye-look activation distributions and dynamics
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_gaze_dynamics.py`](tests/modules/per_module/test_gaze_dynamics.py)
@@ -6799,6 +7342,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`grafiqs`](src/ayase/modules/grafiqs.py)** — GraFIQs gradient face quality (CVPRW 2024; raw |grad|, lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → grafiqs_bn_gradient
 - **Provenance**: `adapted` — backbone is facexlib ArcFace IR-SE50 instead of upstream iresnet50/100 (the same MS1M-class weights are unavailable); alignment uses InsightFace norm_crop 112x112; emits raw Σ|∇| from the upstream image branch, while videos report the mean over up to four uniformly sampled frames — source: GraFIQs (Kolf, Damer, Boutros, CVPRW 2024) — https://github.com/jankolf/GraFIQs
 - **Packages**: facexlib, gc, insightface, torch
@@ -6813,6 +7357,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`head_beat_align`](src/ayase/modules/head_beat_align.py)** — Beat Align — audio/head-motion sync via the Bailando kernel
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → tddfa
 - **Provenance**: `adapted` — the BAS kernel is verbatim but kinematic beats come from the smoothed velocity of TDDFA/3DDFA_V2 pose coefficients rather than the pose track used by the source papers, so absolute values are not comparable — source: BAS kernel (Li et al., Bailando CVPR 2022 Eq.15) applied to head pose; reported as Beat Align by SadTalker (arXiv:2211.12194), Hallo, AniPortrait, EchoMimic — https://github.com/lisiyao21/Bailando
 - **Packages**: librosa, torch
@@ -6827,6 +7372,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`head_pose_diversity`](src/ayase/modules/head_pose_diversity.py)** — Head pose diversity — temporal std of 3DMM pose coefficients
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → tddfa
 - **Provenance**: `adapted` — the source reports the std of head-pose embeddings extracted with Hopenet angles; here TDDFA/3DDFA_V2 12-dim pose coefficients are used, so absolute values are not comparable to the paper — source: Diversity, SadTalker (Zhang et al., arXiv:2211.12194) — https://github.com/OpenTalker/SadTalker
 - **Packages**: torch
@@ -6841,6 +7387,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`id_reveal`](src/ayase/modules/id_reveal.py)** — ID-Reveal identity distance to reference videos (lower=better; RetinaFace + TDDFA + temporal ID-Reveal net)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → idreveal
 - **Provenance**: `adapted` — Official inference is retained, but Ayase accepts a file or arbitrary reference directory, uses protocol/weight/media-aware persistent embedding caches, and excludes only the exact candidate path rather than every reference sharing its stem — source: ID-Reveal (Cozzolino et al. 2021, arXiv:2012.02512); official code https://github.com/grip-unina/id-reveal + https://github.com/grip-unina/poi-forensics (vendored, non-commercial research license)
 - **Packages**: PyYAML, torch, tqdm
@@ -6855,6 +7402,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`id_reveal`](src/ayase/modules/id_reveal.py)** — ID-Reveal identity distance to reference videos (lower=better; RetinaFace + TDDFA + temporal ID-Reveal net)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → idreveal
 - **Provenance**: `utility`
 - **Packages**: PyYAML, torch, tqdm
@@ -6869,6 +7417,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`id_sim`](src/ayase/modules/id_sim.py)** — ID-Sim fine-grained visual identity distance (CVPR 2026)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: ID-Sim (Chae et al.) — https://github.com/JuliaChae/id_sim
 - **VRAM**: ~600 MB
@@ -6882,6 +7431,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`identity_loss`](src/ayase/modules/identity_loss.py)** — Face identity preservation metric (ArcFace cosine distance/similarity vs reference)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: insightface → unavailable
 - **Provenance**: `adapted` — mean 1-cos over subsampled video frames — the video aggregation is an extension of the image metric — source: ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface
 - **Packages**: insightface
@@ -6895,6 +7445,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`lip_dynamics`](src/ayase/modules/lip_dynamics.py)** — THEval temporal variation of all pairwise lip-landmark distances
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: THEval (arXiv 2511.04520), Eq.12–13 — https://arxiv.org/abs/2511.04520
 - **Source**: <a href="https://arxiv.org/abs/2511.04520" target="_blank">arXiv</a>
@@ -6907,6 +7458,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`lmd`](src/ayase/modules/lmd.py)** — LMD/F-LMD: landmark distance of lips and full face to the source video
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → mediapipe
 - **Provenance**: `adapted` — landmarks come from MediaPipe FaceMesh (468 pts, lip subset) instead of the source's 68-pt dlib landmarks, and coordinates are bbox-normalised rather than raw pixels — source: LMD, Chen et al., ECCV 2018 (arXiv:1803.10404) — https://github.com/lelechen63/ATVGnet
 - **Packages**: mediapipe
@@ -6919,6 +7471,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -6929,6 +7482,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -6939,6 +7493,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -6949,6 +7504,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`multi_subject_identity`](src/ayase/modules/multi_subject_identity.py)** — Per-subject face identity in multi-person clips (worst subject reported)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Packages**: insightface, opencv-python, scipy
 - **Tests**: covered by [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
@@ -6960,6 +7516,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`nearid`](src/ayase/modules/nearid.py)** — NearID near-distractor-aware identity similarity (ECCV 2026)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `published` — source: NearID (Cvejic et al., arXiv 2604.01973) — https://github.com/Gorluxor/NearID
 - **Packages**: torch, transformers
@@ -6973,6 +7530,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance and variation on 3DMM expression/pose coefficients
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → tddfa
 - **Provenance**: `adapted` — coefficients come from TDDFA/3DDFA_V2 rather than the source model, so absolute values are not comparable — source: Pose-Var, AniTalker (https://arxiv.org/abs/2408.01121) / Learning to Listen eval protocol
 - **Packages**: torch
@@ -6987,6 +7545,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`aucon_prmse`](src/ayase/modules/aucon_prmse.py)** — AUCON/PRMSE — action-unit and pose agreement with a driver video
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pyfeat
 - **Provenance**: `adapted` — head-pose angles come from Py-Feat's face model rather than OpenFace — source: PRMSE, MarioNETte (Ha et al., arXiv:1911.08139); Py-Feat backend (arXiv:2104.03509) — https://github.com/cosanlab/py-feat
 - **Packages**: feat, torch
@@ -7003,6 +7562,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`action_recognition`](src/ayase/modules/action_recognition.py)** — Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models
 
 - **Input**: vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: VideoMAE (Tong et al. 2022) as a classifier; not a metric — https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics
 - **Packages**: open-clip-torch, torch, transformers
 - **VRAM**: ~600 MB
@@ -7016,6 +7576,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`action_recognition`](src/ayase/modules/action_recognition.py)** — Recognizes human actions (VideoMAE / UMT) - Supports Heavy Models
 
 - **Input**: vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: VideoMAE (Tong et al. 2022) as a classifier; not a metric — https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics
 - **Packages**: open-clip-torch, torch, transformers
 - **VRAM**: ~600 MB
@@ -7029,6 +7590,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`scene_detection`](src/ayase/modules/scene_detection.py)** — Scene stability metric — penalises rapid cuts (0-1, higher=more stable)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: transnetv2 → unavailable
 - **Provenance**: `utility` — source: TransNetV2 — https://github.com/soCzech/TransNetV2
 - **Packages**: opencv-python, transnetv2
@@ -7042,6 +7604,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`color_consistency`](src/ayase/modules/color_consistency.py)** — Verifies color attributes in prompt vs video content
 
 - **Input**: img/vid +cap · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_color_consistency.py`](tests/modules/per_module/test_color_consistency.py)
@@ -7052,6 +7615,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`commonsense`](src/ayase/modules/commonsense.py)** — Common sense adherence (LLaVA VLM rubric)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: vlm → unavailable
 - **Provenance**: `own`
 - **Packages**: Pillow, torch, transformers
@@ -7066,6 +7630,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Packages**: insightface, mediapipe, transformers
@@ -7079,6 +7644,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`concept_presence`](src/ayase/modules/concept_presence.py)** — Detect concept presence via face detection, CLIP-based object/style detection
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Packages**: insightface, mediapipe, transformers
@@ -7093,6 +7659,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: grit → ultralytics → unavailable
 - **Provenance**: `own`
 - **Packages**: grit, torch, ultralytics
@@ -7105,6 +7672,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: grit → ultralytics → unavailable
 - **Provenance**: `own`
 - **Packages**: grit, torch, ultralytics
@@ -7117,6 +7685,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: grit → ultralytics → unavailable
 - **Provenance**: `own`
 - **Packages**: grit, torch, ultralytics
@@ -7129,6 +7698,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`human_fidelity`](src/ayase/modules/human_fidelity.py)** — Human body/hand/face fidelity (DWPose / MediaPipe)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → dwpose → mediapipe
 - **Provenance**: `own` — source: DWPose/MediaPipe Pose models; the aggregation is own — https://github.com/IDEA-Research/DWPose
 - **Packages**: dwpose, mediapipe
@@ -7141,6 +7711,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: grit → ultralytics → unavailable
 - **Provenance**: `own`
 - **Packages**: grit, torch, ultralytics
@@ -7153,6 +7724,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`object_detection`](src/ayase/modules/object_detection.py)** — Detects objects (GRiT / YOLOv8) - Supports Heavy Models
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: grit → ultralytics → unavailable
 - **Provenance**: `own`
 - **Packages**: grit, torch, ultralytics
@@ -7165,6 +7737,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`qwen_image_bench`](src/ayase/modules/qwen_image_bench.py)** — Qwen-Image-Bench T2I judge scores across five image-generation dimensions
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → transformers
 - **Provenance**: `adapted` — judge inference via transformers/OpenAI-compatible endpoint instead of the official ms-swift PtEngine — source: Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench
 - **Packages**: qwen-vl-utils, torch, transformers
@@ -7178,6 +7751,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`ram_tagging`](src/ayase/modules/ram_tagging.py)** — RAM++ multi-label tagging on sampled video frames
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: ram_plus
 - **Provenance**: `utility` — source: RAM++ (Recognize Anything) — https://github.com/xinyu1205/recognize-anything
 - **Packages**: Pillow, huggingface_hub, ram, torch
@@ -7191,6 +7765,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`scene_complexity`](src/ayase/modules/scene_complexity.py)** — Spatial and temporal scene complexity analysis
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_scene_complexity.py`](tests/modules/per_module/test_scene_complexity.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py), +2 more
@@ -7202,6 +7777,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`video_type_classifier`](src/ayase/modules/video_type_classifier.py)** — CLIP zero-shot video content type classification
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: clip → unavailable
 - **Provenance**: `utility` — source: CLIP zero-shot — https://huggingface.co/openai/clip-vit-base-patch32
 - **Packages**: torch, transformers
@@ -7216,6 +7792,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`video_type_classifier`](src/ayase/modules/video_type_classifier.py)** — CLIP zero-shot video content type classification
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: clip → unavailable
 - **Provenance**: `utility` — source: CLIP zero-shot — https://huggingface.co/openai/clip-vit-base-patch32
 - **Packages**: torch, transformers
@@ -7233,6 +7810,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`inception_score`](src/ayase/modules/inception_score.py)** — Inception Score (IS), dataset-level via torch-fidelity
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: torch_fidelity → unavailable
 - **Provenance**: `adapted` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
 - **Packages**: opencv-python, torch_fidelity
@@ -7250,6 +7828,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`brightrate`](src/ayase/modules/brightrate.py)** — BrightRate HDR no-reference video quality via the BrightVQ inference script
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable → brightrate
 - **Provenance**: `published` — source: BrightRate / BrightVQ — https://brightvqa.github.io/BrightVQ/
 - **Packages**: imageio_ffmpeg, joblib, numba, pandas, pyiqa, scikit-learn, scipy, torch, torchvision
@@ -7264,6 +7843,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`delta_ictcp`](src/ayase/modules/delta_ictcp.py)** — Delta E_ITP (BT.2124) perceptual color difference (lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `adapted` — video aggregation (mean over frames at subsample stride) is own; the per-pixel formula and color transforms follow BT.2124/BT.2100/BT.2087 — source: ITU-R BT.2124 (ΔE_ITP) on BT.2100 ICtCp — https://www.itu.int/rec/R-REC-BT.2124
 - **Tests**: covered by [`test_delta_ictcp.py`](tests/modules/per_module/test_delta_ictcp.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -7275,6 +7855,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdr_chipqa`](src/ayase/modules/hdr_chipqa.py)** — HDR-ChipQA no-reference HDR video quality via its feature extractor and LIVE-HDR SVR
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → hdr_chipqa
 - **Provenance**: `published` — source: HDR-ChipQA (Ebenezer et al., arXiv 2304.13156) — https://arxiv.org/abs/2304.13156
 - **Packages**: joblib, matplotlib, numba, opencv-python, scikit-learn, scipy
@@ -7288,6 +7869,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: — (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase
 - **Source**: <a href="https://github.com/seruva19/ayase" target="_blank">GitHub</a>
@@ -7300,6 +7882,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdr_subband_flicker_score`](src/ayase/modules/hdr_subband_flicker_score.py)** — HDR-aware full-reference video quality (PU21 + wavelet)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → pu21_wavelet
 - **Provenance**: `own` — source: named after HDR-VQM (Narwaria et al. 2015) — https://github.com/mperreir/HDR-VQM
 - **Packages**: PyWavelets, opencv-python
@@ -7313,6 +7896,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`4k_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — Memory-efficient quality assessment for 4K+ videos
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: — (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase
 - **Source**: <a href="https://github.com/seruva19/ayase" target="_blank">GitHub</a>
@@ -7325,6 +7909,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdrmax`](src/ayase/modules/hdrmax.py)** — HDRMAX full-reference HDR video quality via its feature and prediction scripts
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: unavailable → hdrmax
 - **Provenance**: `published` — source: HDRMAX: HDR-VMAF / SSIM-HDRMAX / MS-SSIM-HDRMAX (Ebenezer et al.) — https://github.com/utlive/HDRMAX
 - **Packages**: PyWavelets, colour-science, joblib, matplotlib, pandas, pyrtools, scikit-image, scipy
@@ -7338,6 +7923,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`log_metrics`](src/ayase/modules/log_metrics.py)** — log-domain PSNR + plain SSIM on PU21-encoded frames (own)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `own` — source: PU21 (Mantiuk & Azimi, 2021) claimed — https://github.com/gfxdisp/pu21
 - **Source**: <a href="https://github.com/gfxdisp/pu21" target="_blank">GitHub</a>
@@ -7350,6 +7936,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdr_metadata`](src/ayase/modules/hdr_metadata.py)** — MaxFALL + MaxCLL per CTA-861.3 (PQ nits)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — values only for PQ content (color_transfer=smpte2084); SDR/HLG are skipped — CTA-861.3 is undefined for them without display assumptions — source: MaxCLL/MaxFALL (CTA-861.3; https://shop.cta.tech/products/cta-861-3; ST.2084 PQ decode via FFmpeg)
 - **Tests**: covered by [`test_hdr_metadata.py`](tests/modules/per_module/test_hdr_metadata.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -7360,6 +7947,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdr_metadata`](src/ayase/modules/hdr_metadata.py)** — MaxFALL + MaxCLL per CTA-861.3 (PQ nits)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `published` — values only for PQ content (color_transfer=smpte2084); SDR/HLG are skipped — CTA-861.3 is undefined for them without display assumptions — source: MaxCLL/MaxFALL (CTA-861.3; https://shop.cta.tech/products/cta-861-3; ST.2084 PQ decode via FFmpeg)
 - **Tests**: covered by [`test_hdr_metadata.py`](tests/modules/per_module/test_hdr_metadata.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
@@ -7370,6 +7958,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`log_metrics`](src/ayase/modules/log_metrics.py)** — log-domain PSNR + plain SSIM on PU21-encoded frames (own)
 
 - **Input**: img/vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: numpy
 - **Provenance**: `own` — source: PU21 (Mantiuk & Azimi, 2021) claimed — https://github.com/gfxdisp/pu21
 - **Source**: <a href="https://github.com/gfxdisp/pu21" target="_blank">GitHub</a>
@@ -7382,6 +7971,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`hdr_sdr_vqa`](src/ayase/modules/hdr_sdr_vqa.py)** — HDR/SDR-aware video quality assessment
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own` — source: — (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase
 - **Source**: <a href="https://github.com/seruva19/ayase" target="_blank">GitHub</a>
@@ -7397,6 +7987,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`cambi`](src/ayase/modules/cambi.py)** — CAMBI banding/contouring detector (Netflix, 0-24, lower=better)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: CAMBI (Netflix), libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
@@ -7409,6 +8000,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`codec_specific_quality`](src/ayase/modules/codec_specific_quality.py)** — Codec-level efficiency, GOP quality, and artifact detection
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_codec_specific_quality.py`](tests/modules/per_module/test_codec_specific_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7420,6 +8012,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`codec_specific_quality`](src/ayase/modules/codec_specific_quality.py)** — Codec-level efficiency, GOP quality, and artifact detection
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_codec_specific_quality.py`](tests/modules/per_module/test_codec_specific_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7431,6 +8024,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`codec_specific_quality`](src/ayase/modules/codec_specific_quality.py)** — Codec-level efficiency, GOP quality, and artifact detection
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_codec_specific_quality.py`](tests/modules/per_module/test_codec_specific_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7445,6 +8039,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`depth_anything`](src/ayase/modules/depth_anything.py)** — Depth Anything V2 monocular depth estimation and consistency
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Depth Anything V2 model (Yang et al. 2024); the metrics are own — https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf
 - **Packages**: Pillow, torch, transformers
@@ -7458,6 +8053,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`depth_anything`](src/ayase/modules/depth_anything.py)** — Depth Anything V2 monocular depth estimation and consistency
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Depth Anything V2 model (Yang et al. 2024); the metrics are own — https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf
 - **Packages**: Pillow, torch, transformers
@@ -7471,6 +8067,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`depth_map_quality`](src/ayase/modules/depth_map_quality.py)** — Monocular depth map quality (sharpness, completeness, edge alignment)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: MiDaS model; the aggregation is own — https://github.com/isl-org/MiDaS
 - **Packages**: torch
@@ -7484,6 +8081,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`multi_view_consistency`](src/ayase/modules/multi_view_consistency.py)** — Geometric multi-view consistency via epipolar analysis
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_multi_view_consistency.py`](tests/modules/per_module/test_multi_view_consistency.py), [`test_depth_and_multiview.py`](tests/modules/test_depth_and_multiview.py)
@@ -7495,6 +8093,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`stereoscopic_quality`](src/ayase/modules/stereoscopic_quality.py)** — Stereo 3D comfort and quality assessment
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_stereoscopic_quality.py`](tests/modules/per_module/test_stereoscopic_quality.py), [`test_depth_and_multiview.py`](tests/modules/test_depth_and_multiview.py)
@@ -7509,6 +8108,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_production_quality.py`](tests/modules/per_module/test_production_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7520,6 +8120,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_production_quality.py`](tests/modules/per_module/test_production_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7531,6 +8132,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_production_quality.py`](tests/modules/per_module/test_production_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7542,6 +8144,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_production_quality.py`](tests/modules/per_module/test_production_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7553,6 +8156,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`production_quality`](src/ayase/modules/production_quality.py)** — Professional production quality (colour, exposure, focus, banding)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **Tests**: covered by [`test_production_quality.py`](tests/modules/per_module/test_production_quality.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7567,6 +8171,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`captioning`](src/ayase/modules/captioning.py)** — Generates captions using BLIP-2 + computes BLEU score (EvalCrafter blip_bleu)
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: blip2 → unavailable
 - **Provenance**: `utility`
 - **Packages**: Pillow, opencv-python, pycocoevalcap, torch, transformers
@@ -7580,6 +8185,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`text_detection`](src/ayase/modules/text.py)** — Detects text/watermarks using OCR (PaddleOCR / Tesseract)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: paddle → tesseract → unavailable
 - **Provenance**: `utility` — source: PaddleOCR / Tesseract — https://github.com/PaddlePaddle/PaddleOCR
 - **Packages**: paddleocr, pytesseract
@@ -7593,6 +8199,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — EvalCrafter OCR score — text rendering accuracy vs expected text (error measure, lower=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: paddleocr → unavailable
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
@@ -7606,6 +8213,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — EvalCrafter OCR score — text rendering accuracy vs expected text (error measure, lower=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: paddleocr → unavailable
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
@@ -7619,6 +8227,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — EvalCrafter OCR score — text rendering accuracy vs expected text (error measure, lower=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: paddleocr → unavailable
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
@@ -7632,6 +8241,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`ocr_fidelity`](src/ayase/modules/ocr_fidelity.py)** — EvalCrafter OCR score — text rendering accuracy vs expected text (error measure, lower=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: paddleocr → unavailable
 - **Provenance**: `published` — source: EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py
 - **Packages**: paddleocr
@@ -7645,6 +8255,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`text_overlay`](src/ayase/modules/text_overlay.py)** — Text overlay / subtitle detection in video frames
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic → unavailable
 - **Provenance**: `own`
 - **Packages**: opencv-python
@@ -7660,6 +8271,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`watermark_classifier`](src/ayase/modules/watermark_classifier.py)** — Classifies video for watermarks using a pretrained model or custom ResNet-50 weights
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → resnet50_custom
 - **Provenance**: `utility` — source: custom ResNet-50 / HF umm-maybe/AI-image-detector — https://huggingface.co/umm-maybe/AI-image-detector
 - **Packages**: Pillow, torch, torchvision, transformers
@@ -7674,6 +8286,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`bias_detection`](src/ayase/modules/bias_detection.py)** — Demographic representation analysis (face count, age distribution)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: haar_cascade → unavailable
 - **Provenance**: `own`
 - **Tests**: covered by [`test_bias_detection.py`](tests/modules/per_module/test_bias_detection.py), [`test_opencv_modules.py`](tests/modules/test_opencv_modules.py)
@@ -7685,6 +8298,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`deepfake_detection`](src/ayase/modules/deepfake_detection.py)** — Synthetic media / deepfake likelihood estimation
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own`
 - **Packages**: scipy, transformers
@@ -7699,6 +8313,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`harmful_content`](src/ayase/modules/harmful_content.py)** — Violence, gore, and disturbing content detection
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: clip_zeroshot → unavailable
 - **Provenance**: `own` — source: CLIP ViT-B/32 model; the screening is own (docstring: 'ayase-defined, not a published metric') — https://huggingface.co/openai/clip-vit-base-patch32
 - **Packages**: transformers
@@ -7713,6 +8328,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
 - **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: mj_video → unavailable
 - **Provenance**: `published` — source: MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
@@ -7726,6 +8342,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`mj_video`](src/ayase/modules/mj_video.py)** — MJ-Video overall reward and five fine-grained preference aspects
 
 - **Input**: vid +ref +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: mj_video → unavailable
 - **Provenance**: `published` — source: MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video
 - **Packages**: boto3, data_processor, internvl2, model, safetensors, torch, transformers
@@ -7739,6 +8356,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`nsfw`](src/ayase/modules/nsfw.py)** — Detects NSFW (adult/violent) content using ViT
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: transformers → unavailable
 - **Provenance**: `utility` — source: Falconsai/nsfw_image_detection (HF, no paper) — https://huggingface.co/Falconsai/nsfw_image_detection
 - **Packages**: opencv-python, torch, transformers
@@ -7752,6 +8370,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`watermark_classifier`](src/ayase/modules/watermark_classifier.py)** — Classifies video for watermarks using a pretrained model or custom ResNet-50 weights
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable → resnet50_custom
 - **Provenance**: `utility` — source: custom ResNet-50 / HF umm-maybe/AI-image-detector — https://huggingface.co/umm-maybe/AI-image-detector
 - **Packages**: Pillow, torch, torchvision, transformers
@@ -7766,6 +8385,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`watermark_robustness`](src/ayase/modules/watermark_robustness.py)** — Invisible watermark detection and strength estimation
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic → imwatermark
 - **Provenance**: `own`
 - **Packages**: imwatermark
@@ -7778,6 +8398,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`watermark_robustness`](src/ayase/modules/watermark_robustness.py)** — Invisible watermark detection and strength estimation
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic → imwatermark
 - **Provenance**: `own`
 - **Packages**: imwatermark
@@ -7793,6 +8414,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Ayase construct — median of CLIP reference-similarity over 16-frame windows
 - **Packages**: Pillow, lpips, open-clip-torch, timm, torch, torchvision
@@ -7807,6 +8429,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Ayase construct — median of DINOv2 reference-similarity over 16-frame windows
 - **Packages**: Pillow, lpips, open-clip-torch, timm, torch, torchvision
@@ -7821,6 +8444,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Ayase construct — median LPIPS of reference vs window pixel-average
 - **Packages**: Pillow, lpips, open-clip-torch, timm, torch, torchvision
@@ -7835,6 +8459,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`i2v_similarity`](src/ayase/modules/i2v_similarity.py)** — Image-to-Video reference similarity using CLIP, DINOv2, and LPIPS (sliding window)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `own` — source: Ayase construct — weighted blend 0.4*CLIP + 0.2*(1-LPIPS) + 0.4*DINOv2
 - **Packages**: Pillow, lpips, open-clip-torch, timm, torch, torchvision
@@ -7849,6 +8474,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`opens2v`](src/ayase/modules/opens2v.py)** — OpenS2V-Eval subject-consistency metrics: NexusScore (YOLO-World image-prompt subject crops vs reference subject image, GME embeddings) and NaturalScore (GPT-4o naturalness judge)
 
 - **Input**: vid +ref +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: unavailable
 - **Provenance**: `adapted` — canonical 'opens2v' replicates upstream (YOLO-World image-prompt + GME-Qwen2-VL-7B); 'gdino' substitutes GroundingDINO+CLIP/DINOv2 for the detector/encoder (documented substitution). A single reference pair instead of upstream's img_paths×labels list — source: OpenS2V-Nexus NexusScore (arXiv 2505.20292) — https://github.com/PKU-YuanGroup/OpenS2V-Nexus
 - **Packages**: inspect, mmengine, mmyolo, openai, opencv-python, torch, torchvision, transformers
@@ -7866,6 +8492,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`llm_descriptive_qa`](src/ayase/modules/llm_descriptive_qa.py)** — LMM-based interpretable quality assessment with explanations
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Backend**: openai → unavailable → llava
 - **Provenance**: `own` — source: LLaVA-NeXT / GPT-4o models; the metric is own — https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf
 - **Packages**: Pillow, openai, torch, transformers
@@ -7880,6 +8507,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`nemo_curator`](src/ayase/modules/nemo_curator.py)** — Caption text quality scoring (DeBERTa/FastText)
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: deberta → fasttext → unavailable
 - **Provenance**: `published` — source: NVIDIA quality-classifier-deberta (NeMo Curator) — https://huggingface.co/nvidia/quality-classifier-deberta
 - **Packages**: fasttext, torch, transformers
@@ -7892,6 +8520,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`nemo_curator`](src/ayase/modules/nemo_curator.py)** — Caption text quality scoring (DeBERTa/FastText)
 
 - **Input**: img/vid +cap · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Backend**: deberta → fasttext → unavailable
 - **Provenance**: `own`
 - **Packages**: fasttext, torch, transformers
@@ -7904,6 +8533,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`usability_rate`](src/ayase/modules/usability_rate.py)** — Computes percentage of usable frames based on quality thresholds
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_usability_rate.py`](tests/modules/per_module/test_usability_rate.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), [`test_reference_and_meta_metrics.py`](tests/modules/test_reference_and_meta_metrics.py)
 - **Config**: `quality_threshold=50.0`
@@ -7914,6 +8544,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 **[`vtss`](src/ayase/modules/vtss.py)** — Video Training Suitability Score (0-1, meta-metric)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Backend**: algorithmic
 - **Provenance**: `own`
 - **VRAM**: ~800 MB
@@ -7931,6 +8562,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`audio_isc`](src/ayase/modules/audio_isc.py)** — Inception Score for Audio, mean over n_splits subsets (PANNs/PASST backbone, higher=better)
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — backend='passt' swaps the classifier for PaSST-32k — a valid ISC backbone but not the audioldm_eval one — source: Inception Score (Salimans 2016) via audioldm_eval protocol (Cnn14_16k logits → softmax) — https://github.com/haoheliu/audioldm_eval
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 
@@ -7940,6 +8572,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`audio_isc`](src/ayase/modules/audio_isc.py)** — Inception Score for Audio, std over n_splits subsets
 
 - **Input**: audio · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — backend='passt' swaps the classifier for PaSST-32k — a valid ISC backbone but not the audioldm_eval one — source: Inception Score (Salimans 2016) via audioldm_eval protocol (Cnn14_16k logits → softmax) — https://github.com/haoheliu/audioldm_eval
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py)
 
@@ -7949,6 +8582,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`audio_kl`](src/ayase/modules/audio_kl.py)** — Paired KL divergence between audio classifier softmax distributions (audioldm_eval protocol, lower=better)
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — backend='passt' swaps the classifier for PaSST-32k — a valid KL backbone but not the audioldm_eval one — source: audioldm_eval paired KL (AudioGen formulation) — https://github.com/haoheliu/audioldm_eval/blob/main/audioldm_eval/metrics/kl.py
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -7958,6 +8592,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`face_cross_similarity`](src/ayase/modules/face_cross_similarity.py)** — Dataset-wide average pairwise face similarity
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -7967,6 +8602,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Mean available visual/audio component score (0-100)
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
@@ -7976,6 +8612,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Available fixed AVGen-Bench dimension weight (0-1)
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
@@ -7985,6 +8622,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Mean available AV/lip synchronization score (0-100)
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
@@ -7994,6 +8632,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Mean available fine-grained component score (0-100)
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
@@ -8003,6 +8642,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Structured component evidence, counts, and protocol identities
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility` — Ayase-owned structured execution and evidence metadata. — source: Ayase AVGen-Bench runtime and evidence ledger
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
@@ -8012,6 +8652,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — AVGen-Bench Scheme-2 dataset score (0-100, higher=better)
 
 - **Input**: video +cap · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Runs the pinned released full-suite component and Scheme-2 arithmetic, while Ayase validates judge JSON before numeric coercion, rejects boolean/non-finite raw values, and treats zero selected OCR/Music evidence as absent instead of fabricating a numeric dimension. Promptless custom MP4s retain prompt-independent native heads; judge rows without prompts, Face rows without positive labels, and canonical Music rows outside the selected category are preflighted before specialist provisioning. Missing dimensions are explicitly renormalized and reported through coverage; repaired edge cases do not claim historical leaderboard parity. — source: Microsoft AVGen-Bench full-suite source at https://github.com/microsoft/AVGen-Bench/tree/1049eabac472d479fe5feeb1ee202961f8e0982a
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
@@ -8021,6 +8662,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`chd`](src/ayase/modules/chd.py)** — Released unigram codebook Hellinger distance (0-1, lower=better)
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the released CHD-1D unigram algorithm and public ImageNet TiTok-L-32. It does not claim the paper's CHD-1D/CHD-2D composite or retrained tokenizer. Ayase adds strict set validation and isolated pinned asset provisioning. — source: Released CHD-1D source at https://github.com/zexiJia/1d-Distance/tree/06c3f986cb37188a59596ba6fc2e6ad6cc5665d5
 - **Tests**: covered by [`test_chd.py`](tests/modules/test_chd.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8030,6 +8672,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`chd`](src/ayase/modules/chd.py)** — Structured CHD protocol, asset identity, device, and set counts
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `utility` — Ayase-added runtime trace; not an upstream CHD scalar. — source: Ayase runtime trace for the released CHD-1D integration
 - **Tests**: covered by [`test_chd.py`](tests/modules/test_chd.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8039,6 +8682,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`dataset_analytics`](src/ayase/modules/dataset_analytics.py)** — Class/category balance score (0-1, higher=balanced)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
@@ -8048,6 +8692,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`cmmd`](src/ayase/modules/cmmd.py)** — CLIP Maximum Mean Discrepancy between generated and reference sets (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: CMMD (Jayasumana et al., CVPR 2024) — https://github.com/google-research/google-research/tree/master/cmmd
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8057,12 +8702,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Fraction of real samples covered by generated neighbours (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Fraction of real samples covered by generated neighbours (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
@@ -8072,12 +8719,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Average normalized generated-sample density around real samples
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Average normalized generated-sample density around real samples
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
@@ -8087,6 +8736,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`dataset_analytics`](src/ayase/modules/dataset_analytics.py)** — Dataset visual diversity score (0-1, higher=more diverse)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
@@ -8096,6 +8746,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`dataset_analytics`](src/ayase/modules/dataset_analytics.py)** — Count of near-duplicate sample pairs
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
@@ -8105,6 +8756,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`face_cross_similarity`](src/ayase/modules/face_cross_similarity.py)** — Dataset NxN pairwise face similarity matrix
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8114,6 +8766,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, VGGish backbone (lower=better)
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8123,6 +8776,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — FAD VGGish extrapolated to infinite sample size
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8132,6 +8786,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, PANNs Cnn14 backbone
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8141,6 +8796,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — FAD PANNs Cnn14 extrapolated to infinite sample size
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8150,6 +8806,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, PASST backbone
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8159,6 +8816,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — FAD PASST extrapolated to infinite sample size
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8168,6 +8826,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — Frechet Audio Distance, VGGish backbone (lower=better)
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8177,6 +8836,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fad`](src/ayase/modules/fad.py)** — FAD VGGish extrapolated to infinite sample size
 
 - **Input**: audio +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
 - **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8186,6 +8846,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance on expression-coefficient distributions vs reference set (lower=closer)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — the source evals extract coefficients with their own face model; here TDDFA/3DDFA_V2 10-dim expression coefficients are used, so absolute values are not comparable — source: Expr-FD, Learning to Listen (Ng et al., arXiv:2204.08451); EMO/AniTalker evals — https://github.com/evanscratch/learning-to-listen
 - **Tests**: covered by [`test_fd_3dmm.py`](tests/modules/per_module/test_fd_3dmm.py)
 
@@ -8195,6 +8856,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fd_3dmm`](src/ayase/modules/fd_3dmm.py)** — Frechet distance on pose-coefficient distributions vs reference set (lower=closer)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — the source evals extract coefficients with their own face model; here TDDFA/3DDFA_V2 12-dim pose coefficients are used, so absolute values are not comparable — source: Pose-FD, Learning to Listen (Ng et al., arXiv:2204.08451); EMO/AniTalker evals — https://github.com/evanscratch/learning-to-listen
 - **Tests**: covered by [`test_fd_3dmm.py`](tests/modules/per_module/test_fd_3dmm.py)
 
@@ -8204,6 +8866,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fd_gk`](src/ayase/modules/fd_gk.py)** — Frechet distance on body-pose distributions vs reference set (lower=closer)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — poses are MediaPipe BlazePose 33-joint xy instead of the source's SMPL/skeleton poses, so absolute values are not comparable — source: FD_g, Audio2Photoreal (arXiv:2401.01885); AI Choreographer (arXiv:2101.08779) — https://github.com/facebookresearch/audio2photoreal
 - **Tests**: covered by [`test_fd_gk.py`](tests/modules/per_module/test_fd_gk.py)
 
@@ -8213,6 +8876,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fd_gk`](src/ayase/modules/fd_gk.py)** — Frechet distance on body-velocity distributions vs reference set (lower=closer)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — velocities are frame differences of MediaPipe BlazePose 33-joint xy instead of the source's skeleton, so absolute values are not comparable — source: FD_k, Audio2Photoreal (arXiv:2401.01885); AI Choreographer (arXiv:2101.08779) — https://github.com/facebookresearch/audio2photoreal
 - **Tests**: covered by [`test_fd_gk.py`](tests/modules/per_module/test_fd_gk.py)
 
@@ -8222,6 +8886,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fid`](src/ayase/modules/fid.py)** — Fréchet Inception Distance between generated and reference image sets (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — one representative frame per video; without a reference the metric is not emitted — source: FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid
 - **Tests**: covered by [`test_fid.py`](tests/modules/per_module/test_fid.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +1 more
 
@@ -8231,6 +8896,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fvd`](src/ayase/modules/fvd.py)** — Frechet Video Distance between generated and reference video distributions (lower=better)
 
 - **Input**: vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
 - **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +5 more
 
@@ -8240,6 +8906,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`fvmd`](src/ayase/modules/fvmd.py)** — Official FVMD 1.0.0-compatible dataset distance (lower=better)
 
 - **Input**: vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: FVMD (Liu et al., arXiv 2407.16124), official evaluator — https://github.com/ljh0v0/FVMD-frechet-video-motion-distance
 - **Tests**: covered by [`test_fvmd.py`](tests/modules/per_module/test_fvmd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +1 more
 
@@ -8249,6 +8916,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`geneval2`](src/ayase/modules/geneval2.py)** — Official 800-prompt benchmark mean Soft-TIFA AM ×100
 
 - **Input**: image · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: GenEval2 full-benchmark Soft-TIFA AM — https://github.com/facebookresearch/GenEval2
 - **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8258,6 +8926,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`geneval2`](src/ayase/modules/geneval2.py)** — Unique successfully scored official prompts / benchmark prompts
 
 - **Input**: image · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `utility` — source: Ayase completion diagnostic for https://github.com/facebookresearch/GenEval2
 - **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8267,6 +8936,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`geneval2`](src/ayase/modules/geneval2.py)** — Official 800-prompt benchmark mean Soft-TIFA GM ×100
 
 - **Input**: image · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: GenEval2 full-benchmark Soft-TIFA GM — https://github.com/facebookresearch/GenEval2
 - **Tests**: covered by [`test_geneval2.py`](tests/modules/per_module/test_geneval2.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8276,6 +8946,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`face_cross_similarity`](src/ayase/modules/face_cross_similarity.py)** — Estimated number of identity clusters in the dataset
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: ArcFace model (InsightFace/DeepFace); the aggregates are own — https://github.com/deepinsight/insightface
 - **Tests**: covered by [`test_face_cross_similarity.py`](tests/modules/per_module/test_face_cross_similarity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8285,6 +8956,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`inception_score`](src/ayase/modules/inception_score.py)** — Dataset-level Inception Score via torch-fidelity (higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — dataset-level IS (torch-fidelity, 10 splits, FID-Inception); for video — a representative frame; without the package the metric is not emitted — source: Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498
 - **Tests**: covered by [`test_inception_score.py`](tests/modules/per_module/test_inception_score.py)
 
@@ -8294,6 +8966,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`jedi_official`](src/ayase/modules/jedi.py)** — Number of generated videos supplied to JEDi
 
 - **Input**: video +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8303,6 +8976,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`jedi_official`](src/ayase/modules/jedi.py)** — SHA-256 of Ayase's fixed JEDi loader policy
 
 - **Input**: video +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8312,6 +8986,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`jedi_official`](src/ayase/modules/jedi.py)** — Number of reference videos supplied to JEDi
 
 - **Input**: video +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8321,6 +8996,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`jedi_official`](src/ayase/modules/jedi.py)** — SHA-256 of the ordered reference path manifest
 
 - **Input**: video +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `utility`
 - **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8330,6 +9006,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`jedi_official`](src/ayase/modules/jedi.py)** — Official two-distribution JEDi (polynomial MMD x100, lower=better)
 
 - **Input**: video +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the official V-JEPA encoder/probe and JEDi kernel, with Ayase's uniform full-video 16-frame sampling and square bilinear resize. Upstream accepts caller-defined loaders; benchmark-specific decoding/sampling is not reproduced. — source: Official JEDi implementation at commit e64f3fe8572b89ea904d161def44b419024e31a0 — https://github.com/oooolga/JEDi
 - **Tests**: covered by [`test_jedi_official.py`](tests/modules/test_jedi_official.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8339,6 +9016,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`kad`](src/ayase/modules/kad.py)** — Kernel Audio Distance with PANNs Wavegram-Logmel embeddings (unbiased finite-sample estimate ×100, lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: KAD (Chung et al. 2025), the kadtk package — https://github.com/YoonjinXD/kadtk
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
 
@@ -8348,6 +9026,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`kid`](src/ayase/modules/kid.py)** — Kernel Inception Distance estimate (lower=better)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — only the official clean-fid/torch-fidelity backends; without a reference the metric is not emitted; kid_std only via torch-fidelity — source: KID (Bińkowski et al., ICLR 2018) — clean-fid https://github.com/GaParmar/clean-fid or torch-fidelity
 - **Tests**: covered by [`test_kid.py`](tests/modules/per_module/test_kid.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8357,6 +9036,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`kid`](src/ayase/modules/kid.py)** — Standard deviation over KID subsets
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: KID (Bińkowski et al., ICLR 2018) — clean-fid https://github.com/GaParmar/clean-fid or torch-fidelity
 - **Tests**: covered by [`test_kid.py`](tests/modules/per_module/test_kid.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8366,6 +9046,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`kvd`](src/ayase/modules/kvd.py)** — Kernel Video Distance via MMD over video features (lower=better)
 
 - **Input**: vid +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Uses Ayase's StyleGAN-V-derived 16-frame I3D feature path; without a reference the metric is not emitted — source: KVD (Unterthiner et al. 2018) — https://arxiv.org/abs/1812.01717
 - **Tests**: covered by [`test_kvd.py`](tests/modules/per_module/test_kvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +4 more
 
@@ -8375,6 +9056,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`gesture_diversity`](src/ayase/modules/gesture_diversity.py)** — Mean pairwise L1 between per-video pose signatures (higher=more diverse)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — the source computes L1 diversity on SMPL-X body+hand joint rotations; here per-video mean MediaPipe BlazePose xy vectors are used, so absolute values are not comparable — source: Diversity, EMAGE (Liu et al., arXiv:2401.00374); TalkSHOW (arXiv:2212.04420) — https://github.com/PantoMatrix/PantoMatrix
 - **Tests**: covered by [`test_gesture_diversity.py`](tests/modules/per_module/test_gesture_diversity.py)
 
@@ -8384,6 +9066,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`image_lpips`](src/ayase/modules/image_lpips.py)** — Mean pairwise LPIPS between outputs sharing a conditioning input (higher=more diverse)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: LPIPS-diversity (BicycleGAN/MUNIT) — https://arxiv.org/abs/1711.11586
 - **Tests**: covered by [`test_image_lpips.py`](tests/modules/per_module/test_image_lpips.py)
 
@@ -8393,6 +9076,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`palate`](src/ayase/modules/palate.py)** — Holistic score (lower=better)
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
 - **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8402,6 +9086,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`mauve_audio_divergence`](src/ayase/modules/mauve_audio_divergence.py)** — MAD: -log(MAUVE) on max-pooled layer-24 MERT-v1-330M embeddings (dataset-level, lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: MAD: Huang et al., Aligning Text-to-Music Evaluation with Human Preferences (ISMIR 2025) — https://arxiv.org/abs/2503.16669
 - **Tests**: covered by [`test_mauve_audio_divergence.py`](tests/modules/per_module/test_mauve_audio_divergence.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8411,12 +9096,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`mmd_selfsplit`](src/ayase/modules/mmd_selfsplit.py)** — V-JEPA self-split embedding MMD (own metric, lower=better)
 
 - **Input**: vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from JEDi (Luo et al., ICLR 2025, arXiv 2410.05203); the protocol is not reproduced — https://arxiv.org/abs/2410.05203
 - **Tests**: covered by [`test_mmd_selfsplit.py`](tests/modules/per_module/test_mmd_selfsplit.py), [`test_mmd_selfsplit_metric.py`](tests/modules/per_module/test_mmd_selfsplit_metric.py), [`test_motion_scene_semantic_metrics.py`](tests/modules/test_motion_scene_semantic_metrics.py)
 
 **[`mmd_selfsplit_metric`](src/ayase/modules/mmd_selfsplit.py)** — V-JEPA self-split embedding MMD (own metric, lower=better)
 
 - **Input**: vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: name from JEDi (Luo et al., ICLR 2025, arXiv 2410.05203); the protocol is not reproduced — https://arxiv.org/abs/2410.05203
 - **Tests**: covered by [`test_mmd_selfsplit_metric.py`](tests/modules/per_module/test_mmd_selfsplit_metric.py)
 
@@ -8426,6 +9113,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`dataset_analytics`](src/ayase/modules/dataset_analytics.py)** — Number of statistical outliers detected in the dataset
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
@@ -8435,6 +9123,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`palate`](src/ayase/modules/palate.py)** — Scaled full-set MMD baseline
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
 - **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8444,6 +9133,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`palate`](src/ayase/modules/palate.py)** — Protocol and diagnostics
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `utility` — Ayase runtime diagnostics. — source: https://arxiv.org/abs/2503.18462
 - **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8453,6 +9143,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`palate`](src/ayase/modules/palate.py)** — KDE-retained generated fraction
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
 - **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8462,6 +9153,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`palate`](src/ayase/modules/palate.py)** — Training-vs-heldout memorization ratio (balanced generalization near 0.5)
 
 - **Input**: image +ref · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Original DINOv2 and released std-only unnormalized KDE, not DINOv3/normalized paper KDE; Ayase adds exact strict-upper real-pair median sigma estimation and float64 blockwise reductions. — source: https://github.com/gmum/PALATE/tree/34568dd9c5bc8952fb9ae70e334ae57b485aedb0
 - **Tests**: covered by [`test_palate.py`](tests/modules/test_palate.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8471,6 +9163,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Fraction of reference samples with a generated neighbour in range (0-1)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8480,6 +9173,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Average generated-sample density around reference samples
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC density (Naeem et al., ICML 2020) — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8489,6 +9183,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Fraction of generated samples inside the reference manifold (0-1)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8498,6 +9193,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`prdc_dinov2`](src/ayase/modules/prdc_dinov2.py)** — Fraction of reference samples covered by generated samples (0-1)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8507,12 +9203,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Generated-sample precision against the real manifold (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Generated-sample precision against the real manifold (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
@@ -8522,12 +9220,14 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`generative_distribution`](src/ayase/modules/generative_distribution_metrics.py)** — Real-distribution coverage by generated samples (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
 **[`generative_distribution_metrics`](src/ayase/modules/generative_distribution_metrics.py)** — Real-distribution coverage by generated samples (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⚡ fast
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — video → 1 representative frame; without a reference the metrics are not emitted — source: Improved P/R (Kynkäänniemi et al., NeurIPS 2019) via prdc — https://github.com/clovaai/generative-evaluation-prdc
 - **Tests**: covered by [`test_generative_distribution.py`](tests/modules/per_module/test_generative_distribution.py), [`test_generative_distribution_metrics.py`](tests/modules/per_module/test_generative_distribution_metrics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), +1 more
 
@@ -8537,6 +9237,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`dataset_analytics`](src/ayase/modules/dataset_analytics.py)** — Embedding-space coverage score (0-1, higher=more coverage)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_dataset_analytics.py`](tests/modules/per_module/test_dataset_analytics.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py)
 
@@ -8546,6 +9247,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`sfid`](src/ayase/modules/sfid.py)** — Spatial Fréchet Inception Distance on FID-Inception pre-pool features (lower=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — 1 frame per sample (video → representative frame); without a reference the metric is not emitted — source: sFID (Nash et al., ICML 2021), guided-diffusion evaluator — FID-Inception via https://github.com/mseitzer/pytorch-fid
 - **Tests**: covered by [`test_sfid.py`](tests/modules/per_module/test_sfid.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
 
@@ -8555,6 +9257,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`stream_metric`](src/ayase/modules/stream_metric.py)** — STREAM-S spatial diversity / prdc recall (dataset-level)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
 - **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
 
@@ -8564,6 +9267,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`stream_metric`](src/ayase/modules/stream_metric.py)** — STREAM-S spatial fidelity / prdc precision (dataset-level)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
 - **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
 
@@ -8573,6 +9277,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`stream_metric`](src/ayase/modules/stream_metric.py)** — STREAM-T temporal naturalness (dataset-level, real backend only)
 
 - **Input**: img/vid +ref · **Speed**: ⏱️ medium
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
 - **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
 
@@ -8582,6 +9287,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official action binding score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8591,6 +9297,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official consistent attribute binding score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8600,6 +9307,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official dynamic attribute binding score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8609,6 +9317,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official generative numeracy score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8618,6 +9327,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official motion binding score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8627,6 +9337,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official object interactions score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8636,6 +9347,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`t2v_compbench_official`](src/ayase/modules/t2v_compbench.py)** — Mean official spatial relationships score over evaluated videos
 
 - **Input**: video · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — Mean over the exact staged subset; upstream score formula is unchanged — source: Official T2V-CompBench evaluator at dd5eff7b93af0550b9efa2bdabbb21b3b017ceda — https://github.com/KaiyueSun98/T2V-CompBench
 - **Tests**: covered by [`test_t2v_compbench_official.py`](tests/modules/test_t2v_compbench_official.py)
 
@@ -8645,6 +9357,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`umap_projection`](src/ayase/modules/umap_projection.py)** — Coverage of occupied projection space (0-1, higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py)
 
@@ -8654,6 +9367,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`umap_projection`](src/ayase/modules/umap_projection.py)** — Spread of dataset embeddings in the 2-D projection
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `own`
 - **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py)
 
@@ -8663,6 +9377,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Camera Motion score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8672,6 +9387,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 commonsense aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8681,6 +9397,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Complex Landscape score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8690,6 +9407,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Complex Plot score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8699,6 +9417,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Composition score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8708,6 +9427,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 controllability aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8717,6 +9437,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 creativity aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8726,6 +9447,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Diversity score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8735,6 +9457,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Dynamic Attribute score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8744,6 +9467,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Dynamic Spatial Relationship score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8753,6 +9477,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Anatomy score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8762,6 +9487,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Clothes score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8771,6 +9497,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 human-fidelity aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8780,6 +9507,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Identity score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8789,6 +9517,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Human Interaction score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8798,6 +9527,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Instance Preservation score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8807,6 +9537,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Material score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8816,6 +9547,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Mechanics score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8825,6 +9557,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Motion Order Understanding score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8834,6 +9567,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Motion Rationality score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8843,6 +9577,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Multi-View Consistency score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8852,6 +9587,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 physics aggregate
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8861,6 +9597,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — VBench 2.0 Thermotics score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8870,6 +9607,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vbench2`](src/ayase/modules/vbench2.py)** — Mean of the five VBench 2.0 category aggregates
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0
 - **Tests**: covered by [`test_vbench2.py`](tests/modules/per_module/test_vbench2.py), [`test_regressions.py`](tests/test_regressions.py)
 
@@ -8879,6 +9617,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`vendi`](src/ayase/modules/vendi.py)** — Vendi Score dataset diversity from similarity-matrix entropy (higher=better)
 
 - **Input**: img/vid · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `adapted` — embeddings are the FID-Inception pool (2048-d) as in published Vendi; for video — mean over up to 8 frames; cosine kernel — source: Vendi Score, Friedman & Dieng TMLR 2023 — https://github.com/vertaix/Vendi-Score (Inception pool embeddings)
 - **Tests**: covered by [`test_vendi.py`](tests/modules/per_module/test_vendi.py)
 
@@ -8888,6 +9627,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Subscore dict: S_joint, S_video, S_audio, S_other, Overall Score
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: unconfirmed — https://huggingface.co/datasets/dorni/Verse-Bench
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
 
@@ -8897,6 +9637,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Raw metric dict: AS, ID, FD, KL, CS, CE, CU, PC, PQ, WER, LSE-C, LSE-D, AV-A
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: Verse-Bench (UniVerse-1, arXiv:2509.06155) — https://arxiv.org/abs/2509.06155
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
 
@@ -8906,6 +9647,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`verse_bench`](src/ayase/modules/verse_bench.py)** — Weighted aggregate score (0-1, higher=better) from S_joint(50%), S_video(20%), S_audio(20%), S_other(10%)
 
 - **Input**: img/vid · **Speed**: 🐌 slow
+- **Readiness**: `implemented`
 - **Provenance**: `own` — source: unconfirmed — https://huggingface.co/datasets/dorni/Verse-Bench
 - **Tests**: covered by [`test_lip_sync.py`](tests/modules/per_module/test_lip_sync.py), [`test_verse_bench.py`](tests/modules/per_module/test_verse_bench.py), [`test_lip_sync_compatibility.py`](tests/test_lip_sync_compatibility.py)
 
@@ -8915,6 +9657,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without poor-aesthetics finding (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8924,6 +9667,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Sum of two commonsense adherence rates (0-2)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8933,6 +9677,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without fluid-law violation (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8942,6 +9687,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without gravity violation (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8951,6 +9697,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Instruction following mean (0-3, higher=better)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8960,6 +9707,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without mass/solid-law violation (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8969,6 +9717,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without a Newton-law violation (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8978,6 +9727,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without nonphysical penetration (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8987,6 +9737,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Sum of five physical adherence rates (0-5)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -8996,6 +9747,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Fraction without temporal inconsistency (0-1)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -9005,6 +9757,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 **[`worldmodelbench`](src/ayase/modules/worldmodelbench.py)** — Raw total (0-10, higher=better)
 
 - **Input**: img/vid · **Speed**: 🐌 slow · GPU
+- **Readiness**: `implemented`
 - **Provenance**: `published` — source: WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b
 - **Tests**: covered by [`test_worldmodelbench.py`](tests/modules/per_module/test_worldmodelbench.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 
@@ -9012,129 +9765,131 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 Modules that perform validation, embedding, deduplication, or dataset-level analysis without writing individual QualityMetrics fields.
 
-- **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
-- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +12 more
-- **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
-- **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
-- **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
-- **[`codec_compatibility`](src/ayase/modules/codec_compatibility.py)** — Validates codec, pixel format, and container for ML dataloader compatibility · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_codec_compatibility.py`](tests/modules/per_module/test_codec_compatibility.py)
-- **[`decoder_stress`](src/ayase/modules/decoder_stress.py)** — Random access decoder stress test · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_decoder_stress.py`](tests/modules/per_module/test_decoder_stress.py)
-- **[`dedup`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_dedup.py`](tests/modules/per_module/test_dedup.py), [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
-- **[`deduplication`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
-- **[`diversity`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_diversity.py`](tests/modules/per_module/test_diversity.py)
-- **[`diversity_selection`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_diversity.py`](tests/modules/per_module/test_diversity.py), [`test_diversity_selection.py`](tests/modules/per_module/test_diversity_selection.py)
-- **[`embedding`](src/ayase/modules/embedding.py)** — Calculates X-CLIP embeddings for similarity search · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_embedding.py`](tests/modules/per_module/test_embedding.py)
-- **[`knowledge_graph`](src/ayase/modules/knowledge_graph.py)** — Generates a conceptual knowledge graph of the video dataset · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_knowledge_graph.py`](tests/modules/per_module/test_knowledge_graph.py)
-- **[`llm_advisor`](src/ayase/modules/llm_advisor.py)** — Rule-based improvement recommendations derived from quality metrics (no LLM used) · Input: img/vid · Speed: 🐌 slow · Tests: covered by [`test_llm_advisor.py`](tests/modules/per_module/test_llm_advisor.py)
-- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +8 more
-- **[`msswd`](src/ayase/modules/msswd.py)** — MS-SWD multiscale sliced Wasserstein colour distance via pyiqa (batch, lower=better) · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_msswd.py`](tests/modules/per_module/test_msswd.py), [`test_provenance.py`](tests/test_provenance.py)
-- **[`object_count_check`](src/ayase/modules/object_count_check.py)** — Caption object-count check (own, VBench-dimension-inspired) · Input: img/vid +cap · Speed: ⚡ fast · Tests: covered by [`test_object_count_check.py`](tests/modules/per_module/test_object_count_check.py)
-- **[`paranoid_decoder`](src/ayase/modules/paranoid_decoder.py)** — Deep bitstream validation using FFmpeg (Paranoid Mode) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_paranoid_decoder.py`](tests/modules/per_module/test_paranoid_decoder.py)
-- **[`resolution_bucketing`](src/ayase/modules/resolution_bucketing.py)** — Validates resolution/aspect-ratio fit for training buckets · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_resolution_bucketing.py`](tests/modules/per_module/test_resolution_bucketing.py)
-- **[`scene`](src/ayase/modules/scene.py)** — Detects scene cuts and shots using PySceneDetect · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py), [`test_scene.py`](tests/modules/per_module/test_scene.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
-- **[`scene_tagging`](src/ayase/modules/scene_tagging.py)** — Zero-shot scene context tags via CLIP (top-3 scene labels) · Input: img/vid · Speed: ⏱️ medium · GPU · Tests: covered by [`test_scene_tagging.py`](tests/modules/per_module/test_scene_tagging.py)
-- **[`semantic_selection`](src/ayase/modules/semantic_selection.py)** — Selects diverse samples based on VLM-extracted semantic traits · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_semantic_selection.py`](tests/modules/per_module/test_semantic_selection.py)
-- **[`spatial_relationship`](src/ayase/modules/spatial_relationship.py)** — Verifies spatial relations (left/right/top/bottom) in prompt vs detections · Input: img/vid +cap · Speed: ⚡ fast · Tests: covered by [`test_spatial_relationship.py`](tests/modules/per_module/test_spatial_relationship.py)
-- **[`spectral_upscaling`](src/ayase/modules/spectral_upscaling.py)** — Detection of upscaled/fake high-resolution content · Input: img/vid · Speed: ⚡ fast · Tests: covered by [`test_spectral_upscaling.py`](tests/modules/per_module/test_spectral_upscaling.py)
-- **[`structural`](src/ayase/modules/structural.py)** — Checks structural integrity (scene cuts, black bars) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_structural.py`](tests/modules/per_module/test_structural.py)
-- **[`style_consistency`](src/ayase/modules/style_consistency.py)** — Appearance/color style consistency (HSV histogram correlation over time) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_style_consistency.py`](tests/modules/per_module/test_style_consistency.py)
-- **[`temporal_style`](src/ayase/modules/temporal_style.py)** — Analyzes temporal style (Slow Motion, Timelapse, Speed) · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_temporal_style.py`](tests/modules/per_module/test_temporal_style.py)
-- **[`vfr_detection`](src/ayase/modules/vfr_detection.py)** — Variable Frame Rate (VFR) and jitter detection · Input: vid · Speed: ⚡ fast · Tests: covered by [`test_vfr_detection.py`](tests/modules/per_module/test_vfr_detection.py)
-- **[`vlm_judge`](src/ayase/modules/vlm_judge.py)** — Advanced semantic verification using VLM (e.g. LLaVA) · Input: img/vid · Speed: 🐌 slow · GPU · Tests: covered by [`test_vlm_judge.py`](tests/modules/per_module/test_vlm_judge.py), [`test_vlm_presets.py`](tests/modules/test_vlm_presets.py)
+- **[`asr_transcribe`](src/ayase/modules/asr_transcribe.py)** — Shared Whisper ASR transcription cache · Input: img/vid · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py)
+- **[`audio`](src/ayase/modules/audio.py)** — Validates audio stream quality and presence · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_audio.py`](tests/modules/per_module/test_audio.py), [`test_audio_distill_mos.py`](tests/modules/per_module/test_audio_distill_mos.py), [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), +12 more
+- **[`audio_text_alignment`](src/ayase/modules/audio_text_alignment.py)** — Multimodal alignment check (Audio-Text) using CLAP · Input: audio +cap · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_audio_text_alignment.py`](tests/modules/per_module/test_audio_text_alignment.py)
+- **[`background_diversity`](src/ayase/modules/background_diversity.py)** — Checks background complexity (entropy) to detect concept bleeding · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_background_diversity.py`](tests/modules/per_module/test_background_diversity.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **[`bd_rate`](src/ayase/modules/bd_rate.py)** — BD-Rate codec comparison (dataset-level, negative%=better) · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_bd_rate.py`](tests/modules/per_module/test_bd_rate.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
+- **[`codec_compatibility`](src/ayase/modules/codec_compatibility.py)** — Validates codec, pixel format, and container for ML dataloader compatibility · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_codec_compatibility.py`](tests/modules/per_module/test_codec_compatibility.py)
+- **[`decoder_stress`](src/ayase/modules/decoder_stress.py)** — Random access decoder stress test · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_decoder_stress.py`](tests/modules/per_module/test_decoder_stress.py)
+- **[`dedup`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_dedup.py`](tests/modules/per_module/test_dedup.py), [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
+- **[`deduplication`](src/ayase/modules/dedup.py)** — Groups near-duplicate samples by pHash Hamming distance and flags all but the best one · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_deduplication.py`](tests/modules/per_module/test_deduplication.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py)
+- **[`diversity`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_diversity.py`](tests/modules/per_module/test_diversity.py)
+- **[`diversity_selection`](src/ayase/modules/diversity_selection.py)** — Flags redundant samples using embedding similarity (Deduplication) · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_diversity.py`](tests/modules/per_module/test_diversity.py), [`test_diversity_selection.py`](tests/modules/per_module/test_diversity_selection.py)
+- **[`embedding`](src/ayase/modules/embedding.py)** — Calculates X-CLIP embeddings for similarity search · Input: img/vid · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_embedding.py`](tests/modules/per_module/test_embedding.py)
+- **[`knowledge_graph`](src/ayase/modules/knowledge_graph.py)** — Generates a conceptual knowledge graph of the video dataset · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_knowledge_graph.py`](tests/modules/per_module/test_knowledge_graph.py)
+- **[`llm_advisor`](src/ayase/modules/llm_advisor.py)** — Rule-based improvement recommendations derived from quality metrics (no LLM used) · Input: img/vid · Speed: 🐌 slow · Readiness: `implemented` · Tests: covered by [`test_llm_advisor.py`](tests/modules/per_module/test_llm_advisor.py)
+- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +8 more
+- **[`msswd`](src/ayase/modules/msswd.py)** — MS-SWD multiscale sliced Wasserstein colour distance via pyiqa (batch, lower=better) · Input: img/vid · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_msswd.py`](tests/modules/per_module/test_msswd.py), [`test_provenance.py`](tests/test_provenance.py)
+- **[`object_count_check`](src/ayase/modules/object_count_check.py)** — Caption object-count check (own, VBench-dimension-inspired) · Input: img/vid +cap · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_object_count_check.py`](tests/modules/per_module/test_object_count_check.py)
+- **[`paranoid_decoder`](src/ayase/modules/paranoid_decoder.py)** — Deep bitstream validation using FFmpeg (Paranoid Mode) · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_paranoid_decoder.py`](tests/modules/per_module/test_paranoid_decoder.py)
+- **[`resolution_bucketing`](src/ayase/modules/resolution_bucketing.py)** — Validates resolution/aspect-ratio fit for training buckets · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_resolution_bucketing.py`](tests/modules/per_module/test_resolution_bucketing.py)
+- **[`scene`](src/ayase/modules/scene.py)** — Detects scene cuts and shots using PySceneDetect · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_concept_presence.py`](tests/modules/per_module/test_concept_presence.py), [`test_scene.py`](tests/modules/per_module/test_scene.py), [`test_integration_synthetic.py`](tests/test_integration_synthetic.py)
+- **[`scene_tagging`](src/ayase/modules/scene_tagging.py)** — Zero-shot scene context tags via CLIP (top-3 scene labels) · Input: img/vid · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_scene_tagging.py`](tests/modules/per_module/test_scene_tagging.py)
+- **[`semantic_selection`](src/ayase/modules/semantic_selection.py)** — Selects diverse samples based on VLM-extracted semantic traits · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_semantic_selection.py`](tests/modules/per_module/test_semantic_selection.py)
+- **[`spatial_relationship`](src/ayase/modules/spatial_relationship.py)** — Verifies spatial relations (left/right/top/bottom) in prompt vs detections · Input: img/vid +cap · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_spatial_relationship.py`](tests/modules/per_module/test_spatial_relationship.py)
+- **[`spectral_upscaling`](src/ayase/modules/spectral_upscaling.py)** — Detection of upscaled/fake high-resolution content · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_spectral_upscaling.py`](tests/modules/per_module/test_spectral_upscaling.py)
+- **[`structural`](src/ayase/modules/structural.py)** — Checks structural integrity (scene cuts, black bars) · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_structural.py`](tests/modules/per_module/test_structural.py)
+- **[`style_consistency`](src/ayase/modules/style_consistency.py)** — Appearance/color style consistency (HSV histogram correlation over time) · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_style_consistency.py`](tests/modules/per_module/test_style_consistency.py)
+- **[`temporal_style`](src/ayase/modules/temporal_style.py)** — Analyzes temporal style (Slow Motion, Timelapse, Speed) · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_temporal_style.py`](tests/modules/per_module/test_temporal_style.py)
+- **[`vfr_detection`](src/ayase/modules/vfr_detection.py)** — Variable Frame Rate (VFR) and jitter detection · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_vfr_detection.py`](tests/modules/per_module/test_vfr_detection.py)
+- **[`vlm_judge`](src/ayase/modules/vlm_judge.py)** — Advanced semantic verification using VLM (e.g. LLaVA) · Input: img/vid · Speed: 🐌 slow · Readiness: `implemented` · GPU · Tests: covered by [`test_vlm_judge.py`](tests/modules/per_module/test_vlm_judge.py), [`test_vlm_presets.py`](tests/modules/test_vlm_presets.py)
 
 ---
 
-## External backend required — pending real backend (50 modules)
+## External backend required — pending real backend (51 modules)
 
-These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **47** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
+These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **48** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
 
-- **[`acc_emo`](src/ayase/modules/acc_emo.py)** — Target-emotion accuracy via Emotion-FAN/EmoNet (external backend) · Metrics: `acc_emo`
+- **[`acc_emo`](src/ayase/modules/acc_emo.py)** — Target-emotion accuracy via Emotion-FAN/EmoNet (external backend) · Readiness: `unimplemented` · Metrics: `acc_emo`
   - `acc_emo`: `published` — backend unavailable — source: Acc_emo, EAMM (https://arxiv.org/abs/2205.15278); EAT (https://arxiv.org/abs/2309.04946); Emotion-FAN/EmoNet backends
-- **[`aed_apd_deep3d`](src/ayase/modules/aed_apd_deep3d.py)** — AED/APD via published Deep3DFaceRecon extractor (external backend) · Metrics: — (dataset-level / none)
+- **[`aed_apd_deep3d`](src/ayase/modules/aed_apd_deep3d.py)** — AED/APD via published Deep3DFaceRecon extractor (external backend) · Readiness: `unimplemented` · Metrics: — (dataset-level / none)
   - `aed`: `published` — backend unavailable — source: AED, PIRenderer (Ren et al., arXiv:2109.08379) + Deep3DFaceRecon (Deng et al., arXiv:1903.08527) — https://github.com/RenYurui/PIRender
   - `apd`: `published` — backend unavailable — source: APD, PIRenderer (Ren et al., arXiv:2109.08379) + Deep3DFaceRecon (Deng et al., arXiv:1903.08527) — https://github.com/RenYurui/PIRender
-- **[`afine`](src/ayase/modules/afine.py)** — A-FINE adaptive fidelity-naturalness IQA (CVPR 2025) · Metrics: `afine_score` · Needs: opencv-python, pyiqa, torch
+- **[`afine`](src/ayase/modules/afine.py)** — A-FINE adaptive fidelity-naturalness IQA (CVPR 2025) · Readiness: `unimplemented` · Metrics: `afine_score` · Needs: opencv-python, pyiqa, torch
   - `afine_score`: `published` — backend unavailable — source: A-FINE (Chen et al., CVPR 2025), pyiqa ``afine`` FR model — https://github.com/chaofengc/IQA-PyTorch/blob/main/pyiqa/default_model_configs.py
-- **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025) · Metrics: `aigvqa_score`
+- **[`aigvqa`](src/ayase/modules/aigvqa.py)** — AIGVQA multi-dimensional AIGC VQA (ICCVW 2025) · Readiness: `unimplemented` · Metrics: `aigvqa_score`
   - `aigvqa_score`: `utility` — backend unavailable — source: AIGVQA (VQualA 2025, ICCVW) — https://github.com/IntMeGroup/AIGVQA
-- **[`avqt`](src/ayase/modules/avqt.py)** — Apple AVQT perceptual video quality (full-reference) · Metrics: `avqt_score`
+- **[`avqt`](src/ayase/modules/avqt.py)** — Apple AVQT perceptual video quality (full-reference) · Readiness: `unimplemented` · Metrics: `avqt_score`
   - `avqt_score`: `published` — backend unavailable — source: Apple AVQT (closed-source CLI) — https://streaminglearningcenter.com/metrics/apple-avqt-quality-metric.html — Output parsed by keyword match on stdout (no structured output mode in the AVQT CLI); scale is AVQT's native 1-5 MOS.
-- **[`behavioral_embedding`](src/ayase/modules/behavioral_embedding.py)** — Static+temporal behavioural embedding distance (Agarwal 2020, external backend) · Metrics: `behavioral_embedding_distance`
+- **[`behavioral_embedding`](src/ayase/modules/behavioral_embedding.py)** — Static+temporal behavioural embedding distance (Agarwal 2020, external backend) · Readiness: `unimplemented` · Metrics: `behavioral_embedding_distance`
   - `behavioral_embedding_distance`: `published` — backend unavailable — source: behavioral biometric embedding, Agarwal et al. (https://arxiv.org/abs/2004.14491)
-- **[`bvqi`](src/ayase/modules/bvqi.py)** — BVQI zero-shot blind video quality index (ICME 2023) · Metrics: `bvqi_score` · Needs: bvqi, pyiqa, torch
+- **[`bvqi`](src/ayase/modules/bvqi.py)** — BVQI zero-shot blind video quality index (ICME 2023) · Readiness: `unimplemented` · Metrics: `bvqi_score` · Needs: bvqi, pyiqa, torch
   - `bvqi_score`: `utility` — backend unavailable — source: BVQI (Wu et al., ICME 2023) — https://github.com/VQAssessment/BVQI
-- **[`c3dvqa`](src/ayase/modules/c3dvqa.py)** — C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020) · Metrics: `c3dvqa_score` · Needs: c3dvqa
+- **[`c3dvqa`](src/ayase/modules/c3dvqa.py)** — C3DVQA 3D-CNN full-reference video quality (Xu et al. 2020) · Readiness: `unimplemented` · Metrics: `c3dvqa_score` · Needs: c3dvqa
   - `c3dvqa_score`: `utility` — backend unavailable — source: C3DVQA (Xu et al. 2020) — https://arxiv.org/abs/1910.13646
-- **[`contrique`](src/ayase/modules/contrique.py)** — Contrastive no-reference IQA · Metrics: `contrique_score` · Needs: pyiqa, torch
+- **[`cmms`](src/ayase/modules/cmms.py)** — CMMS learned token-space image quality (trained head unavailable) · Readiness: `unimplemented` — The released TiTok-S-128 encoder is available, but the trained CMMS regression head is not. This entry reserves the published metric and never produces a score. · Metrics: `cmms_score`
+  - `cmms_score`: `published` — backend unavailable — source: CMMS — https://arxiv.org/abs/2603.08064
+- **[`contrique`](src/ayase/modules/contrique.py)** — Contrastive no-reference IQA · Readiness: `unimplemented` · Metrics: `contrique_score` · Needs: pyiqa, torch
   - `contrique_score`: `utility` — backend unavailable — source: CONTRIQUE (Madhusudana et al., TIP 2022) — https://github.com/pavancm/CONTRIQUE
-- **[`conviqt`](src/ayase/modules/conviqt.py)** — CONVIQT contrastive self-supervised NR-VQA (TIP 2023) · Metrics: `conviqt_score` · Needs: conviqt, pyiqa, torch
+- **[`conviqt`](src/ayase/modules/conviqt.py)** — CONVIQT contrastive self-supervised NR-VQA (TIP 2023) · Readiness: `unimplemented` · Metrics: `conviqt_score` · Needs: conviqt, pyiqa, torch
   - `conviqt_score`: `utility` — backend unavailable — source: CONVIQT (Madhusudana et al., TIP 2023) — https://github.com/pavancm/CONVIQT
-- **[`deepvqa`](src/ayase/modules/deepvqa.py)** — DeepVQA spatiotemporal masking FR-VQA (ECCV 2018) · Metrics: `deepvqa_score`
+- **[`deepvqa`](src/ayase/modules/deepvqa.py)** — DeepVQA spatiotemporal masking FR-VQA (ECCV 2018) · Readiness: `unimplemented` · Metrics: `deepvqa_score`
   - `deepvqa_score`: `utility` — backend unavailable
-- **[`deepwsd`](src/ayase/modules/deepwsd.py)** — DeepWSD Wasserstein distance FR image quality · Metrics: `deepwsd_score` · Needs: opencv-python, pyiqa, torch
+- **[`deepwsd`](src/ayase/modules/deepwsd.py)** — DeepWSD Wasserstein distance FR image quality · Readiness: `unimplemented` · Metrics: `deepwsd_score` · Needs: opencv-python, pyiqa, torch
   - `deepwsd_score`: `utility` — backend unavailable — source: DeepWSD (Liao et al., ACM MM 2022) — per the paper's design — https://github.com/Buka-Xing/DeepWSD
-- **[`discovqa`](src/ayase/modules/discovqa.py)** — DisCoVQA temporal distortion-content VQA (2023) · Metrics: `discovqa_score`
-- **[`dsg`](src/ayase/modules/dsg.py)** — DSG Davidsonian Scene Graph faithfulness (ICLR 2024, Google) · Metrics: `dsg_score` · Needs: dsg
+- **[`discovqa`](src/ayase/modules/discovqa.py)** — DisCoVQA temporal distortion-content VQA (2023) · Readiness: `unimplemented` · Metrics: `discovqa_score`
+- **[`dsg`](src/ayase/modules/dsg.py)** — DSG Davidsonian Scene Graph faithfulness (ICLR 2024, Google) · Readiness: `unimplemented` · Metrics: `dsg_score` · Needs: dsg
   - `dsg_score`: `utility` — backend unavailable — source: DSG (Cho et al., ICLR 2024) — per the paper's design — https://github.com/j-min/DSG
-- **[`face_gesture_correlations`](src/ayase/modules/face_gesture_correlations.py)** — Face/gesture correlation signature (Bohacek & Farid 2022, external backend) · Metrics: `face_gesture_correlation`
+- **[`face_gesture_correlations`](src/ayase/modules/face_gesture_correlations.py)** — Face/gesture correlation signature (Bohacek & Farid 2022, external backend) · Readiness: `unimplemented` · Metrics: `face_gesture_correlation`
   - `face_gesture_correlation`: `published` — backend unavailable — source: 496-dim face+gesture correlations, Bohacek & Farid, PNAS 2022 (https://arxiv.org/abs/2206.12043)
-- **[`faver`](src/ayase/modules/faver.py)** — FAVER blind VQA for variable frame rate videos (2024) · Metrics: `faver_score`
-- **[`fdd`](src/ayase/modules/fdd.py)** — FDD: upper-face vertex-motion distance (CodeTalker, external backend) · Metrics: `fdd`
+- **[`faver`](src/ayase/modules/faver.py)** — FAVER blind VQA for variable frame rate videos (2024) · Readiness: `unimplemented` · Metrics: `faver_score`
+- **[`fdd`](src/ayase/modules/fdd.py)** — FDD: upper-face vertex-motion distance (CodeTalker, external backend) · Readiness: `unimplemented` · Metrics: `fdd`
   - `fdd`: `published` — backend unavailable — source: FDD, CodeTalker (Xing et al., CVPR 2023, arXiv:2301.02379) — https://github.com/Doubiiu/CodeTalker
-- **[`fgd`](src/ayase/modules/fgd.py)** — Frechet Gesture Distance on autoencoder latents (Yoon et al. 2020) · Metrics: — (dataset-level / none)
+- **[`fgd`](src/ayase/modules/fgd.py)** — Frechet Gesture Distance on autoencoder latents (Yoon et al. 2020) · Readiness: `unimplemented` · Metrics: — (dataset-level / none)
   - `fgd`: `published` — backend unavailable — source: FGD, Yoon et al., TOG 2020 (arXiv:2009.02119); PantoMatrix/EMAGE encoder — https://github.com/PantoMatrix/PantoMatrix
-- **[`funque`](src/ayase/modules/funque.py)** — Fused quality evaluator via the real FUNQUE package (full-reference) · Metrics: `funque_score` · Needs: funque
+- **[`funque`](src/ayase/modules/funque.py)** — Fused quality evaluator via the real FUNQUE package (full-reference) · Readiness: `unimplemented` · Metrics: `funque_score` · Needs: funque
   - `funque_score`: `utility` — backend unavailable — source: FUNQUE (Venkataramanan et al.) — per the paper's design — https://github.com/abhinaukumar/funque
-- **[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023) · Metrics: `gamival_score` · Needs: gc, opencv-python, tensorflow
+- **[`gamival`](src/ayase/modules/gamival.py)** — GAMIVAL cloud gaming NR-VQA: 1156 NSS + 1024 NDNetGaming CNN -> SVR (2023) · Readiness: `unimplemented` · Metrics: `gamival_score` · Needs: gc, opencv-python, tensorflow
   - `gamival_score`: `utility` — backend unavailable — source: GAMIVAL (Yu et al., IEEE SPL 2023) — stub — https://github.com/utlive/GAMIVAL
-- **[`hdr_vdp`](src/ayase/modules/hdr_vdp.py)** — HDR-VDP visual difference predictor (higher=better) · Metrics: `hdr_vdp` · Needs: hdrvdp
+- **[`hdr_vdp`](src/ayase/modules/hdr_vdp.py)** — HDR-VDP visual difference predictor (higher=better) · Readiness: `unimplemented` · Metrics: `hdr_vdp` · Needs: hdrvdp
   - `hdr_vdp`: `utility` — backend unavailable — source: HDR-VDP-3 (Mantiuk et al.) — per the paper's design — https://github.com/gfxdisp/HDR-VDP-3
-- **[`internvqa`](src/ayase/modules/internvqa.py)** — InternVQA compressed-video quality (real model only; disabled if unavailable) · Metrics: `internvqa_score`
-- **[`kvq`](src/ayase/modules/kvq.py)** — Saliency-guided video quality (real KVQ model only) · Metrics: `kvq_score` · Needs: opencv-python, torch, transformers
+- **[`internvqa`](src/ayase/modules/internvqa.py)** — InternVQA compressed-video quality (real model only; disabled if unavailable) · Readiness: `unimplemented` · Metrics: `internvqa_score`
+- **[`kvq`](src/ayase/modules/kvq.py)** — Saliency-guided video quality (real KVQ model only) · Readiness: `unimplemented` · Metrics: `kvq_score` · Needs: opencv-python, torch, transformers
   - `kvq_score`: `utility` — backend unavailable — source: KVQ (Qu et al., CVPR 2025) — per the paper's design — https://huggingface.co/lero233/KVQ
-- **[`lip_reading_wer`](src/ayase/modules/lip_reading_wer.py)** — WER of lip-read transcript vs utterance (AV-HuBERT/Auto-AVSR) · Metrics: `lip_reading_wer`
+- **[`lip_reading_wer`](src/ayase/modules/lip_reading_wer.py)** — WER of lip-read transcript vs utterance (AV-HuBERT/Auto-AVSR) · Readiness: `unimplemented` · Metrics: `lip_reading_wer`
   - `lip_reading_wer`: `published` — backend unavailable — source: lip-reading WER, TalkLip (arXiv:2303.17480); AV-HuBERT (arXiv:2201.02184); Auto-AVSR (arXiv:2303.14307) — https://github.com/facebookresearch/av_hubert
-- **[`lmmvqa`](src/ayase/modules/lmmvqa.py)** — LMM-VQA spatiotemporal quality (real model only; disabled if unavailable) · Metrics: `lmmvqa_score`
-- **[`lve`](src/ayase/modules/lve.py)** — LVE: lip-vertex error vs GT (MeshTalk, external backend) · Metrics: `lve`
+- **[`lmmvqa`](src/ayase/modules/lmmvqa.py)** — LMM-VQA spatiotemporal quality (real model only; disabled if unavailable) · Readiness: `unimplemented` · Metrics: `lmmvqa_score`
+- **[`lve`](src/ayase/modules/lve.py)** — LVE: lip-vertex error vs GT (MeshTalk, external backend) · Readiness: `unimplemented` · Metrics: `lve`
   - `lve`: `published` — backend unavailable — source: LVE, MeshTalk (Richard et al., arXiv:2104.08223) — https://github.com/facebookresearch/meshtalk
-- **[`manner_correlations`](src/ayase/modules/manner_correlations.py)** — Per-person mannerism correlations + one-class SVM (Agarwal 2019, external backend) · Metrics: `manner_correlation`
+- **[`manner_correlations`](src/ayase/modules/manner_correlations.py)** — Per-person mannerism correlations + one-class SVM (Agarwal 2019, external backend) · Readiness: `unimplemented` · Metrics: `manner_correlation`
   - `manner_correlation`: `published` — backend unavailable — source: manner correlations, Agarwal, Farid et al., CVPRW 2019 (https://openaccess.thecvf.com/content_CVPRW_2019/html/Media_Forensics/Agarwal_Protecting_World_Leaders_Against_Deep_Fakes_CVPRW_2019_paper.html)
-- **[`maxvqa`](src/ayase/modules/maxvqa.py)** — MaxVQA explainable language-prompted VQA (ACM MM 2023; real model only) · Metrics: `maxvqa_score` · Needs: maxvqa
+- **[`maxvqa`](src/ayase/modules/maxvqa.py)** — MaxVQA explainable language-prompted VQA (ACM MM 2023; real model only) · Readiness: `unimplemented` · Metrics: `maxvqa_score` · Needs: maxvqa
   - `maxvqa_score`: `published` — backend unavailable — source: MaxVQA (Wu et al., ACM MM 2023) — https://github.com/VQAssessment/ExplainableVQA
-- **[`mdtvsfa`](src/ayase/modules/mdtvsfa.py)** — Multi-Dimensional fragment-based VQA · Metrics: `mdtvsfa_score` · Needs: pyiqa, torch
+- **[`mdtvsfa`](src/ayase/modules/mdtvsfa.py)** — Multi-Dimensional fragment-based VQA · Readiness: `unimplemented` · Metrics: `mdtvsfa_score` · Needs: pyiqa, torch
   - `mdtvsfa_score`: `published` — backend unavailable — source: MDTVSFA (Li, Yang, Ma, IJCV 2021) — https://github.com/lidq92/MDTVSFA
-- **[`memoryvqa`](src/ayase/modules/memoryvqa.py)** — Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable) · Metrics: `memoryvqa_score`
-- **[`mm_pcqa`](src/ayase/modules/mm_pcqa.py)** — MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable) · Metrics: `mm_pcqa_score`
-- **[`mouth_opening_distance`](src/ayase/modules/mouth_opening_distance.py)** — MOD: mouth-opening distance vs GT (DiffPoseTalk, external backend) · Metrics: `mod`
+- **[`memoryvqa`](src/ayase/modules/memoryvqa.py)** — Memory-VQA human memory system VQA (Neurocomputing 2025; real model only, disabled if unavailable) · Readiness: `unimplemented` · Metrics: `memoryvqa_score`
+- **[`mm_pcqa`](src/ayase/modules/mm_pcqa.py)** — MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable) · Readiness: `unimplemented` · Metrics: `mm_pcqa_score`
+- **[`mouth_opening_distance`](src/ayase/modules/mouth_opening_distance.py)** — MOD: mouth-opening distance vs GT (DiffPoseTalk, external backend) · Readiness: `unimplemented` · Metrics: `mod`
   - `mod`: `published` — backend unavailable — source: MOD, DiffPoseTalk (Sun et al., arXiv:2310.00434) — https://github.com/DiffPoseTalk/DiffPoseTalk
-- **[`nr_gvqm`](src/ayase/modules/nr_gvqm.py)** — NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable) · Metrics: `nr_gvqm_score`
-- **[`oavqa`](src/ayase/modules/oavqa.py)** — OAVQA omnidirectional audio-visual QA (2024; real model only, disabled if unavailable) · Metrics: `oavqa_score`
-- **[`p1204`](src/ayase/modules/p1204.py)** — ITU-T P.1204.3 bitstream NR quality (2020) · Metrics: `p1204_mos` · Needs: huggingface_hub, scipy
+- **[`nr_gvqm`](src/ayase/modules/nr_gvqm.py)** — NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable) · Readiness: `unimplemented` · Metrics: `nr_gvqm_score`
+- **[`oavqa`](src/ayase/modules/oavqa.py)** — OAVQA omnidirectional audio-visual QA (2024; real model only, disabled if unavailable) · Readiness: `unimplemented` · Metrics: `oavqa_score`
+- **[`p1204`](src/ayase/modules/p1204.py)** — ITU-T P.1204.3 bitstream NR quality (2020) · Readiness: `unimplemented` · Metrics: `p1204_mos` · Needs: huggingface_hub, scipy
   - `p1204_mos`: `published` — backend unavailable — source: ITU-T P.1204.3 — https://github.com/Telecommunication-Telemedia-Assessment/bitstream_mode3_p1204_3
-- **[`poi_forensics`](src/ayase/modules/poi_forensics.py)** — POI-Forensics audio-visual identity distance (external backend) · Metrics: `poi_forensics_score`
+- **[`poi_forensics`](src/ayase/modules/poi_forensics.py)** — POI-Forensics audio-visual identity distance (external backend) · Readiness: `unimplemented` · Metrics: `poi_forensics_score`
   - `poi_forensics_score`: `published` — backend unavailable — source: POI-Forensics, Cozzolino et al., CVPRW 2023 (arXiv:2204.03083) — https://github.com/grip-unina/poi-forensics
-- **[`promptiqa`](src/ayase/modules/promptiqa.py)** — Prompt-guided NR-IQA (PromptIQA via pyiqa) · Metrics: `promptiqa_score` · Needs: pyiqa, torch
+- **[`promptiqa`](src/ayase/modules/promptiqa.py)** — Prompt-guided NR-IQA (PromptIQA via pyiqa) · Readiness: `unimplemented` · Metrics: `promptiqa_score` · Needs: pyiqa, torch
   - `promptiqa_score`: `adapted` — backend unavailable — source: PromptIQA (Chen et al., ECCV 2024) — https://github.com/chencn2020/PromptIQA — no backend: pyiqa 0.1.14.1 has no promptiqa metric; moreover the image-score prompt pairs that define the method are not passed
-- **[`ptmvqa`](src/ayase/modules/ptmvqa.py)** — PTM-VQA multi-PTM fusion VQA (CVPR 2024) · Metrics: `ptmvqa_score`
+- **[`ptmvqa`](src/ayase/modules/ptmvqa.py)** — PTM-VQA multi-PTM fusion VQA (CVPR 2024) · Readiness: `unimplemented` · Metrics: `ptmvqa_score`
   - `ptmvqa_score`: `utility` — backend unavailable
-- **[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF via bitstream and pixel-level features (2024, 0-100) · Metrics: `pvmaf_score`
+- **[`pvmaf`](src/ayase/modules/pvmaf.py)** — Predictive VMAF via bitstream and pixel-level features (2024, 0-100) · Readiness: `unimplemented` · Metrics: `pvmaf_score`
   - `pvmaf_score`: `utility` — backend unavailable
-- **[`qcn`](src/ayase/modules/qcn.py)** — Blind IQA (QCN via pyiqa) · Metrics: `qcn_score` · Needs: pyiqa, torch
+- **[`qcn`](src/ayase/modules/qcn.py)** — Blind IQA (QCN via pyiqa) · Readiness: `unimplemented` · Metrics: `qcn_score` · Needs: pyiqa, torch
   - `qcn_score`: `adapted` — backend unavailable — source: QCN (Shin et al., CVPR 2024) — https://github.com/nhshin-mcl/QCN — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.
-- **[`rankdvqa`](src/ayase/modules/rankdvqa.py)** — RankDVQA ranking-based FR VQA (real model only) · Metrics: `rankdvqa_score`
+- **[`rankdvqa`](src/ayase/modules/rankdvqa.py)** — RankDVQA ranking-based FR VQA (real model only) · Readiness: `unimplemented` · Metrics: `rankdvqa_score`
   - `rankdvqa_score`: `utility` — backend unavailable
-- **[`rapique`](src/ayase/modules/rapique.py)** — RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only) · Metrics: `rapique_score` · Needs: pyiqa, torch
+- **[`rapique`](src/ayase/modules/rapique.py)** — RAPIQUE rapid NR-VQA (real pyiqa RAPIQUE metric only) · Readiness: `unimplemented` · Metrics: `rapique_score` · Needs: pyiqa, torch
   - `rapique_score`: `utility` — backend unavailable
-- **[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via dropout embedding robustness (CVPR 2020) · Metrics: `serfiq_score` · Needs: gc, huggingface_hub, insightface, mxnet, scikit-learn
+- **[`serfiq`](src/ayase/modules/serfiq.py)** — SER-FIQ face quality via dropout embedding robustness (CVPR 2020) · Readiness: `unimplemented` · Metrics: `serfiq_score` · Needs: gc, huggingface_hub, insightface, mxnet, scikit-learn
   - `serfiq_score`: `adapted` — backend unavailable — source: SER-FIQ (Terhörst et al., CVPR 2020) — https://github.com/pterhoer/FaceImageQuality — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.
-- **[`siamvqa`](src/ayase/modules/siamvqa.py)** — SiamVQA Siamese high-resolution VQA (real model only) · Metrics: `siamvqa_score`
-- **[`sr4kvqa`](src/ayase/modules/sr4kvqa.py)** — SR4KVQA super-resolution 4K quality (2024) · Metrics: `sr4kvqa_score`
-- **[`srgr`](src/ayase/modules/srgr.py)** — SRGR: semantic-weighted gesture PCK (BEAT, external backend) · Metrics: `srgr`
+- **[`siamvqa`](src/ayase/modules/siamvqa.py)** — SiamVQA Siamese high-resolution VQA (real model only) · Readiness: `unimplemented` · Metrics: `siamvqa_score`
+- **[`sr4kvqa`](src/ayase/modules/sr4kvqa.py)** — SR4KVQA super-resolution 4K quality (2024) · Readiness: `unimplemented` · Metrics: `sr4kvqa_score`
+- **[`srgr`](src/ayase/modules/srgr.py)** — SRGR: semantic-weighted gesture PCK (BEAT, external backend) · Readiness: `unimplemented` · Metrics: `srgr`
   - `srgr`: `published` — backend unavailable — source: SRGR, BEAT (Liu et al., ECCV 2022, arXiv:2203.05297) — https://github.com/PantoMatrix/BEAT
-- **[`tts_system_dist`](src/ayase/modules/tts_system_dist.py)** — TTSDS2 dataset distribution score (external backend required) · Metrics: `tts_system_dist_score`
+- **[`tts_system_dist`](src/ayase/modules/tts_system_dist.py)** — TTSDS2 dataset distribution score (external backend required) · Readiness: `unimplemented` · Metrics: `tts_system_dist_score`
   - `tts_system_dist_score`: `published` — backend unavailable — source: TTSDS2, Minixhofer et al. 2025 — https://arxiv.org/abs/2506.19441
-- **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014) · Metrics: `vbliinds_score`
-- **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025) · Metrics: `vqathinker_score` · Needs: vqathinker
+- **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014) · Readiness: `unimplemented` · Metrics: `vbliinds_score`
+- **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025) · Readiness: `unimplemented` · Metrics: `vqathinker_score` · Needs: vqathinker
   - `vqathinker_score`: `utility` — backend unavailable
-- **[`worldscore`](src/ayase/modules/worldscore.py)** — WorldScore world generation evaluation (ICCV 2025) · Metrics: — (dataset-level / none) · Needs: worldscore
+- **[`worldscore`](src/ayase/modules/worldscore.py)** — WorldScore world generation evaluation (ICCV 2025) · Readiness: `unimplemented` · Metrics: — (dataset-level / none) · Needs: worldscore
   - `worldscore`: `utility` — backend unavailable — source: WorldScore, ICCV 2025 — https://github.com/haoyi-duan/WorldScore
