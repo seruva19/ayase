@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **audiojudge**: download verified spoken-label assets on demand into the configured cache instead of bundling WAV files with the package.
+
 - Metric help now shows definition classes, primary sources, and implementation differences; explicit metric descriptions take precedence over generic schema comments.
 - Model discovery no longer lists Ayase module names as pyiqa models or merges different checkpoint files from one Hugging Face repository; weight links retain their purpose, size, and declared terms.
 

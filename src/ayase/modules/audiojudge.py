@@ -502,6 +502,7 @@ class AudioJudgeModule(PipelineModule):
                     user_prompt=user_prompt,
                     concatenation_method=method,
                     work_dir=work,
+                    models_dir=self.config.get("models_dir", "models"),
                 )
                 request_meta = {
                     "provider": provider,

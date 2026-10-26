@@ -1,4 +1,4 @@
-"""Bundled AudioJudge prompts, signal audio, and Ayase protocol adapter."""
+"""Bundled AudioJudge prompts and Ayase protocol adapter."""
 
 from .protocol import (
     PAIRWISE_METHODS,
@@ -14,6 +14,7 @@ from .protocol import (
     custom_contract,
     normalize_wav,
     parse_response,
+    resolve_signal_asset,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "custom_contract",
     "normalize_wav",
     "parse_response",
+    "resolve_signal_asset",
 ]

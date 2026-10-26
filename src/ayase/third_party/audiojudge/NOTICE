@@ -1,22 +1,25 @@
 AudioJudge protocol assets
 ==========================
 
-This directory contains prompt templates and spoken-label WAV assets copied
-verbatim from AudioJudge at commit fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab:
+This directory contains prompt templates copied verbatim from AudioJudge at
+commit fc4a1f93fbe10a7e7fd8ea7298269d6e421a57ab:
 
   https://github.com/Woodygan/AudioJudge
 
 AudioJudge is Copyright (c) 2025 Woody Gan and distributed under the MIT
 License reproduced in LICENSE. The original prompt files are
 system_prompts.py and system_prompts_pointwise.py. The original spoken-label
-files are in signal_audios/.
+WAV files are fetched lazily from that exact revision, verified by
+SHA256, and cached below the configured models_dir. They are not distributed in
+the Ayase package.
 
 protocol.py is an Ayase-owned interoperability implementation. It preserves
 the released prompt, message-order, concatenation, gap, and caller-labelled
 in-context-learning contracts while intentionally replacing the original
-temporary-directory and implicit paid-TTS behavior. It requires bundled
-signals, uses task-scoped temporary paths supplied by the caller, decodes WAV
-input to mono signed PCM16 for heterogeneous-input portability, and never
-performs TTS, ASR, or asset downloads. The released source's historical
+temporary-directory and implicit paid-TTS behavior. It resolves only the
+signals required by the selected concatenation method, uses task-scoped
+temporary paths supplied by the caller, decodes WAV input to mono signed PCM16
+for heterogeneous-input portability, and never performs TTS or ASR. The
+released source's historical
 OpenAI preview default is not retained: the Ayase module declares its current
 hosted-model migration separately and makes no numerical-reproduction claim.

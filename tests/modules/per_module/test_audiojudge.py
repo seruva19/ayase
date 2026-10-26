@@ -1,7 +1,10 @@
 import base64
+import concurrent.futures
 import hashlib
+import io
 import json
 import sys
+import time
 import wave
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -12,10 +15,19 @@ from ayase.models import Sample
 from ayase.pipeline import PipelineModule
 from ayase.third_party.audiojudge import protocol
 
+_REAL_RESOLVER = protocol.resolve_signal_asset
+
 
 @pytest.fixture(autouse=True)
-def _allow_mocked_transport(monkeypatch):
+def _allow_mocked_transport(monkeypatch, tmp_path):
     previous = PipelineModule._global_test_mode
+    signals = tmp_path / "synthetic-signals"
+    signals.mkdir()
+    for index, name in enumerate(protocol._ASSET_SHA256):
+        _wav(signals / name, bytes((index, 0)) * (20 + index))
+    monkeypatch.setattr(
+        protocol, "resolve_signal_asset", lambda name, models_dir="models", **kwargs: signals / name
+    )
     monkeypatch.delenv("AYASE_TEST_MODE", raising=False)
     PipelineModule.set_test_mode(False)
     try:
@@ -101,10 +113,10 @@ def test_all_canonical_tasks_variants_and_prompt_bytes():
         "d6d3e8a7c97bec99a7cc2b55e319fcb872b0d4e7a1ba24e09ab3af5798211913"
     )
     assert set(protocol._ASSET_SHA256) == {
-        path.name for path in (root / "signal_audios").glob("*.wav")
+        "audio.wav", "audio_1.wav", "audio_2.wav", "instruction.wav", "test.wav",
+        *(f"example_{index}.wav" for index in range(1, 11)),
     }
-    for name, digest in protocol._ASSET_SHA256.items():
-        assert hashlib.sha256((root / "signal_audios" / name).read_bytes()).hexdigest() == digest
+    assert "/src/audiojudge/signal_audios/" in protocol._ASSET_BASE_URL
 
 
 @pytest.mark.parametrize(
@@ -174,10 +186,10 @@ def test_pair_and_pointwise_pcm_order_duration_and_repair(tmp_path):
         expected = sum(
             wave.open(str(path), "rb").getnframes()
             for path in (
-                protocol._asset("test.wav"),
-                protocol._asset("audio_1.wav"),
+                protocol.resolve_signal_asset("test.wav"),
+                protocol.resolve_signal_asset("audio_1.wav"),
                 first,
-                protocol._asset("audio_2.wav"),
+                protocol.resolve_signal_asset("audio_2.wav"),
                 second,
             )
         ) + 5 * 12000
@@ -186,7 +198,10 @@ def test_pair_and_pointwise_pcm_order_duration_and_repair(tmp_path):
     with wave.open(str(point), "rb") as stream:
         expected = sum(
             wave.open(str(path), "rb").getnframes()
-            for path in (protocol._asset("example_1.wav"), protocol._asset("audio.wav"), first)
+            for path in (
+                protocol.resolve_signal_asset("example_1.wav"),
+                protocol.resolve_signal_asset("audio.wav"), first,
+            )
         ) + 2 * 12000 + 16800
         assert stream.getnframes() == expected
 
@@ -199,6 +214,120 @@ def test_pair_and_pointwise_pcm_order_duration_and_repair(tmp_path):
     normalized = protocol.normalize_wav(unsigned, tmp_path / "s16.wav")
     with wave.open(str(normalized), "rb") as stream:
         assert stream.readframes(3) == b"\x00\x80\x00\x00\x00\x7f"
+
+
+def test_signal_asset_download_is_verified_cached_and_repairs_corruption(tmp_path, monkeypatch):
+    payload = io.BytesIO()
+    with wave.open(payload, "wb") as stream:
+        stream.setparams((1, 2, 24000, 0, "NONE", "not compressed"))
+        stream.writeframes(b"\x01\x00" * 8)
+    content = payload.getvalue()
+    monkeypatch.setitem(protocol._ASSET_SHA256, "audio.wav", hashlib.sha256(content).hexdigest())
+    calls = []
+
+    class Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.close()
+
+    def open_url(url, timeout):
+        calls.append((url, timeout))
+        return Response(content)
+
+    monkeypatch.setattr(protocol.urllib.request, "urlopen", open_url)
+    first = _REAL_RESOLVER("audio.wav", tmp_path)
+    assert first.read_bytes() == content
+    assert _REAL_RESOLVER("audio.wav", tmp_path) == first
+    assert len(calls) == 1
+    first.write_bytes(b"corrupt")
+    assert _REAL_RESOLVER("audio.wav", tmp_path).read_bytes() == content
+    assert len(calls) == 2
+    assert not list(first.parent.glob("*.part"))
+
+
+def test_signal_asset_rejects_invalid_download_and_cleans_partial(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        protocol.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: io.BytesIO(b"not-the-pinned-asset"),
+    )
+    with pytest.raises(ValueError, match="digest mismatch"):
+        _REAL_RESOLVER("audio.wav", tmp_path)
+    root = tmp_path / ".ayase" / "audiojudge" / protocol.SOURCE_REVISION / "signal_audios"
+    assert not (root / "audio.wav").exists()
+    assert not list(root.glob("*.part"))
+
+    class BrokenResponse(io.BytesIO):
+        def read(self, size=-1):
+            if self.tell():
+                raise OSError("simulated interrupted download")
+            return super().read(4)
+
+    monkeypatch.setattr(
+        protocol.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: BrokenResponse(b"partial"),
+    )
+    with pytest.raises(OSError, match="interrupted"):
+        _REAL_RESOLVER("audio.wav", tmp_path)
+    assert not (root / "audio.wav").exists()
+    assert not list(root.glob("*.part"))
+
+
+def test_signal_asset_concurrent_resolution_downloads_once(tmp_path, monkeypatch):
+    content = b"pinned synthetic content"
+    monkeypatch.setitem(protocol._ASSET_SHA256, "audio.wav", hashlib.sha256(content).hexdigest())
+    calls = []
+
+    def open_url(*args, **kwargs):
+        calls.append(args[0])
+        time.sleep(0.1)
+        return io.BytesIO(content)
+
+    monkeypatch.setattr(protocol.urllib.request, "urlopen", open_url)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        paths = list(pool.map(lambda _: _REAL_RESOLVER("audio.wav", tmp_path), range(2)))
+    assert paths[0] == paths[1]
+    assert paths[0].read_bytes() == content
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("source", ["argument", "environment", "global"])
+def test_signal_asset_test_mode_precedes_filesystem_and_network(tmp_path, monkeypatch, source):
+    models_dir = tmp_path / "must-not-exist"
+    monkeypatch.setattr(
+        protocol.urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: pytest.fail("test mode must not use the network"),
+    )
+    if source == "environment":
+        monkeypatch.setenv("AYASE_TEST_MODE", "1")
+    elif source == "global":
+        PipelineModule.set_test_mode(True)
+    with pytest.raises(RuntimeError, match="disabled in test mode"):
+        _REAL_RESOLVER("audio.wav", models_dir, test_mode=source == "argument")
+    assert not models_dir.exists()
+
+
+def test_non_concatenating_builders_do_not_resolve_assets(tmp_path, monkeypatch):
+    first = _wav(tmp_path / "first.wav", b"\x00\x00" * 5)
+    second = _wav(tmp_path / "second.wav", b"\x01\x00" * 7)
+    monkeypatch.setattr(
+        protocol,
+        "resolve_signal_asset",
+        lambda *args, **kwargs: pytest.fail("separate messages must not resolve signals"),
+    )
+    protocol.build_openai_messages(
+        mode="pairwise", candidate_path=first, comparator_path=second,
+        system_prompt="SYSTEM", work_dir=tmp_path, examples=(),
+        concatenation_method="no_concatenation",
+    )
+    protocol.build_gemini_messages(
+        mode="pointwise", candidate_path=first, system_prompt="SYSTEM",
+        work_dir=tmp_path, examples=(), concatenation_method="no_concatenation",
+    )
 
 
 @pytest.mark.parametrize("method", protocol.PAIRWISE_METHODS)
@@ -242,6 +371,27 @@ def test_mocked_openai_transport_and_pointwise_metadata(tmp_path):
     assert payload["modalities"] == ["text"]
     assert payload["max_completion_tokens"] == 800
     assert payload["temperature"] == 1e-8
+
+
+def test_module_threads_configured_models_dir_to_builder(tmp_path, monkeypatch):
+    import ayase.modules.audiojudge as audiojudge_module
+
+    source = _wav(tmp_path / "candidate.wav", b"\x00\x00" * 10)
+    models_dir = tmp_path / "custom-models"
+    module, _ = _ready_module(
+        {"mode": "pointwise", "task": "somos", "variant": "no_cot", "models_dir": models_dir},
+        '{"score":4}',
+    )
+    original = audiojudge_module.build_openai_messages
+    seen = []
+
+    def capture(**kwargs):
+        seen.append(kwargs["models_dir"])
+        return original(**kwargs)
+
+    monkeypatch.setattr(audiojudge_module, "build_openai_messages", capture)
+    module.process(Sample(path=source, is_video=False))
+    assert seen == [models_dir]
 
 
 @pytest.mark.parametrize(

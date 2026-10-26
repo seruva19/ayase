@@ -11,11 +11,14 @@ import base64
 import hashlib
 import io
 import json
+import os
+import urllib.request
+import uuid
 import wave
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 from .system_prompts import SYSTEM_PROMPTS as PAIRWISE_PROMPTS
 from .system_prompts_pointwise import SYSTEM_PROMPTS as POINTWISE_PROMPTS
@@ -34,8 +37,6 @@ _ASSET_SHA256 = {
     "audio.wav": "8a2702b6c11f596937021e4940ef2c9217f997a2840dfe15d56380c8801844ed",
     "audio_1.wav": "02c1c055a3d00969b1cee862c1b10471ab6430be39825d045373c506d0f90f39",
     "audio_2.wav": "62a0f6be465aece2dd38284af5de5f293519eeadddc5b8dd55051c6301965c61",
-    "audio_response.wav": "394ebdbc256f4cc8b187a1cb62c53d8b3e7ef4c781ebea6e0ce6004828e10423",
-    "example_0.wav": "e19767a6deed5c756955b6fc73f83fe8edb7506c2dd86dca44ecd91c2e02acf9",
     "example_1.wav": "92b087749c99088474d60c4440cfc0330d1f503b38d035bf37c2b3e01d0594fa",
     "example_2.wav": "308a6b8a9c8c669cde91bf9d73a968cf61a7b624e5241cb357203680fa9a75b1",
     "example_3.wav": "f133b4e8cf03e2fb418a2a9e1a2b3c682ee747dc3fb5944ec109375650cbbe61",
@@ -46,12 +47,14 @@ _ASSET_SHA256 = {
     "example_8.wav": "ea698453380a72c28f2e5a5611ecffd02a0f9c1b71dfb55ddb2333cf17fde7c7",
     "example_9.wav": "9050924f82f73ea554592fbe9ef2df28ba5fff4d1afeced75da89ff73352e380",
     "example_10.wav": "fc034b33b57edc253a0dc0b55a06bbb83173345e5cc620478dcf61970952fdc9",
-    "first_audio.wav": "ffda48ad790f672ef48017b2bb87cd58d6a012a347440e0df88991822f095b35",
     "instruction.wav": "63473727d3e4f4f106538edbe7cd6df37eccd629640921e8bb2e0052c9c8be04",
-    "second_audio.wav": "465b568bed61febcfec4a8ee9f684f5816837649d77c8ab6d4ce3bb589af8217",
     "test.wav": "1f0d4cc9ea09ba12708bf1b0ca2f36d5740415b4823cd60ccf9395e62f1bc102",
-    "test_audio.wav": "26913ba9d3777b831e65f78e24a1cf0840125f3950357492ff59644473477e5d",
 }
+_ASSET_BASE_URL = (
+    "https://raw.githubusercontent.com/Woodygan/AudioJudge/"
+    + SOURCE_REVISION
+    + "/src/audiojudge/signal_audios/"
+)
 
 
 @dataclass(frozen=True)
@@ -184,13 +187,78 @@ def parse_response(text: str, contract: ResponseContract) -> Tuple[float, Dict[s
     return mapped, value
 
 
-def _asset(name: str) -> Path:
-    path = Path(__file__).with_name("signal_audios") / name
-    if not path.is_file():
-        raise FileNotFoundError(f"required AudioJudge signal asset is missing: {name}")
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if digest != _ASSET_SHA256[name]:
+def _digest(path: Path) -> str:
+    value = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+
+def resolve_signal_asset(
+    name: str,
+    models_dir: Union[Path, str] = "models",
+    *,
+    asset_dir: Optional[Path] = None,
+    test_mode: bool = False,
+) -> Path:
+    """Return one verified pinned spoken label, downloading it only when needed."""
+    if not test_mode and os.environ.get("AYASE_TEST_MODE", "") != "1":
+        try:
+            from ayase.pipeline import PipelineModule
+
+            test_mode = bool(PipelineModule._global_test_mode)
+        except ImportError:
+            pass
+    if test_mode or os.environ.get("AYASE_TEST_MODE", "") == "1":
+        raise RuntimeError("AudioJudge signal asset resolution is disabled in test mode")
+    try:
+        expected = _ASSET_SHA256[name]
+    except KeyError as exc:
+        raise ValueError(f"unknown AudioJudge signal asset: {name}") from exc
+    root = (
+        Path(asset_dir)
+        if asset_dir is not None
+        else Path(models_dir).expanduser().resolve()
+        / ".ayase"
+        / "audiojudge"
+        / SOURCE_REVISION
+        / "signal_audios"
+    )
+    path = root / name
+    if path.is_file() and _digest(path) == expected:
+        return path
+    if asset_dir is not None:
+        if not path.is_file():
+            raise FileNotFoundError(f"required AudioJudge signal asset is missing: {name}")
         raise ValueError(f"AudioJudge signal asset digest mismatch: {name}")
+
+    from ayase.managed_runtime import _SetupLock
+
+    root.mkdir(parents=True, exist_ok=True)
+    with _SetupLock(root / f"{name}.lock"):
+        if path.is_file() and _digest(path) == expected:
+            return path
+        temporary = root / f".{name}.{os.getpid()}.{uuid.uuid4().hex}.part"
+        try:
+            with urllib.request.urlopen(_ASSET_BASE_URL + name, timeout=60) as response:
+                with temporary.open("wb") as output:
+                    while True:
+                        chunk = response.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        output.write(chunk)
+                    output.flush()
+                    os.fsync(output.fileno())
+            actual = _digest(temporary)
+            if actual != expected:
+                raise ValueError(
+                    f"AudioJudge signal asset digest mismatch: {name} "
+                    f"(expected {expected}, got {actual})"
+                )
+            os.replace(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
     return path
 
 
@@ -250,6 +318,8 @@ def concatenate_pair_audio(
     *,
     is_test: bool,
     start_index: int = 1,
+    models_dir: Union[Path, str] = "models",
+    asset_dir: Optional[Path] = None,
 ) -> Path:
     """Concatenate pair or instruction/pair groups using released boundary order."""
     if not groups or any(len(group) not in {2, 3} for group in groups):
@@ -261,23 +331,33 @@ def concatenate_pair_audio(
     rate = _modal_rate(flat)
     gap = bytes(int(0.5 * rate) * 2)
     chunks: List[bytes] = []
+
+    def asset(name: str) -> Path:
+        return resolve_signal_asset(name, models_dir, asset_dir=asset_dir)
+
     for offset, group in enumerate(groups):
         label = "test.wav" if is_test else f"example_{start_index + offset}.wav"
-        chunks.extend((_pcm16_mono(_asset(label), rate), gap))
+        chunks.extend((_pcm16_mono(asset(label), rate), gap))
         if instruction:
-            chunks.extend((_pcm16_mono(_asset("instruction.wav"), rate), gap))
+            chunks.extend((_pcm16_mono(asset("instruction.wav"), rate), gap))
             chunks.extend((_pcm16_mono(Path(group[0]), rate), gap))
             audio1, audio2 = Path(group[1]), Path(group[2])
         else:
             audio1, audio2 = Path(group[0]), Path(group[1])
-        chunks.extend((_pcm16_mono(_asset("audio_1.wav"), rate), gap))
+        chunks.extend((_pcm16_mono(asset("audio_1.wav"), rate), gap))
         chunks.extend((_pcm16_mono(audio1, rate), gap))
-        chunks.extend((_pcm16_mono(_asset("audio_2.wav"), rate), gap))
+        chunks.extend((_pcm16_mono(asset("audio_2.wav"), rate), gap))
         chunks.extend((_pcm16_mono(audio2, rate), gap))
     return _write_wav(output, rate, b"".join(chunks))
 
 
-def concatenate_pointwise_audio(paths: Sequence[Path], output: Path) -> Path:
+def concatenate_pointwise_audio(
+    paths: Sequence[Path],
+    output: Path,
+    *,
+    models_dir: Union[Path, str] = "models",
+    asset_dir: Optional[Path] = None,
+) -> Path:
     """Concatenate pointwise examples with the released 0.7-second trailing gap."""
     if not paths:
         raise ValueError("at least one pointwise example is required")
@@ -286,8 +366,10 @@ def concatenate_pointwise_audio(paths: Sequence[Path], output: Path) -> Path:
     tail = bytes(int(0.7 * rate) * 2)
     chunks: List[bytes] = []
     for index, path in enumerate(paths, 1):
-        chunks.extend((_pcm16_mono(_asset(f"example_{index}.wav"), rate), gap))
-        chunks.extend((_pcm16_mono(_asset("audio.wav"), rate), gap))
+        label = resolve_signal_asset(f"example_{index}.wav", models_dir, asset_dir=asset_dir)
+        audio = resolve_signal_asset("audio.wav", models_dir, asset_dir=asset_dir)
+        chunks.extend((_pcm16_mono(label, rate), gap))
+        chunks.extend((_pcm16_mono(audio, rate), gap))
         chunks.extend((_pcm16_mono(Path(path), rate), tail))
     return _write_wav(output, rate, b"".join(chunks))
 
@@ -329,6 +411,8 @@ def _pointwise_openai_messages(
     examples: Sequence[PointwiseExample],
     user_prompt: Optional[str],
     concatenation_method: str,
+    models_dir: Union[Path, str],
+    asset_dir: Optional[Path],
 ) -> List[Dict[str, Any]]:
     if concatenation_method not in POINTWISE_METHODS:
         raise ValueError("unsupported pointwise concatenation method")
@@ -365,7 +449,10 @@ def _pointwise_openai_messages(
         )
     elif examples:
         joined = concatenate_pointwise_audio(
-            [example.audio_path for example in examples], work_dir / "pointwise_examples.wav"
+            [example.audio_path for example in examples],
+            work_dir / "pointwise_examples.wav",
+            models_dir=models_dir,
+            asset_dir=asset_dir,
         )
         content = [
             {"type": "text", "text": "Here are some examples for reference:"},
@@ -428,6 +515,8 @@ def build_openai_messages(
     examples: Sequence[Any] = (),
     user_prompt: Optional[str] = None,
     concatenation_method: str,
+    models_dir: Union[Path, str] = "models",
+    asset_dir: Optional[Path] = None,
 ) -> List[Dict[str, Any]]:
     """Build source-conformant OpenAI chat messages without service calls."""
     if mode == "pointwise":
@@ -438,6 +527,8 @@ def build_openai_messages(
             examples,
             user_prompt,
             concatenation_method,
+            models_dir,
+            asset_dir,
         )
     if mode != "pairwise" or comparator_path is None:
         raise ValueError("pairwise mode requires comparator_path")
@@ -471,6 +562,8 @@ def build_openai_messages(
                 work_dir / f"example_pair_{index}.wav",
                 is_test=False,
                 start_index=index,
+                models_dir=models_dir,
+                asset_dir=asset_dir,
             )
             messages.append(
                 {
@@ -487,6 +580,8 @@ def build_openai_messages(
             [_pair_paths(example, instruction) for example in pair_examples],
             work_dir / "all_examples.wav",
             is_test=False,
+            models_dir=models_dir,
+            asset_dir=asset_dir,
         )
         content = [
             {"type": "text", "text": "Here are some examples for reference:"},
@@ -507,7 +602,13 @@ def build_openai_messages(
         else [candidate_path, comparator_path]
     )
     if concatenation_method in {"test_concatenation", "examples_and_test_concatenation"}:
-        joined = concatenate_pair_audio([test_paths], work_dir / "test.wav", is_test=True)
+        joined = concatenate_pair_audio(
+            [test_paths],
+            work_dir / "test.wav",
+            is_test=True,
+            models_dir=models_dir,
+            asset_dir=asset_dir,
+        )
         content = [{"type": "text", "text": prompt}, _openai_audio(joined)]
     else:
         content = _separate_pair_content(
@@ -524,6 +625,8 @@ def _pointwise_gemini_messages(
     examples: Sequence[PointwiseExample],
     user_prompt: Optional[str],
     concatenation_method: str,
+    models_dir: Union[Path, str],
+    asset_dir: Optional[Path],
 ) -> List[Any]:
     if concatenation_method not in POINTWISE_METHODS:
         raise ValueError("unsupported pointwise concatenation method")
@@ -550,7 +653,10 @@ def _pointwise_gemini_messages(
         )
     elif examples:
         joined = concatenate_pointwise_audio(
-            [example.audio_path for example in examples], work_dir / "pointwise_examples.wav"
+            [example.audio_path for example in examples],
+            work_dir / "pointwise_examples.wav",
+            models_dir=models_dir,
+            asset_dir=asset_dir,
         )
         messages.extend(
             (
@@ -592,6 +698,8 @@ def build_gemini_messages(
     examples: Sequence[Any] = (),
     user_prompt: Optional[str] = None,
     concatenation_method: str,
+    models_dir: Union[Path, str] = "models",
+    asset_dir: Optional[Path] = None,
 ) -> List[Any]:
     """Build the released flat Gemini content sequence without service calls."""
     if mode == "pointwise":
@@ -602,6 +710,8 @@ def build_gemini_messages(
             examples,
             user_prompt,
             concatenation_method,
+            models_dir,
+            asset_dir,
         )
     if mode != "pairwise" or comparator_path is None:
         raise ValueError("pairwise mode requires comparator_path")
@@ -638,6 +748,8 @@ def build_gemini_messages(
                 work_dir / f"example_pair_{index}.wav",
                 is_test=False,
                 start_index=index,
+                models_dir=models_dir,
+                asset_dir=asset_dir,
             )
             messages.extend(
                 (
@@ -652,6 +764,8 @@ def build_gemini_messages(
             [_pair_paths(example, instruction) for example in pair_examples],
             work_dir / "all_examples.wav",
             is_test=False,
+            models_dir=models_dir,
+            asset_dir=asset_dir,
         )
         messages.extend(
             (
@@ -667,7 +781,13 @@ def build_gemini_messages(
         else [candidate_path, comparator_path]
     )
     if concatenation_method in {"test_concatenation", "examples_and_test_concatenation"}:
-        joined = concatenate_pair_audio([test_paths], work_dir / "test.wav", is_test=True)
+        joined = concatenate_pair_audio(
+            [test_paths],
+            work_dir / "test.wav",
+            is_test=True,
+            models_dir=models_dir,
+            asset_dir=asset_dir,
+        )
         if instruction:
             messages.append("Please provide your response according to these audio clips:")
         else:

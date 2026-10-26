@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 11:43 · **335 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 14:42 · **335 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -48,7 +48,7 @@
 > image-feature-extraction · apache-2.0
 
 - **Used by**: `nearid`
-- **Parameters**: 428M · **Downloads**: 52
+- **Parameters**: 428M · **Downloads**: 55
 - **Disk**: ~1.6 GB
 - **Task**: NearID identity-aware SigLIP2 image embeddings
 - **Notes**: Apache-2.0; pinned to revision 7f69f4a0c753297de708a0217ef32659fe12a008
@@ -76,7 +76,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `evoquality`
-- **Parameters**: 8.3B · **Downloads**: 152
+- **Parameters**: 8.3B · **Downloads**: 158
 - **Disk**: 7B
 - **Task**: Self-evolving Qwen2.5-VL NR-IQA rating model
 - **Notes**: Loaded through transformers or served through an endpoint.
@@ -242,7 +242,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `qwen_image_bench`
-- **Parameters**: 27.4B · **Downloads**: 25K
+- **Parameters**: 27.4B · **Downloads**: 26K
 - **Disk**: 27B BF16
 - **Task**: Q-Judger text-to-image evaluation model
 - **Notes**: Can also be served through vLLM/SGLang with an OpenAI-compatible endpoint.
@@ -381,7 +381,7 @@
 > other · other
 
 - **Used by**: `avc_reward`
-- **Parameters**: 31.7B · **Downloads**: 60
+- **Parameters**: 31.7B · **Downloads**: 66
 - **VRAM**: BF16 weights are 63.44 GB plus activations (CPU float32 is about 126.9 GB) · **Disk**: 63.44 GB
 - **Task**: AVC-Reward audio-video consistency judge
 - **Notes**: Research use only; checkpoint license metadata is 'other' and incomplete.
@@ -458,7 +458,7 @@
 > audio-text-to-text · apache-2.0
 
 - **Used by**: `anyaudio_judge`
-- **Parameters**: 1M · **Downloads**: 254
+- **Parameters**: 1M · **Downloads**: 259
 - **Disk**: ~5 MB
 - **Task**: AnyAudio-Judge audio rubric scorer
 
@@ -466,7 +466,7 @@
 > audio-text-to-text · apache-2.0
 
 - **Used by**: `anyaudio_judge`
-- **Parameters**: 1M · **Downloads**: 384
+- **Parameters**: 1M · **Downloads**: 387
 - **Disk**: ~5 MB
 - **Task**: AnyAudio-Judge audio rubric scorer
 
