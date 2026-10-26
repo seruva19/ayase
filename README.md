@@ -1,71 +1,88 @@
 # Ayase
 
-Modular media quality metrics for video, image, and audio datasets.
-
-Ayase scans a dataset, runs the metrics you choose, and exports per-sample
-results and validation issues. 390 modules produce 618 metrics across 22 categories,
-covering perceptual quality, text alignment, motion, temporal consistency,
-audio, safety, and more.
+Ayase measures the quality and content of images and videos. Choose the metrics
+that matter to you, run them on your files, and save a report with scores and
+validation issues. 390 modules produce 618 metrics across 22 categories,
+covering visual quality, text alignment, motion, audio, safety, and more.
 
 ## Install
 
-Requires Python 3.9+.
+Requires Python 3.9 or newer:
 
 ```bash
 pip install ayase
 ```
 
-One install provides the metric runtime infrastructure. Ayase downloads weights
-and provisions private Python environments or native tools as needed on first
-use, then caches them for later runs. No per-metric extras are required.
-Uncached setup needs internet access; hardware requirements depend on the metric.
+Ayase automatically downloads weights and provisions backend environments or
+native tools when needed, then caches them for later runs. No per-metric extras
+are required. First use of an uncached metric needs internet access; hardware
+requirements depend on the metric.
 
 ## Quick start
 
-Scan a dataset with a small, explicit set of modules and save a report:
+Put images or videos in a folder, then run:
 
 ```bash
-ayase scan ./dataset --modules metadata,basic_quality --format json --output report.json
+ayase scan ./media --modules metadata,basic_quality --format json --output report.json
 ```
 
-Find and inspect metrics from the command line:
+The JSON report contains `run_status`, overall `stats`, and `samples` with
+per-file results. A missing score is not zero: the metric may not have been
+selected, may not apply to the file, or may have failed or been unavailable.
+Check the run status and logs for details.
+
+## Choose metrics
+
+Browse available metrics and inspect one:
 
 ```bash
-ayase help                      # browse metrics and providers
-ayase help rqvqa_score           # inspect a metric's models, config, and usage
+ayase help
+ayase help blur_score
 ```
 
-### Python
+`blur_score` is a metric field; `basic_quality` is a module that produces it.
+Pass module names to `--modules`. Scores use different scales and directions,
+so check the metric description before comparing results. The
+[metric catalog](METRICS.md) describes inputs, ranges, requirements, and
+readiness: an approximate metric uses a substitute or partial method, while an
+unimplemented metric has no supported complete backend in a standard install.
+The [model catalog](MODELS.md) lists weights and licenses.
+
+## Inputs
+
+The scanner finds images and videos, including in subfolders. For metrics that
+need a caption, place a `.txt`, `.caption`, or caption `.json` file beside the
+media file with the same base name, such as `clip.mp4` and `clip.txt`.
+Reference-based metrics need an
+explicit `reference_path` on a `Sample`; the scanner does not pair references
+automatically. The Python API also accepts prepared `Sample` objects. See the
+[usage guide](docs/usage.md) for input and configuration details.
+
+## Python
 
 ```python
 from ayase import AyasePipeline
 
 pipeline = AyasePipeline(modules=["metadata", "basic_quality"])
-results = pipeline.run("./dataset")
+results = pipeline.run("./media")
 
 for sample in results.values():
     if sample.quality_metrics is not None:
         print(sample.path.name, sample.quality_metrics.blur_score)
 
-pipeline.export("report.json")   # also supports CSV and HTML
+pipeline.export("report.json")
+pipeline.export("report.csv", format="csv")
 ```
-
-## Choose metrics
-
-Use the [metric catalog](METRICS.md) to compare inputs, score ranges,
-configuration, and backend requirements. The [model catalog](MODELS.md) lists
-weights and their licenses. Metrics use different scales and may require
-captions, reference media, or a compatible GPU; check the selected metric's entry.
 
 ## Guides
 
 | Task | Guide |
 | --- | --- |
-| Scan, filter, export, or configure a dataset run | [Usage and configuration](docs/usage.md) |
-| Understand downloads, caches, and backend environments | [Managed backends](docs/managed_backends.md) |
-| Integrate without changing an application's ML dependencies | [Isolated client](docs/isolated_client.md) |
-| Add a metric or external plugin | [Custom modules](docs/custom_modules.md) |
-| Work on Ayase itself | [Contributing](CONTRIBUTING.md) |
+| Run checks, filter files, or configure metrics | [Usage and configuration](docs/usage.md) |
+| Understand downloads, caches, and backend requirements | [Managed backends](docs/managed_backends.md) |
+| Integrate through an isolated environment | [Isolated client](docs/isolated_client.md) |
+| Add a metric or plugin | [Custom modules](docs/custom_modules.md) |
+| Contribute to Ayase | [Contributing](CONTRIBUTING.md) |
 | Review changes between versions | [Changelog](CHANGELOG.md) |
 
 APIs and module interfaces may change before 1.0.
