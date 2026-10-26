@@ -1334,7 +1334,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a("")
     a("- `implemented`: the declared backend and computation are wired, including complete Ayase-defined methods.")
     a("- `approximate`: a material substitute or partial protocol is implemented; consult the readiness notes and field deviations.")
-    a("- `unimplemented`: the intended backend, trained assets or computation are unavailable; excluded from delivered counts and execution.")
+    a("- `unimplemented`: no supported complete backend is available in a standard install; excluded from delivered counts. Inert implementations never mount. Existing expert adapters may try a real externally provided backend, as indicated in their entries.")
     a("")
     a("Source review checks method fidelity and backend wiring. Its confidence describes static evidence, not successful inference with pretrained weights or numerical validation. Runtime requirements such as model downloads, reference inputs and API credentials still apply.")
     a("")
@@ -1781,6 +1781,8 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 readiness_text += f" — {readiness_notes}"
             parts.append(readiness_text)
             parts.append(f"Review evidence: {cls.implementation_review}")
+            if cls.supports_expert_backend:
+                parts.append("Expert adapter: may try a real externally provided backend; standard-install readiness remains unimplemented")
             if owned:
                 parts.append("Metrics: " + ", ".join(f"`{f}`" for f in owned))
             else:

@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 class T2VScoreModule(PipelineModule):
     name = "t2v_generic_score"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "No default trained model: model_name=None causes setup return; generic AutoModel(clip,text) convention has no concrete supported checkpoint or provisioning."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

@@ -102,6 +102,9 @@ class PipelineModule(ABC):
     implementation_review: ClassVar[str] = "unreviewed"
     # Overrides distinguish usable and unavailable outputs of partial modules.
     metric_status: ClassVar[Dict[str, str]] = {}
+    # A standard-install unavailable wrapper may still invoke a real backend
+    # already supplied by an expert. Inert placeholders must leave this False.
+    supports_expert_backend: ClassVar[bool] = False
 
     # True = Ayase-defined construct without a published definition, slated for
     # removal in a future release. Instantiating the module emits a
@@ -332,6 +335,7 @@ class PipelineModule(ABC):
             cls.implementation_notes,
             cls.implementation_review,
             repr(cls.metric_status),
+            cls.supports_expert_backend,
             cls.deprecated,
             cls.input_type,
         )
@@ -498,6 +502,7 @@ class PipelineModule(ABC):
                 field: cls.resolved_metric_status(field)
                 for field in set(outputs) | set(dataset_outputs) | set(cls.metric_groups)
             },
+            "supports_expert_backend": bool(cls.supports_expert_backend),
             "deprecated": bool(cls.deprecated),
         }
         cls._metadata_cache = metadata
@@ -1472,12 +1477,14 @@ class Pipeline:
         self._availability_excluded = {}
         self._frame_cache = {}
         self._runtime_value_cache = {}
-        # An explicit unimplemented declaration is a hard runtime gate: do not
-        # mount the module, because setup may provision packages or weights.
-        # Legacy ``requires_external_backend`` modules leave the declaration at
-        # None and retain their expert-backend revival behavior.
+        # Inert/unusable implementations never mount. Existing expert wrappers
+        # can still detect their real backend without changing standard-install
+        # readiness or substituting another score.
         for module in self.modules:
-            if type(module).implementation_status == "unimplemented":
+            if (
+                type(module).implementation_status == "unimplemented"
+                and not type(module).supports_expert_backend
+            ):
                 self._availability_excluded[module.name] = "implementation_unavailable"
         if self._provenance_excluded:
             logger.info(
@@ -1511,7 +1518,10 @@ class Pipeline:
             if not getattr(module, "_mounted", False):
                 self.module_failures.setdefault(module.name, "module did not mount")
             elif (
-                type(module).requires_external_backend
+                (
+                    type(module).requires_external_backend
+                    or type(module).implementation_status == "unimplemented"
+                )
                 and not getattr(module, "_backend", None)
                 and not getattr(module, "_ml_available", False)
                 and not getattr(module, "_available", False)

@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class VQAThinkerModule(PipelineModule):
     name = "vqathinker"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Only imports hypothetical installed vqathinker.predict; no source/checkpoint/package managed provisioner or executable intended trained inference is supplied. No approximation produces the field by default."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

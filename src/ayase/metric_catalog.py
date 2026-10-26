@@ -100,6 +100,7 @@ class ModuleCatalogItem:
     implementation_status: str = "implemented"
     implementation_notes: str = ""
     implementation_review: str = "unreviewed"
+    supports_expert_backend: bool = False
 
 
 def _normalize_name(value: str) -> str:
@@ -412,6 +413,7 @@ def _build_module_item(cls: type, detailed: bool) -> ModuleCatalogItem:
         implementation_status=cls.resolved_implementation_status(),
         implementation_notes=str(getattr(cls, "implementation_notes", "") or ""),
         implementation_review=str(getattr(cls, "implementation_review", "unreviewed")),
+        supports_expert_backend=bool(cls.supports_expert_backend),
         requires_external_backend=bool(getattr(cls, "requires_external_backend", False)),
         packaged=ModuleRegistry.is_packaged_module(cls),
     )
@@ -528,6 +530,8 @@ def _render_module(
     summary.add_column("Value")
     summary.add_row("Readiness", module.implementation_status)
     summary.add_row("Review evidence", module.implementation_review)
+    if module.supports_expert_backend:
+        summary.add_row("Expert backend", "Can run when the real external backend is provided")
     if module.implementation_notes:
         summary.add_row("Readiness notes", module.implementation_notes)
     summary.add_row("Input", module.input_type)

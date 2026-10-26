@@ -77,7 +77,11 @@ class VLMJudgeModule(PipelineModule):
     def setup(self) -> None:
         try:
             import torch
-            from transformers import AutoModelForImageTextToText, AutoProcessor
+            from transformers import AutoProcessor
+            try:
+                from transformers import AutoModelForImageTextToText
+            except ImportError:
+                from transformers import AutoModelForVision2Seq as AutoModelForImageTextToText
             from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))

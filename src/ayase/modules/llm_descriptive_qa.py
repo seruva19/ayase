@@ -72,7 +72,11 @@ class LLMDescriptiveQAModule(PipelineModule):
                     logger.warning("OpenAI API key not provided")
             else:
                 # Local LLaVA model setup
-                from transformers import AutoModelForImageTextToText, AutoProcessor
+                from transformers import AutoProcessor
+                try:
+                    from transformers import AutoModelForImageTextToText
+                except ImportError:
+                    from transformers import AutoModelForVision2Seq as AutoModelForImageTextToText
                 import torch
                 from ayase.runtime import resolve_torch_device
 

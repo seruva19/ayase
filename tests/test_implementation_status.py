@@ -191,3 +191,61 @@ def test_explicit_unimplemented_never_mounts_or_processes(tmp_path):
     assert pipeline.get_run_status()["availability_excluded"] == {
         module.name: "implementation_unavailable"
     }
+
+
+def test_unimplemented_expert_wrapper_can_run_only_with_real_backend(tmp_path, monkeypatch):
+    monkeypatch.setattr(PipelineModule, "_global_test_mode", False)
+    monkeypatch.delenv("AYASE_TEST_MODE", raising=False)
+    class ExpertWrapper(PipelineModule):
+        name = "_status_expert_wrapper"
+        description = "Expert-provided real backend"
+        implementation_status = "unimplemented"
+        supports_expert_backend = True
+
+        def setup(self):
+            self._backend = self.config.get("provided_backend")
+
+        def process(self, sample):
+            self.executed = True
+            return sample
+
+    for available in (False, True):
+        module = ExpertWrapper({"provided_backend": "real_backend" if available else None})
+        pipeline = Pipeline([module])
+        pipeline.start()
+        sample = Sample(path=tmp_path / "sample.png", is_video=False)
+        assert pipeline.process_sample(sample) is sample
+        assert getattr(module, "executed", False) is available
+        assert (module.name in pipeline._availability_excluded) is not available
+        assert module.resolved_implementation_status() == "unimplemented"
+
+
+def test_avqt_existing_expert_cli_still_scores_through_pipeline(tmp_path, monkeypatch):
+    import subprocess
+    from ayase.modules.avqt import AVQTModule
+
+    monkeypatch.setattr(PipelineModule, "_global_test_mode", False)
+    monkeypatch.delenv("AYASE_TEST_MODE", raising=False)
+    candidate = tmp_path / "candidate.png"
+    reference = tmp_path / "reference.png"
+    candidate.touch()
+    reference.touch()
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        output = "AVQT version 1" if command == ["avqt", "--version"] else "AVQT score: 4.25"
+        return subprocess.CompletedProcess(command, 0, stdout=output, stderr="")
+
+    monkeypatch.setattr("ayase.modules.avqt.subprocess.run", run)
+    module = AVQTModule()
+    pipeline = Pipeline([module])
+    pipeline.start()
+    sample = Sample(path=candidate, reference_path=reference, is_video=False)
+    assert pipeline.process_sample(sample) is sample
+    assert sample.quality_metrics.avqt_score == 4.25
+    assert calls == [
+        ["avqt", "--version"],
+        ["avqt", "-r", str(reference), "-t", str(candidate)],
+    ]
+    assert module.resolved_implementation_status() == "unimplemented"

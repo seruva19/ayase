@@ -2,6 +2,7 @@
 
 from ..conftest import _test_module_basics
 from ayase.models import QualityMetrics
+import pytest
 
 
 def test_vlm_judge_basics():
@@ -26,7 +27,8 @@ def test_vlm_judge_video(video_sample):
 
 
 
-def test_vlm_judge_uses_config_driven_model_and_processor(monkeypatch):
+@pytest.mark.parametrize("legacy_transformers", [False, True])
+def test_vlm_judge_uses_config_driven_model_and_processor(monkeypatch, legacy_transformers):
     import sys
     from types import ModuleType, SimpleNamespace
     from ayase.modules.vlm_judge import VLMJudgeModule
@@ -35,7 +37,7 @@ def test_vlm_judge_uses_config_driven_model_and_processor(monkeypatch):
     model_types = {
         default_id: "llava",
         "custom/another-llava-family": "llava_next",
-        "custom/another-vlm-family": "qwen2_5_vl",
+        "custom/another-vlm-family": "qwen2_vl",
     }
     calls = []
 
@@ -55,7 +57,10 @@ def test_vlm_judge_uses_config_driven_model_and_processor(monkeypatch):
             return SimpleNamespace(model_type=model_types[model_id])
 
     transformers = ModuleType("transformers")
-    transformers.AutoModelForImageTextToText = AutoModel
+    if legacy_transformers:
+        transformers.AutoModelForVision2Seq = AutoModel
+    else:
+        transformers.AutoModelForImageTextToText = AutoModel
     transformers.AutoProcessor = AutoProcessor
     monkeypatch.setitem(sys.modules, "transformers", transformers)
     monkeypatch.setattr(VLMJudgeModule, "test_mode", False)

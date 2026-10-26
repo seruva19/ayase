@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Preserve existing expert-provided backend execution separately from standard-install readiness; retain Transformers 4.45 compatibility for LLaVA model dispatch.
 - Audit readiness for every packaged module with explicit reasons and source-review confidence; distinguish unavailable outputs of partial modules and exclude them from delivered metric counts.
 - Correct field provenance where clipping, substituted representations or evaluation protocols differ from the cited method; expose readiness and review evidence in metric help and the generated reference.
 - **psnr99**, **flolpips**: fix luma-plane extraction and optical-flow frame dimensions; omit undefined flow-weighted scores.

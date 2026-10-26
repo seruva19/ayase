@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class MDTVSFAModule(PipelineModule):
     name = "mdtvsfa"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Generic pyiqa.create_metric(mdtvsfa) adapter only, with no bundled/pinned trained MDTVSFA implementation or managed provisioner for unsupported metric name."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

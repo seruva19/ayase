@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class AFINEModule(PipelineModule):
     name = "afine"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Calls unsupported pyiqa.create_metric(\"afine\"). Both local0.1.14.1 and current upstream config lack that exact key; upstream offers afine_fr/afine_nr instead. No alternative concrete backend."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

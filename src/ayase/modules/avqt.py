@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 class AVQTModule(ReferenceBasedModule):
     name = "avqt"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Only an externally installed Apple AVQT CLI is detected and invoked; no managed binary/source/checkpoint provisioner or standard-install executable is provided. Without that prerequisite score is unset."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

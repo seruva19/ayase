@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class QCNModule(PipelineModule):
     name = "qcn"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Only unsupported pyiqa.create_metric(qcn) name with no trained implementation/checkpoint provisioning. No fallback approximation."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

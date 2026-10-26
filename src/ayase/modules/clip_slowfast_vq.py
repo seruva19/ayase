@@ -49,6 +49,7 @@ _FAST_STRIDE = 4
 
 class ModularBVQAModule(PipelineModule):
     name = "clip_slowfast_vq"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Own learned heads require caller-supplied weights_path, no released/provisioned head checkpoint is wired; loader even accepts a partial subset of heads. Default cannot produce a trained intended score."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

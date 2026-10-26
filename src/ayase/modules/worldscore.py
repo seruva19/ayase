@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class WorldScoreModule(BatchMetricModule):
     name = "worldscore"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Only generic worldscore.extract_features/compute_score adapter, no packaged real WorldScore benchmark orchestration/assets/dependency provisioner."
     implementation_review = "Source inspection; confidence medium; pretrained inference not validated."

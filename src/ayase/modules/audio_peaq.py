@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 class AudioPEAQModule(PipelineModule):
     name = "audio_peaq"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Only finds peaqb/peaqb-fast on PATH; neither setup nor managed dependency/native catalogs provide that required binary. Adapter can call an expert-installed binary, but pip-install readiness contract is incomplete. No replacement score exists."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."

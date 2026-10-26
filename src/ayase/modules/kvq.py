@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class KVQModule(PipelineModule):
     name = "kvq"
+    supports_expert_backend = True
     implementation_status = "unimplemented"
     implementation_notes = "Attempts a generic AutoModel checkpoint and invented tensor/output interface; no trained KVQ implementation/source is bundled/provisioned. Existing requires_external_backend reflects a real missing integration; absent model leaves score unset."
     implementation_review = "Source inspection; confidence medium; pretrained inference not validated."

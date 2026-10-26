@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class PSNR99Module(ReferenceBasedModule):
     name = "psnr99"
     implementation_status = "implemented"
-    implementation_notes = "Intended published top-1%-luma-error formula and frame aggregation are implemented, but there is a concrete accidental indexing bug requiring repair; this is a defect, not an intentionally approximate method. Material numeric defect: COLOR_BGR2YUV_IYUV produces packed planar 2-D output, then [...,0] selects a column containing Y/U/V plane rows, not full luma. Top-1%-error PSNR is therefore computed over the wrong pixels/channels, despite correct subsequent tail formula."
+    implementation_notes = "The top-1%-error PSNR uses the full luma plane from packed I420 images. Video frame sampling and mean aggregation are Ayase adaptations; an offline pixel-error regression covers the luma extraction."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {

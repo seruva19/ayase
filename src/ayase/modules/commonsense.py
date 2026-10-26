@@ -54,7 +54,11 @@ class CommonsenseModule(PipelineModule):
         # Tier 1: LLaVA VLM
         try:
             import torch
-            from transformers import AutoModelForImageTextToText, AutoProcessor
+            from transformers import AutoProcessor
+            try:
+                from transformers import AutoModelForImageTextToText
+            except ImportError:
+                from transformers import AutoModelForVision2Seq as AutoModelForImageTextToText
             from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             vlm_name = self.config.get("vlm_model", "llava-hf/llava-1.5-7b-hf")
