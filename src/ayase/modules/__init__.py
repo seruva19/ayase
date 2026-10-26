@@ -70,6 +70,7 @@ _IMPORTS = [
     ("PQSGModule", ".pqsg"),
     ("VideoScienceJudgeModule", ".videoscience_judge"),
     ("AVGenBenchModule", ".avgen_bench"),
+    ("LongCodeModule", ".long_code"),
     ("PickScoreModule", ".pickscore"),
     ("ImageRewardModule", ".image_reward"),
     ("HPSv2Module", ".hpsv2"),

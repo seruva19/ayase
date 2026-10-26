@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 16:08 · **336 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 16:38 · **337 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**336** models · **131** HuggingFace · **38** pyiqa · **9** sources
+**337** models · **131** HuggingFace · **38** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (98)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (38)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (49)](#local-weight-files) · [Other Models (35)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (98)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (38)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (49)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -663,9 +663,11 @@
 ### <a href="https://huggingface.co/microsoft/xclip-base-patch32" target="_blank">`microsoft/xclip-base-patch32`</a> [↑](#categories)
 > video-classification · mit
 
-- **Used by**: `embedding`, `video_text_matching`
+- **Used by**: `embedding`, `long_code`, `video_text_matching`
 - **Parameters**: 197M · **Downloads**: 73K
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
+- **Task**: Order-sensitive joint text-video encoder for approximate DSA
+- **Notes**: Default revision pinned to a2e27a78a2b5d802e894b8a1ef14f3a8ce490963; eight-frame checkpoint.
 - **Source**: <a href="https://arxiv.org/abs/2208.02816" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">`nielsr/depth-anything-large`</a> [↑](#categories)
@@ -1286,6 +1288,12 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `camera_trajectory`
 - **Task**: SfM feature extraction/matching frontend (Ayase-managed CPU binary)
+
+### <a href="https://developers.openai.com/api/docs/guides/images-vision" target="_blank">`configurable-openai-compatible-vision-judge`</a> [↑](#categories)
+
+- **Used by**: `long_code`
+- **Task**: Optional hosted caption, reasoning, and semantic scoring stages
+- **Notes**: Requires explicit judge_model and API credentials; no request is made during setup.
 
 ### `damo/mplug_visual-question-answering_coco_large_en` [↑](#categories)
 

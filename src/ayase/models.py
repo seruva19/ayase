@@ -1132,6 +1132,20 @@ class QualityMetrics(BaseModel):
     audiojudge_choice: Optional[float] = None  # Descriptive audio selection: 1 or 2
     cmms_score: Optional[float] = None  # Reserved CMMS score; unimplemented, never populated
     visual_chronometer_phyfps: Optional[float] = None  # Reserved physical FPS; unimplemented
+    long_code_approx_dsa: Optional[float] = None  # Approximate structural rank correlation (-1..1)
+    long_code_approx_narrative_score: Optional[float] = (
+        None  # Approximate narrative consistency (0-100)
+    )
+    long_code_approx_causality_score: Optional[float] = (
+        None  # Approximate causal consistency (0-100)
+    )
+    long_code_approx_identity_score: Optional[float] = (
+        None  # Approximate identity persistence (0-100)
+    )
+    long_code_approx_semantic_score: Optional[float] = None  # Approximate semantic mean (0-100)
+    long_code_approx_score: Optional[float] = (
+        None  # Approximate structure/semantics mixture (0-100)
+    )
     miescore_approx_visual_quality: Optional[float] = None  # Approximate edit quality (0-100)
     miescore_approx_instruction_following: Optional[float] = (
         None  # Approximate edit adherence (0-100)

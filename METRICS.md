@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 16:07 · **405 modules** · **633 metrics**
+> **Version 0.2.1** · Generated 2026-10-26 16:37 · **406 modules** · **639 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **400/405 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **401/406 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**405** modules · **749** output fields · **633** metrics · **294** tiered · **192** GPU · **20** categories
+**406** modules · **755** output fields · **639** metrics · **295** tiered · **193** GPU · **20** categories
 
 ## Provenance
 
@@ -43,7 +43,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-82-metrics) (82) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-89-metrics) (89) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-91-metrics) (91) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-117-fields) (117) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-82-metrics) (82) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-95-metrics) (95) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-91-metrics) (91) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-117-fields) (117) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2214,7 +2214,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (89 metrics)
+## Text-Video Alignment (95 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2287,7 +2287,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `device_map=auto`, `dtype=auto`, `max_new_tokens=4096`
 
 ### `avgen_bench_high_physics_score` [↑](#categories)
-> High-level physical plausibility (0-100) · ↑ higher=better · 0-100
+> ↑ higher=better · 0-100
 
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
@@ -2301,7 +2301,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
 
 ### `avgen_bench_holistic_score` [↑](#categories)
-> Holistic audiovisual plot alignment (0-100) · ↑ higher=better · 0-100
+> ↑ higher=better · 0-100
 
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation
 
@@ -2699,6 +2699,78 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_audio_extension_modules.py`](tests/modules/per_module/test_audio_extension_modules.py), [`test_regressions.py`](tests/test_regressions.py)
 - **Config**: `model_name=imagebind_huge`, `sample_rate=16000`, `device=auto`, `warning_threshold=0.2`
 
+### `long_code_approx_causality_score` [↑](#categories)
+> ↑ higher=better · 0-100
+
+**[`long_code`](src/ayase/modules/long_code.py)** — Approximate Long-CODE long-context structural and semantic evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `approximate` — Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge rubric; the unreleased human reference bank and author prompts are omitted, so no official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is pinned; expert encoder_model overrides must also provide their matching revision.
+- **Provenance**: `adapted` — Uses microsoft/xclip-base-patch32 with its processor for full-video temporal encoding; represents the global story as the normalized mean of all independently encoded shot prompts so X-CLIP's text limit cannot discard later shots; uses original generic API rubrics, no human-annotated reference bank, and an Ayase-defined configurable alpha (default 0.5); no official parity is claimed — source: Long-CODE paper — https://arxiv.org/abs/2604.17428
+- **Packages**: openai, opencv-python, torch, transformers
+- **Tests**: covered by [`test_long_code.py`](tests/modules/per_module/test_long_code.py)
+- **Config**: `encoder_model=microsoft/xclip-base-patch32`, `encoder_revision=a2e27a78a2b5d802e894b8a1ef14f3a8ce490963`, `device=auto`, `num_frames=8`, `alpha=0.5`, `semantic_rounds=1`, `timeout=180.0`, `max_tokens=1000`
+
+### `long_code_approx_dsa` [↑](#categories)
+> Approximate structural rank correlation (-1..1) · ↑ higher=better · -1 to 1
+
+**[`long_code`](src/ayase/modules/long_code.py)** — Approximate Long-CODE long-context structural and semantic evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `approximate` — Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge rubric; the unreleased human reference bank and author prompts are omitted, so no official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is pinned; expert encoder_model overrides must also provide their matching revision.
+- **Provenance**: `adapted` — Uses microsoft/xclip-base-patch32 with its processor for full-video temporal encoding; represents the global story as the normalized mean of all independently encoded shot prompts so X-CLIP's text limit cannot discard later shots; uses original generic API rubrics, no human-annotated reference bank, and an Ayase-defined configurable alpha (default 0.5); no official parity is claimed — source: Long-CODE paper — https://arxiv.org/abs/2604.17428
+- **Packages**: openai, opencv-python, torch, transformers
+- **Tests**: covered by [`test_long_code.py`](tests/modules/per_module/test_long_code.py)
+- **Config**: `encoder_model=microsoft/xclip-base-patch32`, `encoder_revision=a2e27a78a2b5d802e894b8a1ef14f3a8ce490963`, `device=auto`, `num_frames=8`, `alpha=0.5`, `semantic_rounds=1`, `timeout=180.0`, `max_tokens=1000`
+
+### `long_code_approx_identity_score` [↑](#categories)
+> ↑ higher=better · 0-100
+
+**[`long_code`](src/ayase/modules/long_code.py)** — Approximate Long-CODE long-context structural and semantic evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `approximate` — Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge rubric; the unreleased human reference bank and author prompts are omitted, so no official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is pinned; expert encoder_model overrides must also provide their matching revision.
+- **Provenance**: `adapted` — Uses microsoft/xclip-base-patch32 with its processor for full-video temporal encoding; represents the global story as the normalized mean of all independently encoded shot prompts so X-CLIP's text limit cannot discard later shots; uses original generic API rubrics, no human-annotated reference bank, and an Ayase-defined configurable alpha (default 0.5); no official parity is claimed — source: Long-CODE paper — https://arxiv.org/abs/2604.17428
+- **Packages**: openai, opencv-python, torch, transformers
+- **Tests**: covered by [`test_long_code.py`](tests/modules/per_module/test_long_code.py)
+- **Config**: `encoder_model=microsoft/xclip-base-patch32`, `encoder_revision=a2e27a78a2b5d802e894b8a1ef14f3a8ce490963`, `device=auto`, `num_frames=8`, `alpha=0.5`, `semantic_rounds=1`, `timeout=180.0`, `max_tokens=1000`
+
+### `long_code_approx_narrative_score` [↑](#categories)
+> ↑ higher=better · 0-100
+
+**[`long_code`](src/ayase/modules/long_code.py)** — Approximate Long-CODE long-context structural and semantic evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `approximate` — Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge rubric; the unreleased human reference bank and author prompts are omitted, so no official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is pinned; expert encoder_model overrides must also provide their matching revision.
+- **Provenance**: `adapted` — Uses microsoft/xclip-base-patch32 with its processor for full-video temporal encoding; represents the global story as the normalized mean of all independently encoded shot prompts so X-CLIP's text limit cannot discard later shots; uses original generic API rubrics, no human-annotated reference bank, and an Ayase-defined configurable alpha (default 0.5); no official parity is claimed — source: Long-CODE paper — https://arxiv.org/abs/2604.17428
+- **Packages**: openai, opencv-python, torch, transformers
+- **Tests**: covered by [`test_long_code.py`](tests/modules/per_module/test_long_code.py)
+- **Config**: `encoder_model=microsoft/xclip-base-patch32`, `encoder_revision=a2e27a78a2b5d802e894b8a1ef14f3a8ce490963`, `device=auto`, `num_frames=8`, `alpha=0.5`, `semantic_rounds=1`, `timeout=180.0`, `max_tokens=1000`
+
+### `long_code_approx_score` [↑](#categories)
+> ↑ higher=better · 0-100
+
+**[`long_code`](src/ayase/modules/long_code.py)** — Approximate Long-CODE long-context structural and semantic evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `approximate` — Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge rubric; the unreleased human reference bank and author prompts are omitted, so no official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is pinned; expert encoder_model overrides must also provide their matching revision.
+- **Provenance**: `adapted` — Uses microsoft/xclip-base-patch32 with its processor for full-video temporal encoding; represents the global story as the normalized mean of all independently encoded shot prompts so X-CLIP's text limit cannot discard later shots; uses original generic API rubrics, no human-annotated reference bank, and an Ayase-defined configurable alpha (default 0.5); no official parity is claimed — source: Long-CODE paper — https://arxiv.org/abs/2604.17428
+- **Packages**: openai, opencv-python, torch, transformers
+- **Tests**: covered by [`test_long_code.py`](tests/modules/per_module/test_long_code.py)
+- **Config**: `encoder_model=microsoft/xclip-base-patch32`, `encoder_revision=a2e27a78a2b5d802e894b8a1ef14f3a8ce490963`, `device=auto`, `num_frames=8`, `alpha=0.5`, `semantic_rounds=1`, `timeout=180.0`, `max_tokens=1000`
+
+### `long_code_approx_semantic_score` [↑](#categories)
+> Approximate semantic mean (0-100) · ↑ higher=better · 0-100
+
+**[`long_code`](src/ayase/modules/long_code.py)** — Approximate Long-CODE long-context structural and semantic evaluation
+
+- **Input**: video · **Speed**: ⏱️ medium · GPU
+- **Readiness**: `approximate` — Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge rubric; the unreleased human reference bank and author prompts are omitted, so no official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is pinned; expert encoder_model overrides must also provide their matching revision.
+- **Provenance**: `adapted` — Uses microsoft/xclip-base-patch32 with its processor for full-video temporal encoding; represents the global story as the normalized mean of all independently encoded shot prompts so X-CLIP's text limit cannot discard later shots; uses original generic API rubrics, no human-annotated reference bank, and an Ayase-defined configurable alpha (default 0.5); no official parity is claimed — source: Long-CODE paper — https://arxiv.org/abs/2604.17428
+- **Packages**: openai, opencv-python, torch, transformers
+- **Tests**: covered by [`test_long_code.py`](tests/modules/per_module/test_long_code.py)
+- **Config**: `encoder_model=microsoft/xclip-base-patch32`, `encoder_revision=a2e27a78a2b5d802e894b8a1ef14f3a8ce490963`, `device=auto`, `num_frames=8`, `alpha=0.5`, `semantic_rounds=1`, `timeout=180.0`, `max_tokens=1000`
+
 ### `love_correspondence_score` [↑](#categories)
 > LOVE raw prompt correspondence score · ↑ higher=better
 
@@ -2726,7 +2798,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model=google/siglip2-so400m-patch16-naflex`, `max_num_patches=1024`, `foreground_threshold=0.5`, `device=auto`
 
 ### `miescore_approx_attribute_preservation` [↑](#categories)
-> Approximate source preservation (0-100) · ↑ higher=better · 0-100
+> ↑ higher=better · 0-100
 
 **[`miescore`](src/ayase/modules/miescore.py)** — Approximate three-dimensional multi-source image-edit evaluation
 
@@ -2739,7 +2811,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model=gpt-4.1`, `timeout=120.0`, `max_tokens=300`
 
 ### `miescore_approx_instruction_following` [↑](#categories)
-> Approximate edit adherence (0-100) · ↑ higher=better · 0-100
+> ↑ higher=better · 0-100
 
 **[`miescore`](src/ayase/modules/miescore.py)** — Approximate three-dimensional multi-source image-edit evaluation
 
@@ -3308,7 +3380,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `model_name=videophysics/videophy_2_auto`, `num_frames=32`, `device=auto`, `verify_source_revision=True`, `auto_download=True`
 
 ### `videoscience_phenomenon_score` [↑](#categories)
-> Expected scientific outcome accuracy (1-4) · ↑ higher=better · 1-4
+> ↑ higher=better · 1-4
 
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
@@ -3322,7 +3394,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Config**: `provider=openai`, `timeout_s=900`, `max_output_tokens=20480`, `canonical_prompt_policy=override`, `generate_checklist=False`, `checklist_model=models/gemini-2.5-flash`, `gemini_poll_s=1.0`
 
 ### `videoscience_prompt_score` [↑](#categories)
-> Experiment setup/procedure consistency (1-4) · ↑ higher=better · 1-4
+> ↑ higher=better · 1-4
 
 **[`videoscience_judge`](src/ayase/modules/videoscience_judge.py)** — VideoScience VLM judge for generated scientific experiment videos
 
@@ -5747,7 +5819,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `input_mode=custom`, `input_mapping={}`, `asset_overrides={}`, `dimension_config={}`, `gemini_model=gemini-3-flash-preview`, `device=auto`, `workers=1`, `timeout_s=600`, `worker_timeout_s=14400`
 
 ### `beyond_time_shifts_score` [↑](#categories)
-> Beyond Time Shifts raw AV sync (higher=better) · ↑ higher=better · nominally 5s;
+> ↑ higher=better · nominally 5s;
 
 **[`beyond_time_shifts`](src/ayase/modules/beyond_time_shifts.py)** — Beyond Time Shifts native audio-video synchronization score
 
@@ -6331,7 +6403,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device_map=auto`, `dtype=bfloat16`, `protocol=hf`, `max_new_tokens=1024`, `managed_operation_timeout=7200`
 
 ### `speechjudge_comparator_score` [↑](#categories)
-> Contextual comparator speech rating (1-10) · ↑ higher=better · 1-10
+> ↑ higher=better · 1-10
 
 **[`speechjudge`](src/ayase/modules/speechjudge.py)** — SpeechJudge-GRM target-text-conditioned pairwise speech naturalness
 
@@ -6415,7 +6487,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`usability_
 - **Config**: `device=auto`, `min_duration_seconds=1.0`, `silence_rms_threshold=1e-05`
 
 ### `syncreward_score` [↑](#categories)
-> SyncReward human-aligned AV sync (0-2, higher=better) · ↑ higher=better · 0-2
+> ↑ higher=better · 0-2
 
 **[`syncreward`](src/ayase/modules/syncreward.py)** — SyncReward learned audio-video synchronization reward (0-2, higher is better)
 
@@ -8676,7 +8748,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Tests**: covered by [`test_avgen_bench.py`](tests/modules/per_module/test_avgen_bench.py), [`test_avgen_bench_remote.py`](tests/modules/per_module/test_avgen_bench_remote.py), [`test_metric_help_cli.py`](tests/test_metric_help_cli.py)
 
 ### `avgen_bench_metrics` [↑](#categories)
-> Raw means, counts, identities and evidence · type: str
+> type: str
 
 **[`avgen_bench`](src/ayase/modules/avgen_bench.py)** — Structured component evidence, counts, and protocol identities
 
