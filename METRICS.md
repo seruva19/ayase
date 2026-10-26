@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 15:42 · **404 modules** · **630 metrics**
+> **Version 0.2.1** · Generated 2026-10-26 15:50 · **404 modules** · **630 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -9797,9 +9797,9 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 
 ---
 
-## External backend required — pending real backend (51 modules)
+## External backend required — pending real backend (52 modules)
 
-These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **48** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
+These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **49** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
 
 - **[`acc_emo`](src/ayase/modules/acc_emo.py)** — Target-emotion accuracy via Emotion-FAN/EmoNet (external backend) · Readiness: `unimplemented` · Metrics: `acc_emo`
   - `acc_emo`: `published` — backend unavailable — source: Acc_emo, EAMM (https://arxiv.org/abs/2205.15278); EAT (https://arxiv.org/abs/2309.04946); Emotion-FAN/EmoNet backends
@@ -9889,6 +9889,8 @@ These modules ship in the package and stay registered, but currently have **no t
 - **[`tts_system_dist`](src/ayase/modules/tts_system_dist.py)** — TTSDS2 dataset distribution score (external backend required) · Readiness: `unimplemented` · Metrics: `tts_system_dist_score`
   - `tts_system_dist_score`: `published` — backend unavailable — source: TTSDS2, Minixhofer et al. 2025 — https://arxiv.org/abs/2506.19441
 - **[`vbliinds`](src/ayase/modules/vbliinds.py)** — V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014) · Readiness: `unimplemented` · Metrics: `vbliinds_score`
+- **[`visual_chronometer`](src/ayase/modules/visual_chronometer.py)** — Visual Chronometer physical FPS (inference backend unimplemented) · Readiness: `unimplemented` — A public demo checkpoint exists, but its demo-use wording and source terms remain unresolved; the strongest model is unreleased. No compatible Ayase predictor or independently trained replacement is implemented, so physical FPS is not produced. · Metrics: `visual_chronometer_phyfps`
+  - `visual_chronometer_phyfps`: `utility` — backend unavailable — source: Visual Chronometer — https://arxiv.org/abs/2603.14375
 - **[`vqathinker`](src/ayase/modules/vqathinker.py)** — VQAThinker RL-based explainable VQA (2025) · Readiness: `unimplemented` · Metrics: `vqathinker_score` · Needs: vqathinker
   - `vqathinker_score`: `utility` — backend unavailable
 - **[`worldscore`](src/ayase/modules/worldscore.py)** — WorldScore world generation evaluation (ICCV 2025) · Readiness: `unimplemented` · Metrics: — (dataset-level / none) · Needs: worldscore
