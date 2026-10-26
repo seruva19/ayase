@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **miescore**: add an explicitly approximate multi-source image-edit judge with separate quality, instruction-following, and attribute-preservation scores; uses a configurable vision API rather than the author's trained model.
+
 - **visual_chronometer**: register physical-FPS estimation as `unimplemented`, explaining the available demo checkpoint and missing inference backend without substituting motion heuristics.
 
 - **cmms**: expose the published metric as `unimplemented` until compatible trained regression weights are available; metric help distinguishes implemented, approximate, and unimplemented modules.

@@ -1111,12 +1111,18 @@ class QualityMetrics(BaseModel):
     pqsg_action_score: Optional[float] = None  # Conditional action-verification accuracy (0-1)
     pqsg_physics_score: Optional[float] = None  # Conditional physics accuracy (0-1)
     speechjudge_candidate_score: Optional[float] = None  # Contextual candidate speech rating (1-10)
-    speechjudge_comparator_score: Optional[float] = None  # Contextual comparator speech rating (1-10)
+    speechjudge_comparator_score: Optional[float] = (
+        None  # Contextual comparator speech rating (1-10)
+    )
     speechjudge_margin: Optional[float] = None  # Candidate minus comparator rating (-9 to 9)
     speechjudge_preference: Optional[float] = None  # Candidate preference: -1, 0 (tie), or 1
     videoscience_score: Optional[float] = None  # Weighted scientific experiment score (1-4)
-    videoscience_prompt_score: Optional[float] = None  # Experiment setup/procedure consistency (1-4)
-    videoscience_phenomenon_score: Optional[float] = None  # Expected scientific outcome accuracy (1-4)
+    videoscience_prompt_score: Optional[float] = (
+        None  # Experiment setup/procedure consistency (1-4)
+    )
+    videoscience_phenomenon_score: Optional[float] = (
+        None  # Expected scientific outcome accuracy (1-4)
+    )
     videoscience_coherence_score: Optional[float] = None  # Spatiotemporal coherence (1-4)
     videoscience_immutability_score: Optional[float] = None  # Correctly unchanged properties (1-4)
     videoscience_dynamism_score: Optional[float] = None  # Consistency with physical laws (1-4)
@@ -1126,6 +1132,13 @@ class QualityMetrics(BaseModel):
     audiojudge_choice: Optional[float] = None  # Descriptive audio selection: 1 or 2
     cmms_score: Optional[float] = None  # Reserved CMMS score; unimplemented, never populated
     visual_chronometer_phyfps: Optional[float] = None  # Reserved physical FPS; unimplemented
+    miescore_approx_visual_quality: Optional[float] = None  # Approximate edit quality (0-100)
+    miescore_approx_instruction_following: Optional[float] = (
+        None  # Approximate edit adherence (0-100)
+    )
+    miescore_approx_attribute_preservation: Optional[float] = (
+        None  # Approximate source preservation (0-100)
+    )
     avgen_bench_visual_score: Optional[float] = None  # Joint-video visual quality (0-100)
     avgen_bench_audio_score: Optional[float] = None  # Audio production quality (0-100)
     avgen_bench_av_sync_score: Optional[float] = None  # Audiovisual synchronization (0-100)
@@ -1135,8 +1148,12 @@ class QualityMetrics(BaseModel):
     avgen_bench_music_score: Optional[float] = None  # Musical instruction correctness (0-100)
     avgen_bench_speech_score: Optional[float] = None  # Speech instruction compliance (0-100)
     avgen_bench_low_physics_score: Optional[float] = None  # Low-level physical plausibility (0-100)
-    avgen_bench_high_physics_score: Optional[float] = None  # High-level physical plausibility (0-100)
-    avgen_bench_holistic_score: Optional[float] = None  # Holistic audiovisual plot alignment (0-100)
+    avgen_bench_high_physics_score: Optional[float] = (
+        None  # High-level physical plausibility (0-100)
+    )
+    avgen_bench_holistic_score: Optional[float] = (
+        None  # Holistic audiovisual plot alignment (0-100)
+    )
     edit_score_overall: Optional[float] = None  # EditScore image editing quality (0-10)
     edit_score_prompt_following: Optional[float] = None  # Edit instruction following (0-10)
     edit_score_consistency: Optional[float] = None  # Preservation of unedited content (0-10)
@@ -1572,8 +1589,12 @@ class QualityMetrics(BaseModel):
     # Audio-visual generation sync
     desync_score: Optional[float] = None  # Synchformer predicted AV offset (seconds, lower=better)
     av_align_score: Optional[float] = None  # AV-Align onset/flow-peak IoU (0-1, higher=better)
-    syncreward_score: Optional[float] = None  # SyncReward human-aligned AV sync (0-2, higher=better)
-    beyond_time_shifts_score: Optional[float] = None  # Beyond Time Shifts raw AV sync (higher=better)
+    syncreward_score: Optional[float] = (
+        None  # SyncReward human-aligned AV sync (0-2, higher=better)
+    )
+    beyond_time_shifts_score: Optional[float] = (
+        None  # Beyond Time Shifts raw AV sync (higher=better)
+    )
 
     # Subject-driven generation consistency (OpenS2V-Eval)
     opens2v_nexus_score: Optional[float] = (
@@ -1974,7 +1995,9 @@ class DatasetStats(BaseModel):
     avgen_bench_cross_score: Optional[float] = None  # Available AV/lip synchronization mean (0-100)
     avgen_bench_fine_score: Optional[float] = None  # Available fine-grained dimension mean (0-100)
     avgen_bench_coverage: Optional[float] = None  # Available global dimension weight (0-1)
-    avgen_bench_metrics: Optional[Dict[str, Any]] = None  # Raw means, counts, identities and evidence
+    avgen_bench_metrics: Optional[Dict[str, Any]] = (
+        None  # Raw means, counts, identities and evidence
+    )
     mmd_selfsplit: Optional[float] = None  # Within-dataset V-JEPA2 self-split diagnostic
     jedi_score: Optional[float] = None  # Official V-JEPA polynomial MMD (lower=better)
     jedi_generated_count: Optional[int] = None

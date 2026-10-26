@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 15:51 · **335 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 16:08 · **336 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**335** models · **131** HuggingFace · **38** pyiqa · **9** sources
+**336** models · **131** HuggingFace · **38** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (98)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (38)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (49)](#local-weight-files) · [Other Models (34)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (98)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (38)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (49)](#local-weight-files) · [Other Models (35)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1332,6 +1332,12 @@ Model backends declared by modules that are not distributed through the sources 
 
 - **Used by**: `camera_trajectory`
 - **Task**: Global structure-from-motion mapper (Ayase-managed CPU binary)
+
+### <a href="https://developers.openai.com/api/docs/models/gpt-4.1" target="_blank">`gpt-4.1`</a> [↑](#categories)
+
+- **Used by**: `miescore`
+- **Task**: Hosted multimodal rubric judge (configured model: gpt-4.1 by default)
+- **Notes**: Requires API credentials; no paper weights or trained regression head.
 
 ### `gpt-4o-2024-11-20` [↑](#categories)
 

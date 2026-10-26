@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 15:50 · **404 modules** · **630 metrics**
+> **Version 0.2.1** · Generated 2026-10-26 16:07 · **405 modules** · **633 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **399/404 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
+> Tests: **400/405 modules** have static test references · `pytest tests/` (light) · `pytest tests/ --full` (with ML models)
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**404** modules · **746** output fields · **630** metrics · **293** tiered · **192** GPU · **20** categories
+**405** modules · **749** output fields · **633** metrics · **294** tiered · **192** GPU · **20** categories
 
 ## Provenance
 
@@ -43,11 +43,11 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-81-metrics) (81) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-87-metrics) (87) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-91-metrics) (91) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-117-fields) (117) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-82-metrics) (82) · [Full-Reference Quality](#full-reference-quality-76-metrics) (76) · [Text-Video Alignment](#text-video-alignment-89-metrics) (89) · [Temporal Consistency](#temporal-consistency-39-metrics) (39) · [Motion & Dynamics](#motion--dynamics-76-metrics) (76) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-91-metrics) (91) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-18-metrics) (18) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-117-fields) (117) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
-## No-Reference Quality (81 metrics)
+## No-Reference Quality (82 metrics)
 
 ### `aigv_static_est` [↑](#categories)
 > AI video static quality
@@ -499,6 +499,19 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://github.com/kunyou99/MD-VQA_cvpr2023" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_mdvqa.py`](tests/modules/per_module/test_mdvqa.py)
 - **Config**: `clip_len=16`, `max_seconds=0`, `device=auto`
+
+### `miescore_approx_visual_quality` [↑](#categories)
+> Approximate edit quality (0-100) · ↑ higher=better · 0-100
+
+**[`miescore`](src/ayase/modules/miescore.py)** — Approximate three-dimensional multi-source image-edit evaluation
+
+- **Input**: img · **Speed**: ⚡ fast
+- **Readiness**: `approximate` — Generic hosted-VLM prompt judge replacing the paper's trained LoRA regression head; scores are uncalibrated and have no official MIEScore parity.
+- **Backend**: openai_compatible
+- **Provenance**: `adapted` — Uses an original generic prompt rubric and hosted vision model instead of the paper's trained LoRA regression head; outputs are uncalibrated and do not claim official implementation parity. — source: MIEScore paper — https://arxiv.org/abs/2608.02059
+- **Packages**: openai
+- **Tests**: covered by [`test_miescore.py`](tests/modules/per_module/test_miescore.py)
+- **Config**: `model=gpt-4.1`, `timeout=120.0`, `max_tokens=300`
 
 ### `mj_video_fineness_score` [↑](#categories)
 > MJ-Video fine-detail aspect · ↑ higher=better
@@ -2095,7 +2108,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Backend**: ffmpeg_libvmaf → unavailable
 - **Provenance**: `published` — source: VMAF v0.6.1, Netflix; FFmpeg libvmaf — https://github.com/Netflix/vmaf
 - **Source**: <a href="https://github.com/Netflix/vmaf" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_vmaf.py`](tests/modules/per_module/test_vmaf.py), [`test_vmaf_variants.py`](tests/modules/per_module/test_vmaf_variants.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +5 more
+- **Tests**: covered by [`test_miescore.py`](tests/modules/per_module/test_miescore.py), [`test_vmaf.py`](tests/modules/per_module/test_vmaf.py), [`test_vmaf_variants.py`](tests/modules/per_module/test_vmaf_variants.py), +6 more
 - **Config**: `vmaf_model=vmaf_v0.6.1`, `subsample=1`, `warning_threshold=70.0`
 
 ### `vmaf_4k` [↑](#categories)
@@ -2201,7 +2214,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (87 metrics)
+## Text-Video Alignment (89 metrics)
 
 ### `aigv_alignment_est` [↑](#categories)
 > AI video text-video alignment
@@ -2711,6 +2724,32 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Source**: <a href="https://arxiv.org/abs/2605.22469" target="_blank">arXiv</a>
 - **Tests**: covered by [`test_masc.py`](tests/modules/test_masc.py)
 - **Config**: `model=google/siglip2-so400m-patch16-naflex`, `max_num_patches=1024`, `foreground_threshold=0.5`, `device=auto`
+
+### `miescore_approx_attribute_preservation` [↑](#categories)
+> Approximate source preservation (0-100) · ↑ higher=better · 0-100
+
+**[`miescore`](src/ayase/modules/miescore.py)** — Approximate three-dimensional multi-source image-edit evaluation
+
+- **Input**: img · **Speed**: ⚡ fast
+- **Readiness**: `approximate` — Generic hosted-VLM prompt judge replacing the paper's trained LoRA regression head; scores are uncalibrated and have no official MIEScore parity.
+- **Backend**: openai_compatible
+- **Provenance**: `adapted` — Uses an original generic prompt rubric and hosted vision model instead of the paper's trained LoRA regression head; outputs are uncalibrated and do not claim official implementation parity. — source: MIEScore paper — https://arxiv.org/abs/2608.02059
+- **Packages**: openai
+- **Tests**: covered by [`test_miescore.py`](tests/modules/per_module/test_miescore.py)
+- **Config**: `model=gpt-4.1`, `timeout=120.0`, `max_tokens=300`
+
+### `miescore_approx_instruction_following` [↑](#categories)
+> Approximate edit adherence (0-100) · ↑ higher=better · 0-100
+
+**[`miescore`](src/ayase/modules/miescore.py)** — Approximate three-dimensional multi-source image-edit evaluation
+
+- **Input**: img · **Speed**: ⚡ fast
+- **Readiness**: `approximate` — Generic hosted-VLM prompt judge replacing the paper's trained LoRA regression head; scores are uncalibrated and have no official MIEScore parity.
+- **Backend**: openai_compatible
+- **Provenance**: `adapted` — Uses an original generic prompt rubric and hosted vision model instead of the paper's trained LoRA regression head; outputs are uncalibrated and do not claim official implementation parity. — source: MIEScore paper — https://arxiv.org/abs/2608.02059
+- **Packages**: openai
+- **Tests**: covered by [`test_miescore.py`](tests/modules/per_module/test_miescore.py)
+- **Config**: `model=gpt-4.1`, `timeout=120.0`, `max_tokens=300`
 
 ### `mj_video_alignment_score` [↑](#categories)
 > MJ-Video prompt alignment aspect · ↑ higher=better
@@ -9779,7 +9818,7 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 - **[`embedding`](src/ayase/modules/embedding.py)** — Calculates X-CLIP embeddings for similarity search · Input: img/vid · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_embedding.py`](tests/modules/per_module/test_embedding.py)
 - **[`knowledge_graph`](src/ayase/modules/knowledge_graph.py)** — Generates a conceptual knowledge graph of the video dataset · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_knowledge_graph.py`](tests/modules/per_module/test_knowledge_graph.py)
 - **[`llm_advisor`](src/ayase/modules/llm_advisor.py)** — Rule-based improvement recommendations derived from quality metrics (no LLM used) · Input: img/vid · Speed: 🐌 slow · Readiness: `implemented` · Tests: covered by [`test_llm_advisor.py`](tests/modules/per_module/test_llm_advisor.py)
-- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +8 more
+- **[`metadata`](src/ayase/modules/metadata.py)** — Checks video/image metadata (resolution, FPS, duration, integrity) · Input: img/vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_camerabench.py`](tests/modules/per_module/test_camerabench.py), [`test_grid_layout.py`](tests/modules/per_module/test_grid_layout.py), [`test_metadata.py`](tests/modules/per_module/test_metadata.py), +9 more
 - **[`msswd`](src/ayase/modules/msswd.py)** — MS-SWD multiscale sliced Wasserstein colour distance via pyiqa (batch, lower=better) · Input: img/vid · Speed: ⏱️ medium · Readiness: `implemented` · GPU · Tests: covered by [`test_msswd.py`](tests/modules/per_module/test_msswd.py), [`test_provenance.py`](tests/test_provenance.py)
 - **[`object_count_check`](src/ayase/modules/object_count_check.py)** — Caption object-count check (own, VBench-dimension-inspired) · Input: img/vid +cap · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_object_count_check.py`](tests/modules/per_module/test_object_count_check.py)
 - **[`paranoid_decoder`](src/ayase/modules/paranoid_decoder.py)** — Deep bitstream validation using FFmpeg (Paranoid Mode) · Input: vid · Speed: ⚡ fast · Readiness: `implemented` · Tests: covered by [`test_paranoid_decoder.py`](tests/modules/per_module/test_paranoid_decoder.py)

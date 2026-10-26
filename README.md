@@ -3,7 +3,7 @@
 Modular media quality metrics for video, image, and audio datasets.
 
 Ayase scans a dataset, runs the metrics you choose, and exports per-sample
-results and validation issues. 404 modules produce 630 metrics across 22 categories,
+results and validation issues. 405 modules produce 633 metrics across 22 categories,
 covering perceptual quality, text alignment, motion, temporal consistency,
 audio, safety, and more.
 
