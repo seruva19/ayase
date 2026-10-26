@@ -79,6 +79,9 @@ def _third_party_path(*parts: str) -> Path:
 
 class ChipQAModule(PipelineModule):
     name = "chipqa"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled ChipQA feature script and trained scaler/SVR are required and invoked via subprocess; parses actual predictor output."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "chipqa_score": "ChipQA (Ebenezer et al.) — https://github.com/JoshuaEbenezer/ChipQA",

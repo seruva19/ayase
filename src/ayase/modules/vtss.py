@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class VTSSModule(PipelineModule):
     name = "vtss"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own weighted composite of available aesthetics/technical/motion/sharpness/noise signals with missing-weight renormalization; not represented as a published standalone metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Video Training Suitability Score (0-1, meta-metric)"

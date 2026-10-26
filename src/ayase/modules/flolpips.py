@@ -34,6 +34,8 @@ logger = logging.getLogger(__name__)
 
 def _mw_spatial_average(in_tens, flow, F, keepdim=True):
     """Verbatim mw_spatial_average from the official flolpips.py."""
+    import torch
+
     _, _, h, w = in_tens.shape
     flow = F.interpolate(flow, (h, w), align_corners=False, mode="bilinear")
     flow_mag = torch.sqrt(flow[:, 0:1] ** 2 + flow[:, 1:2] ** 2)
@@ -41,11 +43,11 @@ def _mw_spatial_average(in_tens, flow, F, keepdim=True):
     return torch.sum(in_tens * flow_mag, dim=[2, 3], keepdim=keepdim)
 
 
-import torch  # noqa: E402  (needed at module level for _mw_spatial_average)
-
-
 class FloLPIPSModule(PipelineModule):
     name = "flolpips"
+    implementation_status = "implemented"
+    implementation_notes = "PWC-Net receives one batch of two ordered frames and LPIPS layers use published flow-difference weighting; pairs with undefined zero-flow weighting are omitted."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "flolpips": "FloLPIPS (Danier et al., PCS 2022) — https://github.com/danier97/flolpips",
@@ -125,6 +127,8 @@ class FloLPIPSModule(PipelineModule):
             return sample
 
         try:
+            import torch
+
             ref_frames = self._load_all(Path(str(reference_path)))
             dist_frames = self._load_all(sample.path)
             n = min(len(ref_frames), len(dist_frames))
@@ -171,8 +175,7 @@ class FloLPIPSModule(PipelineModule):
         import torch
 
         try:
-            inputs = {"images": torch.cat([t0, t1], dim=0).unsqueeze(1)}  # [1,2,3,H,W]
-            inputs["images"] = inputs["images"].permute(0, 1, 2, 3, 4)
+            inputs = {"images": torch.stack([t0, t1], dim=1)}  # [1,2,3,H,W]
             preds = self._flownet(inputs)
             flow = preds["flows"]
             # flows: [N, n_preds, 2, H, W] — take the last (finest) prediction
@@ -204,7 +207,10 @@ class FloLPIPSModule(PipelineModule):
             diffs = (f0 - f1) ** 2
             res.append(_mw_spatial_average(m.lins[kk](diffs), flow_diff, F))
 
-        return float(torch.sum(torch.cat(res, 1), dim=(1, 2, 3)).item())
+        score = float(torch.sum(torch.cat(res, 1), dim=(1, 2, 3)).item())
+        # The published weighting is undefined when flow differences vanish.
+        # Leave that pair unavailable rather than publishing NaN or a proxy.
+        return score if np.isfinite(score) else None
 
     def _load_all(self, path: Path) -> List[np.ndarray]:
         """All consecutive frames at native resolution, RGB uint8."""

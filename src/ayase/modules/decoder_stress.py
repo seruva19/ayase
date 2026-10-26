@@ -19,6 +19,9 @@ class DecoderStressModule(PipelineModule):
     This verifies the integrity of the seek table and B-frame reconstruction.
     """
     name = "decoder_stress"
+    implementation_status = "implemented"
+    implementation_notes = "Complete validation utility decodes real media through OpenCV random seeks or resolved ffmpeg strict decode and records actual failure diagnostics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Random access decoder stress test"
     default_config = {

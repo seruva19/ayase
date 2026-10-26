@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class StabilizedMotionModule(PipelineModule):
     name = "stabilized_motion"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own ORB/RANSAC homography stabilization, Farneback residual flow and camera-corner displacement summaries."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Calculates motion scores with camera stabilization (ORB+Homography)"

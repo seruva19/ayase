@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class FaceGestureCorrelationsModule(PipelineModule):
     name = "face_gesture_correlations"
+    implementation_status = "unimplemented"
+    implementation_notes = "No signal extraction/correlation backend; setup warns and process returns sample unchanged."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Face/gesture correlation signature (Bohacek & Farid 2022, external backend)"
     provenance = "published"
     sources = {

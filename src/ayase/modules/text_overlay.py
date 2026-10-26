@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class TextOverlayModule(PipelineModule):
     name = "text_overlay"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own edge-density/orientation heuristic for text overlay; field is own, not claimed as OCR probability or a published text benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Text overlay / subtitle detection in video frames"

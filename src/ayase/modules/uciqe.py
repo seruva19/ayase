@@ -56,6 +56,9 @@ def _compute_uciqe(img: np.ndarray, c1: float, c2: float, c3: float) -> float:
 
 class UCIQEModule(PipelineModule):
     name = "uciqe"
+    implementation_status = "implemented"
+    implementation_notes = "Executable UCIQE Lab chroma std, top/bottom luminance contrast and saturation weighted formula. Per-frame video mean is disclosed; classical algorithm requires no trained model."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

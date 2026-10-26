@@ -250,6 +250,9 @@ class GazeDynamicsModule(PipelineModule):
     """Compare unaligned MediaPipe ocular-control activation summaries."""
 
     name = "gaze_dynamics"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own bounded ocular blendshape controls, amplitude/location/speed/binocular disagreement distribution comparisons via real Face Landmarker trajectories."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "gaze_blendshape_binocular_disagreement_difference": "own",
         "gaze_blendshape_horizontal_amplitude_difference": "own",

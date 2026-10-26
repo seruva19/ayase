@@ -48,6 +48,9 @@ _POSE_REL = "rtmpose_fidelity/rtmpose_m.onnx"
 
 class RTMPoseFidelityModule(PipelineModule):
     name = "rtmpose_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned real RTMPose/YOLOX ONNX asset downloads and rtmlib inference; own per-person keypoint-confidence average is implemented, not a published fidelity protocol."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "RTMPose keypoint-confidence pose/gesture plausibility (rtmlib, local ONNX; 0-1, higher=better)"

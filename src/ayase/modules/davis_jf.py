@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class DAVISJFModule(ReferenceBasedModule):
     name = "davis_jf"
+    implementation_status = "implemented"
+    implementation_notes = "Executable binary-mask Jaccard and DAVIS boundary F with seg2bmap-style edges and disk tolerance; video mask-pair mean is implemented. No pretrained model is needed for this published algorithm."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "davis_f": "DAVIS J&F (Perazzi et al., CVPR 2016) — db_eval_boundary, https://github.com/davisvideochallenge/davis2017-evaluation/blob/master/davis2017/metrics.py",

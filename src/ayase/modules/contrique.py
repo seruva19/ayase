@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class CONTRIQUEModule(PipelineModule):
     name = "contrique"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only pyiqa.create_metric(contrique) generic loader is implemented; no supported released model entry/trained regressor provisioner backs this name. Bundled BrightRate encoder is not used here."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     requires_external_backend = True
     provenance = "utility"
     sources = {

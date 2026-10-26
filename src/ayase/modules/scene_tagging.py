@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class SceneTaggingModule(PipelineModule):
     name = "scene_tagging"
+    implementation_status = "implemented"
+    implementation_notes = "Complete detection/tagging utility using actual PySceneDetect, CLIP labels or OCR backend respectively; results derived from decoded media."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "utility"
     description = "Zero-shot scene context tags via CLIP (top-3 scene labels)"
     default_config = {"models_dir": "models"}

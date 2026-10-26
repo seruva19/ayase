@@ -38,6 +38,9 @@ logger = logging.getLogger(__name__)
 
 class VMBenchPerceptibleAmplitudeModule(PipelineModule):
     name = "vmbench_pas"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled real GroundingDINO/SAM/CoTracker3 with automatic weights, subject/background point tracks and preserved motion-degree subtraction; subject noun selection/default is a disclosed input adaptation, not a different motion backend."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "perceptible_amplitude_score": "VMBench PAS — https://github.com/AMAP-ML/VMBench",

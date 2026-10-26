@@ -24,6 +24,9 @@ _I3D_URL = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt?dl=1"
 
 class KVDModule(BatchMetricModule):
     name = "kvd"
+    implementation_status = "implemented"
+    implementation_notes = "Delegates real I3D feature extraction to FVD module and computes unbiased degree-3 polynomial-kernel MMD against reference distribution; protocol adaptation is explicit."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "kvd": "KVD (Unterthiner et al. 2018) — https://arxiv.org/abs/1812.01717",

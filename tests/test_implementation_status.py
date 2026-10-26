@@ -65,6 +65,42 @@ def test_invalid_status_is_rejected():
         _InvalidStatusModule.resolved_implementation_status()
 
 
+def test_packaged_modules_have_explicit_source_review_and_readiness():
+    ModuleRegistry.discover_modules()
+    packaged = [
+        cls for cls in ModuleRegistry._modules.values()
+        if cls.__module__.startswith("ayase.modules.")
+    ]
+    assert packaged
+    for cls in packaged:
+        assert cls.__dict__.get("implementation_status") in {
+            "implemented", "approximate", "unimplemented"
+        }, cls.name
+        assert cls.__dict__.get("implementation_notes"), cls.name
+        review = cls.__dict__.get("implementation_review", "")
+        assert review.startswith("Source inspection; confidence "), cls.name
+        assert "pretrained inference not validated" in review, cls.name
+
+
+def test_partial_module_statuses_and_counts_are_field_specific():
+    from ayase.modules.basic import BasicQualityModule
+    from ayase.modules.chronomagic import ChronoMagicModule
+
+    assert BasicQualityModule.resolved_metric_status("brightness") == "implemented"
+    assert BasicQualityModule.resolved_metric_status("vqa_t_score") == "unimplemented"
+    assert ChronoMagicModule.resolved_implementation_status() == "approximate"
+    assert ChronoMagicModule.resolved_metric_status("chronomagic_ch_score") == "implemented"
+    assert ChronoMagicModule.resolved_metric_status("chronomagic_mt_score") == "unimplemented"
+    modules, fields = compute_external_backend_partition(["basic_quality", "chronomagic"])
+    assert not modules
+    assert fields == {"vqa_t_score", "chronomagic_mt_score"}
+    for detailed in (False, True):
+        catalog = build_metric_catalog(["chronomagic"], detailed=detailed)
+        statuses = {m.name: m.implementation_status for m in catalog.modules[0].metrics}
+        assert statuses["chronomagic_ch_score"] == "implemented"
+        assert statuses["chronomagic_mt_score"] == "unimplemented"
+
+
 def test_metadata_contains_resolved_status_notes_and_cache_tracks_them():
     first = _ApproximateModule.get_metadata()
     assert first["implementation_status"] == "approximate"

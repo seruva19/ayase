@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class AudioUTMOSv2Module(PipelineModule):
     name = "audio_utmos_v2"
+    implementation_status = "implemented"
+    implementation_notes = "Calls upstream utmosv2.create_model(pretrained=True) and model.predict; pinned upstream package is automatically available via backend_dependencies. No hand-built MOS fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "utmos_v2_score": "UTMOSv2 (sarulab-speech) — https://github.com/sarulab-speech/UTMOSv2",

@@ -15,14 +15,11 @@ logger = logging.getLogger(__name__)
 
 class VisualChronometerModule(PipelineModule):
     name = "visual_chronometer"
+    implementation_status = "unimplemented"
+    implementation_notes = "Explicit unimplemented placeholder despite public demo checkpoint; no Visual Chronometer model inference/backend is wired, process cannot produce physical FPS."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Visual Chronometer physical FPS (inference backend unimplemented)"
     input_type = "vid"
-    implementation_status = "unimplemented"
-    implementation_notes = (
-        "A public demo checkpoint exists, but its demo-use wording and source terms remain "
-        "unresolved; the strongest model is unreleased. No compatible Ayase predictor or "
-        "independently trained replacement is implemented, so physical FPS is not produced."
-    )
     requires_external_backend = True
     provenance = "utility"
     sources = {

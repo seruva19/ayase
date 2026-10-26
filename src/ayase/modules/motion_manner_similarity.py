@@ -128,6 +128,9 @@ def _distribution_agreement(left: np.ndarray, right: np.ndarray) -> float:
 
 class MotionMannerSimilarityModule(PipelineModule):
     name = "motion_manner_similarity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own pose-origin/scale normalization, per-joint speed distributions, Wasserstein agreement and coverage-gated aggregate; actual pose backend helper requires inspection."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     description = "Similarity of movement manner to a reference clip, compared as distributions"
     default_config = {

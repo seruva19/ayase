@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class VendiModule(BatchMetricModule):
     name = "vendi"
+    implementation_status = "unimplemented"
+    implementation_notes = "Entropy formula itself is implemented correctly, but default required feature extraction calls torch.hub.load on mseitzer/pytorch-fid with no upstream hubconf.py. setup exits before the package/numpy entropy fallback; no executable default embedding path remains."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "vendi": "Vendi Score, Friedman & Dieng TMLR 2023 — https://github.com/vertaix/Vendi-Score (Inception pool embeddings)",

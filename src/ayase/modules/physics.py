@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class PhysicsModule(PipelineModule):
     name = "physics"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own trajectory plausibility heuristic over real CoTracker or Lucas-Kanade tracks (acceleration, teleportation, jerk). This is deliberately own rather than a published physics benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Physics plausibility via trajectory analysis (CoTracker / Lucas-Kanade)"

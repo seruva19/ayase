@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 class BeatConsistencyModule(PipelineModule):
     name = "beat_consistency"
+    implementation_status = "approximate"
+    implementation_notes = "Gaussian nearest-beat kernel is implemented but MediaPipe 2-D joint velocities and librosa music beats substitute for published 3-D gesture/speech beat extraction. Same beat_consistency field receives adapted protocol."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "Beat Consistency — audio/gesture beat kernel (BEAT, EMAGE)"
     provenance = "adapted"
     sources = {

@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 
 class SemanticSegmentationConsistencyModule(PipelineModule):
     name = "semantic_segmentation_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Real SegFormer segmentation and own adjacent-mask mean-IoU temporal consistency; no published benchmark score is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Temporal stability of semantic segmentation"

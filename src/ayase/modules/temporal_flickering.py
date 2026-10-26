@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class TemporalFlickeringModule(PipelineModule):
     name = "temporal_flickering"
+    implementation_status = "implemented"
+    implementation_notes = "Complete real RAFT bidirectional warping and source occlusion-mask score; corrected normalization intentionally differs from buggy upstream preprocessing, no replacement backbone."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "warping_error": "Warping error, EvalCrafter (Liu et al. CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py",

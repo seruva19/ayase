@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class CAMBIModule(PipelineModule):
     name = "cambi"
+    implementation_status = "implemented"
+    implementation_notes = "Executes managed ffmpeg libvmaf CAMBI feature on video and reads pooled/frame cambi values."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cambi": "CAMBI (Netflix), libvmaf — https://github.com/Netflix/vmaf",

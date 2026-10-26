@@ -213,6 +213,9 @@ def _flow_trajectory_streaming(
 
 class AVAlignModule(PipelineModule):
     name = "av_align"
+    implementation_status = "implemented"
+    implementation_notes = "Computes real librosa onset peaks and Farneback magnitude maxima; one-to-one peak matching IoU is an explicit TempoTokens port, no learned-model proxy."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "av_align_score": "AV-Align (Yariv et al., AAAI 2024, TempoTokens) — https://github.com/guyyariv/TempoTokens/blob/master/av_align.py",

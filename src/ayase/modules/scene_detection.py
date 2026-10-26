@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class SceneDetectionModule(PipelineModule):
     name = "scene_detection"
+    implementation_status = "unimplemented"
+    implementation_notes = "Imports TransNetV2 but passes decoded ndarray to predict_video rather than video filename (standard package API); no compatible trained default interface established, catches and skips scores."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = {
         "avg_scene_duration": "utility",

@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 class AudioSISDRModule(PipelineModule):
     name = "audio_si_sdr"
+    implementation_status = "implemented"
+    implementation_notes = "Executable published zero-mean scale-invariant projection and residual energy ratio in dB, with audio decode/resampling and reference checks."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "si_sdr_score": "SI-SDR (Le Roux et al., ICASSP 2019) — https://arxiv.org/abs/1811.02508",

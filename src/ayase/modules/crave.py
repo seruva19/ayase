@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class CRAVEModule(PipelineModule):
     name = "crave"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only imports an unprovisioned top-level research module then calls predict(path); no actual model construction/checkpoint/source integration or managed dependency entry. No approximate fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "crave_score": "CRAVE (2025) — https://github.com/littlespray/CRAVE",

@@ -31,6 +31,9 @@ DEFAULT_BUCKETS: List[Tuple[int, int]] = [
 
 class ResolutionBucketingModule(PipelineModule):
     name = "resolution_bucketing"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility checks resolution/divisibility and finds bucket minimizing crop/aspect penalty with scale-factor warnings."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Validates resolution/aspect-ratio fit for training buckets"
     default_config = {

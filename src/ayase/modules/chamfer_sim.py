@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class PointSSIMModule(ReferenceBasedModule):
     name = "chamfer_sim"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own symmetric nearest-neighbor point-cloud Chamfer distance transformed as 1/(1+d), with real Open3D/cKDTree data path."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "chamfer_sim_score": "PointSSIM (Alexiou & Ebrahimi, 2020) claimed — https://github.com/mmspg/pointssim",

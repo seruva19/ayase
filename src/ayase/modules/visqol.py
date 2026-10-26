@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class ViSQOLModule(PipelineModule):
     name = "visqol"
+    implementation_status = "implemented"
+    implementation_notes = "Managed visqol-python port plus official/CLI alternatives use real ViSQOL model and MOS interface; exact port parity not independently executed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "visqol": "ViSQOL v3, Google — https://github.com/google/visqol",

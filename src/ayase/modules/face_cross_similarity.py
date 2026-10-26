@@ -37,6 +37,9 @@ logger = logging.getLogger(__name__)
 
 class FaceCrossSimilarityModule(PipelineModule):
     name = "face_cross_similarity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own utility uses real normalized ArcFace embeddings, mean sample representation, cross-similarity matrix and threshold-connected identity clusters. Detection count is embeddings count, not deduplicated persons."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "avg_face_cross_similarity": "own",
         "face_cross_similarity": "own",

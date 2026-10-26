@@ -287,6 +287,9 @@ class BeyondTimeShiftsModule(PipelineModule):
     """Published Beyond Time Shifts native audio-video synchronization scorer."""
 
     name = "beyond_time_shifts"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned source, model and checkpoint are automatically resolved and checkpoint structure validated before author evaluator execution; process writes validated native evaluator output. No spectral or generic audio-judge proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Beyond Time Shifts native audio-video synchronization score"
     input_type = "video"
     provenance = "published"

@@ -176,6 +176,9 @@ class CHDModule(PipelineModule):
     """Released marginal-histogram CHD-1D for two independent image sets."""
 
     name = "chd"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned TiTok-L32 source/model and worker invocation produce real discrete-code histograms; Hellinger distance against required reference distribution is computed. CHD-1D sampling/protocol adaptation is explicit, not an unrelated histogram proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Released TiTok-L-32 unigram CHD-1D distribution distance"
     input_type = "image"
     provenance = {"chd_1d": "adapted", "chd_metadata": "utility"}

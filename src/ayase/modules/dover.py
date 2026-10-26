@@ -41,6 +41,9 @@ def _fuse_results(results):
 
 class DOVERModule(PipelineModule):
     name = "dover"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled official dual backbone/checkpoint with exact spatial-temporal samplers, normalization and published sigmoid fusion; ONNX path uses same views/fusion."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "dover_aesthetic": "published",
         "dover_score": "published",

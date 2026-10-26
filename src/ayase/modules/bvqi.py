@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class BVQIModule(PipelineModule):
     name = "bvqi"
+    implementation_status = "unimplemented"
+    implementation_notes = "Native import/predict adapter and/or speculative pyiqa metric name do not resolve to a bundled/provisioned intended backend; current upstream pyiqa default configuration lacks this key. No executable alternative algorithm is present."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     requires_external_backend = True
     provenance = "utility"
     sources = {

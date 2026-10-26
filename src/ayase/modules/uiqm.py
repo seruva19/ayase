@@ -119,6 +119,9 @@ def _uiconm(img: np.ndarray, window_size: int = 10) -> float:
 
 class UIQMModule(PipelineModule):
     name = "uiqm"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete UICM trimmed chromatic means, UISM edge EME and UIConM contrast aggregate. Frame pooling adapted. UISM blue coefficient0.144 vs standard0.114 is small formula defect requiring correction, not surrogate method."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "uiqm_score": "UIQM, Panetta et al. IEEE JOE 2016 (FUnIE-GAN uqim_utils port) — https://ieeexplore.ieee.org/document/7305804",

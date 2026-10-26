@@ -76,6 +76,13 @@ _CH_WEIGHTS = {
 
 class ChronoMagicModule(PipelineModule):
     name = "chronomagic"
+    implementation_status = "approximate"
+    implementation_notes = "Partial module: CHScore has an automatic CoTracker2 backend. MTScore is unimplemented in a standard install and requires an expert-provided InternVideo2 source checkout and checkpoint; no substitute MTScore is emitted."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
+    metric_status = {
+        "chronomagic_ch_score": "implemented",
+        "chronomagic_mt_score": "unimplemented",
+    }
     provenance = "published"
     sources = {
         "chronomagic_ch_score": "ChronoMagic-Bench CHScore/MTScore (NeurIPS 2024) — https://github.com/PKU-YuanGroup/ChronoMagic-Bench",

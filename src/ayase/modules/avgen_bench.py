@@ -179,6 +179,9 @@ class AVGenBenchModule(PipelineModule):
     """Microsoft AVGen-Bench full-suite orchestration with strict evidence handling."""
 
     name = "avgen_bench"
+    implementation_status = "implemented"
+    implementation_notes = "Eleven-dimension execution bridge stages records, provisions pinned source/runtime/assets and calls specialist workers; published normalization and Scheme-2 aggregation retained, absent evidence is explicit. Static gap: all specialist dependency trees and model execution were not exhaustively reproduced."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "Complete eleven-dimension Microsoft AVGen-Bench full-suite evaluation"
     input_type = "video"
     required_packages: List[str] = []

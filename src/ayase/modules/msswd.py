@@ -36,6 +36,9 @@ logger = logging.getLogger(__name__)
 
 class MSSWDModule(BatchMetricModule):
     name = "msswd"
+    implementation_status = "implemented"
+    implementation_notes = "Real pretrained PyIQA MS-SWD pairwise metric, with required paired references and explicit cap/resize/dataset mean. A batch aggregation of actual pair distances is implemented, not random sliced-Wasserstein features."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "msswd": "adapted",
     }

@@ -26,6 +26,9 @@ _I3D_URL = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt?dl=1"
 
 class FVDModule(BatchMetricModule):
     name = "fvd"
+    implementation_status = "implemented"
+    implementation_notes = "Real I3D TorchScript trained features with return_features=True feed standard Gaussian Fréchet distance. Uniform whole-video 16-frame protocol is disclosed adaptation, not surrogate backbone."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "fvd": "FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py",

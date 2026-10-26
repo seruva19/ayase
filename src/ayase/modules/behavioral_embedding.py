@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class BehavioralEmbeddingModule(PipelineModule):
     name = "behavioral_embedding"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup only reports missing intended backend and process always returns sample; no score-producing implementation is wired. A managed package entry alone does not implement the algorithm."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Static+temporal behavioural embedding distance (Agarwal 2020, external backend)"
     provenance = "published"
     sources = {

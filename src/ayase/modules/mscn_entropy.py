@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class STGREEDModule(PipelineModule):
     name = "mscn_entropy"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own multiscale MSCN histogram entropy and temporal difference-entropy comparison. Not GREED source reproduction despite legacy class name."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "mscn_entropy_score": "GREED (Madhusudana et al. TIP 2021) — name only — https://github.com/pavancm/GREED",

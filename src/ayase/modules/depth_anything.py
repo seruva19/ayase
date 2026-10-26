@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class DepthAnythingModule(PipelineModule):
     name = "depth_anything"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own statistics use actual pretrained depth-estimation pipeline; reports display-map dynamic range and neighboring-map correlation. Range may saturate because pipeline depth is visualization-normalized; no published depth-quality claim."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "depth_anything_consistency": "Depth Anything V2 model (Yang et al. 2024); the metrics are own — https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf",

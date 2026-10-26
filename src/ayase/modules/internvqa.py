@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class InternVQAModule(PipelineModule):
     name = "internvqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup explicitly marks unavailable because no trained InternVQA checkpoint/inference is wired; process returns sample and helper returns no value."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "InternVQA compressed-video quality (real model only; disabled if unavailable)"

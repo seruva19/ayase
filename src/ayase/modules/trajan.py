@@ -840,6 +840,9 @@ def _build_backend():
 
 class TRAJANModule(PipelineModule):
     name = "trajan"
+    implementation_status = "implemented"
+    implementation_notes = "Real BootsTAPIR and track-autoencoder checkpoints with Flax-to-Torch conversion and validated state; reconstructs tracked trajectories and published thresholded Jaccard aggregate. Port/adaptations are explicit, not simple optical-flow statistics."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "trajan_score": "TRAJAN, Allen et al. arXiv:2505.00209 — https://github.com/google-deepmind/tapnet",

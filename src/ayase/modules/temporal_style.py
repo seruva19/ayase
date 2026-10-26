@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 class TemporalStyleModule(PipelineModule):
     name = "temporal_style"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Farneback magnitude-statistic speed-style classifier yielding information flags; no promised scalar/model backend."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Analyzes temporal style (Slow Motion, Timelapse, Speed)"

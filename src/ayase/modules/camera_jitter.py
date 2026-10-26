@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class CameraJitterModule(PipelineModule):
     name = "camera_jitter"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own median Farneback global-translation acceleration dispersion mapped to stability."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Camera jitter/shake detection (0-1, 1=stable)"

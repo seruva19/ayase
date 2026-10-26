@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class PQSGModule(PipelineModule):
     name = "pqsg"
+    implementation_status = "implemented"
+    implementation_notes = "Executable PQSG graph generation, model-specific QA/video transport, answer parsing and graph tree aggregation using vendored protocol helpers. Provider/model adaptations are explicit and credentials are required user input, not missing metric code."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "Prompt-derived question graph verification with dependency-aware scoring"
     input_type = "video"
     requires_video = True

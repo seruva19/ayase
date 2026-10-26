@@ -47,6 +47,9 @@ SEMANTIC_PROMPT = (
 
 class VideoPhyModule(PipelineModule):
     name = "vlm_phy"
+    implementation_status = "implemented"
+    implementation_notes = "The own physical-plausibility judge parses only generated continuation tokens; prompt examples cannot supply a spurious rating."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "vlm_pc_likert": "VideoPhy-2, Bansal et al. arXiv:2503.06800 — name only — https://github.com/Hritikbansal/videophy",
@@ -157,7 +160,8 @@ class VideoPhyModule(PipelineModule):
             out = self._vlm_model.generate(
                 **inputs, max_new_tokens=self.max_new_tokens, do_sample=False,
             )
-        return self._vlm_processor.batch_decode(out, skip_special_tokens=True)[0]
+        generated = out[:, inputs["input_ids"].shape[1]:]
+        return self._vlm_processor.batch_decode(generated, skip_special_tokens=True)[0]
 
     def _sample_frames(self, path, n: int) -> Optional[np.ndarray]:
         frames = sample_frames(path, max_frames=n, color="rgb")

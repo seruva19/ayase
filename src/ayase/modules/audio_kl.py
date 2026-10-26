@@ -42,6 +42,9 @@ _EPS = 1e-6
 
 class AudioKLModule(BatchMetricModule):
     name = "audio_kl"
+    implementation_status = "implemented"
+    implementation_notes = "Implemented paired softmax KL(ref||generated) with basename matching and real pinned PANNs CNN14 default; optional PaSST is explicitly a different backbone. No reference/self-split or spectral substitute is emitted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "audio_kl": "audioldm_eval paired KL (AudioGen formulation) — https://github.com/haoheliu/audioldm_eval/blob/main/audioldm_eval/metrics/kl.py",

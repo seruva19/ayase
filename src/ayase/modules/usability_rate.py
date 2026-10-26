@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class UsabilityRateModule(PipelineModule):
     name = "usability_rate"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own utility thresholds existing technical_score or aesthetic_v25 score into sample usability percentage."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Computes percentage of usable frames based on quality thresholds"

@@ -97,6 +97,9 @@ class VBench2Module(PipelineModule):
     """Run the VBench 2.0 evaluator after sample processing."""
 
     name = "vbench2"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled real VBench2 dimension evaluators, automatic source/checkpoint layout and native evaluation are wired. Wrapper also computes explicit category means/total; those aggregate provenance values merit independent protocol validation, but are not evidence the entire native benchmark is unimplemented."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "vbench2_camera_motion": "VBench-2.0, Zheng et al. 2025 — https://github.com/Vchitect/VBench/tree/45e79ec14e69a2187202c675d2dbce1a71843d53/VBench-2.0",

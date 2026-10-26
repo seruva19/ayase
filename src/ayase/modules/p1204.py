@@ -199,6 +199,9 @@ _RF_COLUMNS = sorted(
 
 class P1204Module(PipelineModule):
     name = "p1204"
+    implementation_status = "unimplemented"
+    implementation_notes = "Model/RF formulas exist and download parameters, but setup requires user-provided AYASE_P1204_VIDEOPARSER and Bash parser script; no automated parser provisioning means intended bitstream features unavailable in standard install."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "p1204_mos": "ITU-T P.1204.3 — https://github.com/Telecommunication-Telemedia-Assessment/bitstream_mode3_p1204_3",

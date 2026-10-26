@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class VMAFNEGModule(ReferenceBasedModule):
     name = "vmaf_neg"
+    implementation_status = "implemented"
+    implementation_notes = "Managed ffmpeg/libvmaf tool with explicit NEG model evaluates full paired videos and parses real pooled NEG score."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {

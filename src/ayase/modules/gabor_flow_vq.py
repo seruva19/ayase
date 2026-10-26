@@ -28,6 +28,9 @@ SPATIAL_FREQUENCIES = [0.05, 0.1, 0.2]  # cycles/pixel
 
 class MOVIEModule(PipelineModule):
     name = "gabor_flow_vq"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Gabor-band response correlation plus Farneback-flow difference composite. MOVIE-style naming in helper docstrings is not a faithful MOVIE implementation; own output field/provenance makes readiness implemented as an own heuristic."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "gabor_flow_score": "MOVIE (Seshadrinathan & Bovik, TIP 2010) claimed — https://live.ece.utexas.edu/research/Quality/movie.html",

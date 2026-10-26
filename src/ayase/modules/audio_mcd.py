@@ -104,6 +104,9 @@ class _PyMCD021:
 class AudioMCDModule(PipelineModule):
     implementation_sources = ("../utils/sptk.py",)
     name = "audio_mcd"
+    implementation_status = "implemented"
+    implementation_notes = "Executable PyMCD 0.2.1 algorithm port: WORLD spectral envelope, SPTK-compatible mel cepstra, FastDTW path and Kubichek distance. Managed pyworld/fastdtw dependencies exist; a Python port does not itself make the method approximate."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "mcd_score": "MCD-DTW via pymcd 0.2.1 — https://github.com/chenqi008/pymcd",

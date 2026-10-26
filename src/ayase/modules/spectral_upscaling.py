@@ -27,6 +27,9 @@ class SpectralUpscalingModule(PipelineModule):
     whereas upscaled content shows a sharp drop-off after the original low-res cutoff.
     """
     name = "spectral_upscaling"
+    implementation_status = "implemented"
+    implementation_notes = "Complete spectral heuristic for suspected upscaling, producing validation flags rather than promising a numeric metric or published learned method."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Detection of upscaled/fake high-resolution content"

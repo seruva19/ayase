@@ -17,6 +17,9 @@ class SemanticSelectionModule(PipelineModule):
     This module uses the 'style_traits' detection data produced by the VLMJudgeModule.
     """
     name = "semantic_selection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility greedily selects style-trait coverage plus aesthetic quality; produces selection-rank validation annotations."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Selects diverse samples based on VLM-extracted semantic traits"
     default_config = {

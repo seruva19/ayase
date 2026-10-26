@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class AudioUTMOSModule(PipelineModule):
     name = "audio_utmos"
+    implementation_status = "implemented"
+    implementation_notes = "Loads SpeechMOS utmos22_strong via torch.hub and computes real waveform MOS, with audio/video decoding."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "utmos_score": "UTMOS22 strong (Saeki et al. 2022) via the SpeechMOS port (tarepan) — https://github.com/tarepan/SpeechMOS",

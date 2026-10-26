@@ -48,6 +48,9 @@ _CSF_SQ_SUM = float((_CSF ** 2).sum())
 
 class PSNRHVSModule(ReferenceBasedModule):
     name = "psnr_hvs_approx"
+    implementation_status = "approximate"
+    implementation_notes = "CSF-weighted DCT approximation and separate own AC-energy masking do not reproduce authors PSNR-HVS-M; field naming/provenance correctly distinguish approximate and own quantities."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "psnr_hvs_approx": "adapted",
         "psnr_acmask": "own",

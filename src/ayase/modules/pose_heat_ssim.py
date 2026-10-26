@@ -406,6 +406,9 @@ class PoseHeatSSIMModule(PipelineModule):
     """Frame-corresponding pose heatmap similarity over all detected persons."""
 
     name = "pose_heat_ssim"
+    implementation_status = "approximate"
+    implementation_notes = "Clean-room PoseHeat-SSIM uses locally chosen greedy person matching, global Umeyama alignment and max-composed Gaussian heatmaps without official released reference; material local protocol choices are explicit."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "pose_heat_ssim": "DanceTogether PoseHeat (arXiv 2505.18078) — https://arxiv.org/abs/2505.18078",

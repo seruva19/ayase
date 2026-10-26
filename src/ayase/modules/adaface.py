@@ -93,6 +93,9 @@ def _weight_url(entry: dict) -> str:
 
 class AdaFaceModule(PipelineModule):
     name = "adaface"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned official CVLface weights load strictly into vendored IResNet; aligned RGB embeddings are normalized and cosine-averaged. Frame/reference pooling is a protocol adaptation, not a surrogate."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "adaface_identity_similarity": "AdaFace (Kim et al., CVPR 2022), official CVLface weights — https://github.com/mk-minchul/AdaFace",

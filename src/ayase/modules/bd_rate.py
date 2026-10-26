@@ -89,6 +89,9 @@ def _bd_rate(rate1, quality1, rate2, quality2) -> Optional[float]:
 
 class BDRateModule(BatchMetricModule):
     name = "bd_rate"
+    implementation_status = "implemented"
+    implementation_notes = "Published cubic log-rate polynomial integration over common quality interval, exponential percent rate difference, validated curves and dataset aggregation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "bd_rate": "published",
     }

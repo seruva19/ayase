@@ -30,6 +30,9 @@ class EditScoreModule(PipelineModule):
     """Published EditScore Qwen3-VL-4B image-edit evaluator."""
 
     name = "edit_score"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned author snapshots and bundled EditScore implementation are instantiated and invoked on image-edit/reference/instruction inputs; validates/maps native output axes. No CLIP-only edit proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Published EditScore instruction-guided image-edit evaluator"
     input_type = "image"
     provenance = "published"

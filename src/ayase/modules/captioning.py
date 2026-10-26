@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class CaptioningModule(PipelineModule):
     name = "captioning"
+    implementation_status = "implemented"
+    implementation_notes = "Real BLIP/BLIP2 caption generation plus pycocoevalcap BLEU-n, max over generated captions per n and mean of n=1..4 (EvalCrafter-specific aggregation). Missing BLEU package leaves score unset rather than swapping BLEU definitions."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "auto_caption": "utility",
         "blip_bleu": "published",

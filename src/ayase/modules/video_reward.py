@@ -26,6 +26,9 @@ _HF_BASE = "https://huggingface.co/KlingTeam/VideoReward/resolve/main"
 
 class VideoRewardModule(PipelineModule):
     name = "video_reward"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled actual VideoAlign inferencer and automatically downloaded VideoReward checkpoint/tokenizer files; reward Overall is stored directly."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "video_reward_score": "VideoAlign/VideoReward, Liu et al. NeurIPS 2025 — https://github.com/KlingAIResearch/VideoAlign",

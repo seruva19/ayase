@@ -17,6 +17,9 @@ class DiversitySelectionModule(PipelineModule):
     This module performs cross-sample analysis after the main pipeline run.
     """
     name = "diversity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility selection/ranking over existing embeddings/scores, with post_process behavior rather than a promised new scalar; no named published method or fake model head."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Flags redundant samples using embedding similarity (Deduplication)"
     default_config = {
@@ -97,3 +100,6 @@ class DiversitySelectionCompatModule(DiversitySelectionModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "diversity_selection"
+    implementation_status = "implemented"
+    implementation_notes = "Compatibility subclass inherits complete utility that greedily selects priority-ranked embeddings and flags similarity-threshold redundancies."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

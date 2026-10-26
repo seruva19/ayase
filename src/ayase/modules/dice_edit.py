@@ -104,6 +104,9 @@ class DICEEditModule(PipelineModule):
     """Evaluate whether localized source-to-edited changes follow an instruction."""
 
     name = "dice_edit"
+    implementation_status = "implemented"
+    implementation_notes = "Real DICE difference/coherence adapters and verbatim prompts, object markup and judgment parsing; fraction-of-edits aggregation is explicitly adapted rather than substituted model."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "dice_edit_coherence_score": "DICE (ICCV 2025), official aimagelab/DICE_*_Idefics weights and prompts — https://github.com/aimagelab/DICE",

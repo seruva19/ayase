@@ -79,6 +79,9 @@ _PINNED_BLOBS = {
 
 class T2VCompBenchOfficialModule(PipelineModule):
     name = "t2v_compbench_official"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned official T2V-CompBench source, managed category runtimes/checkpoints, source/CLI contracts, benchmark ID staging and category result parsing are implemented. Output IDs are verified before per-sample/dataset writes; do not mistake expert path overrides for prerequisites."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     implementation_sources = ("_t2v_compbench_runtime.py",)
     provenance = "adapted"
     input_type = "video"

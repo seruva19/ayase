@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class RAMTaggingModule(PipelineModule):
     name = "ram_tagging"
+    implementation_status = "implemented"
+    implementation_notes = "Real RAM++ trained checkpoint/transform/inference and tag union utility; managed pinned source dependency exists."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "ram_tags": "RAM++ (Recognize Anything) — https://github.com/xinyu1205/recognize-anything",

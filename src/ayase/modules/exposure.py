@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class ExposureModule(PipelineModule):
     name = "exposure"
+    implementation_status = "implemented"
+    implementation_notes = "Complete pixel threshold fractions over representative images; utility under/overexposure fields make no claim to a trained exposure-quality metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Checks for overexposure, underexposure, and low contrast using histograms"
     default_config = {

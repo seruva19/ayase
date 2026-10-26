@@ -81,6 +81,9 @@ class VoiceIdentityDriftModule(PipelineModule):
     """Expose chronological ECAPA-TDNN speaker-identity diagnostics."""
 
     name = "voice_identity_drift"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own temporal speaker-identity diagnostics using real SpeechBrain ECAPA embeddings, reference centroid and window series statistics with separate valid-window coverage."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = {
         "voice_identity_below_threshold_fraction": "own",

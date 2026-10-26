@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class PoseFidelityModule(PipelineModule):
     name = "pose_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "Real MediaPipe pose extraction and explicit AKD/MKR/2-D MPJPE/PCK formulas with visibility and reference-body diagonal normalization; coordinate/backbone adaptation already declared."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "AKD/MKR (FOMM) and MPJPE/PCK (Ginosar 2019) pose distance to source"
     provenance = "adapted"
     sources = {

@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class NLPDModule(PipelineModule):
     name = "nlpd"
+    implementation_status = "implemented"
+    implementation_notes = "Real matching PyIQA metric/model is created and invoked on native image or paired tensors; errors skip. Documented video frame selection/mean pooling changes the protocol but not the underlying published image method, so adapted provenance is compatible with implemented readiness."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {
@@ -123,3 +126,6 @@ class NLPDCompatModule(NLPDModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "nlpd_metric"
+    implementation_status = "implemented"
+    implementation_notes = "Compatibility subclass inherits actual pyiqa NLPD paired-image tensors and sampled video means; resize/pooling adaptation disclosed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

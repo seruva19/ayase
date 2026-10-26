@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class P1203Module(PipelineModule):
     name = "p1203"
+    implementation_status = "approximate"
+    implementation_notes = "Material session-estimation substitute: real ITU calculator receives synthesized single video segment, inferred bitrate, empty stalling and no audio/switch history; O46 is emitted as streaming MOS despite unmeasured mandatory session components."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "p1203_mos": "ITU-T P.1203 via itu-p1203 — https://github.com/itu-p1203/itu-p1203",

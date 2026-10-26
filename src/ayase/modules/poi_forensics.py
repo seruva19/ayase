@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class POIForensicsModule(PipelineModule):
     name = "poi_forensics"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup only reports missing intended backend and process always returns sample; no score-producing implementation is wired. A managed package entry alone does not implement the algorithm."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "POI-Forensics audio-visual identity distance (external backend)"
     provenance = "published"
     sources = {

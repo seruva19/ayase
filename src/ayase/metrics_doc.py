@@ -461,8 +461,8 @@ def compute_external_backend_partition(module_names: Iterable[str]) -> Tuple[Set
     - ``external_backend_modules`` — names whose resolved readiness is
       ``unimplemented`` among *module_names*.
     - ``external_only_fields`` — QualityMetrics metric fields whose EVERY
-      owning module resolves to ``unimplemented`` (a field kept alive by at
-      least one delivered module stays delivered). These are excluded from the
+      owning provider resolves that field to ``unimplemented``, including
+      unavailable outputs of partial modules. These are excluded from the
       documented metric count and moved to the external/unimplemented section.
 
     Fields with no owner at all (schema orphans) are NOT reported here; they
@@ -470,6 +470,7 @@ def compute_external_backend_partition(module_names: Iterable[str]) -> Tuple[Set
     """
     external_backend_modules: Set[str] = set()
     field_owners: Dict[str, Set[str]] = defaultdict(set)
+    delivered_fields: Set[str] = set()
     for name in module_names:
         cls = ModuleRegistry.get_module(name)
         if cls is None:
@@ -479,10 +480,12 @@ def compute_external_backend_partition(module_names: Iterable[str]) -> Tuple[Set
             external_backend_modules.add(name)
         for field in _module_owned_qm_fields(cls):
             field_owners[field].add(name)
+            if cls.resolved_metric_status(field) != "unimplemented":
+                delivered_fields.add(field)
     external_only_fields = {
         field
         for field, owners in field_owners.items()
-        if owners and owners <= external_backend_modules
+        if owners and field not in delivered_fields
     }
     return external_backend_modules, external_only_fields
 
@@ -1144,6 +1147,15 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                     dof[fname] = info.get("comment") or info.get("description") or ""
             meta["dataset_output_fields"] = dof
 
+        # A delivered module may expose reserved outputs whose backend is absent.
+        # Keep those in metadata/catalogs, but not in delivered output statistics.
+        for output_key in ("output_fields", "dataset_output_fields"):
+            meta[output_key] = {
+                field: description
+                for field, description in meta.get(output_key, {}).items()
+                if cls.resolved_metric_status(field) != "unimplemented"
+            }
+
         for b in meta["backends"]:
             all_backends[b] += 1
         for pkg in meta["packages"]:
@@ -1155,12 +1167,13 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
         # Track field writes/reads
         written = _detect_fields_written(source)
         for f in written:
-            field_writers[f].append(name)
+            if cls.resolved_metric_status(f) != "unimplemented":
+                field_writers[f].append(name)
         dataset_written = set(
             meta.get("dataset_output_fields", {})
         ) | _detect_dataset_fields_written(source)
         for f in dataset_written:
-            if f in ds_fields:
+            if f in ds_fields and cls.resolved_metric_status(f) != "unimplemented":
                 dataset_field_writers[f].append(name)
         read = _detect_fields_read(source)
         for f in read:
@@ -1283,7 +1296,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a(">")
     a(
         f"> Tests: **{covered_modules}/{total_modules} modules** have static test references · "
-        "`pytest tests/` (light) · `pytest tests/ --full` (with ML models)"
+        "test references do not establish pretrained inference coverage"
     )
     a("")
     a("> [!NOTE]")
@@ -1316,6 +1329,14 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     a("## Provenance")
     a("")
     a("Classification applies to each output field, independently of backend availability.")
+    a("")
+    a("Readiness is a separate module-level classification:")
+    a("")
+    a("- `implemented`: the declared backend and computation are wired, including complete Ayase-defined methods.")
+    a("- `approximate`: a material substitute or partial protocol is implemented; consult the readiness notes and field deviations.")
+    a("- `unimplemented`: the intended backend, trained assets or computation are unavailable; excluded from delivered counts and execution.")
+    a("")
+    a("Source review checks method fidelity and backend wiring. Its confidence describes static evidence, not successful inference with pretrained weights or numerical validation. Runtime requirements such as model downloads, reference inputs and API credentials still apply.")
     a("")
     a("| Class | Meaning |")
     a("|---|---|")
@@ -1442,6 +1463,8 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
     # Group metrics by category
     metrics_by_cat: Dict[str, list] = defaultdict(list)
     for field_name in sorted(qm_fields.keys()):
+        if field_name in external_only_fields:
+            continue
         group = qm_fields[field_name]["group"]
         if field_writers.get(field_name) or field_declarers.get(field_name):
             metrics_by_cat[group].append(field_name)
@@ -1586,6 +1609,8 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 if readiness_notes:
                     readiness_text += f" — {readiness_notes}"
                 a(f"- **Readiness**: {readiness_text}")
+                a(f"- **Field readiness**: `{mod.get('metric_status', {}).get(field_name, readiness)}`")
+                a(f"- **Review evidence**: {mod.get('implementation_review', 'unreviewed')}")
                 if chain:
                     a(f"- **Backend**: {chain}")
                 prov = (mod.get("provenance") or {}).get(field_name)
@@ -1671,6 +1696,8 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 if readiness_notes:
                     readiness_text += f" — {readiness_notes}"
                 a(f"- **Readiness**: {readiness_text}")
+                a(f"- **Review evidence**: {mod.get('implementation_review', 'unreviewed')}")
+                a(f"- **Field readiness**: `{mod.get('metric_status', {}).get(field_name, readiness)}`")
                 prov = (mod.get("provenance") or {}).get(field_name)
                 if prov:
                     prov_parts = [f"`{prov}`"]
@@ -1707,6 +1734,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             if r.get("implementation_notes"):
                 readiness += f" — {r['implementation_notes']}"
             items.append(readiness)
+            items.append(f"Review evidence: {r.get('implementation_review', 'unreviewed')}")
             if r["gpu"]:
                 items.append("GPU")
             items.append(f"Tests: {_format_test_coverage(r['name'], test_coverage, test_results)}")
@@ -1752,6 +1780,7 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
             if readiness_notes:
                 readiness_text += f" — {readiness_notes}"
             parts.append(readiness_text)
+            parts.append(f"Review evidence: {cls.implementation_review}")
             if owned:
                 parts.append("Metrics: " + ", ".join(f"`{f}`" for f in owned))
             else:
@@ -1769,6 +1798,23 @@ def generate_metrics_doc(run_tests: bool = True, include_plugins: bool = False) 
                 if deviation:
                     details.append(deviation)
                 a("  - " + " — ".join(details))
+        a("")
+
+    partial_unavailable = []
+    for name in delivered_modules:
+        cls = ModuleRegistry.get_module(name)
+        if cls is None:
+            continue
+        for field in sorted(_module_owned_qm_fields(cls)):
+            if cls.resolved_metric_status(field) == "unimplemented":
+                partial_unavailable.append((name, field, cls))
+    if partial_unavailable:
+        a("## Unimplemented outputs in partial modules")
+        a("")
+        a("These reserved fields are excluded from delivered metric counts; other outputs of their modules remain available.")
+        a("")
+        for name, field, cls in partial_unavailable:
+            a(f"- `{field}` — **unimplemented**, module `{name}`: {cls.implementation_notes}")
         a("")
 
     return "\n".join(L)

@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 class ArtFIDModule(ReferenceBasedModule):
     name = "artfid"
+    implementation_status = "implemented"
+    implementation_notes = "Calls real art_fid.compute_art_fid with content, generated and style sets. Frame extraction stages those sets for video. Missing required reference/style data leaves score unset; no FID-only substitute is emitted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "artfid_score": "ArtFID (Wright & Ommer, 2022), art-fid package — https://github.com/matthias-wright/art-fid",

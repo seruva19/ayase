@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class PieAPPModule(PipelineModule):
     name = "pieapp"
+    implementation_status = "implemented"
+    implementation_notes = "Real named pyiqa metric invocation with appropriate image tensor/reference interface and frame-score averaging; image-to-video pooling warrants adapted provenance but is not a substitute backend. Package/model execution and numerical parity were not run."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

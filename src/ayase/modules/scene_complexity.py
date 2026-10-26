@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class SceneComplexityModule(PipelineModule):
     name = "scene_complexity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own edge-density/color-entropy/texture spatial score plus frame-difference/optical-flow temporal composite; no named learned complexity model is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Spatial and temporal scene complexity analysis"

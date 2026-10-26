@@ -31,6 +31,9 @@ _NISQA_WEIGHTS_FILENAME = "nisqa/nisqa.tar"
 
 class AudioNISQAModule(PipelineModule):
     name = "audio_nisqa"
+    implementation_status = "implemented"
+    implementation_notes = "Downloads NISQA checkpoint, uses bundled nisqaModel predict_file and reads all five trained predicted dimensions."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "nisqa_coloration": "NISQA v2 (Mittag et al. 2021), vendored code + nisqa.tar — https://github.com/gabrielmittag/NISQA",

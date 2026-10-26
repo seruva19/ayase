@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class QCNModule(PipelineModule):
     name = "qcn"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only unsupported pyiqa.create_metric(qcn) name with no trained implementation/checkpoint provisioning. No fallback approximation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     requires_external_backend = True
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}

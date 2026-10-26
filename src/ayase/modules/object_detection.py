@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ObjectDetectionModule(PipelineModule):
     name = "object_detection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own utility loads real YOLO and aggregates confidences/counts/effective class diversity; optional expert GRIT branch exists."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = {
         "count_score": "own",

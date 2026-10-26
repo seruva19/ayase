@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class HeadPoseDiversityModule(PipelineModule):
     name = "head_pose_diversity"
+    implementation_status = "implemented"
+    implementation_notes = "Real TDDFA coefficient extraction and mean per-component temporal std implement declared head-pose diversity statistic; alternative pose representation remains disclosed adapted provenance."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "Head pose diversity — temporal std of 3DMM pose coefficients"
     provenance = "adapted"
     sources = {

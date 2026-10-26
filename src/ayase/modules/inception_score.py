@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class InceptionScoreModule(BatchMetricModule):
     name = "inception_score"
+    implementation_status = "implemented"
+    implementation_notes = "Actual torch-fidelity Inception Score on image files/representative video frames with guarded split count and dataset publication."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "is_score": "Inception Score (Salimans et al., NeurIPS 2016), torch-fidelity backend — https://arxiv.org/abs/1606.03498",

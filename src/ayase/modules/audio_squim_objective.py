@@ -68,6 +68,9 @@ class AudioSQUIMObjectiveModule(PipelineModule):
     """Estimate STOI, WB-PESQ, and SI-SDR from speech without a reference."""
 
     name = "audio_squim_objective"
+    implementation_status = "implemented"
+    implementation_notes = "Loads torchaudio SQUIM_OBJECTIVE trained model, prepares native 16kHz waveform and writes its three native predictions. These are published SQUIM estimates, not direct intrusive PESQ/STOI claims."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "squim_pesq_score": "TorchAudio-SQUIM Objective (Kumar et al., ICASSP 2023) — https://pytorch.org/audio/stable/generated/torchaudio.pipelines.SQUIM_OBJECTIVE.html",

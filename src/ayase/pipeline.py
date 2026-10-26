@@ -97,6 +97,11 @@ class PipelineModule(ABC):
     # require an external backend are unimplemented until one is wired.
     implementation_status: ClassVar[Optional[str]] = None
     implementation_notes: ClassVar[str] = ""
+    # Source inspection is evidence about wiring and method fidelity, not a
+    # successful run with pretrained weights. Plugins may remain unreviewed.
+    implementation_review: ClassVar[str] = "unreviewed"
+    # Overrides distinguish usable and unavailable outputs of partial modules.
+    metric_status: ClassVar[Dict[str, str]] = {}
 
     # True = Ayase-defined construct without a published definition, slated for
     # removal in a future release. Instantiating the module emits a
@@ -325,6 +330,8 @@ class PipelineModule(ABC):
             cls.requires_external_backend,
             cls.implementation_status,
             cls.implementation_notes,
+            cls.implementation_review,
+            repr(cls.metric_status),
             cls.deprecated,
             cls.input_type,
         )
@@ -486,6 +493,11 @@ class PipelineModule(ABC):
             "requires_external_backend": bool(cls.requires_external_backend),
             "implementation_status": cls.resolved_implementation_status(),
             "implementation_notes": str(cls.implementation_notes or ""),
+            "implementation_review": str(cls.implementation_review or "unreviewed"),
+            "metric_status": {
+                field: cls.resolved_metric_status(field)
+                for field in set(outputs) | set(dataset_outputs) | set(cls.metric_groups)
+            },
             "deprecated": bool(cls.deprecated),
         }
         cls._metadata_cache = metadata
@@ -506,6 +518,14 @@ class PipelineModule(ABC):
                 f"expected one of {sorted(valid)}"
             )
         return normalized
+
+    @classmethod
+    def resolved_metric_status(cls, field: str) -> str:
+        """Resolve readiness for one output, including partial-module overrides."""
+        status = cls.metric_status.get(field, cls.resolved_implementation_status())
+        if status not in {"implemented", "approximate", "unimplemented"}:
+            raise ValueError(f"Invalid metric_status {status!r} for {cls.name}.{field}")
+        return status
 
     @classmethod
     def _resolve_field_map(cls, attr: str, fields: Iterable[str]) -> Dict[str, str]:

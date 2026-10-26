@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class MMPCQAModule(PipelineModule):
     name = "mm_pcqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup remains unavailable and process always returns sample; no rendering/fusion/trained point-cloud scorer."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "MM-PCQA multi-modal point cloud QA (IJCAI 2023; real model only, disabled if unavailable)"

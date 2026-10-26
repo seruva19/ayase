@@ -40,6 +40,9 @@ logger = logging.getLogger(__name__)
 
 class IdentityLossModule(PipelineModule):
     name = "identity_loss"
+    implementation_status = "implemented"
+    implementation_notes = "Real ArcFace normalized embeddings with actual cosine distance/reference mean and similarity companion; adapted video pooling is explicit."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "face_recognition_score": "ArcFace cosine (Deng et al., CVPR 2019), the standard ID-similarity — https://github.com/deepinsight/insightface",

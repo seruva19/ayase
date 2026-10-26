@@ -82,6 +82,9 @@ class AudioDistillMOSModule(PipelineModule):
     """Predict overall speech MOS with the official Distill-MOS v7 model."""
 
     name = "audio_distill_mos"
+    implementation_status = "implemented"
+    implementation_notes = "Real distillmos v7 inference with official first-channel/16kHz, right padding and default overlapping 7.68-second window averaging. An opt-in finite max_windows is documented; default is complete inference, so adapted provenance does not imply approximate readiness."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "distill_mos_score": "Distill-MOS (Stahl & Gamper, ICASSP 2025), official package — https://github.com/microsoft/Distill-MOS",

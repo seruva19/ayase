@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class XPSNRModule(ReferenceBasedModule):
     name = "xpsnr"
+    implementation_status = "implemented"
+    implementation_notes = "Managed real ffmpeg XPSNR filter with native log parsing on paired streams; absent filter skips rather than writing ordinary PSNR."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "xpsnr": "XPSNR, Helmrich et al.; FFmpeg xpsnr — https://ffmpeg.org/ffmpeg-filters.html#xpsnr",

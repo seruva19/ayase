@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 16:38 · **337 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 18:14 · **321 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**337** models · **131** HuggingFace · **38** pyiqa · **9** sources
+**321** models · **125** HuggingFace · **37** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~869 GB
+**Estimated total download size (all models):** ~805 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (98)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (38)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (49)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (92)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (12)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -112,13 +112,6 @@
 - **Task**: Per-frame NSFW classification
 - **Source**: <a href="https://arxiv.org/abs/2010.11929" target="_blank">arXiv</a>
 
-### <a href="https://huggingface.co/FunAudioLLM/SenseVoiceSmall" target="_blank">`FunAudioLLM/SenseVoiceSmall`</a> [↑](#categories)
-> automatic-speech-recognition · other
-
-- **Used by**: `verse_bench`
-- **Downloads**: 23K
-- **Task**: SenseVoice ASR for WER computation
-
 ### <a href="https://huggingface.co/GD-ML/VMBench" target="_blank">`GD-ML/VMBench`</a> [↑](#categories)
 > apache-2.0
 
@@ -149,20 +142,6 @@
 - **Parameters**: 172M · **Downloads**: 643K
 - **Disk**: ~657 MB
 - **Source**: <a href="https://arxiv.org/abs/2303.05499" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/IntMeGroup/AIGV-Assessor-static_quality" target="_blank">`IntMeGroup/AIGV-Assessor-static_quality`</a> [↑](#categories)
-> apache-2.0
-
-- **Used by**: `aigv_assessor`
-- **Parameters**: 8.2B · **Downloads**: 16
-- **Disk**: ~30.4 GB
-
-### <a href="https://huggingface.co/IntMeGroup/FineVQ_score" target="_blank">`IntMeGroup/FineVQ_score`</a> [↑](#categories)
-> apache-2.0
-
-- **Used by**: `finevq_raw`
-- **Parameters**: 8.2B · **Downloads**: 706
-- **Disk**: ~30.5 GB
 
 ### <a href="https://huggingface.co/JZHWS/slowfast" target="_blank">`JZHWS/slowfast`</a> [↑](#categories)
 > apache-2.0
@@ -532,10 +511,10 @@
 ### <a href="https://huggingface.co/facebook/dinov2-large" target="_blank">`facebook/dinov2-large`</a> [↑](#categories)
 > image-feature-extraction · apache-2.0
 
-- **Used by**: `prdc_dinov2`, `verse_bench`
+- **Used by**: `prdc_dinov2`
 - **Parameters**: 304M · **Downloads**: 839K
 - **Disk**: ~1.1 GB
-- **Task**: DINOv2 ViT-L/16 image identity features
+- **Task**: DINOv2 image encoder for PRDC features
 - **Source**: <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/facebook/pe-av-large" target="_blank">`facebook/pe-av-large`</a> [↑](#categories)
@@ -556,11 +535,6 @@
 - **Task**: V-JEPA2 video feature extractor for JEDi
 - **Notes**: Requires trust_remote_code
 
-### `fsmn-vad` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Task**: FSMN voice activity detection (FunASR)
-
 ### <a href="https://huggingface.co/google/siglip-base-patch16-224" target="_blank">`google/siglip-base-patch16-224`</a> [↑](#categories)
 > zero-shot-image-classification · apache-2.0
 
@@ -568,15 +542,6 @@
 - **Parameters**: 203M · **Downloads**: 1.1M
 - **Disk**: ~775 MB
 - **Task**: SigLIP image embedding similarity
-- **Source**: <a href="https://arxiv.org/abs/2303.15343" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/google/siglip-so400m-patch14-384" target="_blank">`google/siglip-so400m-patch14-384`</a> [↑](#categories)
-> zero-shot-image-classification · apache-2.0
-
-- **Used by**: `verse_bench`
-- **Parameters**: 878M · **Downloads**: 715K
-- **Disk**: ~3.3 GB
-- **Task**: SigLIP vision encoder for Aesthetic Predictor V2.5
 - **Source**: <a href="https://arxiv.org/abs/2303.15343" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/google/siglip2-so400m-patch16-naflex" target="_blank">`google/siglip2-so400m-patch16-naflex`</a> [↑](#categories)
@@ -745,11 +710,6 @@
 - **Task**: Full trained Beyond Time Shifts AV-sync evaluator state
 - **Notes**: SHA256 ba36a405792367a15ee1ff69ac167ec4644bd2f09d87ed3286c1e0aecf10c0e6; 4,703,464,448 parameters initialized FP32 on CPU; exact 1,442-tensor transformer state plus two-tensor trained head; high host/GPU peak memory; base-model terms survive
 - **Source**: <a href="https://arxiv.org/abs/2607.09091" target="_blank">arXiv</a>
-
-### `roberta-base` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Task**: RoBERTa text encoder (CLAP submodule)
 
 ### <a href="https://huggingface.co/sarulab-speech/human-clap-wsce-mae" target="_blank">`sarulab-speech/human-clap-wsce-mae`</a> [↑](#categories)
 
@@ -942,16 +902,6 @@
 
 Checkpoint files downloaded directly by Ayase modules or supplied through a local model path.
 
-### `24-01-04T16-39-21.pt` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Task**: Syncformer AV sync model (AST + MotionFormer)
-
-### `630k-audioset-fusion-best.pt` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Task**: LAION CLAP fusion model for audio-text similarity and FAD
-
 ### <a href="https://zenodo.org/records/3987831/files/Cnn14_16k_mAP%3D0.438.pth" target="_blank">`Cnn14_16k_mAP=0.438.pth`</a> [↑](#categories)
 
 - **Used by**: `audio_isc`, `audio_kl`
@@ -978,20 +928,10 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `avgen_bench`
 - **Task**: Continuous audiovisual offset prediction
 
-### `aesthetic_predictor_v2_5.pth` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Task**: Aesthetic Predictor V2.5 head weights
-
 ### <a href="https://download.pytorch.org/models/r3d_18-b3b3357e.pth" target="_blank">`cgvqm/r3d_18-b3b3357e.pth`</a> [↑](#categories)
 
 - **Used by**: `cgvqm`
 - **Task**: Kinetics-400 R3D-18 features used by upstream CGVQM
-
-### `ckpt_koniq10k.pt` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Task**: MANIQA Swin-T quality assessment (KonIQ-10k)
 
 ### <a href="https://raw.githubusercontent.com/physics-from-video/Morpheus/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc/morpheus/scoring/collision_mass_mlp.pt" target="_blank">`collision_mass_mlp.pt`</a> [↑](#categories)
 
@@ -1047,8 +987,8 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 ### <a href="https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/syncnet_v2.model" target="_blank">`syncnet_v2.model`</a> [↑](#categories)
 
-- **Used by**: `avgen_bench`, `verse_bench`
-- **Task**: SyncNet v2 lip-sync model
+- **Used by**: `avgen_bench`
+- **Task**: Lip synchronization track scoring
 - **Notes**: Oxford model page grants research use under CC BY 4.0.
 
 ### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/aggregation_net.pth" target="_blank">`uvq1p5/aggregation_net.pth`</a> [↑](#categories)
@@ -1422,7 +1362,7 @@ Model backends declared by modules that are not distributed through the sources 
 - **Used by**: `object_integrity`
 - **Task**: RTMPose-m body8 keypoint estimator (upstream mmpose backend)
 
-## pyiqa Metrics (38)
+## pyiqa Metrics (37)
 
 <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection of image/video quality metrics. Weights auto-download on first `pyiqa.create_metric()` call. `pip install pyiqa`
 
@@ -1437,7 +1377,6 @@ Model backends declared by modules that are not distributed through the sources 
 | `compare2score` | Comparative-to-absolute quality scoring | research | — | `compare2score` |
 | `cw_ssim` | Complex wavelet SSIM | MIT (pyiqa) | Yes | `cw_ssim` |
 | `dbcnn` | Deep bilinear CNN for blind IQA | research | — | `dbcnn` |
-| `deepdc` | Deep distribution conformance | research | — | `deepdc` |
 | `dmm` | Detail model metric FR-IQA | research | — | `dmm` |
 | `hyperiqa` | Adaptive hypernetwork NR-IQA | research | — | `hyperiqa` |
 | `ilniqe` | Integrated local NIQE | BSD-2-Clause | Yes | `ilniqe` |
@@ -1507,16 +1446,10 @@ Bundled with `pip install torchvision`. Weights download on first use.
 - **Used by**: `advanced_flow`, `motion_amplitude`, `raft_motion`, `temporal_flickering`
 - **VRAM**: ~200 MB · **Disk**: ~20 MB
 
-### `torchvision/resnet18` [↑](#categories)
-> torchvision · BSD-3-Clause
-
-- **Used by**: `resnet_svr_vq`
-- **VRAM**: ~100 MB · **Disk**: ~45 MB
-
 ### `torchvision/resnet50` [↑](#categories)
 > torchvision
 
-- **Used by**: `clip_slowfast_vq`, `vsfa`, `watermark_classifier`
+- **Used by**: `vsfa`, `watermark_classifier`
 
 ### `torchvision/vgg16` [↑](#categories)
 > torchvision
@@ -1566,16 +1499,6 @@ Bundled with `pip install torchvision`. Weights download on first use.
 
 - **Used by**: `depth_consistency`, `depth_map_quality`
 - **VRAM**: ~400 MB · **Disk**: ~400 MB
-
-### `mseitzer/pytorch-fid` [↑](#categories)
-> torch.hub
-
-- **Used by**: `fid`, `sfid`, `vendi`
-
-### `mseitzer/pytorch-fid:fid_inception_v3` [↑](#categories)
-> torch.hub
-
-- **Used by**: `fid`, `sfid`, `vendi`
 
 ### `tarepan/SpeechMOS:v1.2.0` [↑](#categories)
 > torch.hub · MIT
@@ -1629,11 +1552,6 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `aesthetic`
 - **Install**: `pip install aesthetic-predictor-v2-5`
-
-### `audiobox-aesthetics` [↑](#categories)
-
-- **Used by**: `verse_bench`
-- **Install**: `pip install audiobox_aesthetics`
 
 ### `cdpam==0.0.6` [↑](#categories)
 > Official package with bundled scratchJNDdefault_best_model.pth; checkpoint SHA-256 453c8b6edee1a94f0120236156436ff28fe4d8d884485e4a67695c8e8570bdfe; source provenance: pranaymanocha/PerceptualAudio commit 4bd0a842b3d7a196b0e15398b761525482b11640
@@ -1708,7 +1626,7 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 ### `hear21passt` [↑](#categories)
 
-- **Used by**: `audio_isc`, `fad`, `verse_bench`
+- **Used by**: `audio_isc`, `fad`
 - **Install**: `pip install hear21passt`
 
 ### `hpsv2` [↑](#categories)
@@ -1719,13 +1637,13 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 ### `insightface` [↑](#categories)
 > InsightFace (face recognition)
 
-- **Used by**: `active_speaker`, `adaface`, `concept_presence`, `csim`, `dino_face_identity`, `entity_consistency`, `face_cross_similarity`, `face_emb_norm`, `face_identity_drift`, `facesim`, `grafiqs`, `identity_loss`, `multi_subject_identity`
+- **Used by**: `active_speaker`, `adaface`, `concept_presence`, `csim`, `dino_face_identity`, `entity_consistency`, `face_cross_similarity`, `face_emb_norm`, `face_identity_drift`, `facesim`, `grafiqs`, `identity_loss`, `multi_subject_identity`, `serfiq`
 - **Install**: `pip install insightface`
 
 ### `joblib` [↑](#categories)
 > Joblib (serialized model storage)
 
-- **Used by**: `brightrate`, `chipqa`, `hdr_chipqa`, `hdrmax`, `resnet_svr_vq`, `svr60_vq`
+- **Used by**: `brightrate`, `chipqa`, `hdr_chipqa`, `hdrmax`
 - **Install**: `pip install joblib`
 
 ### `kadtk` [↑](#categories)
@@ -1899,11 +1817,6 @@ Require FFmpeg compiled with libvmaf. No separate download needed.
 
 - **Used by**: `vebench`
 - **Install**: `pip install 'vebench==1.0.0'`
-
-### `vendi_score` [↑](#categories)
-
-- **Used by**: `vendi`
-- **Install**: `pip install vendi-score`
 
 ### `videojedi==1.1.0` [↑](#categories)
 > Apache-2.0; source revision e64f3fe8572b89ea904d161def44b419024e31a0

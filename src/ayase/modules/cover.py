@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class COVERModule(PipelineModule):
     name = "cover"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled COVER model/dataset views, real checkpoint state loading, required CLIP/ConvNeXt assets and native semantic/technical/aesthetic heads are wired; total is the model head sum. No heuristic fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cover_aesthetic": "COVER (He et al., CVPRW 2024) — https://github.com/taco-group/COVER",

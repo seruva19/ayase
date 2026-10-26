@@ -39,6 +39,9 @@ SAFE_CONTAINERS = {
 
 class CodecCompatibilityModule(PipelineModule):
     name = "codec_compatibility"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility probes real ffprobe stream/container metadata and applies declared codec/pixel/bitrate/bpp checks."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Validates codec, pixel format, and container for ML dataloader compatibility"
     default_config = {

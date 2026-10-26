@@ -26,6 +26,9 @@ AESTHETIC_MLP_FILENAME = "sac+logos+ava1-l14-linearMSE.pth"
 
 class AestheticScoringModule(PipelineModule):
     name = "aesthetic_scoring"
+    implementation_status = "implemented"
+    implementation_notes = "Loads real CLIP ViT-L/14 and the trained LAION aesthetic MLP state dict with matching layer dimensions; image inference is real. Mean video-frame pooling is a documented protocol extension, not a substitute model."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

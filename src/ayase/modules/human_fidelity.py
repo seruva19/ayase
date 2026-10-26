@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class HumanFidelityModule(PipelineModule):
     name = "human_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own detector-confidence and limb proportion/symmetry heuristic with MediaPipe and DWpose branches; not a trained human-fidelity method. DWpose assumed dict interface needs verification."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "human_fidelity_score": "DWPose/MediaPipe Pose models; the aggregation is own — https://github.com/IDEA-Research/DWPose",

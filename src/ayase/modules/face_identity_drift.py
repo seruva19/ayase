@@ -69,6 +69,9 @@ class FaceIdentityDriftModule(PipelineModule):
     """Expose chronological ArcFace identity diagnostics without aggregating them."""
 
     name = "face_identity_drift"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own real ArcFace identity trajectory summary with coverage, quantile tail, drift slope and contiguous low-similarity runs."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "face_identity_below_threshold_fraction": "ArcFace model (Deng et al. 2019); the statistics are own — https://arxiv.org/abs/1801.07698",

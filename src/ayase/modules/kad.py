@@ -27,6 +27,9 @@ _PANN_WAVEGRAM_URL = (
 
 class KADModule(BatchMetricModule):
     name = "kad"
+    implementation_status = "implemented"
+    implementation_notes = "Loads actual PANN Wavegram-Logmel checkpoint into KADTK loader; upstream calc_kernel_audio_distance processes 2048-d reference/generated embeddings."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "kad": "KAD (Chung et al. 2025), the kadtk package — https://github.com/YoonjinXD/kadtk",

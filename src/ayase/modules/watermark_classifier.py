@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class WatermarkClassificationModule(PipelineModule):
     name = "watermark_classifier"
+    implementation_status = "implemented"
+    implementation_notes = "Default real HF AI-image detector writes separate ai_generated_probability; explicit custom ResNet weights write watermark_probability. Correct separation prevents the former from masquerading as a watermark score; custom trained watermark model remains an expert-supplied route."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "ai_generated_probability": "custom ResNet-50 / HF umm-maybe/AI-image-detector — https://huggingface.co/umm-maybe/AI-image-detector",

@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class ImagingQualityModule(PipelineModule):
     name = "imaging_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Laplacian-kernel noise estimation and edge-density artifacts heuristic; optional BRISQUE is validation-only."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Classical noise/edge/artifact estimation (Immerkaer sigma, edge density, FFT)"
     default_config = {

@@ -58,6 +58,9 @@ _DINOV2_WEIGHTS = {
 
 class DINOFaceIdentityModule(PipelineModule):
     name = "dino_face_identity"
+    implementation_status = "implemented"
+    implementation_notes = "Real DINOv2 checkpoint and InsightFace detection/alignment with normalized reference cosine similarity aggregation; this is an explicitly own face-crop identity statistic."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     models = [
         {

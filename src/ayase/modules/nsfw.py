@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class NSFWModule(PipelineModule):
     name = "nsfw"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned real Falconsai classifier, correct label lookup/softmax, maximum frame NSFW probability. Declared utility provenance is appropriate."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "nsfw_score": "utility",
     }

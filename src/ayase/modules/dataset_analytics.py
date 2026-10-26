@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 class DatasetAnalyticsModule(BatchMetricModule):
     name = "dataset_analytics"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own CLIP-feature distance/coverage/outlier/KMeans entropy and dHash duplicate calculations; fallbacks are part of own diagnostic definitions."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = {
         "class_balance_score": "own",

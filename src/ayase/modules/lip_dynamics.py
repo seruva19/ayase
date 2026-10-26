@@ -74,6 +74,9 @@ class LipDynamicsModule(PipelineModule):
     """Measure talking-head mouth-shape diversity across a video."""
 
     name = "lip_dynamics"
+    implementation_status = "implemented"
+    implementation_notes = "Real MediaPipe lip landmarks form all pairwise lip distances on 256px coordinate scale; mean temporal std implements declared lip-dynamics formula."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "lip_dynamics_score": "THEval (arXiv 2511.04520), Eq.12–13 — https://arxiv.org/abs/2511.04520",

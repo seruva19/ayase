@@ -105,6 +105,9 @@ class VisionRewardModule(PipelineModule):
     """Fine-grained QA-decomposed preference reward (VisionReward, AAAI 2026)."""
 
     name = "vision_reward"
+    implementation_status = "implemented"
+    implementation_notes = "Real VisionReward-Video remote-code model,29published questions/weights, binary judgments and weighted aggregate. Uniform frame sampling/mean normalization are already declared adapted protocol."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "vision_reward_score": "VisionReward, zai-org (AAAI 2026) — https://github.com/zai-org/VisionReward",

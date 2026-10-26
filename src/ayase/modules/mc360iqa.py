@@ -238,6 +238,9 @@ def _build_resnet34():
 
 class MC360IQAModule(PipelineModule):
     name = "mc360iqa"
+    implementation_status = "implemented"
+    implementation_notes = "Executable six-viewport MC360IQA architecture with strict real checkpoint loading, equirectangular-to-perspective projection and native trained MOS output. Representative frame adaptation for videos is disclosed and does not replace the trained image method."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

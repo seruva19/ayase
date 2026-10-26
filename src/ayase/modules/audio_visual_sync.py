@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class AudioVisualSyncModule(PipelineModule):
     name = "av_sync"
+    implementation_status = "implemented"
+    implementation_notes = "Vendored Synchformer inferencer with automatic checkpoint acquisition; native inferred offset is converted/stored. No energy-correlation fallback remains."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "av_sync_offset": "Synchformer (Iashin et al., ICASSP 2024) — https://github.com/v-iashin/Synchformer",
@@ -158,3 +161,6 @@ class AudioVisualSyncCompatModule(AudioVisualSyncModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "audio_visual_sync"
+    implementation_status = "implemented"
+    implementation_notes = "Compatibility class inherits actual downloaded Synchformer checkpoint backend; vendored inferencer loads trained state and returns argmax offset-grid seconds, converted to milliseconds. CUDA is hardcoded in vendor."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

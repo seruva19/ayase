@@ -20,6 +20,9 @@ class Ref4DResultModule(PipelineModule):
     """Import the four Ref4D-VideoBench summary CSVs."""
 
     name = "ref4d_results"
+    implementation_status = "implemented"
+    implementation_notes = "Complete result-import utility: validates/indexes supplied CSV/JSON rows, matches sample identity and copies numeric outputs; does not claim to execute the external research benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "ref4d_event_score": "utility",
         "ref4d_motion_score": "utility",

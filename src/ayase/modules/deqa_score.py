@@ -51,6 +51,9 @@ class DeQAScoreModule(PipelineModule):
     """Official full-tuned DeQA-Score Mix3 image scorer."""
 
     name = "deqa_score"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned official Mix3 snapshot and remote model class, verified level-token IDs, CUDA float16 native model.score quality path and native 1-5 score validation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Official DeQA-Score Mix3 native image-quality rating"
     input_type = "image"
     provenance = "published"

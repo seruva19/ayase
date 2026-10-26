@@ -83,6 +83,9 @@ def _agreement(left: np.ndarray, right: np.ndarray) -> float:
 
 class HeadPoseSimilarityModule(PipelineModule):
     name = "head_pose_similarity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Wasserstein distribution agreement for real MediaPipe head angles and time-normalized rates with coverage."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {
         "head_pose_angle_agreement": "own",
         "head_pose_rate_agreement": "own",

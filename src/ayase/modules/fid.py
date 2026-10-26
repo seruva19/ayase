@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class FIDModule(BatchMetricModule):
     name = "fid"
+    implementation_status = "unimplemented"
+    implementation_notes = "torch.hub.load targets mseitzer/pytorch-fid fid_inception_v3, but upstream repository has no hubconf.py; no direct package loader fallback. FrГ©chet formula exists but actual intended feature loader is broken."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "fid": "FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid",

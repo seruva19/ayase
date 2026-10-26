@@ -100,6 +100,9 @@ class SilentLipStabilityModule(PipelineModule):
     """Measure involuntary lip motion during acoustically silent intervals."""
 
     name = "silent_lip_stability"
+    implementation_status = "implemented"
+    implementation_notes = "Real Silero VAD silence intervals and Face Landmarker normalized lip opening; executable median absolute deviation from mean per THEval definition."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "silent_lip_stability": "THEval (Quignon et al., arXiv 2511.04520) — https://arxiv.org/abs/2511.04520",

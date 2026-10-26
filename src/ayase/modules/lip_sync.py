@@ -308,6 +308,9 @@ class LipSyncVerseModule(_CanonicalLipSyncModule):
     """VERSE-Bench face preparation and SyncNet scoring path."""
 
     name = "lip_sync_verse"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete VerseBench SyncnetInferencer with verified downloaded SyncNet weights; infer confidence and minimum distance populate protocol-specific fields. No cross-protocol fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "VERSE-Bench SyncNet lip-sync confidence and distance"
     protocol_class = VerseBenchProtocol
     protocol_token = "verse_bench"
@@ -350,6 +353,9 @@ class LipSyncSyncNetModule(_CanonicalLipSyncModule):
     """MIT SyncNet/S3FD reference preparation and scoring path."""
 
     name = "lip_sync_syncnet"
+    implementation_status = "implemented"
+    implementation_notes = "Inherited canonical Wav2Lip protocol uses hash-pinned genuine SyncNet/S3FD weights and official track scorer; writes protocol-specific LSE fields. This is executable author-model inference, with declared face/track adaptation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "MIT SyncNet reference protocol with S3FD face tracks"
     protocol_class = Wav2LipProtocol
     protocol_token = "wav2lip"

@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class FlowCoherenceModule(PipelineModule):
     name = "flow_coherence"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Farneback bidirectional round-trip consistency using actual forward-warped sample locations and mean residual error."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Bidirectional optical flow consistency (0-1, higher=coherent)"

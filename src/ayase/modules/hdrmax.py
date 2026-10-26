@@ -36,6 +36,9 @@ def _third_party_path(*parts: str) -> Path:
 
 class HDRMAXModule(PipelineModule):
     name = "hdrmax"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled official HDRMAX feature scripts and trained scaler/SVR execute on ffmpeg-converted 4K 10-bit reference/test YUV; actual pred CSV read."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "hdrmax_score": "HDRMAX: HDR-VMAF / SSIM-HDRMAX / MS-SSIM-HDRMAX (Ebenezer et al.) — https://github.com/utlive/HDRMAX",

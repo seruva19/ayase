@@ -297,6 +297,9 @@ def _extract_temporal_features(frames_gray: list) -> np.ndarray:
 
 class VIDEVALModule(PipelineModule):
     name = "svr60_vq"
+    implementation_status = "unimplemented"
+    implementation_notes = "Requires user-prepared videval SVR/scaler with no download. Feature groups actually total54 yet _compute_quality asserts60, preventing even expert supplied regressor scoring."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "svr60_score": "VIDEVAL, Tu et al. TIP 2021 — name only — https://github.com/vztu/VIDEVAL",

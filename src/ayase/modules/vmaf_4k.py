@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class VMAF4KModule(ReferenceBasedModule):
     name = "vmaf_4k"
+    implementation_status = "implemented"
+    implementation_notes = "Managed ffmpeg libvmaf executes explicit vmaf_4k_v0.6.1 model on true reference/distorted video and parses pooled vmaf mean."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {

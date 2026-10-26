@@ -95,15 +95,11 @@ class LongCodeModule(PipelineModule):
     """Long-CODE-inspired structural and semantic long-video evaluator."""
 
     name = "long_code"
+    implementation_status = "approximate"
+    implementation_notes = "Explicit approximate Long-CODE: real X-CLIP video encoder DSA and three-stage API semantic judge run, but source substitutions/protocol differences are acknowledged and outputs are isolated in approx fields."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Approximate Long-CODE long-context structural and semantic evaluation"
     input_type = "video"
-    implementation_status = "approximate"
-    implementation_notes = (
-        "Equation-inspired DSA with X-CLIP plus an original generic three-stage hosted-judge "
-        "rubric; the unreleased human reference bank and author prompts are omitted, so no "
-        "official Long-CODE parity or calibration is claimed. The standard X-CLIP revision is "
-        "pinned; expert encoder_model overrides must also provide their matching revision."
-    )
     default_config = {
         "encoder_model": ENCODER_ID,
         "encoder_revision": ENCODER_REVISION,

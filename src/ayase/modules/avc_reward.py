@@ -184,6 +184,9 @@ def _validate_loading_info(loading_info: Dict[str, Any]) -> None:
 
 class AVCRewardModule(PipelineModule):
     name = "avc_reward"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned official checkpoint with strict loading and hashed official prompt assets; native Qwen3-Omni inference returns three actual reward dimensions. Processor/sampling adaptation is disclosed, not a replacement scorer."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "AVC-Reward audio-video semantic, temporal, and event consistency"
     input_type = "video"
     provenance = {

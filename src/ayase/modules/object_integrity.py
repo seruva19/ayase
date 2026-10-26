@@ -82,6 +82,9 @@ def _mmpose_config_path(rel_path: str) -> Optional[str]:
 
 class ObjectIntegrityModule(PipelineModule):
     name = "object_integrity"
+    implementation_status = "approximate"
+    implementation_notes = "Default auto first tries official MMPose then substitutes YOLOX-m/RTMPose ONNX via rtmlib into same OIS field; canonical managed environment only activates for backend=mmpose, not auto."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "object_integrity_score": "VMBench OIS (Ling et al., ICCV 2025, arXiv 2503.10076) — https://github.com/AMAP-ML/VMBench",

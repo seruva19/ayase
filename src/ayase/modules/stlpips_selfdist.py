@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class STLPIPSModule(PipelineModule):
     name = "stlpips_selfdist"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own blur-self-distance plus adjacent-frame temporal distance using actual stlpips LPIPS backend; own field avoids false published ST-LPIPS attribution."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "stlpips_selfdist": "ST-LPIPS (Ghildyal & Liu, ECCV 2022) — model only — https://github.com/abhijay9/ShiftTolerant-LPIPS",

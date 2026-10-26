@@ -20,6 +20,9 @@ class LOVEResultModule(PipelineModule):
     """Import raw predictions produced by the LOVE inference scripts."""
 
     name = "love_results"
+    implementation_status = "implemented"
+    implementation_notes = "Complete result-import utility: validates/indexes supplied CSV/JSON rows, matches sample identity and copies numeric outputs; does not claim to execute the external research benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "love_correspondence_score": "imports LOVE results — https://huggingface.co/anonymousdb/LOVE-Perception",

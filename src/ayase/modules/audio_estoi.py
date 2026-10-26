@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 class AudioESTOIModule(PipelineModule):
     name = "audio_estoi"
+    implementation_status = "implemented"
+    implementation_notes = "Uses pystoi extended=True on aligned mono reference/degraded audio at 10 kHz; no proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "estoi_score": "ESTOI (Jensen & Taal 2016), pystoi extended=True — https://github.com/mpariente/pystoi",

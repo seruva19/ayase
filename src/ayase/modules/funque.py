@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class FUNQUEModule(PipelineModule):
     name = "funque"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only imports externally installed funque and calls its compute interface; no trained official source, package/model provisioning or managed environment is supplied. It skips when absent and has no proxy branch."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     requires_external_backend = True
     provenance = "utility"
     sources = {

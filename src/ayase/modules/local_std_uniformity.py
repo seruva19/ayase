@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class GraphSIMModule(ReferenceBasedModule):
     name = "local_std_uniformity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own point-cloud local-neighbor std dispersion comparison using actual Open3D colors/coordinates and cKDTree neighborhoods."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "local_std_uniformity_score": "named after GraphSIM (Yang et al., TPAMI 2020); the docstring acknowledges it is a proxy — https://arxiv.org/abs/2006.12447",

@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 class BiasDetectionModule(PipelineModule):
     name = "bias_detection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own face-presence/framing heuristic from Haar face count variability, box-size spread and no-face proportion; not a demographic fairness metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Demographic representation analysis (face count, age distribution)"

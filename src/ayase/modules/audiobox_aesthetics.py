@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class AudioboxAestheticsModule(PipelineModule):
     name = "audiobox_aesthetics"
+    implementation_status = "implemented"
+    implementation_notes = "Loads official initialize_predictor checkpoint/default and forwards media paths, maps all four official output dimensions directly."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "audiobox_cu": "Meta Audiobox Aesthetics (2025), official package — https://github.com/facebookresearch/audiobox-aesthetics",

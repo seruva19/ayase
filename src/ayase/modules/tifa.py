@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 class TIFAModule(PipelineModule):
     name = "tifa"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled official TIFA question generation, UnifiedQA filtering and VQA score; image path direct and video mean extension, no heuristic fallback."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "tifa_score": "TIFA, Hu et al. ICCV 2023 — https://github.com/Yushi-Hu/tifa",

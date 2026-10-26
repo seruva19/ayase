@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class CompressionArtifactsModule(PipelineModule):
     name = "compression_artifacts"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own block-boundary, edge ringing and local-variance mosquito heuristic with explicit weighted average; no claimed published metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Detects compression artifacts (blocking, ringing, mosquito noise)"

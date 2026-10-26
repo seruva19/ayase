@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class CKDNModule(PipelineModule):
     name = "ckdn"
+    implementation_status = "implemented"
+    implementation_notes = "Real pyiqa CKDN receives paired RGB float tensors and averages image scores across video; adaptation is frame pooling only."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

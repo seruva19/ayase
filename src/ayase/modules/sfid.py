@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class SFIDModule(BatchMetricModule):
     name = "sfid"
+    implementation_status = "unimplemented"
+    implementation_notes = "Default feature backend is not executable: torch.hub.load targets mseitzer/pytorch-fid, which has no hubconf.py. In addition, intended Mixed_7c per-location 2048-D statistics materially differ from published guided-diffusion sFID mixed_6/conv first-seven-channels flattened per image. No valid fallback exists."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "sfid": "sFID (Nash et al., ICML 2021), guided-diffusion evaluator — FID-Inception via https://github.com/mseitzer/pytorch-fid",

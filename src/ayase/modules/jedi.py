@@ -39,6 +39,9 @@ class OfficialJEDiModule(PipelineModule):
     """Run the official JEDi backend on generated and reference collections."""
 
     name = "jedi_official"
+    implementation_status = "implemented"
+    implementation_notes = "Private pinned videojedi/vjepa environment and official encoder assets are automatically provisioned. Concrete worker decodes RGB[0,1]16-frame videos, supplies real reference/generated loaders to JEDiMetric.load_features and compute_metric; decoder protocol is adapted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     implementation_sources = ("../managed_runtime.py", "../_jedi_worker.py")
     provenance = {
         "jedi_score": "adapted",

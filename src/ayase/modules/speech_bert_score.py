@@ -41,6 +41,9 @@ class SpeechBERTScoreModule(PipelineModule):
     """Compute official WavLM-Large SpeechBERTScore precision."""
 
     name = "speech_bert_score"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned size/hash-verified WavLM-large hidden layer14; native-rate mono audio resampled to16kHz and blockwise exact maximum cosine precision averaged over generated frames."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "speech_bert_score": "Saeki et al., Interspeech 2024; DiscreteSpeechMetrics v1.0.1 — https://github.com/Takaaki-Saeki/DiscreteSpeechMetrics",

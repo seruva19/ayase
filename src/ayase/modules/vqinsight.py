@@ -71,12 +71,10 @@ _PROMPTS = {
 
 class VQInsightModule(PipelineModule):
     name = "vqinsight"
-    provenance = {
-        "vqinsight_score": "published",
-        "vqinsight_spatial": "published",
-        "vqinsight_temporal": "published",
-        "vqinsight_consistency": "published",
-    }
+    implementation_status = "implemented"
+    implementation_notes = "Real Qwen2.5-VL checkpoint subfolder and native published video rating prompts; returns parsed natural orAIGC dimensions. Scores divided100/clipped into0-1, requiring adapted provenance for stored fields."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
+    provenance = {"vqinsight_score": "adapted", "vqinsight_spatial": "adapted", "vqinsight_temporal": "adapted", "vqinsight_consistency": "adapted"}
     sources = {
         "vqinsight_score": "VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight",
         "vqinsight_spatial": "VQ-Insight, arXiv:2506.18564 — https://github.com/bytedance/Q-Insight",
@@ -319,6 +317,7 @@ class VQInsightModule(PipelineModule):
     def _first_float(text: str) -> Optional[float]:
         fm = re.search(r"-?\d+(?:\.\d+)?", text)
         return float(fm.group(0)) if fm else None
+    deviations = {"vqinsight_score": "Native prompt requests 0-100 ratings (lines55-69); _norm divides by100 and clamps[0,1] (lines199-200), and _store writes that normalized value into this field (lines202-213). Stored scale is adapted from raw published model response.", "vqinsight_spatial": "Native prompt requests 0-100 ratings (lines55-69); _norm divides by100 and clamps[0,1] (lines199-200), and _store writes that normalized value into this field (lines202-213). Stored scale is adapted from raw published model response.", "vqinsight_temporal": "Native prompt requests 0-100 ratings (lines55-69); _norm divides by100 and clamps[0,1] (lines199-200), and _store writes that normalized value into this field (lines202-213). Stored scale is adapted from raw published model response.", "vqinsight_consistency": "Native prompt requests 0-100 ratings (lines55-69); _norm divides by100 and clamps[0,1] (lines199-200), and _store writes that normalized value into this field (lines202-213). Stored scale is adapted from raw published model response."}
 
 
 def _is_number(v) -> bool:

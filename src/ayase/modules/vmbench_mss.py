@@ -32,6 +32,9 @@ _MSS_WEIGHTS = [1.0, 0.75, 0.5, 0.25, 0.0]
 
 class VMBenchMotionSmoothnessModule(PipelineModule):
     name = "vmbench_mss"
+    implementation_status = "implemented"
+    implementation_notes = "Real vendored Q-Align model/window scores and official VMBench artifact-jump utilities compute native MSS, with amplitude-dependent threshold."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "vmbench_mss": "VMBench MSS — https://github.com/AMAP-ML/VMBench",

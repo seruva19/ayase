@@ -107,6 +107,9 @@ def find_duplicate_groups(hashes: List[int], n_bits: int, threshold: int) -> Lis
 
 class DeduplicationModule(PipelineModule):
     name = "deduplication"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility uses actual imagehash pHash, exact Hamming comparisons with disjoint-set grouping and priority-selected representatives."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Groups near-duplicate samples by pHash Hamming distance and flags all but the best one"
     default_config = {
@@ -234,3 +237,6 @@ class DedupCompatModule(DeduplicationModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "dedup"
+    implementation_status = "implemented"
+    implementation_notes = "Inherited pHash duplicate detector implements Hamming candidate indexing, transitive union groups, quality-based representative selection and validation flags. This utility intentionally writes no QualityMetrics scalar."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

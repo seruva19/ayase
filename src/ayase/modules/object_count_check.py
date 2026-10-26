@@ -33,6 +33,9 @@ _COUNT_PATTERN = re.compile(
 
 class MultipleObjectsModule(PipelineModule):
     name = "object_count_check"
+    implementation_status = "implemented"
+    implementation_notes = "Complete count-parsing/matching validation utility compares caption number expectations to detector metadata; intentionally writes validation issues, not a QualityMetrics scalar."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Caption object-count check (own, VBench-dimension-inspired)"
     default_config = {

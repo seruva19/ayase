@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class VADERModule(PipelineModule):
     name = "hpsv2_const"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own constant-prompt HPSv2 score normalization and video mean; actual HPSv2 backend, no replacement scorer."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "hpsv2_const_quality": "VADER (a finetuning method, not a metric); HPSv2 — https://github.com/mihirp1998/VADER",

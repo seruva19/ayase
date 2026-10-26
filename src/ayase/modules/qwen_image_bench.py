@@ -61,6 +61,9 @@ DIMENSION_ALIASES.update(
 
 class QwenImageBenchModule(PipelineModule):
     name = "qwen_image_bench"
+    implementation_status = "implemented"
+    implementation_notes = "Complete adapted official-style multidimensional Qwen rubric inference with local model or endpoint, dimensional parsing, score validation and aggregation. Input image/prompt transport is implemented; no pixel heuristic fallback."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "qwen_image_bench_aesthetics": "Qwen-Image-Bench (arXiv 2605.28091) — https://github.com/QwenLM/Qwen-Image-Bench",

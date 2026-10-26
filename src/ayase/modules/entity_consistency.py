@@ -39,6 +39,9 @@ logger = logging.getLogger(__name__)
 
 class EntityBenchModule(BatchMetricModule):
     name = "entity_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own DINOv2/CLIP/ArcFace grouping and pairwise cosine calculations; alternative visual identity score is declared own."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "entity_appearance_cos": "name from EntityBench (He et al., arXiv 2605.15199); the definition is not reproduced — https://arxiv.org/abs/2605.15199",

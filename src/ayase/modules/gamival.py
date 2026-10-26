@@ -62,6 +62,9 @@ logger = logging.getLogger(__name__)
 
 class GAMIVALModule(PipelineModule):
     name = "gamival"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup always selects unavailable and _compute_gamival returns None; missing NSS branch and trained SVR are explicit."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "gamival_score": "GAMIVAL (Yu et al., IEEE SPL 2023) — stub — https://github.com/utlive/GAMIVAL",

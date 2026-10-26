@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class CDCModule(PipelineModule):
     name = "cdc"
+    implementation_status = "implemented"
+    implementation_notes = "Algorithm computes normalized per-RGB histograms and mean adjacent-frame Jensen-Shannon divergence with explicit numerical stabilization; no proxy backend."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cdc_score": "CDC (Liu et al.; NTIRE 2023 Video Colorization Challenge temporal metric) — https://doi.org/10.1109/CVPRW59228.2023.00159",

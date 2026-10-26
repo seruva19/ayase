@@ -87,6 +87,9 @@ class AudioProsodyDTWModule(PipelineModule):
     """Compare paired speech energy contours after independent MFCC-based DTW."""
 
     name = "audio_prosody_dtw"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own algorithm: pYIN voicing, MFCC-constrained DTW, centered energy RMSE/correlation and duration/warp statistics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = (

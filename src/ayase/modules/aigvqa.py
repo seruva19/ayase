@@ -69,6 +69,9 @@ logger = logging.getLogger(__name__)
 
 class AIGVQAModule(PipelineModule):
     name = "aigvqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup deliberately never loads architecture/checkpoint; score path cannot be reached by normal setup and _compute_score returns None."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "aigvqa_score": "AIGVQA (VQualA 2025, ICCVW) — https://github.com/IntMeGroup/AIGVQA",

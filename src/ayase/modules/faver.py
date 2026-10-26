@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class FAVERModule(PipelineModule):
     name = "faver"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup explicitly refuses untrained substitution and leaves backend unavailable; process returns sample without numeric output. No trained FAVER path is supplied."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "FAVER blind VQA for variable frame rate videos (2024)"

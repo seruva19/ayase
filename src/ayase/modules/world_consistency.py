@@ -37,6 +37,9 @@ _DINOV2_MIRROR_RELATIVE = "spectral/dinov2_vits14_pretrain.pth"
 
 class WorldConsistencyModule(PipelineModule):
     name = "world_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own DINO/CLIP frame-similarity permanence, variance stability and adjacent-drop blend; does not implement external physical causality benchmark."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "world_consistency_score": "concept from arXiv:2508.00144, own implementation — https://arxiv.org/abs/2508.00144",

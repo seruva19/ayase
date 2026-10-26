@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class HDRVDPModule(ReferenceBasedModule):
     name = "hdr_vdp"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only hypothetical external hdrvdp Python predictor is imported; no implementation/weights/package provisioner is present. Score is left unset without it; no neural or contrast proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     requires_external_backend = True
     provenance = "utility"
     sources = {

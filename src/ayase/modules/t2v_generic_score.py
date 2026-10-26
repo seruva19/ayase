@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 
 class T2VScoreModule(PipelineModule):
     name = "t2v_generic_score"
+    implementation_status = "unimplemented"
+    implementation_notes = "No default trained model: model_name=None causes setup return; generic AutoModel(clip,text) convention has no concrete supported checkpoint or provisioning."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "t2v_generic_alignment": "T2VScore, Wu et al. 2024 — name only — https://github.com/showlab/T2VScore",

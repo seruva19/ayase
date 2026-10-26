@@ -976,7 +976,7 @@ def modules_list(
             continue
         availability = (
             "external backend required"
-            if cls is not None and cls.requires_external_backend
+            if cls is not None and cls.resolved_implementation_status() == "unimplemented"
             else "check dependencies"
         )
         readiness = cls.resolved_implementation_status() if cls is not None else "unknown"

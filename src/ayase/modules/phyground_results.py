@@ -23,6 +23,9 @@ class PhyGroundResultModule(PipelineModule):
     """Import PhyGround/PhyJudge structured JSON results."""
 
     name = "phyground_results"
+    implementation_status = "implemented"
+    implementation_notes = "Complete result-import utility: validates/indexes supplied CSV/JSON rows, matches sample identity and copies numeric outputs; does not claim to execute the external research benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "phyground_general_score": "PhyGround/PhyJudge — https://github.com/NU-World-Model-Embodied-AI/PhyGround",

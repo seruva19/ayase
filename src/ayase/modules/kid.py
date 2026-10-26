@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class KIDModule(BatchMetricModule):
     name = "kid"
+    implementation_status = "implemented"
+    implementation_notes = "Real clean-fid or torch-fidelity KID implementations on staged generated/reference sets; no reference means no KID. Standard deviation is emitted only from actual torch-fidelity output."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "kid": "KID (Bińkowski et al., ICLR 2018) — clean-fid https://github.com/GaParmar/clean-fid or torch-fidelity",

@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class MotionSmoothnessModule(PipelineModule):
     name = "motion_smoothness"
+    implementation_status = "approximate"
+    implementation_notes = "VBench reconstruction protocol uses RIFE HDv3 instead of required AMT-S interpolator, changing the learned reconstruction backend under the same published field."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "motion_smoothness": "VBench Motion Smoothness (Huang et al., CVPR 2024) — https://github.com/Vchitect/VBench",

@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 class KandinskyMotionModule(PipelineModule):
     name = "kandinsky_motion"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled Kandinsky VideoMotionPredictor loads official pretrained weights and maps three native movement/dynamics outputs."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "kandinsky_camera_motion_score": "ai-forever motion predictor (Kandinsky video tools) — https://huggingface.co/ai-forever/kandinsky-video-motion-predictor",

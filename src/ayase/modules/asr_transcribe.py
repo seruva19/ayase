@@ -21,6 +21,9 @@ _TRANSCRIPT_CACHE: Dict[Tuple[str, int, int, str], str] = {}
 
 class ASRTranscribeModule(PipelineModule):
     name = "asr_transcribe"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility: faster-whisper/Whisper model loading, real transcription, sidecars and stat-keyed shared cache; edit-distance helpers are executable."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Shared Whisper ASR transcription cache"
     default_config = {

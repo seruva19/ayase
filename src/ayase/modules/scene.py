@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 class SceneModule(PipelineModule):
     name = "scene"
+    implementation_status = "implemented"
+    implementation_notes = "Complete detection/tagging utility using actual PySceneDetect, CLIP labels or OCR backend respectively; results derived from decoded media."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "utility"
     description = "Detects scene cuts and shots using PySceneDetect"
     default_config = {

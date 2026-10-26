@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class JEDiModule(PipelineModule):
     name = "mmd_selfsplit"
+    implementation_status = "implemented"
+    implementation_notes = "Own V-JEPA2 embedding self-split RBF MMD path is fully coded; static gap: model-specific pixel normalization/layout compatibility was not runtime verified."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "mmd_selfsplit": "name from JEDi (Luo et al., ICLR 2025, arXiv 2410.05203); the protocol is not reproduced — https://arxiv.org/abs/2410.05203",
@@ -175,3 +178,6 @@ class JEDiCompatModule(JEDiModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "mmd_selfsplit_metric"
+    implementation_status = "implemented"
+    implementation_notes = "Inherited complete own V-JEPA2 embedding Gaussian-kernel MMD between dataset halves; explicitly self-split, not the reference-vs-generated JEDi benchmark. Own provenance is appropriate."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

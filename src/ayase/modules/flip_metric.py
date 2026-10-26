@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class FLIPModule(ReferenceBasedModule):
     name = "flip"
+    implementation_status = "implemented"
+    implementation_notes = "Primary official flip-evaluator LDR call is executable, with resize/video aggregation adaptation; alternate flip_torch numerical parity remains unverified."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "flip_score": "ꟻLIP (Andersson et al., HPG 2020) — https://github.com/NVlabs/flip",
@@ -204,3 +207,6 @@ class FLIPCompatModule(FLIPModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "flip_metric"
+    implementation_status = "implemented"
+    implementation_notes = "Inherited real flip_evaluator or flip_loss implementation, native color conversion and reference comparison; video frame mean preserves the real image error method."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

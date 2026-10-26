@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class FDDModule(PipelineModule):
     name = "fdd"
+    implementation_status = "unimplemented"
+    implementation_notes = "No FLAME vertex-motion decoder/backend is implemented; setup/process explicitly leave this CodeTalker vertex metric unset. License-gated prerequisite is real, not a numeric approximation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "FDD: upper-face vertex-motion distance (CodeTalker, external backend)"
     provenance = "published"
     sources = {

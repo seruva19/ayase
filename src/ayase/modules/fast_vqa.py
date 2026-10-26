@@ -44,6 +44,9 @@ def resize_frame_maintain_aspect(frame, min_dim):
 
 class FastVQAModule(PipelineModule):
     name = "fast_vqa"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled official evaluator and sampling helpers load released trained weights, configured temporal/spatial fragments and native score calibration."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "fast_vqa_score": "FAST-VQA / FasterVQA (Wu et al., ECCV 2022 / TPAMI) — https://github.com/VQAssessment/FAST-VQA-and-FasterVQA",

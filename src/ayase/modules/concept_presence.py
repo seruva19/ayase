@@ -36,6 +36,9 @@ _FACE_KEYWORDS = frozenset([
 
 class ConceptPresenceModule(PipelineModule):
     name = "concept_presence"
+    implementation_status = "implemented"
+    implementation_notes = "Explicit own combination of actual face detector counts and thresholded CLIP concept similarities, with supported face backends."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = {
         "concept_count": "own",

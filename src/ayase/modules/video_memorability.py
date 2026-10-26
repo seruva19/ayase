@@ -25,8 +25,11 @@ logger = logging.getLogger(__name__)
 
 class VideoMemorabilityModule(PipelineModule):
     name = "video_memorability"
+    implementation_status = "unimplemented"
+    implementation_notes = "Explicit unavailable placeholder: no trained memorability head is wired, setup sets unavailable, process returns unchanged and _compute_memorability returns None. Existing implemented status is incorrect even though no QualityMetrics output is currently discoverable."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
-    description = "Content memorability approximation (CLIP/DINOv2 feature statistics)"
+    description = "Video memorability placeholder; trained regression backend unavailable"
     default_config = {
         "subsample": 5,
     }

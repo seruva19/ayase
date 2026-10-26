@@ -1014,6 +1014,9 @@ def _load_model_definitions():
 
 class StableVQAModule(PipelineModule):
     name = "stablevqa"
+    implementation_status = "implemented"
+    implementation_notes = "Real trained StableVQA checkpoint, strict state-key validation and source-derived Swin/RAFT/deblur/quality network input path; full translated architecture parity/runtime remains unverified."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "stablevqa_score": "Kou et al., ACM MM 2023 — https://github.com/QMME/StableVQA",

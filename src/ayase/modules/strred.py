@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class STRREDModule(ReferenceBasedModule):
     name = "strred"
+    implementation_status = "implemented"
+    implementation_notes = "Real scikit-video STRRED implementation on paired luma videos, selecting native aggregate rather than a temporal-gradient proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "strred": "Soundararajan & Bovik, TCSVT 2013; scikit-video — http://www.scikit-video.org/stable/modules/generated/skvideo.measure.strred.html",

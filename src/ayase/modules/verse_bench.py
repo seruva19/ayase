@@ -58,6 +58,9 @@ _WEIGHTS = {
 
 class VerseBenchModule(PipelineModule):
     name = "verse_bench"
+    implementation_status = "unimplemented"
+    implementation_notes = "Concrete benchmark loop exists but requires manually materialized dataset_root and all inferencer assets; setup merely sees vendor directory. Several inferencers load local models_path files without automatic resolution; no all-component provisioner in this module. Own aggregate also fills missing metrics from-999 sentinels."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {
         "verse_bench_breakdown_est": "own",
         "verse_bench_metrics": "published",

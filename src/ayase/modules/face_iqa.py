@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class FaceIQAModule(PipelineModule):
     name = "face_iqa"
+    implementation_status = "implemented"
+    implementation_notes = "Real PyIQA face-IQA trained model plus facexlib detection/alignment; writes mean valid aligned-face predictions. Video pooling is a documented protocol extension, not a heuristic model."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "face_iqa_score": "TOPIQ-face (pyiqa topiq_nr-face, Chen et al.) — https://github.com/chaofengc/IQA-PyTorch",

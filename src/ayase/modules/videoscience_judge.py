@@ -55,6 +55,9 @@ OUTPUT_FIELDS = {
 
 class VideoScienceJudgeModule(PipelineModule):
     name = "videoscience_judge"
+    implementation_status = "implemented"
+    implementation_notes = "Released base/checklist VLM judge has real provider calls, source rubrics/weights and strict judgment parsing; unreleased salient-frame and optional CV stage are excluded. Full provider runtime not tested."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "VideoScience VLM judge for generated scientific experiment videos"
     input_type = "video"
     implementation_sources = (

@@ -39,6 +39,9 @@ CAMERA_KEYWORDS = {
 
 class DynamicsControllabilityModule(PipelineModule):
     name = "dynamics_controllability"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own keyword expected-motion rules compared with actual CoTracker/Farneback motion and camera direction; alternatives are explicitly own semantics."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Assesses motion controllability based on text-motion alignment"

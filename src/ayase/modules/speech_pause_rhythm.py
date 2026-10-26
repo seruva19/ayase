@@ -287,6 +287,9 @@ class SpeechPauseRhythmModule(PipelineModule):
     """Compare exact Silero-VAD pause timing in matching-content speech."""
 
     name = "speech_pause_rhythm"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Silero speech activity comparison: span ratio, fraction/count differences, exact empirical Wasserstein pause durations and normalized interval symmetric difference."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "speech_activity_fraction_difference": "Silero VAD (interval detector only) — https://github.com/snakers4/silero-vad",

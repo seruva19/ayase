@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class TTSDS2Module(PipelineModule):
     name = "tts_system_dist"
+    implementation_status = "unimplemented"
+    implementation_notes = "Even with managed ttsds dependency available, setup does not create/evaluate a TTSDS2 distribution and process is unconditional no-op."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     requires_external_backend = True
     sources = {

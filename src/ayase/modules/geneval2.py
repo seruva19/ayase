@@ -27,6 +27,9 @@ BENCHMARK_PROMPTS = 800
 
 class GenEval2Module(PipelineModule):
     name = "geneval2"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned real Qwen3-VL and bundled benchmark/Soft-TIFA protocol compute answer probabilities, atom AM/GM and complete-benchmark guarded aggregates."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "GenEval2 Soft-TIFA image-prompt alignment (raw AM and GM)"
     input_type = "image"
     provenance = {

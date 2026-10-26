@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class DeepDCModule(PipelineModule):
     name = "deepdc"
+    implementation_status = "unimplemented"
+    implementation_notes = "Actual pyiqa DeepDC is full-reference and its wrapper asserts ref is not None; Ayase labels it NR and calls self._model(tensor) with no reference, so intended field cannot be emitted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

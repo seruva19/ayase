@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class MetadataModule(PipelineModule):
     name = "metadata"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility extracts real OpenCV image/video dimensions/fps/duration and ffprobe audio stream metadata plus validation checks."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "metadata": "utility",
     }

@@ -61,6 +61,9 @@ def _third_party_path(*parts: str) -> Path:
 
 class BrightRateModule(PipelineModule):
     name = "brightrate"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled official inference script invoked with downloaded trained regressor and all feature/checkpoint assets; parses actual score file rather than proxy."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "brightrate_score": "BrightRate / BrightVQ — https://brightvqa.github.io/BrightVQ/",

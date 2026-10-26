@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class DeepfakeDetectionModule(PipelineModule):
     name = "deepfake_detection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own CLIP fake/real prompt scoring plus FFT artifact heuristic. Own probability is not a published calibrated deepfake classifier score; absence of CLIP does not silently populate another method."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Synthetic media / deepfake likelihood estimation"

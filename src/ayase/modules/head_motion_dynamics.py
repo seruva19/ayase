@@ -74,6 +74,9 @@ def pose_and_center(
 
 class HeadMotionDynamicsModule(PipelineModule):
     name = "head_motion_dynamics"
+    implementation_status = "approximate"
+    implementation_notes = "Material THEval measurement substitution: head angles derive from MediaPipe face transform and translation is landmark centroid shift in frame pixels rather than published FaceXFormer head/translation output; the aggregation equation is copied but input quantity changes."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "head_motion_dynamics_score": "THEval (arXiv 2511.04520), Eq.26 — https://arxiv.org/abs/2511.04520",

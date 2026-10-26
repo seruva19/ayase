@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class BackgroundConsistencyModule(PipelineModule):
     name = "background_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Loads real CLIP and averages clamped cosine to first/previous frames using published consistency mechanism. Video/frame backend adaptation remains adapted provenance."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "background_consistency": "VBench Background Consistency — https://github.com/Vchitect/VBench/blob/master/vbench/background_consistency.py",

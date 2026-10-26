@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 class StyleConsistencyModule(PipelineModule):
     name = "style_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own sampled HSV histogram correlation validation; emits warning diagnostic rather than a schema score intentionally."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Appearance/color style consistency (HSV histogram correlation over time)"

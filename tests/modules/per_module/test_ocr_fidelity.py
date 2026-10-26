@@ -10,6 +10,40 @@ def test_ocr_fidelity_basics():
     from ayase.modules.ocr_fidelity import OCRFidelityModule
     _test_module_basics(OCRFidelityModule, "ocr_fidelity")
 
+
+@pytest.mark.parametrize("api", ["v2", "v3"])
+def test_missing_ocr_text_is_deletion_error(image_sample, monkeypatch, api):
+    import numpy as np
+    from types import SimpleNamespace
+    from ayase.modules.ocr_fidelity import OCRFidelityModule
+
+    module = OCRFidelityModule({"expected_text": "HELLO WORLD"})
+    module._ocr_available = True
+    module._ocr_api = api
+    module._ocr = SimpleNamespace(
+        predict=lambda frame: [{"rec_texts": []}],
+        ocr=lambda frame, cls: [None],
+    )
+    monkeypatch.setattr(module, "_load_frames", lambda sample: [np.zeros((8, 8, 3))])
+
+    assert module.process(image_sample) is image_sample
+    metrics = image_sample.quality_metrics
+    assert metrics.ocr_score == pytest.approx(1.0)
+    assert metrics.ocr_fidelity == pytest.approx(1.0)
+    assert metrics.ocr_cer == pytest.approx(1.0)
+    assert metrics.ocr_wer == pytest.approx(1.0)
+
+
+def test_character_error_rate_fallback_uses_reference_length(monkeypatch):
+    import sys
+    from ayase.modules.ocr_fidelity import _character_error_rate
+
+    monkeypatch.setitem(sys.modules, "cer", None)
+    assert _character_error_rate("ab", "abcd") == pytest.approx(0.5)
+    assert _character_error_rate("abcdef", "abcd") == pytest.approx(0.5)
+    assert _character_error_rate("", "abcd") == pytest.approx(1.0)
+    assert _character_error_rate("", "") == pytest.approx(0.0)
+
 def test_ocr_fidelity_image(image_sample):
     from ayase.modules.ocr_fidelity import OCRFidelityModule
     image_sample.quality_metrics = QualityMetrics()

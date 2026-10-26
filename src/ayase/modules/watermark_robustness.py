@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class WatermarkRobustnessModule(PipelineModule):
     name = "watermark_robustness"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own DCT/LSB and optional watermark-decoder heuristic plus JPEG/noise/blur/crop/temporal attacks and retention ratio; no published detector-accuracy claim."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Invisible watermark detection and strength estimation"

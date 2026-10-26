@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class AudioModule(PipelineModule):
     name = "audio"
+    implementation_status = "implemented"
+    implementation_notes = "Complete audio validation utility calls resolved ffprobe/ffmpeg, reads actual streams/sample rates/bitrates and optional volumedetect silence checks."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Validates audio stream quality and presence"
     default_config = {

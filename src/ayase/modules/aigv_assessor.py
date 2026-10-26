@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class AIGVAssessorModule(PipelineModule):
     name = "aigv_assessor"
+    implementation_status = "unimplemented"
+    implementation_notes = "No executable default AIGV backend: the HF checkpoint auto_map references configuration_internvl_chat/modeling_internvl_chat modules absent from that checkpoint manifest, and no source acquisition/registration is provided here. Generic AutoProcessor(images=...) and arbitrary flattened-output clipping also do not implement the custom InternVL scorer. No fallback produces numbers."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = {
         "aigv_alignment_est": "own",

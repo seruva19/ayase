@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class SDReferenceModule(PipelineModule):
     name = "sd_reference"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete CLIP-SDXL reference generation and average embedding similarity pipeline; CUDA required by setup. Published SD-score uses different reference generator/protocol if source expects SD1.4; verify before treating as exact."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "sd_score": "EvalCrafter SD-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py",

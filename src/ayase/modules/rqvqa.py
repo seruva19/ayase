@@ -313,6 +313,9 @@ def _build_liqe(checkpoint_path: Path, device: str, dtype):
 
 class RQVQAModule(PipelineModule):
     name = "rqvqa"
+    implementation_status = "implemented"
+    implementation_notes = "Real multi-fold checkpoint ensemble with Swin, SlowFast, Q-Align, LIQE and FAST-VQA feature branches, strict native interface checks and raw score output. Architecture/runtime parity not executed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "rqvqa_score": "RQ-VQA (Sun et al., CVPRW/NTIRE 2024) — https://github.com/sunwei925/RQ-VQA",

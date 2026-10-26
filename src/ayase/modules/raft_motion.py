@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class RAFTMotionModule(PipelineModule):
     name = "raft_motion"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own average RAFT flow magnitude but float inputs remain 0-255 before pretrained torchvision transforms, which expect 0-1 floats; requires input scaling fix. Real trained RAFT exists, no substitute metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "RAFT optical flow motion scoring (torchvision)"

@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class MagFaceModule(PipelineModule):
     name = "face_emb_norm"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own ArcFace embedding-norm quality normalization; explicitly not a MagFace trained model despite legacy class name."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "face_emb_norm": "named after MagFace (Meng et al., CVPR 2021); the MagFace model is not used — https://github.com/IrvingMeng/MagFace",

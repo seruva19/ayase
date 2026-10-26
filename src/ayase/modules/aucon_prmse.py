@@ -56,6 +56,9 @@ def _frames(video_path: Path, fps: float, max_frames: int) -> list:
 
 class AuconPrmseModule(PipelineModule):
     name = "aucon_prmse"
+    implementation_status = "implemented"
+    implementation_notes = "Py-Feat detects AU/pose arrays; computes exact per-frame AU-set agreement and pose-angle RMSE. Managed dependency provides py-feat; frame protocol/backend adaptation already disclosed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "AUCON/PRMSE — action-unit and pose agreement with a driver video"
     provenance = "adapted"
     sources = {

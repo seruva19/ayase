@@ -109,6 +109,9 @@ class ExpressionSimilarityModule(PipelineModule):
     """
 
     name = "expression_similarity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own quantile-Wasserstein, coefficient correlation and change-rate agreement from real MediaPipe blendshape trajectories, with coverage and range diagnostics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Time-free facial-expression manner similarity via MediaPipe blendshapes"
     # Not a published metric: every field is an Ayase-internal quantity and the
     # module is excluded from the default pipeline by the provenance filter.

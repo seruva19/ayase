@@ -132,6 +132,9 @@ def _downsample(img: np.ndarray, times: int) -> np.ndarray:
 
 class SpEEDQAModule(PipelineModule):
     name = "speedqa"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete SpEED-QA Gaussian scale-mixture covariance/eigenvalue entropy implementation and spatial/temporal scaling with published product; numerical/downsample protocol is adapted."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "speedqa_score": "Bampis et al., IEEE SPL 2017; SpEED-QA_release (MATLAB) — https://github.com/christosbampis/SpEED-QA_release",

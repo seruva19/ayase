@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class PtlflowMotionModule(PipelineModule):
     name = "ptlflow_motion"
+    implementation_status = "implemented"
+    implementation_notes = "Real PTLFlow model/checkpoint and optical-flow adapter, then explicitly own mean-magnitude diagnostic. No claim that flow magnitude reproduces a learned quality score."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "ptlflow optical flow motion scoring (dpflow model)"

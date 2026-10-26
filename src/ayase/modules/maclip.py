@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class MACLIPModule(PipelineModule):
     name = "maclip"
+    implementation_status = "implemented"
+    implementation_notes = "Adapter calls real upstream PyIQA MACLIP model and averages native frame predictions. Installed PyIQA0.1.14.1 lacks this key while current upstream config contains it; supported published package availability not established without install, so turnkey readiness remains uncertain."
+    implementation_review = "Source inspection; confidence low; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

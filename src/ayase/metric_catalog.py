@@ -62,6 +62,7 @@ class MetricCatalogItem:
     provenance: str = ""
     source: str = ""
     deviation: str = ""
+    implementation_status: str = "implemented"
 
 
 @dataclass(frozen=True)
@@ -98,6 +99,7 @@ class ModuleCatalogItem:
     packaged: bool
     implementation_status: str = "implemented"
     implementation_notes: str = ""
+    implementation_review: str = "unreviewed"
 
 
 def _normalize_name(value: str) -> str:
@@ -181,6 +183,7 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
                 provenance=provenance.get(field, ""),
                 source=sources.get(field, ""),
                 deviation=deviations.get(field, ""),
+                implementation_status=cls.resolved_metric_status(field),
             )
         )
 
@@ -196,6 +199,7 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
                 provenance=provenance.get(field, ""),
                 source=sources.get(field, ""),
                 deviation=deviations.get(field, ""),
+                implementation_status=cls.resolved_metric_status(field),
             )
         )
     return tuple(sorted(metrics, key=lambda metric: (metric.scope, metric.name)))
@@ -407,6 +411,7 @@ def _build_module_item(cls: type, detailed: bool) -> ModuleCatalogItem:
         paper=(_detect_paper(cls) or "") if detailed else "",
         implementation_status=cls.resolved_implementation_status(),
         implementation_notes=str(getattr(cls, "implementation_notes", "") or ""),
+        implementation_review=str(getattr(cls, "implementation_review", "unreviewed")),
         requires_external_backend=bool(getattr(cls, "requires_external_backend", False)),
         packaged=ModuleRegistry.is_packaged_module(cls),
     )
@@ -489,7 +494,7 @@ def _render_metric_list(console: Console, catalog: MetricCatalog) -> None:
         definitions = ", ".join(
             sorted({metric.provenance for _, metric in providers if metric.provenance})
         )
-        statuses = {module.implementation_status for module, _ in providers}
+        statuses = {metric.implementation_status for _, metric in providers}
         description = next(
             (metric.description for _, metric in providers if metric.description), ""
         )
@@ -522,6 +527,7 @@ def _render_module(
     summary.add_column("Property", style="bold")
     summary.add_column("Value")
     summary.add_row("Readiness", module.implementation_status)
+    summary.add_row("Review evidence", module.implementation_review)
     if module.implementation_notes:
         summary.add_row("Readiness notes", module.implementation_notes)
     summary.add_row("Input", module.input_type)
@@ -549,6 +555,7 @@ def _render_module(
     metrics_table.add_column("Category")
     metrics_table.add_column("Direction", no_wrap=True)
     metrics_table.add_column("Definition")
+    metrics_table.add_column("Readiness")
     metrics_table.add_column("Description")
     for metric in module.metrics:
         style = "bold cyan" if selected_metric == metric.name else "cyan"
@@ -558,6 +565,7 @@ def _render_module(
             metric.category,
             metric.direction,
             metric.provenance,
+            metric.implementation_status,
             metric.description,
         )
     if module.metrics:

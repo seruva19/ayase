@@ -58,6 +58,9 @@ MEDIA_SUFFIXES = (".mp4", ".mkv", ".mov", ".webm", ".avi") + AUDIO_SUFFIXES
 
 class VoiceIdentityModule(PipelineModule):
     name = "voice_identity"
+    implementation_status = "implemented"
+    implementation_notes = "Real SpeechBrain ECAPA speaker encoder, normalized clip/reference embeddings and cosine-reference mean; set aggregation explicit adapted and coverage utility."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {
         "voice_identity": "adapted",
         "voice_identity_coverage": "utility",

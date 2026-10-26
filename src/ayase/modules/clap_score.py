@@ -42,6 +42,9 @@ class LAIONCLAPScoreModule(HumanCLAPModule):
     """
 
     name = "laion_clap_score"
+    implementation_status = "implemented"
+    implementation_notes = "Real CLAP encoder loaders (inherited HumanCLAP path or MSCLAP) compute normalized audio/text embedding cosine and write the selected field."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "laion_clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",
@@ -75,6 +78,9 @@ class MSCLAPScoreModule(HumanCLAPModule):
     """
 
     name = "ms_clap_score"
+    implementation_status = "implemented"
+    implementation_notes = "Real CLAP encoder loaders (inherited HumanCLAP path or MSCLAP) compute normalized audio/text embedding cosine and write the selected field."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "ms_clap_score": "MS-CLAP audio/text cosine — https://github.com/microsoft/CLAP",
@@ -157,6 +163,9 @@ class GenericCLAPScoreModule(HumanCLAPModule):
     """
 
     name = "clap_score"
+    implementation_status = "implemented"
+    implementation_notes = "Real CLAP encoder loaders (inherited HumanCLAP path or MSCLAP) compute normalized audio/text embedding cosine and write the selected field."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "clap_score": "CLAPScore (audio/text cosine in CLAP) — https://huggingface.co/laion/clap-htsat-fused",

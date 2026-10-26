@@ -65,6 +65,9 @@ def eyebrow_dynamics(distances: Sequence[Tuple[float, float]]) -> Optional[float
 
 class EyebrowDynamicsModule(PipelineModule):
     name = "eyebrow_dynamics"
+    implementation_status = "implemented"
+    implementation_notes = "THEval normalized vertical brow-eye-distance standard deviation is directly implemented; real MediaPipe landmark detector is substituted and declared. This preserves the measured geometry/statistic, unlike replacing it with image motion."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "eyebrow_dynamics_score": "THEval (Quignon et al., arXiv 2511.04520), Eq.28 — https://arxiv.org/abs/2511.04520",

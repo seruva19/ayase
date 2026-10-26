@@ -39,6 +39,9 @@ CODEC_BPP_TARGETS = {
 
 class CodecSpecificQualityModule(PipelineModule):
     name = "codec_specific_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own ffprobe bitrate/GOP rules and decoded 8px block-boundary artifact calculations; no published learned metric is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Codec-level efficiency, GOP quality, and artifact detection"

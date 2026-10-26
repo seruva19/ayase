@@ -48,6 +48,9 @@ _NEGATIVE_FEELINGS = [
 
 class CLiFVQAModule(PipelineModule):
     name = "clip_feel"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own CLIP prompt-pair feeling algorithm: sigmoid of scaled positive-minus-negative cosine and average across seven dimensions/frames."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "CLIP aesthetic-feel video quality (own, CLiF-VQA-inspired)"
     default_config = {

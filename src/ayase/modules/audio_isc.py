@@ -30,6 +30,9 @@ _EPS = 1e-16
 
 class AudioISCModule(BatchMetricModule):
     name = "audio_isc"
+    implementation_status = "implemented"
+    implementation_notes = "Default loads real vendored PANNs Cnn14_16k trained logits with checkpoint download and computes exp(mean KL) over splits; optional PaSST swap is explicit non-default."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "audio_isc_mean": "Inception Score (Salimans 2016) via audioldm_eval protocol (Cnn14_16k logits → softmax) — https://github.com/haoheliu/audioldm_eval",

@@ -213,6 +213,9 @@ class BodyMotionKinematicsModule(PipelineModule):
     """Compare reference-relative body-motion summary diagnostics."""
 
     name = "body_motion_kinematics"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own reference comparison of normalized pose velocity, acceleration, jerk, movement range, symmetry, idle fraction and visibility coverage using shared real pose backend; not presented as a published scalar benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Reference-relative 2D body-motion kinematic diagnostics without frame alignment"
     default_config = {

@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class SSIMULACRA2Module(ReferenceBasedModule):
     name = "ssimulacra2"
+    implementation_status = "implemented"
+    implementation_notes = "Actual ssimulacra2 package compute function with paired RGB arrays; third-party port and video pooling are adapted, parity unverified rather than proven replacement."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "ssimulacra2": "SSIMULACRA 2 (Cloudinary/libjxl) — https://github.com/cloudinary/ssimulacra2",

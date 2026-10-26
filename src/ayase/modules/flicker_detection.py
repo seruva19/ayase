@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 class FlickerDetectionModule(PipelineModule):
     name = "flicker_detection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own luminance sign-change-rate times relative difference-variance heuristic, clipped to declared 0-100 output."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Detects temporal luminance flicker"

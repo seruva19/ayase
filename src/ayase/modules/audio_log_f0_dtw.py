@@ -77,6 +77,9 @@ class AudioLogF0DTWModule(PipelineModule):
     """Measure paired pitch-contour error (ESPnet evaluate_f0 protocol)."""
 
     name = "audio_log_f0_dtw"
+    implementation_status = "implemented"
+    implementation_notes = "WORLD harvest/cheaptrick + SPTK mel cepstra drive fastdtw; voiced log-F0 RMSE is converted to cents, with independently own voicing-mismatch statistic."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     implementation_sources = ("../utils/sptk.py",)
     provenance = {
         "audio_f0_voiced_mismatch": "own",

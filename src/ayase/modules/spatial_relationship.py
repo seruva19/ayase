@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class SpatialRelationshipModule(PipelineModule):
     name = "spatial_relationship"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own caption-keyword/detection-box relative-position rule validator; diagnostic-only output is intentional."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Verifies spatial relations (left/right/top/bottom) in prompt vs detections"

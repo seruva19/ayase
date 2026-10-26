@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class LipReadingWERModule(PipelineModule):
     name = "lip_reading_wer"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup only reports missing intended backend and process always returns sample; no score-producing implementation is wired. A managed package entry alone does not implement the algorithm."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "WER of lip-read transcript vs utterance (AV-HuBERT/Auto-AVSR)"
     provenance = "published"
     sources = {

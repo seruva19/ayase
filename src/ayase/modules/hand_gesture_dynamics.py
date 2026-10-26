@@ -347,6 +347,9 @@ class HandGestureDynamicsModule(PipelineModule):
     """Compare transparent hand-shape distributions and dynamics."""
 
     name = "hand_gesture_dynamics"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own hand-reference comparison over pinned DWPose Wholebody/rtmlib output, with articulation/openness/pinch/speed/asymmetry and explicit observability coverage. No absent joint is silently treated as measured zero."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "hand_gesture_articulation_amplitude_difference": "own",
         "hand_gesture_articulation_location_difference": "own",

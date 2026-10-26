@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class LVEModule(PipelineModule):
     name = "lve"
+    implementation_status = "unimplemented"
+    implementation_notes = "No license-gated 3D lip-vertex/face decoder is implemented; setup/process leave LVE unset. No landmark-distance substitute."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "LVE: lip-vertex error vs GT (MeshTalk, external backend)"
     provenance = "published"
     sources = {

@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class VideoScore2Module(PipelineModule):
     name = "videoscore2"
+    implementation_status = "implemented"
+    implementation_notes = "Real VideoScore2 checkpoint with Qwen media processor, generated native dimension scores and likelihood-normalized expectation over1-5 rating tokens. Custom abbreviated prompt may differ upstream; direct source parity not established."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "videoscore2_alignment": "VideoScore2, TIGER-Lab — https://huggingface.co/TIGER-Lab/VideoScore2",

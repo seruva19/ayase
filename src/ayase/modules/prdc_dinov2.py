@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class PRDCDINOv2Module(BatchMetricModule):
     name = "prdc_dinov2"
+    implementation_status = "implemented"
+    implementation_notes = "Actual DINOv2 pooled normalized features and explicit nearest-neighbor manifold precision/recall/density/coverage formulas. DINOv2/video representative-frame feature protocol is a backbone adaptation of generic PRDC."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "prdc_coverage": "PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc",

@@ -182,6 +182,9 @@ def _valid_labels(labels: Any, experiment: str) -> bool:
 
 class MorpheusModule(PipelineModule):
     name = "morpheus"
+    implementation_status = "implemented"
+    implementation_notes = "Pins and automatically fetches actual upstream Morpheus/SAM2 source plus trained SAM2/depth assets; invokes author preprocessing/tracking/physical and PINN statistical scoring for explicit experiment annotations. Minor optional SAM2 postprocessing adaptation disclosed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     input_type = "video"
     description = "Morpheus native annotated-video physical and dynamical physics evaluation"
     provenance = {

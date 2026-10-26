@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 class TextDetectionModule(PipelineModule):
     name = "text_detection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete detection/tagging utility using actual PySceneDetect, CLIP labels or OCR backend respectively; results derived from decoded media."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "ocr_area_ratio": "PaddleOCR / Tesseract — https://github.com/PaddlePaddle/PaddleOCR",
@@ -199,4 +202,7 @@ class TextCompatModule(TextDetectionModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "text"
+    implementation_status = "implemented"
+    implementation_notes = "Compatibility class inherits concrete PaddleOCR/Tesseract utility, real recognized bounding boxes and maximum frame text-area ratio."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
 

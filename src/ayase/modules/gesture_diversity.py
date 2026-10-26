@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class GestureDiversityModule(BatchMetricModule):
     name = "gesture_diversity"
+    implementation_status = "approximate"
+    implementation_notes = "Material substitute for published EMAGE/TalkSHOW diversity: mean MediaPipe xy pose signatures replace SMPL-X body/hand rotation sequences. Pairwise L1 is executable but computes a different representation/statistic."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "L1 Diversity — mean pairwise L1 of per-video pose signatures (EMAGE)"
     provenance = "adapted"
     sources = {

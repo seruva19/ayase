@@ -604,6 +604,9 @@ def _build_model(device, config=None):
 
 class ProVQAModule(PipelineModule):
     name = "provqa"
+    implementation_status = "implemented"
+    implementation_notes = "Real trained source-derived spherical spatial/motion/temporal network with checkpoint, deterministic neighboring-frame triplets and 1-DMOS output; random-to-uniform sampling is an explicit adaptation."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "provqa_score": "ProVQA (Yang et al., TIP 2022) — https://github.com/yanglixiaoshen/ProVQA",

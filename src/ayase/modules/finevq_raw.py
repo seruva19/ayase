@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class FineVQModule(PipelineModule):
     name = "finevq_raw"
+    implementation_status = "unimplemented"
+    implementation_notes = "No executable default FineVQ model: checkpoint auto_map requires custom InternVL source modules absent from its HF file manifest, with no acquisition/registration here. Generic AutoProcessor frame inputs do not supply the custom model interface. Raw-logit mean naming correctly avoids claiming the published score, but cannot repair missing loading/inference."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "finevq_raw_mean": "FineVQ model (Duan et al., CVPR 2025); the number is not its score — https://github.com/IntMeGroup/FineVQ",

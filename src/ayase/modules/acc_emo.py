@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class AccEmoModule(PipelineModule):
     name = "acc_emo"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup only warns; process returns sample without emotion classifier or writes."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Target-emotion accuracy via Emotion-FAN/EmoNet (external backend)"
     provenance = "published"
     sources = {

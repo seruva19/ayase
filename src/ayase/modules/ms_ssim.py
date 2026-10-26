@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class MSSSIMModule(ReferenceBasedModule):
     name = "ms_ssim"
+    implementation_status = "implemented"
+    implementation_notes = "Real pytorch_msssim.ms_ssim backend with paired reference frames and configured native range; per-image score is preserved and video pooling is a documented adaptation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "ms_ssim": "MS-SSIM (Wang et al., 2003) via pytorch-msssim — https://github.com/VainF/pytorch-msssim",

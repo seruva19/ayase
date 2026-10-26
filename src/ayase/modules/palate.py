@@ -297,6 +297,9 @@ Path(sys.argv[2]).write_text(json.dumps(out), encoding="utf-8")"""
 
 class PALATEModule(PipelineModule):
     name = "palate"
+    implementation_status = "implemented"
+    implementation_notes = "Executable source-faithful released DINOv2 PALATE/KDE path, verified source/checkpoint provisioning, MMD, retention and M_PALATE; released-vs-paper difference explicitly adapted."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "Original DINOv2 PALATE and M_PALATE distribution metrics"
     input_type = "image"
     provenance = {

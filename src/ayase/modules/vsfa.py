@@ -63,6 +63,9 @@ def _tp_pool(q, torch, F, tau=12, beta=0.5):
 
 class VSFAModule(PipelineModule):
     name = "vsfa"
+    implementation_status = "implemented"
+    implementation_notes = "Actual pretrained ResNet50 mean/std features plus strict official ANN/GRU/q trained heads and source TP pooling, all native video frames."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "vsfa_score": "VSFA, Li et al. ACM MM 2019 — https://github.com/lidq92/VSFA",

@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 
 class LLMAdvisorModule(PipelineModule):
     name = "llm_advisor"
+    implementation_status = "implemented"
+    implementation_notes = "Complete rule-based recommendations from existing metrics; intentionally no LLM and no new numeric field. Utility is implemented."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Rule-based improvement recommendations derived from quality metrics (no LLM used)"
     default_config = {

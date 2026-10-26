@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class HDRSDRVQAModule(PipelineModule):
     name = "hdr_sdr_vqa"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own entropy/clipping HDR and brightness/contrast/Laplacian SDR heuristics. Video decode is OpenCV 8-bit despite HDR tags; heuristic limitation, not published backend reproduction."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     sources = {
@@ -228,6 +231,9 @@ class FourKVQAModule(PipelineModule):
     """4K/Ultra-HD video quality assessment with memory-efficient processing."""
 
     name = "4k_vqa"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own tiled Laplacian sharpness heuristic, normalized and pooled into hdr_technical_score; it does not claim a named trained 4K model."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "hdr_quality": "— (heuristics; basis is the ayase repository itself) — https://github.com/seruva19/ayase",

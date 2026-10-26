@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class LetterboxModule(PipelineModule):
     name = "letterbox"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility scanning dark border rows/columns over frames and averaging active-border ratio; does not promise a learned detector."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Border/letterbox detection (0-1, 0=no borders)"
     default_config = {"threshold": 16, "subsample": 4}

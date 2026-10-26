@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class PSNR99Module(ReferenceBasedModule):
     name = "psnr99"
+    implementation_status = "implemented"
+    implementation_notes = "Intended published top-1%-luma-error formula and frame aggregation are implemented, but there is a concrete accidental indexing bug requiring repair; this is a defect, not an intentionally approximate method. Material numeric defect: COLOR_BGR2YUV_IYUV produces packed planar 2-D output, then [...,0] selects a column containing Y/U/V plane rows, not full luma. Top-1%-error PSNR is therefore computed over the wrong pixels/channels, despite correct subsequent tail formula."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "psnr99": "PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398",
@@ -94,8 +97,10 @@ class PSNR99Module(ReferenceBasedModule):
         h, w = ref.shape[:2]
         img = cv2.resize(img, (w, h))
 
-        y_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_IYUV)[..., 0].astype(np.float64)
-        y_ref = cv2.cvtColor(ref, cv2.COLOR_BGR2YUV_IYUV)[..., 0].astype(np.float64)
+        # I420 is a packed two-dimensional array: its first h rows are Y.
+        # Selecting [..., 0] would mix a single column of luma and chroma.
+        y_img = cv2.cvtColor(img, cv2.COLOR_BGR2YUV_IYUV)[:h, :w].astype(np.float64)
+        y_ref = cv2.cvtColor(ref, cv2.COLOR_BGR2YUV_IYUV)[:h, :w].astype(np.float64)
 
         sq_err = (y_img - y_ref) ** 2
         n_top = max(1, int(np.ceil(sq_err.size * 0.01)))

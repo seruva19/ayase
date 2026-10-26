@@ -28,6 +28,9 @@ NEGATIVE_PROMPT = "the sound is noisy and with artifacts"
 
 class PAMModule(PipelineModule):
     name = "pam"
+    implementation_status = "implemented"
+    implementation_notes = "Genuine Microsoft CLAP audio embeddings and published positive/negative quality prompts with similarity softmax; not a handcrafted audio-quality heuristic."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "pam_score": "PAM (Deshmukh et al., Interspeech 2024) — https://arxiv.org/abs/2402.00282",

@@ -125,6 +125,9 @@ def _kinematic_beats(video_path: str, pose) -> np.ndarray:
 
 class BeatAlignmentModule(PipelineModule):
     name = "beat_alignment"
+    implementation_status = "approximate"
+    implementation_notes = "Material BAS protocol substitute: MediaPipe normalized xy joint displacements and box smoothing replace source 3D pose/kinematic beat extraction. Gaussian nearest-beat aggregation is present, but published BAS numbers are not reproduced."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "bas_score": "BAS (Li et al., Bailando CVPR 2022 Eq.15; EDGE) — https://github.com/lisiyao21/Bailando",

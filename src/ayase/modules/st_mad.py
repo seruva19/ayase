@@ -440,6 +440,9 @@ def _stmad_index(ref_frames: List[np.ndarray], dst_frames: List[np.ndarray]) -> 
 
 class STMADModule(ReferenceBasedModule):
     name = "st_mad"
+    implementation_status = "implemented"
+    implementation_notes = "Executable classical ST-MAD port includes CSF/local contrast detection, log-Gabor appearance MAD, spatiotemporal slices, Lucas-Kanade motion weights and final aggregation. Algorithmic port and documented frame cap do not constitute a proxy."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "st_mad": "Vu, Vu, Chandler, ICIP 2011; STMAD_2011_MatlabCode — https://github.com/Netflix/vmaf/tree/master/matlab/STMAD_2011_MatlabCode",

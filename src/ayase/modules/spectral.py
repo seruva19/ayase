@@ -28,6 +28,9 @@ _DINOV2_WEIGHTS = {
 
 class SpectralComplexityModule(PipelineModule):
     name = "spectral_complexity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own trained DINOv2 feature SVD, normalized singular-value entropy and effective-rank/frame ratio with automatic checkpoint resolution."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     description = "Analyzes spectral complexity (Effective Rank) of video features (DINOv2)"
     default_config = {
@@ -216,4 +219,7 @@ class SpectralCompatModule(SpectralComplexityModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "spectral"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own algorithm loads real DINOv2 features, centers temporal feature matrix and computes singular-value entropy/effective rank ratio."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True

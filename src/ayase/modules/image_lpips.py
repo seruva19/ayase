@@ -31,7 +31,10 @@ logger = logging.getLogger(__name__)
 
 class ImageLPIPSModule(PipelineModule):
     name = "image_lpips"
-    provenance = "published"
+    implementation_status = "implemented"
+    implementation_notes = "Loads official trained LPIPS and computes real normalized image-pair distance and conditional pairwise diversity. Image output clips unbounded LPIPS to [0,1], requiring adapted provenance; diversity uses raw distances."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
+    provenance = {"*": "published", "image_lpips": "adapted"}
     sources = {
         "image_lpips": "LPIPS (Zhang et al., CVPR 2018) — https://github.com/richzhang/PerceptualSimilarity",
         "lpips_diversity": "LPIPS-diversity (BicycleGAN/MUNIT) — https://arxiv.org/abs/1711.11586",
@@ -257,3 +260,4 @@ class ImageLPIPSModule(PipelineModule):
             except Exception as e:
                 logger.debug("LPIPS batched forward failed: %s", e)
         return distances
+    deviations = {"image_lpips": "Official LPIPS distance is computed at218-231; image_lpips is then clipped[0,1] at135, while lpips_diversity averages unclipped pairwise distances at141-192."}

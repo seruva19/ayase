@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 class NRGVQMModule(PipelineModule):
     name = "nr_gvqm"
+    implementation_status = "unimplemented"
+    implementation_notes = "Explicit unavailable setup/no-op scoring: no native model/dependency/weight pipeline is wired; reserved schema field is never computed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "NR-GVQM no-reference gaming video quality (ISM 2018; real model only, disabled if unavailable)"

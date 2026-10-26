@@ -102,6 +102,9 @@ def _rgb_to_ictcp(rgb_linear: np.ndarray) -> np.ndarray:
 
 class DeltaICtCpModule(ReferenceBasedModule):
     name = "delta_ictcp"
+    implementation_status = "implemented"
+    implementation_notes = "Executable BT.2124 delta-E-ITP formula with transfer decoding, RGB709-to-2020 conversion, LMS/PQ/ICtCp transform and paired pixel averaging. Documented transfer/input and frame aggregation adaptations do not replace the formula."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "delta_ictcp": "ITU-R BT.2124 (ΔE_ITP) on BT.2100 ICtCp — https://www.itu.int/rec/R-REC-BT.2124",

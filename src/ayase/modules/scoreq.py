@@ -57,6 +57,9 @@ def _load_native_scoreq_class():
 
 class SCOREQModule(PipelineModule):
     name = "scoreq"
+    implementation_status = "implemented"
+    implementation_notes = "Loads supported official SCOREQ package class directly, downloads native domain-specific ONNX checkpoint and calls native no-reference predict. No alternate MOS mapping."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "scoreq_score": "SCOREQ (Ragano et al., NeurIPS 2024) — https://github.com/alessandroragano/scoreq",

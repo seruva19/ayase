@@ -22,6 +22,9 @@ _MODEL_REVISION = "cc24074f717b612951c2dead130904ab9b65a81e"
 
 class MaSCModule(PipelineModule):
     name = "masc"
+    implementation_status = "implemented"
+    implementation_notes = "Real MaSC pretrained vision encoder; masked reference patch embeddings are compared to generated patch embeddings by max cosine and foreground averaging. Required reference mask is resolved explicitly; no unmasked CLIP/image similarity substitute is emitted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "masc_concept_preservation": "MaSC (arXiv 2605.22469) — https://arxiv.org/abs/2605.22469",

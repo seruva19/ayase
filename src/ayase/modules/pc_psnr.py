@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class PCPSNRModule(ReferenceBasedModule):
     name = "pc_psnr"
+    implementation_status = "implemented"
+    implementation_notes = "Executable symmetric max-MSE D1 and target-normal-projected D2 distances with point-cloud loading and PSNR conversion. D2 is omitted if normals unavailable, not synthesized; peak convention remains a protocol choice to document."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "pc_d1_psnr": "MPEG D1/D2 PSNR (mpeg-pcc-dmetric), symmetric max — https://github.com/MPEGGroup/mpeg-pcc-tmc13/tree/master/mpeg-pcc-dmetric",

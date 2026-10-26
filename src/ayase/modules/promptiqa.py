@@ -25,6 +25,9 @@ logger = logging.getLogger(__name__)
 
 class PromptIQAModule(PipelineModule):
     name = "promptiqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only calls pyiqa.create_metric(promptiqa), unsupported by pinned PyIQA; source method prompt image/score pairs and author checkpoint interface are absent. No alternate scoring branch exists."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "promptiqa_score": "PromptIQA (Chen et al., ECCV 2024) — https://github.com/chencn2020/PromptIQA",

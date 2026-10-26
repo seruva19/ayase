@@ -37,6 +37,9 @@ _IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"}
 
 class I2VSimilarityModule(PipelineModule):
     name = "i2v_similarity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own sliding-window CLIP/DINO feature similarity and LPIPS of window-mean pixels with explicit weighted quality blend; no published I2V metric is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "i2v_clip_winmed": "Ayase construct — median of CLIP reference-similarity over 16-frame windows",

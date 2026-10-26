@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class PCQMModule(ReferenceBasedModule):
     name = "mse_color"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own nearest-neighbor geometry and point-color MSE inverse quality blend, with geometry-only fallback explicitly own."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "mse_color_score": "PCQM (Meynet et al., 2020) claimed — https://github.com/MEPP-team/PCQM",

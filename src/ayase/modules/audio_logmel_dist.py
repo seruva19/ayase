@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class AudioLPDistModule(PipelineModule):
     name = "audio_logmel_dist"
+    implementation_status = "implemented"
+    implementation_notes = "Own librosa log-mel extraction and paired log-mel RMSE calculation are complete; no named learned perceptual model is substituted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Log-mel RMSE full-reference audio distance (own)"
     default_config = {

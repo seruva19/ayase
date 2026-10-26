@@ -15,13 +15,11 @@ logger = logging.getLogger(__name__)
 
 class CMMSModule(PipelineModule):
     name = "cmms"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup only reports missing intended backend and process always returns sample; no score-producing implementation is wired. A managed package entry alone does not implement the algorithm."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "CMMS learned token-space image quality (trained head unavailable)"
     input_type = "img"
-    implementation_status = "unimplemented"
-    implementation_notes = (
-        "The released TiTok-S-128 encoder is available, but the trained CMMS regression "
-        "head is not. This entry reserves the published metric and never produces a score."
-    )
     requires_external_backend = True
     provenance = "published"
     sources = {"cmms_score": "CMMS — https://arxiv.org/abs/2603.08064"}

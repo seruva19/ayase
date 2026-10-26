@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 class JumpCutModule(PipelineModule):
     name = "jump_cut"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own grayscale adjacent-frame cut detector mapped by cuts/sec to score; own provenance is consistent with heuristic implementation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     sources = {

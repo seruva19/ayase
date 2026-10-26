@@ -43,6 +43,9 @@ QUALITY_LEVELS = {
 
 class QAlignModule(PipelineModule):
     name = "q_align"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled actual Q-Align mPLUG-Owl2 pretrained scorer and native score route; fallback logits-to-quality levels remains within the same model/protocol, not another quality metric. Frame aggregation is disclosed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "qalign_aesthetic": "Q-Align / OneAlign (Wu et al., ICML 2024) — https://github.com/Q-Future/Q-Align",

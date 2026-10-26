@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ContentVariationModule(PipelineModule):
     name = "content_variation"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own weighted frame-difference variance, optical-flow range and cut-frequency heuristic; own naming avoids claiming the DEVIL protocol."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "content_variation": "described as 'DEVIL protocol', actually a heuristic — https://arxiv.org/abs/2407.01094",

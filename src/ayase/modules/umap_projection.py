@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 class UMAPProjectionModule(BatchMetricModule):
     name = "umap_projection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility projection with actual CLIP features, UMAP/t-SNE/PCA alternatives, hull coverage/spread; fallback algorithms are explicit utility semantics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = {
         "detections": "utility",

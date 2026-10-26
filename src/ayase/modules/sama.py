@@ -166,6 +166,9 @@ def _get_spatial_sama_fragments(
 
 class SAMAModule(PipelineModule):
     name = "sama"
+    implementation_status = "implemented"
+    implementation_notes = "Actual SAMA trained checkpoint loaded strictly into compatible FASTVQA evaluator; source temporal sampling/multiscale fragments/normalization and output mean implemented."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "sama_score": "SAMA (Liu et al., AAAI 2024) — https://github.com/Sissuire/SAMA",

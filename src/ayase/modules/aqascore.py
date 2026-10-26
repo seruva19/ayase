@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 class AQAScoreModule(PipelineModule):
     name = "aqascore"
-    provenance = "published"
+    implementation_status = "approximate"
+    implementation_notes = "Single whole-caption Qwen2.5-Omni yes/no probability omits the declared published multi-query caption decomposition; executable semantic proxy is present."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
+    provenance = {"*": "published", "aqascore_score": "adapted"}
     sources = {
         "aqascore_score": "AQAScore (Kuan, Chang, Lee, 2026) — https://arxiv.org/abs/2601.14728",
     }
@@ -164,6 +167,7 @@ class AQAScoreModule(PipelineModule):
         except Exception as e:
             logger.debug("AQAScore Omni scoring failed: %s", e)
             return None
+    deviations = {"aqascore_score": "Single-query variant rather than full caption decomposition."}
 
 
 def _caption_text(sample: Sample) -> Optional[str]:

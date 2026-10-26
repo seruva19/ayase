@@ -50,6 +50,9 @@ def _gaussian(seqs: List[np.ndarray], col_slice: slice):
 
 class FD3DMMModule(BatchMetricModule):
     name = "fd_3dmm"
+    implementation_status = "approximate"
+    implementation_notes = "Implements Gaussian Fréchet/std formulas but uses TDDFA coefficient representation instead of source protocol 3DMM extractor; same named published comparison is materially backbone-dependent."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Frechet distance and variation on 3DMM expression/pose coefficients"
     provenance = "adapted"
     sources = {

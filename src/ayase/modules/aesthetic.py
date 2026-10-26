@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class AestheticModule(PipelineModule):
     name = "aesthetic"
+    implementation_status = "implemented"
+    implementation_notes = "Loads aesthetic-predictor-v2-5 real SigLIP regression head and averages logits across selected frames; duplicate is explicitly the identical compatibility output."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "aesthetic_v25_score": "adapted",
         "aesthetic_v25_dup": "adapted",

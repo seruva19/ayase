@@ -117,6 +117,9 @@ def _mmyolo_config_path(rel_path: str) -> Optional[str]:
 
 class OpenS2VModule(PipelineModule):
     name = "opens2v"
+    implementation_status = "approximate"
+    implementation_notes = "Default auto falls back from YOLO-World+GME to GroundingDINO+CLIP/DINO and from GPT-4o to local framewise LLaVA, writing same published Nexus/Natural fields."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "opens2v_natural_score": "OpenS2V-Nexus NaturalScore (arXiv 2505.20292) — https://github.com/PKU-YuanGroup/OpenS2V-Nexus",

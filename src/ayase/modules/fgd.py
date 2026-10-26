@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class FGDModule(BatchMetricModule):
     name = "fgd"
+    implementation_status = "unimplemented"
+    implementation_notes = "No trained gesture encoder/checkpoint; feature and distribution methods always return None."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Frechet Gesture Distance on autoencoder latents (Yoon et al. 2020)"
     provenance = "published"
     sources = {

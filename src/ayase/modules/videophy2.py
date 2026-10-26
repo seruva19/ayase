@@ -73,6 +73,9 @@ class VideoPhy2AutoEvalModule(PipelineModule):
     """VideoPhy-2's released multitask AutoEval model."""
 
     name = "videophy2_autoeval"
+    implementation_status = "implemented"
+    implementation_notes = "Vendored official mPLUG source and pinned checkpoint with enforced32frame CUDA native rating inference, two published prompts and joint>=4 pass."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     vendor_components = ("videophy2",)
     description = "Official VideoPhy-2 AutoEval native SA/PC ratings and joint threshold"
     input_type = "video"

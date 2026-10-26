@@ -54,6 +54,9 @@ def _head_kinematic_beats(params: np.ndarray, inds: np.ndarray) -> np.ndarray:
 
 class HeadBeatAlignModule(PipelineModule):
     name = "head_beat_align"
+    implementation_status = "approximate"
+    implementation_notes = "Bailando beat kernel retained but beats use smoothed TDDFA head-pose-coefficient speed instead of the source dance/body-motion trajectory; material task representation change."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Beat Align — audio/head-motion sync via the Bailando kernel"
     provenance = "adapted"
     sources = {

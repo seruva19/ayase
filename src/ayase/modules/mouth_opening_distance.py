@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class MouthOpeningDistanceModule(PipelineModule):
     name = "mouth_opening_distance"
+    implementation_status = "unimplemented"
+    implementation_notes = "No FLAME mouth-vertex backend/decoder is implemented; setup/process leave MOD unset rather than substituting 2D landmarks."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "MOD: mouth-opening distance vs GT (DiffPoseTalk, external backend)"
     provenance = "published"
     sources = {

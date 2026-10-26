@@ -34,6 +34,9 @@ _PESQ_RATES = {8000, 16000}
 
 class AudioPESQModule(PipelineModule):
     name = "audio_pesq"
+    implementation_status = "implemented"
+    implementation_notes = "Real pesq package call with required reference and supported sample-rate/mode preparation; no signal heuristic is written into PESQ."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "pesq_score": "ITU-T P.862 (the pesq package), WB at 16 kHz — https://github.com/ludlows/PESQ",

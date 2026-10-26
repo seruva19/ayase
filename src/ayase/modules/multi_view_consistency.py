@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 class MultiViewConsistencyModule(PipelineModule):
     name = "multi_view_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own ORB matching and RANSAC fundamental-matrix inlier ratio aggregated across video pairs."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Geometric multi-view consistency via epipolar analysis"

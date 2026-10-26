@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 class HumanCLAPModule(PipelineModule):
     name = "human_clap"
+    implementation_status = "implemented"
+    implementation_notes = "Loads Human-CLAP fine-tuned official checkpoint with CLAP processor, native 48kHz audio/text encoding and cosine relevance; not generic CLAP weights mislabeled as Human-CLAP."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "human_clap_score": "Human-CLAP (Takano et al., arXiv 2506.23553) — https://github.com/sarulab-speech/Human-CLAP",

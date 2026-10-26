@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class SyncRewardModule(PipelineModule):
     name = "syncreward"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned real SyncReward stage2 and encoder checkpoints, bundled AV preprocessing/reward model and finite [0,2] reward checks."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "SyncReward learned audio-video synchronization reward (0-2, higher is better)"
     provenance = "published"
     sources = {

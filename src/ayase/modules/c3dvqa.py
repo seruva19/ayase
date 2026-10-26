@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class C3DVQAModule(PipelineModule):
     name = "c3dvqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only imports hypothetical externally installed c3dvqa.predict; no package, trained source/assets or managed dependency entry is supplied. Returns without a number when absent; no approximation exists."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "c3dvqa_score": "C3DVQA (Xu et al. 2020) — https://arxiv.org/abs/1910.13646",

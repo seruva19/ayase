@@ -42,6 +42,9 @@ logger = logging.getLogger(__name__)
 
 class STREAMModule(BatchMetricModule):
     name = "stream_metric"
+    implementation_status = "implemented"
+    implementation_notes = "Real v-stream STREAM embedder and native temporal/spatial calculations; reference cache and known embedder dimension workaround wired. Model/parity not executed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {
         "stream_F": "published",
         "stream_D": "published",

@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class MultiSubjectIdentityModule(PipelineModule):
     name = "multi_subject_identity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own InsightFace reference embeddings, face tracks, Hungarian/greedy identity assignment and similarity/coverage summaries."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Per-subject face identity in multi-person clips (worst subject reported)"

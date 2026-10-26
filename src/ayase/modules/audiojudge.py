@@ -44,6 +44,9 @@ _CONTEXT_TASKS = {"speakbench", "speakbench508", "chatbotarena", "chatbotarena_B
 
 class AudioJudgeModule(PipelineModule):
     name = "audiojudge"
+    implementation_status = "implemented"
+    implementation_notes = "Complete adapted AudioJudge API evaluation: task-specific response contracts, examples, candidate/comparator audio and provider transport are wired, validated and mapped to separate fields. Credentials are user inputs, not missing implementation."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "Generic AudioJudge hosted audio evaluator"
     input_type = "audio"
     implementation_sources = (

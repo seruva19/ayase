@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class DISTSModule(PipelineModule):
     name = "dists"
+    implementation_status = "implemented"
+    implementation_notes = "Actual PIQ DISTS or trained DreamSim model with proper paired inputs/preprocessing, real distance output and frame averaging. Video extension does not replace image method."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

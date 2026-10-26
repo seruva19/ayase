@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class DisCoVQAModule(PipelineModule):
     name = "discovqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup only warns, process returns sample; no trained DisCoVQA architecture/weights executed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "discovqa_score": "DisCoVQA (Wu et al. 2023) — stub — https://github.com/VQAssessment/DisCoVQA",

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Audit readiness for every packaged module with explicit reasons and source-review confidence; distinguish unavailable outputs of partial modules and exclude them from delivered metric counts.
+- Correct field provenance where clipping, substituted representations or evaluation protocols differ from the cited method; expose readiness and review evidence in metric help and the generated reference.
+- **psnr99**, **flolpips**: fix luma-plane extraction and optical-flow frame dimensions; omit undefined flow-weighted scores.
+- **ocr_fidelity**, **vlm_phy**: correct empty-recognition errors, CER normalization and generated-answer parsing.
+- **llm_descriptive_qa**, **commonsense**, **vlm_judge**: dispatch model loaders from checkpoint configuration so LLaVA and LLaVA Next use compatible architectures.
+
 ### Added
 
 - **long_code**: add an explicitly approximate X-CLIP structural score and optional three-stage narrative, causality, and identity judging; combined scores require complete semantic evidence and omit the unavailable human reference bank.

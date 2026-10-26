@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class NaturalnessModule(NoReferenceModule):
     name = "brisque_inverted"
+    implementation_status = "implemented"
+    implementation_notes = "Real PyIQA BRISQUE followed by explicitly own clipped 1-BRISQUE/100 transform. Documented mean video-frame scoring does not replace the image backend."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Naturalness via BRISQUE natural-scene-statistics (higher=more natural)"
     default_config = {

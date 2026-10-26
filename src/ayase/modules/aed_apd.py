@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class AedApdModule(PipelineModule):
     name = "aed_apd"
+    implementation_status = "approximate"
+    implementation_notes = "Material substitute for PIRenderer AED/APD: compares TDDFA 10-expression and 12 raw pose coefficients, not the published Deep3DFaceRecon/BFM09 representation; the L1 formula alone does not restore the published measurement."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "AED/APD: 3DMM expression and pose distance to a driver video"
     provenance = "adapted"
     sources = {

@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class VMAFModule(ReferenceBasedModule):
     name = "vmaf"
+    implementation_status = "implemented"
+    implementation_notes = "Managed ffmpeg libvmaf filter/backend and native JSON pooled VMAF output with real reference; no SSIM approximation when filter unavailable."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {

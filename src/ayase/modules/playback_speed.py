@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class PlaybackSpeedModule(PipelineModule):
     name = "playback_speed"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own sampled grayscale frame-difference heuristic normalized by frame gap; not a learned speed estimator."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Playback speed normality detection (1.0=normal)"

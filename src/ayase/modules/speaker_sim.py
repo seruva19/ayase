@@ -63,6 +63,9 @@ _AUDIO_SUFFIXES = {".wav", ".flac"}  # read directly; anything else goes through
 
 class SpeakerSimModule(PipelineModule):
     name = "speaker_sim"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled UniSpeech WavLM/ECAPA speaker-verification architecture with identity-verified trained checkpoint and cosine SIM-o; training-only unexpected keys are screened. No generic CLAP speaker proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "sim_o": "SIM-o speaker similarity: VALL-E (arXiv:2301.02111), Voicebox (arXiv:2306.15687); port of F5-TTS eval utils_eval.py:run_sim — https://github.com/SWivid/F5-TTS",

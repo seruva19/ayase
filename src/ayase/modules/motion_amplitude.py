@@ -77,6 +77,9 @@ SLOW_KEYWORDS = {
 
 class MotionAmplitudeModule(PipelineModule):
     name = "motion_amplitude"
+    implementation_status = "implemented"
+    implementation_notes = "Real RAFT-Large published weights, native optical flow mean and EvalCrafter expected/predicted motion-class agreement. No Farneback substitute remains; caption/explicit expected-motion input is supported."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "motion_ac_score": "EvalCrafter Motion AC-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py",

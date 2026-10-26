@@ -334,6 +334,9 @@ class PROVEModule(PipelineModule):
     """Compute PROVE RC-S and RC-T from generated media plus a removal mask."""
 
     name = "prove"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned real DINOv2 giant patch tokens, source-specific mask crops/windows and Gaussian MMD implement RC-S/RC-T; no proxy feature scorer. Exact upstream numerical parity not run."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "prove_rc_s_score": "PROVE RC-S/RC-T (arXiv 2605.14534, ACM MM 2026) — https://github.com/xiaomi-research/prove",

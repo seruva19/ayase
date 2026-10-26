@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class ColorConsistencyModule(PipelineModule):
     name = "color_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own caption color-word to HSV mask-coverage heuristic, with explicit red wraparound and averaged color scores; no named published color metric is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Verifies color attributes in prompt vs video content"

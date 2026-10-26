@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class CelebrityIDModule(PipelineModule):
     name = "celebrity_id"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own DeepFace reference-verification aggregate; uses real recognition backend, aggregates matching distances and stores own face_id_similarity. No named celebrity benchmark protocol is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "face_id_similarity": "inspired by EvalCrafter celebrity_id_score (DeepFace) — https://github.com/evalcrafter/EvalCrafter",

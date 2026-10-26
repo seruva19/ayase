@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class DreamSimModule(PipelineModule):
     name = "dreamsim"
+    implementation_status = "implemented"
+    implementation_notes = "Actual PIQ DISTS or trained DreamSim model with proper paired inputs/preprocessing, real distance output and frame averaging. Video extension does not replace image method."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {"dreamsim": "adapted"}
     sources = {
         "dreamsim": "DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim",
@@ -166,3 +169,6 @@ class DreamSimCompatModule(DreamSimModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "dreamsim_metric"
+    implementation_status = "implemented"
+    implementation_notes = "Inherited real pretrained DreamSim ensemble plus official preprocess and reference distance; paired frame mean is a documented video protocol extension, not a substitute perceptual metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

@@ -39,6 +39,9 @@ logger = logging.getLogger(__name__)
 
 class VMBenchTemporalCoherenceModule(PipelineModule):
     name = "vmbench_tcs"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete GroundingDINO+SAM2 masks, CoTracker trajectories and vendored disappearance/emergence reason tests implement VMBench temporal coherence; subject extraction/tracking wrapper adaptation disclosed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "temporal_coherence_score": "VMBench TCS — https://github.com/AMAP-ML/VMBench",

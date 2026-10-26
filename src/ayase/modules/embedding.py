@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingModule(PipelineModule):
     name = "embedding"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility loads real XCLIP and computes normalized temporal MIT pooled visual embedding from sampled/padded clip frames."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Calculates X-CLIP embeddings for similarity search"
     default_config = {

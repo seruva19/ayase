@@ -440,6 +440,9 @@ def _build_motion(device):
 
 class MDVQAModule(PipelineModule):
     name = "mdvqa"
+    implementation_status = "implemented"
+    implementation_notes = "Trained fusion head plus source-derived semantic/motion/distortion branches, real checkpoint and upstream full-video sampling/calibration are wired. Full architecture parity/runtime not executed."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "mdvqa_score": "MD-VQA (Zhang et al., CVPR 2023) — https://github.com/kunyou99/MD-VQA_cvpr2023",

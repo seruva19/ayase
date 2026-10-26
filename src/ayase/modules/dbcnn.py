@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class DBCNNModule(PipelineModule):
     name = "dbcnn"
+    implementation_status = "implemented"
+    implementation_notes = "Real trained pyiqa dbcnn on RGB float tensors; image backend preserved, only temporal frame selection/pooling adapted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

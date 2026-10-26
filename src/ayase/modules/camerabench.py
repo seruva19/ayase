@@ -69,6 +69,9 @@ def _store_camera_motion_class(sample: Sample, label: str) -> None:
 
 class CameraBenchModule(PipelineModule):
     name = "camerabench"
+    implementation_status = "implemented"
+    implementation_notes = "Loads fine-tuned Qwen camera model and asks 15 primitive binary questions; next-token Yes probabilities and argmax confidence are real, explicitly adapted aggregation."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "camera_motion_class_confidence": "CameraBench (Lin et al. 2025), chancharikm/qwen2.5-vl-7b-cam-motion model — https://github.com/sy77777en/CameraBench",

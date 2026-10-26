@@ -44,6 +44,9 @@ _CONNECTIVES = (
 
 class TCBenchModule(PipelineModule):
     name = "clip_event_order"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own CLIP event-order algorithm: caption events form similarity matrix, temporal concordance scores and thresholded event fulfillment are computed. It is not exposed as the official TCBench benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "clipord_event_fulfillment": "TC-Bench, Feng et al. arXiv:2406.08656 — name only — https://arxiv.org/abs/2406.08656",

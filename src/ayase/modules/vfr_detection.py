@@ -29,6 +29,9 @@ class VFRDetectionModule(PipelineModule):
     VFR can cause inconsistent motion dynamics training.
     """
     name = "vfr_detection"
+    implementation_status = "implemented"
+    implementation_notes = "Complete ffprobe timestamp/nominal-rate utility with irregular-frame-interval detection and validation reports; intentionally no numeric quality output."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Variable Frame Rate (VFR) and jitter detection"
     default_config = {

@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ASRWERModule(PipelineModule):
     name = "asr_wer"
+    implementation_status = "implemented"
+    implementation_notes = "Expected-text selection, shared Whisper transcription/normalizer and word-level Levenshtein/reference-length WER are implemented; supplied transcripts are an explicit input route, not a substitute metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "asr_wer": "WER (word-level Levenshtein / reference length), Whisper eval normalization — https://github.com/openai/whisper",

@@ -135,6 +135,9 @@ def _content_discontinuity(cell_a: np.ndarray, cell_b: np.ndarray) -> float:
 
 class GridLayoutModule(PipelineModule):
     name = "grid_layout"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility algorithm detects persistent internal edge dividers with black-bar removal, content discontinuity and cross-frame matching."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Split-screen/grid-collage detector (0-1, higher=more likely a grid)"
     default_config = {

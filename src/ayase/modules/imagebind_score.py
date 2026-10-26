@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 class ImageBindScoreModule(PipelineModule):
     name = "imagebind_score"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled genuine ImageBind huge checkpoint/transform pipeline, modality embeddings and cosine scores; audio/text and audio/video fields are separated. Source and weight provisioning are wired."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "imagebind_av_score": "JavisBench sim_av (JavisDiT), ImageBind (Girdhar et al., CVPR 2023) — https://github.com/JavisVerse/JavisDiT",

@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class MotionModule(PipelineModule):
     name = "motion"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own Farneback magnitude and adjacent-frame duplication/effective-FPS analysis."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Analyzes motion dynamics (optical flow, flickering)"

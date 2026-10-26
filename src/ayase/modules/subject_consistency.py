@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class SubjectConsistencyModule(PipelineModule):
     name = "subject_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Real published DINO ViT-B/16 and clipped first/consecutive cosine aggregation over full frames; disclosed image preprocessing differs modestly from upstream but intended method is preserved."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "subject_consistency": "VBench subject consistency (Huang et al. CVPR 2024) — https://github.com/Vchitect/VBench",

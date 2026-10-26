@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 class TISIModule(PipelineModule):
     name = "ti_si"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete Sobel-gradient std and frame-difference std with temporal maximum pooling implement SI/TI; OpenCV grayscale/border and prefix cap are protocol adaptations."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "spatial_information": "ITU-T P.910 — https://www.itu.int/rec/T-REC-P.910",

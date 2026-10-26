@@ -44,6 +44,9 @@ def mouth_bbox(
 
 class MouthQualityModule(PipelineModule):
     name = "mouth_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Actual MediaPipe mouth crop extraction plus trained MUSIQ-SPAQ, averages crop scores. Crop padding/batch canvas are disclosed adaptations of image quality scoring."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

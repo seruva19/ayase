@@ -48,6 +48,9 @@ VIDEO_TYPE_SHORT = [
 
 class VideoTypeClassifierModule(PipelineModule):
     name = "video_type_classifier"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility CLIP text-template classification with real embeddings, per-frame vote/confidence and separate type/confidence fields; no published video-type benchmark protocol is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "video_type": "CLIP zero-shot — https://huggingface.co/openai/clip-vit-base-patch32",

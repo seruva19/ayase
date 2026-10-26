@@ -82,6 +82,9 @@ class VEBenchModule(PipelineModule):
     """Score an edited video against its source video and edit instruction."""
 
     name = "vebench"
+    implementation_status = "implemented"
+    implementation_notes = "Real VEBenchModel from managed pinned source, verified checkpoint snapshot and synchronized CUDA evaluate(reference,edited,instruction) call."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "vebench_score": "VE-Bench, AAAI 2025; the vebench 1.0.0 package — https://github.com/littlespray/VE-Bench",

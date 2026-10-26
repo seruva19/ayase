@@ -74,6 +74,9 @@ class ExpressionFollowingModule(PipelineModule):
     """
 
     name = "expression_following"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own MediaPipe blendshape comparator aligns common-overlap timestamps without missing-frame bridges, computes normalized L1 and coverage; concrete extractor helper still needs inspection."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "expression_following": "MediaPipe Face Landmarker model (blendshapes); the metric is own — https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker",

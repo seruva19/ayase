@@ -245,6 +245,9 @@ def build_unified_reward_edit_prompt(instruction: str, task: str) -> str:
 
 class UnifiedRewardEditModule(PipelineModule):
     name = "unified_reward_edit"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete DiffSynth UnifiedRewardEditMetric pretrained backend or explicit endpoint with task-specific published prompts; source/edited/comparison images parsed into native task dimensions."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {
         "unified_reward_edit_image_1_score": "published",
         "unified_reward_edit_image_2_score": "published",

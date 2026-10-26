@@ -46,6 +46,9 @@ class FVMDModule(BatchMetricModule):
     """Compare generated/reference motion distributions with official FVMD."""
 
     name = "fvmd"
+    implementation_status = "implemented"
+    implementation_notes = "Vendored official FVMD PIPs++ tracker, verified checkpoint, 16-frame motion windows and velocity/acceleration histograms feed real reference-distribution FrГ©chet calculation."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "fvmd": "FVMD (Liu et al., arXiv 2407.16124), official evaluator — https://github.com/ljh0v0/FVMD-frechet-video-motion-distance",

@@ -38,6 +38,9 @@ _WEIGHTS = {
 
 class UVQModule(PipelineModule):
     name = "uvq"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled official UVQ1.5 architecture and automatically downloaded branch/aggregator weights, real infer() video path and native MOS."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "uvq1p5_score": "Google UVQ 1.5 — https://github.com/google/uvq",

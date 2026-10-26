@@ -238,6 +238,9 @@ def _parse_colmap_images_txt(path: str) -> dict:
 class CameraTrajectoryModule(PipelineModule):
     implementation_sources = ("../managed_native_tools.py", "../managed_native.py")
     name = "camera_trajectory"
+    implementation_status = "approximate"
+    implementation_notes = "Real upstream-style GLOMAP errors are implemented, but auto mode also substitutes COLMAP mapper or learned VGGT poses into the same camera-error fields. Formulas remain published-protocol based."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "camera_rot_error": "CamI2V RotErr/TransErr/CamMC — https://github.com/ZGCTroy/CamI2V/blob/main/evaluation/glomap_evaluation.py",

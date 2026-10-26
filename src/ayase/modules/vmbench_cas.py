@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class VMBenchCommonsenseAdherenceModule(PipelineModule):
     name = "vmbench_cas"
+    implementation_status = "implemented"
+    implementation_notes = "Vendored VideoMAEv2 classifier downloads trained VMBench checkpoint, averages softmax over10temporal×3spatial views and applies5-class ordinal CAS weights; load_state_dict(strict=False) records but does not reject missing keys."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "commonsense_adherence_score": "VMBench, Ling et al. ICCV 2025 — cas_utils 30-view protocol, https://github.com/AMAP-ML/VMBench",

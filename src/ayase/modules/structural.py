@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class StructuralModule(PipelineModule):
     name = "structural"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility uses actual PySceneDetect ContentDetector and repeated margin-luminance black-bar checks."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Checks structural integrity (scene cuts, black bars)"
     default_config = {"detect_cuts": True, "detect_black_bars": True}

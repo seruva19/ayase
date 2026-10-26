@@ -55,6 +55,9 @@ _VIDEO_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".webm", ".m4v"}
 
 class CSIMModule(PipelineModule):
     name = "csim"
+    implementation_status = "approximate"
+    implementation_notes = "Named published talking-head CSIM uses different recognition networks; buffalo_l embeddings, padding retry and reference pooling materially replace the cited identity evaluation representation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "csim": "adapted",
         "csim_face_frames": "utility",

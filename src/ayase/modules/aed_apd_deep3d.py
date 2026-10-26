@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class AedApdDeep3DModule(PipelineModule):
     name = "aed_apd_deep3d"
+    implementation_status = "unimplemented"
+    implementation_notes = "No Deep3DFaceRecon executable backend: setup warns and process returns sample unchanged."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "AED/APD via published Deep3DFaceRecon extractor (external backend)"
     provenance = "published"
     sources = {

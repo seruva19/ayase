@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class ProductionQualityModule(PipelineModule):
     name = "production_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own OpenCV LAB palette/exposure coefficient variation, gray-world balance, Laplacian focus and gradient banding formulas."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Professional production quality (colour, exposure, focus, banding)"

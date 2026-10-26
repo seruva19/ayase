@@ -70,6 +70,9 @@ logger = logging.getLogger(__name__)
 
 class PhysicsIQModule(ReferenceBasedModule):
     name = "physics_iq"
+    implementation_status = "implemented"
+    implementation_notes = "Complete source-protocol style mask extraction, binary/weighted/spatiotemporal IoUs and MSE; variance-reference ratio normalization produces verified components. Own neutral aggregate kept separate. setup unavailable flag does not prevent actual process."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = {
         "physics_iq_mse": "published",
         "physics_iq_neutral_score": "own",

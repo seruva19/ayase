@@ -27,6 +27,9 @@ _TORCH_LOAD_LOCK = threading.Lock()
 
 class CDPAMModule(PipelineModule):
     name = "cdpam"
+    implementation_status = "implemented"
+    implementation_notes = "Official cdpam 0.0.6 bundled checkpoint identity verified; real forward with 22.05kHz 16-bit-scale preprocessing and finite-distance checks."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cdpam_score": "CDPAM (Manocha et al. 2021), the cdpam 0.0.6 package — https://github.com/pranaymanocha/PerceptualAudio",

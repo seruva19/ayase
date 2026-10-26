@@ -8,8 +8,8 @@ Protocol (EvalCrafter ``metrics/ocr_score.py``):
    (no separator, no case folding).
 3. Per frame: NED = lev(gt, pred)/max(len(pred), len(gt)) (ICDAR 2019),
    CER = CharacTER's shift-aware character edit rate,
-   WER = word-level lev/len(gt_words). Frames where OCR finds nothing
-   contribute (0, 0, 0).
+   WER = word-level lev/len(gt_words). Missing OCR text is scored as a
+   deletion of the expected text, rather than a zero-error observation.
 4. ``ocr_fidelity`` == ``ocr_score`` = mean over frames of (NED+CER+WER)/3 —
    this is an *error* measure: **lower is better**. ``ocr_cer``/``ocr_wer``
    report the two component means.
@@ -78,11 +78,12 @@ def _character_error_rate(hypothesis: str, reference: str) -> float:
 
     The ``cer`` package implements CharacTER: a word-shift pass on the
     hypothesis followed by character-level Levenshtein between the joined
-    strings, normalized by the hypothesis character length and clipped to
-    1.0. When the package is unavailable the fallback computes the same
-    final step without the shift optimization (identical when no word
-    reordering reduces the distance).
+    strings. When the package is unavailable the fallback computes ordinary
+    character edit distance normalized by the reference character length,
+    clipped to 1.0, without the word-shift optimization.
     """
+    if not hypothesis or not reference:
+        return 0.0 if hypothesis == reference else 1.0
     try:
         from cer import calculate_cer
 
@@ -91,9 +92,7 @@ def _character_error_rate(hypothesis: str, reference: str) -> float:
         pass
     hyp_chars = " ".join(hypothesis.split(" "))
     ref_chars = " ".join(reference.split(" "))
-    if not hyp_chars:
-        return 0.0 if not ref_chars else 1.0
-    return min(1.0, _levenshtein_dp(hyp_chars, ref_chars) / len(hyp_chars))
+    return min(1.0, _levenshtein_dp(hyp_chars, ref_chars) / len(ref_chars))
 
 
 def _word_error_rate(reference: str, hypothesis: str) -> float:
@@ -130,7 +129,10 @@ def _levenshtein_dp(s, t) -> int:
 
 class OCRFidelityModule(PipelineModule):
     name = "ocr_fidelity"
-    provenance = "published"
+    implementation_status = "implemented"
+    implementation_notes = "PaddleOCR text is compared with the reference; empty recognition counts as deletion error and the fallback CER uses reference length. See field deviations for the adapted OCR protocol."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
+    provenance = {"*": "published", "ocr_fidelity": "adapted", "ocr_score": "adapted", "ocr_cer": "adapted"}
     sources = {
         "ocr_cer": "EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py",
         "ocr_fidelity": "EvalCrafter OCR-Score (Liu et al., CVPR 2024) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/ocr_score.py",
@@ -236,13 +238,6 @@ class OCRFidelityModule(PipelineModule):
                         for line in result[0]:
                             if line and line[1] and line[1][0]:
                                 frame_texts.append(line[1][0])
-                if not frame_texts:
-                    # EvalCrafter contributes (0, 0, 0) for frames with no OCR
-                    # output rather than skipping them.
-                    neds.append(0.0)
-                    cers.append(0.0)
-                    wers.append(0.0)
-                    continue
                 # EvalCrafter concatenates recognized lines raw — no
                 # separator, no case folding.
                 recognized = "".join(frame_texts)
@@ -319,4 +314,5 @@ class OCRFidelityModule(PipelineModule):
         except Exception as e:
             logger.debug(f"Frame loading failed: {e}")
         return frames
+    deviations = {"ocr_fidelity": "Current root-corrected loop scores empty recognized strings rather than the author empty-detection zero-error special case; fallback _character_error_rate computes reference-normalized clipped ordinary character edit distance without published CharacTER word-shift optimization (lines76-99). Composite averages this adapted CER with NED/WER.", "ocr_score": "Current root-corrected loop scores empty recognized strings rather than the author empty-detection zero-error special case; fallback _character_error_rate computes reference-normalized clipped ordinary character edit distance without published CharacTER word-shift optimization (lines76-99). Composite averages this adapted CER with NED/WER.", "ocr_cer": "Current root-corrected loop scores empty recognized strings rather than the author empty-detection zero-error special case; fallback _character_error_rate computes reference-normalized clipped ordinary character edit distance without published CharacTER word-shift optimization (lines76-99). Composite averages this adapted CER with NED/WER."}
 

@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class CLIPTemporalModule(PipelineModule):
     name = "clip_temporal"
+    implementation_status = "implemented"
+    implementation_notes = "Real CLIP embeddings; consecutive-frame cosine mean and first-frame anchored mean match the declared EvalCrafter formulas. CLIPProcessor normalization differs from source and is disclosed; this minor preprocessing adaptation is not a replacement backend."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "clip_temp": "EvalCrafter CLIP-Temp — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/Scores_with_CLIP/Scores_with_CLIP.py",

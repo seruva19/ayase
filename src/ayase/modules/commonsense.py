@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class CommonsenseModule(PipelineModule):
     name = "commonsense"
+    implementation_status = "implemented"
+    implementation_notes = "Checkpoint configuration dispatches the vision-language model and processor; the default LLaVA and configurable alternative families use their matching native loaders."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Common sense adherence (LLaVA VLM rubric)"
@@ -51,7 +54,7 @@ class CommonsenseModule(PipelineModule):
         # Tier 1: LLaVA VLM
         try:
             import torch
-            from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+            from transformers import AutoModelForImageTextToText, AutoProcessor
             from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             vlm_name = self.config.get("vlm_model", "llava-hf/llava-1.5-7b-hf")
@@ -60,7 +63,7 @@ class CommonsenseModule(PipelineModule):
             dtype = torch.float16 if self._device == "cuda" else torch.float32
 
             self._vlm_model = from_pretrained_with_attention(
-                LlavaNextForConditionalGeneration,
+                AutoModelForImageTextToText,
                 vlm_name,
                 self.config,
                 device=self._device,
@@ -69,7 +72,7 @@ class CommonsenseModule(PipelineModule):
                 low_cpu_mem_usage=True,
             ).to(self._device)
             self._vlm_model.eval()
-            self._vlm_processor = LlavaNextProcessor.from_pretrained(vlm_name, cache_dir=models_dir)
+            self._vlm_processor = AutoProcessor.from_pretrained(vlm_name, cache_dir=models_dir)
             self._backend = "vlm"
             self._ml_available = True
             logger.info("Commonsense loaded LLaVA on %s", self._device)

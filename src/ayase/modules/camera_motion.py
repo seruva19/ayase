@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 class CameraMotionModule(PipelineModule):
     name = "camera_motion"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own ORB matching/RANSAC homography heuristic with global-motion compensated frame residuals and stability mapping; no claim to reproduce a named published metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Analyzes camera motion stability (VMBench) using Homography"
     default_config = {}

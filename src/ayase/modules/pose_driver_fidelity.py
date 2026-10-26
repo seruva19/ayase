@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class PoseDriverFidelityModule(PipelineModule):
     name = "pose_driver_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own generated-vs-driver normalized pose geometry similarity and coverage using shared real pose backend. No official pose benchmark reproduction is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Body-pose fidelity to a driving video (PCK over normalised skeletons)"

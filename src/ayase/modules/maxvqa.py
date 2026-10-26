@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class MaxVQAModule(PipelineModule):
     name = "maxvqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only imports an unprovisioned top-level research module then calls predict(path); no actual model construction/checkpoint/source integration or managed dependency entry. No approximate fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     requires_external_backend = True
     provenance = "published"
     sources = {

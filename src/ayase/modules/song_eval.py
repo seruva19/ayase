@@ -80,6 +80,9 @@ class SongEvalModule(PipelineModule):
     """Song aesthetic evaluation across 5 perceptual dimensions."""
 
     name = "song_eval"
+    implementation_status = "implemented"
+    implementation_notes = "Reconstructs concrete SongEval attention/FFD head, strictly loads trained checkpoint and uses MuQ hidden layer 6 to predict all five native 1-5 dimensions."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "song_eval_clarity": "SongEval (arXiv 2505.10793) — https://github.com/ASLP-lab/SongEval",

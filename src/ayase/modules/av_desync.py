@@ -95,6 +95,9 @@ def _cut_window(video_path: Path, start_sec: float, dst: Path) -> bool:
 
 class AVDesyncModule(PipelineModule):
     name = "av_desync"
+    implementation_status = "implemented"
+    implementation_notes = "Real vendored Synchformer inferencer, automatic checkpoint mirror, first/last 4.8s windows and mean absolute predicted offset. Vendor forces CUDA; this is a platform/device limitation, not a proxy."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "desync_score": "DeSync (Movie Gen/MMAudio) on Synchformer — https://github.com/hkchengrex/MMAudio",

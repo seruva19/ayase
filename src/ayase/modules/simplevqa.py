@@ -169,6 +169,9 @@ def _build_model(device: str, config=None):
 
 class SimpleVQAModule(PipelineModule):
     name = "simplevqa"
+    implementation_status = "implemented"
+    implementation_notes = "Real SimpleVQA spatial Swin/SlowFast feature model with trained strict-compatible checkpoint, author-style preprocessing/motion clips and native quality head; declared frame/protocol adaptations are not replacement features."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "simplevqa_score": "SimpleVQA (Sun et al., ACM MM 2022) — https://github.com/sunwei925/SimpleVQA",

@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class ActionRecognitionModule(PipelineModule):
     name = "action_recognition"
+    implementation_status = "implemented"
+    implementation_notes = "Real VideoMAE pretrained classifier supplies action_confidence; optional CLIP text-label matching and confidence fallback are explicitly own action_score semantics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "action_confidence": "VideoMAE (Tong et al. 2022) as a classifier; not a metric — https://huggingface.co/MCG-NJU/videomae-large-finetuned-kinetics",

@@ -36,6 +36,9 @@ _MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 
 class DepthMapQualityModule(PipelineModule):
     name = "depth_map_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Real MiDaS depth model/weights plus own sharpness, completeness and edge-overlap composite; no published depth-quality scalar is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "depth_quality": "MiDaS model; the aggregation is own — https://github.com/isl-org/MiDaS",

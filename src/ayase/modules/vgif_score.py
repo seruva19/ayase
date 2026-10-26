@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 class VGIFScoreModule(PipelineModule):
     name = "vgif_score"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete API-only published protocol with explicit annotations, dependency rounds/gated objective accuracy and four-dimension rubric mean; requires configured compatible endpoint/API key. Protocol helper inspection needed, no paid call run."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     input_type = "video"
     description = "VGIF-Score via dependency-gated Gemini video QA and prompt AutoRubric"
     default_config = {

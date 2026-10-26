@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class CreativityModule(PipelineModule):
     name = "creativity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own prompted LLaVA creativity rubric and normalized component aggregation; real VLM is used, and parse/backend failure skips. No published creativity benchmark protocol is claimed."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Artistic novelty assessment (LLaVA VLM rubric)"

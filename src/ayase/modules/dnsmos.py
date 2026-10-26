@@ -37,6 +37,9 @@ _IMAGE_SUFFIXES = {
 
 class DNSMOSModule(PipelineModule):
     name = "dnsmos"
+    implementation_status = "implemented"
+    implementation_notes = "Real torchmetrics DNSMOS with native overall/signal/background/P808 outputs mapped separately; decoding does not substitute a hand-tuned MOS."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "dnsmos_bak": "DNSMOS P.835 (Reddy et al., ICASSP 2022), official ONNX models via torchmetrics — https://github.com/microsoft/DNS-Challenge",

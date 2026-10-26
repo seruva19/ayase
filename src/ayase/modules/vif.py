@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 class VIFModule(ReferenceBasedModule):
     name = "vif"
-    provenance = "published"
+    implementation_status = "implemented"
+    implementation_notes = "Actual PIQ pixel-domain VIF on correctly normalized image/reference tensors and mean sampled video VIF; video extension needs adapted field provenance."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
+    provenance = {"*": "published", "vif": "adapted"}
     sources = {
         "vif": "VIF, Sheikh & Bovik TIP 2006; piq.vif_p — https://github.com/photosynthesis-team/piq",
     }
@@ -250,3 +253,4 @@ class VIFModule(ReferenceBasedModule):
             logger.warning(f"VIF processing failed for {sample.path}: {e}")
 
         return sample
+    deviations = {"vif": "PIQ VIF is evaluated per image/reference pair and mean-pooled over sampled video frames; source field is extended to a non-native video protocol."}

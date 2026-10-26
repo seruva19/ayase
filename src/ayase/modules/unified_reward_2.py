@@ -126,6 +126,9 @@ def build_unified_reward_2_prompt(prompt: Optional[str]) -> str:
 
 class UnifiedReward2Module(PipelineModule):
     name = "unified_reward_2"
+    implementation_status = "implemented"
+    implementation_notes = "Real DiffSynth UnifiedReward2Metric pretrained model or configured matching endpoint; parses native rubric dimensions and mean. No pixel/CLIP substitute; endpoint authenticity is a user configuration responsibility."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "unified_reward_2_alignment_score": "published",
         "unified_reward_2_coherence_score": "published",

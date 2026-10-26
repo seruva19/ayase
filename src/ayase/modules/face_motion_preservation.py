@@ -232,6 +232,9 @@ class FaceMotionPreservationModule(PipelineModule):
     """Compare synchronized source/transformed face motion using the published protocol."""
 
     name = "face_motion_preservation"
+    implementation_status = "approximate"
+    implementation_notes = "Named FaceMotionPreserve replaced unpublished SBR detector/indices with 51 chosen MediaPipe landmarks; clean-room correlation/CCA and uncalibrated blink thresholds materially alter the representation/protocol."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "face_motion_blink_precision": "adapted",
         "face_motion_blink_recall": "adapted",

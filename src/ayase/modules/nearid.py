@@ -24,6 +24,9 @@ _IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
 
 class NearIDModule(PipelineModule):
     name = "nearid"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned published NearID SigLIP2 model and actual normalized paired image embeddings with raw cosine output."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "nearid_identity_similarity": "NearID (Cvejic et al., arXiv 2604.01973) — https://github.com/Gorluxor/NearID",

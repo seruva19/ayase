@@ -45,6 +45,9 @@ class VLMJudgeModule(PipelineModule):
     Supports three modes: 'verify', 'traits', and 'presets'.
     """
     name = "vlm_judge"
+    implementation_status = "implemented"
+    implementation_notes = "Checkpoint configuration dispatches the vision-language model and processor; the default LLaVA and configurable alternative families use their matching native loaders."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "utility"
     description = "Advanced semantic verification using VLM (e.g. LLaVA)"
     default_config = {
@@ -74,7 +77,7 @@ class VLMJudgeModule(PipelineModule):
     def setup(self) -> None:
         try:
             import torch
-            from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+            from transformers import AutoModelForImageTextToText, AutoProcessor
             from ayase.runtime import from_pretrained_with_attention, resolve_torch_device
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
@@ -84,7 +87,7 @@ class VLMJudgeModule(PipelineModule):
 
             dtype = torch.float16 if str(self._device).startswith("cuda") else torch.float32
             self._model = from_pretrained_with_attention(
-                LlavaNextForConditionalGeneration,
+                AutoModelForImageTextToText,
                 self.model_name,
                 self.config,
                 device=self._device,
@@ -93,7 +96,7 @@ class VLMJudgeModule(PipelineModule):
                 low_cpu_mem_usage=True,
             ).to(self._device)
             self._model.eval()
-            self._processor = LlavaNextProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
+            self._processor = AutoProcessor.from_pretrained(self.model_name, cache_dir=models_dir)
 
             self._ml_available = True
             self._backend = "transformers"

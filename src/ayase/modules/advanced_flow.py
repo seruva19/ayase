@@ -63,6 +63,9 @@ def _cap_frame_resolution(frame: np.ndarray, max_side: int) -> np.ndarray:
 
 class AdvancedFlowModule(PipelineModule):
     name = "advanced_flow"
+    implementation_status = "implemented"
+    implementation_notes = "Real torchvision RAFT C_T_V1, 20 updates, native consecutive pairs, mean flow norm; checkpoint mirror plus torchvision fallback. Padding rather than proxy flow."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "flow_score": "EvalCrafter Flow Score (RAFT) — https://github.com/evalcrafter/EvalCrafter/blob/master/metrics/RAFT/optical_flow_scores.py",

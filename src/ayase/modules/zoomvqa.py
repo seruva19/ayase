@@ -642,6 +642,9 @@ if _TORCH_OK:
 
 class ZoomVQAModule(PipelineModule):
     name = "zoomvqa"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete CPNet/VideoSwin architecture and trained branch checkpoints loaded strictly; real image/video preprocessing and two branch predictions are averaged. Fusion is adapted protocol, not missing weights or heuristic substitute."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "zoomvqa_score": "Zoom-VQA, Zhao et al. CVPRW 2023 — https://github.com/k-zha14/Zoom-VQA",

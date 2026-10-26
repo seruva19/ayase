@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class TonalDynamicRangeModule(PipelineModule):
     name = "tonal_dynamic_range"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own grayscale percentile spread, normalized to 0-100 and mean over frames; no published HDR display/scene dynamic-range claim."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Luminance histogram tonal range (0-100)"

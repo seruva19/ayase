@@ -24,6 +24,9 @@ _R3D_18_URL = "https://download.pytorch.org/models/r3d_18-b3b3357e.pth"
 
 class CGVQMModule(ReferenceBasedModule):
     name = "cgvqm"
+    implementation_status = "implemented"
+    implementation_notes = "Loads trained R3D-18 features plus bundled CGVQM calibration, invokes calibrated feature_diff on temporal/spatial patches and pools actual errors."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cgvqm": "CGVQM (Intel Labs) — https://github.com/IntelLabs/cgvqm",

@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class BLIPScoreModule(PipelineModule):
     name = "blip_score"
+    implementation_status = "implemented"
+    implementation_notes = "Real BLIP image-text retrieval checkpoint and positive ITM softmax probability; video mean is a documented image-score extension."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "blip_score": "BLIP ITM head probability (Li et al. 2022), blip-itm-large-coco — https://huggingface.co/Salesforce/blip-itm-large-coco",

@@ -28,6 +28,9 @@ def _bt709_luminance(img: np.ndarray) -> np.ndarray:
 
 class HDRVQMModule(PipelineModule):
     name = "hdr_subband_flicker_score"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own luminance encoding, wavelet detail-energy ratio and temporal flicker blend; explicit own quantity, not claimed as reference PU21 metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "hdr_subband_flicker_score": "named after HDR-VQM (Narwaria et al. 2015) — https://github.com/mperreir/HDR-VQM",

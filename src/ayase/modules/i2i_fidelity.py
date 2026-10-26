@@ -27,6 +27,9 @@ class I2IFidelityModule(PipelineModule):
     """Compute 19 complementary full-reference diagnostics for an image pair."""
 
     name = "i2i_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "MSE/MAE are direct RGB error means; GMSM is direct half-resolution Prewitt magnitude similarity with constant 170. All three declared outputs have executable formulas; stale 19-diagnostic docstring does not add outputs."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "i2i_gradient_similarity_mean": "published",
         "i2i_mae": "published",

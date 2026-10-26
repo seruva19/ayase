@@ -294,6 +294,9 @@ def _persons_from_dwpose(result: dict) -> List[Person]:
 
 class AnatomyCheckModule(PipelineModule):
     name = "anatomy_check"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicit own pose-rule algorithm: hand/head counts, limb ratios, symmetry and plausible-person-frame fraction. MediaPipe supports only the declared subset; this is not a reproduction of a learned anatomy metric."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Human anatomy plausibility (extra/duplicated limbs) via DWPose/MediaPipe (0-1, higher=better)"

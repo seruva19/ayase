@@ -45,6 +45,9 @@ class ColorVideoVDPModule(ReferenceBasedModule):
     """Run the upstream ColorVideoVDP metric on a test/reference pair."""
 
     name = "cvvdp"
+    implementation_status = "implemented"
+    implementation_notes = "Real pycvvdp predictor, display/color-space settings, correct image/video tensor layouts and matched pair validation; native JOD result is returned without an SSIM substitute."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cvvdp_ml_saliency_score": "ColorVideoVDP (Mantiuk et al., SIGGRAPH 2024) + ML variants, the cvvdp package — https://github.com/gfxdisp/ColorVideoVDP",
@@ -268,6 +271,9 @@ class ColorVideoVDPMLTransformerModule(ColorVideoVDPModule):
     """Run the official experimental ML-transformer pooling variant."""
 
     name = "cvvdp_ml_transformer"
+    implementation_status = "implemented"
+    implementation_notes = "Real pycvvdp ML Transformer class, pinned SHA/size-verified trained checkpoint, inherited paired-video loading and display-aware predict interface."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = (
         "Experimental ColorVideoVDP-ML-Transformer streaming-distortion JOD score"
     )
@@ -390,6 +396,9 @@ class ColorVideoVDPMLSaliencyModule(ColorVideoVDPMLTransformerModule):
     """Run the official experimental ML-regressor with saliency weighting."""
 
     name = "cvvdp_ml_saliency"
+    implementation_status = "implemented"
+    implementation_notes = "Inherited ML setup loads pinned size/hash-verified official saliency checkpoint and metric_class; real cvvdp predict consumes shape/fps-matched image/video pairs."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Experimental ColorVideoVDP-ML-Saliency streaming-distortion JOD score"
     metric_field = "cvvdp_ml_saliency_score"
     metric_class_name = "cvvdp_ml_saliency"

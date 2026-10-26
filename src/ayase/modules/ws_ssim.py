@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class WSSSIMModule(ReferenceBasedModule):
     name = "ws_ssim"
+    implementation_status = "implemented"
+    implementation_notes = "Executable spherical pixel-center cosine weights and local SSIM map, with documented Gaussian boundary/video sampling adaptation; no heuristic replacement."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "ws_ssim": "WS-SSIM, Zhou et al. 2018; 360tools — https://github.com/Samsung/360tools",

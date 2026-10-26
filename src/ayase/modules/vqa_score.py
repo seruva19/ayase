@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 class VQAScoreModule(PipelineModule):
     name = "vqa_score"
-    provenance = "published"
+    implementation_status = "implemented"
+    implementation_notes = "Vendored official t2v_metrics VQAScore model, actual caption/image score and mean selected video frames; field should be adapted for image-to-video extension."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
+    provenance = {"*": "published", "vqa_score_alignment": "adapted"}
     sources = {
         "vqa_score_alignment": "VQAScore, Lin et al. ECCV 2024; t2v_metrics — https://github.com/linzhiqiu/t2v_metrics",
     }
@@ -135,3 +138,4 @@ class VQAScoreModule(PipelineModule):
             return float(np.mean(scores)) if scores else None
 
         return self._model(images=[str(sample.path)], texts=[text]).item()
+    deviations = {"vqa_score_alignment": "Official VQAScore image quantity is averaged across selected video frames into the same field; this is the same image-to-video extension marked adapted for peer image metrics."}

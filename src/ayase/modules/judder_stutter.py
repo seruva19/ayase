@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class JudderStutterModule(PipelineModule):
     name = "judder_stutter"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own duplicate-frame fraction and nonduplicate frame-difference coefficient-of-variation cadence diagnostic."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = {
         "judder_score": "own",

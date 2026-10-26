@@ -38,6 +38,9 @@ _MIRROR_BASE = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/"
 
 class DepthConsistencyModule(PipelineModule):
     name = "depth_consistency"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own MiDaS depth inference plus per-frame normalization and adjacent flattened Pearson correlation; helper loads mirrored trained weights."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "depth_temporal_consistency": "MiDaS model (Ranftl et al.); the metric is own — https://github.com/isl-org/MiDaS",

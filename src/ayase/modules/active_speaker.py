@@ -34,6 +34,9 @@ logger = logging.getLogger(__name__)
 
 class ActiveSpeakerModule(PipelineModule):
     name = "active_speaker"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own diagnostic: InsightFace face tracks are cropped with audio, scored by the real VERSE SyncNet adapter, then best confidence, margin and silent-face count are computed. Missing detections/backend skip rather than synthesize confidence."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Lip-sync separation between faces: is exactly one mouth in sync"
     default_config = {

@@ -20,6 +20,9 @@ class ParanoidDecoderModule(PipelineModule):
     This detects corruption that simple metadata checks (MOOV atom etc.) might miss.
     """
     name = "paranoid_decoder"
+    implementation_status = "implemented"
+    implementation_notes = "Complete validation utility decodes real media through OpenCV random seeks or resolved ffmpeg strict decode and records actual failure diagnostics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Deep bitstream validation using FFmpeg (Paranoid Mode)"
     default_config = {

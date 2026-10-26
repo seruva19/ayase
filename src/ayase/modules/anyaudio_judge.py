@@ -140,6 +140,9 @@ def _install_generate_adapter(judge: Any) -> None:
 
 class AnyAudioJudgeModule(PipelineModule):
     name = "anyaudio_judge"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned author source/checkpoint acquisition, author logits judge and rubric/decomposition interfaces are wired; returned native score is validated and stored. Holistic rubric fallback is an author-protocol branch, not a pixel/audio heuristic replacement."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "AnyAudio-Judge author-logits audio-instruction alignment"
     input_type = "audio"
     provenance = {"anyaudio_judge_score": "published"}

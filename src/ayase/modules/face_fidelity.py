@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class FaceFidelityModule(PipelineModule):
     name = "face_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own face quality composite (sharpness, size, frontalness, location) with Haar/MediaPipe detection and count; fallback changes face detector only, not a published face-IQA method."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = {
         "face_count": "utility",

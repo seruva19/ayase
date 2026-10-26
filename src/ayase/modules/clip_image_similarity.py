@@ -45,6 +45,9 @@ logger = logging.getLogger(__name__)
 
 class CLIPImageSimilarityModule(PipelineModule):
     name = "clip_image_similarity"
+    implementation_status = "implemented"
+    implementation_notes = "Real transformers/OpenCLIP encoder features with normalized image-image dot product; video frame averaging is a documented minor extension."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "clip_image_similarity": "CLIP-I (DreamBooth, Ruiz et al. 2023; OpenAI CLIP ViT-B/32) — https://arxiv.org/abs/2208.12242",

@@ -26,6 +26,37 @@ def test_videophy_parse_likert():
     assert _parse_likert("no digit here") is None
 
 
+def test_videophy_decodes_generated_answer_without_prompt_digits():
+    import numpy as np
+    import torch
+    from types import SimpleNamespace
+    from ayase.modules.vlm_phy import PHYSICS_PROMPT, VideoPhyModule, _parse_likert
+
+    class Inputs(dict):
+        def to(self, device):
+            return self
+
+    class Processor:
+        def apply_chat_template(self, conversation, add_generation_prompt):
+            return PHYSICS_PROMPT
+
+        def __call__(self, **kwargs):
+            return Inputs(input_ids=torch.tensor([[1, 20, 21]]))
+
+        def batch_decode(self, tokens, skip_special_tokens):
+            # A decoder that exposes the prompt's literal 1-5 if it leaks.
+            assert tokens.tolist() == [[5]]
+            return ["5"]
+
+    module = VideoPhyModule()
+    module._vlm_processor = Processor()
+    module._vlm_model = SimpleNamespace(
+        generate=lambda **kwargs: torch.tensor([[1, 20, 21, 5]])
+    )
+    answer = module._ask_vlm(np.zeros((8, 4, 4, 3)), PHYSICS_PROMPT)
+    assert _parse_likert(answer) == 1.0
+
+
 def test_videophy_no_backend_leaves_fields_unset(video_sample):
     """Without a loaded backend the module must not fabricate neutral scores."""
     from ayase.modules.vlm_phy import VideoPhyModule

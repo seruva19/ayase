@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class CycleRewardModule(PipelineModule):
     name = "cycle_reward"
+    implementation_status = "implemented"
+    implementation_notes = "Actual CycleReward-Combo package loads trained model/preprocessor; model.score(image,caption) yields mean image/frame reward. Managed package is pinned."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cycle_reward_score": "CycleReward-Combo (Bahng et al., ICCV 2025), the cyclereward package — https://github.com/hjbahng/cyclereward",

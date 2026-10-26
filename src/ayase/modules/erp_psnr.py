@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class SphericalPSNRModule(ReferenceBasedModule):
     name = "erp_psnr"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own ERP plain/CPP-style weighted diagnostics plus true cosine-latitude WS-PSNR. psnr_sphw and psnr_cosw are correctly own rather than falsely published S-PSNR/CPP outputs."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "psnr_cosw": "own",
         "psnr_sphw": "own",

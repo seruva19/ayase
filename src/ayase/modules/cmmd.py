@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class CMMDModule(BatchMetricModule):
     name = "cmmd"
+    implementation_status = "implemented"
+    implementation_notes = "Real CLIP image features feed biased Gaussian-kernel MMD squared scaled by 1000 with sigma=10. Feature normalization helper requires comparison with official protocol."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "cmmd": "CMMD (Jayasumana et al., CVPR 2024) — https://github.com/google-research/google-research/tree/master/cmmd",

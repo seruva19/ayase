@@ -59,6 +59,9 @@ class VQA2Module(PipelineModule):
     """Run the upstream VQA² scorer on images or videos."""
 
     name = "vqa2"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete vendored VQA2 source, pinned quality and SlowFast checkpoints, native prompts/multistream preprocessing and five-quality logits WA5 weighted probabilities. CUDA-only backend is automatically provisioned."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "vqa2_score": "VQA², ACM MM 2025 — https://github.com/Q-Future/Visual-Question-Answering-for-Video-Quality-Assessment",

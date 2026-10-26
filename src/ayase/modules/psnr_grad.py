@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class PSNRDIVModule(ReferenceBasedModule):
     name = "psnr_grad"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own blockwise gradient-difference-weighted PSNR, correct explicit formula; not published PSNR-DIV despite legacy class name."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "psnr_grad": "PSNR_DIV (ICIP 2025, arXiv 2510.01361) claimed — https://arxiv.org/abs/2510.01361",

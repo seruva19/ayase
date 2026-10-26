@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class VideoTextMatchingModule(PipelineModule):
     name = "video_text_matching"
+    implementation_status = "implemented"
+    implementation_notes = "Own XCLIP video logit or explicit CLIP-frame logit/dispersion algorithm is complete; own provenance correctly covers backend-dependent score scaling."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     description = "ViCLIP / X-CLIP (Temporal alignment) or Frame-averaged CLIP"
     default_config = {

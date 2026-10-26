@@ -32,6 +32,9 @@ def _get_caption_text(sample: Sample) -> Optional[str]:
 
 class DSGModule(PipelineModule):
     name = "dsg"
+    implementation_status = "unimplemented"
+    implementation_notes = "Generic dsg.evaluate(path,caption) adapter has no packaged/pinned implementation of dependency-aware question graph generation and VQA; no provisioning entry supplies backend."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     requires_external_backend = True
     provenance = "utility"
     sources = {

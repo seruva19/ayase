@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class LLMDescriptiveQAModule(PipelineModule):
     name = "llm_descriptive_qa"
+    implementation_status = "implemented"
+    implementation_notes = "Checkpoint configuration dispatches the vision-language model and processor; the default LLaVA Next and configurable alternative families use their matching native loaders."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "llm_qa_score": "LLaVA-NeXT / GPT-4o models; the metric is own — https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf",
@@ -69,7 +72,7 @@ class LLMDescriptiveQAModule(PipelineModule):
                     logger.warning("OpenAI API key not provided")
             else:
                 # Local LLaVA model setup
-                from transformers import AutoProcessor, LlavaForConditionalGeneration
+                from transformers import AutoModelForImageTextToText, AutoProcessor
                 import torch
                 from ayase.runtime import resolve_torch_device
 
@@ -79,7 +82,7 @@ class LLMDescriptiveQAModule(PipelineModule):
                 logger.info(f"Loading LLaVA model: {self.model_name}")
 
                 self._processor = AutoProcessor.from_pretrained(self.model_name)
-                self._model = LlavaForConditionalGeneration.from_pretrained(
+                self._model = AutoModelForImageTextToText.from_pretrained(
                     self.model_name,
                     torch_dtype=torch.float16 if use_fp16 else torch.float32,
                     low_cpu_mem_usage=True,

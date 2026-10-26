@@ -60,6 +60,9 @@ def parse_evoquality_output(text: str) -> Optional[float]:
 
 class EvoQualityModule(PipelineModule):
     name = "evoquality"
+    implementation_status = "implemented"
+    implementation_notes = "Loads ByteDance EvoQuality actual model or explicitly configured endpoint, decodes generated suffix, parses rating and averages selected frames."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

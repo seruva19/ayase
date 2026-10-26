@@ -71,6 +71,9 @@ _IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
 
 class FaceSimModule(PipelineModule):
     name = "facesim"
+    implementation_status = "implemented"
+    implementation_notes = "Real CurricularFace and ArcFace weights with declared OpenS2V/ConsisID face extraction and cosine similarity; per-frame detector coverage is separate utility. No generic CLIP face proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "facesim_arc": "published",
         "facesim_cur": "published",

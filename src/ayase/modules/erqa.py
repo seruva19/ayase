@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class ERQAModule(ReferenceBasedModule):
     name = "erqa"
+    implementation_status = "implemented"
+    implementation_notes = "Official erqa.ERQA package scores actual frame pairs; resize and video averaging are protocol adaptation only."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

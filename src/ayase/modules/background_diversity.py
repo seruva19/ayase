@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class BackgroundDiversityModule(PipelineModule):
     name = "background_diversity"
+    implementation_status = "implemented"
+    implementation_notes = "Own rembg segmentation plus masked HSV Shannon entropy and two-frame background PSNR diagnostics are complete."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Checks background complexity (entropy) to detect concept bleeding"

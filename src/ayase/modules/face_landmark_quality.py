@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class FaceLandmarkQualityModule(PipelineModule):
     name = "face_landmark_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own MediaPipe landmark heuristic: centered displacement jitter, second-difference smoothness and normalized shape-deviation identity proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     description = "Facial landmark jitter, expression smoothness, identity consistency"
     default_config = {

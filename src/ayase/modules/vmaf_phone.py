@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class VMAFPhoneModule(ReferenceBasedModule):
     name = "vmaf_phone"
+    implementation_status = "implemented"
+    implementation_notes = "Managed ffmpeg libvmaf native phone_model transformation and native pooled JSON score; no post-hoc ad hoc VMAF-to-phone mapping."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     implementation_sources = ("../managed_ffmpeg.py",)
     provenance = "published"
     sources = {

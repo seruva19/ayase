@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class TLVQMModule(PipelineModule):
     name = "resnet_svr_vq"
+    implementation_status = "unimplemented"
+    implementation_notes = "Requires custom cnn_tlvqm.pth ResNet18 state and tlvqm_svr.pkl joblib regressor, but neither trained artifact is provided/downloaded/resolved by a managed source. setup exits unavailable when absent; executable feature code with unavailable custom trained head is not a complete own metric."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "resnet_svr_score": "CNN-TLVQM, Korhonen ACM MM 2019 — name only — https://github.com/jarikorhonen/cnn-tlvqm",

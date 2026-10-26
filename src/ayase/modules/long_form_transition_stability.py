@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 class LongFormTransitionStabilityModule(PipelineModule):
     name = "long_form_transition_stability"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own boundary detection and black/freeze/flash penalty algorithm with declared 8fps grayscale sampling."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Boundary-local black-frame, flash, duplicate, and freeze stability"

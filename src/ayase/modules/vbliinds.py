@@ -30,6 +30,9 @@ logger = logging.getLogger(__name__)
 
 class VBLIINDSModule(PipelineModule):
     name = "vbliinds"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup stays unavailable; process unchanged and _compute returnsNone, no published feature/regression backend."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "V-BLIINDS blind NR-VQA via DCT-domain GGD + motion coherency (Saad 2014)"

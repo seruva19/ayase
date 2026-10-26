@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class HPSv2Module(PipelineModule):
     name = "hpsv2"
+    implementation_status = "implemented"
+    implementation_notes = "Real hpsv2 package or DiffSynth HPSv2Metric pretrained model; native prompt-conditioned frame scores are averaged, and absent backends do not emit CLIP heuristics."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

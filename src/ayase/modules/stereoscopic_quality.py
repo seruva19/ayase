@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class StereoscopicQualityModule(PipelineModule):
     name = "stereoscopic_quality"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own stereo disparity/comfort/completeness/smoothness/crosstalk composite; own field/provenance correctly avoids a named learned stereoscopic quality benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Stereo 3D comfort and quality assessment"

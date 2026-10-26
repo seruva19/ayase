@@ -19,6 +19,9 @@ class KnowledgeGraphModule(PipelineModule):
     Edges: Relationships based on presence, co-occurrence, and semantic similarity.
     """
     name = "knowledge_graph"
+    implementation_status = "implemented"
+    implementation_notes = "Complete utility exports sample/action/style nodes, confidence edges and optional KMeans clusters. include_similarity_edges branch is only pass, so that opt-in feature is unimplemented."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     description = "Generates a conceptual knowledge graph of the video dataset"
     default_config = {

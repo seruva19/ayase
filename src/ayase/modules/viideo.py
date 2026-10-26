@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 
 class VIIDEOModule(PipelineModule):
     name = "viideo"
+    implementation_status = "implemented"
+    implementation_notes = "Real scikit-video viideo_score on decoded video tensor; no handcrafted temporal variation substitute."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "viideo_score": "VIIDEO, Mittal et al. 2016; scikit-video — http://www.scikit-video.org",

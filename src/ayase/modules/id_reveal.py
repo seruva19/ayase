@@ -52,6 +52,9 @@ _VIDEO_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".webm", ".m4v"}
 
 class IDRevealModule(PipelineModule):
     name = "id_reveal"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled ID-Reveal detector, shared 3DMM extraction and real learned temporal embedding checkpoint with reference cache and native distance scorer. Cropping/sampling adaptations are documented; no coefficient-norm substitute."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = {
         "id_reveal_distance": "adapted",
         "id_reveal_tracks": "utility",

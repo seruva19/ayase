@@ -40,6 +40,9 @@ def _norm_pts(seq: np.ndarray) -> np.ndarray:
 
 class LMDModule(PipelineModule):
     name = "lmd"
+    implementation_status = "approximate"
+    implementation_notes = "Published 68-point pixel landmark distances are replaced by MediaPipe 468-point FaceMesh/lip subset and bounding-box diagonal normalization; materially different quantities."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "LMD/F-LMD: landmark distance of lips and full face to the source video"
     provenance = "adapted"
     sources = {

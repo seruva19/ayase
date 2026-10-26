@@ -34,6 +34,9 @@ _ADAPTER_REVISION = "bcd3f388bec7db42e75b165e235196833111c4ae"
 
 class IDSimModule(PipelineModule):
     name = "id_sim"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned hashed DINOv2 backbone and bundled trained ID-Sim adapter/preprocessing produce official model distance; concrete helper adapter weights still need inspection."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "id_sim_distance": "ID-Sim (Chae et al.) — https://github.com/JuliaChae/id_sim",

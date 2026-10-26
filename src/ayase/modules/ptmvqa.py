@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class PTMVQAModule(PipelineModule):
     name = "ptmvqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "setup never loads any model, _ml_available remains false, _compute_score returns None."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     requires_external_backend = True  # no turnkey real backend in a standard install
     description = "PTM-VQA multi-PTM fusion VQA (CVPR 2024)"

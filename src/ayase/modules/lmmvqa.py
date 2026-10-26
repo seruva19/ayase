@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class LMMVQAModule(PipelineModule):
     name = "lmmvqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "Explicit unavailable placeholder with no loadable trained LMM-VQA checkpoint and no score computation/fallback; process returns unchanged."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "lmmvqa_score": "LMM-VQA (2024) — stub — https://github.com/Sueqk/LMM-VQA",

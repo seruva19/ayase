@@ -67,6 +67,9 @@ def trajectory_motion_similarity(generated, source) -> Optional[float]:
 
 class VideoEditMotionFidelityModule(PipelineModule):
     name = "video_edit_motion_fidelity"
+    implementation_status = "implemented"
+    implementation_notes = "Real CoTracker3 dense tracks and MTBench trajectory-motion cosine matching; omitted optional segmentation mask and reference pairing explicitly adapted."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "video_edit_motion_fidelity": "MTBench, Shi et al. ICCV 2025 — https://openaccess.thecvf.com/content/ICCV2025/html/Shi_Decouple_and_Track_Benchmarking_and_Improving_Video_Diffusion_Transformers_For_ICCV_2025_paper.html",

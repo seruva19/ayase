@@ -30,7 +30,10 @@ logger = logging.getLogger(__name__)
 
 class PerceptualFRModule(PipelineModule):
     name = "perceptual_fr"
-    provenance = "published"
+    implementation_status = "implemented"
+    implementation_notes = "Real PIQ FSIM/GMSD/VSI formulas operate on RGB reference/distorted tensors; video frame averages preserve per-image methods but should be marked adapted for video use."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
+    provenance = {"*": "published", "fsim": "adapted", "gmsd": "adapted", "vsi_score": "adapted"}
     sources = {
         "fsim": "FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq",
         "gmsd": "FSIM (Zhang 2011), GMSD (Xue 2014), VSI (Zhang 2014) via piq — https://github.com/photosynthesis-team/piq",
@@ -196,3 +199,4 @@ class PerceptualFRModule(PipelineModule):
             float(np.mean(gmsd_vals)) if gmsd_vals else None,
             float(np.mean(vsi_vals)) if vsi_vals else None,
         )
+    deviations = {"fsim": "Native image fsim uses the actual PIQ formula, but this same field also receives an arithmetic mean over every Nth decoded video-frame pair in _process_video (lines166-198). No native video version is implemented; retain implemented status with adapted image-to-video pooling provenance.", "gmsd": "Native image gmsd uses the actual PIQ formula, but this same field also receives an arithmetic mean over every Nth decoded video-frame pair in _process_video (lines166-198). No native video version is implemented; retain implemented status with adapted image-to-video pooling provenance.", "vsi_score": "Native image vsi_score uses the actual PIQ formula, but this same field also receives an arithmetic mean over every Nth decoded video-frame pair in _process_video (lines166-198). No native video version is implemented; retain implemented status with adapted image-to-video pooling provenance."}

@@ -42,6 +42,9 @@ def _pu21_encode(linear_rgb: np.ndarray) -> np.ndarray:
 
 class PUMetricsModule(ReferenceBasedModule):
     name = "log_metrics"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own logarithmic luminance mapping, own PSNR/SSIM formulas and paired-frame aggregation; not a reference PU21 implementation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "log_psnr": "PU21 (Mantiuk & Azimi, 2021) claimed — https://github.com/gfxdisp/pu21",

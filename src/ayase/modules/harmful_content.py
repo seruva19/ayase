@@ -29,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 class HarmfulContentModule(PipelineModule):
     name = "harmful_content"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own blend of CLIP safe/harm prompt softmax, red/blood color mask and frame-difference motion heuristic."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "own"
     sources = {
         "harmful_content_score": "CLIP ViT-B/32 model; the screening is own (docstring: 'ayase-defined, not a published metric') — https://huggingface.co/openai/clip-vit-base-patch32",

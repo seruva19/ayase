@@ -54,6 +54,9 @@ _NUMBER_WORDS = {
 
 class GenEvalModule(PipelineModule):
     name = "clip_prompt_check"
+    implementation_status = "implemented"
+    implementation_notes = "Complete explicitly own CLIP/detection caption checks; counting/position remain unset without detector. Not published GenEval reproduction. MMDet path never serves _detect_boxes (YOLO only), limiting that override."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     sources = {
         "clipchk_color_attribution": "name from GenEval (Ghosh et al., NeurIPS 2023); the definition is not reproduced — https://github.com/djghosh13/geneval",

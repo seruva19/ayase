@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class CRFIQAModule(PipelineModule):
     name = "crfiqa"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only imports a generic crfiqa module then calls module.predict(path); no architecture, trained CR-FIQA checkpoint, packaged dependency or managed provisioning exists."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "crfiqa_score": "CR-FIQA (Boutros et al., CVPR 2023) — https://github.com/fdbtrs/CR-FIQA",

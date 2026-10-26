@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 
 class MADModule(PipelineModule):
     name = "mad"
+    implementation_status = "implemented"
+    implementation_notes = "Real named pyiqa metric invocation with appropriate image tensor/reference interface and frame-score averaging; image-to-video pooling warrants adapted provenance but is not a substitute backend. Package/model execution and numerical parity were not run."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {
@@ -112,3 +115,6 @@ class MADCompatModule(MADModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "mad_metric"
+    implementation_status = "implemented"
+    implementation_notes = "Real matching PyIQA metric/model is created and invoked on native image or paired tensors; errors skip. Documented video frame selection/mean pooling changes the protocol but not the underlying published image method, so adapted provenance is compatible with implemented readiness."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

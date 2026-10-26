@@ -70,6 +70,9 @@ def _color_transfer(path: Path) -> Optional[str]:
 
 class HDRMetadataModule(PipelineModule):
     name = "hdr_metadata"
+    implementation_status = "implemented"
+    implementation_notes = "Streams all PQ frames, applies ST2084 EOTF to max RGB components and computes frame-average maximum / pixel maximum in nits. Transfer-gated CTA light-level statistics are real algorithmic outputs."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "max_cll": "MaxCLL/MaxFALL (CTA-861.3; https://shop.cta.tech/products/cta-861-3; ST.2084 PQ decode via FFmpeg)",

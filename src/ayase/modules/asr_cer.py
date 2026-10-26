@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 class ASRCERModule(PipelineModule):
     name = "asr_cer"
+    implementation_status = "implemented"
+    implementation_notes = "Computes normalized character error rate against explicit/caption transcript through shared ASR transcriber; no fabricated fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "asr_cer": "CER (char-level Levenshtein / reference length), Whisper eval normalization — https://github.com/openai/whisper",

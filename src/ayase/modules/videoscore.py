@@ -52,6 +52,9 @@ ROUND_DIGIT = 3
 
 class VideoScoreModule(PipelineModule):
     name = "videoscore"
+    implementation_status = "implemented"
+    implementation_notes = "Real Mantis Idefics2ForSequenceClassification VideoScore checkpoint and processor; native regression logits map to five declared axes. No arbitrary generated-number rubric fallback."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "videoscore_alignment": "VideoScore, He et al. EMNLP 2024 — https://huggingface.co/TIGER-Lab/VideoScore",

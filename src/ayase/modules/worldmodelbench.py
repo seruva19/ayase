@@ -98,6 +98,9 @@ class WorldModelBenchModule(PipelineModule):
     """Evaluate a WorldModelBench-compatible video set with its upstream judge."""
 
     name = "worldmodelbench"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled real WorldModelBench/VILA evaluation source, checkpoint and dependency compatibility layers with actual question/rubric aggregation and native parsed outputs. Automatic source/assets exist, not a generic VLM replacement."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "published"
     sources = {
         "worldmodelbench_aesthetics_adherence": "WorldModelBench (VILA judge) — https://huggingface.co/Efficient-Large-Model/vila-ewm-qwen2-1.5b",

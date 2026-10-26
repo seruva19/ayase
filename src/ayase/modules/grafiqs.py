@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 class GraFIQsModule(PipelineModule):
     name = "grafiqs"
+    implementation_status = "implemented"
+    implementation_notes = "Concrete trained ArcFace BatchNorm distribution mismatch loss backpropagates to input and returns gradient L1 norm; alignment/model/frame adaptations disclosed. Exact published gradient reduction needs independent comparison."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "grafiqs_score": "GraFIQs (Kolf, Damer, Boutros, CVPRW 2024) — https://github.com/jankolf/GraFIQs",

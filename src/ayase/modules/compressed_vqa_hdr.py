@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 class CompressedVQAHDRModule(ReferenceBasedModule):
     name = "compressed_vqa_hdr"
+    implementation_status = "unimplemented"
+    implementation_notes = "Only imports compressedvqa_hdr.predict and passes file paths; neither base runtime nor managed dependency catalog provisions that package, source, model or callable. There is no executable standard-install backend and no approximation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "utility"
     sources = {
         "compressed_vqa_hdr": "CompressedVQA-HDR — https://github.com/sunwei925/CompressedVQA-HDR",

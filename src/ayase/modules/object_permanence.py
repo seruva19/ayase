@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 class ObjectPermanenceModule(PipelineModule):
     name = "object_permanence"
+    implementation_status = "implemented"
+    implementation_notes = "Complete own centroid tracking/disappearance/border-exit/occlusion heuristic with YOLO or contour detections; own fields do not claim an official object-permanence benchmark."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
     provenance = "own"
     description = "Object tracking consistency (ID switches, disappearances)"

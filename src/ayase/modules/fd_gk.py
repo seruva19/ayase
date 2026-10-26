@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 class FDGestureModule(BatchMetricModule):
     name = "fd_gk"
+    implementation_status = "approximate"
+    implementation_notes = "FrГ©chet formula is executable but MediaPipe 33-joint xy/velocity replaces source skeleton/SMPL pose representation under FD_g and FD_k fields."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "FD_g/FD_k: Frechet on body-pose and velocity distributions vs reference set"
     provenance = "adapted"
     sources = {

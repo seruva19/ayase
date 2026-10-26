@@ -28,13 +28,11 @@ class MIEScoreModule(PipelineModule):
     """Approximate MIEScore-style evaluation for multi-source image edits."""
 
     name = "miescore"
+    implementation_status = "approximate"
+    implementation_notes = "Own hosted-VLM rubric replaces trained LoRA regression head; explicit approximate output fields accurately signal lack of published-method reproduction."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "Approximate three-dimensional multi-source image-edit evaluation"
     input_type = "img"
-    implementation_status = "approximate"
-    implementation_notes = (
-        "Generic hosted-VLM prompt judge replacing the paper's trained LoRA regression "
-        "head; scores are uncalibrated and have no official MIEScore parity."
-    )
     provenance = "adapted"
     sources = {"*": f"MIEScore paper — {PAPER_URL}"}
     deviations = {

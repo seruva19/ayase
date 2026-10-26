@@ -45,6 +45,9 @@ class MuQEvalModule(PipelineModule):
     """frozen-MuQ A1 predictor for generated-music quality."""
 
     name = "muq_eval"
+    implementation_status = "implemented"
+    implementation_notes = "Reconstructs author A1 MuQ evaluator, downloads pinned checkpoint/base model and loads strict state dict before native MI output; no general music-embedding norm proxy."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "muq_eval_mi_score": "MuQ-Eval A1 — https://huggingface.co/zhudi2825/MuQ-Eval-A1",

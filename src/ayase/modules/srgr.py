@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 class SRGRModule(PipelineModule):
     name = "srgr"
+    implementation_status = "unimplemented"
+    implementation_notes = "No BEAT semantic annotations/gesture PCK backend is implemented; setup/process explicitly leave SRGR unset."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     description = "SRGR: semantic-weighted gesture PCK (BEAT, external backend)"
     provenance = "published"
     sources = {

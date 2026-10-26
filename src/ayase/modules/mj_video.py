@@ -57,6 +57,9 @@ class MJVideoModule(PipelineModule):
     """Score each text-video pair with the upstream MJ-VIDEO-2B reward model."""
 
     name = "mj_video"
+    implementation_status = "implemented"
+    implementation_notes = "Bundled author MJ-Video model/source and pinned HF checkpoint with strict state loading, tokenizer and native video loader; six native reward axes mapped. Automatic provisioning is present."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "published"
     sources = {
         "mj_video_alignment_score": "MJ-Video / MJ-VIDEO-2B (Tong et al., 2025) — https://github.com/aiming-lab/MJ-Video",

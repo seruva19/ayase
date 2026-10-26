@@ -147,6 +147,9 @@ def load_protocol_conversation(
 
 class SpeechJudgeModule(PipelineModule):
     name = "speechjudge"
+    implementation_status = "implemented"
+    implementation_notes = "Pinned SpeechJudge GRM thinker checkpoint/source protocol with Qwen audio transport, native paired scoring and parsed candidate/comparator/margin/preference. Declared sampling/protocol adaptations retain the trained intended backend."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     description = "SpeechJudge-GRM target-text-conditioned pairwise speech naturalness"
     input_type = "audio"
     implementation_sources = ("../third_party/speechjudge/NOTICE",)

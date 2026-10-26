@@ -203,6 +203,9 @@ class _FadPackageVGGish:
 
 class FADModule(BatchMetricModule):
     name = "fad"
+    implementation_status = "implemented"
+    implementation_notes = "Actual VGGish/PANNs/PaSST trained embeddings and full Fréchet covariance formula; configurable finite-size extrapolation is adapted. SciPy-absent fallback drops covariance interaction, but scipy is mandatory runtime dependency."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         k: "FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK"

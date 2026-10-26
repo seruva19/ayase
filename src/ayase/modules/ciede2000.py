@@ -103,6 +103,9 @@ def _ciede2000_pixel(lab1: np.ndarray, lab2: np.ndarray) -> np.ndarray:
 
 class CIEDE2000Module(ReferenceBasedModule):
     name = "ciede2000"
+    implementation_status = "implemented"
+    implementation_notes = "Executable CIEDE2000 pixel formula and Lab conversion; pairs require references. Mean video-frame aggregation is documented and retains the real per-image color difference."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {

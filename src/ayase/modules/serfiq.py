@@ -58,12 +58,15 @@ _PARAMS_NAME = "insightface-0000.params"
 
 class SERFIQModule(PipelineModule):
     name = "serfiq"
+    implementation_status = "implemented"
+    implementation_notes = "Actual MXNet dropout-ArcFace trained symbol/weights downloaded automatically, managed dependency entry exists, repeated stochastic embeddings and source SER-FIQ logistic formula are wired. Legacy external flag is stale."
+    implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {
         "serfiq_score": "SER-FIQ (Terhörst et al., CVPR 2020) — https://github.com/pterhoer/FaceImageQuality",
     }
-    requires_external_backend = True  # no turnkey real backend in a standard install
+    requires_external_backend = False  # managed MXNet environment and automatic trained assets
     description = "SER-FIQ face quality via dropout embedding robustness (CVPR 2020)"
     default_config = {
         "subsample": 4,

@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 class GenerativeDistributionModule(BatchMetricModule):
     name = "generative_distribution"
+    implementation_status = "implemented"
+    implementation_notes = "Real PRDC equations/package using trained VGG16 fc7 reference/generated features and required reference set. Representative video-frame adaptation is explicit; not a self-split substitute."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     provenance = "adapted"
     sources = {
         "coverage": "Density/Coverage (Naeem et al., ICML 2020) via prdc — https://github.com/clovaai/generative-evaluation-prdc",
@@ -204,3 +207,6 @@ class GenerativeDistributionCompatModule(GenerativeDistributionModule):
     """Compatibility alias matching filename-based discovery."""
 
     name = "generative_distribution_metrics"
+    implementation_status = "implemented"
+    implementation_notes = "Real ImageNet VGG16 fc7 features and official prdc.compute_prdc yield all four metrics against references; selected frame/backbone protocol is adapted."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."

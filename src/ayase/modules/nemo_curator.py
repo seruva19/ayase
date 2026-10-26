@@ -63,11 +63,11 @@ def _get_quality_model_class():
 
 class NemoCuratorModule(PipelineModule):
     name = "nemo_curator"
+    implementation_status = "implemented"
+    implementation_notes = "Real NVIDIA DeBERTa quality classifier plus optional supplied FastText model; own probability-weighted score is explicit. FastText fallback derives categorical label from an own interpolation/threshold rule, so label provenance needs adaptation."
+    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
     deprecated = True
-    provenance = {
-        "nemo_quality_label": "published",
-        "nemo_quality_score": "own",
-    }
+    provenance = {"nemo_quality_label": "adapted", "nemo_quality_score": "own"}
     sources = {
         "nemo_quality_label": "NVIDIA quality-classifier-deberta (NeMo Curator) — https://huggingface.co/nvidia/quality-classifier-deberta",
     }
@@ -255,3 +255,4 @@ class NemoCuratorModule(PipelineModule):
         if score >= 0.4:
             return "Medium"
         return "Low"
+    deviations = {"nemo_quality_label": "Default DeBERTa returns native argmax label, but enabled FastText branch synthesizes a quality score from label confidence and then derives label via own thresholds; shared published label is not native on every configured route."}
