@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **tui**: remove the `ayase tui` command and Textual terminal interface; use the command-line workflows or Python API instead.
 
+### Fixed
+
+- Metric help now shows definition classes, primary sources, and implementation differences; explicit metric descriptions take precedence over generic schema comments.
+- Model discovery no longer lists Ayase module names as pyiqa models or merges different checkpoint files from one Hugging Face repository; weight links retain their purpose, size, and declared terms.
+
 ## [0.2.1] - 2026-10-22
 
 ### Added

@@ -442,8 +442,8 @@ class PipelineModule(ABC):
         # scanner cannot safely infer.  Only accept actual QualityMetrics
         # fields so dataset-level declarations remain separate below.
         for field, description in cls.metric_info.items():
-            if field in field_descs and field not in outputs:
-                outputs[field] = description or field_descs[field]
+            if field in field_descs:
+                outputs[field] = description or outputs.get(field) or field_descs[field]
 
         dataset_outputs: Dict[str, str] = {}
         for m in _re.finditer(r'add_dataset_metric\(\s*["\'](\w+)["\']', output_src):
@@ -451,8 +451,10 @@ class PipelineModule(ABC):
             if field not in dataset_outputs and field in dataset_field_descs:
                 dataset_outputs[field] = dataset_field_descs[field]
         for field, description in cls.metric_info.items():
-            if field in dataset_field_descs and field not in dataset_outputs:
-                dataset_outputs[field] = description or dataset_field_descs[field]
+            if field in dataset_field_descs:
+                dataset_outputs[field] = (
+                    description or dataset_outputs.get(field) or dataset_field_descs[field]
+                )
 
         # Provenance metadata is always resolved per field (field -> class /
         # source / deviation), even when the module used a shorthand form.

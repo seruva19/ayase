@@ -1,8 +1,8 @@
 """Interactive catalog for discovering Ayase modules, metrics, models, and usage.
 
-The catalog is built entirely from class metadata and source introspection. It
-never instantiates a pipeline module, imports a model backend, or downloads
-weights, so it is safe to use as an offline CLI help surface.
+The catalog is built from registered module classes and source introspection.
+Discovery imports module definitions; catalog construction never instantiates
+or mounts a pipeline module and does not download weights or query model APIs.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from .metrics_doc import (
     _CATEGORY_DISPLAY,
@@ -58,6 +59,9 @@ class MetricCatalogItem:
     scope: str
     category: str
     direction: str
+    provenance: str = ""
+    source: str = ""
+    deviation: str = ""
 
 
 @dataclass(frozen=True)
@@ -151,6 +155,13 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
         elif field in dataset_schema:
             dataset_fields.setdefault(field, "")
 
+    all_fields = list(sample_fields) + [
+        field for field in dataset_fields if field not in sample_fields
+    ]
+    provenance = cls._resolve_field_map("provenance", all_fields)
+    sources = cls._resolve_field_map("sources", all_fields)
+    deviations = cls._resolve_field_map("deviations", all_fields)
+
     metrics: List[MetricCatalogItem] = []
     for field in sample_fields:
         description = _metric_description(field, sample_fields, declared_info, quality_schema)
@@ -165,6 +176,9 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
                 scope="sample",
                 category=category,
                 direction=_get_score_direction(field, description),
+                provenance=provenance.get(field, ""),
+                source=sources.get(field, ""),
+                deviation=deviations.get(field, ""),
             )
         )
 
@@ -177,6 +191,9 @@ def _collect_metrics(cls: type, metadata: Dict[str, Any]) -> Tuple[MetricCatalog
                 scope="dataset",
                 category="Dataset & Distribution",
                 direction=_get_score_direction(field, description),
+                provenance=provenance.get(field, ""),
+                source=sources.get(field, ""),
+                deviation=deviations.get(field, ""),
             )
         )
     return tuple(sorted(metrics, key=lambda metric: (metric.scope, metric.name)))
@@ -456,6 +473,7 @@ def _render_metric_list(console: Console, catalog: MetricCatalog) -> None:
     table.add_column("Scope")
     table.add_column("Input")
     table.add_column("Direction")
+    table.add_column("Definition")
     table.add_column("Status")
     table.add_column("Description")
 
@@ -464,6 +482,9 @@ def _render_metric_list(console: Console, catalog: MetricCatalog) -> None:
         scopes = ", ".join(sorted({metric.scope for _, metric in providers}))
         inputs = ", ".join(sorted({module.input_type for module, _ in providers}))
         directions = ", ".join(sorted({metric.direction for _, metric in providers}))
+        definitions = ", ".join(
+            sorted({metric.provenance for _, metric in providers if metric.provenance})
+        )
         statuses = {
             "external-backend" if module.requires_external_backend else "ready" for module, _ in providers
         }
@@ -476,6 +497,7 @@ def _render_metric_list(console: Console, catalog: MetricCatalog) -> None:
             scopes,
             inputs,
             directions,
+            definitions,
             ", ".join(sorted(statuses)),
             description,
         )
@@ -522,7 +544,8 @@ def _render_module(
     metrics_table.add_column("Metric", style="cyan")
     metrics_table.add_column("Scope")
     metrics_table.add_column("Category")
-    metrics_table.add_column("Direction")
+    metrics_table.add_column("Direction", no_wrap=True)
+    metrics_table.add_column("Definition")
     metrics_table.add_column("Description")
     for metric in module.metrics:
         style = "bold cyan" if selected_metric == metric.name else "cyan"
@@ -531,12 +554,31 @@ def _render_module(
             metric.scope,
             metric.category,
             metric.direction,
+            metric.provenance,
             metric.description,
         )
     if module.metrics:
         console.print(metrics_table)
     else:
         console.print("[dim]No numeric QualityMetrics/DatasetStats fields declared.[/dim]")
+
+    visible_metrics = [
+        metric
+        for metric in module.metrics
+        if selected_metric is None or metric.name == selected_metric
+    ]
+    references: Dict[Tuple[str, str], List[str]] = {}
+    for metric in visible_metrics:
+        if metric.source or metric.deviation:
+            references.setdefault((metric.source, metric.deviation), []).append(metric.name)
+    if references:
+        console.print("\n[bold]Definition source and differences[/bold]")
+        for (source, deviation), fields in references.items():
+            console.print(Text("Metrics: " + ", ".join(fields), style="bold"))
+            if source:
+                console.print(Text("Primary source: " + source))
+            if deviation:
+                console.print(Text("How Ayase differs: " + deviation))
 
     console.print("\n[bold]Models and weights[/bold]")
     if module.models:

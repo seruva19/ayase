@@ -95,11 +95,13 @@ class FaceSimModule(PipelineModule):
         {"id": "BestWishYsh/OpenS2V-Weight", "type": "huggingface",
          "url": "https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/face_extractor/models/buffalo_l/det_10g.onnx",
          "task": "InsightFace buffalo_l SCRFD-10GF face detector", "size": "17 MB", "auto_download": True,
-         "notes": "InsightFace model: non-commercial research use only"},
+         "license": "non-commercial-research",
+         "notes": "InsightFace model: non-commercial research use only; https://github.com/deepinsight/insightface#license"},
         {"id": "BestWishYsh/OpenS2V-Weight", "type": "huggingface",
          "url": "https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/face_extractor/models/buffalo_l/w600k_r50.onnx",
          "task": "InsightFace buffalo_l ArcFace R50 embedding (FaceSim-Arc)", "size": "174 MB", "auto_download": True,
-         "notes": "InsightFace model: non-commercial research use only"},
+         "license": "non-commercial-research",
+         "notes": "InsightFace model: non-commercial research use only; https://github.com/deepinsight/insightface#license"},
     ]
     metric_info = {
         "facesim_cur": "FaceSim-Cur: CurricularFace cosine to the reference face, mean over frames (higher=better)",

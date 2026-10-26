@@ -476,7 +476,7 @@ class TestURLFormats:
             # HF resolve URLs must have /resolve/main/ or /resolve/
             if "huggingface.co" in url and "/resolve/" in url:
                 assert re.search(
-                    r"huggingface\.co/[^/]+/[^/]+/resolve/", url
+                    r"huggingface\.co/(?:datasets/)?(?:[^/]+/[^/]+|\{\w+\})/resolve/", url
                 ), f"{name}: malformed HF resolve URL {url!r}"
 
 

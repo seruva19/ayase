@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 11:17 · **355 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-10-26 11:43 · **335 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**355** models · **143** HuggingFace · **45** pyiqa · **9** sources
+**335** models · **131** HuggingFace · **38** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,18 +31,18 @@
 
 <a id="categories"></a>
 
-[HuggingFace (108)](#huggingface-models) · [Weight Files (35)](#weight-file-repos) · [pyiqa (45)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (50)](#local-weight-files) · [Other Models (34)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (98)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (38)](#pyiqa-metrics) · [torchvision (13)](#torchvision-models) · [CLIP / OpenCLIP (2)](#clip--openclip) · [torch.hub (6)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (56)](#pip-packages) · [Local Weights (49)](#local-weight-files) · [Other Models (34)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
 ## HuggingFace Models
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/worldmodelbench/worldmodelbench.json" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
 
-- **Used by**: `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `face_motion_preservation`, `gaze_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `id_sim`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`, `vbench2`, `vebench`, `worldmodelbench`
+- **Used by**: `id_sim`, `vbench2`, `vebench`, `worldmodelbench`
 - **VRAM**: ~6 GB total evaluator peak · **Disk**: 5.65 GB
-- **Task**: Mirrored benchmark definition and VILA runtime source
-- **Notes**: WorldModelBench 00b7aa17a05f9fd1ab5c8f66bcf476d04c9c33bf; VILA 0f1426e8da9181e6e6653e10bc15f62d515fa2f6; S2Wrapper 9c008a37540e761f53574b488979db6e49a64312
+- **Task**: Six VE-Bench evaluator checkpoints
+- **Notes**: Pinned revision 377ac94f1fadca1e35b7171c7860ccad6ae9fd1a; SHA-256-verified files under vebench/ckpts/
 
 ### <a href="https://huggingface.co/Aleksandar/nearid-siglip2" target="_blank">`Aleksandar/nearid-siglip2`</a> [↑](#categories)
 > image-feature-extraction · apache-2.0
@@ -63,12 +63,11 @@
 - **Task**: GME image/text embeddings (canonical NexusScore)
 - **Source**: <a href="https://arxiv.org/abs/2412.16855" target="_blank">arXiv</a>
 
-### <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/face_extractor/models/buffalo_l/w600k_r50.onnx" target="_blank">`BestWishYsh/OpenS2V-Weight`</a> [↑](#categories)
+### <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">`BestWishYsh/OpenS2V-Weight`</a> [↑](#categories)
 > text-to-video · apache-2.0
 
-- **Used by**: `csim`, `facesim`, `opens2v`
+- **Used by**: `opens2v`
 - **Downloads**: 128
-- **Disk**: 174 MB
 - **Task**: YOLO-World v2-L image-prompt subject detector (canonical)
 - **Notes**: file yolo_world_v2_l_image_prompt_adapter-719a7afb.pth
 - **Source**: <a href="https://arxiv.org/abs/2505.20292" target="_blank">arXiv</a>
@@ -93,7 +92,7 @@
 > text-generation · other
 
 - **Used by**: `edit_score`
-- **Downloads**: 301
+- **Downloads**: 308
 - **Task**: EditScore Qwen3-VL-4B LoRA adapter
 - **Notes**: Hugging Face metadata says license:other; no standalone adapter license was identified; terms require clarification
 - **Source**: <a href="https://arxiv.org/abs/2509.23909" target="_blank">arXiv</a>
@@ -162,7 +161,7 @@
 > apache-2.0
 
 - **Used by**: `finevq_raw`
-- **Parameters**: 8.2B · **Downloads**: 704
+- **Parameters**: 8.2B · **Downloads**: 706
 - **Disk**: ~30.5 GB
 
 ### <a href="https://huggingface.co/JZHWS/slowfast" target="_blank">`JZHWS/slowfast`</a> [↑](#categories)
@@ -200,7 +199,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `hpsv3`
-- **Downloads**: 448
+- **Downloads**: 471
 - **Task**: HPSv3 prompt-conditioned reward model
 - **Notes**: Reward head checkpoint
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
@@ -227,7 +226,7 @@
 > image-to-text · apache-2.0
 
 - **Used by**: `avgen_bench`
-- **Downloads**: 410K
+- **Downloads**: 411K
 - **Task**: AVGen visible-text detection
 - **Source**: <a href="https://arxiv.org/abs/1212.1442" target="_blank">arXiv</a>
 
@@ -235,7 +234,7 @@
 > image-to-text · apache-2.0
 
 - **Used by**: `avgen_bench`
-- **Downloads**: 154K
+- **Downloads**: 153K
 - **Task**: AVGen visible-text recognition
 - **Source**: <a href="https://arxiv.org/abs/1212.1442" target="_blank">arXiv</a>
 
@@ -262,7 +261,7 @@
 > any-to-any · other
 
 - **Used by**: `beyond_time_shifts`
-- **Parameters**: 5.5B · **Downloads**: 137K
+- **Parameters**: 5.5B · **Downloads**: 135K
 - **Disk**: ~20.6 GB
 - **Task**: Qwen2.5-Omni-3B backbone for the AV-sync evaluator
 - **Notes**: Qwen Research License; non-commercial use only
@@ -300,7 +299,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `edit_score`
-- **Parameters**: 4.4B · **Downloads**: 3.8M
+- **Parameters**: 4.4B · **Downloads**: 3.9M
 - **Disk**: ~16.5 GB
 - **Task**: Qwen3-VL-4B base for EditScore
 - **Notes**: Apache-2.0; pinned local snapshot
@@ -310,7 +309,7 @@
 > image-text-to-text · apache-2.0
 
 - **Used by**: `geneval2`
-- **Parameters**: 8.8B · **Downloads**: 5.5M
+- **Parameters**: 8.8B · **Downloads**: 5.8M
 - **Disk**: ~32.7 GB
 - **Task**: GenEval2 Soft-TIFA visual question answering
 - **Notes**: Apache-2.0 model; GenEval2 code/data are CC-BY-NC-4.0
@@ -320,7 +319,7 @@
 > cc-by-nc-4.0
 
 - **Used by**: `speechjudge`
-- **Parameters**: 10.7B · **Downloads**: 690
+- **Parameters**: 10.7B · **Downloads**: 695
 - **Disk**: 22.36 GB (five safetensors shards)
 - **Task**: Pairwise target-text-conditioned speech naturalness judge
 - **Notes**: CC-BY-NC-4.0 model; non-commercial use only
@@ -341,13 +340,6 @@
 - **Parameters**: 3.7B · **Downloads**: 418K
 - **VRAM**: ~6 GB · **Disk**: ~6 GB
 - **Source**: <a href="https://arxiv.org/abs/2301.12597" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/Stable-Human/3ddfa_v2/resolve/main/mb1_120x120.pth" target="_blank">`Stable-Human/3ddfa_v2`</a> [↑](#categories)
-> mit
-
-- **Used by**: `aed_apd`, `fd_3dmm`, `head_beat_align`, `head_pose_diversity`, `id_reveal`
-- **Disk**: 13 MB
-- **Task**: TDDFA (3DDFA_V2) MobileNet-1 3DMM regressor
 
 ### <a href="https://huggingface.co/Systran/faster-whisper-large-v3" target="_blank">`Systran/faster-whisper-large-v3`</a> [↑](#categories)
 > automatic-speech-recognition · mit
@@ -404,7 +396,7 @@
 ### <a href="https://huggingface.co/ai-forever/kandinsky-video-motion-predictor" target="_blank">`ai-forever/kandinsky-video-motion-predictor`</a> [↑](#categories)
 
 - **Used by**: `kandinsky_motion`
-- **Parameters**: 115M · **Downloads**: 102
+- **Parameters**: 115M · **Downloads**: 100
 - **Disk**: ~440 MB
 - **Task**: VideoMAE-V2 camera/object/dynamics motion predictor
 - **Notes**: Loaded through bundled Kandinsky third-party wrapper
@@ -421,12 +413,6 @@
 - **VRAM**: ~20 GB in bfloat16 · **Disk**: ~20 GB
 - **Task**: DICE object-level difference detector and stage-2 LoRA
 
-### <a href="https://huggingface.co/akhaliq/RetinaFace-R50/resolve/main/RetinaFace-R50.pth" target="_blank">`akhaliq/RetinaFace-R50`</a> [↑](#categories)
-
-- **Used by**: `aed_apd`, `fd_3dmm`, `head_beat_align`, `head_pose_diversity`, `id_reveal`
-- **Disk**: 104 MB
-- **Task**: RetinaFace ResNet-50 face detector
-
 ### <a href="https://huggingface.co/allenai/unifiedqa-v2-t5-large-1363200" target="_blank">`allenai/unifiedqa-v2-t5-large-1363200`</a> [↑](#categories)
 
 - **Used by**: `tifa`
@@ -437,7 +423,7 @@
 > apache-2.0
 
 - **Used by**: `love_results`
-- **Parameters**: 9.2B · **Downloads**: 12
+- **Parameters**: 9.2B · **Downloads**: 14
 - **Disk**: ~34.4 GB
 - **Task**: LOVE text-video correspondence regressor
 - **Notes**: Run with the upstream LOVE repository; software license not published
@@ -450,14 +436,6 @@
 - **Disk**: ~34.4 GB
 - **Task**: LOVE video perception regressor
 - **Notes**: Run with the upstream LOVE repository; software license not published
-
-### <a href="https://huggingface.co/bezzam/wavlm_large_finetune_seed_tts_eval/resolve/main/wavlm_large_finetune.pth" target="_blank">`bezzam/wavlm_large_finetune_seed_tts_eval`</a> [↑](#categories)
-> cc-by-sa-3.0
-
-- **Used by**: `speaker_sim`
-- **Disk**: 1.3 GB
-- **Task**: WavLM-TDNN speaker verification checkpoint (SIM-o)
-- **Notes**: CC BY-SA 3.0 (UniSpeech); copy of the checkpoint linked by seed-tts-eval / F5-TTS
 
 ### <a href="https://huggingface.co/chaenayo/id-sim_dinov2_vitb14_cls_patch" target="_blank">`chaenayo/id-sim_dinov2_vitb14_cls_patch`</a> [↑](#categories)
 > image-feature-extraction · mit
@@ -472,7 +450,7 @@
 > video-text-to-text · other
 
 - **Used by**: `camerabench`
-- **Parameters**: 8.3B · **Downloads**: 230
+- **Parameters**: 8.3B · **Downloads**: 203
 - **Disk**: ~30.9 GB
 - **Source**: <a href="https://arxiv.org/abs/2404.01291" target="_blank">arXiv</a>
 
@@ -564,7 +542,7 @@
 > apache-2.0
 
 - **Used by**: `syncreward`
-- **Parameters**: 2.2B · **Downloads**: 21K
+- **Parameters**: 2.2B · **Downloads**: 20K
 - **Disk**: ~8.3 GB
 - **Task**: PE-AV audio-video encoder
 - **Source**: <a href="https://arxiv.org/abs/2512.19687" target="_blank">arXiv</a>
@@ -582,14 +560,6 @@
 
 - **Used by**: `verse_bench`
 - **Task**: FSMN voice activity detection (FunASR)
-
-### <a href="https://huggingface.co/gfxdisp/cvvdp_ml/blob/b202a7893f6663a6a46f76f7b06c62d1235bc3ab/cvvdp_ml_transformer/cvvdp.ckpt" target="_blank">`gfxdisp/cvvdp_ml`</a> [↑](#categories)
-> mit
-
-- **Used by**: `cvvdp_ml_saliency`, `cvvdp_ml_transformer`
-- **Disk**: 38.1 MB
-- **Task**: ColorVideoVDP-ML-Transformer learned quality pooling
-- **Notes**: MIT; checkpoint pinned at revision b202a7893f6663a6a46f76f7b06c62d1235bc3ab with SHA-256 26c9d643fe4164b76059dc93777a00f4a1f847fd3179456c2d3ceb2b80904df0
 
 ### <a href="https://huggingface.co/google/siglip-base-patch16-224" target="_blank">`google/siglip-base-patch16-224`</a> [↑](#categories)
 > zero-shot-image-classification · apache-2.0
@@ -683,15 +653,12 @@
 - **Task**: MS-CLAP audio-text encoder weights
 - **Source**: <a href="https://arxiv.org/abs/2309.05767" target="_blank">arXiv</a>
 
-### <a href="https://huggingface.co/microsoft/wavlm-large/blob/c1423ed94bb01d80a3f5ce5bc39f6026a0f4828c/pytorch_model.bin" target="_blank">`microsoft/wavlm-large`</a> [↑](#categories)
+### <a href="https://huggingface.co/microsoft/wavlm-large" target="_blank">`microsoft/wavlm-large`</a> [↑](#categories)
 > feature-extraction · CC BY-SA 3.0
 
 - **Used by**: `speech_bert_score`
 - **Downloads**: 842K
-- **Disk**: 1,261,990,257 bytes
-- **Task**: Matching-content reference speech similarity
-- **Notes**: CC BY-SA 3.0; WavLM-Large at 16 kHz; SHA-256 fdee460e529396ddb2f8c8e8ce0ad74cfb747b726bc6f612e666c7c1e1963c9d; official license: https://github.com/microsoft/UniSpeech/blob/8f8cbd22d352fc59dfd5bf19de979b05bb5c7938/LICENSE; weights are downloaded at runtime and not bundled
-- **Source**: <a href="https://arxiv.org/abs/2110.13900" target="_blank">arXiv</a>
+- **Source**: <a href="https://arxiv.org/abs/1912.07875" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/microsoft/xclip-base-patch32" target="_blank">`microsoft/xclip-base-patch32`</a> [↑](#categories)
 > video-classification · mit
@@ -700,56 +667,6 @@
 - **Parameters**: 197M · **Downloads**: 73K
 - **VRAM**: ~600 MB · **Disk**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2208.02816" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_ms1mv2/resolve/afdb94f8190f4cd8ea1467258ce65f1d76033b63/model.safetensors" target="_blank">`minchul/cvlface_adaface_ir101_ms1mv2`</a> [↑](#categories)
-> feature-extraction
-
-- **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 72
-- **Disk**: 261.0 MB
-- **Task**: AdaFace ir101_ms1mv2 face-recognition embedding
-- **Notes**: MIT (CVLface); pinned to revision afdb94f8190f4cd8ea1467258ce65f1d76033b63
-- **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_webface12m/resolve/54f602a0737bd1ee4a4e7e9fd089a485f397fefd/model.safetensors" target="_blank">`minchul/cvlface_adaface_ir101_webface12m`</a> [↑](#categories)
-> feature-extraction
-
-- **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 1K
-- **Disk**: 261.0 MB
-- **Task**: AdaFace ir101_webface12m face-recognition embedding
-- **Notes**: MIT (CVLface); pinned to revision 54f602a0737bd1ee4a4e7e9fd089a485f397fefd
-- **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_webface4m/resolve/f2b38d9e24bfe301490d8dd081d8924b102333dd/model.safetensors" target="_blank">`minchul/cvlface_adaface_ir101_webface4m`</a> [↑](#categories)
-> feature-extraction
-
-- **Used by**: `adaface`
-- **Parameters**: 65M · **Downloads**: 322
-- **Disk**: 261.0 MB
-- **Task**: AdaFace ir101_webface4m face-recognition embedding
-- **Notes**: MIT (CVLface); pinned to revision f2b38d9e24bfe301490d8dd081d8924b102333dd
-- **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/minchul/cvlface_adaface_ir18_webface4m/resolve/0dd53f188fa27968b0a1326970ebf4aeb37ce2ca/model.safetensors" target="_blank">`minchul/cvlface_adaface_ir18_webface4m`</a> [↑](#categories)
-> feature-extraction
-
-- **Used by**: `adaface`
-- **Parameters**: 24M · **Downloads**: 169
-- **Disk**: 97.1 MB
-- **Task**: AdaFace ir18_webface4m face-recognition embedding
-- **Notes**: MIT (CVLface); pinned to revision 0dd53f188fa27968b0a1326970ebf4aeb37ce2ca
-- **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
-
-### <a href="https://huggingface.co/minchul/cvlface_adaface_ir50_webface4m/resolve/60a65befbcf7e19284c4f3ac730f56867ed29594/model.safetensors" target="_blank">`minchul/cvlface_adaface_ir50_webface4m`</a> [↑](#categories)
-> feature-extraction
-
-- **Used by**: `adaface`
-- **Parameters**: 44M · **Downloads**: 382
-- **Disk**: 175.4 MB
-- **Task**: AdaFace ir50_webface4m face-recognition embedding
-- **Notes**: MIT (CVLface); pinned to revision 60a65befbcf7e19284c4f3ac730f56867ed29594
-- **Source**: <a href="https://arxiv.org/abs/2204.00964" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">`nielsr/depth-anything-large`</a> [↑](#categories)
 > depth-estimation · apache-2.0
@@ -832,13 +749,6 @@
 - **Used by**: `verse_bench`
 - **Task**: RoBERTa text encoder (CLAP submodule)
 
-### <a href="https://huggingface.co/s3prl/converted_ckpts/resolve/main/wavlm_large.pt" target="_blank">`s3prl/converted_ckpts`</a> [↑](#categories)
-
-- **Used by**: `speaker_sim`
-- **Disk**: 1.26 GB
-- **Task**: WavLM-Large upstream for the WavLM-TDNN model
-- **Notes**: MIT (WavLM, Microsoft); the file s3prl's wavlm_large entry downloads
-
 ### <a href="https://huggingface.co/sarulab-speech/human-clap-wsce-mae" target="_blank">`sarulab-speech/human-clap-wsce-mae`</a> [↑](#categories)
 
 - **Used by**: `human_clap`, `ms_clap_score`
@@ -908,7 +818,7 @@
 - **Source**: <a href="https://arxiv.org/abs/2305.01569" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/yzd-v/DWPose" target="_blank">`yzd-v/DWPose`</a> [↑](#categories)
-> apache-2.0
+> Apache-2.0
 
 - **Used by**: `hand_gesture_dynamics`, `pose_heat_ssim`
 - **Disk**: 351.1 MB total
@@ -940,65 +850,91 @@
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets" target="_blank">`AkaneTendo25/ayase-assets`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `24-01-04T16-39-21.pt` — used by `audio_visual_sync`, `av_desync`, `av_sync`
-- `CLIPIQA+_ViTL14_512-e66488f2.pth` — used by `brightrate`
-- `CONTRIQUE_checkpoint25.tar` — used by `brightrate`
-- `DOVER.pth` — used by `dover`
-- `FAST_VQA_3D_1_1.pth` — used by `fast_vqa`
-- `FAST_VQA_B_1_4.pth` — used by `fast_vqa`
-- `FAST_VQA_M_1_4.pth` — used by `fast_vqa`
-- `SAMA-baseline_val-ltest_s_dev_v0.0.pth` — used by `sama`
-- `ViT-B-32.safetensors` — used by `brightrate`
-- `ViT-B-32.safetensors` — used by `i2v_similarity`
-- `ViT-L-14.safetensors` — used by `brightrate`
-- `alex.pth` — used by `i2v_similarity`
-- `brightrate_brightvq.pt` — used by `brightrate`
-- `convnext_tiny_1k_224_ema.pth` — used by `cover`, `dover`
-- `dino_vitbase16_pretrain.pth` — used by `dreamsim`, `dreamsim_metric`
-- `dinov2_vitb14_pretrain.pth` — used by `dino_face_identity`
-- `dinov2_vitb14_pretrain.pth` — used by `i2v_similarity`
-- `flownet.pkl` — used by `motion_smoothness`
-- `frames_modelparameters.mat` — used by `brightrate`
-- `imagebind_huge.pth` — used by `imagebind_score`
-- `model.safetensors` — used by `song_eval`
-- `nisqa.tar` — used by `audio_nisqa`
-- `onnx_dover.onnx` — used by `dover`
-- `rtmpose_m.onnx` — used by `body_motion_kinematics`, `object_integrity`
-- `sac+logos+ava1-l14-linearMSE.pth` — used by `aesthetic_scoring`
-- `yolox_m.onnx` — used by `body_motion_kinematics`, `object_integrity`
+- [`24-01-04T16-39-21.pt`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/synchformer/24-01-04T16-39-21.pt) — used by `audio_visual_sync`, `av_desync`, `av_sync`; From `AkaneTendo25/ayase-assets` repo
+- [`CLIPIQA+_ViTL14_512-e66488f2.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/CLIPIQA+_ViTL14_512-e66488f2.pth) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
+- [`CONTRIQUE_checkpoint25.tar`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/CONTRIQUE_checkpoint25.tar) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
+- [`ViT-B-32.safetensors`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/ViT-B-32.safetensors) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
+- [`ViT-B-32.safetensors`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/ViT-B-32.safetensors) — used by `i2v_similarity`; From `AkaneTendo25/ayase-assets` repo
+- [`ViT-L-14.safetensors`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/ViT-L-14.safetensors) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
+- [`alex.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/alex.pth) — used by `i2v_similarity`; From `AkaneTendo25/ayase-assets` repo
+- [`brightrate_brightvq.pt`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/brightrate_brightvq.pt) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
+- [`convnext_tiny_1k_224_ema.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth) — used by `cover`, `dover`; ConvNeXt-Tiny aesthetic backbone; From `AkaneTendo25/ayase-assets` repo
+- [`dino_vitbase16_pretrain.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dreamsim/dino_vitbase16_pretrain.pth) — used by `dreamsim`, `dreamsim_metric`; From `AkaneTendo25/ayase-assets` repo
+- [`dinov2_vitb14_pretrain.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/i2v_similarity/dinov2_vitb14_pretrain.pth) — used by `i2v_similarity`; From `AkaneTendo25/ayase-assets` repo
+- [`expression_following/face_landmarker.task`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/409c832ac7a30524a48ab642455bf963c2a95d1f/expression_following/face_landmarker.task) — used by `expression_following`, `expression_similarity`, `eyebrow_dynamics`, `face_motion_preservation`, `gaze_dynamics`, `head_motion_dynamics`, `head_pose_similarity`, `lip_dynamics`, `mouth_quality`, `silent_lip_stability`; MediaPipe face landmarks; Shared pinned Face Landmarker bundle; upstream Blendshape V2 model card is Apache-2.0 and outputs are not gaze angles
+- [`frames_modelparameters.mat`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/brightvq/frames_modelparameters.mat) — used by `brightrate`; From `AkaneTendo25/ayase-assets` repo
+- [`imagebind_huge.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/imagebind/imagebind_huge.pth) — used by `imagebind_score`; From `AkaneTendo25/ayase-assets` repo
+- [`sac+logos+ava1-l14-linearMSE.pth`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/aesthetic_scoring/sac+logos+ava1-l14-linearMSE.pth) — used by `aesthetic_scoring`; From `AkaneTendo25/ayase-assets` repo
+- [`worldmodelbench/worldmodelbench.json`](https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/worldmodelbench/worldmodelbench.json) — used by `worldmodelbench`; Mirrored benchmark definition and VILA runtime source; WorldModelBench 00b7aa17a05f9fd1ab5c8f66bcf476d04c9c33bf; VILA 0f1426e8da9181e6e6653e10bc15f62d515fa2f6; S2Wrapper 9c008a37540e761f53574b488979db6e49a64312
 
 ### <a href="https://huggingface.co/BestWishYsh/OpenS2V-Weight" target="_blank">`BestWishYsh/OpenS2V-Weight`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `det_10g.onnx` — used by `csim`, `facesim`
-- `glint360k_curricular_face_r101_backbone.bin` — used by `facesim`
-- `w600k_r50.onnx` — used by `csim`, `facesim`
-- `yolo_world_v2_l_image_prompt_adapter-719a7afb.pth` — used by `opens2v`
+- [`face_extractor/models/buffalo_l/det_10g.onnx`](https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/face_extractor/models/buffalo_l/det_10g.onnx) — used by `csim`, `facesim`; InsightFace buffalo_l SCRFD-10GF face detector; 17 MB; License: non-commercial-research; InsightFace model: non-commercial research use only; https://github.com/deepinsight/insightface#license
+- [`face_extractor/models/buffalo_l/w600k_r50.onnx`](https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/face_extractor/models/buffalo_l/w600k_r50.onnx) — used by `csim`, `facesim`; InsightFace buffalo_l ArcFace R50 embedding (FaceSim-Arc); 174 MB; License: non-commercial-research; InsightFace model: non-commercial research use only; https://github.com/deepinsight/insightface#license
+- [`glint360k_curricular_face_r101_backbone.bin`](https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/glint360k_curricular_face_r101_backbone.bin) — used by `facesim`; CurricularFace IR-101 face embedding (FaceSim-Cur); 261 MB; License: apache-2.0; Apache-2.0 (ConsisID / OpenS2V weight repository); sha256 aa54ae6d...
+- [`yolo_world_v2_l_image_prompt_adapter-719a7afb.pth`](https://huggingface.co/BestWishYsh/OpenS2V-Weight/resolve/main/yolo_world_v2_l_image_prompt_adapter-719a7afb.pth) — used by `opens2v`; License: apache-2.0; From `BestWishYsh/OpenS2V-Weight` repo
 
 ### <a href="https://huggingface.co/Stable-Human/3ddfa_v2" target="_blank">`Stable-Human/3ddfa_v2`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `mb1_120x120.pth` — used by `aed_apd`, `fd_3dmm`, `head_beat_align`, `head_pose_diversity`, `id_reveal`
+- [`mb1_120x120.pth`](https://huggingface.co/Stable-Human/3ddfa_v2/resolve/main/mb1_120x120.pth) — used by `aed_apd`, `fd_3dmm`, `head_beat_align`, `head_pose_diversity`, `id_reveal`; TDDFA (3DDFA_V2) MobileNet-1 3DMM regressor; 13 MB; License: mit
 
 ### <a href="https://huggingface.co/akhaliq/RetinaFace-R50" target="_blank">`akhaliq/RetinaFace-R50`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `RetinaFace-R50.pth` — used by `aed_apd`, `fd_3dmm`, `head_beat_align`, `head_pose_diversity`, `id_reveal`
+- [`RetinaFace-R50.pth`](https://huggingface.co/akhaliq/RetinaFace-R50/resolve/main/RetinaFace-R50.pth) — used by `aed_apd`, `fd_3dmm`, `head_beat_align`, `head_pose_diversity`, `id_reveal`; RetinaFace ResNet-50 face detector; 104 MB
 
 ### <a href="https://huggingface.co/bezzam/wavlm_large_finetune_seed_tts_eval" target="_blank">`bezzam/wavlm_large_finetune_seed_tts_eval`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `wavlm_large_finetune.pth` — used by `speaker_sim`
+- [`wavlm_large_finetune.pth`](https://huggingface.co/bezzam/wavlm_large_finetune_seed_tts_eval/resolve/main/wavlm_large_finetune.pth) — used by `speaker_sim`; WavLM-TDNN speaker verification checkpoint (SIM-o); 1.3 GB; License: cc-by-sa-3.0; CC BY-SA 3.0 (UniSpeech); copy of the checkpoint linked by seed-tts-eval / F5-TTS
 
 ### <a href="https://huggingface.co/facebook/cotracker" target="_blank">`facebook/cotracker`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `cotracker2.pth` — used by `vbench2`
+- [`cotracker2.pth`](https://huggingface.co/facebook/cotracker/resolve/main/cotracker2.pth) — used by `vbench2`; License: cc-by-nc-4.0; From `facebook/cotracker` repo
+
+### <a href="https://huggingface.co/gfxdisp/cvvdp_ml" target="_blank">`gfxdisp/cvvdp_ml`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`cvvdp_ml_saliency/cvvdp.ckpt`](https://huggingface.co/gfxdisp/cvvdp_ml/blob/b202a7893f6663a6a46f76f7b06c62d1235bc3ab/cvvdp_ml_saliency/cvvdp.ckpt) — used by `cvvdp_ml_saliency`; ColorVideoVDP-ML-Saliency learned quality pooling; 168 KB; License: mit; MIT; checkpoint pinned at revision b202a7893f6663a6a46f76f7b06c62d1235bc3ab with SHA-256 cbce3d92e92a0362d73a58afd937cf0f2d0195db87c898a9d2abff10846cf506
+- [`cvvdp_ml_transformer/cvvdp.ckpt`](https://huggingface.co/gfxdisp/cvvdp_ml/blob/b202a7893f6663a6a46f76f7b06c62d1235bc3ab/cvvdp_ml_transformer/cvvdp.ckpt) — used by `cvvdp_ml_transformer`; ColorVideoVDP-ML-Transformer learned quality pooling; 38.1 MB; License: mit; MIT; checkpoint pinned at revision b202a7893f6663a6a46f76f7b06c62d1235bc3ab with SHA-256 26c9d643fe4164b76059dc93777a00f4a1f847fd3179456c2d3ceb2b80904df0
+
+### <a href="https://huggingface.co/microsoft/wavlm-large" target="_blank">`microsoft/wavlm-large`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`pytorch_model.bin`](https://huggingface.co/microsoft/wavlm-large/blob/c1423ed94bb01d80a3f5ce5bc39f6026a0f4828c/pytorch_model.bin) — used by `speech_bert_score`; Matching-content reference speech similarity; 1,261,990,257 bytes; License: CC BY-SA 3.0; [Paper](https://arxiv.org/abs/2110.13900); CC BY-SA 3.0; WavLM-Large at 16 kHz; SHA-256 fdee460e529396ddb2f8c8e8ce0ad74cfb747b726bc6f612e666c7c1e1963c9d; official license: https://github.com/microsoft/UniSpeech/blob/8f8cbd22d352fc59dfd5bf19de979b05bb5c7938/LICENSE; weights are downloaded at runtime and not bundled
+
+### <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_ms1mv2" target="_blank">`minchul/cvlface_adaface_ir101_ms1mv2`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`model.safetensors`](https://huggingface.co/minchul/cvlface_adaface_ir101_ms1mv2/resolve/afdb94f8190f4cd8ea1467258ce65f1d76033b63/model.safetensors) — used by `adaface`; AdaFace ir101_ms1mv2 face-recognition embedding; 261.0 MB; MIT (CVLface); pinned to revision afdb94f8190f4cd8ea1467258ce65f1d76033b63
+
+### <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_webface12m" target="_blank">`minchul/cvlface_adaface_ir101_webface12m`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`model.safetensors`](https://huggingface.co/minchul/cvlface_adaface_ir101_webface12m/resolve/54f602a0737bd1ee4a4e7e9fd089a485f397fefd/model.safetensors) — used by `adaface`; AdaFace ir101_webface12m face-recognition embedding; 261.0 MB; MIT (CVLface); pinned to revision 54f602a0737bd1ee4a4e7e9fd089a485f397fefd
+
+### <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_webface4m" target="_blank">`minchul/cvlface_adaface_ir101_webface4m`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`model.safetensors`](https://huggingface.co/minchul/cvlface_adaface_ir101_webface4m/resolve/f2b38d9e24bfe301490d8dd081d8924b102333dd/model.safetensors) — used by `adaface`; AdaFace ir101_webface4m face-recognition embedding; 261.0 MB; MIT (CVLface); pinned to revision f2b38d9e24bfe301490d8dd081d8924b102333dd
+
+### <a href="https://huggingface.co/minchul/cvlface_adaface_ir18_webface4m" target="_blank">`minchul/cvlface_adaface_ir18_webface4m`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`model.safetensors`](https://huggingface.co/minchul/cvlface_adaface_ir18_webface4m/resolve/0dd53f188fa27968b0a1326970ebf4aeb37ce2ca/model.safetensors) — used by `adaface`; AdaFace ir18_webface4m face-recognition embedding; 97.1 MB; MIT (CVLface); pinned to revision 0dd53f188fa27968b0a1326970ebf4aeb37ce2ca
+
+### <a href="https://huggingface.co/minchul/cvlface_adaface_ir50_webface4m" target="_blank">`minchul/cvlface_adaface_ir50_webface4m`</a> [↑](#categories)
+> Pre-trained weight files for ayase modules
+
+- [`model.safetensors`](https://huggingface.co/minchul/cvlface_adaface_ir50_webface4m/resolve/60a65befbcf7e19284c4f3ac730f56867ed29594/model.safetensors) — used by `adaface`; AdaFace ir50_webface4m face-recognition embedding; 175.4 MB; MIT (CVLface); pinned to revision 60a65befbcf7e19284c4f3ac730f56867ed29594
 
 ### <a href="https://huggingface.co/s3prl/converted_ckpts" target="_blank">`s3prl/converted_ckpts`</a> [↑](#categories)
 > Pre-trained weight files for ayase modules
 
-- `wavlm_large.pt` — used by `speaker_sim`
+- [`wavlm_large.pt`](https://huggingface.co/s3prl/converted_ckpts/resolve/main/wavlm_large.pt) — used by `speaker_sim`; WavLM-Large upstream for the WavLM-TDNN model; 1.26 GB; MIT (WavLM, Microsoft); the file s3prl's wavlm_large entry downloads
 
 ## Local Weight Files
 
@@ -1023,27 +959,6 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `cycle_reward`
 - **Task**: CycleReward combined I2T/T2I preference checkpoint
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/DOVER.pth" target="_blank">`DOVER.pth`</a> [↑](#categories)
-
-- **Used by**: `dover`
-- **Task**: Native DOVER video quality weights
-- **Notes**: Resolved from weights_path or models_dir
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth" target="_blank">`FAST_VQA_3D_1_1.pth`</a> [↑](#categories)
-
-- **Used by**: `fast_vqa`
-- **Task**: FAST-VQA / FasterVQA video quality checkpoint
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`FAST_VQA_B_1_4.pth`</a> [↑](#categories)
-
-- **Used by**: `fast_vqa`
-- **Task**: FAST-VQA base video quality checkpoint
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth" target="_blank">`FAST_VQA_M_1_4.pth`</a> [↑](#categories)
-
-- **Used by**: `fast_vqa`
-- **Task**: FAST-VQA motion-aware video quality checkpoint
 
 ### <a href="https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip" target="_blank">`InsightFace/buffalo_l`</a> [↑](#categories)
 
@@ -1082,27 +997,6 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Task**: Released Morpheus collision mass estimator
 - **Notes**: Acquired inside the pinned Morpheus source archive
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/convnext_tiny_1k_224_ema.pth" target="_blank">`convnext_tiny_1k_224_ema.pth`</a> [↑](#categories)
-
-- **Used by**: `dover`
-- **Task**: ConvNeXt-Tiny aesthetic backbone
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth" target="_blank">`dino_face_identity/dinov2_vitb14_pretrain.pth`</a> [↑](#categories)
-
-- **Used by**: `dino_face_identity`
-- **Task**: Default dinov2_vitb14 checkpoint weights
-- **Notes**: Downloaded from the mutable main revision; repo_revision does not pin this artifact.
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`fast_vqa/FAST_VQA_B_1_4.pth`</a> [↑](#categories)
-
-- **Used by**: `rqvqa`
-- **Task**: RQ-VQA FAST-VQA 768-D feature encoder
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/motion_smoothness/flownet.pkl" target="_blank">`flownet.pkl`</a> [↑](#categories)
-
-- **Used by**: `motion_smoothness`
-- **Task**: Bundled RIFE HD v3 interpolation weights
-
 ### <a href="https://github.com/ljh0v0/FVMD-frechet-video-motion-distance/releases/download/pips2_weights/pips2_weights.pth" target="_blank">`fvmd/pips2_weights.pth`</a> [↑](#categories)
 
 - **Used by**: `fvmd`
@@ -1120,16 +1014,116 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `kad`
 - **Task**: PANNs Wavegram-Logmel audio embedding checkpoint
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/nisqa/nisqa.tar" target="_blank">`nisqa.tar`</a> [↑](#categories)
+### <a href="https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt" target="_blank">`sam2.1_hiera_large.pt`</a> [↑](#categories)
+
+- **Used by**: `morpheus`
+- **Task**: SAM2.1 Hiera-L checkpoint
+
+### <a href="https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/sfd_face.pth" target="_blank">`sfd_face.pth`</a> [↑](#categories)
+
+- **Used by**: `avgen_bench`, `lip_sync_syncnet`
+- **Task**: S3FD face detector
+- **Disk**: 89.8 MB
+- **Notes**: Author-hosted checkpoint bytes are identity-pinned; checkpoint license is not established.
+
+### <a href="https://raw.githubusercontent.com/spotify/basic-pitch/v0.4.0/basic_pitch/saved_models/icassp_2022/nmp.onnx" target="_blank">`spotify/basic-pitch:nmp.onnx`</a> [↑](#categories)
+
+- **Used by**: `avgen_bench`
+- **Task**: AVGen music note and chord extraction
+
+### <a href="https://download.pytorch.org/torchaudio/models/squim_objective_dns2020.pth" target="_blank">`squim_objective_dns2020.pth`</a> [↑](#categories)
+
+- **Used by**: `audio_squim_objective`
+- **Task**: Reference-free estimation of STOI, WB-PESQ, and SI-SDR
+- **Disk**: 29,584,237 bytes (28.213727 MiB)
+- **Notes**: DNS 2020 weights; SHA-256 2c54586fea83fb5eb5394d710038ee89f55cab7011a5bf730bebed4c8777e828; license https://github.com/microsoft/DNS-Challenge/blob/interspeech2020/master/LICENSE
+
+### <a href="https://dl.fbaipublicfiles.com/jepa/vith16/ssv2-probe.pth.tar" target="_blank">`ssv2-probe.pth.tar`</a> [↑](#categories)
+
+- **Used by**: `jedi_official`
+- **Task**: Official Something-Something-v2 attentive probe
+
+### <a href="https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/syncnet_v2.model" target="_blank">`syncnet_v2.model`</a> [↑](#categories)
+
+- **Used by**: `avgen_bench`, `verse_bench`
+- **Task**: SyncNet v2 lip-sync model
+- **Notes**: Oxford model page grants research use under CC BY 4.0.
+
+### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/aggregation_net.pth" target="_blank">`uvq1p5/aggregation_net.pth`</a> [↑](#categories)
+
+- **Used by**: `uvq`
+- **Task**: Google UVQ 1.5 aggregation network
+- **Disk**: 0.3 MB
+- **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
+
+### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/content_net.pth" target="_blank">`uvq1p5/content_net.pth`</a> [↑](#categories)
+
+- **Used by**: `uvq`
+- **Task**: Google UVQ 1.5 content network
+- **Disk**: 15.3 MB
+- **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
+
+### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/distortion_net.pth" target="_blank">`uvq1p5/distortion_net.pth`</a> [↑](#categories)
+
+- **Used by**: `uvq`
+- **Task**: Google UVQ 1.5 distortion network
+- **Disk**: 15.3 MB
+- **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
+
+### <a href="https://dl.fbaipublicfiles.com/jepa/vith16/vith16.pth.tar" target="_blank">`vith16.pth.tar`</a> [↑](#categories)
+
+- **Used by**: `jedi_official`
+- **Task**: Official V-JEPA ViT-H/16 encoder checkpoint
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth" target="_blank">`dino_face_identity/dinov2_vitb14_pretrain.pth`</a> [↑](#categories)
+
+- **Used by**: `dino_face_identity`
+- **Task**: Default dinov2_vitb14 checkpoint weights
+- **Notes**: Downloaded from the mutable main revision; repo_revision does not pin this artifact.
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/DOVER.pth" target="_blank">`dover/DOVER.pth`</a> [↑](#categories)
+
+- **Used by**: `dover`
+- **Task**: Native DOVER video quality weights
+- **Notes**: Resolved from weights_path or models_dir
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/onnx_dover.onnx" target="_blank">`dover/onnx_dover.onnx`</a> [↑](#categories)
+
+- **Used by**: `dover`
+- **Task**: Optional ONNX DOVER backend
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_3D_1_1.pth" target="_blank">`fast_vqa/FAST_VQA_3D_1_1.pth`</a> [↑](#categories)
+
+- **Used by**: `fast_vqa`
+- **Task**: FAST-VQA / FasterVQA video quality checkpoint
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_B_1_4.pth" target="_blank">`fast_vqa/FAST_VQA_B_1_4.pth`</a> [↑](#categories)
+
+- **Used by**: `fast_vqa`, `rqvqa`
+- **Task**: RQ-VQA FAST-VQA 768-D feature encoder
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/fast_vqa/FAST_VQA_M_1_4.pth" target="_blank">`fast_vqa/FAST_VQA_M_1_4.pth`</a> [↑](#categories)
+
+- **Used by**: `fast_vqa`
+- **Task**: FAST-VQA motion-aware video quality checkpoint
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/lip_sync/syncnet_v2.model" target="_blank">`lip_sync/syncnet_v2.model`</a> [↑](#categories)
+
+- **Used by**: `lip_sync_syncnet`, `lip_sync_verse`
+- **Task**: SyncNet v2 lip-sync model
+- **Disk**: 54.6 MB
+- **Notes**: Checkpoint bytes are identity-pinned; checkpoint license is not established.
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/motion_smoothness/flownet.pkl" target="_blank">`motion_smoothness/flownet.pkl`</a> [↑](#categories)
+
+- **Used by**: `motion_smoothness`
+- **Task**: Bundled RIFE HD v3 interpolation weights
+
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/nisqa/nisqa.tar" target="_blank">`nisqa/nisqa.tar`</a> [↑](#categories)
 
 - **Used by**: `audio_nisqa`
 - **Task**: NISQAv2 multidimensional speech quality (MIT)
 - **Notes**: ~1 MB; vendored source at ayase/third_party/nisqa/
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dover/onnx_dover.onnx" target="_blank">`onnx_dover.onnx`</a> [↑](#categories)
-
-- **Used by**: `dover`
-- **Task**: Optional ONNX DOVER backend
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rqvqa/LIQE.pt" target="_blank">`rqvqa/LIQE.pt`</a> [↑](#categories)
 
@@ -1191,89 +1185,27 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 - **Used by**: `rqvqa`
 - **Task**: RQ-VQA released ensemble fold
 
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx" target="_blank">`rtmpose_m.onnx`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/rtmpose_m.onnx" target="_blank">`rtmpose_fidelity/rtmpose_m.onnx`</a> [↑](#categories)
 
 - **Used by**: `body_motion_kinematics`, `object_integrity`
 - **Task**: RTMPose keypoint estimator (rtmlib opt-in backend)
 - **Notes**: Shared with rtmpose_fidelity
 
-### <a href="https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt" target="_blank">`sam2.1_hiera_large.pt`</a> [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx" target="_blank">`rtmpose_fidelity/yolox_m.onnx`</a> [↑](#categories)
 
-- **Used by**: `morpheus`
-- **Task**: SAM2.1 Hiera-L checkpoint
+- **Used by**: `body_motion_kinematics`, `object_integrity`
+- **Task**: YOLOX person detector (rtmlib opt-in backend)
+- **Notes**: Shared with rtmpose_fidelity
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth" target="_blank">`sama/SAMA-baseline_val-ltest_s_dev_v0.0.pth`</a> [↑](#categories)
 
 - **Used by**: `sama`
 - **Task**: SAMA LSVQ baseline video quality checkpoint
 
-### <a href="https://www.robots.ox.ac.uk/~vgg/software/lipsync/data/sfd_face.pth" target="_blank">`sfd_face.pth`</a> [↑](#categories)
-
-- **Used by**: `avgen_bench`, `lip_sync_syncnet`
-- **Task**: S3FD face detector
-- **Disk**: 89.8 MB
-- **Notes**: Author-hosted checkpoint bytes are identity-pinned; checkpoint license is not established.
-
-### `song_eval/model.safetensors` [↑](#categories)
+### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/song_eval/model.safetensors" target="_blank">`song_eval/model.safetensors`</a> [↑](#categories)
 
 - **Used by**: `song_eval`
 - **Task**: SongEval Generator aesthetic head weights
-
-### <a href="https://raw.githubusercontent.com/spotify/basic-pitch/v0.4.0/basic_pitch/saved_models/icassp_2022/nmp.onnx" target="_blank">`spotify/basic-pitch:nmp.onnx`</a> [↑](#categories)
-
-- **Used by**: `avgen_bench`
-- **Task**: AVGen music note and chord extraction
-
-### <a href="https://download.pytorch.org/torchaudio/models/squim_objective_dns2020.pth" target="_blank">`squim_objective_dns2020.pth`</a> [↑](#categories)
-
-- **Used by**: `audio_squim_objective`
-- **Task**: Reference-free estimation of STOI, WB-PESQ, and SI-SDR
-- **Disk**: 29,584,237 bytes (28.213727 MiB)
-- **Notes**: DNS 2020 weights; SHA-256 2c54586fea83fb5eb5394d710038ee89f55cab7011a5bf730bebed4c8777e828; license https://github.com/microsoft/DNS-Challenge/blob/interspeech2020/master/LICENSE
-
-### <a href="https://dl.fbaipublicfiles.com/jepa/vith16/ssv2-probe.pth.tar" target="_blank">`ssv2-probe.pth.tar`</a> [↑](#categories)
-
-- **Used by**: `jedi_official`
-- **Task**: Official Something-Something-v2 attentive probe
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/lip_sync/syncnet_v2.model" target="_blank">`syncnet_v2.model`</a> [↑](#categories)
-
-- **Used by**: `avgen_bench`, `lip_sync_syncnet`, `lip_sync_verse`, `verse_bench`
-- **Task**: SyncNet v2 lip-sync model
-- **Disk**: 54.6 MB
-- **Notes**: Checkpoint bytes are identity-pinned; checkpoint license is not established.
-
-### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/aggregation_net.pth" target="_blank">`uvq1p5/aggregation_net.pth`</a> [↑](#categories)
-
-- **Used by**: `uvq`
-- **Task**: Google UVQ 1.5 aggregation network
-- **Disk**: 0.3 MB
-- **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
-
-### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/content_net.pth" target="_blank">`uvq1p5/content_net.pth`</a> [↑](#categories)
-
-- **Used by**: `uvq`
-- **Task**: Google UVQ 1.5 content network
-- **Disk**: 15.3 MB
-- **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
-
-### <a href="https://raw.githubusercontent.com/google/uvq/811b6b1b7c085a9ac59ee5e3a03c560be18fe91c/uvq1p5_pytorch/checkpoints/distortion_net.pth" target="_blank">`uvq1p5/distortion_net.pth`</a> [↑](#categories)
-
-- **Used by**: `uvq`
-- **Task**: Google UVQ 1.5 distortion network
-- **Disk**: 15.3 MB
-- **Notes**: Apache-2.0; pinned to google/uvq commit 811b6b1b7c085a9ac59ee5e3a03c560be18fe91c
-
-### <a href="https://dl.fbaipublicfiles.com/jepa/vith16/vith16.pth.tar" target="_blank">`vith16.pth.tar`</a> [↑](#categories)
-
-- **Used by**: `jedi_official`
-- **Task**: Official V-JEPA ViT-H/16 encoder checkpoint
-
-### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/rtmpose_fidelity/yolox_m.onnx" target="_blank">`yolox_m.onnx`</a> [↑](#categories)
-
-- **Used by**: `body_motion_kinematics`, `object_integrity`
-- **Task**: YOLOX person detector (rtmlib opt-in backend)
-- **Notes**: Shared with rtmpose_fidelity
 
 ## Other Models
 
@@ -1476,7 +1408,7 @@ Model backends declared by modules that are not distributed through the sources 
 - **Used by**: `object_integrity`
 - **Task**: RTMPose-m body8 keypoint estimator (upstream mmpose backend)
 
-## pyiqa Metrics (45)
+## pyiqa Metrics (38)
 
 <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">pyiqa</a> is an MIT-licensed collection of image/video quality metrics. Weights auto-download on first `pyiqa.create_metric()` call. `pip install pyiqa`
 
@@ -1485,9 +1417,7 @@ Model backends declared by modules that are not distributed through the sources 
 | `ahiq` | Attention-based hybrid FR-IQA | research | — | `ahiq` |
 | `arniqa` | Artifact-aware NR-IQA | research | — | `arniqa` |
 | `brisque` | Blind naturalness statistics NR-IQA | BSD-2-Clause (OpenCV) | Yes | `brisque`, `brisque_inverted` |
-| `brisque_inverted` | Natural scene statistics | research | — | `brisque_inverted` |
 | `ckdn` | Conditional knowledge distillation FR-IQA | research | — | `ckdn` |
-| `clip_iqa` | CLIP image quality assessment | research | — | `clip_iqa` |
 | `clipiqa+` | CLIP-based image quality assessment | MIT (pyiqa) | Yes | `clip_iqa` |
 | `cnniqa` | CNN-based blind image quality | research | — | `cnniqa` |
 | `compare2score` | Comparative-to-absolute quality scoring | research | — | `compare2score` |
@@ -1495,16 +1425,13 @@ Model backends declared by modules that are not distributed through the sources 
 | `dbcnn` | Deep bilinear CNN for blind IQA | research | — | `dbcnn` |
 | `deepdc` | Deep distribution conformance | research | — | `deepdc` |
 | `dmm` | Detail model metric FR-IQA | research | — | `dmm` |
-| `face_iqa` | TOPIQ face-specific quality | research | — | `face_iqa` |
 | `hyperiqa` | Adaptive hypernetwork NR-IQA | research | — | `hyperiqa` |
 | `ilniqe` | Integrated local NIQE | BSD-2-Clause | Yes | `ilniqe` |
 | `laion_aes` | LAION aesthetic scoring (CLIP-based) | MIT | Yes | `laion_aesthetic` |
-| `laion_aesthetic` | LAION Aesthetics V2 predictor | research | — | `laion_aesthetic` |
 | `liqe` | Learned image quality evaluator (multi-task) | research | — | `liqe` |
 | `maclip` | Multi-attribute CLIP quality scoring | research | — | `maclip` |
 | `mad` | Most apparent distortion FR-IQA | research | — | `mad` |
 | `maniqa` | Multi-dimension attention NR-IQA | Apache-2.0 | Yes | `maniqa` |
-| `mouth_quality` | IQA | research | — | `mouth_quality` |
 | `msswd` | Multi-scale sliced Wasserstein distance | research | — | `msswd` |
 | `musiq` | Multi-scale image quality transformer | Apache-2.0 (Google) | Yes | `musiq` |
 | `musiq-spaq` | MUSIQ pretrained on SPAQ — the THEval mouth-crop scorer | research | — | `mouth_quality` |
@@ -1518,13 +1445,11 @@ Model backends declared by modules that are not distributed through the sources 
 | `piqe` | Perception-based blind NR-IQA | BSD-2-Clause | Yes | `piqe` |
 | `qualiclip` | Quality-aware CLIP embeddings | research | — | `qualiclip` |
 | `ssimc` | Complex wavelet SSIM-C FR | MIT (pyiqa) | Yes | `ssimc` |
-| `topiq` | TOPIQ transformer quality | research | — | `topiq` |
 | `topiq_fr` | Transformer-based FR image quality | MIT (pyiqa) | Yes | `topiq_fr` |
 | `topiq_nr` | Transformer-based NR image quality | MIT (pyiqa) | Yes | `topiq` |
 | `topiq_nr-face` | TOPIQ face-specific quality | MIT (pyiqa) | Yes | `face_iqa` |
 | `tres` | Transformer relative quality estimation | research | — | `tres` |
 | `unique` | Unified NR-IQA with contrastive learning | research | — | `unique` |
-| `wadiqam` | Weighted average deep IQA | research | — | `wadiqam` |
 | `wadiqam_fr` | Weighted average deep FR-IQA | research | — | `wadiqam_fr` |
 | `wadiqam_nr` | Weighted average deep NR-IQA | research | — | `wadiqam` |
 

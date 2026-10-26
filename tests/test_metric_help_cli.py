@@ -46,6 +46,10 @@ def test_help_metric_resolves_owning_module() -> None:
     assert "Metric rqvqa_score is produced by 1 module" in result.output
     assert "rqvqa" in result.output
     assert "higher=better" in result.output
+    assert "Definition" in result.output
+    assert "published" in result.output
+    assert "Primary source: RQ-VQA" in result.output
+    assert "https://github.com/sunwei925/RQ-VQA" in result.output
 
 
 def test_help_unknown_name_returns_suggestions() -> None:
@@ -84,3 +88,55 @@ def test_catalog_honors_declared_image_input_in_fast_and_detailed_modes() -> Non
         module = catalog.module("i2i_learned")
         assert module is not None
         assert module.input_type == "img +ref"
+
+
+def test_catalog_resolves_field_provenance_in_fast_and_detailed_modes() -> None:
+    ModuleRegistry.discover_modules()
+
+    for detailed in (False, True):
+        catalog = build_metric_catalog(["avgen_bench", "rqvqa"], detailed=detailed)
+
+        avgen = catalog.module("avgen_bench")
+        assert avgen is not None
+        visual = next(
+            metric for metric in avgen.metrics if metric.name == "avgen_bench_visual_score"
+        )
+        assert visual.provenance == "adapted"
+        assert "https://github.com/microsoft/AVGen-Bench" in visual.source
+        assert "renormalized" in visual.deviation
+
+        utility = next(metric for metric in avgen.metrics if metric.name == "avgen_bench_metrics")
+        assert utility.scope == "dataset"
+        assert utility.provenance == "utility"
+        assert utility.source == "Ayase AVGen-Bench runtime and evidence ledger"
+        assert utility.deviation == "Ayase-owned structured execution and evidence metadata."
+
+        rqvqa = catalog.module("rqvqa")
+        assert rqvqa is not None
+        score = next(metric for metric in rqvqa.metrics if metric.name == "rqvqa_score")
+        assert score.provenance == "published"
+        assert score.source.endswith("https://github.com/sunwei925/RQ-VQA")
+        assert score.deviation == ""
+
+
+def test_help_deduplicates_shared_avgen_definition_details() -> None:
+    result = runner.invoke(app, ["help", "avgen_bench"], env={"COLUMNS": "240"})
+
+    assert result.exit_code == 0, result.output
+    source = "https://github.com/microsoft/AVGen-Bench/tree/"
+    assert result.output.count(source) == 1
+    assert result.output.count("How Ayase differs: Runs the pinned released full-suite") == 1
+    assert "Definition" in result.output
+    assert "adapted" in result.output
+    assert "utility" in result.output
+
+
+def test_selected_metric_help_only_shows_its_definition_details() -> None:
+    result = runner.invoke(
+        app, ["help", "avgen_bench_visual_score"], env={"COLUMNS": "240"}
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Metrics: avgen_bench_visual_score" in result.output
+    assert "https://github.com/microsoft/AVGen-Bench/tree/" in result.output
+    assert "Ayase AVGen-Bench runtime and evidence ledger" not in result.output

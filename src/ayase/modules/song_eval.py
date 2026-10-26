@@ -103,6 +103,7 @@ class SongEvalModule(PipelineModule):
         {
             "id": "song_eval/model.safetensors",
             "type": "local",
+            "url": "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/song_eval/model.safetensors",
             "task": "SongEval Generator aesthetic head weights",
         },
     ]

@@ -10,12 +10,15 @@ Extracts model references from module source code:
 - Local/downloaded weight files
 """
 
+import ast
 import inspect
 import json
 import logging
 import re
+import textwrap
 import urllib.request
 import urllib.error
+from urllib.parse import urlsplit
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -567,22 +570,61 @@ def _extract_hf_models(source: str, default_config: dict = None) -> List[str]:
 
 
 def _extract_pyiqa_metrics(source: str) -> List[str]:
-    """Extract pyiqa.create_metric() metric names."""
-    metrics = set()
-    # Direct string: create_metric("name")
-    for m in re.finditer(r'create_metric\s*\(\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
-        metrics.add(m.group(1))
-    # Variable-based: self.variant or name passed to create_metric
-    # Look for variant/name = "metric" patterns when create_metric is present
-    if "create_metric" in source and "import pyiqa" in source:
-        for m in re.finditer(
-            r'(?:variant|name|metric_name)\s*=\s*["\']([a-zA-Z0-9_+-]+)["\']', source
+    """Extract actual create_metric arguments, without treating registry names as models."""
+    try:
+        tree = ast.parse(textwrap.dedent(source))
+    except SyntaxError:
+        return []
+
+    def symbol(node):
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            parent = symbol(node.value)
+            return f"{parent}.{node.attr}" if parent else None
+        return None
+
+    def defaults(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return {node.value}
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "get"
+            and len(node.args) >= 2
         ):
-            metrics.add(m.group(1))
-        # Also check default_config for variant
-        for m in re.finditer(r'"variant"\s*:\s*["\']([a-zA-Z0-9_+-]+)["\']', source):
-            metrics.add(m.group(1))
-    return sorted(metrics)
+            return defaults(node.args[1])
+        return set()
+
+    assignments = defaultdict(set)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                key = symbol(target)
+                if key:
+                    assignments[key].update(defaults(node.value))
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            key = symbol(node.target)
+            if key:
+                assignments[key].update(defaults(node.value))
+
+    metrics = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        function = symbol(node.func)
+        if not function or function.rsplit(".", 1)[-1] != "create_metric":
+            continue
+        argument = (
+            node.args[0]
+            if node.args
+            else next(
+                (keyword.value for keyword in node.keywords if keyword.arg == "metric_name"), None
+            )
+        )
+        metrics.update(defaults(argument))
+        metrics.update(assignments.get(symbol(argument), ()))
+    return sorted(metric for metric in metrics if re.fullmatch(r"[a-zA-Z0-9_+.-]+", metric))
 
 
 def _extract_torch_hub(source: str) -> List[str]:
@@ -664,6 +706,28 @@ def _extract_hf_direct_urls(source: str) -> List[tuple]:
 def _extract_required_files(cls) -> Dict[str, str]:
     """Extract required_files class attribute."""
     return getattr(cls, "required_files", {}) or {}
+
+
+def _hf_checkpoint_reference(url: Optional[str]) -> Optional[tuple]:
+    """Identify a particular HF file without collapsing revisions into the repo card."""
+    if not url:
+        return None
+    parsed = urlsplit(url)
+    parts = parsed.path.strip("/").split("/", 4)
+    if (
+        parsed.scheme not in {"https", "http"}
+        or parsed.netloc.lower() != "huggingface.co"
+        or len(parts) != 5
+        or parts[2] not in {"resolve", "blob"}
+        or not all(parts)
+    ):
+        return None
+    return f"{parts[0]}/{parts[1]}", parts[3], parts[4]
+
+
+def _checkpoint_key(reference: tuple) -> str:
+    repo, revision, path = reference
+    return f"hf_file:{repo}@{revision}/{path}"
 
 
 def _generate_charts(
@@ -885,14 +949,21 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                 "other": "other",
             }.get(src_type, "other")
             key = f"{source_prefix}:{model_id}"
+            checkpoint = _hf_checkpoint_reference(decl.get("url"))
+            if checkpoint is not None and src_type in {"huggingface", "local"}:
+                key = _checkpoint_key(checkpoint)
             if key not in entries:
                 url = decl.get("url")
                 if src_type == "huggingface" and "/" in model_id and not url:
                     url = f"https://huggingface.co/{model_id}"
-                disk, vram = _SIZE_DB.get(model_id, (decl.get("size"), decl.get("vram")))
+                disk, vram = (
+                    (decl.get("size"), decl.get("vram"))
+                    if checkpoint
+                    else _SIZE_DB.get(model_id, (decl.get("size"), decl.get("vram")))
+                )
                 rendered_source = "pip" if src_type == "pip_package" else src_type
                 entries[key] = ModelEntry(
-                    name=model_id,
+                    name=checkpoint[2] if checkpoint else model_id,
                     source=rendered_source,
                     url=url,
                     install=decl.get("install"),
@@ -902,6 +973,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                     auto_download=decl.get("auto_download", True),
                     notes=decl.get("notes"),
                     arxiv=decl.get("arxiv"),
+                    license=decl.get("license"),
+                    commercial_ok=_classify_license(decl.get("license")),
                 )
             else:
                 # An explicit module declaration is more precise than regex
@@ -925,6 +998,9 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
                     entry.notes = decl["notes"]
                 if decl.get("arxiv"):
                     entry.arxiv = decl["arxiv"]
+                if decl.get("license"):
+                    entry.license = decl["license"]
+                    entry.commercial_ok = _classify_license(decl["license"])
             if mod_name not in entries[key].modules:
                 entries[key].modules.append(mod_name)
 
@@ -1013,7 +1089,7 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
         # Use full module source to catch module-level URL constants
         full_source = _get_module_source(cls)
         for repo, path in _extract_hf_direct_urls(full_source):
-            key = f"hf_file:{repo}/{path}"
+            key = _checkpoint_key((repo, "main", path))
             if key not in entries:
                 entries[key] = ModelEntry(
                     name=path.split("/")[-1],
@@ -1026,7 +1102,8 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
         # required_files
         for fname, url in _extract_required_files(cls).items():
-            key = f"file:{fname}"
+            checkpoint = _hf_checkpoint_reference(url)
+            key = _checkpoint_key(checkpoint) if checkpoint else f"file:{fname}"
             if key not in entries:
                 entries[key] = ModelEntry(
                     name=fname,
@@ -1093,24 +1170,45 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     # ── Resolve licenses ─────────────────────────────────────────────────
     # 1. Apply hardcoded known licenses
     for key, entry in entries.items():
-        if key in _KNOWN_LICENSES:
+        if entry.license is None and key in _KNOWN_LICENSES:
             lic, comm = _KNOWN_LICENSES[key]
             entry.license = lic
             entry.commercial_ok = comm
 
+    checkpoint_repos = {
+        key: reference[0]
+        for key, entry in entries.items()
+        if (reference := _hf_checkpoint_reference(entry.url)) is not None
+    }
+    repository_licenses: Dict[str, tuple] = {
+        repo: _KNOWN_LICENSES[f"hf:{repo}"]
+        for repo in set(checkpoint_repos.values())
+        if f"hf:{repo}" in _KNOWN_LICENSES
+    }
+
     # 2. Fetch rich HF metadata via API (license, downloads, params, etc.)
     if fetch_licenses:
-        hf_repos_to_query = []
+        hf_repos_to_query = set(checkpoint_repos.values())
         for key, entry in entries.items():
-            if entry.source == "huggingface":
+            if entry.source == "huggingface" and not key.startswith("hf_file:"):
                 if "/" in entry.name and entry.name.count("/") == 1:
-                    hf_repos_to_query.append(entry.name)
+                    hf_repos_to_query.add(entry.name)
 
         if hf_repos_to_query:
             logger.info("Fetching metadata for %d HuggingFace models...", len(hf_repos_to_query))
-            hf_info = _fetch_hf_info_batch(hf_repos_to_query)
+            hf_info = _fetch_hf_info_batch(sorted(hf_repos_to_query))
+            for repo, data in hf_info.items():
+                if data.get("license"):
+                    repository_licenses[repo] = (
+                        data["license"],
+                        _classify_license(data["license"]),
+                    )
             for key, entry in entries.items():
-                if entry.source == "huggingface" and entry.name in hf_info:
+                if (
+                    entry.source == "huggingface"
+                    and not key.startswith("hf_file:")
+                    and entry.name in hf_info
+                ):
                     data = hf_info[entry.name]
                     if entry.license is None and data.get("license"):
                         entry.license = data["license"]
@@ -1132,22 +1230,20 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
 
     # 3. Inherit license from parent repo for file entries
     # e.g., AkaneTendo25/ayase-assets files inherit from the repo
-    repo_licenses: Dict[str, tuple] = {}
+    repo_licenses: Dict[str, tuple] = dict(repository_licenses)
     for key, entry in entries.items():
         if (
             entry.source == "huggingface"
+            and not key.startswith("hf_file:")
             and entry.license
             and "/" in entry.name
             and entry.name.count("/") == 1
         ):
             repo_licenses[entry.name] = (entry.license, entry.commercial_ok)
     for key, entry in entries.items():
-        if entry.license is None and entry.notes and "From `" in (entry.notes or ""):
-            for repo, (lic, comm) in repo_licenses.items():
-                if repo in (entry.notes or ""):
-                    entry.license = lic
-                    entry.commercial_ok = comm
-                    break
+        repo = checkpoint_repos.get(key)
+        if entry.license is None and repo in repo_licenses:
+            entry.license, entry.commercial_ok = repo_licenses[repo]
 
     # ── Compute chart data ───────────────────────────────────────────────
     total_models = len(entries)
@@ -1324,12 +1420,12 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     hf_entries = [
         (k, e)
         for k, e in sorted(entries.items())
-        if e.source == "huggingface" and not (e.notes and "From `" in (e.notes or ""))
+        if e.source == "huggingface" and not k.startswith("hf_file:")
     ]
     hf_file_entries = [
         (k, e)
         for k, e in sorted(entries.items())
-        if e.source == "huggingface" and e.notes and "From `" in (e.notes or "")
+        if e.source == "huggingface" and k.startswith("hf_file:")
     ]
     pyiqa_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "pyiqa"]
     tv_entries = [(k, e) for k, e in sorted(entries.items()) if e.source == "torchvision"]
@@ -1343,10 +1439,9 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
     # Group weight files by parent repo
     weight_file_repos: Dict[str, List[tuple]] = defaultdict(list)
     for _key, e in hf_file_entries:
-        # Extract repo name from notes "From `repo` repo"
-        m = re.search(r"From `([^`]+)` repo", e.notes or "")
-        if m:
-            weight_file_repos[m.group(1)].append(e)
+        reference = _hf_checkpoint_reference(e.url)
+        if reference:
+            weight_file_repos[reference[0]].append(e)
 
     nav_sections = []
     if hf_entries:
@@ -1458,7 +1553,20 @@ def generate_models_doc(fetch_licenses: bool = True, include_plugins: bool = Fal
             a("")
             for fe in sorted(files, key=lambda x: x.name):
                 file_mods = ", ".join(f"`{m}`" for m in fe.modules)
-                a(f"- `{fe.name}` — used by {file_mods}")
+                details = [f"used by {file_mods}"]
+                if fe.task:
+                    details.append(fe.task)
+                if fe.size_estimate:
+                    details.append(fe.size_estimate)
+                if fe.vram_estimate:
+                    details.append(f"VRAM: {fe.vram_estimate}")
+                if fe.license:
+                    details.append(f"License: {fe.license}")
+                if fe.arxiv:
+                    details.append(f"[Paper](https://arxiv.org/abs/{fe.arxiv})")
+                if fe.notes:
+                    details.append(fe.notes)
+                a(f"- [`{fe.name}`]({fe.url}) — " + "; ".join(details))
             a("")
 
     # ══════════════════════════════════════════════════════════════════════
