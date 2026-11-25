@@ -92,3 +92,7 @@ APIs and module interfaces may change before 1.0.
 Ayase's own code is MIT. Bundled components and downloaded model weights retain
 their own terms; see [third-party notices](src/ayase/third_party/NOTICES.md)
 and the [model catalog](MODELS.md).
+
+## Google Colab
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/seruva19/ayase/blob/master/notebooks/ayase_demo.ipynb)
