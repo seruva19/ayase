@@ -1442,7 +1442,10 @@ class Pipeline:
             **({"video_decoder": self._video_decoder} if self._video_decoder != "opencv" else {}),
             **({
                 "execution_mode": "staged",
-                "stage_protocol": 2,
+                "effective_execution_mode": (
+                    "staged" if self._can_run_staged() else "sample_first"
+                ),
+                "stage_protocol": 3,
                 "video_decoder": self._video_decoder,
             } if self.execution_mode == "staged" else {}),
             "runtime": self._runtime_environment_fingerprint(),
@@ -1747,22 +1750,8 @@ class Pipeline:
 
     def start(self) -> None:
         """Prepare all modules for execution."""
-        from .base_modules import BatchMetricModule
-
         self._reset_run()
-        self._staged_active = (
-            self.execution_mode == "staged"
-            and not self._hooks
-            and bool(self.modules)
-            and all(
-                self._stage_can_release(module)
-                or (
-                    isinstance(module, BatchMetricModule)
-                    and type(module).__dict__.get("stage_accumulator_safe", False)
-                )
-                for module in self.modules
-            )
-        )
+        self._staged_active = self._can_run_staged()
         if not self._staged_active and self.execution_mode == "staged":
             logger.info("Using sample-first execution for a stack with hooks or non-stage-safe modules")
         self._mount_modules(self._run_lifecycle_modules())
@@ -1778,6 +1767,21 @@ class Pipeline:
             self.stats = DatasetStats(
                 total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
             )
+
+    def _can_run_staged(self) -> bool:
+        if self.execution_mode != "staged" or self._hooks or not self.modules:
+            return False
+
+        from .base_modules import BatchMetricModule
+
+        return all(
+            self._stage_can_release(module)
+            or (
+                isinstance(module, BatchMetricModule)
+                and type(module).__dict__.get("stage_accumulator_safe", False)
+            )
+            for module in self.modules
+        )
 
     @staticmethod
     def _stage_can_release(module: PipelineModule) -> bool:

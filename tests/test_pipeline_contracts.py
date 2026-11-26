@@ -1648,3 +1648,34 @@ def test_staged_request_preserves_hooks_for_sample_local_stack(tmp_path, monkeyp
         ("basic", "a.hook.mp4"), ("motion", "a.hook.mp4"),
         ("basic", "b.hook.mp4"), ("motion", "b.hook.mp4"),
     ]
+
+def test_staged_checkpoint_requires_same_numeric_and_execution_settings(tmp_path):
+    from ayase.modules.basic import BasicQualityModule
+
+    def build(*, hook=False, mode="staged", **config):
+        pipeline = Pipeline([BasicQualityModule(config)], execution_mode=mode)
+        if hook:
+            pipeline.add_hook("basic_quality", before=lambda sample: sample)
+        return pipeline
+
+    path = _media(tmp_path)
+    reference = build(dtype="fp32", amp_enabled=False, video_decoder="opencv")
+    reference.start()
+    reference.process_sample(Sample(path=path, is_video=True))
+    reference.stop()
+    checkpoint = tmp_path / "staged-state.json"
+    reference.save_state(checkpoint)
+
+    compatible = build(dtype="fp32", amp_enabled=False, video_decoder="auto")
+    compatible.load_state(checkpoint)
+    assert list(compatible.results) == [str(path)]
+
+    for changed in (
+        build(dtype="bf16", amp_enabled=False, video_decoder="opencv"),
+        build(dtype="fp32", amp_enabled=True, video_decoder="opencv"),
+        build(dtype="fp32", amp_enabled=False, video_decoder="decord"),
+        build(dtype="fp32", amp_enabled=False, video_decoder="opencv", hook=True),
+        build(dtype="fp32", amp_enabled=False, video_decoder="opencv", mode="sample_first"),
+    ):
+        changed.load_state(checkpoint)
+        assert not changed.results
