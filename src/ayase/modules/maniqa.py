@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class MANIQAModule(PipelineModule):
     name = "maniqa"
+    stage_safe = True
     implementation_status = "implemented"
     implementation_notes = "Trained pyiqa MANIQA runs on RGB image/frame tensors; frame averaging is explicitly disclosed adaptation."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."
@@ -72,6 +73,11 @@ class MANIQAModule(PipelineModule):
         except Exception as e:
             logger.warning("MANIQA processing failed: %s", e)
         return sample
+
+    def on_dispose(self) -> None:
+        self._model = None
+        self._ml_available = False
+        super().on_dispose()
 
     def _score_frames(self, frames: list) -> float:
         import torch

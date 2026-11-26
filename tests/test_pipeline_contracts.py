@@ -1614,3 +1614,37 @@ def test_staged_releases_modules_and_commits_only_complete_samples(tmp_path, mon
     assert not first._mounted and not second._mounted
     assert all(s.quality_metrics is None for s in inputs)
     pipeline.stop()
+
+def test_staged_request_preserves_hooks_for_sample_local_stack(tmp_path, monkeypatch):
+    from ayase.modules.basic import BasicQualityModule
+    from ayase.modules.motion import MotionModule
+
+    names = []
+    basic, motion = BasicQualityModule(), MotionModule()
+    pipeline = Pipeline(
+        [basic, motion], execution_mode="staged",
+        allow_provenance=["published", "utility", "adapted", "own"],
+    )
+
+    def before(sample):
+        return sample.model_copy(update={"path": sample.path.with_suffix(".hook.mp4")})
+
+    def observe(module):
+        def process(sample):
+            names.append((module, sample.path.name))
+            return sample
+        return process
+
+    monkeypatch.setattr(basic, "process", observe("basic"))
+    monkeypatch.setattr(motion, "process", observe("motion"))
+    pipeline.add_hook(basic.name, before=before)
+    pipeline.start()
+    pipeline.process_samples([
+        Sample(path=tmp_path / filename, is_video=True)
+        for filename in ("a.mp4", "b.mp4")
+    ], batch_size=1)
+    pipeline.stop()
+    assert names == [
+        ("basic", "a.hook.mp4"), ("motion", "a.hook.mp4"),
+        ("basic", "b.hook.mp4"), ("motion", "b.hook.mp4"),
+    ]
