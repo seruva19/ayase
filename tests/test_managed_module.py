@@ -86,6 +86,14 @@ class TinyManagedModule(PipelineModule):
         self.executing = True
 
     def process(self, sample):
+        crash_marker = self.config.get("crash_marker")
+        if crash_marker:
+            print("crash probe processed", sample.path.stem, flush=True)
+        if crash_marker and sample.path.stem == "crash":
+            import os
+            from pathlib import Path
+            if Path(crash_marker).exists():
+                os._exit(17)
         if sample.metadata.get("fail"):
             raise RuntimeError("synthetic worker failure")
         self.retained.append(sample)
@@ -98,8 +106,9 @@ class TinyManagedModule(PipelineModule):
         return sample
 
     def post_process(self, all_samples):
-        for sample in self.retained:
-            sample.metadata["retained_post_processed"] = True
+        if not self.config.get("crash_marker"):
+            for sample in self.retained:
+                sample.metadata["retained_post_processed"] = True
         for sample in all_samples:
             sample.metadata["post_processed"] = True
         self.pipeline.add_dataset_metric("kvd", 12.5)
@@ -308,6 +317,69 @@ def test_worker_transport_failure_stops_worker(tmp_path, monkeypatch, failure):
         bridge.dispose()
     assert process.poll() is not None
     assert bridge._transport is None
+
+
+def test_checkpoint_retries_a_batch_after_worker_exits_mid_request(tmp_path, monkeypatch):
+    template = _tiny_module(tmp_path, monkeypatch)
+    marker = tmp_path / "interrupt"
+    paths = [tmp_path / f"{name}.png" for name in ("done", "before", "crash", "after")]
+    for path in paths:
+        path.write_bytes(b"fixture")
+
+    def build(label):
+        module = type(template)({**template.config, "crash_marker": str(marker)})
+        pipeline = Pipeline([module])
+        bridge = ManagedModuleBridge(module, Path(sys.executable), tmp_path / label)
+        module._managed_bridge = bridge
+        bridge.start()
+        module._mounted = True
+        return pipeline, bridge
+
+    def inputs():
+        return [Sample(path=path, is_video=False) for path in paths]
+
+    uninterrupted, bridge = build("uninterrupted")
+    try:
+        uninterrupted.start()
+        uninterrupted.process_samples(inputs(), batch_size=3)
+        uninterrupted.stop()
+    finally:
+        bridge.dispose()
+
+    marker.touch()
+    checkpoint = tmp_path / "state.json"
+    interrupted, bridge = build("interrupted")
+    try:
+        interrupted.start()
+        batch = inputs()
+        interrupted.process_sample(batch[0])
+        interrupted.process_samples(batch[1:], batch_size=3)
+        assert not interrupted.results[str(paths[0])].failed_modules
+        assert all(interrupted.results[str(path)].failed_modules for path in paths[1:])
+        interrupted.save_state(checkpoint)
+    finally:
+        bridge.dispose()
+
+    marker.unlink()
+    resumed, bridge = build("resumed")
+    try:
+        resumed.load_state(checkpoint)
+        assert not resumed.results[str(paths[0])].failed_modules
+        assert all(resumed.results[str(path)].failed_modules for path in paths[1:])
+        resumed.start()
+        resumed.process_samples(inputs(), batch_size=3)
+        resumed.stop()
+    finally:
+        bridge.dispose()
+
+    assert list(resumed.results) == list(uninterrupted.results)
+    for path in resumed.results:
+        assert resumed.results[path].model_dump() == uninterrupted.results[path].model_dump()
+    assert resumed.stats.model_dump() == uninterrupted.stats.model_dump()
+    log = (tmp_path / "resumed" / "worker.log").read_text(encoding="utf-8")
+    assert "crash probe processed done" not in log
+    for path in paths[1:]:
+        assert log.count(f"crash probe processed {path.stem}") == 1
 
 
 def test_worker_config_rejects_unsupported_values(

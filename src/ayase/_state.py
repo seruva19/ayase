@@ -27,6 +27,11 @@ def save_state(pipeline: "Pipeline", path: Path) -> None:
                 k: pipeline._result_manifests.get(k) or pipeline._sample_state_manifest(v)
                 for k, v in pipeline.results.items()
             },
+            "cache_signatures": {
+                key: pipeline._result_signatures[key]
+                for key in pipeline.results
+                if key in pipeline._result_signatures
+            },
         }
         tmp_fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
         try:
@@ -84,6 +89,7 @@ def load_state(pipeline: "Pipeline", path: Path) -> None:
     try:
         results_data = data.get("results", {})
         manifests = data.get("cache_manifest", {})
+        signatures = data.get("cache_signatures", {})
         partial_restore = False
 
         if "results" in data:
@@ -122,7 +128,14 @@ def load_state(pipeline: "Pipeline", path: Path) -> None:
                         partial_restore = True
                         continue
                     pipeline.results[k] = sample
-                    pipeline._result_signatures[k] = pipeline._sample_cache_signature(sample)
+                    if isinstance(signatures, dict) and k in signatures:
+                        signature = signatures[k]
+                        pipeline._result_signatures[k] = (
+                            tuple(signature) if isinstance(signature, list) else ()
+                        )
+                    else:
+                        # Older checkpoints only have the output sample.
+                        pipeline._result_signatures[k] = pipeline._sample_cache_signature(sample)
                     pipeline._result_manifests[k] = (
                         manifest
                         if isinstance(manifest, dict)
