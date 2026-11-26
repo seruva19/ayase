@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-27
+
 ### Changed
 
 - Transfer NIMA frame scores together and offer opt-in batched frame inference.
@@ -38,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Route FVD, HPSv3, GraFIQs, face cross-similarity, OCR fidelity and motion smoothness through the shared video frame reader.
 - Add `ayase compare` for prompt-bootstrapped Bradley–Terry rankings from pairwise judgments.
 - Skip redundant metric snapshots in single and batch processing when no after-hook runs.
-- Snapshot only the audited output fields of `motion` and `psnr99` during sample processing.
+- Snapshot only the audited output fields across 67 built-in modules during sample processing.
 - Load bundled CLIP, Transformers compatibility shims, and metric class exports on first use.
 - Use the packaged module index to load only requested modules for named pipelines.
 - Share compatible CLIP weights and cached features across CLIP metrics.
@@ -51,6 +53,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Disable unused TensorFlow and Flax backends in `transformers` via `_compat.py` to avoid host JAX/TF NumPy conflicts (such as on Google Colab).
+- **wmreward**: cache SHA-256 checkpoint verification metadata beside `vitg.pt` and run scoring under `torch.inference_mode()`.
+- Isolate managed worker subprocesses from host `site-packages` and run managed provisioning inside the caller virtualenv.
 - Resolve DreamSim's device and put its mirrored DINO backbone in the cache the backend reads.
 - Pass writable frame buffers to PyTorch during CLIP-IQA preprocessing.
 - Preserve input signatures in checkpoints when modules update sample metadata.

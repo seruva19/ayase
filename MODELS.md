@@ -1,6 +1,6 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 23:13 · **329 models** across **9 sources**
+> **Version 0.2.2** · Generated 2026-11-27 01:48 · **329 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
@@ -184,7 +184,7 @@
 - **Source**: <a href="https://arxiv.org/abs/2508.03789" target="_blank">arXiv</a>
 
 ### <a href="https://huggingface.co/NU-World-Model-Embodied-AI/phyjudge-9B" target="_blank">`NU-World-Model-Embodied-AI/phyjudge-9B`</a> [↑](#categories)
-> video-text-to-text · other
+> video-text-to-text · apache-2.0
 
 - **Used by**: `phyground_results`
 - **Downloads**: 20
