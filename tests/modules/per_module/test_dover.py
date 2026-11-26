@@ -15,3 +15,35 @@ def test_dover_video(video_sample):
     m.on_mount()
     result = m.process(video_sample)
     assert result is video_sample
+
+
+def test_native_dover_retries_amp_close_to_warning_threshold(monkeypatch):
+    from contextlib import contextmanager
+
+    import pytest
+
+    torch = pytest.importorskip("torch")
+    from ayase import runtime
+    from ayase.modules import dover
+
+    modes = []
+
+    @contextmanager
+    def inference_context(device, dtype, amp):
+        modes.append((dtype, amp))
+        yield
+
+    def model(views, reduce_scores):
+        value = 0.401 if modes[-1][1] else 0.397
+        return [torch.tensor(value), torch.tensor(value)]
+
+    def fuse(values):
+        return dict(aesthetic=values[0], technical=values[1], overall=values[0])
+
+    monkeypatch.setattr(runtime, "torch_inference_context", inference_context)
+    monkeypatch.setattr(dover, "_fuse_results", fuse)
+    module = dover.DOVERModule({"amp_enabled": True, "dtype": "bf16"})
+    module._device = "cuda"
+    module._model = model
+    assert module._infer_native_views({}) == pytest.approx((0.397, 0.397, 0.397))
+    assert modes == [("bf16", True), ("fp32", False)]

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Offer opt-in CUDA autocast for native DOVER with FP32 retries near the warning threshold.
 - Transfer MANIQA frame scores together and offer opt-in batched frame inference.
 - Share synchronized video frame selection across ERQA, PSNR99, and PSNR-Grad with opt-in Decord support.
 - Use the shared frame decoder for CLIP-SlowFast VQ while preserving its frame grid and FPS input.

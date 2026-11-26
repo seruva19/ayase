@@ -67,6 +67,7 @@ class DOVERModule(PipelineModule):
     description = "DOVER disentangled technical + aesthetic VQA (ICCV 2023)"
     default_config = {
         "warning_threshold": 0.4,
+        "amp_enabled": False,  # Opt in to CUDA autocast for native inference
         "weights_path": None,  # Explicit path to DOVER.pth (optional)
         "preferred_backend": None,  # "native" or "onnx" — None = auto (native first)
     }
@@ -392,7 +393,6 @@ class DOVERModule(PipelineModule):
 
     def _process_native(self, sample: Sample):
         """Run inference using the native DOVER model."""
-        import torch
         from ayase.third_party.dover.datasets import UnifiedFrameSampler, spatial_temporal_view_decomposition
 
         # Build temporal samplers
@@ -431,11 +431,42 @@ class DOVERModule(PipelineModule):
         # DOVERModel iterates dict keys, so order depends on self._sample_types.
         # _fuse_results expects [aesthetic, technical].
         ordered = {"aesthetic": processed["aesthetic"], "technical": processed["technical"]}
-        with torch.no_grad():
-            outputs = self._model(ordered, reduce_scores=False)
-            results = [float(np.mean(out.detach().cpu().numpy())) for out in outputs]
+        return self._infer_native_views(ordered)
 
-        rescaled = _fuse_results(results)
+    def _infer_native_views(self, views):
+        from ayase.runtime import resolve_torch_dtype, torch_inference_context
+        import torch
+
+        device = str(self._device)
+        dtype = self.config.get("dtype", "auto")
+        use_amp = (
+            self.config.get("amp_enabled", False)
+            and device.startswith("cuda")
+            and resolve_torch_dtype(device, dtype) in (torch.float16, torch.bfloat16)
+        )
+
+        def infer(precision, amp):
+            with torch_inference_context(device, precision, amp):
+                outputs = self._model(views, reduce_scores=False)
+                results = [
+                    float(np.mean((out.float() if amp else out).detach().cpu().numpy()))
+                    for out in outputs
+                ]
+            return _fuse_results(results)
+
+        rescaled = None
+        if use_amp:
+            try:
+                scores = infer(dtype, True)
+                if (
+                    all(np.isfinite(score) for score in scores.values())
+                    and abs(scores["overall"] - self.warning_threshold) > 0.005
+                ):
+                    rescaled = scores
+            except Exception as exc:
+                logger.debug("DOVER autocast failed; retrying FP32: %s", exc)
+        if rescaled is None:
+            rescaled = infer("fp32", False)
         return rescaled["aesthetic"], rescaled["technical"], rescaled["overall"]
 
     def _process_onnx(self, sample: Sample):
