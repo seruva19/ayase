@@ -248,7 +248,7 @@ class MyMetricModule(PipelineModule):
 - [ ] Add field to `_FIELD_GROUPS` in `models.py`
 - [ ] Write tests in `tests/modules/` — use `_test_module_basics()` from conftest
 - [ ] Add to `modules/__init__.py` if it's a key module (grouped by category, not alphabetical)
-- [ ] Update hardcoded `README_METRICS` list and field count in `tests/test_readme_contract.py`
+- [ ] Update the expected metric count in `tests/test_readme_contract.py` and regenerate `METRICS.md`
 
 ### Tiered Backend Pattern
 
@@ -532,7 +532,7 @@ After implementing any change (new modules, new metrics, bug fixes), complete AL
 ### 2. Tests
 
 - [ ] Write tests in `tests/modules/test_*.py`
-- [ ] Update `tests/test_readme_contract.py`: add fields to `README_METRICS` list, update field count
+- [ ] Update the expected metric count in `tests/test_readme_contract.py` when adding metric fields
 - [ ] Run a focused light test suite covering the changed files/modules
 - [ ] Run `pytest tests/ -x -q` only if the user explicitly asks for the full regression suite
 
@@ -576,12 +576,9 @@ ayase modules sync-readme               # Update module/field counts in README.m
 
 `tests/test_readme_contract.py` enforces structural invariants. When adding metrics, you MUST update:
 
-1. **Field count** — `test_quality_metrics_has_N_fields()` asserts exact count (update when adding fields)
-2. **`README_METRICS` list** — hardcoded list of all field names in order; used by:
-   - `test_readme_table_count()` — list length matches field count
-   - `test_readme_metric_exists_in_model()` — every listed name is a QualityMetrics field
-   - `test_no_unlisted_fields()` — every QualityMetrics field appears in the list
-3. **`tests/modules/test_metrics_table.py`** — parses README `## Metrics` table and verifies 1:1 match with QualityMetrics fields in order
+1. **Field count** — update the expected length of `README_METRICS` when adding fields.
+2. **`README_METRICS`** — derived from `QualityMetrics.model_fields`, excluding bookkeeping fields.
+3. **`tests/modules/test_metrics_table.py`** — reads `METRICS.md`. Regenerate the catalog when metric fields change.
 
 Other contract tests: golden values (`test_golden_values.py`, ±2% tolerance), public API surface (`TestPipelineAPI`, `TestProfileAPI`, `TestSampleModel`), and CLI commands.
 
@@ -613,6 +610,6 @@ Rules:
 5. **Don't add fields to QualityMetrics without adding to `_FIELD_GROUPS`** — `to_grouped_dict()` will put them in "other"
 6. **Don't modify `third_party/`** unless absolutely necessary — it's vendored external code
 7. **Version is in two places** — `__init__.py` and `pyproject.toml` — update both
-8. **Don't forget `tests/test_readme_contract.py`** — has a hardcoded `README_METRICS` list and field count that must be updated when adding new QualityMetrics fields
+8. **Don't forget `tests/test_readme_contract.py`** — the expected metric count must be updated when adding metric fields
 9. **Don't use `enable_ml` flag** — removed; use tiered backend auto-detection pattern instead
 10. **Don't add modules alphabetically to `modules/__init__.py`** — they're grouped by functional category

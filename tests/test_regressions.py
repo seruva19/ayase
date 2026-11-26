@@ -1728,10 +1728,15 @@ class TestNoSourceCodeDownloads:
         import ayase.modules
 
         pattern = re.compile(r"https?://(github\.com|gitlab\.com)[^\s\"']*\.zip")
+        model_weight_archive = (
+            "https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip"
+        )
         offenders = []
         for path in Path(ayase.modules.__file__).parent.glob("*.py"):
             for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-                if pattern.search(line):
+                for match in pattern.finditer(line):
+                    if path.name == "avgen_bench.py" and match.group() == model_weight_archive:
+                        continue
                     offenders.append(f"{path.name}:{number}")
         assert not offenders, "code archive URLs: " + "; ".join(offenders)
 
@@ -1812,8 +1817,9 @@ class TestVendorLicenceNotice:
 
         readme = Path(__file__).resolve().parent.parent / "README.md"
         document = readme.read_text(encoding="utf-8")
-        assert "## License" in document
-        assert "see [MODELS.md](MODELS.md)" in document
+        _, heading, remainder = document.partition("\n## License\n")
+        assert heading
+        assert "](MODELS.md)" in remainder.split("\n## ", 1)[0]
         assert "CC BY-NC" not in document
         assert "no licence file" not in document
 
