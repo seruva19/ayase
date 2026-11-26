@@ -566,11 +566,13 @@ ayase modules sync-readme               # Update module/field counts in README.m
 
 - [ ] `ruff check` on new/changed files
 - [ ] Commit with a concise message describing what was added/changed
+- [ ] Do NOT create or push git tags to GitHub (`git push origin master` without `--tags`)
 
 ### 6. PyPI Publish
 
 - [ ] Bump version in both `pyproject.toml` and `src/ayase/__init__.py` (keep in sync)
 - [ ] `python -m build && twine upload dist/*`
+- [ ] Never run `git tag` or `git push --tags`
 
 ## Contract Tests
 
