@@ -61,6 +61,7 @@ class QAlignModule(PipelineModule):
         "dtype": "float16",  # float16 | bfloat16 | float32
         "device": "auto",
         "subsample": 8,  # Every Nth video frame
+        "batch_inputs": False,
         "max_frames": 16,  # Max frames to score per video
         "warning_threshold": 2.5,  # Warn if score < 2.5 / 5
         "trust_remote_code": True,
@@ -298,49 +299,104 @@ class QAlignModule(PipelineModule):
             else:
                 quality, aesthetic = self._process_image(sample.path)
 
-            if quality is None and aesthetic is None:
-                return sample
-
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            if quality is not None:
-                sample.quality_metrics.qalign_quality = quality
-            if aesthetic is not None:
-                sample.quality_metrics.qalign_aesthetic = aesthetic
-
-            # Warn if scores are low
-            combined = None
-            if quality is not None and aesthetic is not None:
-                combined = (quality + aesthetic) / 2.0
-            elif quality is not None:
-                combined = quality
-
-            if combined is not None and combined < self.warning_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"Low Q-Align score: {combined:.2f}/5",
-                        details={
-                            "qalign_quality": quality,
-                            "qalign_aesthetic": aesthetic,
-                        },
-                        recommendation=(
-                            "Q-Align vision-language assessment indicates "
-                            "below-threshold quality or aesthetics."
-                        ),
-                    )
-                )
-
-            logger.debug(
-                f"Q-Align for {sample.path.name}: "
-                f"quality={quality} aesthetic={aesthetic}"
-            )
+            self._apply_scores(sample, quality, aesthetic)
 
         except Exception as e:
             logger.warning(f"Q-Align failed for {sample.path}: {e}")
 
         return sample
+
+    def _apply_scores(self, sample, quality, aesthetic):
+        if quality is None and aesthetic is None:
+            return
+
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+
+        if quality is not None:
+            sample.quality_metrics.qalign_quality = quality
+        if aesthetic is not None:
+            sample.quality_metrics.qalign_aesthetic = aesthetic
+
+        # Warn if scores are low
+        combined = None
+        if quality is not None and aesthetic is not None:
+            combined = (quality + aesthetic) / 2.0
+        elif quality is not None:
+            combined = quality
+
+        if combined is not None and combined < self.warning_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Low Q-Align score: {combined:.2f}/5",
+                    details={
+                        "qalign_quality": quality,
+                        "qalign_aesthetic": aesthetic,
+                    },
+                    recommendation=(
+                        "Q-Align vision-language assessment indicates "
+                        "below-threshold quality or aesthetics."
+                    ),
+                )
+            )
+
+        logger.debug(
+            f"Q-Align for {sample.path.name}: "
+            f"quality={quality} aesthetic={aesthetic}"
+        )
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available or not self.config.get("batch_inputs", False) or len(samples) < 2:
+            return super().process_batch(samples)
+
+        from PIL import Image
+        from ayase.runtime import torch_inference_context
+
+        groups = {}
+        for sample in samples:
+            try:
+                if sample.is_video:
+                    frames = self._decode_video(sample.path)
+                    if not frames:
+                        continue
+                    item = [Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)) for frame in frames]
+                    key = ("video", len(item))
+                else:
+                    frame = cv2.imread(str(sample.path))
+                    if frame is None:
+                        continue
+                    item = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                    key = ("image", 1)
+                groups.setdefault(key, []).append((sample, item))
+            except Exception as exc:
+                logger.warning("Q-Align failed to prepare %s: %s", sample.path, exc)
+
+        for (kind, _), group in groups.items():
+            if len(group) == 1:
+                self.process(group[0][0])
+                continue
+            items = [item for _, item in group]
+            try:
+                with torch_inference_context(str(self.device), "fp32", False):
+                    quality = self._model.score(items, task_="quality", input_=kind).flatten()
+                    aesthetic = self._model.score(items, task_="aesthetics", input_=kind).flatten()
+                    if quality.numel() != len(group) or aesthetic.numel() != len(group):
+                        raise ValueError("Q-Align did not return one score per input")
+                    pairs = quality.cpu().tolist(), aesthetic.cpu().tolist()
+            except Exception as exc:
+                logger.debug("Q-Align batch failed; retrying per sample: %s", exc)
+                for sample, _ in group:
+                    self.process(sample)
+                continue
+
+            for (sample, _), quality_score, aesthetic_score in zip(group, *pairs):
+                combined = (quality_score + aesthetic_score) / 2.0
+                if not np.isfinite(combined) or combined <= self.warning_threshold + 0.02:
+                    self.process(sample)
+                else:
+                    self._apply_scores(sample, quality_score, aesthetic_score)
+        return samples
 
     def _process_image(
         self, path: Path
@@ -353,14 +409,19 @@ class QAlignModule(PipelineModule):
     def _process_video(
         self, path: Path
     ) -> Tuple[Optional[float], Optional[float]]:
-        cap = cv2.VideoCapture(str(path))
-        if not cap.isOpened():
+        frames = self._decode_video(path)
+        if not frames:
             return None, None
 
+        return self.score_frames(frames, "quality"), self.score_frames(frames, "aesthetics")
+
+    def _decode_video(self, path: Path) -> List[np.ndarray]:
+        cap = cv2.VideoCapture(str(path))
         frames: List[np.ndarray] = []
         idx = 0
-
         try:
+            if not cap.isOpened():
+                return frames
             while len(frames) < self.max_frames:
                 ret, frame = cap.read()
                 if not ret:
@@ -370,9 +431,4 @@ class QAlignModule(PipelineModule):
                 idx += 1
         finally:
             cap.release()
-
-        if not frames:
-            return None, None
-
-        # Official video protocol: a single input_="video" call per task.
-        return self.score_frames(frames, "quality"), self.score_frames(frames, "aesthetics")
+        return frames

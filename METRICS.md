@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 20:52 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 20:58 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -759,7 +759,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://github.com/Q-Future/Q-Align" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
 - **Tests**: covered by [`test_avgen_bench_native.py`](tests/modules/per_module/test_avgen_bench_native.py), [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
-- **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
+- **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `batch_inputs=False`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 ### `qualiclip_score` [↑](#categories)
 > QualiCLIP opinion-unaware (higher=better) · ↑ higher=better
@@ -6093,7 +6093,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 - **VRAM**: ~14 GB
 - **Source**: <a href="https://github.com/Q-Future/Q-Align" target="_blank">GitHub</a> · <a href="https://huggingface.co/q-future/one-align" target="_blank">HF</a>
 - **Tests**: covered by [`test_avgen_bench_native.py`](tests/modules/per_module/test_avgen_bench_native.py), [`test_q_align.py`](tests/modules/per_module/test_q_align.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py)
-- **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
+- **Config**: `model_name=q-future/one-align`, `dtype=float16`, `device=auto`, `subsample=8`, `batch_inputs=False`, `max_frames=16`, `warning_threshold=2.5`, `trust_remote_code=True`
 
 ### `qwen_image_bench_aesthetics` [↑](#categories)
 > Aesthetics L1 score · 0-100

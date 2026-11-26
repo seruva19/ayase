@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Offer opt-in native Q-Align batching for images and equally sampled videos.
 - Share identical DINOv2 weights between Spectral Complexity and World Consistency.
 - Include the effective execution mode in staged checkpoint compatibility checks.
 - Offer opt-in FP32 batching across videos for LAION aesthetic scoring.
