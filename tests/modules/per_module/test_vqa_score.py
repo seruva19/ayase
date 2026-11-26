@@ -51,3 +51,34 @@ def test_vqa_score_cleans_partial_jpeg_after_save_error(video_sample, monkeypatc
 
     assert module.process(video_sample) is video_sample
     assert files and not files[0].parent.exists()
+def test_vqa_score_pil_video_frames_are_opt_in_and_avoid_jpeg(video_sample, monkeypatch):
+    from types import SimpleNamespace
+
+    from PIL import Image
+
+    from ayase.models import CaptionMetadata
+    from ayase.modules.vqa_score import VQAScoreModule
+
+    seen = []
+
+    class Scorer:
+        model = SimpleNamespace(supports_pil_images=True)
+
+        def __call__(self, *, images, texts):
+            assert texts == ["clip"]
+            assert len(images) == 1 and isinstance(images[0], Image.Image)
+            seen.append(images[0].mode)
+            return SimpleNamespace(item=lambda: 0.75)
+
+    def reject_save(*args, **kwargs):
+        raise AssertionError("PIL mode must not encode temporary JPEGs")
+
+    monkeypatch.setattr(Image.Image, "save", reject_save)
+    video_sample.caption = CaptionMetadata(text="clip", length=4)
+    module = VQAScoreModule({"video_frame_input": "pil"})
+    module._model = Scorer()
+    module._ml_available = True
+
+    assert module.process(video_sample) is video_sample
+    assert video_sample.quality_metrics.vqa_score_alignment == 0.75
+    assert seen and set(seen) == {"RGB"}

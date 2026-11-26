@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 19:31 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 19:36 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -3933,7 +3933,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Packages**: Pillow, opencv-python
 - **Source**: <a href="https://github.com/linzhiqiu/t2v_metrics" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_vqa_score.py`](tests/modules/per_module/test_vqa_score.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
-- **Config**: `model=clip-flant5-xxl`, `subsample=4`
+- **Config**: `model=clip-flant5-xxl`, `subsample=4`, `video_frame_input=jpeg`
 
 
 ## Temporal Consistency (36 metrics)

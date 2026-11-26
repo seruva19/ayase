@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Skip VideoMAE top-k boundary retries when weighted caption matching is disabled.
 - Fix AVGen-Bench Synchformer imports in isolated scratch directories and enable float32 scoring on CPU.
 - Clean up VQAScore's temporary JPEG frames even when frame encoding fails partway through.
+- Add an optional decoded PIL video input path for CLIP-FlanT5 VQAScore. JPEG quality 95 remains the default.
 - Reuse successful FFprobe responses for repeated requests with identical media files and query arguments.
 - Add source-video inputs, edit instructions and timestamp alignment policies for video editing.
 - Route FVD, HPSv3, GraFIQs, face cross-similarity, OCR fidelity and motion smoothness through the shared video frame reader.

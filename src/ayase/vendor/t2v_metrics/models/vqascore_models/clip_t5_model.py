@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Union
+from PIL import Image
 import torch
 
 from .vqa_model import VQAScoreModel
@@ -158,6 +159,7 @@ CLIP_T5_MODELS = {
 
 class CLIPT5Model(VQAScoreModel):
     """A wrapper for the CLIP-FlanT5 or CLIP-T5 models"""
+    supports_pil_images = True
     video_mode = "concat"
     allows_image = True
     def __init__(self,
@@ -206,12 +208,12 @@ class CLIPT5Model(VQAScoreModel):
         )
 
     def load_images(self,
-                    image: List[str]) -> torch.Tensor:
+                    image: List[Union[str, Image.Image]]) -> torch.Tensor:
         """Load the image(s), and return a tensor (after preprocessing) put on self.device
         """
-        if any(path.startswith(("http://", "https://")) for path in image):
+        if any(isinstance(path, str) and path.startswith(("http://", "https://")) for path in image):
             raise NotImplementedError("Web link image/video inputs are not yet supported for this model. Please use a local path, or otherwise, make a Github issue request if this feature is necessary.")
-        image = [self.image_loader(x) for x in image]
+        image = [x if isinstance(x, Image.Image) else self.image_loader(x) for x in image]
         if self.image_aspect_ratio == 'pad':
             image = [expand2square(image, tuple(int(x*255) for x in self.image_processor.image_mean)) for image in image]
         image = [self.image_processor.preprocess(image, return_tensors='pt')['pixel_values'][0] for image in image]

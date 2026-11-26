@@ -4,7 +4,9 @@ The vendored ``t2v_metrics`` backend asks whether the image shows the caption
 and scores the probability of the affirmative answer. Images are scored once;
 videos are sampled to at most four frames by default and their scores are
 averaged. ``vqa_score_alignment`` is expected in [0, 1] and is better when
-higher. The default model is ``clip-flant5-xxl``; language/domain applicability
+higher. The default model is ``clip-flant5-xxl``. CLIP-FlanT5 supports
+``video_frame_input="pil"`` for decoded RGB frames; the default is JPEG quality 95
+because the two inputs can produce different scores. Language/domain applicability
 follows that model. This is not a reference-image or dataset-level metric, and
 no CLIP/heuristic substitute is emitted when the backend or caption is absent.
 Method and model source: https://github.com/linzhiqiu/t2v_metrics
@@ -34,6 +36,7 @@ class VQAScoreModule(PipelineModule):
     default_config = {
         "model": "clip-flant5-xxl",
         "subsample": 4,
+        "video_frame_input": "jpeg",
     }
     models = [
         {
@@ -89,15 +92,8 @@ class VQAScoreModule(PipelineModule):
         return sample
 
     def _compute_vqascore(self, sample: Sample) -> Optional[float]:
-        """Compute VQAScore using t2v_metrics.
-
-        The underlying ``t2v_metrics`` API expects ``images`` to be a list of
-        path strings (it calls ``.startswith()`` on each entry to detect
-        URLs). Passing PIL.Image objects raises
-        ``'Image' object has no attribute 'startswith'``. So: for images we
-        pass ``sample.path`` directly; for videos we dump each sampled frame
-        to a temporary JPEG and pass the path.
-        """
+        """Score an image path or sampled video frames with t2v_metrics."""
+        from contextlib import nullcontext
         from pathlib import Path
         from tempfile import TemporaryDirectory
         from PIL import Image
@@ -108,26 +104,39 @@ class VQAScoreModule(PipelineModule):
         if sample.is_video:
             import cv2
 
-            cap = cv2.VideoCapture(str(sample.path))
+            frame_input = self.config.get("video_frame_input", "jpeg")
+            if frame_input == "pil":
+                backend = getattr(self._model, "model", None)
+                if not getattr(backend, "supports_pil_images", False):
+                    raise ValueError("The selected VQAScore backend does not support PIL input")
+                frame_directory = nullcontext(None)
+            elif frame_input == "jpeg":
+                frame_directory = TemporaryDirectory(prefix="ayase-vqascore-")
+            else:
+                raise ValueError("video_frame_input must be 'jpeg' or 'pil'")
+
             scores = []
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-                if not indices:
-                    return None
-                with TemporaryDirectory(prefix="ayase-vqascore-") as directory:
+            with frame_directory as directory:
+                cap = cv2.VideoCapture(str(sample.path))
+                try:
+                    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    indices = list(range(0, total, max(1, total // subsample)))[:subsample]
                     for idx in indices:
                         cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
                         ret, frame = cap.read()
                         if not ret:
                             continue
                         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        frame_path = Path(directory) / f"{idx}.jpg"
-                        Image.fromarray(rgb).save(frame_path, "JPEG", quality=95)
-                        score = self._model(images=[str(frame_path)], texts=[text]).item()
-                        scores.append(score)
-            finally:
-                cap.release()
+                        image = Image.fromarray(rgb)
+                        if directory is not None:
+                            frame_path = Path(directory) / f"{idx}.jpg"
+                            image.save(frame_path, "JPEG", quality=95)
+                            frame_source = str(frame_path)
+                        else:
+                            frame_source = image
+                        scores.append(self._model(images=[frame_source], texts=[text]).item())
+                finally:
+                    cap.release()
             return float(np.mean(scores)) if scores else None
 
         return self._model(images=[str(sample.path)], texts=[text]).item()
