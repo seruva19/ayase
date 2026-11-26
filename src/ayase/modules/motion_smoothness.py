@@ -10,10 +10,11 @@ differently-scaled optical-flow warping proxy."""
 
 import logging
 import os
-import cv2
+import sys
 import numpy as np
 from typing import Optional, List
 
+from ayase.image import sample_frames
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
 
@@ -220,28 +221,8 @@ class MotionSmoothnessModule(PipelineModule):
             )
 
     def _load_frames(self, sample: Sample) -> List[np.ndarray]:
-        frames = []
-        cap = cv2.VideoCapture(str(sample.path))
-        try:
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-            if total <= 0:
-                return []
-
-            # VBench evaluates every frame; max_frames > 0 is an explicit cap.
-            if self.max_frames > 0:
-                indices = np.linspace(0, total - 1, min(self.max_frames, total), dtype=int)
-            else:
-                indices = range(total)
-
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ret, frame = cap.read()
-                if ret:
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(frame)
-        finally:
-            cap.release()
-        return frames
+        # VBench evaluates every frame; max_frames > 0 is an explicit cap.
+        limit = self.max_frames if self.max_frames > 0 else sys.maxsize
+        return sample_frames(sample.path, limit, color="rgb", known_count_only=True)
 
 

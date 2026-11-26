@@ -25,11 +25,13 @@ References:
 
 import logging
 import re
+import sys
 from typing import List, Optional
 
 import cv2
 import numpy as np
 
+from ayase.image import sample_frames
 from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
 
@@ -293,20 +295,9 @@ class OCRFidelityModule(PipelineModule):
         frames: List[np.ndarray] = []
         try:
             if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    cap.release()
-                    return frames
                 # num_frames <= 0 follows the EvalCrafter protocol: every frame.
-                n = total if self.num_frames <= 0 else min(self.num_frames, total)
-                indices = np.linspace(0, total - 1, n, dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-                cap.release()
+                limit = self.num_frames if self.num_frames > 0 else sys.maxsize
+                return sample_frames(sample.path, limit, color="bgr", known_count_only=True)
             else:
                 img = cv2.imread(str(sample.path))
                 if img is not None:
