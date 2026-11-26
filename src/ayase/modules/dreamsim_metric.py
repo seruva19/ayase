@@ -23,7 +23,7 @@ class DreamSimModule(PipelineModule):
     name = "dreamsim"
     implementation_status = "implemented"
     implementation_notes = "Actual PIQ DISTS or trained DreamSim model with proper paired inputs/preprocessing, real distance output and frame averaging. Video extension does not replace image method."
-    implementation_review = "Official pretrained DreamSim 0.2.1 ensemble verified on three video pairs with serial and batched RTX 5090 inference."
+    implementation_review = "Uses the official pretrained DreamSim ensemble."
     provenance = {"dreamsim": "adapted"}
     sources = {
         "dreamsim": "DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim",

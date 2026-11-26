@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 21:31 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 21:36 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -163,7 +163,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Real matching PyIQA metric/model is created and invoked on native image or paired tensors; errors skip. Documented video frame selection/mean pooling changes the protocol but not the underlying published image method, so adapted provenance is compatible with implemented readiness.
 - **Field readiness**: `implemented`
-- **Review evidence**: Pretrained PyIQA CLIP-IQA+ verified on three videos with serial and batched GPU inference.
+- **Review evidence**: Uses the pretrained PyIQA CLIP-IQA+ backend.
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CLIP-IQA+ (Wang et al., AAAI 2023) via pyiqa — https://github.com/IceClear/CLIP-IQA
 - **Packages**: pyiqa, torch
@@ -1495,7 +1495,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Actual PIQ DISTS or trained DreamSim model with proper paired inputs/preprocessing, real distance output and frame averaging. Video extension does not replace image method.
 - **Field readiness**: `implemented`
-- **Review evidence**: Official pretrained DreamSim 0.2.1 ensemble verified on three video pairs with serial and batched RTX 5090 inference.
+- **Review evidence**: Uses the official pretrained DreamSim ensemble.
 - **Backend**: unavailable → dreamsim
 - **Provenance**: `adapted` — DreamSim is defined for image pairs; video is scored as the mean over position-paired uniformly sampled frames. — source: DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim
 - **Packages**: dreamsim, torch
@@ -1509,7 +1509,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Inherited real pretrained DreamSim ensemble plus official preprocess and reference distance; paired frame mean is a documented video protocol extension, not a substitute perceptual metric.
 - **Field readiness**: `implemented`
-- **Review evidence**: Official pretrained DreamSim 0.2.1 ensemble verified on three video pairs with serial and batched RTX 5090 inference.
+- **Review evidence**: Uses the official pretrained DreamSim ensemble.
 - **Backend**: unavailable → dreamsim
 - **Provenance**: `adapted` — DreamSim is defined for image pairs; video is scored as the mean over position-paired uniformly sampled frames. — source: DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim
 - **Packages**: dreamsim, torch
@@ -6076,7 +6076,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 - **Packages**: opencv-python, pyiqa, torch
 - **Source**: <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_nima.py`](tests/modules/per_module/test_nima.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
-- **Config**: `subsample=8`
+- **Config**: `subsample=8`, `batch_frames=False`
 
 ### `qalign_aesthetic` [↑](#categories)
 > Q-Align aesthetic quality (1-5, higher=better) · ↑ higher=better · 1-5
@@ -10271,7 +10271,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: batch +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Real I3D TorchScript trained features with return_features=True feed standard Gaussian Fréchet distance. Uniform whole-video 16-frame protocol is disclosed adaptation, not surrogate backbone.
-- **Review evidence**: Pretrained I3D verified on real videos, including checkpoint replay and FP32/FP16/BF16 feature extraction on RTX 5090.
+- **Review evidence**: Uses pretrained I3D features for Fréchet distance.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
 - **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +7 more

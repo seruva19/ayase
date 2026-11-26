@@ -103,14 +103,11 @@ keeps supported CLIP, FID and FVD inference weights between runs. Each run
 has fresh module instances, accumulators and results. Call
 `release_model_weights()` between runs to free the retained weights.
 
-GPU profiles can set `sample_batch_size` to 4–16 where device memory allows.
+`sample_batch_size` defaults to 1. GPU profiles can use 4–16 where device
+memory allows.
 
 FVD uses FP32 by default. Set `dtype = "fp16"` or `dtype = "bf16"` in the
-FVD module settings to enable CUDA autocast. On an RTX 5090 with four
-16-frame clips, the pretrained I3D feature pass measured 323 clips/s in
-FP32 and 440 in FP16 after warmup, excluding decode and distribution
-aggregation. FVD differed from FP32 by 0.0023% in FP16 and 0.30% in BF16
-on that input set.
+FVD module settings to enable CUDA autocast for I3D feature extraction.
 
 Set `execution_mode = "staged"` under `[general]` to process an input cohort
 one module at a time and release each module before mounting the next.
@@ -119,9 +116,6 @@ accumulators such as FID and FVD. The accumulators finalize at the end of
 the run and rebuild their features from the full input cohort after resume.
 Stacks with hooks or other modules use sample-first execution. Staged runs
 hold the cohort in memory and publish results only after the final stage.
-The default is 1. FVD batches I3D feature extraction and computes one score
-over the complete dataset. Its default `dtype = "auto"` keeps I3D in FP32.
-Choose `"fp16"` or `"bf16"` explicitly to enable I3D autocast on CUDA.
 
 `assets_repo` selects the Hugging Face repository used for Ayase-managed
 checkpoints and source archives. It can also be set with
