@@ -38,6 +38,21 @@ _CORE_REQUIREMENTS = (
 _SETUP_TIMEOUT = 7200.0
 _DEFAULT_OPERATION_TIMEOUT = 1800.0
 _METHODS = ("process", "process_batch", "post_process", "on_execute", "on_dispose")
+_WORKER_BOOTSTRAP = """\
+import importlib.util
+import runpy
+import sys
+from pathlib import Path
+
+package = Path(sys.argv.pop(1))
+spec = importlib.util.spec_from_file_location(
+    "ayase", package / "__init__.py", submodule_search_locations=[str(package)]
+)
+ayase = importlib.util.module_from_spec(spec)
+sys.modules["ayase"] = ayase
+spec.loader.exec_module(ayase)
+runpy.run_module("ayase._managed_module_worker", run_name="__main__", alter_sys=True)
+"""
 
 
 def _dependency_for(name: str) -> Any:
@@ -113,10 +128,6 @@ def _json_value(value: Any, location: str = "config") -> Any:
 
 def _worker_environment(module: Any, interpreter: Path) -> Dict[str, str]:
     environment = os.environ.copy()
-    existing_pythonpath = environment.get("PYTHONPATH")
-    environment["PYTHONPATH"] = os.pathsep.join(
-        [str(_package_root()), *(item for item in [existing_pythonpath] if item)]
-    )
     cache_root = Path(module.config.get("models_dir", "models")).resolve() / ".ayase" / "cache"
     environment["HF_HOME"] = str(cache_root / "huggingface")
     environment["TORCH_HOME"] = str(cache_root / "torch")
@@ -163,8 +174,10 @@ class ManagedModuleBridge:
         environment = _worker_environment(self.module, self.interpreter)
         command = [
             str(self.interpreter),
-            "-m",
-            "ayase._managed_module_worker",
+            # Import the installed Ayase package without exposing its sibling packages.
+            "-c",
+            _WORKER_BOOTSTRAP,
+            str(_package_root() / "ayase"),
             "--module",
             type(self.module).__module__,
             "--qualname",

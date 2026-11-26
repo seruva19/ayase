@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,11 +13,33 @@ import pytest
 
 from ayase.managed_module import (
     ManagedModuleBridge,
+    _WORKER_BOOTSTRAP,
     _worker_environment,
     attach_managed_backend,
 )
 from ayase.models import QualityMetrics, Sample, ValidationSeverity
 from ayase.pipeline import Pipeline
+
+
+def test_worker_bootstrap_ignores_dependencies_next_to_installed_package(tmp_path, monkeypatch):
+    package = tmp_path / "site-packages" / "ayase"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "_managed_module_worker.py").write_text(
+        "import numpy\nprint(numpy.__version__)\n", encoding="utf-8"
+    )
+    (package.parent / "numpy.py").write_text(
+        "raise RuntimeError('wrong ABI')\n", encoding="utf-8"
+    )
+    monkeypatch.delenv("PYTHONPATH", raising=False)
+    result = subprocess.run(
+        [sys.executable, "-c", _WORKER_BOOTSTRAP, str(package)],
+        cwd=tmp_path,
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    assert result.stdout.strip()
 
 
 def test_dataset_forwarding_preserves_the_active_module_context(tmp_path):
