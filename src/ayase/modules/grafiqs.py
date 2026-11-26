@@ -275,19 +275,9 @@ class GraFIQsModule(PipelineModule):
         """Extract frames from video or load image."""
         frames = []
         if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            try:
-                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if total <= 0:
-                    return frames
-                indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if ret:
-                        frames.append(frame)
-            finally:
-                cap.release()
+            from ayase.image import sample_frames
+
+            return sample_frames(sample.path, self.subsample, "bgr", known_count_only=True)
         else:
             img = cv2.imread(str(sample.path))
             if img is not None:

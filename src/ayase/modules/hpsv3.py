@@ -197,22 +197,9 @@ class HPSv3Module(PipelineModule):
                 rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
                 return [Image.fromarray(rgb)]
 
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return []
+            from ayase.image import sample_frames
 
-            frame_count = min(self.num_frames, total)
-            indices = np.linspace(0, total - 1, frame_count, dtype=int)
-            frames = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-                ok, frame = cap.read()
-                if ok:
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    frames.append(Image.fromarray(rgb))
-            cap.release()
-            return frames
+            frames = sample_frames(sample.path, self.num_frames, "rgb", known_count_only=True)
+            return [Image.fromarray(frame) for frame in frames]
         except Exception:
             return []

@@ -97,3 +97,28 @@ def test_fvd_batch_preserves_budget_and_reference_features(tmp_path, monkeypatch
     np.testing.assert_array_equal(batch._feature_cache, single._feature_cache)
     np.testing.assert_array_equal(batch._reference_cache, single._reference_cache)
     assert calls == ([2, 1, 1, 1, 1, 1, 1] if fail_batch else [2, 2, 1, 1])
+
+
+def test_fvd_preserves_required_frame_count_with_shared_reader(monkeypatch):
+    from pathlib import Path
+
+    import numpy as np
+
+    from ayase import image
+    from ayase.modules.fvd import FVDModule
+
+    path = Path("short.mp4")
+    red = np.zeros((3, 4, 3), dtype=np.uint8)
+    red[..., 0] = 255
+
+    def decode(path_arg, max_frames, color, *, known_count_only):
+        assert path_arg == path
+        assert color == "rgb" and known_count_only
+        return [red] * min(max_frames, 3)
+
+    monkeypatch.setattr(image, "sample_frames", decode)
+    module = FVDModule()
+    assert module._load_video_frames(path, 4) is None
+    actual = module._load_video_frames(path, 3)
+    assert actual.shape == (3, 224, 224, 3)
+    assert actual[0, 0, 0].tolist() == [255, 0, 0]

@@ -204,32 +204,12 @@ class FVDModule(BatchMetricModule):
             Array of shape (T, H, W, C) with sampled frames, or None if failed
         """
         try:
-            cap = cv2.VideoCapture(str(video_path))
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            from ayase.image import sample_frames
 
-            if total_frames < num_frames:
-                cap.release()
+            frames = sample_frames(video_path, num_frames, "rgb", known_count_only=True)
+            if len(frames) != num_frames:
                 return None
-
-            # Sample frames uniformly
-            frame_indices = np.linspace(0, total_frames - 1, num_frames, dtype=int)
-            frames = []
-
-            for idx in frame_indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if not ret:
-                    cap.release()
-                    return None
-
-                # Convert BGR to RGB and resize to 224x224
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame_resized = cv2.resize(frame_rgb, (224, 224))
-                frames.append(frame_resized)
-
-            cap.release()
-
-            return np.stack(frames, axis=0)  # (T, H, W, C)
+            return np.stack([cv2.resize(frame, (224, 224)) for frame in frames], axis=0)
 
         except Exception as e:
             logger.debug(f"Failed to load video frames: {e}")
