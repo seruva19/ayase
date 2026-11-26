@@ -169,3 +169,24 @@ def test_failed_indexed_import_rolls_back_partial_registration(tmp_path, monkeyp
     assert "test_indexed_broken" not in pipeline.ModuleRegistry._modules
     assert "broken_metric" not in sys.modules
     assert readiness["broken_metric"] == {"status": "missing", "error": "missing backend"}
+
+
+def test_apply_patches_disables_tf_and_flax_without_overriding(monkeypatch):
+    import os
+    from ayase import _compat
+
+    for key in ("USE_TF", "USE_FLAX", "TRANSFORMERS_NO_TF", "TRANSFORMERS_NO_FLAX"):
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setattr(sys, _compat._PATCHED_FLAG, False, raising=False)
+    monkeypatch.setattr(sys, "meta_path", list(sys.meta_path))
+
+    _compat.apply_patches()
+    assert os.environ["USE_TF"] == "0"
+    assert os.environ["USE_FLAX"] == "0"
+    assert os.environ["TRANSFORMERS_NO_TF"] == "1"
+    assert os.environ["TRANSFORMERS_NO_FLAX"] == "1"
+
+    monkeypatch.setenv("USE_TF", "1")
+    monkeypatch.setattr(sys, _compat._PATCHED_FLAG, False, raising=False)
+    _compat.apply_patches()
+    assert os.environ["USE_TF"] == "1"

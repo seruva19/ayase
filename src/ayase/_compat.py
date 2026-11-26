@@ -27,6 +27,7 @@ import importlib
 import importlib.abc
 import importlib.machinery
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -92,6 +93,13 @@ def apply_patches() -> None:
     """Install compatibility patches on demand. Safe to call multiple times."""
     if getattr(sys, _PATCHED_FLAG, False):
         return
+
+    # Ayase uses PyTorch exclusively; disable unused TF/Flax backends before
+    # transformers is imported so stale host JAX/TF packages cannot break it.
+    os.environ.setdefault("USE_TF", "0")
+    os.environ.setdefault("USE_FLAX", "0")
+    os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
+    os.environ.setdefault("TRANSFORMERS_NO_FLAX", "1")
 
     sys.meta_path.insert(0, _CompatibilityFinder())
     if (modeling_utils := sys.modules.get("transformers.modeling_utils")) is not None:
