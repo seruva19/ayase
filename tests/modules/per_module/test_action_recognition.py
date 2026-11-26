@@ -25,7 +25,7 @@ def test_action_recognition_batches_and_retries_threshold_samples(monkeypatch):
     from ayase.models import Sample
     from ayase.modules.action_recognition import ActionRecognitionModule
 
-    module = ActionRecognitionModule()
+    module = ActionRecognitionModule({"top_k": 2})
     module._ml_available = True
     module._device = "cpu"
     batch_sizes = []
@@ -35,7 +35,7 @@ def test_action_recognition_batches_and_retries_threshold_samples(monkeypatch):
             return self
 
     class Classifier:
-        config = SimpleNamespace(id2label={0: "walk", 1: "sit"})
+        config = SimpleNamespace(id2label={0: "walk", 1: "sit", 2: "stand"})
         reject_batches = False
 
         def __call__(self, pixel_values):
@@ -53,8 +53,8 @@ def test_action_recognition_batches_and_retries_threshold_samples(monkeypatch):
         lambda frames, return_tensors: Inputs(pixel_values=torch.tensor([frames[0]])),
     )
     inputs = [
-        Sample(path=Path("clear.mp4"), is_video=True, metadata={"logits": [6.0, 1.0]}),
-        Sample(path=Path("boundary.mp4"), is_video=True, metadata={"logits": [0.0, 0.0]}),
+        Sample(path=Path("clear.mp4"), is_video=True, metadata={"logits": [6.0, 1.0, 1.0]}),
+        Sample(path=Path("boundary.mp4"), is_video=True, metadata={"logits": [0.0, 0.0, -100.0]}),
         Sample(path=Path("image.png"), is_video=False),
     ]
     expected = [module.process(sample.model_copy(deep=True)).model_dump() for sample in inputs]

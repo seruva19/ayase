@@ -223,12 +223,14 @@ class ActionRecognitionModule(PipelineModule):
 
             # Re-run clips close to the warning threshold or a label cutoff to
             # guard those decisions against small batch-kernel differences.
-            top = probs.topk(min(max(2, self.top_k + 1), probs.shape[1])).values
+            weighted = self._clip_available and self.config.get("matching_mode", "weighted") != "top1"
+            cutoff = self.top_k if weighted else 1
+            top = probs.topk(min(max(2, cutoff + 1), probs.shape[1])).values
             boundary = (top[:, 0] - 0.5).abs() <= 1e-4
             if top.shape[1] > 1:
                 boundary |= (top[:, 0] - top[:, 1]).abs() <= 1e-4
-            if 1 <= self.top_k < top.shape[1]:
-                boundary |= (top[:, self.top_k - 1] - top[:, self.top_k]).abs() <= 1e-4
+            if 1 < cutoff < top.shape[1]:
+                boundary |= (top[:, cutoff - 1] - top[:, cutoff]).abs() <= 1e-4
             retry = boundary.cpu().tolist()
         except Exception as exc:
             logger.debug("VideoMAE batch failed; retrying per clip: %s", exc)
