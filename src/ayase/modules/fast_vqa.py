@@ -6,11 +6,13 @@ Returns fast_vqa_score (0-100, higher = better). Supports 5 model variants."""
 import logging
 from pathlib import Path
 import urllib.request
+from typing import List
 
 import cv2
 import numpy as np
 from ayase.models import Sample, ValidationIssue, ValidationSeverity, QualityMetrics
 from ayase.pipeline import PipelineModule
+from ayase.runtime import torch_inference_context
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +54,7 @@ class FastVQAModule(PipelineModule):
         "fast_vqa_score": "FAST-VQA / FasterVQA (Wu et al., ECCV 2022 / TPAMI) — https://github.com/VQAssessment/FAST-VQA-and-FasterVQA",
     }
     description = "Deep Learning Video Quality Assessment (FAST-VQA)"
-    default_config = {"model_type": "FasterVQA"}
+    default_config = {"model_type": "FasterVQA", "batch_fragments": False}
     models = [
         {
             "id": "FAST_VQA_3D_1_1.pth",
@@ -85,6 +87,7 @@ class FastVQAModule(PipelineModule):
         self.model_type = self.config.get(
             "model_type", "FasterVQA"
         )  # FasterVQA, FasterVQA-MS, FasterVQA-MT, FAST-VQA, FAST-VQA-M
+        self.batch_fragments = self.config.get("batch_fragments", False)
         self.device = "cpu"
         self._model = None
         self._opt = None
@@ -290,49 +293,92 @@ class FastVQAModule(PipelineModule):
 
         return {"samples": vsamples, "num_clips": clip_count}
 
-    def process(self, sample: Sample) -> Sample:
-        if not self._ml_available or not sample.is_video:
-            return sample
+    def _infer_scores(self, prepared):
+        inputs = {key: tensor.to(self.device) for key, tensor in prepared.items()}
+        with torch_inference_context(str(self.device), "fp32", amp_enabled=False):
+            return self._model(inputs)
 
-        try:
-            import torch
+    def _rescale_score(self, raw_score: float) -> float:
+        mean, std = self.fastvqa_mean_std[self.model_type]
+        return float((1.0 / (1.0 + np.exp(-(raw_score - mean) / std))) * 100.0)
 
-            prepared = self._prepare_input(sample.path)
-
-            batched_inputs = {}
-            for sample_type in prepared["samples"].keys():
-                batched_inputs[sample_type] = prepared["samples"][sample_type].to(self.device)
-
-            with torch.no_grad():
-                scores = self._model(batched_inputs)
-                # scores shape: (num_clips, 1) usually
-                # We average over clips
-                raw_score = scores.mean().item()
-
-            # Sigmoid rescale
-            mean, std = self.fastvqa_mean_std[self.model_type]
-            x = (raw_score - mean) / std
-            final_score = 1 / (1 + np.exp(-x))
-            final_score_100 = final_score * 100.0
-
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            sample.quality_metrics.fast_vqa_score = final_score_100
-
-            if final_score_100 < 40.0:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"Low FastVQA Score: {final_score_100:.1f}",
-                        details={"score": final_score_100, "raw": raw_score},
-                    )
+    def _apply_score(self, sample: Sample, raw_score: float) -> None:
+        normalized = self._rescale_score(raw_score)
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.fast_vqa_score = normalized
+        if normalized < 40.0:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Low FastVQA Score: {normalized:.1f}",
+                    details={"score": normalized, "raw": raw_score},
                 )
+            )
 
-        except Exception as e:
-            logger.warning(f"FastVQA failed for {sample.path}: {e}")
-            import traceback
+    def _score_clip(self, sample: Sample, prepared) -> None:
+        try:
+            self._apply_score(sample, self._infer_scores(prepared).mean().item())
+        except Exception as exc:
+            logger.warning("FastVQA failed for %s: %s", sample.path, exc)
 
-            traceback.print_exc()
-
+    def process(self, sample: Sample) -> Sample:
+        if self._ml_available and sample.is_video:
+            try:
+                prepared = self._prepare_input(sample.path)["samples"]
+            except Exception as exc:
+                logger.warning("FastVQA failed for %s: %s", sample.path, exc)
+            else:
+                self._score_clip(sample, prepared)
         return sample
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self.batch_fragments or not self._ml_available or len(samples) <= 1:
+            return super().process_batch(samples)
+
+        import torch
+
+        cohorts = {}
+        for sample in samples:
+            if not sample.is_video:
+                continue
+            try:
+                prepared = self._prepare_input(sample.path)["samples"]
+                tensors = list(prepared.values())
+                count = tensors[0].shape[0]
+                if not all(tensor.shape[0] == count for tensor in tensors):
+                    self._score_clip(sample, prepared)
+                    continue
+                signature = tuple(
+                    (key, tensor.shape[1:], tensor.dtype) for key, tensor in prepared.items()
+                )
+                cohorts.setdefault(signature, []).append((sample, prepared, count))
+            except Exception as exc:
+                logger.warning("FastVQA failed for %s: %s", sample.path, exc)
+
+        for group in cohorts.values():
+            if len(group) == 1:
+                sample, prepared, _ = group[0]
+                self._score_clip(sample, prepared)
+                continue
+            try:
+                packed = {
+                    key: torch.cat([prepared[key] for _, prepared, _ in group], dim=0)
+                    for key in group[0][1]
+                }
+                counts = [count for _, _, count in group]
+                scores = self._infer_scores(packed)
+                if scores.ndim == 0 or scores.shape[0] != sum(counts):
+                    raise ValueError("FastVQA did not return one score tensor per fragment")
+                means = torch.stack([part.mean() for part in scores.split(counts)]).cpu().tolist()
+            except Exception as exc:
+                logger.debug("FastVQA batch failed; retrying the same fragments: %s", exc)
+                for sample, prepared, _ in group:
+                    self._score_clip(sample, prepared)
+                continue
+            for (sample, prepared, _), raw_score in zip(group, means):
+                if abs(self._rescale_score(raw_score) - 40.0) <= 1e-3:
+                    self._score_clip(sample, prepared)
+                else:
+                    self._apply_score(sample, raw_score)
+        return samples

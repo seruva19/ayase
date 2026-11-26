@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 19:36 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 19:51 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -349,7 +349,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Packages**: PyYAML, decord, torch, traceback
 - **Source**: <a href="https://github.com/VQAssessment/FAST-VQA-and-FasterVQA" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_fast_vqa.py`](tests/modules/per_module/test_fast_vqa.py)
-- **Config**: `model_type=FasterVQA`
+- **Config**: `model_type=FasterVQA`, `batch_fragments=False`
 
 ### `hpsv2_const_quality` [↑](#categories)
 > VADER reward alignment · ↑ higher=better

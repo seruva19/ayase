@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Add opt-in batching of compatible FastVQA fragments across videos, preserving per-video normalization and warning thresholds.
 - Keep FVD aggregation compatible with SciPy versions that removed the `sqrtm` `disp` argument.
 - Rebuild distribution metric features from the full input set when resuming a checkpoint.
 - Retrieve VideoMAE action label IDs in one device transfer for weighted caption matching.
