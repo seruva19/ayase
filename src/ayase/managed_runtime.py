@@ -103,7 +103,8 @@ def _resolve_managed_python(version: str, cache_root: Path) -> Path:
     # Requested versions are downloaded on demand and --managed-python excludes
     # unrelated system installs: https://docs.astral.sh/uv/concepts/python-versions/
     logger.info("Resolving Ayase-managed Python %s under %s", version, cache_root)
-    uv = [str(Path(sys.executable).resolve()), "-m", "uv"]
+    # Resolving a virtualenv's executable symlink would run the system Python.
+    uv = [sys.executable, "-m", "uv"]
     environment = _uv_environment(cache_root)
     installed = _run(
         [

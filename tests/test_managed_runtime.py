@@ -4,10 +4,27 @@ import json
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from ayase import managed_runtime
+
+
+def test_uv_runs_in_the_installing_environment(tmp_path, monkeypatch):
+    # The spelling of the launcher retains the virtualenv identity.
+    executable = str(tmp_path / "venv" / "bin" / ".." / "bin" / "python")
+    managed_python = tmp_path / "managed" / "bin" / "python"
+    monkeypatch.setattr(managed_runtime, "sys", SimpleNamespace(executable=executable))
+    commands = []
+
+    def run(command, *, env):
+        commands.append(command)
+        return SimpleNamespace(returncode=0, stdout=str(managed_python))
+
+    monkeypatch.setattr(managed_runtime, "_run", run)
+    assert managed_runtime._resolve_managed_python("3.11", tmp_path) == managed_python.resolve()
+    assert [command[:3] for command in commands] == [[executable, "-m", "uv"]] * 2
 
 
 def test_empty_environment_is_created_and_reused(tmp_path: Path) -> None:
