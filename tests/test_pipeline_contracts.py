@@ -955,6 +955,68 @@ def test_failed_seek_replays_grid_without_mixing_decoder_positions(tmp_path, mon
     np.testing.assert_array_equal(frames, expected)
 
 
+@pytest.mark.parametrize("cache_enabled", [True, False])
+def test_decord_batch_respects_grid_and_channel_order(tmp_path, monkeypatch, cache_enabled):
+    import sys
+    from types import ModuleType
+
+    calls = []
+
+    class Reader:
+        def __init__(self, path, *, fault_tol):
+            assert 0 < fault_tol < 1 / 9
+
+        def __len__(self):
+            return 9
+
+        def get_batch(self, indices):
+            calls.append(indices)
+            return np.asarray([[[[index, 12, 34]]] for index in indices], dtype=np.uint8)
+
+    decord = ModuleType("decord")
+    decord.VideoReader = Reader
+    monkeypatch.setitem(sys.modules, "decord", decord)
+
+    class DecoderProbe(PipelineModule):
+        def process(self, sample):
+            return sample
+
+    pipeline = Pipeline([DecoderProbe({
+        "video_decoder": "decord", "frame_cache_enabled": cache_enabled,
+    })])
+    media = _media(tmp_path)
+    assert [frame[0, 0].tolist() for frame in pipeline.sample_frames(media, 3)] == [
+        [0, 12, 34], [4, 12, 34], [8, 12, 34],
+    ]
+    representative = pipeline.load_representative_frame(media, "bgr")
+    assert representative[0, 0].tolist() == [34, 12, 4]
+    assert not representative.flags.writeable
+    assert calls == ([[0, 4, 8]] if cache_enabled else [[0, 4, 8], [4]])
+
+
+def test_decoder_choice_is_part_of_numeric_state(tmp_path):
+    class DecoderProbe(PipelineModule):
+        def process(self, sample):
+            return sample
+
+    def pipeline(decoder):
+        return Pipeline([DecoderProbe({"video_decoder": decoder})])
+
+    opencv = pipeline("opencv")
+    auto = pipeline("auto")
+    decord = pipeline("decord")
+    assert auto._pipeline_fingerprint() == opencv._pipeline_fingerprint()
+    assert decord._pipeline_fingerprint()["video_decoder"] == "decord"
+    path = _media(tmp_path)
+    opencv.process_sample(Sample(path=path, is_video=True))
+    checkpoint = tmp_path / "decoder-state.json"
+    opencv.save_state(checkpoint)
+    auto.load_state(checkpoint)
+    decord.load_state(checkpoint)
+    assert set(auto.results) == {str(path)}
+    assert not decord.results
+
+
 @pytest.mark.parametrize("unreliable_count", [False, True])
 def test_frame_cache_video_sampling_matches_standalone_with_decoder_edge_cases(
     tmp_path: Path,
@@ -1045,6 +1107,16 @@ def test_frame_cache_unreliable_count_allows_redecode(
     assert calls == [list(range(9)), list(range(9))]
     assert [int(frame[0, 0, 0]) for frame in first] == [0, 4]
     assert [int(frame[0, 0, 0]) for frame in second] == [0, 4]
+
+
+def test_known_count_only_does_not_read_sequential_fallback(tmp_path, monkeypatch):
+    from ayase.image import sample_frames
+
+    calls = _install_fake_decoder(monkeypatch, total_frames=0)
+    media = _media(tmp_path)
+    assert sample_frames(media, 4, known_count_only=True) == []
+    assert Pipeline([]).sample_frames(media, 4, known_count_only=True) == []
+    assert calls == [[], []]
 
 
 def test_sample_frames_detailed_reports_frame_count(

@@ -128,7 +128,9 @@ def _load_representative_frame_uncached(path: Path, color: str = "rgb") -> Optio
         cap.release()
 
 
-def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[np.ndarray]:
+def sample_frames(
+    path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False
+) -> List[np.ndarray]:
     """Load uniformly spaced frames from a video, or one frame for an image.
 
     ``max_frames`` caps the number of frames; ``color`` is ``"rgb"`` (default),
@@ -139,12 +141,18 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
     the pixel buffers may be shared. Do NOT mutate
     returned frames in place — copy first (``frame.copy()``) if you need to
     write. Returns an empty list when no frames can be decoded.
+    Set ``known_count_only`` when the metric requires indexed sampling and
+    must skip streams without a positive frame count.
     """
     try:
         from .runtime import current_pipeline
 
         pipeline = current_pipeline()
         if pipeline is not None and hasattr(pipeline, "sample_frames"):
+            if known_count_only:
+                return pipeline.sample_frames(
+                    path, max_frames=max_frames, color=color, known_count_only=True
+                )
             return pipeline.sample_frames(path, max_frames=max_frames, color=color)
     except Exception:
         pass
@@ -153,6 +161,10 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
     # production under a live pipeline).
     from .runtime import clone_frames
 
+    if known_count_only:
+        return clone_frames(
+            _sample_frames_uncached_detailed(path, max_frames, color, known_count_only=True)[0]
+        )
     return clone_frames(_sample_frames_uncached(path, max_frames=max_frames, color=color))
 
 
@@ -237,6 +249,9 @@ class _FrameCache:
         path_key: tuple[Any, ...],
         max_frames: Optional[int],
         color: str,
+        *,
+        decoder: str = "opencv",
+        known_count_only: bool = False,
     ) -> List[np.ndarray]:
         """Read one exact grid, or the middle frame when no frame limit is supplied."""
         from .runtime import clone_frames
@@ -244,6 +259,9 @@ class _FrameCache:
         if not is_video_path(path):
             frame = self._read((*path_key, "image", 0), color, lambda: load_image_array(path, "bgr"))
             return [] if frame is None else [frame]
+
+        if decoder == "decord":
+            return self._read_decord(path, path_key, max_frames, color)
 
         key = (*path_key, 0, "opencv")
         total = self._totals.get(key)
@@ -277,6 +295,8 @@ class _FrameCache:
                     if not ok or frame is None:
                         return []
                     return clone_frames([_convert_frame_color(frame, color)])
+                elif known_count_only:
+                    return []
                 else:
                     return clone_frames(_sample_frames_sequential(reader, max_frames, color))
             result = []
@@ -291,12 +311,88 @@ class _FrameCache:
                 cap.release()
                 cap = None
             if max_frames is not None:
+                if known_count_only:
+                    return clone_frames(
+                        _sample_frames_uncached_detailed(
+                            path, max_frames, color, known_count_only=True
+                        )[0]
+                    )
                 return clone_frames(_sample_frames_uncached(path, max_frames, color))
             frame = _load_representative_frame_uncached(path, color)
             return [] if frame is None else clone_frames([frame])
         finally:
             if cap is not None:
                 cap.release()
+
+    def _read_decord(
+        self, path: Path, path_key: tuple[Any, ...], max_frames: Optional[int], color: str
+    ) -> List[np.ndarray]:
+        from .runtime import readonly_view
+
+        key = (*path_key, 0, "decord")
+        reader = None
+        if color not in ("rgb", "gray"):
+            color = "bgr"
+
+        def open_reader():
+            nonlocal reader
+            if reader is None:
+                from decord import VideoReader
+
+                # A positive fractional threshold below one recovered frame
+                # rejects substituted frames in Decord's fault-tolerance path.
+                reader = VideoReader(str(path), fault_tol=1e-9)
+            return reader
+
+        try:
+            total = self._totals.get(key)
+            if total is None:
+                total = len(open_reader())
+                self._totals[key] = total
+            if total <= 0:
+                return []
+            indices = list(_video_indices(total, max_frames))
+            result = []
+            for start in range(0, len(indices), 32):
+                chunk = indices[start : start + 32]
+                ready = {}
+                native = {}
+                missing = []
+                for index in chunk:
+                    exact = self._get((*key, index, color))
+                    if exact is not None:
+                        ready[index] = readonly_view(exact)
+                    else:
+                        base = self._get((*key, index, "bgr"))
+                        if base is None:
+                            missing.append(index)
+                        else:
+                            native[index] = base
+                if missing:
+                    batch = open_reader().get_batch(missing)
+                    pixels = batch.asnumpy() if hasattr(batch, "asnumpy") else np.asarray(batch)
+                    if pixels.ndim != 4 or pixels.shape[0] != len(missing) or pixels.shape[-1] != 3:
+                        raise ValueError("unexpected Decord RGB batch shape")
+                    for index, frame in zip(missing, pixels):
+                        # Own each pixel buffer so the LRU never retains a whole batch via a view.
+                        native[index] = self._store(
+                            (*key, index, "bgr"), cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                        )
+                for index in chunk:
+                    if index in ready:
+                        result.append(ready[index])
+                    else:
+                        base = native[index]
+                        frame = (
+                            base
+                            if color == "bgr"
+                            else self._store((*key, index, color), _convert_frame_color(base, color))
+                        )
+                        result.append(readonly_view(frame))
+            return result
+        except Exception as exc:
+            logger.warning("Decord could not decode %s: %s", path, exc)
+            return []
 
 
 # When CAP_PROP_FRAME_COUNT is unreliable, scan at most this many frames per
@@ -332,7 +428,7 @@ def _sample_frames_sequential(
 
 
 def _sample_frames_uncached_detailed(
-    path: Path, max_frames: int = 8, color: str = "rgb"
+    path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False
 ) -> tuple[List[np.ndarray], Optional[int]]:
     """Uncached frame sampling that also reports the decoder's frame count.
 
@@ -363,6 +459,8 @@ def _sample_frames_uncached_detailed(
             return frames, None
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         if total <= 0:
+            if known_count_only:
+                return frames, None
             # Frame count unreliable: fall back to a bounded sequential read so
             # frame metrics still get samples instead of silently skipping.
             # Report None so callers never cache an authoritative "exhausted".

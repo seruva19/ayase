@@ -36,6 +36,7 @@ and backend requirements. Scores from different metrics use different scales.
 ```toml
 [general]
 parallel_jobs = 8  # concurrency hint passed to capable modules/backends
+video_decoder = "opencv"
 assets_repo = "AkaneTendo25/ayase-assets"  # owner/repo or its huggingface.co URL
 
 [pipeline]
@@ -45,6 +46,12 @@ modules = ["metadata", "basic_quality", "motion"]
 default_format = "json"
 artifacts_dir = "reports"
 ```
+
+`video_decoder = "decord"` opts into Decord for video metrics that use
+Ayase's frame readers. OpenCV is the default and the current behavior of
+`"auto"`. A Decord decode failure leaves the affected frame request empty.
+Resume state records the effective decoder and rejects reuse across different
+decoders.
 
 `assets_repo` selects the Hugging Face repository used for Ayase-managed
 checkpoints and source archives. It can also be set with

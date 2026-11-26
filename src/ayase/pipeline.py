@@ -1053,6 +1053,7 @@ class Pipeline:
     _RUNTIME_CONFIG_KEYS = {
         "parallel_jobs",
         "frame_cache_enabled",
+        "video_decoder",
         "timing_enabled",
         "cache_enabled",
     }
@@ -1227,6 +1228,14 @@ class Pipeline:
             if self.modules
             else True
         ) and self._cache_enabled
+        decoders = {
+            module.config["video_decoder"] for module in self.modules
+            if "video_decoder" in module.config
+        }
+        if not decoders <= {"opencv", "decord", "auto"} or len(decoders) > 1:
+            raise ValueError("A pipeline must use one video_decoder: opencv, decord, or auto")
+        # Until the cross-platform parity gate passes, auto keeps the default decoder.
+        self._video_decoder = "decord" if "decord" in decoders else "opencv"
         self._timing_enabled = (
             any(bool(module.config.get("timing_enabled", True)) for module in self.modules)
             if self.modules
@@ -1263,27 +1272,52 @@ class Pipeline:
             return base + (content_digest(path),)
         return base
 
-    def sample_frames(self, path: Path, max_frames: int = 8, color: str = "rgb") -> List[Any]:
+    def sample_frames(
+        self, path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False
+    ) -> List[Any]:
         """Build the exact sampling grid and reuse frames shared with earlier grids."""
-        from .image import _sample_frames_uncached
+        from .image import (
+            _FrameCache, _sample_frames_uncached, _sample_frames_uncached_detailed, is_video_path,
+        )
 
         max_frames = max(0, int(max_frames))
         color = str(color)
+        path = Path(path)
+        if self._video_decoder == "decord" and is_video_path(path):
+            cache = self._frame_cache if self._frame_cache_enabled else _FrameCache(0)
+            return cast(
+                List[Any], cache.read(
+                    path, self._path_cache_state(path), max_frames, color, decoder="decord"
+                )
+            )
 
         if not self._frame_cache_enabled or max_frames <= 0:
-            frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
+            if known_count_only:
+                frames, _ = _sample_frames_uncached_detailed(
+                    path, max_frames, color, known_count_only=True
+                )
+            else:
+                frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
             return cast(List[Any], clone_frames(frames))
 
         path = Path(path)
         return cast(
-            List[Any], self._frame_cache.read(path, self._path_cache_state(path), max_frames, color)
+            List[Any], self._frame_cache.read(
+                path, self._path_cache_state(path), max_frames, color,
+                known_count_only=known_count_only,
+            )
         )
 
     def load_representative_frame(self, path: Path, color: str = "rgb") -> Optional[Any]:
         """Load the middle frame, including a cache hit from any earlier sampling grid."""
-        from .image import _load_representative_frame_uncached
+        from .image import _FrameCache, _load_representative_frame_uncached, is_video_path
 
         color = str(color)
+        path = Path(path)
+        if self._video_decoder == "decord" and is_video_path(path):
+            cache = self._frame_cache if self._frame_cache_enabled else _FrameCache(0)
+            frames = cache.read(path, self._path_cache_state(path), None, color, decoder="decord")
+            return frames[0] if frames else None
         if not self._frame_cache_enabled:
             frame = _load_representative_frame_uncached(path, color=color)
             return readonly_view(frame) if frame is not None else None
@@ -1504,6 +1538,8 @@ class Pipeline:
         from importlib import metadata as importlib_metadata
 
         packages = {"numpy", "opencv-python", "pydantic", "torch", "transformers"}
+        if self._video_decoder == "decord":
+            packages.add("decord")
         for module in self.modules:
             packages.update(str(package) for package in module.required_packages)
 
@@ -1528,6 +1564,7 @@ class Pipeline:
     def _pipeline_fingerprint(self) -> Dict[str, Any]:
         """Describe the active module stack for cache/state compatibility checks."""
         return {
+            **({"video_decoder": self._video_decoder} if self._video_decoder != "opencv" else {}),
             "runtime": self._runtime_environment_fingerprint(),
             "modules": [
                 {

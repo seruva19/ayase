@@ -4,7 +4,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, cast
+from typing import Any, Dict, List, Literal, Mapping, Optional, cast
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, Field, field_validator
@@ -189,6 +189,7 @@ class GeneralConfig(BaseModel):
     amp_enabled: bool = True
     attention_backend: str = "auto"
     frame_cache_enabled: bool = True
+    video_decoder: Literal["opencv", "decord", "auto"] = "opencv"
     timing_enabled: bool = True
     sample_batch_size: int = 1
     max_clip_images_per_forward: int = 64
