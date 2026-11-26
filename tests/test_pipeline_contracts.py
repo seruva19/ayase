@@ -1547,6 +1547,8 @@ def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count
     assert resumed.stats.fid is None and resumed.stats.fvd is None
     resumed.process_samples(samples(), batch_size=2)
     assert [len(module._feature_cache) for module in resumed.modules[:2]] == [4, 4]
+    if mode == "staged":
+        assert all(not module._mounted for module in resumed.modules[:2])
     resumed.stop()
 
     assert resumed.stats.fid == expected.stats.fid == pytest.approx(28.5635797968)

@@ -1446,7 +1446,7 @@ class Pipeline:
                 "effective_execution_mode": (
                     "staged" if self._can_run_staged() else "sample_first"
                 ),
-                "stage_protocol": 4,
+                "stage_protocol": 5,
                 "video_decoder": self._video_decoder,
             } if self.execution_mode == "staged" else {}),
             "runtime": self._runtime_environment_fingerprint(),
@@ -1755,11 +1755,13 @@ class Pipeline:
         self._staged_active = self._can_run_staged()
         if not self._staged_active and self.execution_mode == "staged":
             logger.info("Using sample-first execution for a stack with hooks or non-stage-safe modules")
-        self._mount_modules(self._run_lifecycle_modules())
+        if not self._staged_active:
+            self._mount_modules(self.modules)
 
+        accumulators = self._run_lifecycle_modules() if self._staged_active else self._batch_modules
         if self._restored_checkpoint and any(
             module.name not in self.module_failures and not self._module_is_excluded(module.name)
-            for module in self._batch_modules
+            for module in accumulators
         ):
             # Checkpoints contain sample results, not the accumulators of
             # distribution metrics. Replay the input cohort to rebuild them.
@@ -2871,11 +2873,9 @@ class Pipeline:
                 stage = list(members)
                 releasable = self._stage_can_release(stage[0])
                 resources = self._runtime_resource_cache
-                if releasable:
-                    self._runtime_resource_cache = {}
+                self._runtime_resource_cache = {}
                 try:
-                    if releasable:
-                        self._mount_modules(stage)
+                    self._mount_modules(stage)
                     for module in stage:
                         failure = self.module_failures.get(module.name)
                         if failure is not None:
@@ -2897,11 +2897,15 @@ class Pipeline:
                             self._frame_cache.clear()
                             self._runtime_value_cache.clear()
                 finally:
-                    if releasable:
-                        try:
+                    try:
+                        if releasable:
                             self._dispose_modules(stage, [outputs[index] for index in indices])
-                        finally:
-                            self._runtime_resource_cache = resources
+                        else:
+                            for module in stage:
+                                module._release_torch_resources()
+                                module._mounted = False
+                    finally:
+                        self._runtime_resource_cache = resources
                     self._frame_cache.clear()
                     self._runtime_value_cache.clear()
         except BaseException:
