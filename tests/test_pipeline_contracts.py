@@ -35,6 +35,24 @@ from ayase.models import (
 from ayase.pipeline import ModuleRegistry, Pipeline, PipelineModule
 
 
+def test_audited_metric_writers_use_selective_snapshots(tmp_path):
+    from importlib import import_module
+
+    from ayase.pipeline import _AUDITED_METRIC_WRITES, _SelectiveMetricState
+
+    sample = Sample(path=tmp_path / "input.mp4", is_video=True, quality_metrics=QualityMetrics())
+    pipeline = Pipeline([])
+    for (module_path, class_name), fields in _AUDITED_METRIC_WRITES.items():
+        module_class = getattr(import_module(module_path), class_name)
+        # Snapshot selection depends on the class and arguments, not model setup.
+        module = module_class()
+        assert fields <= QualityMetrics.model_fields.keys(), class_name
+        assert module_class.field_provenance().keys() <= fields, class_name
+        snapshot = pipeline._module_metric_state(sample, module)
+        assert isinstance(snapshot, _SelectiveMetricState), class_name
+        assert snapshot.keys() == fields | {"metric_provenance"}, class_name
+
+
 # ---------------------------------------------------------------------------
 # Test module helpers (unique "corefix_" names; auto-registered but not
 # packaged, so docs-integrity tests ignore them).

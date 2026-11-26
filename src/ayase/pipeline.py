@@ -70,8 +70,131 @@ logger = logging.getLogger(__name__)
 # Exact built-in classes whose synchronous processing only writes these
 # canonical metric fields. A provenance declaration alone is not a write contract.
 _AUDITED_METRIC_WRITES = {
+    ("ayase.modules.action_recognition", "ActionRecognitionModule"): frozenset(
+        {"action_confidence", "action_score"}
+    ),
+    ("ayase.modules.active_speaker", "ActiveSpeakerModule"): frozenset(
+        {"active_speaker_best_conf", "active_speaker_margin", "active_speaker_silent_faces"}
+    ),
+    ("ayase.modules.aed_apd", "AedApdModule"): frozenset({"aed", "apd"}),
+    ("ayase.modules.aesthetic", "AestheticModule"): frozenset(
+        {"aesthetic_v25_dup", "aesthetic_v25_score"}
+    ),
+    ("ayase.modules.aigvqa", "AIGVQAModule"): frozenset({"aigvqa_score"}),
+    ("ayase.modules.aucon_prmse", "AuconPrmseModule"): frozenset({"aucon", "prmse"}),
+    ("ayase.modules.audio_distill_mos", "AudioDistillMOSModule"): frozenset({"distill_mos_score"}),
+    ("ayase.modules.audio_log_f0_dtw", "AudioLogF0DTWModule"): frozenset(
+        {"audio_f0_voiced_mismatch", "audio_log_f0_rmse_cents"}
+    ),
+    ("ayase.modules.audio_squim_objective", "AudioSQUIMObjectiveModule"): frozenset(
+        {"squim_pesq_score", "squim_si_sdr_score", "squim_stoi_score"}
+    ),
+    ("ayase.modules.audio_utmos", "AudioUTMOSModule"): frozenset({"utmos_score"}),
+    ("ayase.modules.audio_utmos_v2", "AudioUTMOSv2Module"): frozenset({"utmos_v2_score"}),
+    ("ayase.modules.audiobox_aesthetics", "AudioboxAestheticsModule"): frozenset(
+        {"audiobox_cu", "audiobox_enjoyment", "audiobox_pc", "audiobox_production"}
+    ),
+    ("ayase.modules.av_align", "AVAlignModule"): frozenset({"av_align_score"}),
+    ("ayase.modules.av_desync", "AVDesyncModule"): frozenset({"desync_score"}),
+    ("ayase.modules.basic", "BasicQualityModule"): frozenset(
+        {"blur_score", "brightness", "contrast", "saturation", "vqa_t_score"}
+    ),
+    ("ayase.modules.brisque", "BRISQUEModule"): frozenset({"brisque"}),
+    ("ayase.modules.cambi", "CAMBIModule"): frozenset({"cambi"}),
+    ("ayase.modules.camera_jitter", "CameraJitterModule"): frozenset({"camera_jitter_score"}),
+    ("ayase.modules.cdc", "CDCModule"): frozenset({"cdc_score"}),
+    ("ayase.modules.chipqa", "ChipQAModule"): frozenset({"chipqa_score"}),
+    ("ayase.modules.clip_temporal", "CLIPTemporalModule"): frozenset(
+        {"clip_temp", "face_consistency"}
+    ),
+    ("ayase.modules.color_consistency", "ColorConsistencyModule"): frozenset({"color_score"}),
+    ("ayase.modules.compression_artifacts", "CompressionArtifactsModule"): frozenset(
+        {"compression_artifacts"}
+    ),
+    ("ayase.modules.content_variation", "ContentVariationModule"): frozenset({"content_variation"}),
+    ("ayase.modules.contrique", "CONTRIQUEModule"): frozenset({"contrique_score"}),
+    ("ayase.modules.cpbd", "CPBDModule"): frozenset({"cpbd_score"}),
+    ("ayase.modules.deepfake_detection", "DeepfakeDetectionModule"): frozenset(
+        {"deepfake_probability"}
+    ),
+    ("ayase.modules.depth_anything", "DepthAnythingModule"): frozenset(
+        {"depth_anything_consistency", "depth_anything_score"}
+    ),
+    ("ayase.modules.depth_map_quality", "DepthMapQualityModule"): frozenset({"depth_quality"}),
+    ("ayase.modules.dnsmos", "DNSMOSModule"): frozenset(
+        {"dnsmos_bak", "dnsmos_overall", "dnsmos_p808", "dnsmos_sig"}
+    ),
+    ("ayase.modules.dover", "DOVERModule"): frozenset(
+        {"dover_aesthetic", "dover_score", "dover_technical"}
+    ),
+    ("ayase.modules.exposure", "ExposureModule"): frozenset(
+        {"overexposed_pixel_ratio", "underexposed_pixel_ratio"}
+    ),
+    ("ayase.modules.eyebrow_dynamics", "EyebrowDynamicsModule"): frozenset(
+        {"eyebrow_dynamics_score"}
+    ),
+    ("ayase.modules.fast_vqa", "FastVQAModule"): frozenset({"fast_vqa_score"}),
+    ("ayase.modules.flicker_detection", "FlickerDetectionModule"): frozenset({"flicker_score"}),
+    ("ayase.modules.flow_coherence", "FlowCoherenceModule"): frozenset({"flow_coherence"}),
+    ("ayase.modules.harmful_content", "HarmfulContentModule"): frozenset({"harmful_content_score"}),
+    ("ayase.modules.hdr_chipqa", "HDRChipQAModule"): frozenset({"hdr_chipqa_score"}),
+    ("ayase.modules.hdr_metadata", "HDRMetadataModule"): frozenset({"max_cll", "max_fall"}),
+    ("ayase.modules.hdr_sdr_vqa", "FourKVQAModule"): frozenset({"hdr_technical_score"}),
+    ("ayase.modules.head_motion_dynamics", "HeadMotionDynamicsModule"): frozenset(
+        {"head_motion_dynamics_score"}
+    ),
+    ("ayase.modules.kandinsky_motion", "KandinskyMotionModule"): frozenset(
+        {
+            "kandinsky_camera_motion_score",
+            "kandinsky_dynamics_score",
+            "kandinsky_object_motion_score",
+        }
+    ),
+    ("ayase.modules.lip_dynamics", "LipDynamicsModule"): frozenset({"lip_dynamics_score"}),
+    ("ayase.modules.long_form_transition_stability", "LongFormTransitionStabilityModule"): frozenset(
+        {"long_form_transition_stability"}
+    ),
+    ("ayase.modules.morpheus", "MorpheusModule"): frozenset(
+        {"morpheus_dynamical_score", "morpheus_physical_score"}
+    ),
     ("ayase.modules.motion", "MotionModule"): frozenset({"motion_score"}),
+    ("ayase.modules.motion_smoothness", "MotionSmoothnessModule"): frozenset({"motion_smoothness"}),
+    ("ayase.modules.mouth_quality", "MouthQualityModule"): frozenset({"mouth_quality_score"}),
+    ("ayase.modules.muq_eval", "MuQEvalModule"): frozenset({"muq_eval_mi_score"}),
+    ("ayase.modules.musiq", "MUSIQModule"): frozenset({"musiq_score"}),
+    ("ayase.modules.nearid", "NearIDModule"): frozenset({"nearid_identity_similarity"}),
+    ("ayase.modules.nemo_curator", "NemoCuratorModule"): frozenset(
+        {"nemo_quality_label", "nemo_quality_score"}
+    ),
+    ("ayase.modules.nima", "NIMAModule"): frozenset({"nima_score"}),
+    ("ayase.modules.nsfw", "NSFWModule"): frozenset({"nsfw_score"}),
+    ("ayase.modules.pam", "PAMModule"): frozenset({"pam_score"}),
     ("ayase.modules.psnr99", "PSNR99Module"): frozenset({"psnr99"}),
+    ("ayase.modules.scoreq", "SCOREQModule"): frozenset({"scoreq_score"}),
+    ("ayase.modules.semantic_alignment", "SemanticAlignmentModule"): frozenset({"clip_score"}),
+    ("ayase.modules.silent_lip_stability", "SilentLipStabilityModule"): frozenset(
+        {"silent_lip_stability"}
+    ),
+    ("ayase.modules.song_eval", "SongEvalModule"): frozenset(
+        {
+            "song_eval_clarity",
+            "song_eval_coherence",
+            "song_eval_memorability",
+            "song_eval_musicality",
+            "song_eval_naturalness",
+        }
+    ),
+    ("ayase.modules.syncreward", "SyncRewardModule"): frozenset({"syncreward_score"}),
+    ("ayase.modules.text", "TextDetectionModule"): frozenset({"ocr_area_ratio"}),
+    ("ayase.modules.topiq", "TOPIQModule"): frozenset({"topiq_score"}),
+    ("ayase.modules.uvq", "UVQModule"): frozenset({"uvq1p5_score"}),
+    ("ayase.modules.video_edit_motion_fidelity", "VideoEditMotionFidelityModule"): frozenset(
+        {"video_edit_motion_fidelity"}
+    ),
+    ("ayase.modules.video_reward", "VideoRewardModule"): frozenset({"video_reward_score"}),
+    ("ayase.modules.videophy2", "VideoPhy2AutoEvalModule"): frozenset(
+        {"videophy2_joint_pass", "videophy2_pc_rating", "videophy2_sa_rating"}
+    ),
 }
 
 
