@@ -1545,7 +1545,8 @@ def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count
     assert len(resumed.results) == count
     resumed.start()
     assert resumed.stats.fid is None and resumed.stats.fvd is None
-    resumed.process_samples(samples(), batch_size=2)
+    requested = samples()
+    resumed.process_samples([*requested, requested[0]], batch_size=2)
     assert [len(module._feature_cache) for module in resumed.modules[:2]] == [4, 4]
     if mode == "staged":
         assert all(not module._mounted for module in resumed.modules[:2])
@@ -1722,3 +1723,27 @@ def test_staged_groups_only_adjacent_sample_local_modules(tmp_path):
         (Boundary.name, "a.mp4"), (Boundary.name, "b.mp4"),
         (Last.name, "a.mp4"), (Last.name, "b.mp4"),
     ]
+
+def test_staged_reuses_completed_repeated_paths_between_batches(tmp_path):
+    calls = []
+
+    class Probe(PipelineModule):
+        name = "contract_staged_repeated_paths"
+        stage_safe = True
+
+        def process(self, sample):
+            calls.append(sample.path.name)
+            sample.quality_metrics = QualityMetrics(blur_score=float(len(calls)))
+            return sample
+
+    pipeline = Pipeline([Probe()], execution_mode="staged")
+    a, b, c = (_media(tmp_path, f"{name}.mp4") for name in "abc")
+    pipeline.start()
+    outputs = pipeline.process_samples(
+        [Sample(path=path, is_video=True) for path in (a, b, a, c)], batch_size=2
+    )
+    pipeline.stop()
+
+    assert calls == ["a.mp4", "b.mp4", "c.mp4"]
+    assert outputs[2] is outputs[0]
+    assert list(pipeline.results) == [str(path) for path in (a, b, c)]

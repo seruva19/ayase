@@ -1446,7 +1446,7 @@ class Pipeline:
                 "effective_execution_mode": (
                     "staged" if self._can_run_staged() else "sample_first"
                 ),
-                "stage_protocol": 5,
+                "stage_protocol": 6,
                 "video_decoder": self._video_decoder,
             } if self.execution_mode == "staged" else {}),
             "runtime": self._runtime_environment_fingerprint(),
@@ -2828,6 +2828,24 @@ class Pipeline:
 
     def _iter_staged_batches(self, samples: Iterable[Sample], size: int) -> Iterable[List[Sample]]:
         inputs = list(samples)
+        if not self._cache_enabled:
+            yield from self._iter_staged_cohort(inputs, size)
+            return
+
+        start = 0
+        paths = set()
+        for offset in range(0, len(inputs), size):
+            chunk_paths = {str(sample.path) for sample in inputs[offset : offset + size]}
+            if paths.intersection(chunk_paths):
+                # A repeated path can reuse a prior complete result only
+                # after the preceding chunk has finished all stages.
+                yield from self._iter_staged_cohort(inputs[start:offset], size)
+                start = offset
+                paths.clear()
+            paths.update(chunk_paths)
+        yield from self._iter_staged_cohort(inputs[start:], size)
+
+    def _iter_staged_cohort(self, inputs: List[Sample], size: int) -> Iterable[List[Sample]]:
         outputs = list(inputs)
         pending = []
         for index, sample in enumerate(inputs):
