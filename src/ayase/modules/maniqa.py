@@ -28,13 +28,14 @@ class MANIQAModule(PipelineModule):
         "maniqa_score": "MANIQA (Yang et al., CVPRW 2022) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
     }
     description = "MANIQA multi-dimension attention no-reference IQA"
-    default_config = {"subsample": 8}
+    default_config = {"subsample": 8, "batch_frames": False}
     metric_groups = {
         "maniqa_score": "nr_quality",
     }
 
     def __init__(self, config: Optional[dict] = None) -> None:
         super().__init__(config)
+        self.batch_frames = self.config.get("batch_frames", False)
         self._ml_available = False
         self._model = None
         self._device = "cpu"
@@ -63,26 +64,42 @@ class MANIQAModule(PipelineModule):
         if not self._ml_available:
             return sample
         try:
-            import torch
-
             frames = self._load_frames(sample)
             if not frames:
                 return sample
 
-            scores = []
-            for frame in frames:
-                arr = np.ascontiguousarray(frame, dtype=np.float32)
-                tensor = torch.from_numpy(arr).permute(2, 0, 1).unsqueeze(0) / 255.0
-                tensor = tensor.to(self._device)
-                with torch.no_grad():
-                    score = self._model(tensor).item()
-                scores.append(score)
-
-            if scores:
-                sample.quality_metrics.maniqa_score = float(np.mean(scores))
+            sample.quality_metrics.maniqa_score = self._score_frames(frames)
         except Exception as e:
             logger.warning("MANIQA processing failed: %s", e)
         return sample
+
+    def _score_frames(self, frames: list) -> float:
+        import torch
+        from ayase.runtime import torch_inference_context
+
+        def to_tensor(frame):
+            array = np.ascontiguousarray(frame, dtype=np.float32)
+            return torch.from_numpy(array).permute(2, 0, 1).div(255.0)
+
+        with torch_inference_context(str(self._device), "fp32", False):
+            if self.batch_frames and len(frames) > 1:
+                try:
+                    scores = self._model(
+                        torch.stack([to_tensor(frame) for frame in frames]).to(self._device)
+                    )
+                    if scores.ndim == 0 or scores.shape[0] != len(frames):
+                        raise ValueError("MANIQA backend did not return a score per frame")
+                    if scores.numel() != len(frames):
+                        raise ValueError("MANIQA backend returned multiple scores per frame")
+                    return float(np.mean(scores.reshape(-1).cpu().tolist()))
+                except Exception as exc:
+                    logger.debug("MANIQA frame batch failed; retrying one frame at a time: %s", exc)
+
+            scores = [
+                self._model(to_tensor(frame).unsqueeze(0).to(self._device)).reshape(())
+                for frame in frames
+            ]
+            return float(np.mean(torch.stack(scores).cpu().tolist()))
 
     def _load_frames(self, sample: Sample) -> list:
         subsample = self.config.get("subsample", 8)

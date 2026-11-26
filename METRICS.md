@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 19:59 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 20:03 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -460,7 +460,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Packages**: pyiqa, torch
 - **Source**: <a href="https://github.com/chaofengc/IQA-PyTorch" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_maniqa.py`](tests/modules/per_module/test_maniqa.py), [`test_iqa_research_metrics.py`](tests/modules/test_iqa_research_metrics.py)
-- **Config**: `subsample=8`
+- **Config**: `subsample=8`, `batch_frames=False`
 
 ### `mc360iqa_score` [↑](#categories)
 > MC360IQA blind 360 (higher=better) · ↑ higher=better
