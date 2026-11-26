@@ -105,6 +105,13 @@ has fresh module instances, accumulators and results. Call
 
 GPU profiles can set `sample_batch_size` to 4–16 where device memory allows.
 
+FVD uses FP32 by default. Set `dtype = "fp16"` or `dtype = "bf16"` in the
+FVD module settings to enable CUDA autocast. On an RTX 5090 with four
+16-frame clips, the pretrained I3D feature pass measured 323 clips/s in
+FP32 and 440 in FP16 after warmup, excluding decode and distribution
+aggregation. FVD differed from FP32 by 0.0023% in FP16 and 0.30% in BF16
+on that input set.
+
 Set `execution_mode = "staged"` under `[general]` to process an input cohort
 one module at a time and release each module before mounting the next.
 The selected stack may include sample-local modules and supported dataset

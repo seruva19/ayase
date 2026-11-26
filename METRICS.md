@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 21:16 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 21:31 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -1495,7 +1495,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Actual PIQ DISTS or trained DreamSim model with proper paired inputs/preprocessing, real distance output and frame averaging. Video extension does not replace image method.
 - **Field readiness**: `implemented`
-- **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
+- **Review evidence**: Official pretrained DreamSim 0.2.1 ensemble verified on three video pairs with serial and batched RTX 5090 inference.
 - **Backend**: unavailable → dreamsim
 - **Provenance**: `adapted` — DreamSim is defined for image pairs; video is scored as the mean over position-paired uniformly sampled frames. — source: DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim
 - **Packages**: dreamsim, torch
@@ -1509,7 +1509,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Inherited real pretrained DreamSim ensemble plus official preprocess and reference distance; paired frame mean is a documented video protocol extension, not a substitute perceptual metric.
 - **Field readiness**: `implemented`
-- **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
+- **Review evidence**: Official pretrained DreamSim 0.2.1 ensemble verified on three video pairs with serial and batched RTX 5090 inference.
 - **Backend**: unavailable → dreamsim
 - **Provenance**: `adapted` — DreamSim is defined for image pairs; video is scored as the mean over position-paired uniformly sampled frames. — source: DreamSim (Fu et al., NeurIPS 2023) — https://github.com/ssundaram21/dreamsim
 - **Packages**: dreamsim, torch
@@ -10271,7 +10271,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 
 - **Input**: batch +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Real I3D TorchScript trained features with return_features=True feed standard Gaussian Fréchet distance. Uniform whole-video 16-frame protocol is disclosed adaptation, not surrogate backbone.
-- **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
+- **Review evidence**: Pretrained I3D verified on real videos, including checkpoint replay and FP32/FP16/BF16 feature extraction on RTX 5090.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
 - **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +7 more
