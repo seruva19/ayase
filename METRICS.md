@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 21:41 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 23:07 · **392 modules** · **619 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **386/391 modules** have static test references · test references do not establish pretrained inference coverage
+> Tests: **387/392 modules** have static test references · test references do not establish pretrained inference coverage
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**391** modules · **729** output fields · **618** metrics · **294** tiered · **81** with GPU code detected · **21** categories
+**392** modules · **730** output fields · **619** metrics · **295** tiered · **81** with GPU code detected · **21** categories
 
 Speed and memory values are source-based estimates, not benchmarks. GPU detection indicates code paths, not a GPU requirement. Imports and backend labels do not verify successful inference.
 
@@ -53,7 +53,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-73-metrics) (73) · [Full-Reference Quality](#full-reference-quality-75-metrics) (75) · [Text-Video Alignment](#text-video-alignment-91-metrics) (91) · [Temporal Consistency](#temporal-consistency-36-metrics) (36) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-89-metrics) (89) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-112-fields) (112) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-73-metrics) (73) · [Full-Reference Quality](#full-reference-quality-75-metrics) (75) · [Text-Video Alignment](#text-video-alignment-92-metrics) (92) · [Temporal Consistency](#temporal-consistency-36-metrics) (36) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-89-metrics) (89) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-112-fields) (112) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -2483,7 +2483,23 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Tests**: covered by [`test_xpsnr.py`](tests/modules/per_module/test_xpsnr.py), [`test_streaming_codec_metrics.py`](tests/modules/test_streaming_codec_metrics.py)
 
 
-## Text-Video Alignment (91 metrics)
+## Text-Video Alignment (92 metrics)
+
+### `avbench_alignment_score` [↑](#categories)
+> AVBench audio-video matching (0-1) · ↑ higher=better · 0–1, higher means more consistent
+
+**[`avbench_alignment`](src/ayase/modules/avbench_alignment.py)** — AVBench Audio-Video Matching head (higher = more consistent)
+
+- **Input**: video + audio · **Estimated speed**: ⏱️ medium
+- **Readiness**: `implemented`
+- **Field readiness**: `implemented`
+- **Review evidence**: unreviewed
+- **Backend**: avbench_qwen2_5_omni
+- **Provenance**: `published` — source: AVBench — https://github.com/YaJialiang/AVBench
+- **Packages**: av, qwen-vl-utils, torch, transformers
+- **Source**: <a href="https://github.com/YaJialiang/AVBench" target="_blank">GitHub</a> · <a href="https://huggingface.co/iiiiii123/AVBench_model/tree/ea995265a1b5091bc06a4e8e281e64e3c5c0dc7e/Qwen2.5-Omni-7B-AudioVideoMatching-Merged" target="_blank">HF</a>
+- **Tests**: covered by [`test_avbench_alignment.py`](tests/modules/per_module/test_avbench_alignment.py)
+- **Config**: `device_map=auto`
 
 ### `avc_event_correspondence_score` [↑](#categories)
 > Fine-grained event compatibility (0-1) · ↑ higher=better · 0-1

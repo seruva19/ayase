@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 21:42 · **327 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-11-26 23:08 · **328 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**327** models · **125** HuggingFace · **37** pyiqa · **9** sources
+**328** models · **126** HuggingFace · **37** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (92)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (46)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (93)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (46)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -548,6 +548,12 @@
 - **Task**: Frozen SigLIP2 NaFlex patch embeddings for MaSC
 - **Notes**: Apache-2.0; pinned to revision cc24074f717b612951c2dead130904ab9b65a81e
 - **Source**: <a href="https://arxiv.org/abs/2502.14786" target="_blank">arXiv</a>
+
+### <a href="https://huggingface.co/iiiiii123/AVBench_model/tree/ea995265a1b5091bc06a4e8e281e64e3c5c0dc7e/Qwen2.5-Omni-7B-AudioVideoMatching-Merged" target="_blank">`iiiiii123/AVBench_model`</a> [↑](#categories)
+> apache-2.0
+
+- **Used by**: `avbench_alignment`
+- **Task**: AVBench Qwen2.5-Omni-7B Audio-Video Matching head
 
 ### <a href="https://huggingface.co/internlm/internlm2-chat-1_8b" target="_blank">`internlm/internlm2-chat-1_8b`</a> [↑](#categories)
 > text-generation · other

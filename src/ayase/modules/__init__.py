@@ -64,6 +64,7 @@ _IMPORTS = [
     ("DSGModule", ".dsg"),
     ("VGIFScoreModule", ".vgif_score"),
     ("AVCRewardModule", ".avc_reward"),
+    ("AVBenchAlignmentModule", ".avbench_alignment"),
     ("PQSGModule", ".pqsg"),
     ("VideoScienceJudgeModule", ".videoscience_judge"),
     ("AVGenBenchModule", ".avgen_bench"),

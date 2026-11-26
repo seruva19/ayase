@@ -67,6 +67,15 @@ outside the covered range.
 The edit inputs are serialized with pipeline state. A new instruction,
 alignment policy, or changed source video invalidates cached results.
 
+## Published video scores
+
+Select `avbench_alignment` to reproduce AVBench's audio-video matching head.
+`avbench_alignment_score` is its 0–1 probability of a match. The head uses video
+sampled at 1 FPS and up to 9.9 seconds of mono audio. Videos without audio have
+no score.
+
+The module provisions its runtime and model weights on first use.
+
 ## Configuration
 
 `ayase.toml` in project root:

@@ -755,6 +755,21 @@
       "av_sync_offset": "published"
     }
   },
+  "avbench_alignment": {
+    "aliases": [],
+    "class_name": "AVBenchAlignmentModule",
+    "dataset_output_fields": [],
+    "import_path": "ayase.modules.avbench_alignment",
+    "metric_groups": {
+      "avbench_alignment_score": "alignment"
+    },
+    "output_fields": [
+      "avbench_alignment_score"
+    ],
+    "provenance": {
+      "avbench_alignment_score": "published"
+    }
+  },
   "avc_reward": {
     "aliases": [],
     "class_name": "AVCRewardModule",

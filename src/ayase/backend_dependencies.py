@@ -81,6 +81,21 @@ _ENTRIES = (
         ),
         conda_packages=("ffmpeg=7.1.1",),
     ),
+    BackendDependency(
+        "avbench_alignment",
+        (
+            "torch==2.7.1+cu128",
+            "torchvision==0.22.1+cu128",
+            "torchaudio==2.7.1+cu128",
+            "transformers==4.57.1",
+            "qwen-vl-utils==0.0.14",
+            "accelerate==1.12.0",
+            "decord==0.6.0",
+            "av==15.1.0",
+            "imageio-ffmpeg==0.6.0",
+        ),
+        pip_options=("--extra-index-url", "https://download.pytorch.org/whl/cu128"),
+    ),
     _pypi("pqsg", "google-genai==1.31.0", "openai==2.7.2", cpu_only=True),
     BackendDependency(
         "avc_reward",
