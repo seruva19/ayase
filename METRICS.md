@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 19:07 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 19:20 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -10261,7 +10261,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Official pretrained checkpoint verified. CPU pool3 features match pytorch-fid; CUDA FP32 batch differences stayed below 1e-5 on fixed synthetic inputs.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase resizes inputs with bicubic interpolation and uses one representative frame per video; no score without references — source: FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid
-- **Tests**: covered by [`test_fid.py`](tests/modules/per_module/test_fid.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +2 more
+- **Tests**: covered by [`test_fid.py`](tests/modules/per_module/test_fid.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +3 more
 
 ### `fvd` [↑](#categories)
 > Fréchet Video Distance · ↓ lower=better · type: float
@@ -10273,7 +10273,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
-- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +6 more
+- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +7 more
 
 ### `fvmd` [↑](#categories)
 > Fréchet Video Motion Distance · ↓ lower=better · type: float

@@ -122,3 +122,16 @@ def test_fvd_preserves_required_frame_count_with_shared_reader(monkeypatch):
     actual = module._load_video_frames(path, 3)
     assert actual.shape == (3, 224, 224, 3)
     assert actual[0, 0, 0].tolist() == [255, 0, 0]
+def test_fvd_accepts_sqrtm_without_disp_argument(monkeypatch):
+    import numpy as np
+    from scipy import linalg
+
+    from ayase.modules.fvd import FVDModule
+
+    sqrtm = linalg.sqrtm
+    monkeypatch.setattr(linalg, "sqrtm", lambda matrix: sqrtm(matrix))
+    reference = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+    generated = reference + [2.0, 3.0]
+    assert FVDModule().compute_distribution_metric(list(generated), list(reference)) == (
+        pytest.approx(13.0)
+    )

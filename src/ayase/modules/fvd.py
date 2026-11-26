@@ -253,7 +253,7 @@ class FVDModule(BatchMetricModule):
             # Compute Fréchet distance
             # FD = ||mu1 - mu2||^2 + Tr(sigma1 + sigma2 - 2*sqrt(sigma1*sigma2))
             diff = mu1 - mu2
-            covmean, _ = linalg.sqrtm(sigma1.dot(sigma2), disp=False)
+            covmean = linalg.sqrtm(sigma1.dot(sigma2))
 
             if np.iscomplexobj(covmean):
                 covmean = covmean.real
