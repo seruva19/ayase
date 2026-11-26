@@ -1104,6 +1104,7 @@ class QualityMetrics(BaseModel):
     vgif_motion_score: Optional[float] = None  # Raw prompt-conditioned motion rubric (1-5)
     vgif_physics_score: Optional[float] = None  # Raw prompt-conditioned physics rubric (1-5)
     avbench_alignment_score: Optional[float] = None  # AVBench audio-video matching (0-1)
+    latent_prediction_reward: Optional[float] = None  # WMReward V-JEPA 2 cosine distance
     avc_reward_score: Optional[float] = None  # Mean AVC-Reward consistency score (0-1)
     avc_macro_semantic_score: Optional[float] = None  # Global audio-video semantic harmony (0-1)
     avc_temporal_score: Optional[float] = None  # Audio-video event synchronization (0-1)

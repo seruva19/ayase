@@ -2,7 +2,7 @@
 
 Ayase measures the quality and content of images and videos. Choose the metrics
 that matter to you, run them on your files, and save a report with scores and
-validation issues. 392 modules produce 619 metrics across 22 categories,
+validation issues. 393 modules produce 620 metrics across 22 categories,
 covering visual quality, text alignment, motion, audio, safety, and more.
 
 ## Install

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 23:08 · **328 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-11-26 23:13 · **329 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**328** models · **126** HuggingFace · **37** pyiqa · **9** sources
+**329** models · **126** HuggingFace · **37** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -22,7 +22,7 @@
 <td width="50%" valign="top"><h4>Top Used Models</h4><img src="docs/models_top_used.png" width="100%"/></td>
 </tr></table>
 
-**Estimated total download size (all models):** ~863 GB
+**Estimated total download size (all models):** ~880 GB
 
 *Note: Most modules auto-download only the models they need on first use. You rarely need all models at once.*
 
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (93)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (46)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (93)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (47)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -1031,6 +1031,12 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `jedi_official`
 - **Task**: Official V-JEPA ViT-H/16 encoder checkpoint
+
+### <a href="https://dl.fbaipublicfiles.com/vjepa2/vitg.pt" target="_blank">`wmreward/vitg.pt`</a> [↑](#categories)
+
+- **Used by**: `wmreward`
+- **Task**: Official V-JEPA 2 ViT-g encoder and predictor
+- **Disk**: 16.46 GB
 
 ### <a href="https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dino_face_identity/dinov2_vitb14_pretrain.pth" target="_blank">`dino_face_identity/dinov2_vitb14_pretrain.pth`</a> [↑](#categories)
 

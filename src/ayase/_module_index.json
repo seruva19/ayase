@@ -7678,6 +7678,21 @@
       "watermark_strength": "own"
     }
   },
+  "wmreward": {
+    "aliases": [],
+    "class_name": "WMRewardModule",
+    "dataset_output_fields": [],
+    "import_path": "ayase.modules.wmreward",
+    "metric_groups": {
+      "latent_prediction_reward": "temporal"
+    },
+    "output_fields": [
+      "latent_prediction_reward"
+    ],
+    "provenance": {
+      "latent_prediction_reward": "published"
+    }
+  },
   "world_consistency": {
     "aliases": [],
     "class_name": "WorldConsistencyModule",

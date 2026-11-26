@@ -74,7 +74,14 @@ Select `avbench_alignment` to reproduce AVBench's audio-video matching head.
 sampled at 1 FPS and up to 9.9 seconds of mono audio. Videos without audio have
 no score.
 
-The module provisions its runtime and model weights on first use.
+Select `wmreward` to compute `latent_prediction_reward` with the V-JEPA 2 ViT-g
+encoder and predictor. The score averages `1 − cosine similarity` between
+predicted and observed future tokens. It uses up to 49 uniformly sampled frames,
+16-frame windows with eight context frames, and a stride of two sampled frames.
+Videos with fewer than 16 frames have no score. The value measures prediction
+surprise. Its relationship to perceptual video quality depends on the content.
+
+Both modules provision their runtimes and model weights on first use.
 
 ## Configuration
 

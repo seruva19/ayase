@@ -96,6 +96,18 @@ _ENTRIES = (
         ),
         pip_options=("--extra-index-url", "https://download.pytorch.org/whl/cu128"),
     ),
+    BackendDependency(
+        "wmreward",
+        (
+            "torch==2.7.1+cu128",
+            "torchvision==0.22.1+cu128",
+            "torchaudio==2.7.1+cu128",
+            "decord==0.6.0",
+            "timm==1.0.15",
+            "einops==0.8.1",
+        ),
+        pip_options=("--extra-index-url", "https://download.pytorch.org/whl/cu128"),
+    ),
     _pypi("pqsg", "google-genai==1.31.0", "openai==2.7.2", cpu_only=True),
     BackendDependency(
         "avc_reward",

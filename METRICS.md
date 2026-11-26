@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 23:07 · **392 modules** · **619 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 23:12 · **393 modules** · **620 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **387/392 modules** have static test references · test references do not establish pretrained inference coverage
+> Tests: **388/393 modules** have static test references · test references do not establish pretrained inference coverage
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**392** modules · **730** output fields · **619** metrics · **295** tiered · **81** with GPU code detected · **21** categories
+**393** modules · **731** output fields · **620** metrics · **296** tiered · **82** with GPU code detected · **21** categories
 
 Speed and memory values are source-based estimates, not benchmarks. GPU detection indicates code paths, not a GPU requirement. Imports and backend labels do not verify successful inference.
 
@@ -53,7 +53,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-73-metrics) (73) · [Full-Reference Quality](#full-reference-quality-75-metrics) (75) · [Text-Video Alignment](#text-video-alignment-92-metrics) (92) · [Temporal Consistency](#temporal-consistency-36-metrics) (36) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-89-metrics) (89) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-112-fields) (112) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-73-metrics) (73) · [Full-Reference Quality](#full-reference-quality-75-metrics) (75) · [Text-Video Alignment](#text-video-alignment-92-metrics) (92) · [Temporal Consistency](#temporal-consistency-37-metrics) (37) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-89-metrics) (89) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-112-fields) (112) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -3952,7 +3952,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Config**: `model=clip-flant5-xxl`, `subsample=4`, `video_frame_input=jpeg`
 
 
-## Temporal Consistency (36 metrics)
+## Temporal Consistency (37 metrics)
 
 ### `background_consistency` [↑](#categories)
 > ↑ higher=better
@@ -4153,6 +4153,21 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py), [`vtss`](src/ayase/m
 - **Source**: <a href="https://github.com/hpcaitech/Open-Sora" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_jump_cut.py`](tests/modules/per_module/test_jump_cut.py), [`test_curation_metrics.py`](tests/modules/test_curation_metrics.py)
 - **Config**: `threshold=40.0`
+
+### `latent_prediction_reward` [↑](#categories)
+> WMReward V-JEPA 2 cosine distance
+
+**[`wmreward`](src/ayase/modules/wmreward.py)** — WMReward latent prediction surprise (V-JEPA 2 ViT-g)
+
+- **Input**: video · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Readiness**: `implemented`
+- **Field readiness**: `implemented`
+- **Review evidence**: unreviewed
+- **Backend**: vjepa2_vitg
+- **Provenance**: `published` — source: WMReward (CVPR 2026) — https://facebookresearch.github.io/WMReward/
+- **Packages**: decord, torch, torchvision
+- **Tests**: covered by [`test_wmreward.py`](tests/modules/per_module/test_wmreward.py)
+- **Config**: `device=auto`
 
 ### `long_form_transition_stability` [↑](#categories)
 > Boundary stability (0-1) · ↑ higher=better · 0-1

@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **avbench_alignment**: score audio-video matching with the published AVBench matching head.
+- **wmreward**: report the published V-JEPA 2 ViT-g latent prediction surprise for video.
 - **long_code**: add an explicitly approximate X-CLIP structural score and optional three-stage narrative, causality, and identity judging; combined scores require complete semantic evidence and omit the unavailable human reference bank.
 
 - **miescore**: add an explicitly approximate multi-source image-edit judge with separate quality, instruction-following, and attribute-preservation scores; uses a configurable vision API rather than the author's trained model.
