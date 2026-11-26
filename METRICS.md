@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 20:10 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 20:14 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -282,7 +282,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
-- **Config**: `warning_threshold=0.4`, `amp_enabled=False`
+- **Config**: `warning_threshold=0.4`, `batch_views=False`, `amp_enabled=False`
 
 ### `dover_technical` [↑](#categories)
 > DOVER technical quality · 0-1 sigmoid
@@ -299,7 +299,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
-- **Config**: `warning_threshold=0.4`, `amp_enabled=False`
+- **Config**: `warning_threshold=0.4`, `batch_views=False`, `amp_enabled=False`
 
 ### `edit_score_perceptual_quality` [↑](#categories)
 > Edited image perceptual quality (0-10) · ↑ higher=better · 0-10
@@ -5959,7 +5959,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Provenance**: `adapted` — The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric. — source: Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Source**: <a href="https://github.com/discus0434/aesthetic-predictor-v2-5" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
+- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), +2 more
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
 ### `aesthetic_v25_score` [↑](#categories)
@@ -5976,7 +5976,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 - **Provenance**: `adapted` — The source is an image metric; Ayase averages video frames selected by num_frames (default 5). aesthetic_v25_dup stores the identical value as a compatibility output, not an independent text-alignment metric. — source: Aesthetic Predictor V2.5 (discus0434, SigLIP) — https://github.com/discus0434/aesthetic-predictor-v2-5
 - **Packages**: aesthetic_predictor_v2_5, torch
 - **Source**: <a href="https://github.com/discus0434/aesthetic-predictor-v2-5" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
+- **Tests**: covered by [`test_aesthetic.py`](tests/modules/per_module/test_aesthetic.py), [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_field_groups.py`](tests/modules/test_field_groups.py), +2 more
 - **Config**: `num_frames=5`, `trust_remote_code=True`
 
 ### `cover_aesthetic` [↑](#categories)
@@ -6043,7 +6043,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
 - **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
-- **Config**: `warning_threshold=0.4`, `amp_enabled=False`
+- **Config**: `warning_threshold=0.4`, `batch_views=False`, `amp_enabled=False`
 
 ### `laion_aesthetic` [↑](#categories)
 > LAION Aesthetics V2 (0-10) · 0-10

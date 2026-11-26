@@ -47,3 +47,19 @@ def test_native_dover_retries_amp_close_to_warning_threshold(monkeypatch):
     module._model = model
     assert module._infer_native_views({}) == pytest.approx((0.397, 0.397, 0.397))
     assert modes == [("bf16", True), ("fp32", False)]
+
+
+def test_native_dover_batch_pools_each_branch_per_video():
+    import pytest
+
+    torch = pytest.importorskip("torch")
+    from ayase.modules.dover import DOVERModule
+
+    module = DOVERModule()
+    module._model = lambda views, **kwargs: list(views.values())
+    videos = [
+        {"aesthetic": torch.tensor([0.2]), "technical": torch.tensor([0.1, 0.2, 0.3])},
+        {"aesthetic": torch.tensor([-0.2]), "technical": torch.tensor([-0.5, -0.1])},
+    ]
+    expected = [module._infer_native_views(video) for video in videos]
+    assert module._infer_native_batch(videos) == expected

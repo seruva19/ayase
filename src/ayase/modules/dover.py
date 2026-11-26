@@ -67,6 +67,7 @@ class DOVERModule(PipelineModule):
     description = "DOVER disentangled technical + aesthetic VQA (ICCV 2023)"
     default_config = {
         "warning_threshold": 0.4,
+        "batch_views": False,  # Opt in to packing views across native FP32 videos
         "amp_enabled": False,  # Opt in to CUDA autocast for native inference
         "weights_path": None,  # Explicit path to DOVER.pth (optional)
         "preferred_backend": None,  # "native" or "onnx" — None = auto (native first)
@@ -356,43 +357,120 @@ class DOVERModule(PipelineModule):
             else:
                 return sample
 
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            sample.quality_metrics.dover_score = overall
-            sample.quality_metrics.dover_aesthetic = aesthetic
-            sample.quality_metrics.dover_technical = technical
-
-            if overall < self.warning_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"Low DOVER score: {overall:.3f}",
-                        details={
-                            "dover_score": overall,
-                            "dover_technical": technical,
-                            "dover_aesthetic": aesthetic,
-                        },
-                        recommendation=(
-                            "Video quality is below threshold. "
-                            "Technical issues: noise/blur/compression. "
-                            "Aesthetic issues: composition/colour."
-                        ),
-                    )
-                )
-
-            logger.debug(
-                f"DOVER for {sample.path.name}: "
-                f"overall={overall:.3f} tech={technical:.3f} aes={aesthetic:.3f}"
-            )
+            self._apply_scores(sample, (aesthetic, technical, overall))
 
         except Exception as e:
             logger.warning(f"DOVER failed for {sample.path}: {e}")
 
         return sample
 
+    def _apply_scores(self, sample, scores):
+        aesthetic, technical, overall = scores
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+
+        sample.quality_metrics.dover_score = overall
+        sample.quality_metrics.dover_aesthetic = aesthetic
+        sample.quality_metrics.dover_technical = technical
+
+        if overall < self.warning_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Low DOVER score: {overall:.3f}",
+                    details={
+                        "dover_score": overall,
+                        "dover_technical": technical,
+                        "dover_aesthetic": aesthetic,
+                    },
+                    recommendation=(
+                        "Video quality is below threshold. "
+                        "Technical issues: noise/blur/compression. "
+                        "Aesthetic issues: composition/colour."
+                    ),
+                )
+            )
+
+        logger.debug(
+            f"DOVER for {sample.path.name}: "
+            f"overall={overall:.3f} tech={technical:.3f} aes={aesthetic:.3f}"
+        )
+
+    def process_batch(self, samples: list[Sample]) -> list[Sample]:
+        if (
+            len(samples) < 2
+            or not self._ml_available
+            or self._backend != "native"
+            or not self.config.get("batch_views", False)
+            or self.config.get("amp_enabled", False)
+        ):
+            return super().process_batch(samples)
+
+        cohorts = {}
+        for sample in samples:
+            if not sample.is_video:
+                continue
+            try:
+                views = self._prepare_native_views(sample)
+                shapes = tuple(view.shape[1:] for view in views.values())
+                cohorts.setdefault(shapes, []).append((sample, views))
+            except Exception as exc:
+                logger.warning("DOVER failed for %s: %s", sample.path, exc)
+
+        for group in cohorts.values():
+            scores = None
+            if len(group) > 1:
+                try:
+                    scores = self._infer_native_batch([views for _, views in group])
+                except Exception as exc:
+                    logger.debug("DOVER view batch failed; retrying per video: %s", exc)
+
+            for index, (sample, views) in enumerate(group):
+                try:
+                    score = scores[index] if scores is not None else None
+                    if score is None or abs(score[2] - self.warning_threshold) <= 0.005:
+                        score = self._infer_native_views(
+                            {key: view.to(self._device) for key, view in views.items()}
+                        )
+                    self._apply_scores(sample, score)
+                except Exception as exc:
+                    logger.warning("DOVER failed for %s: %s", sample.path, exc)
+        return samples
+
+    def _infer_native_batch(self, videos):
+        import torch
+        from ayase.runtime import torch_inference_context
+
+        keys = ("aesthetic", "technical")
+        counts = {key: [len(video[key]) for video in videos] for key in keys}
+        with torch_inference_context(str(self._device), "fp32", False):
+            packed = {
+                key: torch.cat([video[key] for video in videos]).to(self._device)
+                for key in keys
+            }
+            outputs = self._model(packed, reduce_scores=False)
+            if len(outputs) != len(keys):
+                raise ValueError("DOVER did not return both score branches")
+            raw_scores = []
+            for key, out in zip(keys, outputs):
+                if out.ndim == 0 or len(out) != sum(counts[key]):
+                    raise ValueError("DOVER did not return one score map per clip")
+                split_points = np.cumsum(counts[key])[:-1]
+                parts = np.split(out.cpu().numpy(), split_points)
+                raw_scores.append([float(np.mean(part)) for part in parts])
+        scores = [_fuse_results([aesthetic, technical]) for aesthetic, technical in zip(*raw_scores)]
+        return [
+            (score["aesthetic"], score["technical"], score["overall"])
+            if all(np.isfinite(value) for value in score.values()) else None
+            for score in scores
+        ]
+
     def _process_native(self, sample: Sample):
         """Run inference using the native DOVER model."""
+        views = self._prepare_native_views(sample)
+        return self._infer_native_views({key: view.to(self._device) for key, view in views.items()})
+
+    def _prepare_native_views(self, sample: Sample):
         from ayase.third_party.dover.datasets import UnifiedFrameSampler, spatial_temporal_view_decomposition
 
         # Build temporal samplers
@@ -424,14 +502,12 @@ class DOVERModule(PipelineModule):
                 .permute(3, 0, 1, 2)
                 .reshape(v.shape[0], num_clips, -1, *v.shape[2:])
                 .transpose(0, 1)
-                .to(self._device)
             )
 
         # Ensure aesthetic-first order for _fuse_results:
         # DOVERModel iterates dict keys, so order depends on self._sample_types.
         # _fuse_results expects [aesthetic, technical].
-        ordered = {"aesthetic": processed["aesthetic"], "technical": processed["technical"]}
-        return self._infer_native_views(ordered)
+        return {"aesthetic": processed["aesthetic"], "technical": processed["technical"]}
 
     def _infer_native_views(self, views):
         from ayase.runtime import resolve_torch_dtype, torch_inference_context
