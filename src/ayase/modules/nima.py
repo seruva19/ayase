@@ -27,7 +27,7 @@ class NIMAModule(PipelineModule):
         "nima_score": "NIMA (Talebi & Milanfar, TIP 2018) via pyiqa — https://github.com/chaofengc/IQA-PyTorch",
     }
     description = "NIMA aesthetic and technical image quality (1-10 scale)"
-    default_config = {"subsample": 8}
+    default_config = {"subsample": 8, "batch_frames": False}
     metric_groups = {
         "nima_score": "aesthetic",
     }
@@ -68,28 +68,39 @@ class NIMAModule(PipelineModule):
         if not self._ml_available:
             return sample
         try:
-            import cv2
-            import torch
-
             frames = self._load_frames(sample)
-            if not frames:
-                return sample
-
-            scores = []
-            for frame in frames:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                tensor = (
-                    torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).float() / 255.0
-                )
-                tensor = tensor.to(self._device)
-                with torch.no_grad():
-                    score = self._model(tensor).item()
-                scores.append(score)
-
-            sample.quality_metrics.nima_score = float(np.mean(scores))
+            if frames:
+                sample.quality_metrics.nima_score = self._score_frames(frames)
         except Exception as e:
             logger.warning("NIMA processing failed: %s", e)
         return sample
+
+    def _score_frames(self, frames: list) -> float:
+        import cv2
+        import torch
+        from ayase.runtime import torch_inference_context
+
+        def tensor(frame):
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            return torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
+
+        with torch_inference_context(str(self._device), "fp32", False):
+            if self.config.get("batch_frames", False) and len(frames) > 1:
+                try:
+                    scores = self._model(
+                        torch.stack([tensor(frame) for frame in frames]).to(self._device)
+                    )
+                    if scores.ndim == 0 or len(scores) != len(frames) or scores.numel() != len(frames):
+                        raise ValueError("NIMA did not return one score per frame")
+                    return float(np.mean(scores.flatten().cpu().tolist()))
+                except Exception as exc:
+                    logger.debug("NIMA batch failed; retrying individual frames: %s", exc)
+
+            scores = [
+                self._model(tensor(frame).unsqueeze(0).to(self._device)).reshape(())
+                for frame in frames
+            ]
+            return float(np.mean(torch.stack(scores).cpu().tolist()))
 
     def _load_frames(self, sample: Sample) -> list:
         import cv2
