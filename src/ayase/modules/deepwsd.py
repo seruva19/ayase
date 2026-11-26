@@ -109,15 +109,9 @@ class DeepWSDModule(PipelineModule):
         subsample = self.config.get("subsample", 4)
         frames = []
         if is_video:
-            cap = cv2.VideoCapture(path)
-            total = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0)
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    frames.append(frame)
-            cap.release()
+            from ayase.image import sample_frames
+
+            return sample_frames(path, max_frames=subsample, color="bgr", floor_stride=True)
         else:
             frame = cv2.imread(path)
             if frame is not None:

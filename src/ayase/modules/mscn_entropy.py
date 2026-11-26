@@ -148,17 +148,9 @@ class STGREEDModule(PipelineModule):
 
     def _load_gray_frames(self, path, subsample: int) -> list:
         """Load grayscale frames from a video path."""
-        import cv2
+        from ayase.image import sample_frames
 
-        cap = cv2.VideoCapture(str(path))
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-
-        frames = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-            ret, frame = cap.read()
-            if ret:
-                frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY).astype(np.float64))
-        cap.release()
-        return frames
+        return [
+            frame.astype(np.float64)
+            for frame in sample_frames(path, max_frames=subsample, color="gray", floor_stride=True)
+        ]

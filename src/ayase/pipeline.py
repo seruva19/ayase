@@ -1122,7 +1122,8 @@ class Pipeline:
         return base
 
     def sample_frames(
-        self, path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False
+        self, path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False,
+        floor_stride: bool = False,
     ) -> List[Any]:
         """Build the exact sampling grid and reuse frames shared with earlier grids."""
         from .image import (
@@ -1136,14 +1137,15 @@ class Pipeline:
             cache = self._frame_cache if self._frame_cache_enabled else _FrameCache(0)
             return cast(
                 List[Any], cache.read(
-                    path, self._path_cache_state(path), max_frames, color, decoder="decord"
+                    path, self._path_cache_state(path), max_frames, color, decoder="decord",
+                    floor_stride=floor_stride,
                 )
             )
 
         if not self._frame_cache_enabled or max_frames <= 0:
-            if known_count_only:
+            if known_count_only or floor_stride:
                 frames, _ = _sample_frames_uncached_detailed(
-                    path, max_frames, color, known_count_only=True
+                    path, max_frames, color, known_count_only=True, floor_stride=floor_stride
                 )
             else:
                 frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
@@ -1153,7 +1155,7 @@ class Pipeline:
         return cast(
             List[Any], self._frame_cache.read(
                 path, self._path_cache_state(path), max_frames, color,
-                known_count_only=known_count_only,
+                known_count_only=known_count_only, floor_stride=floor_stride,
             )
         )
 

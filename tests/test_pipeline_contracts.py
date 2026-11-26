@@ -1109,14 +1109,31 @@ def test_frame_cache_unreliable_count_allows_redecode(
     assert [int(frame[0, 0, 0]) for frame in second] == [0, 4]
 
 
-def test_known_count_only_does_not_read_sequential_fallback(tmp_path, monkeypatch):
+@pytest.mark.parametrize("options", [{"known_count_only": True}, {"floor_stride": True}])
+def test_known_count_only_does_not_read_sequential_fallback(tmp_path, monkeypatch, options):
     from ayase.image import sample_frames
 
     calls = _install_fake_decoder(monkeypatch, total_frames=0)
     media = _media(tmp_path)
-    assert sample_frames(media, 4, known_count_only=True) == []
-    assert Pipeline([]).sample_frames(media, 4, known_count_only=True) == []
+    assert sample_frames(media, 4, **options) == []
+    assert Pipeline([]).sample_frames(media, 4, **options) == []
     assert calls == [[], []]
+
+
+def test_floor_stride_and_uniform_grids_share_only_matching_indices(tmp_path, monkeypatch):
+    from ayase.image import sample_frames
+
+    calls = _install_fake_decoder(monkeypatch, total_frames=10)
+    media = _media(tmp_path)
+    expected = sample_frames(media, 4, color="bgr", floor_stride=True)
+    calls.clear()
+    pipeline = Pipeline([])
+    uniform = pipeline.sample_frames(media, 4, color="bgr")
+    stride = pipeline.sample_frames(media, 4, color="bgr", floor_stride=True)
+    np.testing.assert_array_equal(stride, expected)
+    assert [int(frame[0, 0, 0]) for frame in uniform] == [0, 3, 6, 9]
+    assert [int(frame[0, 0, 0]) for frame in stride] == [0, 2, 4, 6]
+    assert calls == [[0, 3, 6, 9], [2, 4]]
 
 
 @pytest.mark.parametrize("size", [1, 2])

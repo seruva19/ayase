@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Share the original stride-based frame selection across seven image and video quality metrics.
 - Add opt-in native DOVER video batching in FP32 with per-video fusion and warning checks.
 - Offer opt-in CUDA autocast for native DOVER with FP32 retries near the warning threshold.
 - Transfer MANIQA frame scores together and offer opt-in batched frame inference.

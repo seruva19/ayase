@@ -129,7 +129,8 @@ def _load_representative_frame_uncached(path: Path, color: str = "rgb") -> Optio
 
 
 def sample_frames(
-    path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False
+    path: Path, max_frames: int = 8, color: str = "rgb", *,
+    known_count_only: bool = False, floor_stride: bool = False,
 ) -> List[np.ndarray]:
     """Load uniformly spaced frames from a video, or one frame for an image.
 
@@ -142,13 +143,18 @@ def sample_frames(
     returned frames in place — copy first (``frame.copy()``) if you need to
     write. Returns an empty list when no frames can be decoded.
     Set ``known_count_only`` when the metric requires indexed sampling and
-    must skip streams without a positive frame count.
+    must skip streams without a positive frame count. The floor stride grid
+    takes at most max_frames at a step of max(1, total // max_frames).
     """
     try:
         from .runtime import current_pipeline
 
         pipeline = current_pipeline()
         if pipeline is not None and hasattr(pipeline, "sample_frames"):
+            if floor_stride:
+                return pipeline.sample_frames(
+                    path, max_frames=max_frames, color=color, floor_stride=True
+                )
             if known_count_only:
                 return pipeline.sample_frames(
                     path, max_frames=max_frames, color=color, known_count_only=True
@@ -161,9 +167,11 @@ def sample_frames(
     # production under a live pipeline).
     from .runtime import clone_frames
 
-    if known_count_only:
+    if known_count_only or floor_stride:
         return clone_frames(
-            _sample_frames_uncached_detailed(path, max_frames, color, known_count_only=True)[0]
+            _sample_frames_uncached_detailed(
+                path, max_frames, color, known_count_only=True, floor_stride=floor_stride
+            )[0]
         )
     return clone_frames(_sample_frames_uncached(path, max_frames=max_frames, color=color))
 
@@ -177,9 +185,15 @@ def _convert_frame_color(frame: np.ndarray, color: str) -> np.ndarray:
     return frame  # "bgr" (native) or any passthrough
 
 
-def _video_indices(total: int, max_frames: Optional[int]) -> Iterable[int]:
+def _video_indices(
+    total: int, max_frames: Optional[int], *, floor_stride: bool = False
+) -> Iterable[int]:
     if max_frames is None:
         return (total // 2,)
+    if floor_stride:
+        if max_frames <= 0:
+            return ()
+        return range(0, total, max(1, total // max_frames))[:max_frames]
     return map(int, np.linspace(0, total - 1, min(max_frames, total), dtype=int))
 
 
@@ -243,11 +257,12 @@ def sample_video_pairs(
 
 
 def _selection_indices(
-    total: int, limit: Optional[int], prefetch_limits: tuple[Optional[int], ...]
+    total: int, limit: Optional[int], prefetch_limits: tuple[Optional[int], ...],
+    *, floor_stride: bool = False,
 ) -> Iterable[int]:
     if prefetch_limits:
         return sorted({idx for size in prefetch_limits for idx in _video_indices(total, size)})
-    return _video_indices(total, limit)
+    return _video_indices(total, limit, floor_stride=floor_stride)
 
 
 class _FrameCache:
@@ -325,6 +340,7 @@ class _FrameCache:
         decoder: str = "opencv",
         known_count_only: bool = False,
         prefetch_limits: tuple[Optional[int], ...] = (),
+        floor_stride: bool = False,
     ) -> List[np.ndarray]:
         """Read one exact grid, or the middle frame when no frame limit is supplied."""
         from .runtime import clone_frames
@@ -334,7 +350,9 @@ class _FrameCache:
             return [] if frame is None else [frame]
 
         if decoder == "decord":
-            return self._read_decord(path, path_key, max_frames, color, prefetch_limits)
+            return self._read_decord(
+                path, path_key, max_frames, color, prefetch_limits, floor_stride=floor_stride
+            )
 
         key = (*path_key, 0, "opencv")
         total = self._totals.get(key)
@@ -370,12 +388,12 @@ class _FrameCache:
                     if not ok or frame is None:
                         return []
                     return clone_frames([_convert_frame_color(frame, color)])
-                elif known_count_only:
+                elif known_count_only or floor_stride:
                     return []
                 else:
                     return clone_frames(_sample_frames_sequential(reader, max_frames, color))
             result = []
-            for index in _selection_indices(total, max_frames, prefetch_limits):
+            for index in _selection_indices(total, max_frames, prefetch_limits, floor_stride=floor_stride):
                 frame = self._read((*key, index), color, lambda: decode(index))
                 if frame is not None and not prefetch_limits:
                     result.append(frame)
@@ -389,10 +407,10 @@ class _FrameCache:
                 cap.release()
                 cap = None
             if max_frames is not None:
-                if known_count_only:
+                if known_count_only or floor_stride:
                     return clone_frames(
                         _sample_frames_uncached_detailed(
-                            path, max_frames, color, known_count_only=True
+                            path, max_frames, color, known_count_only=True, floor_stride=floor_stride
                         )[0]
                     )
                 return clone_frames(_sample_frames_uncached(path, max_frames, color))
@@ -405,6 +423,7 @@ class _FrameCache:
     def _read_decord(
         self, path: Path, path_key: tuple[Any, ...], max_frames: Optional[int], color: str,
         prefetch_limits: tuple[Optional[int], ...],
+        *, floor_stride: bool = False,
     ) -> List[np.ndarray]:
         from .runtime import readonly_view
 
@@ -430,7 +449,7 @@ class _FrameCache:
                 self._totals[key] = total
             if total <= 0:
                 return []
-            indices = list(_selection_indices(total, max_frames, prefetch_limits))
+            indices = list(_selection_indices(total, max_frames, prefetch_limits, floor_stride=floor_stride))
             result = []
             for start in range(0, len(indices), 32):
                 chunk = indices[start : start + 32]
@@ -521,7 +540,8 @@ def _sample_frames_sequential(
 
 
 def _sample_frames_uncached_detailed(
-    path: Path, max_frames: int = 8, color: str = "rgb", *, known_count_only: bool = False
+    path: Path, max_frames: int = 8, color: str = "rgb", *,
+    known_count_only: bool = False, floor_stride: bool = False,
 ) -> tuple[List[np.ndarray], Optional[int]]:
     """Uncached frame sampling that also reports the decoder's frame count.
 
@@ -552,13 +572,13 @@ def _sample_frames_uncached_detailed(
             return frames, None
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         if total <= 0:
-            if known_count_only:
+            if known_count_only or floor_stride:
                 return frames, None
             # Frame count unreliable: fall back to a bounded sequential read so
             # frame metrics still get samples instead of silently skipping.
             # Report None so callers never cache an authoritative "exhausted".
             return _sample_frames_sequential(cap, max_frames, color), None
-        for idx in _video_indices(total, max_frames):
+        for idx in _video_indices(total, max_frames, floor_stride=floor_stride):
             cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
             ok, frame = cap.read()
             if not ok or frame is None:
