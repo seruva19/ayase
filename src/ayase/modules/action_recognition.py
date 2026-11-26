@@ -188,75 +188,127 @@ class ActionRecognitionModule(PipelineModule):
                 logits = outputs.logits
                 probs = logits.softmax(dim=1)
 
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            # Get top-1 for action_confidence (always available)
-            top1_prob, top1_idx = probs.topk(1)
-            top1_label = self._model.config.id2label[top1_idx.item()]
-            top1_confidence = top1_prob.item()
-            sample.quality_metrics.action_confidence = round(top1_confidence * 100.0, 2)
-
-            # Caption-matching mode: compute action_score via CLIP text similarity
-            expected_action = self.config.get("expected_action")
-            match_text = expected_action or (sample.caption.text if sample.caption else None)
-
-            matching_mode = self.config.get("matching_mode", "weighted")
-
-            if self._clip_available and match_text:
-                caption_features = self._encode_text(match_text)
-
-                if matching_mode == "top1":
-                    # Direct top-1 similarity: CLIP(top1_label, prompt)
-                    action_features = self._encode_text(top1_label)
-                    action_score = float((action_features @ caption_features.T).squeeze().cpu()) * 100.0
-                else:
-                    # Weighted top-K: sum(confidence_i * similarity_i)
-                    top_k_probs, top_k_indices = probs.topk(min(self.top_k, probs.shape[1]))
-                    label_ids = top_k_indices.squeeze(0).tolist()
-                    action_labels = [
-                        self._model.config.id2label[label_id] for label_id in label_ids
-                    ]
-                    confidences = top_k_probs.squeeze(0)
-                    action_features = self._encode_text(action_labels)
-                    similarities = (action_features @ caption_features.T).squeeze(-1)
-                    action_score = (confidences @ similarities).item() * 100.0
-
-                sample.quality_metrics.action_score = round(action_score, 2)
-            else:
-                # Fallback: use top-1 confidence as action_score (original behavior)
-                sample.quality_metrics.action_score = round(top1_confidence * 100.0, 2)
-
-            if top1_confidence > 0.5:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.INFO,
-                        message=f"Detected Action: {top1_label} ({top1_confidence:.2f})",
-                        details={"action": top1_label, "confidence": top1_confidence},
-                    )
-                )
-
-                # Add to detections for Knowledge Graph analysis
-                sample.detections.append({
-                    "type": "action",
-                    "label": top1_label,
-                    "confidence": float(top1_confidence)
-                })
-
-                # Validation against caption
-                if sample.caption:
-                    if top1_label.replace("_", " ") not in sample.caption.text.lower():
-                        sample.validation_issues.append(
-                            ValidationIssue(
-                                severity=ValidationSeverity.INFO,
-                                message=f"Action '{top1_label}' not explicitly found in caption.",
-                            )
-                        )
+            self._apply_probabilities(sample, probs)
 
         except Exception as e:
             logger.warning(f"Action recognition failed: {e}")
 
         return sample
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available or len(samples) <= 1:
+            return super().process_batch(samples)
+
+        import torch
+
+        ready = []
+        try:
+            for sample in samples:
+                if not sample.is_video:
+                    continue
+                frames = self._load_frames(sample, num_frames=16)
+                if len(frames) >= 16:
+                    inputs = self._processor(list(frames), return_tensors="pt")
+                    ready.append((sample, inputs))
+            if not ready:
+                return samples
+            batch = {
+                key: torch.cat([inputs[key] for _, inputs in ready], dim=0).to(self._device)
+                for key in ready[0][1]
+            }
+            with torch.no_grad():
+                probs = self._model(**batch).logits.softmax(dim=1)
+            if probs.ndim != 2 or probs.shape[0] != len(ready):
+                raise ValueError("VideoMAE did not produce one row per clip")
+
+            # Re-run clips close to the warning threshold or a label cutoff to
+            # guard those decisions against small batch-kernel differences.
+            top = probs.topk(min(max(2, self.top_k + 1), probs.shape[1])).values
+            boundary = (top[:, 0] - 0.5).abs() <= 1e-4
+            if top.shape[1] > 1:
+                boundary |= (top[:, 0] - top[:, 1]).abs() <= 1e-4
+            if 1 <= self.top_k < top.shape[1]:
+                boundary |= (top[:, self.top_k - 1] - top[:, self.top_k]).abs() <= 1e-4
+            retry = boundary.cpu().tolist()
+        except Exception as exc:
+            logger.debug("VideoMAE batch failed; retrying per clip: %s", exc)
+        else:
+            for (sample, _), row, near_boundary in zip(ready, probs.split(1), retry):
+                if near_boundary:
+                    self.process(sample)
+                    continue
+                try:
+                    self._apply_probabilities(sample, row)
+                except Exception as exc:
+                    logger.warning("Action recognition failed: %s", exc)
+            return samples
+        return super().process_batch(samples)
+
+    def _apply_probabilities(self, sample: Sample, probs) -> None:
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+
+        # Get top-1 for action_confidence (always available)
+        top1_prob, top1_idx = probs.topk(1)
+        top1_label = self._model.config.id2label[top1_idx.item()]
+        top1_confidence = top1_prob.item()
+        sample.quality_metrics.action_confidence = round(top1_confidence * 100.0, 2)
+
+        # Caption-matching mode: compute action_score via CLIP text similarity
+        expected_action = self.config.get("expected_action")
+        match_text = expected_action or (sample.caption.text if sample.caption else None)
+
+        matching_mode = self.config.get("matching_mode", "weighted")
+
+        if self._clip_available and match_text:
+            caption_features = self._encode_text(match_text)
+
+            if matching_mode == "top1":
+                # Direct top-1 similarity: CLIP(top1_label, prompt)
+                action_features = self._encode_text(top1_label)
+                action_score = float((action_features @ caption_features.T).squeeze().cpu()) * 100.0
+            else:
+                # Weighted top-K: sum(confidence_i * similarity_i)
+                top_k_probs, top_k_indices = probs.topk(min(self.top_k, probs.shape[1]))
+                label_ids = top_k_indices.squeeze(0).tolist()
+                action_labels = [
+                    self._model.config.id2label[label_id] for label_id in label_ids
+                ]
+                confidences = top_k_probs.squeeze(0)
+                action_features = self._encode_text(action_labels)
+                similarities = (action_features @ caption_features.T).squeeze(-1)
+                action_score = (confidences @ similarities).item() * 100.0
+
+            sample.quality_metrics.action_score = round(action_score, 2)
+        else:
+            # Fallback: use top-1 confidence as action_score (original behavior)
+            sample.quality_metrics.action_score = round(top1_confidence * 100.0, 2)
+
+        if top1_confidence > 0.5:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.INFO,
+                    message=f"Detected Action: {top1_label} ({top1_confidence:.2f})",
+                    details={"action": top1_label, "confidence": top1_confidence},
+                )
+            )
+
+            # Add to detections for Knowledge Graph analysis
+            sample.detections.append({
+                "type": "action",
+                "label": top1_label,
+                "confidence": float(top1_confidence)
+            })
+
+            # Validation against caption
+            if sample.caption:
+                if top1_label.replace("_", " ") not in sample.caption.text.lower():
+                    sample.validation_issues.append(
+                        ValidationIssue(
+                            severity=ValidationSeverity.INFO,
+                            message=f"Action '{top1_label}' not explicitly found in caption.",
+                        )
+                    )
 
     def _load_frames(self, sample: Sample, num_frames: int = 16) -> List[np.ndarray]:
         try:

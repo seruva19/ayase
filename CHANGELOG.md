@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Retrieve VideoMAE action label IDs in one device transfer for weighted caption matching.
+- Batch VideoMAE inference across clips and retry borderline classification decisions per clip.
 - Fix AVGen-Bench Synchformer imports in isolated scratch directories and enable float32 scoring on CPU.
 - Clean up VQAScore's temporary JPEG frames even when frame encoding fails partway through.
 - Reuse successful FFprobe responses for repeated requests with identical media files and query arguments.
