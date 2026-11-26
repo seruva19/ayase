@@ -163,20 +163,31 @@ class FVDModule(BatchMetricModule):
             return None
 
     def _extract_i3d_features(self, frames: np.ndarray) -> Optional[np.ndarray]:
-        import torch
+        return self._extract_i3d_batch([frames])[0]
 
-        # StyleGAN-V/cd-fvd protocol: (T,H,W,C) uint8 → (1,C,T,H,W) in [-1, 1].
-        frames_tensor = torch.from_numpy(frames).permute(3, 0, 1, 2).unsqueeze(0)
+    def _extract_i3d_batch(self, clips: List[np.ndarray]) -> np.ndarray:
+        import torch
+        from ayase.runtime import torch_inference_context
+
+        # StyleGAN-V/cd-fvd protocol: (N,T,H,W,C) uint8 → (N,C,T,H,W) in [-1, 1].
+        pixels = clips[0][None, ...] if len(clips) == 1 else np.stack(clips)
+        frames_tensor = torch.from_numpy(pixels).permute(0, 4, 1, 2, 3)
         frames_tensor = frames_tensor.float().to(self.device) / 127.5 - 1.0
 
-        with torch.no_grad():
+        dtype = str(self.config.get("dtype", "auto"))
+        amp = dtype.lower() != "auto" and bool(self.config.get("amp_enabled", True))
+        with torch_inference_context(str(self.device), dtype, amp):
             features = self._r3d_model(
                 frames_tensor,
                 rescale=False,
                 resize=False,
                 return_features=True,
             )
-            return features.cpu().numpy().flatten()
+        if features.shape[0] != len(clips):
+            raise ValueError("I3D did not produce a feature row for each video")
+        if features.dtype == torch.bfloat16:
+            features = features.float()
+        return features.cpu().numpy().reshape(len(clips), -1)
 
     def extract_reference_features(self, sample: Sample) -> Optional[np.ndarray]:
         """Extract reference features without consuming subsample budget."""
@@ -307,6 +318,48 @@ class FVDModule(BatchMetricModule):
                 logger.debug(f"Failed to extract reference features: {e}")
 
         return sample
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if len(samples) <= 1 or not self._ml_available:
+            return super().process_batch(samples)
+
+        offset = 0
+        while offset < len(samples):
+            size = max(1, int(self.batch_size))
+            if self.subsample_videos is not None:
+                size = min(size, self.subsample_videos - self._processed_count)
+                if size <= 0:
+                    break
+            chunk = samples[offset : offset + size]
+            offset += len(chunk)
+            try:
+                valid = []
+                for sample in chunk:
+                    if sample.is_video:
+                        clip = self._load_video_frames(sample.path, self.num_frames)
+                        if clip is not None and len(clip) == self.num_frames:
+                            valid.append((sample, clip))
+                if not valid:
+                    continue
+                reference_clips = []
+                for sample, _ in valid:
+                    if sample.reference_path is None:
+                        continue
+                    reference = self._load_video_frames(sample.reference_path, self.num_frames)
+                    if reference is not None and len(reference) == self.num_frames:
+                        reference_clips.append(reference)
+                generated = self._extract_i3d_batch([clip for _, clip in valid])
+                references = self._extract_i3d_batch(reference_clips) if reference_clips else []
+            except Exception as exc:
+                # No features are committed until both forwards finish. Retry
+                # per video when a decoder or a device batch cannot complete.
+                logger.debug("FVD batch extraction failed; retrying per video: %s", exc)
+                super().process_batch(chunk)
+                continue
+            self._feature_cache.extend(generated)
+            self._reference_cache.extend(references)
+            self._processed_count += len(generated)
+        return samples
 
     def on_dispose(self) -> None:
         """Compute FVD after all samples processed."""

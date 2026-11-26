@@ -65,6 +65,11 @@ keeps supported CLIP, FID and FVD inference weights between runs. Each run
 has fresh module instances, accumulators and results. Call
 `release_model_weights()` between runs to free the retained weights.
 
+GPU profiles can set `sample_batch_size` to 4–16 where device memory allows.
+The default is 1. FVD batches I3D feature extraction and computes one score
+over the complete dataset. Its default `dtype = "auto"` keeps I3D in FP32.
+Choose `"fp16"` or `"bf16"` explicitly to enable I3D autocast on CUDA.
+
 `assets_repo` selects the Hugging Face repository used for Ayase-managed
 checkpoints and source archives. It can also be set with
 `AYASE_GENERAL__ASSETS_REPO`; a module profile's `assets_repo` value takes

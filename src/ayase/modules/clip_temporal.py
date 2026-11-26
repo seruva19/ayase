@@ -151,19 +151,36 @@ class CLIPTemporalModule(PipelineModule):
         if embeddings is None or embeddings.size(0) < 2:
             return
 
+        import torch
+
         # L2 normalize defensively; cached HF features are already normalized.
-        embeddings = embeddings / embeddings.norm(p=2, dim=-1, keepdim=True)
+        with torch.inference_mode():
+            embeddings = embeddings / embeddings.norm(p=2, dim=-1, keepdim=True)
+            values = (
+                embeddings.float()
+                if embeddings.dtype in (torch.float16, torch.bfloat16)
+                else embeddings
+            )
+            consecutive = (values[:-1] * values[1:]).sum(dim=-1)
+            anchored = (values[:1] * values[1:]).sum(dim=-1)
+            products = torch.stack((consecutive, anchored)).to(embeddings.dtype).cpu().tolist()
+            clip_temp, face_consistency = (float(np.mean(row)) for row in products)
+            # Kernel reduction order can differ close to an issue threshold.
+            # Re-evaluate those rare cases with the previous dot-product path.
+            tolerance = 8 * torch.finfo(embeddings.dtype).eps
+            if abs(clip_temp - self.temp_threshold) <= tolerance:
+                products = torch.stack([
+                    embeddings[i] @ embeddings[i + 1] for i in range(embeddings.size(0) - 1)
+                ])
+                clip_temp = float(np.mean(products.cpu().tolist()))
+            if abs(face_consistency - self.face_threshold) <= tolerance:
+                products = torch.stack([embeddings[0] @ frame for frame in embeddings[1:]])
+                face_consistency = float(np.mean(products.cpu().tolist()))
 
         from ayase.models import QualityMetrics
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
 
-        # --- clip_temp_score: consecutive frame pairs ---
-        consec_sims = []
-        for i in range(embeddings.size(0) - 1):
-            sim = (embeddings[i] @ embeddings[i + 1]).item()
-            consec_sims.append(sim)
-        clip_temp = float(np.mean(consec_sims))
         sample.quality_metrics.clip_temp = clip_temp
 
         if clip_temp < self.temp_threshold:
@@ -176,11 +193,6 @@ class CLIPTemporalModule(PipelineModule):
                 )
             )
 
-        # --- face_consistency: mean similarity of frames [1:] to the first
-        # frame (EvalCrafter protocol) ---
-        anchor = embeddings[0]
-        face_sims = [(anchor @ embeddings[i]).item() for i in range(1, embeddings.size(0))]
-        face_consistency = float(np.mean(face_sims)) if face_sims else clip_temp
         sample.quality_metrics.face_consistency = face_consistency
 
         if face_consistency < self.face_threshold:
