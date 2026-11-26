@@ -183,6 +183,65 @@ def _video_indices(total: int, max_frames: Optional[int]) -> Iterable[int]:
     return map(int, np.linspace(0, total - 1, min(max_frames, total), dtype=int))
 
 
+def sample_video_pairs(
+    sample_path: str, reference_path: str, max_frames: int
+) -> Iterable[tuple[np.ndarray, np.ndarray]]:
+    """Yield BGR pairs on the common frame-index grid of two videos.
+
+    Use the shorter stream to build the grid. OpenCV skips a pair when either
+    read fails. Decord rejects its recovered frames and skips the video pair
+    if either stream fails to decode.
+    """
+    from .runtime import current_pipeline
+
+    if getattr(current_pipeline(), "_video_decoder", "opencv") == "decord":
+        try:
+            from decord import VideoReader
+
+            sample = VideoReader(sample_path, fault_tol=1e-9)
+            reference = VideoReader(reference_path, fault_tol=1e-9)
+            total = min(len(sample), len(reference))
+            indices = list(_video_indices(total, max_frames))
+            if not indices:
+                return
+            samples = sample.get_batch(indices).asnumpy()
+            references = reference.get_batch(indices).asnumpy()
+        except Exception as exc:
+            logger.warning(
+                "Decord could not decode video pair %s and %s: %s",
+                sample_path, reference_path, exc,
+            )
+            return
+        for frame, reference_frame in zip(samples, references):
+            yield (
+                cv2.cvtColor(frame, cv2.COLOR_RGB2BGR),
+                cv2.cvtColor(reference_frame, cv2.COLOR_RGB2BGR),
+            )
+        return
+
+    sample_capture = cv2.VideoCapture(sample_path)
+    try:
+        reference_capture = cv2.VideoCapture(reference_path)
+        try:
+            total = min(
+                int(sample_capture.get(cv2.CAP_PROP_FRAME_COUNT)),
+                int(reference_capture.get(cv2.CAP_PROP_FRAME_COUNT)),
+            )
+            if total <= 0:
+                return
+            for index in _video_indices(total, max_frames):
+                sample_capture.set(cv2.CAP_PROP_POS_FRAMES, index)
+                reference_capture.set(cv2.CAP_PROP_POS_FRAMES, index)
+                sample_ok, frame = sample_capture.read()
+                reference_ok, reference_frame = reference_capture.read()
+                if sample_ok and reference_ok:
+                    yield frame, reference_frame
+        finally:
+            reference_capture.release()
+    finally:
+        sample_capture.release()
+
+
 def _selection_indices(
     total: int, limit: Optional[int], prefetch_limits: tuple[Optional[int], ...]
 ) -> Iterable[int]:

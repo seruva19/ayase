@@ -26,6 +26,47 @@ def test_psnr99_no_reference(image_sample):
     assert result is image_sample
 
 
+def test_psnr99_video_keeps_pair_indices_when_reference_read_fails(monkeypatch):
+    import cv2
+    import numpy as np
+    from ayase.modules.psnr99 import PSNR99Module
+
+    released = []
+
+    class Capture:
+        def __init__(self, path):
+            self.path = path
+
+        def get(self, prop):
+            assert prop == cv2.CAP_PROP_FRAME_COUNT
+            return 7 if self.path == "sample" else 5
+
+        def set(self, prop, index):
+            assert prop == cv2.CAP_PROP_POS_FRAMES
+            self.index = index
+
+        def read(self):
+            if self.path == "reference" and self.index == 2:
+                return False, None
+            return True, np.full((1, 1, 3), self.index, dtype=np.uint8)
+
+        def release(self):
+            released.append(self.path)
+
+    pairs = []
+
+    def score(frame, reference):
+        pairs.append((int(frame[0, 0, 0]), int(reference[0, 0, 0])))
+        return float(frame[0, 0, 0])
+
+    monkeypatch.setattr(cv2, "VideoCapture", Capture)
+    module = PSNR99Module({"subsample": 3})
+    monkeypatch.setattr(module, "_block_psnr99", score)
+    assert module._score_video("sample", "reference") == 2.0
+    assert pairs == [(0, 0), (4, 4)]
+    assert set(released) == {"sample", "reference"}
+
+
 def test_psnr99_measures_errors_outside_first_column():
     import cv2
     import numpy as np

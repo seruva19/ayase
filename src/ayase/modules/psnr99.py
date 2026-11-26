@@ -15,6 +15,7 @@ from typing import Optional
 
 from ayase.models import Sample, QualityMetrics
 from ayase.base_modules import ReferenceBasedModule
+from ayase.image import sample_video_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -67,30 +68,12 @@ class PSNR99Module(ReferenceBasedModule):
         return self._block_psnr99(img, ref)
 
     def _score_video(self, sample_p: str, ref_p: str) -> Optional[float]:
-        cap_s = cv2.VideoCapture(sample_p)
-        cap_r = cv2.VideoCapture(ref_p)
-        try:
-            total = min(
-                int(cap_s.get(cv2.CAP_PROP_FRAME_COUNT)),
-                int(cap_r.get(cv2.CAP_PROP_FRAME_COUNT)),
-            )
-            if total <= 0:
-                return None
-            indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-            scores = []
-            for idx in indices:
-                cap_s.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                cap_r.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret_s, frame_s = cap_s.read()
-                ret_r, frame_r = cap_r.read()
-                if ret_s and ret_r:
-                    s = self._block_psnr99(frame_s, frame_r)
-                    if s is not None:
-                        scores.append(s)
-            return float(np.mean(scores)) if scores else None
-        finally:
-            cap_s.release()
-            cap_r.release()
+        scores = []
+        for frame, reference in sample_video_pairs(sample_p, ref_p, self.subsample):
+            score = self._block_psnr99(frame, reference)
+            if score is not None:
+                scores.append(score)
+        return float(np.mean(scores)) if scores else None
 
     def _block_psnr99(self, img: np.ndarray, ref: np.ndarray) -> Optional[float]:
         """Mean of the top-1% per-pixel squared Y errors → PSNR (the paper's def)."""
