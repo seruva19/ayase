@@ -180,6 +180,7 @@ class GeneralConfig(BaseModel):
     """
 
     parallel_jobs: int = 8
+    prefetch_workers: int = Field(default=0, ge=0)
     cache_enabled: bool = True
     cache_dir: Path = Path.home() / ".cache" / "ayase"
     models_dir: Path = Path("models")

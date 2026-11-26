@@ -116,6 +116,9 @@ class AestheticScoringModule(PipelineModule):
         except Exception as e:
             logger.error(f"Failed to load Aesthetic models: {e}")
 
+    def frame_prefetch_limits(self):
+        return (8,) if self._ml_available else ()
+
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
             return sample

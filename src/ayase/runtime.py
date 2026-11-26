@@ -86,6 +86,7 @@ def runtime_module_config(config: Optional[Any]) -> Dict[str, Any]:
         "attention_backend": general.attention_backend,
         "cache_enabled": general.cache_enabled,
         "frame_cache_enabled": general.frame_cache_enabled,
+        "prefetch_workers": general.prefetch_workers,
         "video_decoder": general.video_decoder,
         "timing_enabled": general.timing_enabled,
         "sample_batch_size": general.sample_batch_size,

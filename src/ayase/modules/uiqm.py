@@ -150,6 +150,9 @@ class UIQMModule(PipelineModule):
         # (UICM + UISM + UIConM).
         self._backend = "port"
 
+    def frame_prefetch_limits(self) -> tuple[int, ...]:
+        return (self.subsample,)
+
     def process(self, sample: Sample) -> Sample:
         try:
             score = self._compute(sample)

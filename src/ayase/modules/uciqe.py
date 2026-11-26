@@ -84,6 +84,9 @@ class UCIQEModule(PipelineModule):
         # Faithful CIELab port of the Yang & Sowmya (2015) UCIQE formula.
         self._backend = "port"
 
+    def frame_prefetch_limits(self) -> tuple[int, ...]:
+        return (self.subsample,)
+
     def process(self, sample: Sample) -> Sample:
         try:
             score = self._compute(sample)

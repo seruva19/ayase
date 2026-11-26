@@ -1119,6 +1119,94 @@ def test_known_count_only_does_not_read_sequential_fallback(tmp_path, monkeypatc
     assert calls == [[], []]
 
 
+@pytest.mark.parametrize("size", [1, 2])
+def test_prefetch_overlaps_one_batch_and_keeps_pipeline_on_owner(tmp_path, monkeypatch, size):
+    from threading import Event, get_ident
+
+    from ayase import image
+    from ayase.cli import _process_samples
+
+    owner = get_ident()
+    next_batch_started = Event()
+    original = image._prefetch_frames
+    opens = _install_fake_decoder(monkeypatch, total_frames=9)
+    yielded = []
+    hooks = []
+    checkpoints = []
+    fail_first = False
+
+    def decode(path, *args):
+        assert get_ident() != owner
+        if fail_first and path.stem == "0":
+            raise RuntimeError("simulated prefetch failure")
+        if path.stem == str(size):
+            next_batch_started.set()
+        return original(path, *args)
+
+    monkeypatch.setattr(image, "_prefetch_frames", decode)
+
+    class PrefetchProbe(PipelineModule):
+        def frame_prefetch_limits(self):
+            return (3, 4, None)
+
+        def process(self, sample):
+            assert get_ident() == owner
+            if sample.path.stem == "0" and self.config["prefetch_workers"]:
+                assert next_batch_started.wait(5)
+                assert yielded == list(range(2 * size))
+            first = image.sample_frames(sample.path, 3)
+            second = image.sample_frames(sample.path, 4)
+            middle = image.load_representative_frame(sample.path)
+            sample.metadata["decode"] = [
+                [int(frame[0, 0, 0]) for frame in first],
+                [int(frame[0, 0, 0]) for frame in second],
+                int(middle[0, 0, 0]),
+            ]
+            return sample
+
+    paths = [_media(tmp_path, f"{index}.mp4") for index in range(5)]
+
+    def run(workers):
+        module = PrefetchProbe({"prefetch_workers": workers, "sample_batch_size": size})
+        module._mounted = True
+        pipeline = Pipeline([module])
+
+        def before(sample):
+            assert get_ident() == owner
+            hooks.append(sample.path)
+            return sample
+
+        pipeline.add_hook(module.name, before=before)
+
+        def samples():
+            for index, path in enumerate(paths):
+                yielded.append(index)
+                yield Sample(path=path, is_video=True)
+
+        count = _process_samples(
+            pipeline, samples(), checkpoint_every=2,
+            checkpoint_fn=lambda p, count: checkpoints.append((count, len(p.results))),
+        )
+        assert count == len(paths)
+        assert hooks == paths
+        assert checkpoints == [(2, 2), (4, 4), (5, 5)]
+        return [sample.canonical_model_dump(mode="json") for sample in pipeline.results.values()]
+
+    expected = run(0)
+    opens.clear()
+    yielded.clear()
+    hooks.clear()
+    checkpoints.clear()
+    assert run(2) == expected
+    assert opens == [[0, 2, 4, 5, 8]] * len(paths)
+    yielded.clear()
+    hooks.clear()
+    checkpoints.clear()
+    next_batch_started.clear()
+    fail_first = True
+    assert run(2) == expected
+
+
 def test_sample_frames_detailed_reports_frame_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

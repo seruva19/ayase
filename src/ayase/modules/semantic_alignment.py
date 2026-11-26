@@ -165,6 +165,9 @@ class SemanticAlignmentModule(PipelineModule):
                 )
             )
 
+    def frame_prefetch_limits(self):
+        return (self.max_frames,) if self._ml_available else ()
+
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
             return sample

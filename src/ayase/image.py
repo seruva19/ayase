@@ -183,6 +183,14 @@ def _video_indices(total: int, max_frames: Optional[int]) -> Iterable[int]:
     return map(int, np.linspace(0, total - 1, min(max_frames, total), dtype=int))
 
 
+def _selection_indices(
+    total: int, limit: Optional[int], prefetch_limits: tuple[Optional[int], ...]
+) -> Iterable[int]:
+    if prefetch_limits:
+        return sorted({idx for size in prefetch_limits for idx in _video_indices(total, size)})
+    return _video_indices(total, limit)
+
+
 class _FrameCache:
     """Byte-bounded LRU for exact decoded frames in a sample or batch."""
 
@@ -196,6 +204,11 @@ class _FrameCache:
         self._frames.clear()
         self._totals.clear()
         self.bytes_used = 0
+
+    def absorb(self, decoded: "_FrameCache") -> None:
+        self._totals.update(decoded._totals)
+        for key, frame in decoded._frames.items():
+            self._store(key, frame)
 
     def _get(self, key: tuple[Any, ...]) -> Optional[np.ndarray]:
         frame = self._frames.get(key)
@@ -252,6 +265,7 @@ class _FrameCache:
         *,
         decoder: str = "opencv",
         known_count_only: bool = False,
+        prefetch_limits: tuple[Optional[int], ...] = (),
     ) -> List[np.ndarray]:
         """Read one exact grid, or the middle frame when no frame limit is supplied."""
         from .runtime import clone_frames
@@ -261,7 +275,7 @@ class _FrameCache:
             return [] if frame is None else [frame]
 
         if decoder == "decord":
-            return self._read_decord(path, path_key, max_frames, color)
+            return self._read_decord(path, path_key, max_frames, color, prefetch_limits)
 
         key = (*path_key, 0, "opencv")
         total = self._totals.get(key)
@@ -290,6 +304,8 @@ class _FrameCache:
                 total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
                 if total > 0:
                     self._totals[key] = total
+                elif prefetch_limits:
+                    return []
                 elif max_frames is None:
                     ok, frame = reader.read()
                     if not ok or frame is None:
@@ -300,12 +316,15 @@ class _FrameCache:
                 else:
                     return clone_frames(_sample_frames_sequential(reader, max_frames, color))
             result = []
-            for index in _video_indices(total, max_frames):
+            for index in _selection_indices(total, max_frames, prefetch_limits):
                 frame = self._read((*key, index), color, lambda: decode(index))
-                if frame is not None:
+                if frame is not None and not prefetch_limits:
                     result.append(frame)
             return result
         except Exception as exc:
+            if prefetch_limits:
+                self.clear()
+                return []
             logger.debug("Falling back to uncached frame reading for %s: %s", path, exc)
             if cap is not None:
                 cap.release()
@@ -325,7 +344,8 @@ class _FrameCache:
                 cap.release()
 
     def _read_decord(
-        self, path: Path, path_key: tuple[Any, ...], max_frames: Optional[int], color: str
+        self, path: Path, path_key: tuple[Any, ...], max_frames: Optional[int], color: str,
+        prefetch_limits: tuple[Optional[int], ...],
     ) -> List[np.ndarray]:
         from .runtime import readonly_view
 
@@ -351,7 +371,7 @@ class _FrameCache:
                 self._totals[key] = total
             if total <= 0:
                 return []
-            indices = list(_video_indices(total, max_frames))
+            indices = list(_selection_indices(total, max_frames, prefetch_limits))
             result = []
             for start in range(0, len(indices), 32):
                 chunk = indices[start : start + 32]
@@ -380,7 +400,8 @@ class _FrameCache:
                         )
                 for index in chunk:
                     if index in ready:
-                        result.append(ready[index])
+                        if not prefetch_limits:
+                            result.append(ready[index])
                     else:
                         base = native[index]
                         frame = (
@@ -388,11 +409,24 @@ class _FrameCache:
                             if color == "bgr"
                             else self._store((*key, index, color), _convert_frame_color(base, color))
                         )
-                        result.append(readonly_view(frame))
+                        if not prefetch_limits:
+                            result.append(readonly_view(frame))
             return result
         except Exception as exc:
+            if prefetch_limits:
+                self.clear()
+                return []
             logger.warning("Decord could not decode %s: %s", path, exc)
             return []
+
+
+def _prefetch_frames(
+    path: Path, path_key: tuple[Any, ...], limits: tuple[Optional[int], ...],
+    decoder: str, budget: int,
+) -> _FrameCache:
+    cache = _FrameCache(budget)
+    cache.read(path, path_key, None, "bgr", decoder=decoder, prefetch_limits=limits)
+    return cache
 
 
 # When CAP_PROP_FRAME_COUNT is unreliable, scan at most this many frames per

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Share compatible CLIP weights and cached features across CLIP metrics.
 - Reuse exact decoded video frames across sampling grids and representative-frame requests in a byte-bounded cache.
 - Add an opt-in Decord backend for shared video frame readers and separate its resume state from OpenCV.
+- Optionally decode the next batch's declared frame grids while the current batch runs.
 
 ### Fixed
 

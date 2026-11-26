@@ -16,6 +16,7 @@ import warnings
 from abc import ABC, abstractmethod
 from copy import copy, deepcopy
 from functools import lru_cache
+from itertools import islice
 from pathlib import Path
 from typing import (
     Any,
@@ -444,6 +445,10 @@ class PipelineModule(ABC):
                 continue
             processed_samples.append(processed)
         return processed_samples
+
+    def frame_prefetch_limits(self) -> tuple[Optional[int], ...]:
+        """Declare fixed shared-reader requests for the main video. None means middle frame."""
+        return ()
 
     def on_mount(self) -> None:
         """Called when the module is loaded/initialized. Use for loading models/weights.
@@ -1054,6 +1059,7 @@ class Pipeline:
         "parallel_jobs",
         "frame_cache_enabled",
         "video_decoder",
+        "prefetch_workers",
         "timing_enabled",
         "cache_enabled",
     }
@@ -1201,6 +1207,10 @@ class Pipeline:
         from .image import _FrameCache
 
         self._frame_cache = _FrameCache(128 * 1024 * 1024)
+        self._prefetched_frame_caches: tuple[_FrameCache, ...] = ()
+        self.prefetch_workers = max(
+            (int(module.config.get("prefetch_workers", 0)) for module in self.modules), default=0
+        )
         self._runtime_resource_cache: Dict[tuple[Any, ...], Any] = {}
         self._runtime_value_cache: Dict[tuple[Any, ...], Any] = {}
         # Result/frame/runtime caching is a GLOBAL feature gated by config
@@ -2390,6 +2400,8 @@ class Pipeline:
             self._register_module_failure(sample, module_name, detail)
 
         self._frame_cache.clear()
+        for cache in self._prefetched_frame_caches:
+            self._frame_cache.absorb(cache)
         self._runtime_value_cache = {}
         try:
             with pipeline_context(self):
@@ -2822,6 +2834,8 @@ class Pipeline:
         if pending_samples:
             active_samples = pending_samples
             self._frame_cache.clear()
+            for cache in self._prefetched_frame_caches:
+                self._frame_cache.absorb(cache)
             self._runtime_value_cache = {}
             try:
                 with pipeline_context(self):
@@ -2855,20 +2869,77 @@ class Pipeline:
         modules to override ``process_batch()`` for true batched inference.
         """
 
-        size = self._coerce_batch_size(batch_size)
-        if size <= 1:
-            return [self.process_sample(sample) for sample in samples]
+        return [
+            result
+            for batch in self.iter_processed_batches(samples, batch_size=batch_size)
+            for result in batch
+        ]
 
-        processed: List[Sample] = []
-        batch: List[Sample] = []
-        for sample in samples:
-            batch.append(sample)
-            if len(batch) >= size:
-                processed.extend(self._process_sample_batch(batch))
-                batch = []
-        if batch:
-            processed.extend(self._process_sample_batch(batch))
-        return processed
+    def iter_processed_batches(
+        self, samples: Iterable[Sample], *, batch_size: Optional[int] = None
+    ) -> Iterable[List[Sample]]:
+        """Process ordered batches with at most one upcoming batch decoding in the background."""
+        from concurrent.futures import Future, ThreadPoolExecutor
+
+        from .image import _FrameCache, _prefetch_frames, is_video_path
+
+        size = self._coerce_batch_size(batch_size)
+        source = iter(samples)
+        if self.prefetch_workers > 0 and self._frame_cache_enabled:
+            limits = tuple(dict.fromkeys(
+                limit
+                for module in self.modules
+                if module._mounted and module.name not in self.module_failures
+                for limit in module.frame_prefetch_limits()
+                if limit is None or limit > 0
+            ))
+        else:
+            limits = ()
+
+        def execute(batch: List[Sample]) -> List[Sample]:
+            return [self.process_sample(batch[0])] if size == 1 else self._process_sample_batch(batch)
+
+        if not limits:
+            while batch := list(islice(source, size)):
+                yield execute(batch)
+            return
+
+        with ThreadPoolExecutor(max_workers=min(size, self.prefetch_workers)) as executor:
+            def submit(batch: List[Sample]) -> List[Future[_FrameCache]]:
+                requests = {
+                    Path(sample.path): self._path_cache_state(Path(sample.path))
+                    for sample in batch
+                    if sample.is_video and is_video_path(sample.path)
+                }
+                budget = self._frame_cache.max_bytes // max(1, len(requests))
+                return [
+                    executor.submit(_prefetch_frames, path, key, limits, self._video_decoder, budget)
+                    for path, key in requests.items()
+                ]
+
+            batch = list(islice(source, size))
+            pending = submit(batch)
+            try:
+                while batch:
+                    ready = []
+                    for future in pending:
+                        try:
+                            ready.append(future.result())
+                        except Exception as exc:
+                            logger.debug("Frame prefetch failed; reading on demand: %s", exc)
+                    following = list(islice(source, size))
+                    pending = submit(following)
+                    self._prefetched_frame_caches = tuple(ready)
+                    try:
+                        result = execute(batch)
+                    finally:
+                        self._prefetched_frame_caches = ()
+                    del ready
+                    yield result
+                    batch = following
+            finally:
+                for future in pending:
+                    future.cancel()
 
     def export_report(self, path: Path, format: str = "json") -> None:
         """Export a detailed validation report.

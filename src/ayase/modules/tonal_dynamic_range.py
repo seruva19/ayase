@@ -44,6 +44,9 @@ class TonalDynamicRangeModule(PipelineModule):
         self.subsample = self.config.get("subsample", 8)
         self._backend = "algorithmic"
 
+    def frame_prefetch_limits(self) -> tuple[int, ...]:
+        return (self.subsample,)
+
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()

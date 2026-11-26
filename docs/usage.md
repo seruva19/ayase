@@ -36,6 +36,7 @@ and backend requirements. Scores from different metrics use different scales.
 ```toml
 [general]
 parallel_jobs = 8  # concurrency hint passed to capable modules/backends
+prefetch_workers = 0  # opt-in: number of background video readers
 video_decoder = "opencv"
 assets_repo = "AkaneTendo25/ayase-assets"  # owner/repo or its huggingface.co URL
 
@@ -52,6 +53,12 @@ Ayase's frame readers. OpenCV is the default and the current behavior of
 `"auto"`. A Decord decode failure leaves the affected frame request empty.
 Resume state records the effective decoder and rejects reuse across different
 decoders.
+
+Set `prefetch_workers` above zero to overlap decoding one upcoming batch with
+the current batch. Prefetch reads the fixed frame grids declared by compatible
+modules and requires the shared frame cache. Module processing, hooks and
+checkpoints run sequentially in input order. For video with no reliable frame
+count, the normal reader handles the request when the metric runs.
 
 `assets_repo` selects the Hugging Face repository used for Ayase-managed
 checkpoints and source archives. It can also be set with

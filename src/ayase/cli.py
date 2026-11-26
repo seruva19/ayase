@@ -241,6 +241,13 @@ def _process_samples(
         next_checkpoint = ((processed_count // checkpoint_every) + 1) * checkpoint_every
 
     batch_size = _pipeline_sample_batch_size(pipeline)
+    if getattr(pipeline, "prefetch_workers", 0) > 0:
+        for processed in pipeline.iter_processed_batches(samples, batch_size=batch_size):
+            processed_count += len(processed)
+            _maybe_checkpoint()
+        _maybe_checkpoint(force=True)
+        return processed_count
+
     if batch_size > 1:
         batch = []
         for sample in samples:

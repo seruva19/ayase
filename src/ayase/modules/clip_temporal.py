@@ -87,6 +87,10 @@ class CLIPTemporalModule(PipelineModule):
         except Exception as e:
             logger.warning(f"Failed to load CLIP for temporal: {e}")
 
+    def frame_prefetch_limits(self):
+        # An uncapped clip may be much larger than the prefetch budget.
+        return (self.max_frames,) if self._ml_available and self.max_frames > 0 else ()
+
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available or not sample.is_video:
             return sample
