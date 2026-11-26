@@ -361,14 +361,14 @@ def test_semantic_alignment_process_batch_batches_clip_images(
     monkeypatch: pytest.MonkeyPatch,
 ):
     torch = pytest.importorskip("torch")
-    import ayase.image as image_utils
+    import ayase.modules.semantic_alignment as alignment_module
     from ayase.modules.semantic_alignment import SemanticAlignmentModule
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
         frames = [np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8) for i in range(max_frames)]
-        return frames, len(frames)
+        return frames
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_sample_frames)
+    monkeypatch.setattr(alignment_module, "sample_frames", fake_sample_frames)
 
     first_path = tmp_path / "first.mp4"
     second_path = tmp_path / "second.mp4"
@@ -413,14 +413,14 @@ def test_clip_temporal_process_batch_batches_clip_images(
     monkeypatch: pytest.MonkeyPatch,
 ):
     torch = pytest.importorskip("torch")
-    import ayase.image as image_utils
+    import ayase.modules.clip_temporal as temporal_module
     from ayase.modules.clip_temporal import CLIPTemporalModule
 
     def fake_sample_frames(path, max_frames=8, color="rgb"):
         frames = [np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8) for i in range(max_frames)]
-        return frames, len(frames)
+        return frames
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_sample_frames)
+    monkeypatch.setattr(temporal_module, "sample_frames", fake_sample_frames)
 
     first_path = tmp_path / "first.mp4"
     second_path = tmp_path / "second.mp4"
@@ -475,11 +475,26 @@ def test_pipeline_frame_cache_reuses_decoded_frames(
     media.write_bytes(b"video")
     calls = {"count": 0}
 
-    def fake_sample_frames(path, max_frames=8, color="rgb"):
-        calls["count"] += 1
-        return [np.zeros((2, 2, 3), dtype=np.uint8)], 1
+    class SingleFrameCapture:
+        def __init__(self, path):
+            calls["count"] += 1
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_sample_frames)
+        def isOpened(self):
+            return True
+
+        def get(self, prop):
+            return 1
+
+        def set(self, prop, position):
+            return True
+
+        def read(self):
+            return True, np.zeros((2, 2, 3), dtype=np.uint8)
+
+        def release(self):
+            pass
+
+    monkeypatch.setattr(image_utils.cv2, "VideoCapture", SingleFrameCapture)
 
     pipeline = Pipeline([_FrameCacheProbeModule()])
     pipeline.start()

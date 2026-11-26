@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Load bundled CLIP, Transformers compatibility shims, and metric class exports on first use.
 - Use the packaged module index to load only requested modules for named pipelines.
 - Share compatible CLIP weights and cached features across CLIP metrics.
+- Reuse exact decoded video frames across sampling grids and representative-frame requests in a byte-bounded cache.
 
 ### Fixed
 

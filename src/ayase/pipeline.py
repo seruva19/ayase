@@ -1196,10 +1196,10 @@ class Pipeline:
         self.module_timings: Dict[str, float] = {}
         self.module_call_counts: Dict[str, int] = {}
         self.module_failures: Dict[str, str] = {}
-        # Per-sample frame store, keyed by file identity only. Each entry holds
-        # one native-BGR decode plus lazily converted per-color variants; see
-        # sample_frames() / load_representative_frame().
-        self._frame_cache: Dict[tuple[Any, ...], Dict[str, Any]] = {}
+        # Per-sample/batch cache of exact frame indices and converted pixels.
+        from .image import _FrameCache
+
+        self._frame_cache = _FrameCache(128 * 1024 * 1024)
         self._runtime_resource_cache: Dict[tuple[Any, ...], Any] = {}
         self._runtime_value_cache: Dict[tuple[Any, ...], Any] = {}
         # Result/frame/runtime caching is a GLOBAL feature gated by config
@@ -1263,26 +1263,9 @@ class Pipeline:
             return base + (content_digest(path),)
         return base
 
-    def _frame_cache_key(self, kind: str, path: Path) -> tuple[Any, ...]:
-        """Key the per-sample frame store by file identity only.
-
-        Deliberately excludes ``max_frames`` and ``color`` so every module that
-        touches the same file shares one decode. Different (max_frames, color)
-        requests are served as subsampled views / lazily converted colors of
-        that single decode.
-        """
-        return (kind, *self._path_cache_state(path))
-
     def sample_frames(self, path: Path, max_frames: int = 8, color: str = "rgb") -> List[Any]:
-        """Load uniformly spaced frames, reusing a per-sample runtime cache.
-
-        Returns a fresh list of zero-copy READ-ONLY numpy views each call. The
-        exact ``max_frames`` sampling grid is decoded once in native BGR; color
-        conversions for that grid are cached lazily. Keeping separate entries
-        for different frame limits makes the result independent of request
-        order. Callers must not mutate the returned arrays in place (copy first).
-        """
-        from .image import _convert_frame_color, _sample_frames_uncached
+        """Build the exact sampling grid and reuse frames shared with earlier grids."""
+        from .image import _sample_frames_uncached
 
         max_frames = max(0, int(max_frames))
         color = str(color)
@@ -1291,57 +1274,23 @@ class Pipeline:
             frames = _sample_frames_uncached(path, max_frames=max_frames, color=color)
             return cast(List[Any], clone_frames(frames))
 
-        # A uniform N-frame grid generally is not a subset of a uniform M-frame
-        # grid. Include max_frames so an earlier, denser request cannot change
-        # the pixels returned by a later, smaller request.
-        key = (*self._frame_cache_key("frames", Path(path)), max_frames)
-        entry = self._frame_cache.get(key)
-        if entry is None:
-            decoded = _sample_frames_uncached(path, max_frames=max_frames, color="bgr")
-            base = [readonly_view(frame) for frame in decoded]
-            entry = {
-                "bgr": base,
-                "colors": {"bgr": base},
-            }
-            self._frame_cache[key] = entry
-
-        full = entry["colors"].get(color)
-        if full is None:
-            full = [readonly_view(_convert_frame_color(frame, color)) for frame in entry["bgr"]]
-            entry["colors"][color] = full
-
-        return [readonly_view(frame) for frame in full]
+        path = Path(path)
+        return cast(
+            List[Any], self._frame_cache.read(path, self._path_cache_state(path), max_frames, color)
+        )
 
     def load_representative_frame(self, path: Path, color: str = "rgb") -> Optional[Any]:
-        """Load one representative frame, reusing a per-sample runtime cache.
-
-        Returns a fresh zero-copy READ-ONLY numpy view (or ``None``). The middle
-        frame is decoded once in native BGR and cached per file; each ``color``
-        is converted-and-cached on first use. Do not mutate the result in place.
-        """
-        from .image import _load_representative_frame_uncached, _convert_frame_color
+        """Load the middle frame, including a cache hit from any earlier sampling grid."""
+        from .image import _load_representative_frame_uncached
 
         color = str(color)
         if not self._frame_cache_enabled:
             frame = _load_representative_frame_uncached(path, color=color)
             return readonly_view(frame) if frame is not None else None
 
-        key = self._frame_cache_key("representative", Path(path))
-        entry = self._frame_cache.get(key)
-        if entry is None:
-            decoded = _load_representative_frame_uncached(path, color="bgr")
-            base = readonly_view(decoded) if decoded is not None else None
-            entry = {"bgr": base, "colors": ({} if base is None else {"bgr": base})}
-            self._frame_cache[key] = entry
-
-        base = entry["bgr"]
-        if base is None:
-            return None
-        frame = entry["colors"].get(color)
-        if frame is None:
-            frame = readonly_view(_convert_frame_color(base, color))
-            entry["colors"][color] = frame
-        return readonly_view(frame)
+        path = Path(path)
+        frames = self._frame_cache.read(path, self._path_cache_state(path), None, color)
+        return frames[0] if frames else None
 
     def _record_module_timing(self, module_name: str, elapsed: float, calls: int = 1) -> None:
         if not self._timing_enabled:
@@ -1880,7 +1829,7 @@ class Pipeline:
         self.module_call_counts = {}
         self.module_failures = {}
         self._availability_excluded = {}
-        self._frame_cache = {}
+        self._frame_cache.clear()
         self._runtime_value_cache = {}
         # Inert/unusable implementations never mount. Existing expert wrappers
         # can still detect their real backend without changing standard-install
@@ -2403,7 +2352,7 @@ class Pipeline:
         for module_name, detail in self.module_failures.items():
             self._register_module_failure(sample, module_name, detail)
 
-        self._frame_cache = {}
+        self._frame_cache.clear()
         self._runtime_value_cache = {}
         try:
             with pipeline_context(self):
@@ -2571,7 +2520,7 @@ class Pipeline:
                             )
                         self._record_module_timing(module.name, perf_counter() - started_at)
         finally:
-            self._frame_cache = {}
+            self._frame_cache.clear()
             self._runtime_value_cache = {}
 
         # Cache the result and keep aggregate stats in sync.
@@ -2835,7 +2784,7 @@ class Pipeline:
 
         if pending_samples:
             active_samples = pending_samples
-            self._frame_cache = {}
+            self._frame_cache.clear()
             self._runtime_value_cache = {}
             try:
                 with pipeline_context(self):
@@ -2847,7 +2796,7 @@ class Pipeline:
                             continue
                         active_samples = self._process_module_batch(module, active_samples)
             finally:
-                self._frame_cache = {}
+                self._frame_cache.clear()
                 self._runtime_value_cache = {}
 
             for (idx, str_path, signature, manifest), sample in zip(pending_meta, active_samples):

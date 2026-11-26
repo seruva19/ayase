@@ -779,22 +779,42 @@ def test_external_plugin_symlink_cannot_escape_configured_folder(tmp_path: Path)
 # ---------------------------------------------------------------------------
 
 
-def _install_fake_decoder(monkeypatch, total_frames: int = 8):
+def _install_fake_decoder(monkeypatch, total_frames: int = 8, failed_frames=(), failed_seeks=()):
     import ayase.image as image_utils
 
-    calls = []
+    opens = []
 
-    def fake_decode(path, max_frames=8, color="rgb"):
-        calls.append((int(max_frames), str(color)))
-        n = min(int(max_frames), total_frames)
-        frames = [
-            np.full((4, 4, 3), fill_value=i, dtype=np.uint8) for i in range(n)
-        ]
-        # reliable_total == the video's true frame count (decoder-reported).
-        return frames, total_frames
+    class Capture:
+        def __init__(self, path):
+            self.position = 0
+            self.reads = []
+            opens.append(self.reads)
 
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached_detailed", fake_decode)
-    return calls
+        def isOpened(self):
+            return True
+
+        def get(self, prop):
+            return total_frames
+
+        def set(self, prop, position):
+            if position in failed_seeks:
+                return False
+            self.position = position
+            return True
+
+        def read(self):
+            index = self.position
+            self.position += 1
+            self.reads.append(index)
+            if index in failed_frames or (total_frames <= 0 and index >= 8):
+                return False, None
+            return True, np.full((4, 4, 3), index, dtype=np.uint8)
+
+        def release(self):
+            pass
+
+    monkeypatch.setattr(image_utils.cv2, "VideoCapture", Capture)
+    return opens
 
 
 def test_frame_cache_shares_decode_across_colors_for_same_grid(
@@ -809,7 +829,7 @@ def test_frame_cache_shares_decode_across_colors_for_same_grid(
     again = pipeline.sample_frames(media, max_frames=8, color="rgb")
 
     assert len(calls) == 1  # one exact grid serves all color requests
-    assert calls[0] == (8, "bgr")  # decoded once, native BGR
+    assert calls[0] == list(range(8))
     assert len(first) == 8
     assert len(gray) == 8
     assert gray[0].ndim == 2  # converted to gray lazily
@@ -833,7 +853,7 @@ def test_frame_cache_returns_read_only_views(
         frames[0][0, 0, 0] = 9
 
 
-def test_frame_cache_redecodes_for_higher_max_frames(
+def test_frame_cache_reads_only_new_indices_for_higher_max_frames(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     calls = _install_fake_decoder(monkeypatch)
@@ -845,10 +865,10 @@ def test_frame_cache_redecodes_for_higher_max_frames(
 
     assert len(low) == 3
     assert len(high) == 8
-    assert [c[0] for c in calls] == [3, 8]
+    assert calls == [[0, 3, 7], [1, 2, 4, 5, 6]]
 
 
-def test_frame_cache_keeps_unequal_exhausted_requests_independent(
+def test_frame_cache_reuses_identical_grids_for_short_videos(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     calls = _install_fake_decoder(monkeypatch, total_frames=2)
@@ -860,23 +880,14 @@ def test_frame_cache_keeps_unequal_exhausted_requests_independent(
 
     assert len(first) == 2
     assert len(second) == 2
-    assert [c[0] for c in calls] == [4, 8]
+    assert calls == [[0, 1]]
 
 
 def test_frame_cache_sampling_is_order_independent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """A smaller grid has the same pixels standalone or after a larger grid."""
-    import ayase.image as image_utils
-
-    calls = []
-
-    def grid_decode(path, max_frames=8, color="rgb"):
-        calls.append(int(max_frames))
-        indices = np.linspace(0, 99, min(int(max_frames), 100), dtype=int)
-        return [np.full((2, 2, 3), int(i), dtype=np.uint8) for i in indices]
-
-    monkeypatch.setattr(image_utils, "_sample_frames_uncached", grid_decode)
+    calls = _install_fake_decoder(monkeypatch, total_frames=100)
     media = _media(tmp_path)
 
     standalone = Pipeline([]).sample_frames(media, max_frames=3, color="bgr")
@@ -886,7 +897,62 @@ def test_frame_cache_sampling_is_order_independent(
 
     assert [int(frame[0, 0, 0]) for frame in standalone] == [0, 49, 99]
     assert [int(frame[0, 0, 0]) for frame in ordered] == [0, 49, 99]
-    assert calls == [3, 8, 3]
+    assert calls == [[0, 49, 99], [0, 14, 28, 42, 56, 70, 84, 99], [49]]
+
+
+@pytest.mark.parametrize("order", [(5, 8, 16, 32), (32, 16, 8, 5)])
+def test_exact_frame_grids_decode_each_successful_index_once(tmp_path, monkeypatch, order):
+    from ayase.image import _sample_frames_uncached
+
+    calls = _install_fake_decoder(monkeypatch, total_frames=101)
+    pipeline = Pipeline([])
+    media = _media(tmp_path)
+    reference = {
+        limit: _sample_frames_uncached(media, max_frames=limit, color="rgb")
+        for limit in order
+    }
+    calls.clear()
+    for limit in order:
+        frames = pipeline.sample_frames(media, max_frames=limit, color="rgb")
+        np.testing.assert_array_equal(frames, reference[limit])
+    middle = pipeline.load_representative_frame(media, color="gray")
+    assert int(middle[0, 0]) == 50
+    decoded = [index for opened in calls for index in opened]
+    expected = {50}
+    for limit in order:
+        expected.update(np.linspace(0, 100, limit, dtype=int))
+    assert len(decoded) == len(expected)
+    assert set(decoded) == expected
+
+
+def test_frame_cache_bounds_converted_pixels_and_returns_readonly_views(tmp_path, monkeypatch):
+    calls = _install_fake_decoder(monkeypatch, total_frames=8)
+    pipeline = Pipeline([])
+    # A BGR frame and its RGB conversion each occupy 48 bytes.
+    pipeline._frame_cache.max_bytes = 96
+    media = _media(tmp_path)
+    frames = pipeline.sample_frames(media, max_frames=3, color="rgb")
+    assert pipeline._frame_cache.bytes_used <= 96
+    assert [int(frame[0, 0, 0]) for frame in frames] == [0, 3, 7]
+    assert pipeline.sample_frames(media, max_frames=1, color="gray")[0].shape == (4, 4)
+    assert pipeline._frame_cache.bytes_used <= 96
+    assert calls == [[0, 3, 7], [0]]
+    with pytest.raises(ValueError):
+        frames[0].setflags(write=True)
+
+
+def test_failed_seek_replays_grid_without_mixing_decoder_positions(tmp_path, monkeypatch):
+    from ayase.image import _sample_frames_uncached
+
+    _install_fake_decoder(monkeypatch, total_frames=9, failed_seeks={4})
+    pipeline = Pipeline([])
+    media = _media(tmp_path)
+    pipeline.sample_frames(media, max_frames=1, color="rgb")
+
+    frames = pipeline.sample_frames(media, max_frames=3, color="rgb")
+    expected = _sample_frames_uncached(media, max_frames=3, color="rgb")
+    assert [int(frame[0, 0, 0]) for frame in expected] == [0, 1, 8]
+    np.testing.assert_array_equal(frames, expected)
 
 
 @pytest.mark.parametrize("unreliable_count", [False, True])
@@ -953,55 +1019,32 @@ def test_frame_cache_short_read_not_treated_as_exhausted(
     A cache entry is exhausted only when the decoder confirms the source has no
     additional frames; failed seeks do not establish exhaustion.
     """
-    import ayase.image as image_utils
-
-    calls = []
-
-    def flaky_detailed(path, max_frames=8, color="rgb"):
-        calls.append(int(max_frames))
-        # Video actually has 100 frames, but seeks fail so only 3 come back.
-        n = min(3, int(max_frames))
-        frames = [np.full((4, 4, 3), i, dtype=np.uint8) for i in range(n)]
-        return frames, 100  # reliable_total >> returned count
-
-    monkeypatch.setattr(
-        image_utils, "_sample_frames_uncached_detailed", flaky_detailed
-    )
+    calls = _install_fake_decoder(monkeypatch, total_frames=100, failed_frames={33, 28, 99})
     media = _media(tmp_path)
     pipeline = Pipeline([])
 
     first = pipeline.sample_frames(media, max_frames=4, color="rgb")
-    pipeline.sample_frames(media, max_frames=8, color="rgb")
+    second = pipeline.sample_frames(media, max_frames=8, color="rgb")
 
-    assert len(first) == 3
-    # Not exhausted (reliable_total 100 > 4) => higher request re-decodes.
-    assert calls == [4, 8]
+    assert [int(frame[0, 0, 0]) for frame in first] == [0, 66]
+    assert [int(frame[0, 0, 0]) for frame in second] == [0, 14, 42, 56, 70, 84]
+    assert calls == [[0, 33, 66, 99], [14, 28, 42, 56, 70, 84, 99]]
 
 
 def test_frame_cache_unreliable_count_allows_redecode(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """When the decoder frame count is unreliable, a larger request re-attempts."""
-    import ayase.image as image_utils
-
-    calls = []
-
-    def seq_detailed(path, max_frames=8, color="rgb"):
-        calls.append(int(max_frames))
-        n = min(int(max_frames), 2)
-        frames = [np.full((4, 4, 3), i, dtype=np.uint8) for i in range(n)]
-        return frames, None  # frame count unreliable (<=0)
-
-    monkeypatch.setattr(
-        image_utils, "_sample_frames_uncached_detailed", seq_detailed
-    )
+    calls = _install_fake_decoder(monkeypatch, total_frames=0)
     media = _media(tmp_path)
     pipeline = Pipeline([])
 
-    pipeline.sample_frames(media, max_frames=4, color="rgb")
-    pipeline.sample_frames(media, max_frames=8, color="rgb")
+    first = pipeline.sample_frames(media, max_frames=4, color="rgb")
+    second = pipeline.sample_frames(media, max_frames=8, color="rgb")
 
-    assert calls == [4, 8]  # unreliable count => not cached as exhausted
+    assert calls == [list(range(9)), list(range(9))]
+    assert [int(frame[0, 0, 0]) for frame in first] == [0, 4]
+    assert [int(frame[0, 0, 0]) for frame in second] == [0, 4]
 
 
 def test_sample_frames_detailed_reports_frame_count(
@@ -1064,28 +1107,20 @@ def test_uncached_sample_frames_are_read_only(
 def test_representative_frame_cached_and_read_only(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    import ayase.image as image_utils
-
-    calls = {"count": 0}
-
-    def fake_rep(path, color="rgb"):
-        calls["count"] += 1
-        return np.full((4, 4, 3), fill_value=7, dtype=np.uint8)
-
-    monkeypatch.setattr(
-        image_utils, "_load_representative_frame_uncached", fake_rep
-    )
+    calls = _install_fake_decoder(monkeypatch, total_frames=9)
     media = _media(tmp_path)
     pipeline = Pipeline([])
 
     rgb = pipeline.load_representative_frame(media, color="rgb")
     gray = pipeline.load_representative_frame(media, color="gray")
     rgb2 = pipeline.load_representative_frame(media, color="rgb")
+    sampled = pipeline.sample_frames(media, max_frames=3, color="rgb")
 
-    assert calls["count"] == 1  # decoded once, colors converted lazily
+    assert calls == [[4], [0, 8]]
     assert rgb is not None and rgb.flags.writeable is False
     assert gray is not None and gray.ndim == 2
     assert rgb2 is not rgb and np.shares_memory(rgb2, rgb)
+    assert np.shares_memory(sampled[1], rgb)
     with pytest.raises((ValueError, RuntimeError)):
         rgb[0, 0, 0] = 1
 

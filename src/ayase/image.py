@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import io
 import logging
+from collections import OrderedDict
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence
+from typing import Any, Callable, Iterable, List, Optional, Sequence
 
 import cv2
 import numpy as np
@@ -133,7 +134,7 @@ def sample_frames(path: Path, max_frames: int = 8, color: str = "rgb") -> List[n
     ``max_frames`` caps the number of frames; ``color`` is ``"rgb"`` (default),
     ``"bgr"``, or ``"gray"``. The returned arrays are ALWAYS READ-ONLY
     (``writeable=False``) — both when a pipeline is active (zero-copy views over
-    the shared per-sample cache for the exact ``max_frames`` sampling grid) and
+    the shared per-sample cache of individual decoded frames) and
     on the uncached fallback path. The returned list is fresh each call, but
     the pixel buffers may be shared. Do NOT mutate
     returned frames in place — copy first (``frame.copy()``) if you need to
@@ -162,6 +163,140 @@ def _convert_frame_color(frame: np.ndarray, color: str) -> np.ndarray:
     if color == "rgb":
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     return frame  # "bgr" (native) or any passthrough
+
+
+def _video_indices(total: int, max_frames: Optional[int]) -> Iterable[int]:
+    if max_frames is None:
+        return (total // 2,)
+    return map(int, np.linspace(0, total - 1, min(max_frames, total), dtype=int))
+
+
+class _FrameCache:
+    """Byte-bounded LRU for exact decoded frames in a sample or batch."""
+
+    def __init__(self, max_bytes: int) -> None:
+        self.max_bytes = max_bytes
+        self.bytes_used = 0
+        self._frames: OrderedDict[tuple[Any, ...], np.ndarray] = OrderedDict()
+        self._totals: dict[tuple[Any, ...], int] = {}
+
+    def clear(self) -> None:
+        self._frames.clear()
+        self._totals.clear()
+        self.bytes_used = 0
+
+    def _get(self, key: tuple[Any, ...]) -> Optional[np.ndarray]:
+        frame = self._frames.get(key)
+        if frame is not None:
+            self._frames.move_to_end(key)
+        return frame
+
+    def _store(self, key: tuple[Any, ...], frame: np.ndarray) -> np.ndarray:
+        from .runtime import readonly_view
+
+        frame.setflags(write=False)
+        frame = readonly_view(frame)
+        if frame.nbytes <= self.max_bytes:
+            if (previous := self._frames.pop(key, None)) is not None:
+                self.bytes_used -= previous.nbytes
+            while self.bytes_used + frame.nbytes > self.max_bytes:
+                _, evicted = self._frames.popitem(last=False)
+                self.bytes_used -= evicted.nbytes
+            self._frames[key] = frame
+            self.bytes_used += frame.nbytes
+        return frame
+
+    def _read(
+        self,
+        key: tuple[Any, ...],
+        color: str,
+        decode: Callable[[], Optional[np.ndarray]],
+    ) -> Optional[np.ndarray]:
+        from .runtime import readonly_view
+
+        if color not in ("gray", "rgb"):
+            color = "bgr"
+        exact = (*key, color)
+        frame = self._get(exact)
+        if frame is not None:
+            return readonly_view(frame)
+        base_key = (*key, "bgr")
+        base = self._get(base_key)
+        if base is None:
+            base = decode()
+            if base is None:
+                return None
+            base = self._store(base_key, base)
+        if color == "bgr":
+            return readonly_view(base)
+        return readonly_view(self._store(exact, _convert_frame_color(base, color)))
+
+    def read(
+        self,
+        path: Path,
+        path_key: tuple[Any, ...],
+        max_frames: Optional[int],
+        color: str,
+    ) -> List[np.ndarray]:
+        """Read one exact grid, or the middle frame when no frame limit is supplied."""
+        from .runtime import clone_frames
+
+        if not is_video_path(path):
+            frame = self._read((*path_key, "image", 0), color, lambda: load_image_array(path, "bgr"))
+            return [] if frame is None else [frame]
+
+        key = (*path_key, 0, "opencv")
+        total = self._totals.get(key)
+        cap: Optional[cv2.VideoCapture] = None
+
+        def open_video() -> cv2.VideoCapture:
+            nonlocal cap
+            if cap is None:
+                cap = cv2.VideoCapture(str(path))
+            return cap
+
+        def decode(index: int) -> Optional[np.ndarray]:
+            reader = open_video()
+            if not reader.isOpened() or not reader.set(cv2.CAP_PROP_POS_FRAMES, index):
+                # The legacy decoder still reads when seeking fails. Replay the
+                # full request so skipped cache hits can't change that position.
+                raise OSError(f"Could not seek to frame {index}")
+            ok, frame = reader.read()
+            return frame if ok else None
+
+        try:
+            if total is None:
+                reader = open_video()
+                if not reader.isOpened():
+                    return []
+                total = int(reader.get(cv2.CAP_PROP_FRAME_COUNT))
+                if total > 0:
+                    self._totals[key] = total
+                elif max_frames is None:
+                    ok, frame = reader.read()
+                    if not ok or frame is None:
+                        return []
+                    return clone_frames([_convert_frame_color(frame, color)])
+                else:
+                    return clone_frames(_sample_frames_sequential(reader, max_frames, color))
+            result = []
+            for index in _video_indices(total, max_frames):
+                frame = self._read((*key, index), color, lambda: decode(index))
+                if frame is not None:
+                    result.append(frame)
+            return result
+        except Exception as exc:
+            logger.debug("Falling back to uncached frame reading for %s: %s", path, exc)
+            if cap is not None:
+                cap.release()
+                cap = None
+            if max_frames is not None:
+                return clone_frames(_sample_frames_uncached(path, max_frames, color))
+            frame = _load_representative_frame_uncached(path, color)
+            return [] if frame is None else clone_frames([frame])
+        finally:
+            if cap is not None:
+                cap.release()
 
 
 # When CAP_PROP_FRAME_COUNT is unreliable, scan at most this many frames per
@@ -232,9 +367,8 @@ def _sample_frames_uncached_detailed(
             # frame metrics still get samples instead of silently skipping.
             # Report None so callers never cache an authoritative "exhausted".
             return _sample_frames_sequential(cap, max_frames, color), None
-        n = min(max_frames, total)
-        for idx in np.linspace(0, total - 1, n, dtype=int):
-            cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
+        for idx in _video_indices(total, max_frames):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
             ok, frame = cap.read()
             if not ok or frame is None:
                 continue
