@@ -27,6 +27,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -1729,6 +1730,23 @@ class Pipeline:
 
     def start(self) -> None:
         """Prepare all modules for execution."""
+        self._reset_run()
+        self._mount_modules(self.modules)
+
+        if self._restored_checkpoint and any(
+            module.name not in self.module_failures and not self._module_is_excluded(module.name)
+            for module in self._batch_modules
+        ):
+            # Checkpoints contain sample results, not the accumulators of
+            # distribution metrics. Replay the input cohort to rebuild them.
+            logger.info("Replaying checkpoint input cohort for dataset-level metrics")
+            self._clear_loaded_state()
+            self.stats = DatasetStats(
+                total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
+            )
+
+    def _reset_run(self) -> None:
+        """Reset run state before any module is mounted."""
         if self._start_needs_reset:
             self._clear_loaded_state()
             self._start_needs_reset = False
@@ -1764,7 +1782,10 @@ class Pipeline:
                 len(self._availability_excluded),
                 ", ".join(sorted(self._availability_excluded)),
             )
-        for module in self.modules:
+
+    def _mount_modules(self, modules: Sequence[PipelineModule]) -> None:
+        """Mount a module group and run its per-run setup in order."""
+        for module in modules:
             if self._module_is_excluded(module.name):
                 continue
             try:
@@ -1794,7 +1815,7 @@ class Pipeline:
                 and not getattr(module, "_available", False)
             ):
                 self.module_failures.setdefault(module.name, "backend unavailable")
-        for module in self.modules:
+        for module in modules:
             if module.name in self.module_failures or self._module_is_excluded(module.name):
                 continue
             on_execute = getattr(module, "on_execute", None)
@@ -1805,18 +1826,6 @@ class Pipeline:
             except Exception as e:
                 logger.error(f"Error in on_execute for module {module.name}: {e}")
                 self.module_failures[module.name] = f"on_execute failed: {type(e).__name__}: {e}"
-
-        if self._restored_checkpoint and any(
-            module.name not in self.module_failures and not self._module_is_excluded(module.name)
-            for module in self._batch_modules
-        ):
-            # Checkpoints contain sample results, not the accumulators of
-            # distribution metrics. Replay the input cohort to rebuild them.
-            logger.info("Replaying checkpoint input cohort for dataset-level metrics")
-            self._clear_loaded_state()
-            self.stats = DatasetStats(
-                total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
-            )
 
     def get_run_status(self) -> Dict[str, Any]:
         """Return requested/mounted module coverage for the current run."""
@@ -1895,8 +1904,28 @@ class Pipeline:
         # stored; refold those into the sample-derived aggregate stats.
         self._rebuild_sample_stats()
 
-        # Call on_dispose (this triggers batch metric computation)
-        for module in self.modules:
+        self._dispose_modules(self.modules, all_samples)
+
+        # on_dispose() (e.g. dedup batch modules) can flip validity or write
+        # metrics onto samples AFTER post_process ran; refold those into the
+        # sample-derived aggregate stats so exported numbers match the final
+        # sample states. Rebuild recomputes from scratch, so it is idempotent
+        # and does not double-count the earlier post_process rebuild.
+        self._rebuild_sample_stats()
+
+        # Log batch metrics if any were computed
+        if self._batch_modules:
+            logger.info(f"Processed {len(self._batch_modules)} batch metric modules")
+            for module in self._batch_modules:
+                logger.debug(f"  - {module.name}")
+        self._runtime_resource_cache = {}
+        self._start_needs_reset = True
+
+    def _dispose_modules(
+        self, modules: Sequence[PipelineModule], all_samples: List[Sample]
+    ) -> None:
+        """Run teardown for a module group with the supplied result cohort."""
+        for module in modules:
             if self._module_is_excluded(module.name):
                 continue
             on_dispose = getattr(module, "on_dispose", None)
@@ -1914,21 +1943,6 @@ class Pipeline:
             finally:
                 module._mounted = False
                 self._active_dataset_module = None
-
-        # on_dispose() (e.g. dedup batch modules) can flip validity or write
-        # metrics onto samples AFTER post_process ran; refold those into the
-        # sample-derived aggregate stats so exported numbers match the final
-        # sample states. Rebuild recomputes from scratch, so it is idempotent
-        # and does not double-count the earlier post_process rebuild.
-        self._rebuild_sample_stats()
-
-        # Log batch metrics if any were computed
-        if self._batch_modules:
-            logger.info(f"Processed {len(self._batch_modules)} batch metric modules")
-            for module in self._batch_modules:
-                logger.debug(f"  - {module.name}")
-        self._runtime_resource_cache = {}
-        self._start_needs_reset = True
 
     @staticmethod
     def _sample_is_complete(sample: Sample) -> bool:
