@@ -141,6 +141,29 @@ checkpoints and source archives. It can also be set with
 `AYASE_GENERAL__ASSETS_REPO`; a module profile's `assets_repo` value takes
 precedence for that module.
 
+## Pairwise comparison
+
+`ayase.pairwise.compare(rows, *, draws=1000, seed=0)` fits Bradley–Terry
+log-strengths from pairwise preferences over shared prompts:
+
+```python
+from ayase.pairwise import compare
+
+report = compare(
+    [
+        {"prompt": "p1", "model_a": "m1", "model_b": "m2", "outcome": "a"},
+        {"prompt": "p2", "model_a": "m1", "model_b": "m2", "outcome": "tie"},
+    ],
+    draws=1000,
+    seed=0,
+)
+```
+
+Each row requires `prompt`, `model_a`, `model_b`, and `outcome` (`"a"`, `"b"`,
+or `"tie"`, counted as half a win per side). Disconnected comparison subgraphs
+are returned as separate `components` with `connected: false`, and `ci95` gives
+prompt-level bootstrap 95% intervals when a component spans multiple prompts.
+
 See [managed backends](managed_backends.md) for runtime caching and expert
 backend overrides, or [the isolated client](isolated_client.md) to keep Ayase
 outside an application's dependency environment.

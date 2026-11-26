@@ -1,7 +1,9 @@
 """WMReward latent prediction surprise using the V-JEPA 2 ViT-g predictor."""
 
 import hashlib
+import json
 import logging
+import os
 from pathlib import Path
 
 from ayase.models import QualityMetrics, Sample
@@ -69,6 +71,41 @@ class WMRewardModule(PipelineModule):
         super().__init__(config)
         self._encoder = self._predictor = self._device = self._backend = None
 
+    @staticmethod
+    def _verify_checkpoint(checkpoint: Path, sidecar: Path) -> None:
+        st = checkpoint.stat()
+        if sidecar.is_file():
+            try:
+                cached = json.loads(sidecar.read_text(encoding="utf-8"))
+                if (
+                    isinstance(cached, dict)
+                    and cached.get("sha256") == WEIGHTS_SHA256
+                    and cached.get("size") == st.st_size
+                    and cached.get("mtime_ns") == st.st_mtime_ns
+                ):
+                    return
+            except Exception:
+                pass
+
+        digest = hashlib.sha256()
+        with checkpoint.open("rb") as file:
+            for block in iter(lambda: file.read(8 * 1024 * 1024), b""):
+                digest.update(block)
+        if digest.hexdigest() != WEIGHTS_SHA256:
+            sidecar.unlink(missing_ok=True)
+            raise ValueError("WMReward ViT-g checkpoint has an unexpected SHA-256 digest")
+
+        tmp = sidecar.with_suffix(".tmp")
+        payload = json.dumps(
+            {
+                "sha256": WEIGHTS_SHA256,
+                "size": st.st_size,
+                "mtime_ns": st.st_mtime_ns,
+            }
+        )
+        tmp.write_text(payload, encoding="utf-8")
+        os.replace(tmp, sidecar)
+
     def setup(self):
         if self.test_mode:
             return
@@ -92,12 +129,7 @@ class WMRewardModule(PipelineModule):
                     checkpoint = download_model_file(
                         "wmreward/vitg.pt", WEIGHTS_URL, str(models_dir)
                     )
-                digest = hashlib.sha256()
-                with checkpoint.open("rb") as file:
-                    for block in iter(lambda: file.read(8 * 1024 * 1024), b""):
-                        digest.update(block)
-                if digest.hexdigest() != WEIGHTS_SHA256:
-                    raise ValueError("WMReward ViT-g checkpoint has an unexpected SHA-256 digest")
+                    self._verify_checkpoint(checkpoint, directory / "vitg.pt.verified.json")
             self._encoder, self._predictor = _load_vitg(checkpoint, device)
             self._device = device
             self._backend = "vjepa2_vitg"
@@ -130,7 +162,7 @@ class WMRewardModule(PipelineModule):
         positions = torch.arange(total, device=self._device).unsqueeze(0)
         context, future = positions[:, :split].contiguous(), positions[:, split:].contiguous()
         scores = []
-        with torch.no_grad():
+        with torch.inference_mode():
             for start in range(0, count - WINDOW_SIZE + 1, WINDOW_STRIDE):
                 window = clip[:, :, start : start + WINDOW_SIZE].contiguous()
                 observed = encoder(window)[:, split:total]
