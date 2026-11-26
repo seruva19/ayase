@@ -135,7 +135,7 @@ class MagFaceModule(PipelineModule):
 
         return list(sample_frames(sample.path, max_frames=self.subsample, color="bgr"))
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._face_app = None
         import gc
         gc.collect()

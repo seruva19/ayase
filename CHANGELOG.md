@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Release model references and reset module lifecycle state after custom cleanup and dataset finalization.
 - **camera_trajectory**: keep distinct VGGT checkpoints separate in the runtime cache.
 - Build catalog entries from executable loader calls and metric assignments, excluding examples, unrelated paths and sibling module definitions; preserve inherited implementations and input dependencies.
 - Preserve checkpoint filenames and pinned revisions in model links, and keep distinct backend models separate when they share a documentation URL.

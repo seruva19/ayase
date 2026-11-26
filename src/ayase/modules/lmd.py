@@ -90,7 +90,7 @@ class LMDModule(PipelineModule):
             logger.warning("lmd: FaceMesh init failed: %s", e)
             self._backend = "unavailable"
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         if self._mesh is not None:
             try:
                 self._mesh.close()

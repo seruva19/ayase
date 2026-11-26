@@ -350,16 +350,9 @@ class AdaFaceModule(PipelineModule):
         """Uniformly sampled BGR frames (a single frame for images)."""
         return sample_frames(sample.path, max_frames=self.subsample, color="bgr")
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._net = None
         self._face_app = None
         import gc
 
         gc.collect()
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass

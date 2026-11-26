@@ -203,6 +203,8 @@ class FD3DMMModule(BatchMetricModule):
         if len(self._feature_cache) < 1 or not self._reference_cache:
             self._feature_cache = []
             self._reference_cache = []
+            self._extractor = None
+            super().on_dispose()
             return
         try:
             self.compute_distribution_metric(
@@ -214,3 +216,5 @@ class FD3DMMModule(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
+            self._extractor = None
+            super().on_dispose()

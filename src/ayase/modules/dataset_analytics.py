@@ -368,3 +368,6 @@ class DatasetAnalyticsModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._hashes = []
+            self._clip_model = None
+            self._clip_processor = None
+            super().on_dispose()

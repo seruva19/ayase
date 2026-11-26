@@ -288,7 +288,7 @@ class SERFIQModule(PipelineModule):
 
         return list(sample_frames(sample.path, max_frames=self.subsample, color="bgr"))
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._insightface_net = None
         self._face_app = None
         self._mx = None

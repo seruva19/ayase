@@ -167,7 +167,7 @@ class GAMIVALModule(PipelineModule):
                 frames.append(img)
         return frames
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._ndnetgaming = None
         self._svr = None
         import gc

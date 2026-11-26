@@ -189,6 +189,10 @@ class GenerativeDistributionModule(BatchMetricModule):
             )
             self._feature_cache = []
             self._reference_cache = []
+            self._feature_extractor = None
+            self._preprocess = None
+            self._prdc = None
+            super().on_dispose()
             return
 
         try:
@@ -201,6 +205,10 @@ class GenerativeDistributionModule(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
+            self._feature_extractor = None
+            self._preprocess = None
+            self._prdc = None
+            super().on_dispose()
 
 
 class GenerativeDistributionCompatModule(GenerativeDistributionModule):

@@ -272,7 +272,5 @@ class STREAMModule(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
-
-        from ayase.pipeline import PipelineModule
-
-        PipelineModule.on_dispose(self)
+            self._stream_instance = None
+            super().on_dispose()

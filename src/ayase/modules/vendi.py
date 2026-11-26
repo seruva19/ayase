@@ -218,6 +218,10 @@ class VendiModule(BatchMetricModule):
             logger.info(f"Vendi: Not enough samples ({len(self._feature_cache)})")
             self._feature_cache = []
             self._reference_cache = []
+            self._model = None
+            self._embedder = None
+            self._transform = None
+            super().on_dispose()
             return
 
         try:
@@ -236,3 +240,7 @@ class VendiModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._processed_count = 0
+            self._model = None
+            self._embedder = None
+            self._transform = None
+            super().on_dispose()

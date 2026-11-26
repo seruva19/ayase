@@ -362,16 +362,9 @@ class MorpheusModule(PipelineModule):
             logger.warning("Morpheus failed for %s: %s", sample.path, exc)
         return sample
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._tracker = None
         self._backend = None
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except Exception:
-            pass
 
     def _applicable_annotations(self, annotations: Dict[str, Any]) -> bool:
         original = self.config

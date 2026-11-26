@@ -275,6 +275,9 @@ class UMAPProjectionModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._sample_refs = []
+            self._clip_model = None
+            self._clip_processor = None
+            super().on_dispose()
             return
 
         try:
@@ -288,3 +291,6 @@ class UMAPProjectionModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._sample_refs = []
+            self._clip_model = None
+            self._clip_processor = None
+            super().on_dispose()

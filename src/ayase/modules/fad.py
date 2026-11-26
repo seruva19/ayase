@@ -531,6 +531,8 @@ class FADModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._processed_count = 0
+            self._loader = None
+            super().on_dispose()
             return
 
         try:
@@ -570,6 +572,8 @@ class FADModule(BatchMetricModule):
             self._feature_cache = []
             self._reference_cache = []
             self._processed_count = 0
+            self._loader = None
+            super().on_dispose()
 
 
 # ----------------------------------------------------------------- helpers

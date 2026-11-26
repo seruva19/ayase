@@ -362,7 +362,7 @@ class AnyAudioJudgeModule(PipelineModule):
             logger.warning("AnyAudio-Judge failed for %s: %s", sample.path, exc)
         return sample
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._judge = None
         self._backend = None
         self._decomposition_cache.clear()
@@ -372,9 +372,3 @@ class AnyAudioJudgeModule(PipelineModule):
         if cached is not None and hasattr(cached, "cache_clear"):
             cached.cache_clear()
         self._decomposer_path = None
-        try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except Exception:
-            pass

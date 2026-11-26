@@ -1393,3 +1393,44 @@ def test_module_error_issues_counted_by_structured_type(tmp_path: Path):
 
     assert pipeline.stats.issues_by_type.get("module_error") == 1
     assert pipeline.stats.severity_distribution.get("warning") == 1
+
+
+@pytest.mark.parametrize(
+    ("module_name", "resource"),
+    [
+        ("adaface", "_net"),
+        ("fad", "_loader"),
+        ("prdc_dinov2", "_processor"),
+        ("stream_metric", "_stream_instance"),
+        ("umap_projection", "_clip_processor"),
+    ],
+)
+def test_custom_dispose_releases_backend_on_empty_run(module_name, resource):
+    module_class = ModuleRegistry.get_module(module_name)
+    module = module_class()
+    module._mounted = True
+    setattr(module, resource, object())
+
+    module.on_dispose()
+
+    assert not module._mounted
+    assert getattr(module, resource) is None
+
+
+def test_entity_dispose_releases_group_state_on_error(monkeypatch):
+    from ayase.modules.entity_consistency import EntityBenchModule
+
+    module = EntityBenchModule()
+    module._mounted = True
+    module._face_model = object()
+    module._groups["group"] = [object(), object()]
+
+    def fail(_items):
+        raise RuntimeError("group failed")
+
+    monkeypatch.setattr(module, "_identity_consistency", fail)
+    with pytest.raises(RuntimeError, match="group failed"):
+        module.on_dispose()
+    assert not module._mounted
+    assert not module._groups
+    assert module._face_model is None

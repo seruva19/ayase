@@ -85,7 +85,7 @@ class PoseFidelityModule(PipelineModule):
             logger.warning("pose_fidelity: Pose init failed: %s", e)
             self._backend = "unavailable"
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         if self._pose is not None:
             try:
                 self._pose.close()

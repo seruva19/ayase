@@ -200,16 +200,26 @@ class EntityBenchModule(BatchMetricModule):
         return None
 
     def on_dispose(self) -> None:
-        if not self._groups:
-            return
-        for group, items in self._groups.items():
-            if len(items) < 2:
-                # Single-shot group: consistency is undefined, not "perfect".
-                continue
-            id_score = self._identity_consistency(items)
-            app_score = self._appearance_consistency(items)
-            self._write_group(items, id_score, app_score)
-        self._groups.clear()
+        try:
+            if not self._groups:
+                return
+            for group, items in self._groups.items():
+                if len(items) < 2:
+                    # Single-shot group: consistency is undefined, not "perfect".
+                    continue
+                id_score = self._identity_consistency(items)
+                app_score = self._appearance_consistency(items)
+                self._write_group(items, id_score, app_score)
+        finally:
+            self._groups.clear()
+            self._feature_cache = []
+            self._reference_cache = []
+            self._dinov2 = None
+            self._dinov2_proc = None
+            self._face_model = None
+            self._clip_model = None
+            self._clip_processor = None
+            super().on_dispose()
 
     # --------------------------------------------------------------------
     def _write_group(self, items, id_score: Optional[float], app_score: Optional[float]) -> None:

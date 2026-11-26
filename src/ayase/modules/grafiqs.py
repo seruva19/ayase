@@ -294,15 +294,9 @@ class GraFIQsModule(PipelineModule):
                 frames.append(img)
         return frames
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         self._face_app = None
         self._torch_model = None
         self._bn_layers = []
         import gc
         gc.collect()
-        try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass

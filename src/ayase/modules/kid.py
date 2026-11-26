@@ -250,6 +250,7 @@ class KIDModule(BatchMetricModule):
             )
             self._feature_cache = []
             self._reference_cache = []
+            super().on_dispose()
             return
 
         try:
@@ -277,3 +278,4 @@ class KIDModule(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
+            super().on_dispose()

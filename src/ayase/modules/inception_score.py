@@ -131,6 +131,7 @@ class InceptionScoreModule(BatchMetricModule):
             )
             self._feature_cache = []
             self._reference_cache = []
+            super().on_dispose()
             return
 
         try:
@@ -148,3 +149,4 @@ class InceptionScoreModule(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
+            super().on_dispose()

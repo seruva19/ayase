@@ -81,6 +81,8 @@ class GestureDiversityModule(BatchMetricModule):
             logger.error("gesture_diversity: failed: %s", e)
         finally:
             self._feature_cache = []
+            self._reference_cache = []
+            super().on_dispose()
 
     def extract_features(self, sample: Sample):
         """Per-video signature: mean pose vector over frames (66-dim)."""

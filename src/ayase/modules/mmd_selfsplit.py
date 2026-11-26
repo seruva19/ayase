@@ -138,6 +138,8 @@ class JEDiModule(PipelineModule):
         if len(self._feature_cache) < 10:
             logger.info("JEDi: Not enough samples (%d) for distribution metric", len(self._feature_cache))
             self._feature_cache = []
+            self._model = None
+            super().on_dispose()
             return
 
         try:
@@ -156,6 +158,8 @@ class JEDiModule(PipelineModule):
             logger.warning("JEDi computation failed: %s", e)
         finally:
             self._feature_cache = []
+            self._model = None
+            super().on_dispose()
 
     @staticmethod
     def _compute_mmd(x: np.ndarray, y: np.ndarray) -> float:

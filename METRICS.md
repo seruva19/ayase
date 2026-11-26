@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 16:56 · **390 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 17:04 · **390 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -11,7 +11,7 @@
 
 ## Summary
 
-**390** modules · **728** output fields · **618** metrics · **293** tiered · **85** with GPU code detected · **21** categories
+**390** modules · **728** output fields · **618** metrics · **293** tiered · **81** with GPU code detected · **21** categories
 
 Speed and memory values are source-based estimates, not benchmarks. GPU detection indicates code paths, not a GPU requirement. Imports and backend labels do not verify successful inference.
 
@@ -4060,7 +4060,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py), [`vtss`](src/ayase/m
 - **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2605.15199" target="_blank">arXiv</a> · <a href="https://huggingface.co/facebook/dinov2-base" target="_blank">HF</a>
-- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 - **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `entity_identity_cos` [↑](#categories)
@@ -4076,7 +4076,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py), [`vtss`](src/ayase/m
 - **Packages**: insightface, torch, transformers
 - **VRAM**: ~600 MB
 - **Source**: <a href="https://arxiv.org/abs/2605.15199" target="_blank">arXiv</a> · <a href="https://huggingface.co/facebook/dinov2-base" target="_blank">HF</a>
-- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Tests**: covered by [`test_entity_consistency.py`](tests/modules/per_module/test_entity_consistency.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 - **Config**: `backend=auto`, `clip_model=openai/clip-vit-base-patch32`
 
 ### `flicker_score` [↑](#categories)
@@ -5077,13 +5077,13 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 
 **[`morpheus`](src/ayase/modules/morpheus.py)** — Morpheus native annotated-video physical and dynamical physics evaluation
 
-- **Input**: video · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Input**: video · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Pins and automatically fetches actual upstream Morpheus/SAM2 source plus trained SAM2/depth assets; invokes author preprocessing/tracking/physical and PINN statistical scoring for explicit experiment annotations. Minor optional SAM2 postprocessing adaptation disclosed.
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Backend**: unavailable
 - **Provenance**: `adapted` — SAM2 runs without its optional compiled _C connected-component/small-hole postprocessing; the upstream supported fallback leaves masks unchanged. — source: Morpheus source ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc — https://github.com/physics-from-video/Morpheus/tree/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc
-- **Packages**: huggingface_hub, morpheus, sam2, torch, transformers
+- **Packages**: huggingface_hub, morpheus, sam2, transformers
 - **Source**: <a href="https://github.com/physics-from-video/Morpheus" target="_blank">GitHub</a> · <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">HF</a>
 - **Tests**: covered by [`test_morpheus.py`](tests/modules/test_morpheus.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `source_category=generated`, `conditioning=single_frame_conditioning`, `prompt_type=plain`, `device=auto`
@@ -5093,13 +5093,13 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 
 **[`morpheus`](src/ayase/modules/morpheus.py)** — Morpheus native annotated-video physical and dynamical physics evaluation
 
-- **Input**: video · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Input**: video · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Pins and automatically fetches actual upstream Morpheus/SAM2 source plus trained SAM2/depth assets; invokes author preprocessing/tracking/physical and PINN statistical scoring for explicit experiment annotations. Minor optional SAM2 postprocessing adaptation disclosed.
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Backend**: unavailable
 - **Provenance**: `adapted` — SAM2 runs without its optional compiled _C connected-component/small-hole postprocessing; the upstream supported fallback leaves masks unchanged. — source: Morpheus source ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc — https://github.com/physics-from-video/Morpheus/tree/ee3b6aec1474a9b905eba9a52efb5ea6cfd9f0bc
-- **Packages**: huggingface_hub, morpheus, sam2, torch, transformers
+- **Packages**: huggingface_hub, morpheus, sam2, transformers
 - **Source**: <a href="https://github.com/physics-from-video/Morpheus" target="_blank">GitHub</a> · <a href="https://huggingface.co/nielsr/depth-anything-large" target="_blank">HF</a>
 - **Tests**: covered by [`test_morpheus.py`](tests/modules/test_morpheus.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
 - **Config**: `source_category=generated`, `conditioning=single_frame_conditioning`, `prompt_type=plain`, `device=auto`
@@ -6189,7 +6189,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 
 **[`anyaudio_judge`](src/ayase/modules/anyaudio_judge.py)** — AnyAudio-Judge author-logits audio-instruction alignment
 
-- **Input**: audio +cap · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Input**: audio +cap · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Pinned author source/checkpoint acquisition, author logits judge and rubric/decomposition interfaces are wired; returned native score is validated and stored. Holistic rubric fallback is an author-protocol branch, not a pixel/audio heuristic replacement.
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
@@ -7558,7 +7558,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 - **Packages**: gc, insightface, safetensors, torch
 - **VRAM**: ~200 MB
 - **Source**: <a href="https://github.com/mk-minchul/AdaFace" target="_blank">GitHub</a> · <a href="https://huggingface.co/minchul/cvlface_adaface_ir101_webface12m/resolve/54f602a0737bd1ee4a4e7e9fd089a485f397fefd/model.safetensors" target="_blank">HF</a>
-- **Tests**: covered by [`test_adaface.py`](tests/modules/test_adaface.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Tests**: covered by [`test_adaface.py`](tests/modules/test_adaface.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 - **Config**: `checkpoint=ir101_webface12m`, `face_model=buffalo_l`, `subsample=8`, `warning_threshold=0.3`, `pad_retry=0.25`, `device=auto`
 
 ### `aed` [↑](#categories)
@@ -7695,7 +7695,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 
 **[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
-- **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Real DINOv2 checkpoint and InsightFace detection/alignment with normalized reference cosine similarity aggregation; this is an explicitly own face-crop identity statistic.
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
@@ -7711,7 +7711,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 
 **[`dino_face_identity`](src/ayase/modules/dino_face_identity.py)** — Face identity similarity via DINOv2 on face crops (appearance indicator; ArcFace is the stronger identity discriminator)
 
-- **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Input**: img/vid +ref · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Real DINOv2 checkpoint and InsightFace detection/alignment with normalized reference cosine similarity aggregation; this is an explicitly own face-crop identity statistic.
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
@@ -8459,7 +8459,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 
 **[`grafiqs`](src/ayase/modules/grafiqs.py)** — GraFIQs gradient face quality (CVPRW 2024; raw |grad|, lower=better)
 
-- **Input**: img/vid · **Estimated speed**: ⏱️ medium · GPU code detected
+- **Input**: img/vid · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Concrete trained ArcFace BatchNorm distribution mismatch loss backpropagates to input and returns gradient L1 norm; alignment/model/frame adaptations disclosed. Exact published gradient reduction needs independent comparison.
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
@@ -10117,7 +10117,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_infinity` [↑](#categories)
 > FAD extrapolated to infinite sample size (lower=better) · ↓ lower=better · type: float
@@ -10129,7 +10129,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_panns` [↑](#categories)
 > type: float
@@ -10141,7 +10141,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_panns_infinity` [↑](#categories)
 > type: float
@@ -10153,7 +10153,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_passt` [↑](#categories)
 > Frechet Audio Distance with PaSST backbone (lower=better) · ↓ lower=better · type: float
@@ -10165,7 +10165,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_passt_infinity` [↑](#categories)
 > type: float
@@ -10177,7 +10177,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_vggish` [↑](#categories)
 > Frechet Audio Distance with VGGish backbone (lower=better) · ↓ lower=better · type: float
@@ -10189,7 +10189,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fad_vggish_infinity` [↑](#categories)
 > type: float
@@ -10201,7 +10201,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Ayase exposes multiple backbone/runtime variants and optional FAD-inf extrapolation under one module; values are only comparable for the same backend and protocol settings, and a reference set is required — source: FAD (Kilgour et al., Interspeech 2019); frame embeddings + FAD-inf via fadtk (Gui et al., ICASSP 2024) — https://github.com/microsoft/FADTK
-- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_fad.py`](tests/modules/per_module/test_fad.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), +1 more
 
 ### `fd_3dmm_expression` [↑](#categories)
 > type: float
@@ -10582,7 +10582,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `prdc_density` [↑](#categories)
 > PRDC density in DINOv2 space · type: float
@@ -10594,7 +10594,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC density (Naeem et al., ICML 2020) — https://github.com/clovaai/generative-evaluation-prdc
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `prdc_precision` [↑](#categories)
 > PRDC precision in DINOv2 space (0-1) · type: float
@@ -10606,7 +10606,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `prdc_recall` [↑](#categories)
 > PRDC recall in DINOv2 space (0-1) · type: float
@@ -10618,7 +10618,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: PRDC (Naeem et al., ICML 2020) on DINOv2 features (Stein et al., NeurIPS 2023) — https://github.com/clovaai/generative-evaluation-prdc
-- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py)
+- **Tests**: covered by [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_self_vs_self.py`](tests/modules/test_self_vs_self.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `precision` [↑](#categories)
 > Quality of generated samples (0-1) · type: float
@@ -10684,7 +10684,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
-- **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
+- **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `stream_F` [↑](#categories)
 > STREAM-S spatial fidelity (prdc precision) · type: float
@@ -10696,7 +10696,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
-- **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
+- **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `stream_temporal` [↑](#categories)
 > STREAM temporal naturalness · type: float
@@ -10708,7 +10708,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence medium; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `published` — source: STREAM, Kim et al. ICLR 2024; the v-stream package — https://github.com/pro2nit/STREAM
-- **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py)
+- **Tests**: covered by [`test_stream_metric.py`](tests/modules/per_module/test_stream_metric.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `t2v_compbench_action_binding_avg` [↑](#categories)
 > type: float
@@ -10804,7 +10804,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `own`
-- **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py)
+- **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `umap_spread` [↑](#categories)
 > UMAP projection spread · type: float
@@ -10816,7 +10816,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `own`
-- **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py)
+- **Tests**: covered by [`test_umap_projection.py`](tests/modules/per_module/test_umap_projection.py), [`test_umap_projection.py`](tests/modules/test_umap_projection.py), [`test_pipeline_contracts.py`](tests/test_pipeline_contracts.py)
 
 ### `vbench2_camera_motion` [↑](#categories)
 > type: float

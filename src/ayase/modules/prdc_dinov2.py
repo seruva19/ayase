@@ -124,6 +124,9 @@ class PRDCDINOv2Module(BatchMetricModule):
         if len(self._feature_cache) < 2 or not self._reference_cache:
             self._feature_cache = []
             self._reference_cache = []
+            self._model = None
+            self._processor = None
+            super().on_dispose()
             return
         try:
             self.compute_distribution_metric(
@@ -135,6 +138,9 @@ class PRDCDINOv2Module(BatchMetricModule):
         finally:
             self._feature_cache = []
             self._reference_cache = []
+            self._model = None
+            self._processor = None
+            super().on_dispose()
 
     def _extract_dinov2(self, frame: np.ndarray) -> Optional[np.ndarray]:
         try:

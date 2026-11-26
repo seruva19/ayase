@@ -308,15 +308,9 @@ class DINOFaceIdentityModule(PipelineModule):
         """
         return sample_frames(sample.path, max_frames=self.subsample, color="bgr")
 
-    def on_dispose(self) -> None:
+    def teardown(self) -> None:
         """Release GPU memory."""
         self._dino = None
         self._face_app = None
         import gc
         gc.collect()
-        try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass
