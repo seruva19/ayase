@@ -172,13 +172,9 @@ class WatermarkClassificationModule(PipelineModule):
     def _load_image(self, sample: Sample) -> Optional[np.ndarray]:
         try:
             if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                # Check middle frame
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
-                ret, frame = cap.read()
-                cap.release()
-                return frame if ret else None
+                from ayase.image import load_representative_frame
+
+                return load_representative_frame(sample.path, color="bgr")
             else:
                 return cv2.imread(str(sample.path))
         except Exception:

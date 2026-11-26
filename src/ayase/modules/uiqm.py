@@ -169,19 +169,10 @@ class UIQMModule(PipelineModule):
 
     def _compute(self, sample: Sample) -> Optional[float]:
         if sample.is_video:
-            cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if total <= 0:
-                cap.release()
-                return None
-            indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
-            scores = []
-            for idx in indices:
-                cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                ret, frame = cap.read()
-                if ret:
-                    scores.append(self._score_frame(frame))
-            cap.release()
+            from ayase.image import sample_frames
+
+            frames = sample_frames(sample.path, self.subsample, "bgr", known_count_only=True)
+            scores = [self._score_frame(frame) for frame in frames]
             return float(np.mean(scores)) if scores else None
         else:
             img = cv2.imread(str(sample.path))

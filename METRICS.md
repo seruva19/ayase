@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-10-26 23:39 · **390 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 16:51 · **390 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -281,7 +281,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: onnxruntime, torch
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **Config**: `warning_threshold=0.4`
 
 ### `dover_technical` [↑](#categories)
@@ -298,7 +298,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Packages**: onnxruntime, torch
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **Config**: `warning_threshold=0.4`
 
 ### `edit_score_perceptual_quality` [↑](#categories)
@@ -2114,7 +2114,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Backend**: numpy
 - **Provenance**: `adapted` — Image inputs use the published per-image formula. Video inputs use Ayase-defined uniform frame subsampling and mean aggregation; the shared image/video field is classified as adapted. — source: PSNR99 (Image-Difficulty-Aware Evaluation of SR Models, arXiv 2509.26398) — https://arxiv.org/abs/2509.26398
 - **Source**: <a href="https://arxiv.org/abs/2509.26398" target="_blank">arXiv</a>
-- **Tests**: covered by [`test_psnr99.py`](tests/modules/per_module/test_psnr99.py)
+- **Tests**: covered by [`test_psnr99.py`](tests/modules/per_module/test_psnr99.py), [`test_provenance.py`](tests/test_provenance.py)
 - **Config**: `subsample=8`
 
 ### `psnr_acmask` [↑](#categories)
@@ -5225,7 +5225,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Backend**: algorithmic
 - **Provenance**: `own`
-- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +4 more
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +5 more
 - **Config**: `sample_rate=5`, `low_motion_threshold=0.5`, `high_motion_threshold=20.0`
 
 ### `motion_smoothness` [↑](#categories)
@@ -5946,7 +5946,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Packages**: Pillow, torch, transformers
 - **VRAM**: ~1.5 GB
 - **Source**: <a href="https://github.com/christophschuhmann/improved-aesthetic-predictor" target="_blank">GitHub</a> · <a href="https://huggingface.co/openai/clip-vit-large-patch14" target="_blank">HF</a>
-- **Tests**: covered by [`test_aesthetic_scoring.py`](tests/modules/per_module/test_aesthetic_scoring.py)
+- **Tests**: covered by [`test_aesthetic_scoring.py`](tests/modules/per_module/test_aesthetic_scoring.py), [`test_regressions.py`](tests/test_regressions.py)
 
 ### `aesthetic_v25_dup` [↑](#categories)
 
@@ -6042,7 +6042,7 @@ Used by: [`knowledge_graph`](src/ayase/modules/knowledge_graph.py), [`llm_adviso
 - **Packages**: onnxruntime, torch
 - **VRAM**: ~800 MB
 - **Source**: <a href="https://github.com/VQAssessment/DOVER" target="_blank">GitHub</a>
-- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py)
+- **Tests**: covered by [`test_dover.py`](tests/modules/per_module/test_dover.py), [`test_ml_basics.py`](tests/modules/test_ml_basics.py), [`test_backend_dependencies.py`](tests/test_backend_dependencies.py), +1 more
 - **Config**: `warning_threshold=0.4`
 
 ### `laion_aesthetic` [↑](#categories)
@@ -10261,7 +10261,7 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Field readiness**: `implemented`
 - **Provenance**: `adapted` — Uses the StyleGAN-V I3D TorchScript convention with 16 uniformly sampled 224×224 frames in [-1,1], rather than claiming equivalence to every FVD implementation; without a reference the metric is not emitted — source: FVD (Unterthiner et al., 2018) — https://arxiv.org/abs/1812.01717; StyleGAN-V TorchScript port — https://github.com/universome/stylegan-v/blob/master/src/metrics/frechet_video_distance.py
-- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +5 more
+- **Tests**: covered by [`test_fvd.py`](tests/modules/per_module/test_fvd.py), [`test_dataset_modules.py`](tests/modules/test_dataset_modules.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +6 more
 
 ### `fvmd` [↑](#categories)
 > Fréchet Video Motion Distance · ↓ lower=better · type: float

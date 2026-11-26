@@ -69,24 +69,12 @@ class TonalDynamicRangeModule(PipelineModule):
         return (hi - lo) / 255.0 * 100.0
 
     def _score_video(self, sample: Sample) -> Optional[float]:
-        cap = cv2.VideoCapture(str(sample.path))
-        if not cap.isOpened():
-            return None
+        from ayase.image import sample_frames
 
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if total <= 0:
-            cap.release()
-            return None
-
-        indices = np.linspace(0, total - 1, min(self.subsample, total), dtype=int)
         scores = []
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-            ret, frame = cap.read()
-            if ret:
-                s = self._score_frame(frame)
-                if s is not None:
-                    scores.append(s)
-        cap.release()
+        for frame in sample_frames(sample.path, self.subsample, "bgr", known_count_only=True):
+            score = self._score_frame(frame)
+            if score is not None:
+                scores.append(score)
 
         return float(np.mean(scores)) if scores else None

@@ -135,20 +135,9 @@ class CelebrityIDModule(PipelineModule):
         frames = []
         try:
             if sample.is_video:
-                cap = cv2.VideoCapture(str(sample.path))
-                try:
-                    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    if total <= 0:
-                        return frames
-                    n = min(self.num_frames, total)
-                    indices = np.linspace(0, total - 1, n, dtype=int)
-                    for idx in indices:
-                        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                        ret, frame = cap.read()
-                        if ret:
-                            frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                finally:
-                    cap.release()
+                from ayase.image import sample_frames
+
+                return sample_frames(sample.path, self.num_frames, "rgb", known_count_only=True)
             else:
                 img = cv2.imread(str(sample.path))
                 if img is not None:
