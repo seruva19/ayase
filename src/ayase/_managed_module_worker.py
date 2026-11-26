@@ -1,7 +1,7 @@
 """Subprocess worker for managed metric modules.
 
-This module is an internal entry point. Protocol data travels through JSON files;
-stdout and stderr are reserved for the worker log.
+This module is an internal entry point. Protocol data travels through binary pipes. The worker sends backend output
+to the log stream before importing the target module.
 """
 
 from __future__ import annotations
@@ -11,13 +11,12 @@ import importlib
 import json
 import os
 import sys
-import time
 import traceback
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Mapping
+from typing import Any, BinaryIO, Dict, List, Mapping
 
-from ayase._managed_protocol import dump_sample
+from ayase._managed_protocol import dump_sample, read_message, write_message
 from ayase.models import QualityMetrics, Sample, observe_metric_writes
 from ayase.pipeline import Pipeline
 
@@ -65,31 +64,6 @@ def _dataset_metrics(pipeline: Pipeline, before: Mapping[str, Any]) -> Dict[str,
     }
 
 
-def _reply(path: Path, payload: Dict[str, Any]) -> None:
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload), encoding="utf-8")
-    deadline = time.monotonic() + 5.0
-    while True:
-        try:
-            os.replace(temporary, path)
-            return
-        except PermissionError:
-            if time.monotonic() >= deadline:
-                raise
-            time.sleep(0.02)
-
-
-def _read_request(path: Path) -> Dict[str, Any]:
-    deadline = time.monotonic() + 5.0
-    while True:
-        try:
-            return dict(json.loads(path.read_text(encoding="utf-8")))
-        except PermissionError:
-            if time.monotonic() >= deadline:
-                raise
-            time.sleep(0.02)
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--module", required=True)
@@ -97,6 +71,26 @@ def main() -> int:
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
 
+    with (
+        os.fdopen(os.dup(sys.stdin.fileno()), "rb") as requests,
+        os.fdopen(os.dup(sys.stdout.fileno()), "wb") as replies,
+        open(os.devnull, "rb") as null_input,
+    ):
+        os.dup2(null_input.fileno(), sys.stdin.fileno())
+        os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
+        if os.name == "nt":
+            # Windows subprocesses can inherit Win32 handles independently of CRT fds.
+            import ctypes
+            import msvcrt
+            from ctypes.wintypes import HANDLE
+
+            kernel = ctypes.windll.kernel32
+            kernel.SetStdHandle(-10, HANDLE(msvcrt.get_osfhandle(sys.stdin.fileno())))
+            kernel.SetStdHandle(-11, HANDLE(msvcrt.get_osfhandle(sys.stdout.fileno())))
+        return _serve(args, requests, replies)
+
+
+def _serve(args: argparse.Namespace, requests: BinaryIO, replies: BinaryIO) -> int:
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
     config["_ayase_managed_worker"] = True
     module_class = _resolve_class(args.module, args.qualname)
@@ -106,15 +100,12 @@ def main() -> int:
     identities: Dict[str, Sample] = {}
     reported_stats = pipeline.stats.model_dump(mode="json")
 
-    for line in sys.stdin:
-        request_name = line.strip()
-        if not request_name:
-            continue
-        request_path = Path(request_name)
-        request: Dict[str, Any] = {}
+    while True:
         try:
-            request = _read_request(request_path)
-            reply_path = Path(request["reply"])
+            request = read_message(requests)
+        except EOFError:
+            return 0
+        try:
             operation = request["operation"]
             payload = request.get("payload", {})
             if operation == "mount":
@@ -192,20 +183,18 @@ def main() -> int:
                 raise ValueError(f"Unknown managed worker operation: {operation}")
             result["dataset_metrics"] = _dataset_metrics(pipeline, reported_stats)
             reported_stats = pipeline.stats.model_dump(mode="json")
-            _reply(reply_path, {"ok": True, "result": result})
+            write_message(replies, {"ok": True, "result": result})
             if operation == "on_dispose":
                 return 0
         except Exception as exc:
-            reply_path = Path(request.get("reply", request_path.with_suffix(".reply.json")))
-            _reply(
-                reply_path,
+            write_message(
+                replies,
                 {
                     "ok": False,
                     "error": f"{type(exc).__name__}: {exc}",
                     "traceback": traceback.format_exc(),
                 },
             )
-    return 0
 
 
 if __name__ == "__main__":

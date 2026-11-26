@@ -9,15 +9,16 @@ import os
 import re
 import subprocess
 import sys
-import time
 import types
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from contextlib import suppress
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
-from ._managed_protocol import dump_sample
+from ._managed_protocol import dump_sample, read_message, write_message
 from .managed_runtime import ensure_managed_environment
 from .models import Sample
 
@@ -37,30 +38,6 @@ _CORE_REQUIREMENTS = (
 _SETUP_TIMEOUT = 7200.0
 _DEFAULT_OPERATION_TIMEOUT = 1800.0
 _METHODS = ("process", "process_batch", "post_process", "on_execute", "on_dispose")
-
-
-def _read_json_after_publish(path: Path, deadline: float) -> Dict[str, Any]:
-    """Read a protocol file while tolerating transient Windows share locks."""
-    while True:
-        try:
-            return dict(json.loads(path.read_text(encoding="utf-8")))
-        except PermissionError:
-            if time.monotonic() >= deadline:
-                raise
-            time.sleep(0.02)
-
-
-def _best_effort_unlink(path: Path) -> None:
-    """Remove protocol data without masking an already completed operation."""
-    deadline = time.monotonic() + 0.25
-    while True:
-        try:
-            path.unlink(missing_ok=True)
-            return
-        except PermissionError:
-            if time.monotonic() >= deadline:
-                return
-            time.sleep(0.02)
 
 
 def _dependency_for(name: str) -> Any:
@@ -171,11 +148,10 @@ class ManagedModuleBridge:
         self._originals: Dict[str, Callable[..., Any]] = {
             name: getattr(module, name) for name in _METHODS
         }
-        self._process: Optional[subprocess.Popen[str]] = None
+        self._process: Optional[subprocess.Popen[bytes]] = None
+        self._transport: Optional[ThreadPoolExecutor] = None
         self._log_stream: Any = None
         self.backend_identity: Optional[str] = None
-        self._request_dir = runtime_root / "requests"
-        self._request_dir.mkdir(parents=True, exist_ok=True)
 
     def start(self) -> None:
         config_path = self.runtime_root / "config.json"
@@ -197,17 +173,16 @@ class ManagedModuleBridge:
             "--config",
             str(config_path),
         ]
-        self._process = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=self._log_stream,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            env=environment,
-            creationflags=_creation_flags(),
-        )
         try:
+            self._process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=self._log_stream,
+                env=environment,
+                creationflags=_creation_flags(),
+            )
+            self._transport = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ayase-worker")
             response = self.request("mount", {}, timeout=_SETUP_TIMEOUT)
             if not response.get("mounted"):
                 raise RuntimeError(
@@ -215,15 +190,8 @@ class ManagedModuleBridge:
                     f"(backend={response.get('backend')!r}, "
                     f"ml_available={response.get('ml_available')!r})"
                 )
-        except Exception:
-            if self._process.stdin is not None:
-                self._process.stdin.close()
-            if self._process.poll() is None:
-                self._process.kill()
-                self._process.wait(timeout=10)
-            if self._log_stream is not None:
-                self._log_stream.close()
-                self._log_stream = None
+        except BaseException:
+            self._close_worker()
             raise
         backend = response.get("backend")
         self.backend_identity = str(backend) if backend else None
@@ -246,47 +214,42 @@ class ManagedModuleBridge:
     def request(
         self, operation: str, payload: Mapping[str, Any], *, timeout: Optional[float] = None
     ) -> Dict[str, Any]:
-        process = self._process
-        if process is None or process.stdin is None:
+        process, transport = self._process, self._transport
+        if process is None or transport is None or process.poll() is not None:
             raise RuntimeError("Managed module worker is not running")
-        token = uuid.uuid4().hex
-        request_path = self._request_dir / f"{token}.request.json"
-        reply_path = self._request_dir / f"{token}.reply.json"
-        temporary = request_path.with_suffix(".tmp")
-        temporary.write_text(
-            json.dumps(
-                {"operation": operation, "payload": payload, "reply": str(reply_path)},
-            ),
-            encoding="utf-8",
+        future = transport.submit(
+            self._exchange, process, {"operation": operation, "payload": payload}
         )
-        os.replace(temporary, request_path)
-        process.stdin.write(str(request_path) + "\n")
-        process.stdin.flush()
-        deadline = time.monotonic() + (self.timeout if timeout is None else timeout)
         try:
-            while not reply_path.is_file():
-                returncode = process.poll()
-                if returncode is not None:
-                    raise RuntimeError(
-                        f"Managed worker for {self.module.name} exited with code {returncode}; "
-                        f"log: {self.runtime_root / 'worker.log'}"
-                    )
-                if time.monotonic() >= deadline:
-                    process.kill()
-                    raise TimeoutError(
-                        f"Managed worker operation {operation!r} timed out for {self.module.name}"
-                    )
-                time.sleep(0.02)
-            response = _read_json_after_publish(reply_path, deadline)
-        finally:
-            _best_effort_unlink(request_path)
-            _best_effort_unlink(reply_path)
+            response = future.result(timeout=self.timeout if timeout is None else timeout)
+        except FutureTimeout as exc:
+            self._close_worker()
+            raise TimeoutError(
+                f"Managed worker operation {operation!r} timed out for {self.module.name}"
+            ) from exc
+        except (EOFError, OSError, ValueError) as exc:
+            self._close_worker()
+            raise RuntimeError(
+                f"Managed worker transport failed for {self.module.name}: {exc}; "
+                f"log: {self.runtime_root / 'worker.log'}"
+            ) from exc
+        except KeyboardInterrupt:
+            self._close_worker()
+            raise
         if not response.get("ok"):
             raise RuntimeError(
                 f"Managed worker {operation!r} failed for {self.module.name}: "
                 f"{response.get('error')}\n{response.get('traceback', '')}"
             )
         return dict(response.get("result", {}))
+
+    @staticmethod
+    def _exchange(
+        process: subprocess.Popen[bytes], message: Mapping[str, Any]
+    ) -> Dict[str, Any]:
+        assert process.stdin is not None and process.stdout is not None
+        write_message(process.stdin, message)
+        return read_message(process.stdout)
 
     def _record_sample_error(self, sample: Sample, operation: str, exc: Exception) -> Sample:
         from .pipeline import Pipeline
@@ -355,19 +318,31 @@ class ManagedModuleBridge:
             _copy_sample(sample, document, fields)
         self._forward_dataset_metrics(result)
 
+    def _close_worker(self) -> None:
+        process, self._process = self._process, None
+        if process is not None and process.poll() is None:
+            process.kill()
+            process.wait(timeout=10)
+        if self._transport is not None:
+            self._transport.shutdown(cancel_futures=True)
+            self._transport = None
+        if process is not None:
+            if process.stdin is not None:
+                with suppress(OSError):
+                    process.stdin.close()
+            if process.stdout is not None:
+                process.stdout.close()
+        if self._log_stream is not None:
+            self._log_stream.close()
+            self._log_stream = None
+
     def dispose(self) -> None:
         try:
             if self._process is not None and self._process.poll() is None:
                 self.request("on_dispose", {})
                 self._process.wait(timeout=10)
         finally:
-            if self._process is not None and self._process.stdin is not None:
-                self._process.stdin.close()
-            if self._process is not None and self._process.poll() is None:
-                self._process.kill()
-                self._process.wait(timeout=10)
-            if self._log_stream is not None:
-                self._log_stream.close()
+            self._close_worker()
             for name, method in self._originals.items():
                 setattr(self.module, name, method)
             self.module._managed_bridge = None

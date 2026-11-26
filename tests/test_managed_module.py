@@ -12,7 +12,6 @@ import pytest
 
 from ayase.managed_module import (
     ManagedModuleBridge,
-    _read_json_after_publish,
     _worker_environment,
     attach_managed_backend,
 )
@@ -68,10 +67,22 @@ class TinyManagedModule(PipelineModule):
     name = "tiny_managed"
 
     def setup(self):
+        import os
+        import subprocess
+        import sys
+        print("backend stdout", flush=True)
+        os.write(1, b"backend fd 1\\n")
+        subprocess.run([sys.executable, "-c", "print('backend child stdout')"], check=True)
         self.ready = True
         self.retained = []
 
     def on_execute(self):
+        if self.config.get("exit_on_execute"):
+            import os
+            os._exit(17)
+        if self.config.get("delay_on_execute"):
+            import time
+            time.sleep(5)
         self.executing = True
 
     def process(self, sample):
@@ -158,6 +169,11 @@ def test_real_worker_preserves_identity_and_forwards_lifecycle(
     assert module.process.__func__ is original_process
     assert module._managed_bridge is None
     assert module._mounted is False
+    log = (tmp_path / "runtime" / "worker.log").read_text(encoding="utf-8")
+    assert "backend stdout" in log
+    assert "backend fd 1" in log
+    assert "backend child stdout" in log
+    assert not (tmp_path / "runtime" / "requests").exists()
 
 
 def test_process_failure_is_visible_and_returns_original_sample(
@@ -251,24 +267,46 @@ def test_attach_skips_test_mode_without_provisioning(
     assert attach_managed_backend(module) is False
 
 
-def test_protocol_read_retries_one_transient_permission_error(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    path = tmp_path / "reply.json"
-    path.write_text('{"ok": true}', encoding="utf-8")
-    original = Path.read_text
-    attempts = 0
+def test_protocol_reads_multiple_frames_and_rejects_truncation():
+    from io import BytesIO
 
-    def flaky_read_text(self, *args, **kwargs):
-        nonlocal attempts
-        if self == path and attempts == 0:
-            attempts += 1
-            raise PermissionError("synthetic Windows scanner lock")
-        return original(self, *args, **kwargs)
+    from ayase._managed_protocol import read_message, write_message
 
-    monkeypatch.setattr(Path, "read_text", flaky_read_text)
-    assert _read_json_after_publish(path, 10**20) == {"ok": True}
-    assert attempts == 1
+    stream = BytesIO()
+    write_message(stream, {"label": "кадр", "index": 0})
+    second_frame = stream.tell()
+    write_message(stream, {"index": 1})
+    stream.seek(0)
+    assert read_message(stream) == {"label": "кадр", "index": 0}
+    assert read_message(stream) == {"index": 1}
+    with pytest.raises(EOFError, match="header"):
+        read_message(stream)
+    with pytest.raises(EOFError, match="body"):
+        read_message(BytesIO(stream.getvalue()[second_frame:-1]))
+
+
+@pytest.mark.parametrize("failure", ["timeout", "eof"])
+def test_worker_transport_failure_stops_worker(tmp_path, monkeypatch, failure):
+    module = _tiny_module(tmp_path, monkeypatch)
+    module.config["exit_on_execute"] = failure == "eof"
+    module.config["delay_on_execute"] = failure == "timeout"
+    module.pipeline = Pipeline([module])
+    bridge = ManagedModuleBridge(module, Path(sys.executable), tmp_path / "runtime")
+    module._managed_bridge = bridge
+    bridge.start()
+    process = bridge._process
+    assert process is not None
+    try:
+        if failure == "timeout":
+            with pytest.raises(TimeoutError, match="timed out"):
+                bridge.request("on_execute", {}, timeout=0.05)
+        else:
+            with pytest.raises(RuntimeError, match="header ended early"):
+                bridge.request("on_execute", {})
+    finally:
+        bridge.dispose()
+    assert process.poll() is not None
+    assert bridge._transport is None
 
 
 def test_worker_config_rejects_unsupported_values(
