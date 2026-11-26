@@ -177,3 +177,26 @@ def test_vendored_t2v_metrics_resolves_ffmpeg_without_importing_vendor_code():
     ]
     assert imports_resolver
     assert resolved_ffmpeg_calls
+def test_ffprobe_cache_matches_full_query_and_file_identity(tmp_path, monkeypatch):
+    from ayase._ffprobe_cache import ffprobe_stdout
+
+    tool = tmp_path / "ffprobe"
+    clip = tmp_path / "clip.mp4"
+    tool.write_bytes(b"tool")
+    clip.write_bytes(b"first")
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout=b'{"streams":[]}')
+
+    monkeypatch.setattr(subprocess, "run", run)
+    streams = [str(tool), "-show_streams", str(clip)]
+    fields = [str(tool), "-show_entries", "stream=codec_name", str(clip)]
+    assert ffprobe_stdout(streams) == ffprobe_stdout(streams)
+    assert len(calls) == 1
+    ffprobe_stdout(fields)
+    assert len(calls) == 2
+    clip.write_bytes(b"replacement")
+    ffprobe_stdout(streams)
+    assert len(calls) == 3

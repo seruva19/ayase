@@ -10,6 +10,7 @@ from typing import Dict, Optional
 import numpy as np
 
 from .models import AudioMetadata
+from ._ffprobe_cache import ffprobe_stdout
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,7 @@ def get_audio_metadata(path: Path) -> Optional[AudioMetadata]:
             "a",
             str(path),
         ]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        data = json.loads(result.stdout)
+        data = json.loads(ffprobe_stdout(cmd, text=True))
 
         if not data.get("streams"):
             return None
