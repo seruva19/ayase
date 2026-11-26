@@ -29,6 +29,26 @@ model downloads and compute. Select modules explicitly for a targeted run.
 See the [metric catalog](../METRICS.md) for inputs, score directions, provenance,
 and backend requirements. Scores from different metrics use different scales.
 
+## Pairwise model comparison
+
+Run `ayase compare judgments.jsonl --draws 1000 --seed 0 -o comparison.json`.
+Supply a JSON array or one JSON object per line in a `.jsonl` file.
+
+```json
+{"prompt": "prompt-001", "model_a": "model-a", "model_b": "model-b", "outcome": "tie"}
+```
+
+Use `a` or `b` for a win, or `tie` for half a win per model. The
+Bradley–Terry fit uses a symmetric half-win prior per observed pair to keep
+ratings finite when one model wins every comparison. Log-strengths are
+centered within each connected component. If `connected` is false, the ranks
+apply within their respective components.
+
+Confidence intervals resample complete prompts with replacement. A bootstrap
+draw contributes to a component only when it retains that component's
+connectivity. The report includes the number of accepted draws and uses
+`null` for unavailable intervals.
+
 ## Configuration
 
 `ayase.toml` in project root:

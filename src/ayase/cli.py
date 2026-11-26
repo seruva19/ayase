@@ -426,6 +426,34 @@ def main(
         console.print("[dim]Verbose mode enabled[/dim]")
 
 
+@app.command("compare")
+def compare_models(
+    comparisons: Annotated[Path, typer.Argument(help="JSON array or .jsonl comparison rows")],
+    output: Annotated[Optional[Path], typer.Option("--output", "-o")] = None,
+    draws: Annotated[int, typer.Option("--draws", min=0)] = 1000,
+    seed: Annotated[int, typer.Option("--seed", min=0)] = 0,
+) -> None:
+    """Rank models by pairwise judgments and bootstrap intervals by prompt."""
+    from .pairwise import compare
+
+    try:
+        content = comparisons.read_text(encoding="utf-8-sig")
+        if comparisons.suffix.lower() == ".jsonl":
+            rows = [json.loads(line) for line in content.splitlines() if line.strip()]
+        else:
+            rows = json.loads(content)
+        if not isinstance(rows, list):
+            raise ValueError("expected a JSON array or a .jsonl file")
+        report = compare(rows, draws=draws, seed=seed)
+        document = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
+        if output is None:
+            typer.echo(document, nl=False)
+        else:
+            output.write_text(document, encoding="utf-8")
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
 @app.command("help")
 def metric_help(
     name: Annotated[
