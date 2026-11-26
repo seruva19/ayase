@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 20:39 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 20:44 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -5225,7 +5225,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Backend**: algorithmic
 - **Provenance**: `own`
-- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +5 more
+- **Tests**: covered by [`test_body_motion_kinematics.py`](tests/modules/per_module/test_body_motion_kinematics.py), [`test_hand_gesture_dynamics.py`](tests/modules/per_module/test_hand_gesture_dynamics.py), [`test_motion.py`](tests/modules/per_module/test_motion.py), +6 more
 - **Config**: `sample_rate=5`, `low_motion_threshold=0.5`, `high_motion_threshold=20.0`
 
 ### `motion_smoothness` [↑](#categories)
@@ -5943,10 +5943,11 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Field readiness**: `implemented`
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: LAION improved-aesthetic-predictor (sac+logos+ava1-l14-linearMSE) — https://github.com/christophschuhmann/improved-aesthetic-predictor
-- **Packages**: Pillow, torch, transformers
+- **Packages**: torch, transformers
 - **VRAM**: ~1.5 GB
 - **Source**: <a href="https://github.com/christophschuhmann/improved-aesthetic-predictor" target="_blank">GitHub</a> · <a href="https://huggingface.co/openai/clip-vit-large-patch14" target="_blank">HF</a>
 - **Tests**: covered by [`test_aesthetic_scoring.py`](tests/modules/per_module/test_aesthetic_scoring.py), [`test_regressions.py`](tests/test_regressions.py)
+- **Config**: `batch_frames=False`
 
 ### `aesthetic_v25_dup` [↑](#categories)
 

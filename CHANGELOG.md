@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Offer opt-in FP32 batching across videos for LAION aesthetic scoring.
 - Allow MANIQA in staged profiles and release its weights after its stage.
 - Allow staged execution with FID and FVD and replay their feature cohorts on resume.
 - Add an opt-in staged pipeline for explicitly sample-local module stacks.

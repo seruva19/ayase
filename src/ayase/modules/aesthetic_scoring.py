@@ -13,9 +13,12 @@ from typing import Optional
 from pathlib import Path
 import urllib.request
 
-from ayase.models import Sample, ValidationIssue, ValidationSeverity
+from ayase.models import QualityMetrics, Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
-from ayase.runtime import cached_clip_image_features, media_state_key
+from ayase.runtime import (
+    cached_clip_image_feature_groups, cached_clip_image_features, media_state_key,
+    torch_inference_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,7 @@ class AestheticScoringModule(PipelineModule):
         "aesthetic_mlp_score": "LAION improved-aesthetic-predictor (sac+logos+ava1-l14-linearMSE) — https://github.com/christophschuhmann/improved-aesthetic-predictor",
     }
     description = "Calculates aesthetic score (1-10) using LAION-Aesthetics MLP"
-    default_config = {"models_dir": "models"}
+    default_config = {"models_dir": "models", "batch_frames": False}
     models = [
         {"id": "openai/clip-vit-large-patch14", "type": "huggingface", "task": "CLIP frame encoder"},
     ]
@@ -119,62 +122,83 @@ class AestheticScoringModule(PipelineModule):
     def frame_prefetch_limits(self):
         return (8,) if self._ml_available else ()
 
+    def _load_images(self, sample):
+        from ayase.image import sample_frames
+
+        frames = sample_frames(sample.path, max_frames=8, color="rgb")
+        return [Image.fromarray(np.ascontiguousarray(frame)) for frame in frames]
+
+    def _score_features(self, features):
+        with torch_inference_context(str(self._device), "fp32", False):
+            return self._linear(features.float()).flatten()
+
+    def _apply_scores(self, sample, scores):
+        if not scores:
+            return
+        avg_score = sum(scores) / len(scores)
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.aesthetic_mlp_score = float(avg_score)
+        if avg_score < 4.5:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.INFO,
+                    message=f"Low aesthetic score: {avg_score:.2f}",
+                    details={"score": avg_score, "frame_scores": scores},
+                )
+            )
+
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
             return sample
+        try:
+            images = self._load_images(sample)
+            if images:
+                features = cached_clip_image_features(
+                    self, self._model, self._processor, images,
+                    model_key=self._clip_model_key, device=self._device,
+                    cache_key=(8, media_state_key(sample.path)), full_precision=True,
+                )
+                self._apply_scores(sample, self._score_features(features).cpu().tolist())
+        except Exception as exc:
+            logger.warning("Aesthetic scoring failed: %s", exc)
+        return sample
+
+    def process_batch(self, samples: list[Sample]) -> list[Sample]:
+        if not self._ml_available or not self.config.get("batch_frames", False) or len(samples) < 2:
+            return super().process_batch(samples)
+        import torch
 
         try:
-            from ayase.image import sample_frames
-            frames = sample_frames(sample.path, max_frames=8, color="rgb")
-
-            if not frames:
-                return sample
-
-            import torch
-            from PIL import Image
-
-            # sample_frames returns RGB read-only views; copy for PIL.
-            pil_images = [
-                Image.fromarray(np.ascontiguousarray(image)) for image in frames
-            ]
-            image_features = cached_clip_image_features(
-                self,
-                self._model,
-                self._processor,
-                pil_images,
-                model_key=self._clip_model_key,
-                device=self._device,
-                cache_key=(8, media_state_key(sample.path)),
+            groups = [self._load_images(sample) for sample in samples]
+            feature_groups = cached_clip_image_feature_groups(
+                self, self._model, self._processor, groups,
+                model_key=self._clip_model_key, device=self._device,
+                cache_keys=[(8, media_state_key(sample.path)) for sample in samples],
                 full_precision=True,
             )
+            active = [
+                (sample, features) for sample, features in zip(samples, feature_groups)
+                if features is not None
+            ]
+            if not active:
+                return samples
+            scores = self._score_features(torch.cat([features for _, features in active]))
+            counts = [len(features) for _, features in active]
+            if scores.numel() != sum(counts):
+                raise ValueError("Aesthetic head did not produce one score per frame")
+            score_groups = scores.cpu().split(counts)
+        except Exception as exc:
+            logger.debug("Aesthetic frame batch failed; retrying per sample: %s", exc)
+            return super().process_batch(samples)
 
-            with torch.no_grad():
-                score_tensor = self._linear(image_features.float()).flatten()
-                scores = [float(value) for value in score_tensor.detach().cpu().tolist()]
-
-            if not scores:
-                return sample
-
-            avg_score = sum(scores) / len(scores)
-
-            # Check if we have quality_metrics
-            if sample.quality_metrics is None:
-                from ayase.models import QualityMetrics
-
-                sample.quality_metrics = QualityMetrics()
-
-            sample.quality_metrics.aesthetic_mlp_score = float(avg_score)
-
-            if avg_score < 4.5:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.INFO,
-                        message=f"Low aesthetic score: {avg_score:.2f}",
-                        details={"score": avg_score, "frame_scores": scores},
-                    )
-                )
-
-        except Exception as e:
-            logger.warning(f"Aesthetic scoring failed: {e}")
-
-        return sample
+        for (sample, _), scores in zip(active, score_groups):
+            values = scores.tolist()
+            mean = sum(values) / len(values)
+            # Preserve both the threshold decision and original frame scores
+            # in the warning details.
+            if not np.isfinite(mean) or mean <= 4.501:
+                self.process(sample)
+            else:
+                self._apply_scores(sample, values)
+        return samples

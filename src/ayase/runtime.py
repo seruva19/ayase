@@ -422,6 +422,7 @@ def cached_clip_image_feature_groups(
     device: Any,
     cache_keys: Sequence[tuple[Any, ...]],
     normalize: bool = True,
+    full_precision: bool = False,
 ) -> List[Any]:
     """Return CLIP image features for multiple samples using one forward pass.
 
@@ -445,6 +446,8 @@ def cached_clip_image_feature_groups(
             cache_key,
             normalize=normalize,
         )
+        if full_precision:
+            key = (*key, "full_precision")
         cached = cached_runtime_value(owner, key, _MISSING)
         if cached is not _MISSING:
             results[idx] = cached
@@ -470,6 +473,7 @@ def cached_clip_image_feature_groups(
             device=device,
             cache_key=batch_key,
             normalize=normalize,
+            full_precision=full_precision,
         )
 
         for idx, (start, end) in zip(missing_indices, spans):
@@ -480,7 +484,8 @@ def cached_clip_image_feature_groups(
                 cache_keys[idx],
                 normalize=normalize,
             )
-            store_runtime_value(owner, key, features)
+            if not full_precision:
+                store_runtime_value(owner, key, features)
             results[idx] = features
 
     return results
