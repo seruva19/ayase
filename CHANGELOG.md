@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Skip redundant metric snapshots in single and batch processing when no after-hook runs.
+
 ### Fixed
 
 - Build catalog entries from executable loader calls and metric assignments, excluding examples, unrelated paths and sibling module definitions; preserve inherited implementations and input dependencies.

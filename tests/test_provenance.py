@@ -793,6 +793,53 @@ def test_failed_batch_writer_restores_value_and_provenance(tmp_path):
     assert out.quality_metrics.metric_provenance["vmaf"] == "adapted"
 
 
+@pytest.mark.parametrize("batch", [False, True])
+@pytest.mark.parametrize("after_hook", [False, True])
+def test_metric_snapshot_count(tmp_path, monkeypatch, batch, after_hook):
+    module = _PublishedModule()
+    module._mounted = True
+    pipeline = Pipeline([module])
+    hooks = {"before": lambda sample: sample}
+    if after_hook:
+        hooks["after"] = lambda sample: sample
+    pipeline.add_hook(module.name, **hooks)
+    samples = []
+    metric_state = pipeline._metric_state
+
+    def snapshot(sample):
+        samples.append(sample)
+        return metric_state(sample)
+
+    monkeypatch.setattr(pipeline, "_metric_state", snapshot)
+    sample = Sample(path=tmp_path / "x.png", is_video=False)
+    if batch:
+        result, = pipeline._process_module_batch(module, [sample])
+    else:
+        result = pipeline.process_sample(sample)
+
+    assert len(samples) == (2 if after_hook else 1)
+    assert result.quality_metrics.vmaf == 50.0
+    assert result.quality_metrics.metric_provenance["vmaf"] == "published"
+
+
+def test_single_without_hook_preserves_nan_lineage_behavior(tmp_path):
+    import math
+
+    class NonFiniteModule(_PublishedModule):
+        name = "test_nonfinite_provenance"
+        provenance = {"vmaf": "published"}
+
+        def process(self, sample):
+            sample.quality_metrics = QualityMetrics(vmaf=float("nan"))
+            return sample
+
+    module = NonFiniteModule()
+    module._mounted = True
+    result = Pipeline([module]).process_sample(Sample(path=tmp_path / "x.png", is_video=False))
+    assert math.isnan(result.quality_metrics.vmaf)
+    assert "vmaf" not in result.quality_metrics.metric_provenance
+
+
 def test_after_hook_failure_keeps_successful_lineage(tmp_path):
     module = _PublishedModule()
     module._mounted = True

@@ -2440,6 +2440,7 @@ class Pipeline:
                                 self._restore_metric_state(sample, module, metric_state)
                     finally:
                         process_end_state: Dict[str, Any] = {}
+                        run_after_hook = entered and hooks is not None and "after" in hooks
                         if succeeded:
                             self._persist_backend(sample, module)
                             qm = sample.quality_metrics
@@ -2449,10 +2450,21 @@ class Pipeline:
                                 metric_state,
                                 written_by_model.get(id(qm)) if qm is not None else None,
                             )
-                            process_end_state = self._metric_state(sample)
+                            if not run_after_hook and qm is not None:
+                                # Match the previous single-sample reconciliation for
+                                # non-reflexive values such as NaN without a snapshot.
+                                fields = type(module).field_provenance().keys()
+                                for field in fields & qm.metric_provenance.keys():
+                                    if field in qm._NON_METRIC_FIELDS:
+                                        continue
+                                    value = getattr(qm, field, None)
+                                    if not self._metric_values_equal(value, value):
+                                        qm.metric_provenance.pop(field, None)
                         # Always revert before-hook state so mutations do not
                         # propagate to later modules or the stored result.
                         if entered and hooks and "after" in hooks:
+                            if succeeded:
+                                process_end_state = self._metric_state(sample)
                             # Snapshot failure markers before the revert; an
                             # after-hook that returns a fresh Sample would
                             # otherwise discard them (caching a failed sample as
@@ -2671,7 +2683,8 @@ class Pipeline:
                     metric_states.get(pos),
                     written_by_model.get(id(qm)) if qm is not None else None,
                 )
-                process_end_states[pos] = self._metric_state(working[pos])
+                if hooks and "after" in hooks:
+                    process_end_states[pos] = self._metric_state(working[pos])
             if hooks and "after" in hooks:
                 for pos in eligible_positions:
                     # Snapshot failure markers before the revert. An after-hook
