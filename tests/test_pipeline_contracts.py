@@ -1747,3 +1747,36 @@ def test_staged_reuses_completed_repeated_paths_between_batches(tmp_path):
     assert calls == ["a.mp4", "b.mp4", "c.mp4"]
     assert outputs[2] is outputs[0]
     assert list(pipeline.results) == [str(path) for path in (a, b, c)]
+
+def test_decord_rejects_recovered_frames_without_rejecting_identical_pixels(tmp_path, monkeypatch):
+    import sys
+    from types import ModuleType
+
+    class Reader:
+        def __init__(self, path, *, fault_tol):
+            self.fault_tol = fault_tol
+
+        def __len__(self):
+            return 40
+
+        def get_batch(self, indices):
+            if 39 in indices and 0 < self.fault_tol < 1 / len(self):
+                raise RuntimeError("recovered frame exceeds fault tolerance")
+            return np.zeros((len(indices), 2, 2, 3), dtype=np.uint8)
+
+    decord = ModuleType("decord")
+    decord.VideoReader = Reader
+    monkeypatch.setitem(sys.modules, "decord", decord)
+
+    class Probe(PipelineModule):
+        def process(self, sample):
+            return sample
+
+    media = _media(tmp_path)
+    pipeline = Pipeline([Probe({"video_decoder": "decord"})])
+    assert pipeline.sample_frames(media, 40, color="rgb") == []
+    # Earlier decoded frames remain reusable even though the larger request failed.
+    for frame in pipeline.sample_frames(media, 4, color="bgr", floor_stride=True):
+        assert not frame.flags.writeable
+        assert np.array_equal(frame, np.zeros((2, 2, 3), dtype=np.uint8))
+    assert len(pipeline.sample_frames(media, 4, color="bgr", floor_stride=True)) == 4
