@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optionally decode the next batch's declared frame grids while the current batch runs.
 - Optionally reuse supported CLIP, FID and FVD inference weights across runs of the Python API.
 - Batch FVD video feature extraction and vectorize CLIP temporal similarity reductions.
+- Batch compatible CLIP-IQA frames and DreamSim frame pairs across samples.
 
 ### Fixed
 

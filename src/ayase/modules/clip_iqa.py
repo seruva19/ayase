@@ -67,9 +67,9 @@ class CLIPIQAModule(PipelineModule):
         except Exception as e:
             logger.warning(f"Failed to setup CLIP-IQA: {e}")
 
-    def _score_frames(self, frames: List[np.ndarray]) -> Optional[float]:
-        """Score RGB frames directly as a tensor batch (no temp files)."""
+    def _infer_frames(self, frames: List[np.ndarray]):
         import torch
+        from ayase.runtime import torch_inference_context
 
         tensors = []
         for frame in frames:
@@ -83,43 +83,80 @@ class CLIPIQAModule(PipelineModule):
         if not tensors:
             return None
         batch = torch.stack(tensors).to(self._device)
-        with torch.no_grad():
-            scores = self._metric(batch)
-        return float(scores.mean().item())
+        with torch_inference_context(str(self._device), "fp32", False):
+            return self._metric(batch)
+
+    def _score_frames(self, frames: List[np.ndarray]) -> Optional[float]:
+        """Score RGB frames directly as a tensor batch (no temp files)."""
+        scores = self._infer_frames(frames)
+        return None if scores is None else float(scores.mean().item())
+
+    def _load_frames(self, sample: Sample) -> List[np.ndarray]:
+        if sample.is_video:
+            return sample_frames(sample.path, max_frames=self.subsample, color="rgb")
+        frame = load_representative_frame(sample.path, color="rgb")
+        return [frame] if frame is not None else []
+
+    def _apply_score(self, sample: Sample, score: float) -> None:
+        if sample.quality_metrics is None:
+            sample.quality_metrics = QualityMetrics()
+        sample.quality_metrics.clip_iqa_score = score
+        if score < self.warning_threshold:
+            sample.validation_issues.append(
+                ValidationIssue(
+                    severity=ValidationSeverity.WARNING,
+                    message=f"Low CLIP-IQA: {score:.3f}",
+                    details={"clip_iqa_score": score},
+                    recommendation="CLIP-based semantic quality assessment is low.",
+                )
+            )
+        logger.debug("CLIP-IQA for %s: %.3f", sample.path.name, score)
 
     def process(self, sample: Sample) -> Sample:
         if not self._ml_available:
             return sample
 
         try:
-            if sample.is_video:
-                frames = sample_frames(sample.path, max_frames=self.subsample, color="rgb")
-            else:
-                frame = load_representative_frame(sample.path, color="rgb")
-                frames = [frame] if frame is not None else []
-
-            score = self._score_frames(frames)
-            if score is None:
-                return sample
-
-            if sample.quality_metrics is None:
-                sample.quality_metrics = QualityMetrics()
-
-            sample.quality_metrics.clip_iqa_score = score
-
-            if score < self.warning_threshold:
-                sample.validation_issues.append(
-                    ValidationIssue(
-                        severity=ValidationSeverity.WARNING,
-                        message=f"Low CLIP-IQA: {score:.3f}",
-                        details={"clip_iqa_score": score},
-                        recommendation="CLIP-based semantic quality assessment is low.",
-                    )
-                )
-
-            logger.debug(f"CLIP-IQA for {sample.path.name}: {score:.3f}")
-
+            score = self._score_frames(self._load_frames(sample))
+            if score is not None:
+                self._apply_score(sample, score)
         except Exception as e:
             logger.error(f"CLIP-IQA failed for {sample.path}: {e}")
 
         return sample
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if not self._ml_available or len(samples) <= 1:
+            return super().process_batch(samples)
+
+        import torch
+
+        cohorts = {}
+        scored = []
+        try:
+            for sample in samples:
+                frames = self._load_frames(sample)
+                if frames:
+                    shape = frames[0].shape
+                    if any(frame.shape != shape for frame in frames):
+                        raise ValueError("Mixed frame sizes within one CLIP-IQA sample")
+                    cohorts.setdefault(shape, []).append((sample, frames))
+            for group in cohorts.values():
+                packed = [frame for _, frames in group for frame in frames]
+                counts = [len(frames) for _, frames in group]
+                scores = self._infer_frames(packed)
+                if scores.ndim == 0 or scores.shape[0] != len(packed):
+                    raise ValueError("CLIP-IQA backend did not produce per-frame scores")
+                means = torch.stack([part.mean() for part in scores.split(counts)]).cpu().tolist()
+                for (sample, frames), score in zip(group, means):
+                    if abs(score - self.warning_threshold) <= 1e-3:
+                        score = self._score_frames(frames)
+                    if score is not None:
+                        scored.append((sample, score))
+        except Exception as exc:
+            logger.debug("CLIP-IQA batch failed; retrying per sample: %s", exc)
+        else:
+            for sample, score in scored:
+                self._apply_score(sample, score)
+            return samples
+        return super().process_batch(samples)

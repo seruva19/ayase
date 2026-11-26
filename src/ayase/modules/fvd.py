@@ -354,11 +354,12 @@ class FVDModule(BatchMetricModule):
                 # No features are committed until both forwards finish. Retry
                 # per video when a decoder or a device batch cannot complete.
                 logger.debug("FVD batch extraction failed; retrying per video: %s", exc)
-                super().process_batch(chunk)
+            else:
+                self._feature_cache.extend(generated)
+                self._reference_cache.extend(references)
+                self._processed_count += len(generated)
                 continue
-            self._feature_cache.extend(generated)
-            self._reference_cache.extend(references)
-            self._processed_count += len(generated)
+            super().process_batch(chunk)
         return samples
 
     def on_dispose(self) -> None:

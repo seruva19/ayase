@@ -98,39 +98,73 @@ class DreamSimModule(PipelineModule):
         arrays = sample_frames(path, max_frames=subsample, color="rgb")
         return arrays_to_pil(arrays)
 
+    def _frame_pairs(self, sample: Sample):
+        reference = getattr(sample, "reference_path", None)
+        if reference is None:
+            return [], []
+        ref = self._load_frames(reference)
+        dist = self._load_frames(sample.path)
+        if not ref or not dist:
+            return [], []
+        # Pair by position, broadcasting a still image or cycling a shorter sequence.
+        count = max(len(ref), len(dist))
+        return [ref[i % len(ref)] for i in range(count)], [dist[i % len(dist)] for i in range(count)]
+
+    def _score_pairs(self, reference, distorted):
+        from ayase.runtime import torch_inference_context
+
+        first = self._prep_batch(reference)
+        second = self._prep_batch(distorted)
+        with torch_inference_context(str(first.device), "fp32", False):
+            return self._model(first, second)
+
     def process(self, sample: Sample) -> Sample:
         if sample.quality_metrics is None:
             sample.quality_metrics = QualityMetrics()
         if not self._ml_available:
             return sample
 
-        reference_path = getattr(sample, "reference_path", None)
-        if reference_path is None:
-            # DreamSim is a full-reference metric; no reference → no score.
-            return sample
-
         try:
-            import torch
-
-            ref_frames = self._load_frames(reference_path)
-            dist_frames = self._load_frames(sample.path)
-            if not ref_frames or not dist_frames:
+            reference, distorted = self._frame_pairs(sample)
+            if not reference:
                 return sample
-
-            # Pair frames by position (a single image broadcasts to every video
-            # frame), then score every pair in ONE batched forward pass.
-            n = max(len(ref_frames), len(dist_frames))
-            ref_pil = [ref_frames[i % len(ref_frames)] for i in range(n)]
-            dist_pil = [dist_frames[i % len(dist_frames)] for i in range(n)]
-            with torch.no_grad():
-                distances = self._model(
-                    self._prep_batch(ref_pil), self._prep_batch(dist_pil)
-                )
-
-            sample.quality_metrics.dreamsim = float(distances.mean().item())
+            sample.quality_metrics.dreamsim = float(
+                self._score_pairs(reference, distorted).mean().item()
+            )
         except Exception as e:
             logger.warning("DreamSim processing failed: %s", e)
         return sample
+
+    def process_batch(self, samples: list[Sample]) -> list[Sample]:
+        if not self._ml_available or len(samples) <= 1:
+            return super().process_batch(samples)
+
+        import torch
+
+        prepared, counts, reference, distorted = [], [], [], []
+        try:
+            for sample in samples:
+                if sample.quality_metrics is None:
+                    sample.quality_metrics = QualityMetrics()
+                first, second = self._frame_pairs(sample)
+                if first:
+                    prepared.append(sample)
+                    counts.append(len(first))
+                    reference.extend(first)
+                    distorted.extend(second)
+            if not prepared:
+                return samples
+            distances = self._score_pairs(reference, distorted)
+            if distances.ndim == 0 or distances.shape[0] != len(reference):
+                raise ValueError("DreamSim backend did not produce a distance per pair")
+            means = torch.stack([part.mean() for part in distances.split(counts)]).cpu().tolist()
+        except Exception as exc:
+            logger.debug("DreamSim batch failed; retrying per sample: %s", exc)
+        else:
+            for sample, score in zip(prepared, means):
+                sample.quality_metrics.dreamsim = score
+            return samples
+        return super().process_batch(samples)
 
     # DreamSim's DINO ViT-B/16 backbone is fetched by ``dreamsim(pretrained=True)`` via
     # ``torch.hub`` from dl.fbaipublicfiles.com, which has no timeout and hangs on some

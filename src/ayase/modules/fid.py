@@ -167,11 +167,11 @@ class FIDModule(BatchMetricModule):
             reference_features = self._extract_inception_batch(references) if references else []
         except Exception as exc:
             logger.debug("FID batch extraction failed; retrying per sample: %s", exc)
-            return super().process_batch(samples)
-
-        self._feature_cache.extend(features)
-        self._reference_cache.extend(reference_features)
-        return samples
+        else:
+            self._feature_cache.extend(features)
+            self._reference_cache.extend(reference_features)
+            return samples
+        return super().process_batch(samples)
 
     def _frechet_distance(self, x: np.ndarray, y: np.ndarray) -> Optional[float]:
         mu_x = np.mean(x, axis=0)
