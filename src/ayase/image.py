@@ -143,8 +143,9 @@ def sample_frames(
     returned frames in place — copy first (``frame.copy()``) if you need to
     write. Returns an empty list when no frames can be decoded.
     Set ``known_count_only`` when the metric requires indexed sampling and
-    must skip streams without a positive frame count. The floor stride grid
-    takes at most max_frames at a step of max(1, total // max_frames).
+    must skip streams without a positive frame count. Use floor_stride for
+    known video inputs, including uncommon suffixes. It takes at most max_frames
+    at a step of max(1, total // max_frames).
     """
     try:
         from .runtime import current_pipeline
@@ -345,7 +346,7 @@ class _FrameCache:
         """Read one exact grid, or the middle frame when no frame limit is supplied."""
         from .runtime import clone_frames
 
-        if not is_video_path(path):
+        if not floor_stride and not is_video_path(path):
             frame = self._read((*path_key, "image", 0), color, lambda: load_image_array(path, "bgr"))
             return [] if frame is None else [frame]
 
@@ -558,7 +559,7 @@ def _sample_frames_uncached_detailed(
     it must NOT be used to infer exhaustion.
     """
     path = Path(path)
-    if not is_video_path(path):
+    if not floor_stride and not is_video_path(path):
         frame = _load_representative_frame_uncached(path, color=color)
         frames = [frame] if frame is not None else []
         # A still image / non-video is a single-frame source: its total is

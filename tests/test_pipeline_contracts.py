@@ -1136,6 +1136,19 @@ def test_floor_stride_and_uniform_grids_share_only_matching_indices(tmp_path, mo
     assert calls == [[0, 3, 6, 9], [2, 4]]
 
 
+def test_floor_stride_decodes_explicit_video_with_uncommon_suffix(tmp_path, monkeypatch):
+    from ayase.image import sample_frames
+
+    _install_fake_decoder(monkeypatch, total_frames=10)
+    media = _media(tmp_path).with_suffix(".mpeg")
+    media.write_bytes(b"video")
+    for frames in (
+        sample_frames(media, 4, color="bgr", floor_stride=True),
+        Pipeline([]).sample_frames(media, 4, color="bgr", floor_stride=True),
+    ):
+        assert [int(frame[0, 0, 0]) for frame in frames] == [0, 2, 4, 6]
+
+
 @pytest.mark.parametrize("size", [1, 2])
 def test_prefetch_overlaps_one_batch_and_keeps_pipeline_on_owner(tmp_path, monkeypatch, size):
     from threading import Event, get_ident

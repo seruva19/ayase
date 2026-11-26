@@ -1133,7 +1133,7 @@ class Pipeline:
         max_frames = max(0, int(max_frames))
         color = str(color)
         path = Path(path)
-        if self._video_decoder == "decord" and is_video_path(path):
+        if self._video_decoder == "decord" and (floor_stride or is_video_path(path)):
             cache = self._frame_cache if self._frame_cache_enabled else _FrameCache(0)
             return cast(
                 List[Any], cache.read(

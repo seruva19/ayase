@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reuse stride-based video decoding in DMM, NLPD, SSIMC, TOPIQ-FR, and TReS.
 - Share the original stride-based frame selection across seven image and video quality metrics.
 - Add opt-in native DOVER video batching in FP32 with per-video fusion and warning checks.
 - Offer opt-in CUDA autocast for native DOVER with FP32 retries near the warning threshold.
