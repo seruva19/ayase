@@ -16,7 +16,7 @@ from ayase.managed_module import (
     _worker_environment,
     attach_managed_backend,
 )
-from ayase.models import Sample, ValidationSeverity
+from ayase.models import QualityMetrics, Sample, ValidationSeverity
 from ayase.pipeline import Pipeline
 
 
@@ -37,6 +37,27 @@ def test_dataset_forwarding_preserves_the_active_module_context(tmp_path):
     bridge._forward_dataset_metrics({"dataset_metrics": {"fvd": 7.5}})
     assert observed == [("fvd", 7.5, module)]
     assert pipeline._active_dataset_module is previous
+
+
+def test_wire_sample_omits_only_restorable_null_metric_defaults(tmp_path):
+    from ayase._managed_protocol import dump_sample
+
+    sample = Sample(
+        path=tmp_path / "sample.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(aesthetic_v25_score=0.0),
+        metadata={"optional": None},
+    )
+    document = dump_sample(sample)
+    assert document["quality_metrics"]["aesthetic_v25_score"] == 0.0
+    assert "blur_score" not in document["quality_metrics"]
+    assert document["metadata"] == {"optional": None}
+    assert Sample.model_validate(document).model_dump(mode="json") == sample.model_dump(
+        mode="json"
+    )
+
+    sample.quality_metrics.set_lip_sync_legacy_protocol("verse_bench")
+    assert dump_sample(sample) == sample.model_dump(mode="json")
 
 
 _BACKEND_SOURCE = """

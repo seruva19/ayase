@@ -17,6 +17,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
+from ._managed_protocol import dump_sample
 from .managed_runtime import ensure_managed_environment
 from .models import Sample
 
@@ -300,7 +301,7 @@ class ManagedModuleBridge:
 
     @staticmethod
     def _record(sample: Sample) -> Dict[str, Any]:
-        return {"token": str(id(sample)), "sample": sample.model_dump(mode="json")}
+        return {"token": str(id(sample)), "sample": dump_sample(sample)}
 
     def _forward_dataset_metrics(self, result: Mapping[str, Any]) -> None:
         pipeline = self.module.pipeline
@@ -442,6 +443,7 @@ def attach_managed_backend(module: Any) -> bool:
         for path in (
             __file__,
             Path(__file__).with_name("_managed_module_worker.py"),
+            Path(__file__).with_name("_managed_protocol.py"),
             Path(__file__).with_name("models.py"),
             Path(__file__).with_name("pipeline.py"),
             Path(__file__).with_name("modules"),

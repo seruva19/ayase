@@ -17,6 +17,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Mapping
 
+from ayase._managed_protocol import dump_sample
 from ayase.models import QualityMetrics, Sample, observe_metric_writes
 from ayase.pipeline import Pipeline
 
@@ -52,7 +53,7 @@ def _samples(records: List[Dict[str, Any]], identities: Dict[str, Sample]) -> Li
 
 
 def _dump_samples(samples: List[Sample]) -> List[Dict[str, Any]]:
-    return [sample.model_dump(mode="json") for sample in samples]
+    return [dump_sample(sample) for sample in samples]
 
 
 def _dataset_metrics(pipeline: Pipeline, before: Mapping[str, Any]) -> Dict[str, Any]:
@@ -139,7 +140,7 @@ def main() -> int:
                     processed = module.process(sample)
                 identities[str(record["token"])] = processed
                 result = {
-                    "sample": processed.model_dump(mode="json"),
+                    "sample": dump_sample(processed),
                     "written_fields": sorted(
                         written.get(id(processed.quality_metrics), set())
                         if isinstance(processed.quality_metrics, QualityMetrics)
