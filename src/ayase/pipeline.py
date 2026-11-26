@@ -16,7 +16,7 @@ import warnings
 from abc import ABC, abstractmethod
 from copy import copy, deepcopy
 from functools import lru_cache
-from itertools import islice
+from itertools import groupby, islice
 from pathlib import Path
 from typing import (
     Any,
@@ -150,6 +150,7 @@ class PipelineModule(ABC):
     implementation_status: ClassVar[Optional[str]] = None
     # Explicit contract: execution and teardown have no cross-sample observations.
     stage_safe: ClassVar[bool] = False
+    stage_group: ClassVar[Optional[str]] = None
     implementation_notes: ClassVar[str] = ""
     # Source inspection is evidence about wiring and method fidelity, not a
     # successful run with pretrained weights. Plugins may remain unreviewed.
@@ -1445,7 +1446,7 @@ class Pipeline:
                 "effective_execution_mode": (
                     "staged" if self._can_run_staged() else "sample_first"
                 ),
-                "stage_protocol": 3,
+                "stage_protocol": 4,
                 "video_decoder": self._video_decoder,
             } if self.execution_mode == "staged" else {}),
             "runtime": self._runtime_environment_fingerprint(),
@@ -1794,6 +1795,13 @@ class Pipeline:
         if not self._staged_active:
             return self.modules
         return [module for module in self.modules if not self._stage_can_release(module)]
+
+    def _stage_key(self, module: PipelineModule) -> object:
+        if self._stage_can_release(module):
+            group = type(module).__dict__.get("stage_group")
+            if group is not None:
+                return group
+        return object()
 
     def _reset_run(self) -> None:
         """Reset run state before any module is mounted."""
@@ -2859,33 +2867,39 @@ class Pipeline:
             if isinstance(module, BatchMetricModule)
         ]
         try:
-            for module in self.modules:
-                releasable = self._stage_can_release(module)
+            for _, members in groupby(self.modules, key=self._stage_key):
+                stage = list(members)
+                releasable = self._stage_can_release(stage[0])
                 resources = self._runtime_resource_cache
                 if releasable:
                     self._runtime_resource_cache = {}
                 try:
                     if releasable:
-                        self._mount_modules([module])
-                    failure = self.module_failures.get(module.name)
-                    if failure is not None:
-                        for index in indices:
-                            self._register_module_failure(outputs[index], module.name, failure)
-                    elif module._mounted and not self._module_is_excluded(module.name):
-                        with pipeline_context(self):
-                            for offset in range(0, len(indices), size):
-                                chunk = indices[offset : offset + size]
-                                processed = self._process_module_batch(
-                                    module, [outputs[index] for index in chunk]
-                                )
-                                for index, sample in zip(chunk, processed):
-                                    outputs[index] = sample
-                                self._frame_cache.clear()
-                                self._runtime_value_cache.clear()
+                        self._mount_modules(stage)
+                    for module in stage:
+                        failure = self.module_failures.get(module.name)
+                        if failure is not None:
+                            for index in indices:
+                                self._register_module_failure(outputs[index], module.name, failure)
+                    with pipeline_context(self):
+                        for offset in range(0, len(indices), size):
+                            chunk = indices[offset : offset + size]
+                            processed = [outputs[index] for index in chunk]
+                            for module in stage:
+                                if (
+                                    module._mounted
+                                    and module.name not in self.module_failures
+                                    and not self._module_is_excluded(module.name)
+                                ):
+                                    processed = self._process_module_batch(module, processed)
+                            for index, sample in zip(chunk, processed):
+                                outputs[index] = sample
+                            self._frame_cache.clear()
+                            self._runtime_value_cache.clear()
                 finally:
                     if releasable:
                         try:
-                            self._dispose_modules([module], [outputs[index] for index in indices])
+                            self._dispose_modules(stage, [outputs[index] for index in indices])
                         finally:
                             self._runtime_resource_cache = resources
                     self._frame_cache.clear()

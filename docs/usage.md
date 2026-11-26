@@ -110,7 +110,9 @@ FVD uses FP32 by default. Set `dtype = "fp16"` or `dtype = "bf16"` in the
 FVD module settings to enable CUDA autocast for I3D feature extraction.
 
 Set `execution_mode = "staged"` under `[general]` to process an input cohort
-one module at a time and release each module before mounting the next.
+in stages. Adjacent sample-local modules with the same stage group run
+together in their original order. Each sample-local stage releases its
+resources before the next stage runs.
 The selected stack may include sample-local modules and supported dataset
 accumulators such as FID and FVD. The accumulators finalize at the end of
 the run and rebuild their features from the full input cohort after resume.

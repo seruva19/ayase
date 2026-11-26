@@ -1679,3 +1679,44 @@ def test_staged_checkpoint_requires_same_numeric_and_execution_settings(tmp_path
     ):
         changed.load_state(checkpoint)
         assert not changed.results
+
+def test_staged_groups_only_adjacent_sample_local_modules(tmp_path):
+    events = []
+
+    class Probe(PipelineModule):
+        def process(self, sample):
+            events.append((self.name, sample.path.name))
+            return sample
+
+    class First(Probe):
+        name = "test_stage_group_first"
+        stage_safe = True
+        stage_group = "cpu"
+
+    class Second(Probe):
+        name = "test_stage_group_second"
+        stage_safe = True
+        stage_group = "cpu"
+
+    class Boundary(Probe):
+        name = "test_stage_group_boundary"
+        stage_safe = True
+
+    class Last(Probe):
+        name = "test_stage_group_last"
+        stage_safe = True
+        stage_group = "cpu"
+
+    pipeline = Pipeline([First(), Second(), Boundary(), Last()], execution_mode="staged")
+    pipeline.start()
+    pipeline.process_samples(
+        [Sample(path=tmp_path / filename, is_video=True) for filename in ("a.mp4", "b.mp4")],
+        batch_size=1,
+    )
+    pipeline.stop()
+    assert events == [
+        (First.name, "a.mp4"), (Second.name, "a.mp4"),
+        (First.name, "b.mp4"), (Second.name, "b.mp4"),
+        (Boundary.name, "a.mp4"), (Boundary.name, "b.mp4"),
+        (Last.name, "a.mp4"), (Last.name, "b.mp4"),
+    ]

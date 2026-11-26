@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 class BasicQualityModule(PipelineModule):
     name = "basic_quality"
     stage_safe = True
+    stage_group = "cpu"
     implementation_status = "implemented"
     implementation_notes = "Complete utility measurements: Laplacian variance, gray mean/std and HSV saturation. Composite is validation-only; advertised vqa_t_score is never assigned by this module."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."
@@ -204,6 +205,7 @@ class BasicCompatModule(BasicQualityModule):
 
     name = "basic"
     stage_safe = True
+    stage_group = "cpu"
     implementation_status = "implemented"
     implementation_notes = "Inherited BasicQualityModule computes actual Laplacian variance, mean gray brightness, gray std contrast and HSV saturation; the warning composite is an own utility. The vqa_t_score metadata entry is not an output write."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."
