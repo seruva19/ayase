@@ -55,6 +55,26 @@ logger = logging.getLogger(__name__)
 _METADATA_MODULE_CACHE: Dict[str, Tuple[int, int, str, ast.Module]] = {}
 _METADATA_FUNCTION_CACHE: Dict[str, Tuple[int, int, Dict[int, str]]] = {}
 
+# Exact built-in classes whose synchronous processing only writes these
+# canonical metric fields. A provenance declaration alone is not a write contract.
+_AUDITED_METRIC_WRITES = {
+    ("ayase.modules.motion", "MotionModule"): frozenset({"motion_score"}),
+    ("ayase.modules.psnr99", "PSNR99Module"): frozenset({"psnr99"}),
+}
+
+
+class _SelectiveMetricState(dict[str, Any]):
+    """Declared values plus the original model for the missing-model rollback path."""
+
+    def __init__(self, metrics: QualityMetrics, fields: FrozenSet[str]) -> None:
+        super().__init__(deepcopy(metrics.canonical_model_dump(include=set(fields))))
+        self["metric_provenance"] = {
+            field: metrics.metric_provenance[field]
+            for field in fields
+            if field in metrics.metric_provenance
+        }
+        self.original = metrics
+
 
 @lru_cache(maxsize=2048)
 def _metadata_tree(source: str) -> ast.Module:
@@ -2194,11 +2214,33 @@ class Pipeline:
     @staticmethod
     def _metric_state(sample: Sample) -> Dict[str, Any]:
         """Snapshot metric values before a module runs."""
-        import copy
-
         if sample.quality_metrics is None:
             return {}
-        return copy.deepcopy(sample.quality_metrics.canonical_model_dump())
+        return deepcopy(sample.quality_metrics.canonical_model_dump())
+
+    def _module_metric_state(
+        self, sample: Sample, module: "PipelineModule", *, batch: bool = False
+    ) -> Dict[str, Any]:
+        metrics = sample.quality_metrics
+        module_type = type(module)
+        fields = _AUDITED_METRIC_WRITES.get((module_type.__module__, module_type.__name__))
+        if (
+            metrics is None
+            or type(metrics) is not QualityMetrics
+            or fields is None
+            or getattr(sys.modules.get(module_type.__module__), module_type.__name__, None)
+            is not module_type
+            or "process" in vars(module)
+            or (
+                batch
+                and getattr(module.process_batch, "__func__", None)
+                is not PipelineModule.process_batch
+            )
+            or getattr(module, "metric_field", None) not in (None, *fields)
+            or not type(module).field_provenance().keys() <= fields
+        ):
+            return self._metric_state(sample)
+        return _SelectiveMetricState(metrics, fields)
 
     @staticmethod
     def _metric_values_equal(left: Any, right: Any) -> bool:
@@ -2222,7 +2264,17 @@ class Pipeline:
         if qm is None:
             if not before:
                 return
-            qm = QualityMetrics(**deepcopy(before))
+            if isinstance(before, _SelectiveMetricState):
+                # Only owned fields could have changed on the previous model.
+                values = before.original.canonical_model_dump()
+                values.update(
+                    (field, value)
+                    for field, value in before.items()
+                    if field != "metric_provenance"
+                )
+                qm = QualityMetrics(**deepcopy(values))
+            else:
+                qm = QualityMetrics(**deepcopy(before))
             sample.quality_metrics = qm
         provenance_before = before.get("metric_provenance", {})
         for field in type(module).field_provenance():
@@ -2404,7 +2456,7 @@ class Pipeline:
                                 continue
                             sample = hooked
 
-                        metric_state = self._metric_state(sample)
+                        metric_state = self._module_metric_state(sample, module)
 
                         def record_write(metrics: QualityMetrics, field: str) -> None:
                             written_by_model.setdefault(id(metrics), set()).add(field)
@@ -2464,7 +2516,7 @@ class Pipeline:
                         # propagate to later modules or the stored result.
                         if entered and hooks and "after" in hooks:
                             if succeeded:
-                                process_end_state = self._metric_state(sample)
+                                process_end_state = self._module_metric_state(sample, module)
                             # Snapshot failure markers before the revert; an
                             # after-hook that returns a fresh Sample would
                             # otherwise discard them (caching a failed sample as
@@ -2589,7 +2641,7 @@ class Pipeline:
 
                 eligible_samples.append(sample)
                 eligible_positions.append(idx)
-                metric_states[idx] = self._metric_state(sample)
+                metric_states[idx] = self._module_metric_state(sample, module, batch=True)
 
             if eligible_samples:
                 try:
@@ -2684,7 +2736,9 @@ class Pipeline:
                     written_by_model.get(id(qm)) if qm is not None else None,
                 )
                 if hooks and "after" in hooks:
-                    process_end_states[pos] = self._metric_state(working[pos])
+                    process_end_states[pos] = self._module_metric_state(
+                        working[pos], module, batch=True
+                    )
             if hooks and "after" in hooks:
                 for pos in eligible_positions:
                     # Snapshot failure markers before the revert. An after-hook

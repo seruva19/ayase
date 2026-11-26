@@ -840,6 +840,134 @@ def test_single_without_hook_preserves_nan_lineage_behavior(tmp_path):
     assert "vmaf" not in result.quality_metrics.metric_provenance
 
 
+@pytest.mark.parametrize("batch", [False, True])
+@pytest.mark.parametrize("hook_score", [12.0, 50.0, 75.0])
+def test_audited_metric_snapshot_matches_full_baseline(tmp_path, monkeypatch, batch, hook_score):
+    import json
+
+    from ayase.modules.psnr99 import PSNR99Module
+
+    path = tmp_path / "image.png"
+    path.touch()
+    module = PSNR99Module()
+    module._mounted = True
+    monkeypatch.setattr(module, "compute_reference_score", lambda *_: 50.0)
+
+    def run(force_full):
+        pipeline = Pipeline([module], allow_provenance=["adapted"])
+        sample = Sample(
+            path=path,
+            reference_path=path,
+            is_video=False,
+            quality_metrics=QualityMetrics(
+                psnr99=12.0, vmaf=25.0, metric_provenance={"psnr99": "published"}
+            ),
+        )
+        assert set(pipeline._module_metric_state(sample, module, batch=batch)) == {
+            "psnr99", "metric_provenance"
+        }
+        if force_full:
+            monkeypatch.setattr(
+                pipeline, "_module_metric_state",
+                lambda sample, module, **kwargs: pipeline._metric_state(sample),
+            )
+
+        def after(processed):
+            replacement = processed.model_copy(deep=True)
+            replacement.quality_metrics.psnr99 = hook_score
+            return replacement
+
+        pipeline.add_hook(module.name, after=after)
+        if batch:
+            (result,) = pipeline._process_module_batch(module, [sample])
+        else:
+            result = pipeline.process_sample(sample)
+        assert result is not sample
+        lineage = {12.0: "published", 50.0: "adapted", 75.0: None}
+        assert result.quality_metrics.metric_provenance.get("psnr99") == lineage[hook_score]
+        return json.dumps(result.canonical_model_dump(mode="json"), sort_keys=True)
+
+    assert run(False) == run(True)
+
+
+def test_selective_rollback_restores_missing_metrics(tmp_path):
+    from ayase.modules.psnr99 import PSNR99Module
+
+    module = PSNR99Module()
+    pipeline = Pipeline([module], allow_provenance=["adapted"])
+    sample = Sample(
+        path=tmp_path / "image.png",
+        is_video=False,
+        quality_metrics=QualityMetrics(
+            psnr99=12.0, vmaf=25.0, metric_provenance={"psnr99": "published"}
+        ),
+    )
+    full_baseline = pipeline._metric_state(sample)
+    baseline = pipeline._module_metric_state(sample, module)
+    sample.quality_metrics.psnr99 = 50.0
+    sample.quality_metrics = None
+    pipeline._restore_metric_state(sample, module, baseline)
+    assert sample.quality_metrics.canonical_model_dump() == full_baseline
+
+
+def test_external_module_container_writes_roll_back(tmp_path):
+    from pydantic import Field
+
+    class PluginMetrics(QualityMetrics):
+        list_result: list[int] = Field(default_factory=list)
+        dict_result: dict[str, int] = Field(default_factory=dict)
+
+    class ContainerWriter(PipelineModule):
+        name = "test_snapshot_container_writer"
+        provenance = {"list_result": "utility", "dict_result": "utility"}
+
+        def process(self, sample):
+            sample.quality_metrics.list_result.append(2)
+            sample.quality_metrics.dict_result["value"] = 2
+            raise RuntimeError("container mutation")
+
+    module = ContainerWriter()
+    module._mounted = True
+    pipeline = Pipeline([module])
+    sample = Sample(
+        path=tmp_path / "image.png",
+        is_video=False,
+        quality_metrics=PluginMetrics(list_result=[1], dict_result={"value": 1}),
+    )
+    baseline = sample.quality_metrics.canonical_model_dump()
+    result = pipeline.process_sample(sample)
+    assert module.name in result.failed_modules
+    assert result.quality_metrics.canonical_model_dump() == baseline
+
+
+@pytest.mark.parametrize(("protocol", "suffix"), [("verse_bench", "verse"), ("wav2lip", "syncnet")])
+def test_legacy_lip_sync_snapshot_tracks_canonical_writes(tmp_path, protocol, suffix):
+    confidence = f"lse_c_{suffix}"
+    distance = f"lse_d_{suffix}"
+
+    class LegacyWriter(PipelineModule):
+        name = f"test_snapshot_legacy_writer_{suffix}"
+        provenance = {confidence: "utility", distance: "utility"}
+
+        def process(self, sample):
+            sample.quality_metrics.lse_c = 8.0
+            sample.quality_metrics.lse_d = 4.0
+            return sample
+
+    module = LegacyWriter()
+    module._mounted = True
+    pipeline = Pipeline([module])
+    metrics = QualityMetrics(
+        **{confidence: 8.0, distance: 4.0},
+        metric_provenance={confidence: "adapted", distance: "adapted"},
+    )
+    metrics.set_lip_sync_legacy_protocol(protocol)
+    result = pipeline.process_sample(
+        Sample(path=tmp_path / "video.mp4", is_video=True, quality_metrics=metrics)
+    )
+    assert result.quality_metrics.metric_provenance == {confidence: "utility", distance: "utility"}
+
+
 def test_after_hook_failure_keeps_successful_lineage(tmp_path):
     module = _PublishedModule()
     module._mounted = True
