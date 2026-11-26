@@ -11,7 +11,7 @@ Method and model source: https://github.com/linzhiqiu/t2v_metrics
 """
 
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -98,7 +98,8 @@ class VQAScoreModule(PipelineModule):
         pass ``sample.path`` directly; for videos we dump each sampled frame
         to a temporary JPEG and pass the path.
         """
-        import tempfile
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
         from PIL import Image
 
         text = sample.caption.text
@@ -108,33 +109,25 @@ class VQAScoreModule(PipelineModule):
             import cv2
 
             cap = cv2.VideoCapture(str(sample.path))
-            total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            indices = list(range(0, total, max(1, total // subsample)))[:subsample]
-
             scores = []
-            tmp_paths: List[str] = []
             try:
-                for idx in indices:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
-                    ret, frame = cap.read()
-                    if not ret:
-                        continue
-                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    pil_img = Image.fromarray(rgb)
-                    tf = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-                    tf.close()
-                    pil_img.save(tf.name, "JPEG", quality=95)
-                    tmp_paths.append(tf.name)
-                    score = self._model(images=[tf.name], texts=[text]).item()
-                    scores.append(score)
+                total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                indices = list(range(0, total, max(1, total // subsample)))[:subsample]
+                if not indices:
+                    return None
+                with TemporaryDirectory(prefix="ayase-vqascore-") as directory:
+                    for idx in indices:
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                        ret, frame = cap.read()
+                        if not ret:
+                            continue
+                        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        frame_path = Path(directory) / f"{idx}.jpg"
+                        Image.fromarray(rgb).save(frame_path, "JPEG", quality=95)
+                        score = self._model(images=[str(frame_path)], texts=[text]).item()
+                        scores.append(score)
             finally:
                 cap.release()
-                import os
-                for p in tmp_paths:
-                    try:
-                        os.unlink(p)
-                    except OSError:
-                        pass
             return float(np.mean(scores)) if scores else None
 
         return self._model(images=[str(sample.path)], texts=[text]).item()
