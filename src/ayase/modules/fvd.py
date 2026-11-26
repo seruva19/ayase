@@ -96,7 +96,7 @@ class FVDModule(BatchMetricModule):
 
     def _setup_i3d(self) -> None:
         import torch
-        from ayase.runtime import shared_runtime_resource
+        from ayase.runtime import shared_model_weights
         from ayase.config import download_model_file
 
         models_dir = self.config.get("models_dir", "models")
@@ -123,9 +123,11 @@ class FVDModule(BatchMetricModule):
         def load_i3d():
             return torch.jit.load(str(ckpt), map_location="cpu").to(self.device).eval()
 
-        self._r3d_model = shared_runtime_resource(
+        stat = ckpt.stat()
+        self._r3d_model = shared_model_weights(
             self,
-            ("fvd_i3d_torchscript", str(self.device)),
+            ("fvd_i3d_torchscript", str(ckpt.resolve()), stat.st_size, stat.st_mtime_ns,
+             str(self.device)),
             load_i3d,
         )
         self._ml_available = True

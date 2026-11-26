@@ -128,6 +128,14 @@ def shared_runtime_resource(owner: Any, key: tuple[Any, ...], factory: Any) -> A
     return factory()
 
 
+def shared_model_weights(owner: Any, key: tuple[Any, ...], factory: Any) -> Any:
+    """Share inference-only weights across runs when the facade owns a weight pool."""
+    pipeline = getattr(owner, "pipeline", None)
+    if pipeline is not None and hasattr(pipeline, "get_model_weights"):
+        return pipeline.get_model_weights(key, factory)
+    return shared_runtime_resource(owner, key, factory)
+
+
 def shared_hf_clip_resource(
     owner: Any,
     model_name: str,
@@ -137,6 +145,8 @@ def shared_hf_clip_resource(
     cache_dir: Optional[str] = None,
 ) -> tuple[Any, Any, tuple[Any, ...]]:
     """Load CLIP and its processor under a key that identifies the weight policy."""
+    from pathlib import Path
+
     from transformers import CLIPModel, CLIPProcessor
 
     from .config import resolve_model_path
@@ -159,7 +169,10 @@ def shared_hf_clip_resource(
             processor = CLIPProcessor.from_pretrained(resolved, **cache_options)
             return model, processor, key
 
-        return shared_runtime_resource(owner, key, build)
+        # Local checkpoints can be edited in place between runs.
+        if Path(resolved).exists():
+            return shared_runtime_resource(owner, key, build)
+        return shared_model_weights(owner, key, build)
 
     try:
         model, processor, key = load(use_safetensors=True)

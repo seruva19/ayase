@@ -1108,6 +1108,8 @@ class Pipeline:
         self,
         modules: List[PipelineModule],
         allow_provenance: Optional[Iterable[str]] = None,
+        *,
+        _weight_pool: Optional[Dict[tuple[Any, ...], Any]] = None,
     ):
         self.modules = self._deduplicate_modules(modules)
         self._legacy_module_aliases: Dict[str, str] = {}
@@ -1212,6 +1214,7 @@ class Pipeline:
             (int(module.config.get("prefetch_workers", 0)) for module in self.modules), default=0
         )
         self._runtime_resource_cache: Dict[tuple[Any, ...], Any] = {}
+        self._weight_pool = _weight_pool
         self._runtime_value_cache: Dict[tuple[Any, ...], Any] = {}
         # Result/frame/runtime caching is a GLOBAL feature gated by config
         # (``[general] cache_enabled``), which runtime_module_config() injects
@@ -1369,6 +1372,14 @@ class Pipeline:
         if key not in self._runtime_value_cache:
             self._runtime_value_cache[key] = factory()
         return self._runtime_value_cache[key]
+
+    def get_model_weights(self, key: tuple[Any, ...], factory: Callable[[], Any]) -> Any:
+        """Get an explicitly reusable inference resource from the run owner."""
+        if not self._cache_enabled or self._weight_pool is None:
+            return self.get_runtime_resource(key, factory)
+        if key not in self._weight_pool:
+            self._weight_pool[key] = factory()
+        return self._weight_pool[key]
 
     def peek_runtime_value(self, key: tuple[Any, ...], default: Any = None) -> Any:
         """Return a cached runtime value without constructing it."""
@@ -3660,6 +3671,7 @@ class AyasePipeline:
         config: Optional[Any] = None,
         profile: Optional[Union[Path, str, Dict[str, Any]]] = None,
         modules: Optional[List[str]] = None,
+        reuse_model_weights: bool = False,
     ):
         from .config import AyaseConfig
 
@@ -3686,6 +3698,7 @@ class AyasePipeline:
         else:
             self._modules = []
 
+        self._weight_pool: Optional[Dict[tuple[Any, ...], Any]] = {} if reuse_model_weights else None
         self.pipeline: Pipeline
         self._rebuild_pipeline()
 
@@ -3730,7 +3743,7 @@ class AyasePipeline:
         if preserve_public_state and hasattr(self, "pipeline"):
             module_templates = self.pipeline.modules
             hooks = self._clone_pipeline_hooks(self.pipeline._hooks)
-        self.pipeline = Pipeline(self._clone_modules(module_templates))
+        self.pipeline = Pipeline(self._clone_modules(module_templates), _weight_pool=self._weight_pool)
         self.pipeline._hooks = hooks
         return self.pipeline
 
@@ -3765,6 +3778,18 @@ class AyasePipeline:
             pipeline.stop()
 
         return pipeline.results
+
+    def release_model_weights(self) -> None:
+        """Release cached model weights between runs. Later runs load them again."""
+        if self._weight_pool is None:
+            return
+        self._weight_pool.clear()
+        torch = sys.modules.get("torch")
+        try:
+            if torch is not None and torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            logger.debug("Could not clear the CUDA allocator cache", exc_info=True)
 
     def export(self, path: Union[str, Path], format: str = "json") -> None:
         """Export the pipeline report."""

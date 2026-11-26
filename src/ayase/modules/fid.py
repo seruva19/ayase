@@ -71,9 +71,9 @@ class FIDModule(BatchMetricModule):
                     "mseitzer/pytorch-fid", "fid_inception_v3"
                 ).to(self._device).eval()
 
-            from ayase.runtime import shared_runtime_resource
+            from ayase.runtime import shared_model_weights
 
-            self._model = shared_runtime_resource(
+            self._model = shared_model_weights(
                 self,
                 ("fid_inception_v3_pt_inception", str(self._device)),
                 load_inception,

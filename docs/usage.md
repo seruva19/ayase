@@ -60,6 +60,11 @@ modules and requires the shared frame cache. Module processing, hooks and
 checkpoints run sequentially in input order. For video with no reliable frame
 count, the normal reader handles the request when the metric runs.
 
+For repeated Python API calls, `AyasePipeline(..., reuse_model_weights=True)`
+keeps supported CLIP, FID and FVD inference weights between runs. Each run
+has fresh module instances, accumulators and results. Call
+`release_model_weights()` between runs to free the retained weights.
+
 `assets_repo` selects the Hugging Face repository used for Ayase-managed
 checkpoints and source archives. It can also be set with
 `AYASE_GENERAL__ASSETS_REPO`; a module profile's `assets_repo` value takes
