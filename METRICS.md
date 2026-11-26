@@ -1,17 +1,17 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 17:13 · **390 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 17:27 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
-> Tests: **385/390 modules** have static test references · test references do not establish pretrained inference coverage
+> Tests: **386/391 modules** have static test references · test references do not establish pretrained inference coverage
 
 > [!NOTE]
 > Coverage links identify tests that reference each module. Test execution results are reported by the test runner.
 
 ## Summary
 
-**390** modules · **728** output fields · **618** metrics · **293** tiered · **81** with GPU code detected · **21** categories
+**391** modules · **729** output fields · **618** metrics · **294** tiered · **81** with GPU code detected · **21** categories
 
 Speed and memory values are source-based estimates, not benchmarks. GPU detection indicates code paths, not a GPU requirement. Imports and backend labels do not verify successful inference.
 
@@ -53,7 +53,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 
 <a id="categories"></a>
 
-[No-Reference Quality](#no-reference-quality-73-metrics) (73) · [Full-Reference Quality](#full-reference-quality-75-metrics) (75) · [Text-Video Alignment](#text-video-alignment-91-metrics) (91) · [Temporal Consistency](#temporal-consistency-36-metrics) (36) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-89-metrics) (89) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-111-fields) (111) · [Utility & Validation](#utility--validation-29-modules) (29)
+[No-Reference Quality](#no-reference-quality-73-metrics) (73) · [Full-Reference Quality](#full-reference-quality-75-metrics) (75) · [Text-Video Alignment](#text-video-alignment-91-metrics) (91) · [Temporal Consistency](#temporal-consistency-36-metrics) (36) · [Motion & Dynamics](#motion--dynamics-75-metrics) (75) · [Pose & Gesture](#pose--gesture-4-metrics) (4) · [Basic Visual Quality](#basic-visual-quality-15-metrics) (15) · [Aesthetics](#aesthetics-13-metrics) (13) · [Audio Quality](#audio-quality-89-metrics) (89) · [Face & Identity](#face--identity-76-metrics) (76) · [Scene & Content](#scene--content-17-metrics) (17) · [Distribution & Generation](#distribution--generation-1-metrics) (1) · [HDR & Color](#hdr--color-12-metrics) (12) · [Codec & Technical](#codec--technical-4-metrics) (4) · [Depth & Spatial](#depth--spatial-5-metrics) (5) · [Production Quality](#production-quality-5-metrics) (5) · [OCR & Text](#ocr--text-7-metrics) (7) · [Safety & Ethics](#safety--ethics-10-metrics) (10) · [Image-to-Video Reference](#image-to-video-reference-5-metrics) (5) · [Meta & Curation](#meta--curation-5-metrics) (5) · [Dataset-Level Metrics](#dataset-level-metrics-112-fields) (112) · [Utility & Validation](#utility--validation-29-modules) (29)
 
 ---
 
@@ -9857,7 +9857,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Config**: `weights={'aesthetic': 0.15, 'technical': 0.15, 'motion': 0.1, 'clip_temp': 0.15, 'blur': 0.1, 'noise': 0.1, 'scene_stability': 0.1, 'resolution': 0.15}`
 
 
-## Dataset-Level Metrics (111 fields)
+## Dataset-Level Metrics (112 fields)
 
 Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/post-processing.
 
@@ -10250,6 +10250,18 @@ Fields stored on `DatasetStats` via `pipeline.add_dataset_metric()` after batch/
 - **Field readiness**: `approximate`
 - **Provenance**: `adapted` — velocities are frame differences of MediaPipe BlazePose 33-joint xy instead of the source's skeleton, so absolute values are not comparable — source: FD_k, Audio2Photoreal (arXiv:2401.01885); AI Choreographer (arXiv:2101.08779) — https://github.com/facebookresearch/audio2photoreal
 - **Tests**: covered by [`test_fd_gk.py`](tests/modules/per_module/test_fd_gk.py)
+
+### `fid` [↑](#categories)
+> Fréchet Inception Distance · ↓ lower=better · type: float
+
+**[`fid`](src/ayase/modules/fid.py)** — Fréchet Inception Distance between generated and reference image sets (lower=better)
+
+- **Input**: batch +ref · **Estimated speed**: ⏱️ medium
+- **Readiness**: `implemented` — Official pytorch-fid pool3 weights and Gaussian Fréchet distance; Ayase applies bicubic resizing and uses one representative frame per video.
+- **Review evidence**: Official pretrained checkpoint verified. CPU pool3 features match pytorch-fid; CUDA FP32 batch differences stayed below 1e-5 on fixed synthetic inputs.
+- **Field readiness**: `implemented`
+- **Provenance**: `adapted` — Ayase resizes inputs with bicubic interpolation and uses one representative frame per video; no score without references — source: FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid
+- **Tests**: covered by [`test_fid.py`](tests/modules/per_module/test_fid.py), [`test_blip_distribution_asr_quality.py`](tests/modules/test_blip_distribution_asr_quality.py), [`test_fields_general.py`](tests/modules/test_fields_general.py), +2 more
 
 ### `fvd` [↑](#categories)
 > Fréchet Video Distance · ↓ lower=better · type: float
@@ -11274,7 +11286,7 @@ Modules that perform validation, embedding, deduplication, or dataset-level anal
 
 ---
 
-## External backend required — pending real backend (68 modules)
+## External backend required — pending real backend (67 modules)
 
 These modules ship in the package and stay registered, but currently have **no turnkey real backend** in a standard `pip install ayase` + network environment (uninstallable dependency, unreleased weights, needs training or a native build, or architecturally impossible). They are **excluded from the module/metric/category counts above** and produce no values until a real backend is wired. The **70** metric field(s) below stay in the `QualityMetrics` schema, reserved for that revival.
 
@@ -11333,8 +11345,6 @@ These modules ship in the package and stay registered, but currently have **no t
   - `fdd`: `published` — backend unavailable — source: FDD, CodeTalker (Xing et al., CVPR 2023, arXiv:2301.02379) — https://github.com/Doubiiu/CodeTalker
 - **[`fgd`](src/ayase/modules/fgd.py)** — Frechet Gesture Distance on autoencoder latents (Yoon et al. 2020) · Readiness: `unimplemented` — No trained gesture encoder/checkpoint; feature and distribution methods always return None. · Review evidence: Source inspection; confidence high; pretrained inference not validated. · Metrics: — (dataset-level / none)
   - `fgd`: `published` — backend unavailable — source: FGD, Yoon et al., TOG 2020 (arXiv:2009.02119); PantoMatrix/EMAGE encoder — https://github.com/PantoMatrix/PantoMatrix
-- **[`fid`](src/ayase/modules/fid.py)** — Fréchet Inception Distance for image generation (batch metric) · Readiness: `unimplemented` — torch.hub.load targets mseitzer/pytorch-fid fid_inception_v3, but upstream repository has no hubconf.py; no direct package loader fallback. FrГ©chet formula exists but actual intended feature loader is broken. · Review evidence: Source inspection; confidence high; pretrained inference not validated. · Metrics: — (dataset-level / none) · Needs: scipy, torch, torchvision
-  - `fid`: `adapted` — backend unavailable — source: FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid — one representative frame per video; without a reference the metric is not emitted
 - **[`finevq_raw`](src/ayase/modules/finevq_raw.py)** — Raw logit mean of the FineVQ model (adapted) · Readiness: `unimplemented` — No executable default FineVQ model: checkpoint auto_map requires custom InternVL source modules absent from its HF file manifest, with no acquisition/registration here. Generic AutoProcessor frame inputs do not supply the custom model interface. Raw-logit mean naming correctly avoids claiming the published score, but cannot repair missing loading/inference. · Review evidence: Source inspection; confidence high; pretrained inference not validated. · Metrics: `finevq_raw_mean` · Needs: Pillow, opencv-python, torch, transformers
   - `finevq_raw_mean`: `own` — backend unavailable — source: FineVQ model (Duan et al., CVPR 2025); the number is not its score — https://github.com/IntMeGroup/FineVQ
 - **[`funque`](src/ayase/modules/funque.py)** — Fused quality evaluator via the real FUNQUE package (full-reference) · Readiness: `unimplemented` — Only imports externally installed funque and calls its compute interface; no trained official source, package/model provisioning or managed environment is supplied. It skips when absent and has no proxy branch. · Review evidence: Source inspection; confidence high; pretrained inference not validated. · Expert adapter: may try a real externally provided backend; standard-install readiness remains unimplemented · Metrics: `funque_score` · Needs: funque

@@ -47,6 +47,7 @@ dependencies = [
     "imageio-ffmpeg>=0.6.0,<1.0",
     "torch>=2.1.0,<2.11",
     "torchvision>=0.16.0,<0.26",
+    "pytorch-fid==0.3.0",
     "torchaudio>=2.1.0,<2.11",
     "transformers>=4.45.0,<5.0",
     "qwen-vl-utils>=0.0.8",

@@ -1,12 +1,12 @@
 # Ayase Models Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 17:14 · **326 models** across **9 sources**
+> **Version 0.2.1** · Generated 2026-11-26 17:28 · **327 models** across **9 sources**
 >
 > `ayase modules models -o MODELS.md` to regenerate
 
 ## Summary
 
-**326** models · **125** HuggingFace · **37** pyiqa · **9** sources
+**327** models · **125** HuggingFace · **37** pyiqa · **9** sources
 
 *License labels in the model catalog cover model weights and runtime assets referenced by Ayase modules.*
 *Project and vendored runtime licensing is documented in the final section below.*
@@ -31,7 +31,7 @@
 
 <a id="categories"></a>
 
-[HuggingFace (92)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (45)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
+[HuggingFace (92)](#huggingface-models) · [Weight Files (33)](#weight-file-repos) · [pyiqa (37)](#pyiqa-metrics) · [torchvision (16)](#torchvision-models) · [CLIP / OpenCLIP (3)](#clip--openclip) · [torch.hub (4)](#torchhub) · [FFmpeg (6)](#ffmpeg) · [pip Packages (54)](#pip-packages) · [Local Weights (46)](#local-weight-files) · [Other Models (36)](#other-models) · [Quick Install Guide](#quick-install-guide)
 
 ---
 
@@ -959,6 +959,11 @@ Checkpoint files downloaded directly by Ayase modules or supplied through a loca
 
 - **Used by**: `kad`
 - **Task**: PANNs Wavegram-Logmel audio embedding checkpoint
+
+### <a href="https://github.com/mseitzer/pytorch-fid/releases/download/fid_weights/pt_inception-2015-12-05-6726825d.pth" target="_blank">`pt_inception-2015-12-05-6726825d.pth`</a> [↑](#categories)
+
+- **Used by**: `fid`
+- **Task**: Canonical FID InceptionV3 (pt_inception port)
 
 ### <a href="https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt" target="_blank">`sam2.1_hiera_large.pt`</a> [↑](#categories)
 

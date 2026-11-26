@@ -1,13 +1,13 @@
 """FID image distribution metric.
 
 Computes the Fréchet Inception Distance between generated and reference image
-feature distributions using the canonical FID InceptionV3 weights
-(``fid_inception_v3`` via ``torch.hub``/pytorch-fid — the TF ``pt_inception``
-port used by every published FID number). When torch is unavailable the metric
-is left unset (no heuristic stand-in). Lower FID is better.
+feature distributions using the canonical pytorch-fid InceptionV3 pool3
+features. Video inputs use one representative frame. Lower FID is better.
 """
 
 import logging
+from contextlib import nullcontext
+from threading import Lock
 from typing import List, Optional
 
 import numpy as np
@@ -17,30 +17,34 @@ from ayase.image import load_representative_frame
 from ayase.models import Sample
 
 logger = logging.getLogger(__name__)
+_CUDNN_PRECISION_LOCK = Lock()
 
 
 class FIDModule(BatchMetricModule):
     name = "fid"
-    implementation_status = "unimplemented"
-    implementation_notes = "torch.hub.load targets mseitzer/pytorch-fid fid_inception_v3, but upstream repository has no hubconf.py; no direct package loader fallback. FrГ©chet formula exists but actual intended feature loader is broken."
-    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
+    implementation_status = "implemented"
+    implementation_notes = "Official pytorch-fid pool3 weights and Gaussian Fréchet distance; Ayase applies bicubic resizing and uses one representative frame per video."
+    implementation_review = "Official pretrained checkpoint verified. CPU pool3 features match pytorch-fid; CUDA FP32 batch differences stayed below 1e-5 on fixed synthetic inputs."
     provenance = "adapted"
     sources = {
         "fid": "FID (Heusel et al., NeurIPS 2017) — fid_inception_v3 via https://github.com/mseitzer/pytorch-fid",
     }
     deviations = {
-        "fid": "one representative frame per video; without a reference the metric is not emitted",
+        "fid": "Ayase resizes inputs with bicubic interpolation and uses one representative frame per video; no score without references",
     }
     description = "Fréchet Inception Distance for image generation (batch metric)"
     default_config = {
         "device": "auto",
         "resize": 299,
     }
+    required_packages = ["pytorch_fid"]
     models = [
         {
-            "id": "mseitzer/pytorch-fid:fid_inception_v3",
-            "type": "torch_hub",
+            "id": "pt_inception-2015-12-05-6726825d.pth",
+            "type": "local",
+            "url": "https://github.com/mseitzer/pytorch-fid/releases/download/fid_weights/pt_inception-2015-12-05-6726825d.pth",
             "task": "Canonical FID InceptionV3 (pt_inception port)",
+            "auto_download": True,
         },
     ]
     metric_info = {
@@ -58,24 +62,21 @@ class FIDModule(BatchMetricModule):
 
     def setup(self) -> None:
         try:
-            import torch
+            from pytorch_fid.inception import InceptionV3
             from torchvision import transforms
-            from ayase.runtime import resolve_torch_device
+            from ayase.runtime import resolve_torch_device, shared_model_weights
 
             self._device = resolve_torch_device(self.device_config)
 
             def load_inception():
-                # Canonical FID weights: the pytorch-fid port of TF's
-                # pt_inception-2015-12-05 checkpoint. Inputs are [0, 1] NCHW.
-                return torch.hub.load(
-                    "mseitzer/pytorch-fid", "fid_inception_v3"
+                return InceptionV3(
+                    output_blocks=(InceptionV3.BLOCK_INDEX_BY_DIM[2048],),
+                    resize_input=False,
                 ).to(self._device).eval()
-
-            from ayase.runtime import shared_model_weights
 
             self._model = shared_model_weights(
                 self,
-                ("fid_inception_v3_pt_inception", str(self._device)),
+                ("pytorch-fid", "0.3.0", 2048, str(self._device)),
                 load_inception,
             )
             self._transform = transforms.Compose([
@@ -89,7 +90,7 @@ class FIDModule(BatchMetricModule):
             self._backend = "fid_inception_v3"
             logger.info("FID initialised with pytorch-fid fid_inception_v3 on %s", self._device)
         except ImportError:
-            logger.warning("FID unavailable: requires torch and torchvision.")
+            logger.warning("FID unavailable: pytorch-fid could not be imported.")
         except Exception as e:
             logger.warning("FID Inception setup failed (%s); metric disabled", e)
 
@@ -118,17 +119,59 @@ class FIDModule(BatchMetricModule):
 
     def _extract_inception(self, frame: np.ndarray) -> Optional[np.ndarray]:
         try:
-            import torch
-
-            tensor = self._transform(frame.astype(np.uint8)).unsqueeze(0).to(self._device)
-            with torch.no_grad():
-                features = self._model(tensor)
-                if hasattr(features, "logits"):
-                    features = features.logits
-            return features.detach().cpu().numpy().reshape(-1).astype(np.float64)
+            return self._extract_inception_batch([frame])[0]
         except Exception as e:
             logger.debug("FID Inception extraction failed: %s", e)
             return None
+
+    def _extract_inception_batch(self, frames: List[np.ndarray]) -> np.ndarray:
+        import torch
+        from ayase.runtime import torch_inference_context
+
+        inputs = torch.stack([self._transform(frame) for frame in frames]).to(self._device)
+        # FID's covariance estimate is sensitive to reduced precision.
+        cudnn = torch.backends.cudnn
+        with _CUDNN_PRECISION_LOCK if inputs.is_cuda else nullcontext():
+            precision = (
+                cudnn.flags(
+                    enabled=cudnn.enabled,
+                    benchmark=cudnn.benchmark,
+                    benchmark_limit=cudnn.benchmark_limit,
+                    deterministic=cudnn.deterministic,
+                    allow_tf32=False,
+                )
+                if inputs.is_cuda
+                else nullcontext()
+            )
+            with precision, torch_inference_context(str(self._device), "fp32", False):
+                features = self._model(inputs)[0]
+                features = torch.nn.functional.adaptive_avg_pool2d(features, (1, 1))
+        return features.flatten(1).cpu().numpy().astype(np.float64)
+
+    def process_batch(self, samples: List[Sample]) -> List[Sample]:
+        if len(samples) <= 1 or self._backend != "fid_inception_v3" or self._model is None:
+            return super().process_batch(samples)
+
+        try:
+            generated, references = [], []
+            for sample in samples:
+                frame = load_representative_frame(sample.path, color="rgb")
+                if frame is not None:
+                    generated.append(frame)
+                reference = sample.reference_path
+                if reference is not None and reference.exists():
+                    frame = load_representative_frame(reference, color="rgb")
+                    if frame is not None:
+                        references.append(frame)
+            features = self._extract_inception_batch(generated) if generated else []
+            reference_features = self._extract_inception_batch(references) if references else []
+        except Exception as exc:
+            logger.debug("FID batch extraction failed; retrying per sample: %s", exc)
+            return super().process_batch(samples)
+
+        self._feature_cache.extend(features)
+        self._reference_cache.extend(reference_features)
+        return samples
 
     def _frechet_distance(self, x: np.ndarray, y: np.ndarray) -> Optional[float]:
         mu_x = np.mean(x, axis=0)
@@ -143,11 +186,11 @@ class FIDModule(BatchMetricModule):
         try:
             from scipy import linalg
 
-            covmean, _ = linalg.sqrtm(cov_x @ cov_y, disp=False)
+            covmean = linalg.sqrtm(cov_x @ cov_y)
             if not np.isfinite(covmean).all():
                 eps = 1e-6
                 offset = np.eye(cov_x.shape[0]) * eps
-                covmean, _ = linalg.sqrtm((cov_x + offset) @ (cov_y + offset), disp=False)
+                covmean = linalg.sqrtm((cov_x + offset) @ (cov_y + offset))
             if not np.isfinite(covmean).all():
                 logger.warning("FID covariance square root is non-finite; metric left unset")
                 return None
