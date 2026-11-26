@@ -49,6 +49,7 @@ from .runtime import (
     readonly_view,
     runtime_module_config,
 )
+from ._module_index import load_module_index
 
 logger = logging.getLogger(__name__)
 
@@ -958,11 +959,22 @@ class PipelineModule(ABC):
         cached = cls.__dict__.get("_resolved_field_provenance")
         if cached is None:
             try:
-                cached = dict(cls.get_metadata().get("provenance") or {})
+                cached = dict(cls._runtime_metadata().get("provenance") or {})
             except Exception:
                 cached = {}
             cls._resolved_field_provenance = cached
         return dict(cached)
+
+    @classmethod
+    def _runtime_metadata(cls) -> Dict[str, Any]:
+        entry = load_module_index().get(cls.name)
+        if (
+            entry is not None
+            and entry["import_path"] == cls.__module__
+            and entry["class_name"] == cls.__qualname__
+        ):
+            return cast(Dict[str, Any], entry)
+        return cls.get_metadata()
 
     def _check_required_packages(self) -> List[str]:
         required = []
@@ -1159,12 +1171,9 @@ class Pipeline:
         self._active_dataset_module: Optional[PipelineModule] = None
         for module in self.modules:
             try:
-                meta = type(module).get_metadata()
+                meta = type(module)._runtime_metadata()
             except Exception:
                 continue
-            declared = set(meta.get("output_fields", {})) | set(
-                meta.get("dataset_output_fields", {})
-            )
             prov_map = meta.get("provenance") or {}
             # Consider every marked output — including service side-channels
             # declared in ``provenance`` (e.g. ``detections`` on Sample) — so a
@@ -3242,6 +3251,8 @@ class ModuleRegistry:
     @classmethod
     def register(cls, module_cls: Type[PipelineModule]) -> None:
         existing = cls._modules.get(module_cls.name)
+        if existing is None and module_cls.__module__.startswith("ayase_ext_"):
+            existing = cls._load_indexed(module_cls.name)
         if existing is not None and existing is not module_cls:
             raise ValueError(
                 f"Duplicate module name '{module_cls.name}' for "
@@ -3252,7 +3263,7 @@ class ModuleRegistry:
 
     @classmethod
     def get_module(cls, name: str) -> Optional[Type[PipelineModule]]:
-        module_cls = cls._modules.get(name)
+        module_cls = cls._modules.get(name) or cls._load_indexed(name)
         if module_cls is None and name == "lip_sync":
             # ``lip_sync`` is a config-aware compatibility factory and is
             # intentionally absent from the canonical module registry.
@@ -3264,15 +3275,55 @@ class ModuleRegistry:
                 module_cls = None
         if module_cls is None:
             new_name = MODULE_ALIASES.get(name)
-            if new_name is not None and new_name in cls._modules:
+            if new_name is not None:
+                module_cls = cls._modules.get(new_name) or cls._load_indexed(new_name)
+            if module_cls is not None:
                 warnings.warn(
                     f"Module name '{name}' was renamed to '{new_name}' in 0.1.80; "
                     "the alias will be removed in a later release.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
-                module_cls = cls._modules[new_name]
         return module_cls
+
+    @classmethod
+    def _load_indexed(cls, name: str) -> Optional[Type[PipelineModule]]:
+        entry = load_module_index().get(name)
+        if entry is None:
+            return None
+        module_name = entry["import_path"]
+        was_imported = module_name in sys.modules
+        previous_modules = dict(cls._modules)
+        try:
+            imported: Any = importlib.import_module(module_name)
+            for component in entry["class_name"].split("."):
+                imported = getattr(imported, component)
+            registered = cls._modules.get(name)
+            if registered is None or registered is not imported:
+                raise ImportError(f"Module {module_name} did not register {name!r} as indexed")
+        except Exception as exc:
+            if not was_imported:
+                sys.modules.pop(module_name, None)
+            cls._rollback_partial_registration(previous_modules, module_name)
+            cls._record_readiness(module_name.rsplit(".", 1)[-1], False, str(exc))
+            logger.warning("Failed to import module %s: %s", module_name, exc)
+            return None
+        cls._record_readiness(module_name.rsplit(".", 1)[-1], True)
+        QualityMetrics.register_field_groups(entry["metric_groups"])
+        return registered
+
+    @classmethod
+    def prepare_named_lookup(cls, plugin_paths: List[Path]) -> None:
+        """Load configured plugins without importing the entire built-in catalog."""
+        index = load_module_index()
+        if not index:
+            cls.discover_modules(plugin_paths=plugin_paths)
+            return
+        for entry in index.values():
+            QualityMetrics.register_field_groups(entry["metric_groups"])
+        if plugin_paths:
+            cls.discover_external_modules(plugin_paths)
+        cls._register_metric_groups()
 
     @classmethod
     def is_packaged_module(cls, module_cls: Type[PipelineModule]) -> bool:
@@ -3563,10 +3614,8 @@ class AyasePipeline:
         else:
             self.config = config
 
-        # Discover all available modules
-        ModuleRegistry.discover_modules(
-            plugin_paths=self.config.pipeline.plugin_folders,
-        )
+        if profile is None:
+            ModuleRegistry.prepare_named_lookup(self.config.pipeline.plugin_folders)
 
         # Build module list from profile or explicit list
         if profile is not None:

@@ -70,7 +70,7 @@ def instantiate_profile_modules(
     loaded = load_profile(profile)
     cfg = config or AyaseConfig.load()
 
-    ModuleRegistry.discover_modules(plugin_paths=cfg.pipeline.plugin_folders)
+    ModuleRegistry.prepare_named_lookup(cfg.pipeline.plugin_folders)
 
     if not loaded.modules:
         return []

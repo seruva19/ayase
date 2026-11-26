@@ -127,7 +127,7 @@ def _select_modules(quick: bool, deep: bool, config: AyaseConfig) -> List[str]:
 
 def _parse_pipeline_str(pipeline_str: str, config: AyaseConfig) -> List[PipelineModule]:
     """Parse a pipeline string like 'metadata,motion{sample_rate=10}'."""
-    _discover_all_modules(config)
+    ModuleRegistry.prepare_named_lookup(config.pipeline.plugin_folders)
     requests: List[tuple[str, Dict[str, Any]]] = []
 
     if not pipeline_str.strip():
@@ -534,7 +534,7 @@ def scan(
     if pipeline is not None:
         modules = _parse_pipeline_str(pipeline, config)
     elif modules_flag is not None:
-        _discover_all_modules(config)
+        ModuleRegistry.prepare_named_lookup(config.pipeline.plugin_folders)
         module_names = [n.strip() for n in modules_flag.split(",") if n.strip()]
         modules = _instantiate_modules(module_names, config, provenance_opt_in=True)
     else:
@@ -1054,6 +1054,9 @@ def modules_docs(
     run_tests: Annotated[
         bool, typer.Option("--run-tests/--no-tests", help="Run tests and show pass/fail status")
     ] = True,
+    module_index: Annotated[
+        Optional[Path], typer.Option("--module-index", help="Write the packaged lookup index")
+    ] = None,
 ) -> None:
     """Generate METRICS.md with charts, test status, and version info.
 
@@ -1083,6 +1086,11 @@ def modules_docs(
                 console.print(f"[green]Generated {len(charts)} charts in docs/[/green]")
     else:
         print(content)
+    if module_index is not None:
+        from ._module_index import write_module_index
+
+        write_module_index(module_index)
+        console.print(f"[green]Written module index to {module_index}[/green]")
 
 
 @modules_app.command("models")

@@ -82,3 +82,90 @@ assert metric.values == ("chunk", "heads", "original")
 """,
         tmp_path,
     )
+
+
+def test_named_profile_uses_index_and_preserves_dataset_provenance():
+    _run_imports(
+        """
+import sys
+import warnings
+from ayase.config import AyaseConfig
+from ayase.pipeline import ModuleRegistry, Pipeline
+from ayase.profile import instantiate_profile_modules
+
+config = AyaseConfig()
+config.pipeline.plugin_folders = []
+modules = instantiate_profile_modules({"modules": ["dover", "motion", "fid"]}, config)
+assert [module.name for module in modules] == ["dover", "motion", "fid"]
+assert "ayase.modules.fvd" not in sys.modules
+assert "ayase.modules.finevq_raw" not in sys.modules
+
+fid = type(modules[-1])
+def fail(*args, **kwargs):
+    raise AssertionError("source introspection was called")
+fid.get_metadata = fail
+assert Pipeline(modules)._dataset_field_provenance["fid"] == "adapted"
+with warnings.catch_warnings(record=True) as captured:
+    warnings.simplefilter("always")
+    assert ModuleRegistry.get_module("finevq") is ModuleRegistry.get_module("finevq_raw")
+    assert any("was renamed" in str(w.message) for w in captured)
+assert ModuleRegistry.get_module("lip_sync").__name__ == "LipSyncModule"
+"""
+    )
+
+
+def test_named_discovery_rejects_plugin_collision(tmp_path):
+    (tmp_path / "duplicate.py").write_text(
+        "from ayase.pipeline import PipelineModule\n"
+        "class Duplicate(PipelineModule):\n"
+        "    name = 'dover'\n"
+        "    def process(self, sample): return sample\n",
+        encoding="utf-8",
+    )
+    _run_imports(
+        f"""
+from pathlib import Path
+from ayase.pipeline import ModuleRegistry
+folder = Path({str(tmp_path)!r})
+ModuleRegistry.prepare_named_lookup([folder])
+assert ModuleRegistry.get_module("dover").__module__ == "ayase.modules.dover"
+report = ModuleRegistry.readiness_report()
+duplicate = report[str(folder / "duplicate.py")]
+assert duplicate["status"] == "missing"
+assert "Duplicate module name" in duplicate["error"]
+"""
+    )
+
+
+def test_packaged_index_matches_full_discovery():
+    from ayase._module_index import generate_module_index, load_module_index
+
+    assert load_module_index() == generate_module_index()
+
+
+def test_failed_indexed_import_rolls_back_partial_registration(tmp_path, monkeypatch):
+    from ayase import pipeline
+
+    (tmp_path / "broken_metric.py").write_text(
+        "from ayase.pipeline import PipelineModule\n"
+        "class Broken(PipelineModule):\n"
+        "    name = 'test_indexed_broken'\n"
+        "    def process(self, sample): return sample\n"
+        "raise ImportError('missing backend')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setattr(
+        pipeline,
+        "load_module_index",
+        lambda: {
+            "test_indexed_broken": {"import_path": "broken_metric", "class_name": "Broken"}
+        },
+    )
+    readiness = dict(pipeline.ModuleRegistry._readiness)
+    monkeypatch.setattr(pipeline.ModuleRegistry, "_readiness", readiness)
+
+    assert pipeline.ModuleRegistry.get_module("test_indexed_broken") is None
+    assert "test_indexed_broken" not in pipeline.ModuleRegistry._modules
+    assert "broken_metric" not in sys.modules
+    assert readiness["broken_metric"] == {"status": "missing", "error": "missing backend"}
