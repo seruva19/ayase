@@ -407,30 +407,23 @@ class ModularBVQAModule(PipelineModule):
         """Video quality with Laplacian spatial and SlowFast temporal rectifiers."""
         import torch
         import cv2
+        from ayase.image import sample_frames
 
         cap = cv2.VideoCapture(str(sample.path))
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-        if total <= 0:
+        try:
+            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+        finally:
             cap.release()
-            return None
 
-        n_frames = min(self.subsample, total)
-        indices = np.linspace(0, total - 1, n_frames, dtype=int)
+        frames = sample_frames(
+            sample.path, max_frames=self.subsample, color="bgr", known_count_only=True
+        )
 
         frame_features = []
         gray_frames = []
         laplacian_features_list = []
 
-        for idx in indices:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
-            ret, frame = cap.read()
-            if not ret:
-                continue
-
+        for frame in frames:
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -445,8 +438,6 @@ class ModularBVQAModule(PipelineModule):
             # Compute per-frame Laplacian pyramid features
             lap_feat = self._compute_laplacian_features(gray)
             laplacian_features_list.append(lap_feat)
-
-        cap.release()
 
         if not frame_features:
             return None
