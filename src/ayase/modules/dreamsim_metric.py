@@ -8,7 +8,7 @@ Basis: https://github.com/ssundaram21/dreamsim
 """
 
 import logging
-import os
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
@@ -49,12 +49,17 @@ class DreamSimModule(PipelineModule):
         original_hub_dir = None
         try:
             import torch
+            from ayase.runtime import resolve_torch_device
 
             original_hub_dir = torch.hub.get_dir()
-            self._ensure_dino_cached()
             from dreamsim import dreamsim
 
-            model, preprocess = dreamsim(pretrained=True)
+            cache_dir = Path(self.config.get("models_dir") or "models")
+            self._ensure_dino_cached(cache_dir)
+            device = resolve_torch_device(self.config.get("device", "auto"))
+            model, preprocess = dreamsim(
+                pretrained=True, device=device, cache_dir=str(cache_dir)
+            )
             self._model = model
             self._preprocess = preprocess
             self._ml_available = True
@@ -174,29 +179,19 @@ class DreamSimModule(PipelineModule):
     _DINO_MIRROR_URL = "https://huggingface.co/AkaneTendo25/ayase-assets/resolve/main/dreamsim/dino_vitbase16_pretrain.pth"
     _DINO_FILENAME = "dino_vitbase16_pretrain.pth"
 
-    def _ensure_dino_cached(self) -> None:
-        """Pre-place DreamSim's base DINO backbone in the torch hub cache if absent."""
-        import torch
-
-        hub_dir = torch.hub.get_dir()
-        cache_dir = os.path.join(hub_dir, "checkpoints")
-        cached = os.path.join(cache_dir, self._DINO_FILENAME)
-        if os.path.exists(cached):
+    def _ensure_dino_cached(self, cache_dir: Path) -> None:
+        """Pre-place the base DINO backbone where DreamSim points Torch Hub."""
+        relative = f"checkpoints/{self._DINO_FILENAME}"
+        if (cache_dir / relative).is_file():
             return
-        os.makedirs(cache_dir, exist_ok=True)
-        logger.info("Pre-caching base DINO backbone for DreamSim from the ayase mirror...")
+
         from ayase.config import download_model_file, resolve_assets_url
 
-        tmp = download_model_file(
-            os.path.join("hub", "checkpoints", self._DINO_FILENAME),
+        download_model_file(
+            relative,
             resolve_assets_url(self._DINO_MIRROR_URL, self.config),
-            os.path.dirname(hub_dir),  # parent of hub dir
+            str(cache_dir),
         )
-        # Move to torch cache if downloaded elsewhere
-        if str(tmp) != cached and os.path.exists(str(tmp)):
-            import shutil
-
-            shutil.copy2(str(tmp), cached)
 
 
 class DreamSimCompatModule(DreamSimModule):

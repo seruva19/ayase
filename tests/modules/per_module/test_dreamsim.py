@@ -60,7 +60,7 @@ def test_dreamsim_video(video_sample):
         assert video_sample.quality_metrics.dreamsim is not None
 
 
-def test_dreamsim_setup_restores_torch_hub_after_success(monkeypatch):
+def test_dreamsim_setup_restores_torch_hub_after_success(monkeypatch, tmp_path):
     """DreamSim's package-local hub override cannot affect a later loader."""
     from ayase.modules.dreamsim_metric import DreamSimModule
 
@@ -68,20 +68,25 @@ def test_dreamsim_setup_restores_torch_hub_after_success(monkeypatch):
     monkeypatch.setitem(sys.modules, "torch", _fake_torch(hub))
     dreamsim_module = ModuleType("dreamsim")
 
-    def load_dreamsim(pretrained=True):
+    def load_dreamsim(*, pretrained, device, cache_dir):
         assert pretrained is True
-        hub.set_dir("./models")
+        assert device == "cpu"
+        assert cache_dir == str(tmp_path)
+        hub.set_dir(cache_dir)
         return object(), object()
 
     dreamsim_module.dreamsim = load_dreamsim
     monkeypatch.setitem(sys.modules, "dreamsim", dreamsim_module)
-    module = DreamSimModule()
-    monkeypatch.setattr(module, "_ensure_dino_cached", lambda: None)
+    module = DreamSimModule({"device": "cpu", "models_dir": str(tmp_path)})
+    calls = []
+    monkeypatch.setattr("ayase.config.download_model_file", lambda *args: calls.append(args))
 
     module.setup()
 
     assert module._ml_available is True
     assert hub.get_dir() == "/original/torch-hub"
+    assert calls[0][0] == "checkpoints/dino_vitbase16_pretrain.pth"
+    assert calls[0][2] == str(tmp_path)
 
     def unrelated_loader():
         return hub.get_dir()
@@ -97,14 +102,14 @@ def test_dreamsim_setup_restores_torch_hub_after_loader_failure(monkeypatch):
     monkeypatch.setitem(sys.modules, "torch", _fake_torch(hub))
     dreamsim_module = ModuleType("dreamsim")
 
-    def fail_dreamsim(pretrained=True):
+    def fail_dreamsim(**kwargs):
         hub.set_dir("./models")
         raise RuntimeError("synthetic load failure")
 
     dreamsim_module.dreamsim = fail_dreamsim
     monkeypatch.setitem(sys.modules, "dreamsim", dreamsim_module)
     module = DreamSimModule()
-    monkeypatch.setattr(module, "_ensure_dino_cached", lambda: None)
+    monkeypatch.setattr(module, "_ensure_dino_cached", lambda cache_dir: None)
 
     module.setup()
 
@@ -129,7 +134,7 @@ def test_dreamsim_setup_restores_torch_hub_after_import_failure(monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fail_import)
     module = DreamSimModule()
-    monkeypatch.setattr(module, "_ensure_dino_cached", lambda: None)
+    monkeypatch.setattr(module, "_ensure_dino_cached", lambda cache_dir: None)
 
     module.setup()
 
