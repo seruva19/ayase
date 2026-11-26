@@ -193,6 +193,7 @@ class GeneralConfig(BaseModel):
     video_decoder: Literal["opencv", "decord", "auto"] = "opencv"
     timing_enabled: bool = True
     sample_batch_size: int = 1
+    execution_mode: Literal["sample_first", "staged"] = "sample_first"
     max_clip_images_per_forward: int = 64
 
     @field_validator("assets_repo", mode="before")

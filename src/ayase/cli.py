@@ -241,7 +241,10 @@ def _process_samples(
         next_checkpoint = ((processed_count // checkpoint_every) + 1) * checkpoint_every
 
     batch_size = _pipeline_sample_batch_size(pipeline)
-    if getattr(pipeline, "prefetch_workers", 0) > 0:
+    if (
+        getattr(pipeline, "prefetch_workers", 0) > 0
+        or getattr(pipeline, "execution_mode", "sample_first") == "staged"
+    ):
         for processed in pipeline.iter_processed_batches(samples, batch_size=batch_size):
             processed_count += len(processed)
             _maybe_checkpoint()
@@ -581,7 +584,7 @@ def scan(
             module_names, config, allow_empty=True, provenance_opt_in=opt_in
         )
 
-    p = Pipeline(modules)
+    p = Pipeline(modules, execution_mode=config.general.execution_mode)
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
     _run_pipeline(p, samples)
 
@@ -681,7 +684,7 @@ def run(
             c.strip() for c in allow_provenance.split(",") if c.strip()
         ]
     modules = _parse_pipeline_str(pipeline, config)
-    p = Pipeline(modules)
+    p = Pipeline(modules, execution_mode=config.general.execution_mode)
 
     checkpoint_fn = None
     if checkpoint_every > 0 and format == "json" and output is not None:
@@ -815,7 +818,7 @@ def filter(
     config = AyaseConfig.load()
     module_names = _select_modules(quick=False, deep=False, config=config)
     modules = _instantiate_modules(module_names, config, allow_empty=True)
-    pipeline = Pipeline(modules)
+    pipeline = Pipeline(modules, execution_mode=config.general.execution_mode)
 
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
     _run_pipeline(pipeline, samples)
@@ -935,7 +938,7 @@ def stats(
     config = AyaseConfig.load()
     module_names = _select_modules(quick=True, deep=False, config=config)
     modules = _instantiate_modules(module_names, config, allow_empty=True)
-    pipeline = Pipeline(modules)
+    pipeline = Pipeline(modules, execution_mode=config.general.execution_mode)
     samples = _iter_dataset_samples(dataset_path, include_videos=True, include_images=True)
     _run_pipeline(pipeline, samples)
 

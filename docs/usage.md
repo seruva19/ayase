@@ -104,6 +104,12 @@ has fresh module instances, accumulators and results. Call
 `release_model_weights()` between runs to free the retained weights.
 
 GPU profiles can set `sample_batch_size` to 4–16 where device memory allows.
+
+Set `execution_mode = "staged"` under `[general]` to process an input cohort
+one module at a time and release each module before mounting the next.
+Every selected module must declare the sample-local contract. A stack with
+hooks or a dataset-level module uses sample-first execution. Staged runs
+hold the cohort in memory and publish results only after the final stage.
 The default is 1. FVD batches I3D feature extraction and computes one score
 over the complete dataset. Its default `dtype = "auto"` keeps I3D in FP32.
 Choose `"fp16"` or `"bf16"` explicitly to enable I3D autocast on CUDA.

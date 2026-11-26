@@ -26,6 +26,7 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
+    Literal,
     Optional,
     Sequence,
     Set,
@@ -147,6 +148,8 @@ class PipelineModule(ABC):
     # legacy contract: ordinary modules are implemented, while modules that
     # require an external backend are unimplemented until one is wired.
     implementation_status: ClassVar[Optional[str]] = None
+    # Explicit contract: execution and teardown have no cross-sample observations.
+    stage_safe: ClassVar[bool] = False
     implementation_notes: ClassVar[str] = ""
     # Source inspection is evidence about wiring and method fidelity, not a
     # successful run with pretrained weights. Plugins may remain unreviewed.
@@ -945,8 +948,13 @@ class Pipeline:
         modules: List[PipelineModule],
         allow_provenance: Optional[Iterable[str]] = None,
         *,
+        execution_mode: Literal["sample_first", "staged"] = "sample_first",
         _weight_pool: Optional[Dict[tuple[Any, ...], Any]] = None,
     ):
+        if execution_mode not in ("sample_first", "staged"):
+            raise ValueError(f"Unsupported pipeline execution mode: {execution_mode!r}")
+        self.execution_mode = execution_mode
+        self._staged_active = False
         self.modules = self._deduplicate_modules(modules)
         self._legacy_module_aliases: Dict[str, str] = {}
         self._legacy_output_aliases: Dict[str, str] = {}
@@ -1214,7 +1222,7 @@ class Pipeline:
 
     def get_model_weights(self, key: tuple[Any, ...], factory: Callable[[], Any]) -> Any:
         """Get an explicitly reusable inference resource from the run owner."""
-        if not self._cache_enabled or self._weight_pool is None:
+        if self._staged_active or not self._cache_enabled or self._weight_pool is None:
             return self.get_runtime_resource(key, factory)
         if key not in self._weight_pool:
             self._weight_pool[key] = factory()
@@ -1432,6 +1440,11 @@ class Pipeline:
         """Describe the active module stack for cache/state compatibility checks."""
         return {
             **({"video_decoder": self._video_decoder} if self._video_decoder != "opencv" else {}),
+            **({
+                "execution_mode": "staged",
+                "stage_protocol": 1,
+                "video_decoder": self._video_decoder,
+            } if self.execution_mode == "staged" else {}),
             "runtime": self._runtime_environment_fingerprint(),
             "modules": [
                 {
@@ -1655,6 +1668,8 @@ class Pipeline:
         Args:
             module: The module to register as batch processor
         """
+        if self._staged_active:
+            raise RuntimeError("Dataset accumulators cannot register during staged execution")
         if module not in self._batch_modules:
             self._batch_modules.append(module)
             logger.debug(f"Registered batch module: {module.name}")
@@ -1682,6 +1697,8 @@ class Pipeline:
             before: ``(Sample) -> Sample`` called before ``process()``.
             after:  ``(Sample) -> Sample`` called after ``process()``.
         """
+        if self._staged_active and (before is not None or after is not None):
+            raise RuntimeError("Register pipeline hooks before starting staged execution")
         entry: Dict[str, Callable[[Sample], Sample]] = {}
         if before is not None:
             entry["before"] = before
@@ -1731,6 +1748,21 @@ class Pipeline:
     def start(self) -> None:
         """Prepare all modules for execution."""
         self._reset_run()
+        self._staged_active = (
+            self.execution_mode == "staged"
+            and not self._hooks
+            and not self._batch_modules
+            and bool(self.modules)
+            and all(
+                type(module).__dict__.get("stage_safe", False)
+                and type(module).post_process is PipelineModule.post_process
+                for module in self.modules
+            )
+        )
+        if self._staged_active:
+            return
+        if self.execution_mode == "staged":
+            logger.info("Using sample-first execution for a stack with hooks or non-stage-safe modules")
         self._mount_modules(self.modules)
 
         if self._restored_checkpoint and any(
@@ -1880,6 +1912,11 @@ class Pipeline:
     def stop(self) -> None:
         """Finalize and cleanup all modules."""
         all_samples = list(self.results.values())
+        if self._staged_active:
+            self._rebuild_sample_stats()
+            self._staged_active = False
+            self._start_needs_reset = True
+            return
 
         # Call post_process on all modules first
         for module in self.modules:
@@ -2267,6 +2304,9 @@ class Pipeline:
 
     def process_sample(self, sample: Sample) -> Sample:
         """Run all active modules on a sample."""
+
+        if self._staged_active:
+            return next(iter(self._iter_staged_batches([sample], 1)))[0]
 
         # Check if we already have a result for this file in memory (from load_state)
         str_path = str(sample.path)
@@ -2761,6 +2801,62 @@ class Pipeline:
             for result in batch
         ]
 
+    def _iter_staged_batches(self, samples: Iterable[Sample], size: int) -> Iterable[List[Sample]]:
+        inputs = list(samples)
+        outputs = list(inputs)
+        pending = []
+        for index, sample in enumerate(inputs):
+            path = str(sample.path)
+            signature = self._sample_cache_signature(sample)
+            manifest = self._sample_state_manifest(sample)
+            cached = self.results.get(path)
+            if (
+                self._cache_enabled
+                and cached is not None
+                and self._result_signatures.get(path) == signature
+                and self._result_manifests.get(path) == manifest
+                and self._sample_is_complete(cached)
+            ):
+                outputs[index] = cached
+            else:
+                pending.append((index, path, signature, manifest))
+                outputs[index] = sample.model_copy(deep=True)
+
+        indices = [index for index, *_ in pending]
+        if indices:
+            for module in self.modules:
+                stage = [module]
+                try:
+                    self._mount_modules(stage)
+                    failure = self.module_failures.get(module.name)
+                    if failure is not None:
+                        for index in indices:
+                            self._register_module_failure(outputs[index], module.name, failure)
+                    elif module._mounted and not self._module_is_excluded(module.name):
+                        with pipeline_context(self):
+                            for offset in range(0, len(indices), size):
+                                chunk = indices[offset : offset + size]
+                                processed = self._process_module_batch(
+                                    module, [outputs[index] for index in chunk]
+                                )
+                                for index, sample in zip(chunk, processed):
+                                    outputs[index] = sample
+                                self._frame_cache.clear()
+                                self._runtime_value_cache.clear()
+                finally:
+                    self._dispose_modules(stage, [outputs[index] for index in indices])
+                    self._frame_cache.clear()
+                    self._runtime_value_cache.clear()
+                    self._runtime_resource_cache.clear()
+
+        by_index = {index: (path, signature, manifest) for index, path, signature, manifest in pending}
+        for offset in range(0, len(outputs), size):
+            for index in range(offset, min(offset + size, len(outputs))):
+                if index in by_index:
+                    path, signature, manifest = by_index[index]
+                    self._store_result(path, outputs[index], signature=signature, manifest=manifest)
+            yield outputs[offset : offset + size]
+
     def iter_processed_batches(
         self, samples: Iterable[Sample], *, batch_size: Optional[int] = None
     ) -> Iterable[List[Sample]]:
@@ -2770,6 +2866,9 @@ class Pipeline:
         from .image import _FrameCache, _prefetch_frames, is_video_path
 
         size = self._coerce_batch_size(batch_size)
+        if self._staged_active:
+            yield from self._iter_staged_batches(samples, size)
+            return
         source = iter(samples)
         if self.prefetch_workers > 0 and self._frame_cache_enabled:
             limits = tuple(dict.fromkeys(
@@ -3083,7 +3182,11 @@ class AyasePipeline:
         if preserve_public_state and hasattr(self, "pipeline"):
             module_templates = self.pipeline.modules
             hooks = self._clone_pipeline_hooks(self.pipeline._hooks)
-        self.pipeline = Pipeline(self._clone_modules(module_templates), _weight_pool=self._weight_pool)
+        self.pipeline = Pipeline(
+            self._clone_modules(module_templates),
+            execution_mode=self.config.general.execution_mode,
+            _weight_pool=self._weight_pool,
+        )
         self.pipeline._hooks = hooks
         return self.pipeline
 

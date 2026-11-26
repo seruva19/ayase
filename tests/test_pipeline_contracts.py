@@ -1528,3 +1528,66 @@ def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count
 
     assert resumed.stats.fid == expected.stats.fid == pytest.approx(28.5635797968)
     assert resumed.stats.fvd == expected.stats.fvd == pytest.approx(28.5635797968)
+
+def test_staged_releases_modules_and_commits_only_complete_samples(tmp_path, monkeypatch):
+    events = []
+
+    class First(PipelineModule):
+        name = "contract_stage_first"
+        stage_safe = True
+
+        def on_mount(self):
+            events.append("mount first")
+            super().on_mount()
+
+        def process(self, sample):
+            events.append(("first", sample.path.name))
+            sample.quality_metrics = QualityMetrics(blur_score=1.0)
+            return sample
+
+        def on_dispose(self):
+            events.append("dispose first")
+            super().on_dispose()
+
+    class Second(PipelineModule):
+        name = "contract_stage_second"
+        stage_safe = True
+
+        def on_mount(self):
+            assert not first._mounted
+            events.append("mount second")
+            super().on_mount()
+
+        def process(self, sample):
+            assert not pipeline.results
+            assert sample.quality_metrics.blur_score == 1.0
+            events.append(("second", sample.path.name))
+            sample.quality_metrics.blur_score = 2.0
+            return sample
+
+    first, second = First(), Second()
+    pipeline = Pipeline([first, second], execution_mode="staged")
+    paths = [tmp_path / name for name in ("a.mp4", "b.mp4")]
+    inputs = [Sample(path=path, is_video=True) for path in paths]
+    pipeline.start()
+    results = pipeline.process_samples(inputs, batch_size=1)
+    pipeline.stop()
+    assert events == [
+        "mount first", ("first", "a.mp4"), ("first", "b.mp4"),
+        "dispose first", "mount second", ("second", "a.mp4"), ("second", "b.mp4"),
+    ]
+    assert [s.quality_metrics.blur_score for s in results] == [2.0, 2.0]
+    assert all(s.quality_metrics is None for s in inputs)
+    assert list(pipeline.results.values()) == results
+
+    def interrupt(sample):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(second, "process", interrupt)
+    pipeline.start()
+    with pytest.raises(KeyboardInterrupt):
+        pipeline.process_samples(inputs, batch_size=1)
+    assert not pipeline.results
+    assert not first._mounted and not second._mounted
+    assert all(s.quality_metrics is None for s in inputs)
+    pipeline.stop()

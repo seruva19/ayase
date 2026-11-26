@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 class MotionModule(PipelineModule):
     name = "motion"
+    stage_safe = True
     implementation_status = "implemented"
     implementation_notes = "Complete own Farneback magnitude and adjacent-frame duplication/effective-FPS analysis."
     implementation_review = "Source inspection; confidence high; pretrained inference not validated."
