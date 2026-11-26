@@ -8,13 +8,12 @@ from __future__ import annotations
 
 import argparse
 import importlib
-import json
 import os
 import sys
 import traceback
 from copy import deepcopy
-from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Mapping
+from itertools import chain
+from typing import Any, BinaryIO, Dict, Iterator, List, Mapping
 
 from ayase._managed_protocol import dump_sample, read_message, write_message
 from ayase.models import QualityMetrics, Sample, observe_metric_writes
@@ -68,7 +67,6 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--module", required=True)
     parser.add_argument("--qualname", required=True)
-    parser.add_argument("--config", required=True)
     args = parser.parse_args()
 
     with (
@@ -90,8 +88,22 @@ def main() -> int:
         return _serve(args, requests, replies)
 
 
+def _requests(stream: BinaryIO) -> Iterator[Dict[str, Any]]:
+    while True:
+        try:
+            yield read_message(stream)
+        except EOFError:
+            return
+
+
 def _serve(args: argparse.Namespace, requests: BinaryIO, replies: BinaryIO) -> int:
-    config = json.loads(Path(args.config).read_text(encoding="utf-8"))
+    messages = _requests(requests)
+    first = next(messages, None)
+    if first is None:
+        return 0
+    if first.get("operation") != "mount":
+        raise ValueError("Managed worker expects mount as its first operation")
+    config = dict(first["payload"]["config"])
     config["_ayase_managed_worker"] = True
     module_class = _resolve_class(args.module, args.qualname)
     module = module_class(config)
@@ -100,11 +112,7 @@ def _serve(args: argparse.Namespace, requests: BinaryIO, replies: BinaryIO) -> i
     identities: Dict[str, Sample] = {}
     reported_stats = pipeline.stats.model_dump(mode="json")
 
-    while True:
-        try:
-            request = read_message(requests)
-        except EOFError:
-            return 0
+    for request in chain((first,), messages):
         try:
             operation = request["operation"]
             payload = request.get("payload", {})
@@ -195,6 +203,7 @@ def _serve(args: argparse.Namespace, requests: BinaryIO, replies: BinaryIO) -> i
                     "traceback": traceback.format_exc(),
                 },
             )
+    return 0
 
 
 if __name__ == "__main__":

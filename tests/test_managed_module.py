@@ -174,6 +174,7 @@ def test_real_worker_preserves_identity_and_forwards_lifecycle(
     assert "backend fd 1" in log
     assert "backend child stdout" in log
     assert not (tmp_path / "runtime" / "requests").exists()
+    assert not (tmp_path / "runtime" / "config.json").exists()
 
 
 def test_process_failure_is_visible_and_returns_original_sample(

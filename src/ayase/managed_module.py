@@ -154,11 +154,10 @@ class ManagedModuleBridge:
         self.backend_identity: Optional[str] = None
 
     def start(self) -> None:
-        config_path = self.runtime_root / "config.json"
-        config_path.parent.mkdir(parents=True, exist_ok=True)
+        self.runtime_root.mkdir(parents=True, exist_ok=True)
         config = dict(self.module.config)
         config["_ayase_managed_worker"] = True
-        config_path.write_text(json.dumps(_json_value(config)), encoding="utf-8")
+        config_payload = _json_value(config)
         log_path = self.runtime_root / "worker.log"
         self._log_stream = log_path.open("a", encoding="utf-8")
         environment = _worker_environment(self.module, self.interpreter)
@@ -170,8 +169,6 @@ class ManagedModuleBridge:
             type(self.module).__module__,
             "--qualname",
             type(self.module).__qualname__,
-            "--config",
-            str(config_path),
         ]
         try:
             self._process = subprocess.Popen(
@@ -183,7 +180,7 @@ class ManagedModuleBridge:
                 creationflags=_creation_flags(),
             )
             self._transport = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ayase-worker")
-            response = self.request("mount", {}, timeout=_SETUP_TIMEOUT)
+            response = self.request("mount", {"config": config_payload}, timeout=_SETUP_TIMEOUT)
             if not response.get("mounted"):
                 raise RuntimeError(
                     f"Managed worker did not make module {self.module.name} available "

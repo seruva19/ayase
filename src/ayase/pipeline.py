@@ -1385,6 +1385,7 @@ class Pipeline:
                     "managed_native.py",
                     "managed_module.py",
                     "_managed_module_worker.py",
+                    "_managed_protocol.py",
                 ):
                     add_file(package_root / helper, f"managed-helper:{helper}")
         except (ImportError, TypeError, ValueError):
