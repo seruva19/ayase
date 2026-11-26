@@ -27,7 +27,7 @@ class CLIPIQAModule(PipelineModule):
     name = "clip_iqa"
     implementation_status = "implemented"
     implementation_notes = "Real matching PyIQA metric/model is created and invoked on native image or paired tensors; errors skip. Documented video frame selection/mean pooling changes the protocol but not the underlying published image method, so adapted provenance is compatible with implemented readiness."
-    implementation_review = "Source inspection; confidence high; pretrained inference not validated."
+    implementation_review = "Pretrained PyIQA CLIP-IQA+ verified on three videos with serial and batched GPU inference."
     provenance = 'adapted'
     deviations = {'*': 'The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend.'}
     sources = {
@@ -75,7 +75,7 @@ class CLIPIQAModule(PipelineModule):
         for frame in frames:
             if frame is None:
                 continue
-            arr = np.ascontiguousarray(frame)
+            arr = np.require(frame, requirements=["C", "W"])
             if arr.ndim == 2:
                 arr = np.stack([arr, arr, arr], axis=-1)
             t = torch.from_numpy(arr).permute(2, 0, 1).float().div(255.0)

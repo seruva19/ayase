@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 20:58 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 21:09 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -163,7 +163,7 @@ Default selections allow `published` and `utility`; explicit module selection op
 - **Input**: img/vid · **Estimated speed**: ⏱️ medium
 - **Readiness**: `implemented` — Real matching PyIQA metric/model is created and invoked on native image or paired tensors; errors skip. Documented video frame selection/mean pooling changes the protocol but not the underlying published image method, so adapted provenance is compatible with implemented readiness.
 - **Field readiness**: `implemented`
-- **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
+- **Review evidence**: Pretrained PyIQA CLIP-IQA+ verified on three videos with serial and batched GPU inference.
 - **Backend**: unavailable → pyiqa
 - **Provenance**: `adapted` — The cited score is defined per image. Ayase also writes this field for video by selecting decoded frames and aggregating their image scores; frame selection and pooling follow this module, not a published native video protocol. Image inputs use the image backend. — source: CLIP-IQA+ (Wang et al., AAAI 2023) via pyiqa — https://github.com/IceClear/CLIP-IQA
 - **Packages**: pyiqa, torch

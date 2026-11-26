@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pass writable frame buffers to PyTorch during CLIP-IQA preprocessing.
 - Preserve input signatures in checkpoints when modules update sample metadata.
 - **fid**: load the official pytorch-fid Inception checkpoint and batch pool3 feature extraction.
 - Release model references and reset module lifecycle state after custom cleanup and dataset finalization.
