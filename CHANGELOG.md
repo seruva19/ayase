@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fix AVGen-Bench Synchformer imports in isolated scratch directories and enable float32 scoring on CPU.
 - Clean up VQAScore's temporary JPEG frames even when frame encoding fails partway through.
 - Reuse successful FFprobe responses for repeated requests with identical media files and query arguments.
 - Add source-video inputs, edit instructions and timestamp alignment policies for video editing.

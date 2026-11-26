@@ -55,12 +55,14 @@ def _import_dependency(name: str) -> ModuleType:
 
 
 @contextlib.contextmanager
-def _source_context(search_root: Path, cwd: Optional[Path] = None):
+def _source_context(
+    search_root: Path, cwd: Optional[Path] = None, *, import_roots: Iterable[Path] = ()
+):
     """Temporarily expose one upstream evaluator root and its expected working directory."""
 
     old_path = list(sys.path)
     old_cwd = Path.cwd()
-    sys.path.insert(0, str(search_root))
+    sys.path[:0] = [str(path) for path in (search_root, *import_roots)]
     if cwd is not None:
         cwd.mkdir(parents=True, exist_ok=True)
         os.chdir(cwd)
@@ -386,9 +388,22 @@ def _run_av(
         source.which_ffmpeg = lambda: str(ffmpeg)
 
     work_root = Path(str(request["work_dir"])).resolve() / "AV"
+    extractors = source_root / "model" / "modules" / "feat_extractors"
+    # Upstream adds relative package roots, but the worker runs in per-record scratch dirs.
+    import_roots = (extractors / "visual", extractors, extractors / "train_clip_src")
+    if device_name == "cpu":
+        prepare_inputs = source.prepare_inputs
+
+        def prepare_cpu_inputs(*args, **kwargs):
+            audio, video, targets = prepare_inputs(*args, **kwargs)
+            return audio.float(), video.float(), targets
+
+        source.prepare_inputs = prepare_cpu_inputs
     torch = source.torch
-    with _source_context(source_root, work_root / "setup"):
+    with _source_context(source_root, work_root / "setup", import_roots=import_roots):
         cfg = source.patch_config(source.OmegaConf.load(str(config_path)))
+        if device_name == "cpu":
+            cfg.training.use_half_precision = False
         max_off_sec = cfg.data.max_off_sec
         num_cls = cfg.model.params.transformer.params.off_head_cfg.params.out_features
         grid = source.make_class_grid(-max_off_sec, max_off_sec, num_cls)
@@ -409,7 +424,7 @@ def _run_av(
         record_id = str(record["id"])
         try:
             record_work = work_root / hashlib.sha256(record_id.encode("utf-8")).hexdigest()[:16]
-            with _source_context(source_root, record_work):
+            with _source_context(source_root, record_work, import_roots=import_roots):
                 used_path = str(_record_path(record))
                 if not no_reencode:
                     used_path = source.maybe_reencode_if_needed(

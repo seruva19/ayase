@@ -3,6 +3,7 @@
 import ast
 import contextlib
 import os
+import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
@@ -221,12 +222,14 @@ def test_aud_uses_native_extraction_original_sr_and_selects_pq(monkeypatch, tmp_
     assert isinstance(calls["score"][1], Path)
 
 
-def test_av_selects_continuous_softmax_expectation_not_argmax(monkeypatch, tmp_path):
+@pytest.mark.parametrize("device", ["cuda:0", "cpu"])
+def test_av_selects_continuous_softmax_expectation_not_argmax(monkeypatch, tmp_path, device):
     calls = {}
     transformer = SimpleNamespace(params=SimpleNamespace(off_head_cfg=SimpleNamespace(params=SimpleNamespace(out_features=5))))
     cfg = SimpleNamespace(
         data=SimpleNamespace(max_off_sec=1.0),
         model=SimpleNamespace(params=SimpleNamespace(transformer=transformer)),
+        training=SimpleNamespace(use_half_precision=True),
     )
 
     class Model:
@@ -251,15 +254,27 @@ def test_av_selects_continuous_softmax_expectation_not_argmax(monkeypatch, tmp_p
         return path
 
     def predict(**kwargs):
+        calls["prediction_import_paths"] = list(sys.path)
         calls["predict"] = kwargs
+        if device == "cpu":
+            assert source.prepare_inputs("batch", device) == ("audio", "video", "targets")
         return -0.125, -0.5, 0
+
+    def get_model(actual_cfg, device):
+        calls["setup_import_paths"] = list(sys.path)
+        return None, Model()
 
     source = SimpleNamespace(
         torch=Torch,
         OmegaConf=SimpleNamespace(load=lambda path: cfg),
         patch_config=lambda value: value,
         make_class_grid=lambda left, right, count: [left, 0.0, right],
-        get_model=lambda actual_cfg, device: (None, Model()),
+        get_model=get_model,
+        prepare_inputs=lambda *_: (
+            SimpleNamespace(float=lambda: "audio"),
+            SimpleNamespace(float=lambda: "video"),
+            "targets",
+        ),
         get_transforms=lambda actual_cfg, splits: {"test": "source-transform"},
         maybe_reencode_if_needed=reencode,
         predict_offset_for_video=predict,
@@ -267,11 +282,13 @@ def test_av_selects_continuous_softmax_expectation_not_argmax(monkeypatch, tmp_p
     )
     monkeypatch.setattr(native, "_load_source_module", lambda *args: source)
     request = _request(tmp_path, "AV")
+    request["config"]["device"] = device
     request["assets"].update(
         synchformer_checkpoint=_asset_file(tmp_path, "sync former.pt"),
         synchformer_config=_asset_file(tmp_path, "sync config.yaml"),
     )
 
+    original_import_paths = list(sys.path)
     result = native.run_dimension(request)
 
     record = result["records"][0]
@@ -279,6 +296,14 @@ def test_av_selects_continuous_softmax_expectation_not_argmax(monkeypatch, tmp_p
     assert record["raw_details"]["pred_offset_sec_argmax"] == pytest.approx(-0.5)
     assert result["raw_summary"]["mean_abs_offset_cont_sec"] == pytest.approx(0.125)
     assert calls["reencode"][1:] == (25, 16000, 256)
+    extractors = (
+        Path(request["source_dir"]) / "eval" / "Syncformer" / "model" / "modules" / "feat_extractors"
+    )
+    for path in (extractors, extractors / "visual", extractors / "train_clip_src"):
+        assert str(path) in calls["setup_import_paths"]
+        assert str(path) in calls["prediction_import_paths"]
+    assert sys.path == original_import_paths
+    assert cfg.training.use_half_precision == (device != "cpu")
 
 
 def test_lip_pools_all_passing_tracks_at_launcher_threshold(monkeypatch, tmp_path):
