@@ -213,9 +213,9 @@ class ActionRecognitionModule(PipelineModule):
                 else:
                     # Weighted top-K: sum(confidence_i * similarity_i)
                     top_k_probs, top_k_indices = probs.topk(min(self.top_k, probs.shape[1]))
+                    label_ids = top_k_indices.squeeze(0).tolist()
                     action_labels = [
-                        self._model.config.id2label[idx.item()]
-                        for idx in top_k_indices.squeeze(0)
+                        self._model.config.id2label[label_id] for label_id in label_ids
                     ]
                     confidences = top_k_probs.squeeze(0)
                     action_features = self._encode_text(action_labels)
