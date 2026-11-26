@@ -72,6 +72,14 @@ class BatchMetricModule(PipelineModule):
     Dataset-level metrics are stored in pipeline stats, not individual samples.
     """
 
+    # Opt in when feature extraction is sample-local and rollback restores
+    # every accumulator changed by the current cohort.
+    stage_accumulator_safe = False
+
+    def _rollback_stage_features(self, generated_count: int, reference_count: int) -> None:
+        del self._feature_cache[generated_count:]
+        del self._reference_cache[reference_count:]
+
     def __init__(self, config=None):
         """Initialize batch metric module."""
         super().__init__(config)

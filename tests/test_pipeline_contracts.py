@@ -1465,9 +1465,11 @@ def test_entity_dispose_releases_group_state_on_error(monkeypatch):
     assert not module._groups
     assert module._face_model is None
 @pytest.mark.parametrize(("count", "finalized"), [(3, False), (4, True)])
-def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count, finalized):
+@pytest.mark.parametrize("mode", ["sample_first", "staged"])
+def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count, finalized, mode):
     import numpy as np
 
+    from ayase.modules.basic import BasicQualityModule
     from ayase.modules.fid import FIDModule
     from ayase.modules.fvd import FVDModule
 
@@ -1500,7 +1502,13 @@ def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count
             lambda path, total: [features(Sample(path=path, is_video=True))] * total,
         )
         monkeypatch.setattr(fvd, "_extract_i3d_batch", lambda clips: [clip[0] for clip in clips])
-        return Pipeline([fid, fvd], allow_provenance=["published", "adapted", "own"])
+        basic = BasicQualityModule({"test_mode": True})
+        monkeypatch.setattr(basic, "process", lambda sample: sample)
+        return Pipeline(
+            [fid, fvd, basic],
+            allow_provenance=["published", "adapted", "own"],
+            execution_mode=mode,
+        )
 
     expected = pipeline()
     expected.start()
@@ -1509,6 +1517,21 @@ def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count
 
     interrupted = pipeline()
     interrupted.start()
+    if mode == "staged":
+        assert interrupted._staged_active
+        basic = interrupted.modules[-1]
+
+        def interrupt(sample):
+            raise KeyboardInterrupt
+
+        with monkeypatch.context() as patch:
+            patch.setattr(basic, "process", interrupt)
+            with pytest.raises(KeyboardInterrupt):
+                interrupted.process_samples(samples(), batch_size=2)
+        assert not interrupted.results
+        assert interrupted.modules[0]._feature_cache == []
+        assert interrupted.modules[1]._feature_cache == []
+        assert interrupted.modules[1]._processed_count == 0
     interrupted.process_samples(samples()[:count], batch_size=2)
     checkpoint = tmp_path / "state.json"
     if finalized:
@@ -1523,7 +1546,7 @@ def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count
     resumed.start()
     assert resumed.stats.fid is None and resumed.stats.fvd is None
     resumed.process_samples(samples(), batch_size=2)
-    assert [len(module._feature_cache) for module in resumed.modules] == [4, 4]
+    assert [len(module._feature_cache) for module in resumed.modules[:2]] == [4, 4]
     resumed.stop()
 
     assert resumed.stats.fid == expected.stats.fid == pytest.approx(28.5635797968)

@@ -25,6 +25,7 @@ _I3D_URL = "https://www.dropbox.com/s/ge9e5ujwgetktms/i3d_torchscript.pt?dl=1"
 
 
 class FVDModule(BatchMetricModule):
+    stage_accumulator_safe = True
     name = "fvd"
     implementation_status = "implemented"
     implementation_notes = "Real I3D TorchScript trained features with return_features=True feed standard Gaussian Fréchet distance. Uniform whole-video 16-frame protocol is disclosed adaptation, not surrogate backbone."
@@ -341,6 +342,10 @@ class FVDModule(BatchMetricModule):
                 continue
             super().process_batch(chunk)
         return samples
+
+    def _rollback_stage_features(self, generated_count: int, reference_count: int) -> None:
+        self._processed_count -= len(self._feature_cache) - generated_count
+        super()._rollback_stage_features(generated_count, reference_count)
 
     def on_dispose(self) -> None:
         """Compute FVD after all samples processed."""

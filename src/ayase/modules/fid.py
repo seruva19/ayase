@@ -21,6 +21,7 @@ _CUDNN_PRECISION_LOCK = Lock()
 
 
 class FIDModule(BatchMetricModule):
+    stage_accumulator_safe = True
     name = "fid"
     implementation_status = "implemented"
     implementation_notes = "Official pytorch-fid pool3 weights and Gaussian Fréchet distance; Ayase applies bicubic resizing and uses one representative frame per video."

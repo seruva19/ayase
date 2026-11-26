@@ -1442,7 +1442,7 @@ class Pipeline:
             **({"video_decoder": self._video_decoder} if self._video_decoder != "opencv" else {}),
             **({
                 "execution_mode": "staged",
-                "stage_protocol": 1,
+                "stage_protocol": 2,
                 "video_decoder": self._video_decoder,
             } if self.execution_mode == "staged" else {}),
             "runtime": self._runtime_environment_fingerprint(),
@@ -1668,7 +1668,7 @@ class Pipeline:
         Args:
             module: The module to register as batch processor
         """
-        if self._staged_active:
+        if self._staged_active and self._stage_can_release(module):
             raise RuntimeError("Dataset accumulators cannot register during staged execution")
         if module not in self._batch_modules:
             self._batch_modules.append(module)
@@ -1747,23 +1747,25 @@ class Pipeline:
 
     def start(self) -> None:
         """Prepare all modules for execution."""
+        from .base_modules import BatchMetricModule
+
         self._reset_run()
         self._staged_active = (
             self.execution_mode == "staged"
             and not self._hooks
-            and not self._batch_modules
             and bool(self.modules)
             and all(
-                type(module).__dict__.get("stage_safe", False)
-                and type(module).post_process is PipelineModule.post_process
+                self._stage_can_release(module)
+                or (
+                    isinstance(module, BatchMetricModule)
+                    and type(module).__dict__.get("stage_accumulator_safe", False)
+                )
                 for module in self.modules
             )
         )
-        if self._staged_active:
-            return
-        if self.execution_mode == "staged":
+        if not self._staged_active and self.execution_mode == "staged":
             logger.info("Using sample-first execution for a stack with hooks or non-stage-safe modules")
-        self._mount_modules(self.modules)
+        self._mount_modules(self._run_lifecycle_modules())
 
         if self._restored_checkpoint and any(
             module.name not in self.module_failures and not self._module_is_excluded(module.name)
@@ -1776,6 +1778,18 @@ class Pipeline:
             self.stats = DatasetStats(
                 total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
             )
+
+    @staticmethod
+    def _stage_can_release(module: PipelineModule) -> bool:
+        return (
+            bool(type(module).__dict__.get("stage_safe", False))
+            and type(module).post_process is PipelineModule.post_process
+        )
+
+    def _run_lifecycle_modules(self) -> List[PipelineModule]:
+        if not self._staged_active:
+            return self.modules
+        return [module for module in self.modules if not self._stage_can_release(module)]
 
     def _reset_run(self) -> None:
         """Reset run state before any module is mounted."""
@@ -1912,14 +1926,10 @@ class Pipeline:
     def stop(self) -> None:
         """Finalize and cleanup all modules."""
         all_samples = list(self.results.values())
-        if self._staged_active:
-            self._rebuild_sample_stats()
-            self._staged_active = False
-            self._start_needs_reset = True
-            return
+        lifecycle_modules = self._run_lifecycle_modules()
 
         # Call post_process on all modules first
-        for module in self.modules:
+        for module in lifecycle_modules:
             if module.name in self.module_failures or self._module_is_excluded(module.name):
                 continue
             post_process = getattr(module, "post_process", None)
@@ -1941,7 +1951,7 @@ class Pipeline:
         # stored; refold those into the sample-derived aggregate stats.
         self._rebuild_sample_stats()
 
-        self._dispose_modules(self.modules, all_samples)
+        self._dispose_modules(lifecycle_modules, all_samples)
 
         # on_dispose() (e.g. dedup batch modules) can flip validity or write
         # metrics onto samples AFTER post_process ran; refold those into the
@@ -1956,6 +1966,7 @@ class Pipeline:
             for module in self._batch_modules:
                 logger.debug(f"  - {module.name}")
         self._runtime_resource_cache = {}
+        self._staged_active = False
         self._start_needs_reset = True
 
     def _dispose_modules(
@@ -2824,10 +2835,34 @@ class Pipeline:
 
         indices = [index for index, *_ in pending]
         if indices:
+            self._run_stages(outputs, indices, size)
+
+        # All features for the cohort have been collected. Commit the whole
+        # cohort before exposing its first batch to a checkpoint callback.
+        for index, path, signature, manifest in pending:
+            self._store_result(path, outputs[index], signature=signature, manifest=manifest)
+        for offset in range(0, len(outputs), size):
+            yield outputs[offset : offset + size]
+
+    def _run_stages(self, outputs: List[Sample], indices: List[int], size: int) -> None:
+        from .base_modules import BatchMetricModule
+
+        # Distribution accumulators remain mounted for stop(). If the current
+        # cohort is interrupted, discard only the features added by its stages.
+        positions = [
+            (module, len(module._feature_cache), len(module._reference_cache))
+            for module in self._run_lifecycle_modules()
+            if isinstance(module, BatchMetricModule)
+        ]
+        try:
             for module in self.modules:
-                stage = [module]
+                releasable = self._stage_can_release(module)
+                resources = self._runtime_resource_cache
+                if releasable:
+                    self._runtime_resource_cache = {}
                 try:
-                    self._mount_modules(stage)
+                    if releasable:
+                        self._mount_modules([module])
                     failure = self.module_failures.get(module.name)
                     if failure is not None:
                         for index in indices:
@@ -2844,18 +2879,17 @@ class Pipeline:
                                 self._frame_cache.clear()
                                 self._runtime_value_cache.clear()
                 finally:
-                    self._dispose_modules(stage, [outputs[index] for index in indices])
+                    if releasable:
+                        try:
+                            self._dispose_modules([module], [outputs[index] for index in indices])
+                        finally:
+                            self._runtime_resource_cache = resources
                     self._frame_cache.clear()
                     self._runtime_value_cache.clear()
-                    self._runtime_resource_cache.clear()
-
-        by_index = {index: (path, signature, manifest) for index, path, signature, manifest in pending}
-        for offset in range(0, len(outputs), size):
-            for index in range(offset, min(offset + size, len(outputs))):
-                if index in by_index:
-                    path, signature, manifest = by_index[index]
-                    self._store_result(path, outputs[index], signature=signature, manifest=manifest)
-            yield outputs[offset : offset + size]
+        except BaseException:
+            for module, generated_count, reference_count in positions:
+                module._rollback_stage_features(generated_count, reference_count)
+            raise
 
     def iter_processed_batches(
         self, samples: Iterable[Sample], *, batch_size: Optional[int] = None
