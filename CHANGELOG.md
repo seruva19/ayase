@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Skip redundant metric snapshots in single and batch processing when no after-hook runs.
 - Snapshot only the audited output fields of `motion` and `psnr99` during sample processing.
+- Load bundled CLIP, Transformers compatibility shims, and metric class exports on first use.
 
 ### Fixed
 

@@ -10,9 +10,6 @@ Ayase-managed environments when the module is mounted.
 """
 
 import importlib as _importlib
-import logging as _logging
-
-_logger = _logging.getLogger(__name__)
 
 # (attribute_name, module_path) pairs for lazy, fault-tolerant imports.
 _IMPORTS = [
@@ -116,14 +113,12 @@ _IMPORTS = [
     ("VideoRewardModule", ".video_reward"),
     ("RQVQAModule", ".rqvqa"),
     ("AIGVAssessorModule", ".aigv_assessor"),
-    ("FineVQModule", ".finevq"),
     ("KVQModule", ".kvq"),
     ("JEDiModule", ".mmd_selfsplit"),
     ("OfficialJEDiModule", ".jedi"),
     ("VideoPhy2AutoEvalModule", ".videophy2"),
     ("T2VCompBenchOfficialModule", ".t2v_compbench"),
     ("COVERModule", ".cover"),
-    ("VIDEVALModule", ".videval"),
     ("InternVQAModule", ".internvqa"),
     ("NRGVQMModule", ".nr_gvqm"),
     # --- Generation metrics ---
@@ -169,7 +164,6 @@ _IMPORTS = [
     ("SpatialRelationshipModule", ".spatial_relationship"),
     ("PhysicsModule", ".physics"),
     ("CommonsenseModule", ".commonsense"),
-    ("MultipleObjectsModule", ".multiple_objects"),
     # --- Safety & ethics ---
     ("NSFWModule", ".nsfw"),
     ("DeepfakeDetectionModule", ".deepfake_detection"),
@@ -197,7 +191,6 @@ _IMPORTS = [
     ("AudioISCModule", ".audio_isc"),
     ("AudioKLModule", ".audio_kl"),
     ("SCOREQModule", ".scoreq"),
-    ("TTSDS2Module", ".ttsds2"),
     ("KADModule", ".kad"),
     ("MAUVEAudioDivergenceModule", ".mauve_audio_divergence"),
     ("HumanCLAPModule", ".human_clap"),
@@ -250,15 +243,18 @@ _IMPORTS = [
     ("ConceptPresenceModule", ".concept_presence"),
 ]
 
-# Perform imports, silently skipping modules with missing optional deps.
-_available = {}
-for _attr, _mod in _IMPORTS:
-    try:
-        _m = _importlib.import_module(_mod, __name__)
-        _obj = getattr(_m, _attr)
-        _available[_attr] = _obj
-        globals()[_attr] = _obj
-    except Exception:
-        pass
+_EXPORTS = dict(_IMPORTS)
+__all__ = list(_EXPORTS)
 
-__all__ = list(_available.keys())
+
+def __getattr__(name):
+    if name not in _EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = _importlib.import_module(_EXPORTS[name], __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value
+
+
+def __dir__():
+    return sorted(set(globals()) | set(_EXPORTS))
