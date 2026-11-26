@@ -1036,6 +1036,7 @@ class Pipeline:
         self._result_manifests: Dict[str, Dict[str, Any]] = {}
         self.stats = DatasetStats(total_samples=0, valid_samples=0, invalid_samples=0, total_size=0)
         self._batch_modules: List[PipelineModule] = []  # Modules that need batch processing
+        self._restored_checkpoint = False
         self._hooks: Dict[str, Dict[str, Callable[[Sample], Sample]]] = {}
         self.module_timings: Dict[str, float] = {}
         self.module_call_counts: Dict[str, int] = {}
@@ -1622,6 +1623,7 @@ class Pipeline:
 
     def _clear_loaded_state(self) -> None:
         """Reset cached results and rebuilt stats before replacing state."""
+        self._restored_checkpoint = False
         self.results = {}
         self._result_signatures = {}
         self._result_manifests = {}
@@ -1801,6 +1803,18 @@ class Pipeline:
             except Exception as e:
                 logger.error(f"Error in on_execute for module {module.name}: {e}")
                 self.module_failures[module.name] = f"on_execute failed: {type(e).__name__}: {e}"
+
+        if self._restored_checkpoint and any(
+            module.name not in self.module_failures and not self._module_is_excluded(module.name)
+            for module in self._batch_modules
+        ):
+            # Checkpoints contain sample results, not the accumulators of
+            # distribution metrics. Replay the input cohort to rebuild them.
+            logger.info("Replaying checkpoint input cohort for dataset-level metrics")
+            self._clear_loaded_state()
+            self.stats = DatasetStats(
+                total_samples=0, valid_samples=0, invalid_samples=0, total_size=0
+            )
 
     def get_run_status(self) -> Dict[str, Any]:
         """Return requested/mounted module coverage for the current run."""
@@ -2921,7 +2935,11 @@ class Pipeline:
         return {**data, "quality_metrics": cleaned}
 
     def load_state(self, path: Path) -> None:
-        """Load pipeline state from disk."""
+        """Load pipeline state from disk.
+
+        When resuming distribution metrics, pass the full input cohort so their
+        feature accumulators can be rebuilt.
+        """
         from ._state import load_state
 
         load_state(self, path)

@@ -78,6 +78,7 @@ def load_state(pipeline: "Pipeline", path: Path) -> None:
     previous_stats = pipeline.stats.model_copy(deep=True)
     previous_metric_counts = dict(pipeline._metric_counts)
     previous_start_needs_reset = pipeline._start_needs_reset
+    previous_restored_checkpoint = pipeline._restored_checkpoint
     pipeline._clear_loaded_state()
     pipeline._start_needs_reset = False
     try:
@@ -139,6 +140,7 @@ def load_state(pipeline: "Pipeline", path: Path) -> None:
         ):
             pipeline._restore_saved_stats(saved_stats)
 
+        pipeline._restored_checkpoint = bool(pipeline.results)
         logger.info(f"State loaded from {path}")
     except Exception as e:
         pipeline.results = previous_results
@@ -147,4 +149,5 @@ def load_state(pipeline: "Pipeline", path: Path) -> None:
         pipeline.stats = previous_stats
         pipeline._metric_counts = previous_metric_counts
         pipeline._start_needs_reset = previous_start_needs_reset
+        pipeline._restored_checkpoint = previous_restored_checkpoint
         logger.error(f"Failed to load state: {e}")

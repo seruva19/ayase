@@ -1434,3 +1434,67 @@ def test_entity_dispose_releases_group_state_on_error(monkeypatch):
     assert not module._mounted
     assert not module._groups
     assert module._face_model is None
+@pytest.mark.parametrize(("count", "finalized"), [(3, False), (4, True)])
+def test_resume_rebuilds_fid_and_fvd_feature_cohort(tmp_path, monkeypatch, count, finalized):
+    import numpy as np
+
+    from ayase.modules.fid import FIDModule
+    from ayase.modules.fvd import FVDModule
+
+    for i in range(4):
+        for part in ("gen", "ref"):
+            (tmp_path / f"{part}-{i}.mp4").touch()
+
+    def features(sample):
+        part, index = sample.path.stem.split("-")
+        i = float(index)
+        return np.array([i if part == "ref" else i + i**2, i**2, i**3])
+
+    def samples():
+        return [
+            Sample(path=tmp_path / f"gen-{i}.mp4", reference_path=tmp_path / f"ref-{i}.mp4",
+                   is_video=True)
+            for i in range(4)
+        ]
+
+    def pipeline():
+        fid = FIDModule({"test_mode": True})
+        fvd = FVDModule({"test_mode": True})
+        for module in (fid, fvd):
+            monkeypatch.setattr(module, "extract_features", features)
+            monkeypatch.setattr(module, "extract_reference_features", features, raising=False)
+        fid._backend = "test_features"
+        fvd._ml_available = True
+        monkeypatch.setattr(
+            fvd, "_load_video_frames",
+            lambda path, total: [features(Sample(path=path, is_video=True))] * total,
+        )
+        monkeypatch.setattr(fvd, "_extract_i3d_batch", lambda clips: [clip[0] for clip in clips])
+        return Pipeline([fid, fvd], allow_provenance=["published", "adapted", "own"])
+
+    expected = pipeline()
+    expected.start()
+    expected.process_samples(samples(), batch_size=2)
+    expected.stop()
+
+    interrupted = pipeline()
+    interrupted.start()
+    interrupted.process_samples(samples()[:count], batch_size=2)
+    checkpoint = tmp_path / "state.json"
+    if finalized:
+        interrupted.stop()
+    interrupted.save_state(checkpoint)
+    if not finalized:
+        interrupted.stop()
+
+    resumed = pipeline()
+    resumed.load_state(checkpoint)
+    assert len(resumed.results) == count
+    resumed.start()
+    assert resumed.stats.fid is None and resumed.stats.fvd is None
+    resumed.process_samples(samples(), batch_size=2)
+    assert [len(module._feature_cache) for module in resumed.modules] == [4, 4]
+    resumed.stop()
+
+    assert resumed.stats.fid == expected.stats.fid == pytest.approx(28.5635797968)
+    assert resumed.stats.fvd == expected.stats.fvd == pytest.approx(28.5635797968)
