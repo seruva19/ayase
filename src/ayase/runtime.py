@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
 
 import numpy as np
 
@@ -18,6 +18,7 @@ _CURRENT_PIPELINE: ContextVar[Optional[Any]] = ContextVar(
     default=None,
 )
 _MISSING = object()
+_HFClipKey = Union[str, tuple[Any, ...]]
 
 
 @contextmanager
@@ -125,6 +126,52 @@ def shared_runtime_resource(owner: Any, key: tuple[Any, ...], factory: Any) -> A
     return factory()
 
 
+def shared_hf_clip_resource(
+    owner: Any,
+    model_name: str,
+    device: str,
+    *,
+    allow_legacy_weights: bool = False,
+    cache_dir: Optional[str] = None,
+) -> tuple[Any, Any, tuple[Any, ...]]:
+    """Load CLIP and its processor under a key that identifies the weight policy."""
+    from transformers import CLIPModel, CLIPProcessor
+
+    from .config import resolve_model_path
+
+    config = _runtime_config(owner)
+    resolved = resolve_model_path(model_name, config.get("models_dir", "models"))
+    cache_options = {"cache_dir": cache_dir} if cache_dir is not None else {}
+    resource = (
+        "hf_clip", resolved, str(device), str(config.get("attention_backend", "auto")), cache_dir
+    )
+
+    def load(use_safetensors: bool):
+        key = (*resource, "safetensors" if use_safetensors else "default")
+
+        def build():
+            weight_options = {"use_safetensors": True} if use_safetensors else {}
+            model = from_pretrained_with_attention(
+                CLIPModel, resolved, config, device=device, **cache_options, **weight_options
+            ).to(device).eval()
+            processor = CLIPProcessor.from_pretrained(resolved, **cache_options)
+            return model, processor, key
+
+        return shared_runtime_resource(owner, key, build)
+
+    try:
+        model, processor, key = load(use_safetensors=True)
+    except OSError:
+        if not allow_legacy_weights:
+            raise
+        model, processor, key = load(use_safetensors=False)
+    feature_key = (
+        *key, str(config.get("dtype", "auto")), bool(config.get("amp_enabled", True)),
+        _max_clip_images_per_forward(owner),
+    )
+    return model, processor, feature_key
+
+
 def shared_runtime_value(owner: Any, key: tuple[Any, ...], factory: Any) -> Any:
     """Return a per-sample cached value, or build one without a pipeline."""
 
@@ -197,7 +244,7 @@ def cached_clip_text_features(
     processor: Any,
     texts: Sequence[str],
     *,
-    model_key: str,
+    model_key: _HFClipKey,
     device: Any,
     cache_key: Optional[tuple[Any, ...]] = None,
     normalize: bool = True,
@@ -239,7 +286,7 @@ def cached_clip_text_features(
 
 
 def clip_image_features_cache_key(
-    model_key: str,
+    model_key: _HFClipKey,
     device: Any,
     cache_key: tuple[Any, ...],
     *,
@@ -263,10 +310,11 @@ def cached_clip_image_features(
     processor: Any,
     images: Sequence[Any],
     *,
-    model_key: str,
+    model_key: _HFClipKey,
     device: Any,
     cache_key: tuple[Any, ...],
     normalize: bool = True,
+    full_precision: bool = False,
 ) -> Any:
     """Return cached Hugging Face CLIP image features for an image sequence."""
 
@@ -276,10 +324,12 @@ def cached_clip_image_features(
         cache_key,
         normalize=normalize,
     )
+    if full_precision:
+        key = (*key, "full_precision")
 
     def compute() -> Any:
         image_values = list(images)
-        chunk_size = _max_clip_images_per_forward(owner)
+        chunk_size = len(image_values) if full_precision else _max_clip_images_per_forward(owner)
         return _encode_clip_image_chunks(
             owner,
             model,
@@ -288,6 +338,7 @@ def cached_clip_image_features(
             device=device,
             normalize=normalize,
             chunk_size=chunk_size,
+            full_precision=full_precision,
         )
 
     return shared_runtime_value(owner, key, compute)
@@ -302,6 +353,7 @@ def _encode_clip_image_chunks(
     device: Any,
     normalize: bool,
     chunk_size: int,
+    full_precision: bool,
 ) -> Any:
     import torch
     from ayase.compat import extract_features
@@ -317,11 +369,16 @@ def _encode_clip_image_chunks(
         chunk = image_values[start : start + chunk_size]
         try:
             inputs = processor(images=chunk, return_tensors="pt").to(device)
-            with torch_inference_context(
-                str(device),
-                _runtime_config(owner).get("dtype", "auto"),
-                bool(_runtime_config(owner).get("amp_enabled", True)),
-            ):
+            context = (
+                torch.no_grad()
+                if full_precision
+                else torch_inference_context(
+                    str(device),
+                    _runtime_config(owner).get("dtype", "auto"),
+                    bool(_runtime_config(owner).get("amp_enabled", True)),
+                )
+            )
+            with context:
                 features = model.get_image_features(**inputs)
                 if normalize:
                     features = _normalize_torch_features(features)
@@ -346,7 +403,7 @@ def cached_clip_image_feature_groups(
     processor: Any,
     image_groups: Sequence[Sequence[Any]],
     *,
-    model_key: str,
+    model_key: _HFClipKey,
     device: Any,
     cache_keys: Sequence[tuple[Any, ...]],
     normalize: bool = True,

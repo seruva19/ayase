@@ -262,8 +262,8 @@ def _detect_backends(source: str) -> List[str]:
         "pyiqa": r"pyiqa\.create_metric",
         "piq": r"import piq|from piq",
         "ffmpeg": r'["\']ffmpeg["\']|subprocess.*ffmpeg',
-        "torch": r"import torch",
-        "transformers": r"from transformers",
+        "torch": r"import torch|\bshared_hf_clip_resource\(",
+        "transformers": r"from transformers|\bshared_hf_clip_resource\(",
         "opencv": r"import cv2",
         "torchvision": r"from torchvision",
         "torchmetrics": r"from torchmetrics",
@@ -299,6 +299,8 @@ def _detect_packages(source: str) -> List[str]:
             continue
         pip_name = _IMPORT_TO_PIP.get(top, top)
         pkgs.add(pip_name)
+    if re.search(r"\bshared_hf_clip_resource\(", source):
+        pkgs.update(("torch", "transformers"))
     # Remove numpy (always available)
     pkgs.discard("numpy")
     return sorted(pkgs)

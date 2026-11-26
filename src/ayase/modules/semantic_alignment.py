@@ -64,6 +64,7 @@ class SemanticAlignmentModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
+        self._clip_model_key = self.model_name
         self.backend = self.config.get("backend", "auto")
         self.pretrained = self.config.get("pretrained", "laion2b_s34b_b79k")
         self.max_frames = self.config.get("max_frames", 32)
@@ -86,43 +87,13 @@ class SemanticAlignmentModule(PipelineModule):
                 return
 
         try:
-            import torch
-            from transformers import CLIPModel, CLIPProcessor
-            from ayase.runtime import (
-                from_pretrained_with_attention,
-                resolve_torch_device,
-                shared_runtime_resource,
-            )
+            from ayase.runtime import resolve_torch_device, shared_hf_clip_resource
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading CLIP for Alignment on {self._device}...")
 
-            from ayase.config import resolve_model_path
-
-            models_dir = self.config.get("models_dir", "models")
-            resolved = resolve_model_path(self.model_name, models_dir)
-
-            def load_clip():
-                model = from_pretrained_with_attention(
-                    CLIPModel,
-                    resolved,
-                    self.config,
-                    device=self._device,
-                    use_safetensors=True,
-                ).to(self._device).eval()
-                processor = CLIPProcessor.from_pretrained(resolved)
-                return model, processor
-
-            self._model, self._processor = shared_runtime_resource(
-                self,
-                (
-                    "hf_clip",
-                    resolved,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "safetensors",
-                ),
-                load_clip,
+            self._model, self._processor, self._clip_model_key = shared_hf_clip_resource(
+                self, self.model_name, self._device
             )
             self._ml_available = True
             self._backend = "transformers"
@@ -260,7 +231,7 @@ class SemanticAlignmentModule(PipelineModule):
                 self._model,
                 self._processor,
                 captions,
-                model_key=self.model_name,
+                model_key=self._clip_model_key,
                 device=self._device,
             )
             image_feature_groups = cached_clip_image_feature_groups(
@@ -268,7 +239,7 @@ class SemanticAlignmentModule(PipelineModule):
                 self._model,
                 self._processor,
                 image_groups,
-                model_key=self.model_name,
+                model_key=self._clip_model_key,
                 device=self._device,
                 cache_keys=cache_keys,
             )
@@ -310,7 +281,7 @@ class SemanticAlignmentModule(PipelineModule):
                 self._model,
                 self._processor,
                 [text],
-                model_key=self.model_name,
+                model_key=self._clip_model_key,
                 device=self._device,
             )
 
@@ -338,7 +309,7 @@ class SemanticAlignmentModule(PipelineModule):
                 self._model,
                 self._processor,
                 images,
-                model_key=self.model_name,
+                model_key=self._clip_model_key,
                 device=self._device,
                 cache_key=(self.max_frames, media_state_key(sample.path)),
             )

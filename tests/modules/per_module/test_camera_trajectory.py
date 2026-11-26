@@ -42,6 +42,34 @@ def test_camera_trajectory_basics():
     _test_module_basics(CameraTrajectoryModule, "camera_trajectory")
 
 
+def test_vggt_resource_uses_model_and_device(monkeypatch):
+    import sys
+    from types import ModuleType
+    from unittest.mock import Mock
+
+    from ayase.modules.camera_trajectory import CameraTrajectoryModule
+    from ayase.pipeline import Pipeline
+
+    backend = ModuleType("vggt.models.vggt")
+    vggt = Mock()
+    backend.VGGT = vggt
+    monkeypatch.setitem(sys.modules, backend.__name__, backend)
+    modules = [CameraTrajectoryModule({"model_id": name}) for name in ("model-a", "model-b")]
+    pipeline = Pipeline([])
+    for module in modules:
+        module.pipeline = pipeline
+        module._device = "cpu"
+
+    first = modules[0]._load_vggt()
+    assert modules[0]._load_vggt() is first
+    modules[1]._load_vggt()
+    modules[0]._device = "cuda:1"
+    modules[0]._load_vggt()
+    assert [call.args for call in vggt.from_pretrained.call_args_list] == [
+        ("model-a",), ("model-b",), ("model-a",)
+    ]
+
+
 @pytest.mark.parametrize(
     ("feature_help", "matching_help", "expected"),
     [

@@ -50,6 +50,9 @@ class CLIPTemporalModule(PipelineModule):
         "temp_threshold": 0.90,
         "face_threshold": 0.85,
     }
+    models = [
+        {"id": "openai/clip-vit-base-patch32", "type": "huggingface", "task": "CLIP frame encoder"},
+    ]
     metric_groups = {
         "clip_temp": "temporal",
         "face_consistency": "face",
@@ -58,6 +61,7 @@ class CLIPTemporalModule(PipelineModule):
     def __init__(self, config=None):
         super().__init__(config)
         self.model_name = self.config.get("model_name", "openai/clip-vit-base-patch32")
+        self._clip_model_key = self.model_name
         # EvalCrafter reads every frame; max_frames <= 0 keeps that behaviour,
         # a positive value is an explicit non-default sampling cap.
         self.max_frames = self.config.get("max_frames", 0)
@@ -71,41 +75,12 @@ class CLIPTemporalModule(PipelineModule):
 
     def setup(self):
         try:
-            import torch
-            from transformers import CLIPModel, CLIPProcessor
-            from ayase.runtime import (
-                from_pretrained_with_attention,
-                resolve_torch_device,
-                shared_runtime_resource,
-            )
+            from ayase.runtime import resolve_torch_device, shared_hf_clip_resource
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading CLIP for temporal consistency on {self._device}...")
-            from ayase.config import resolve_model_path
-
-            models_dir = self.config.get("models_dir", "models")
-            resolved = resolve_model_path(self.model_name, models_dir)
-
-            def load_clip():
-                model = from_pretrained_with_attention(
-                    CLIPModel,
-                    resolved,
-                    self.config,
-                    device=self._device,
-                ).to(self._device).eval()
-                processor = CLIPProcessor.from_pretrained(resolved)
-                return model, processor
-
-            self._model, self._processor = shared_runtime_resource(
-                self,
-                (
-                    "hf_clip",
-                    resolved,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "default",
-                ),
-                load_clip,
+            self._model, self._processor, self._clip_model_key = shared_hf_clip_resource(
+                self, self.model_name, self._device, allow_legacy_weights=True
             )
             self._ml_available = True
             self._backend = "clip"
@@ -157,7 +132,7 @@ class CLIPTemporalModule(PipelineModule):
                 self._model,
                 self._processor,
                 image_groups,
-                model_key=self.model_name,
+                model_key=self._clip_model_key,
                 device=self._device,
                 cache_keys=cache_keys,
             )
@@ -224,7 +199,7 @@ class CLIPTemporalModule(PipelineModule):
             self._model,
             self._processor,
             arrays_to_pil(frames),
-            model_key=self.model_name,
+            model_key=self._clip_model_key,
             device=self._device,
             cache_key=(self._frame_limit(), media_state_key(sample.path)),
         )

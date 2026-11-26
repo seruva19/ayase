@@ -13,9 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Snapshot only the audited output fields of `motion` and `psnr99` during sample processing.
 - Load bundled CLIP, Transformers compatibility shims, and metric class exports on first use.
 - Use the packaged module index to load only requested modules for named pipelines.
+- Share compatible CLIP weights and cached features across CLIP metrics.
 
 ### Fixed
 
+- **camera_trajectory**: keep distinct VGGT checkpoints separate in the runtime cache.
 - Build catalog entries from executable loader calls and metric assignments, excluding examples, unrelated paths and sibling module definitions; preserve inherited implementations and input dependencies.
 - Preserve checkpoint filenames and pinned revisions in model links, and keep distinct backend models separate when they share a documentation URL.
 - Metric help includes model purpose descriptions and provider links; speed and detected GPU code are labelled as static estimates rather than hardware requirements.

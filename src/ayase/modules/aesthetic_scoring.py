@@ -15,7 +15,7 @@ import urllib.request
 
 from ayase.models import Sample, ValidationIssue, ValidationSeverity
 from ayase.pipeline import PipelineModule
-from ayase.compat import extract_features
+from ayase.runtime import cached_clip_image_features, media_state_key
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,9 @@ class AestheticScoringModule(PipelineModule):
     }
     description = "Calculates aesthetic score (1-10) using LAION-Aesthetics MLP"
     default_config = {"models_dir": "models"}
+    models = [
+        {"id": "openai/clip-vit-large-patch14", "type": "huggingface", "task": "CLIP frame encoder"},
+    ]
     metric_groups = {
         "aesthetic_mlp_score": "aesthetic",
     }
@@ -47,6 +50,7 @@ class AestheticScoringModule(PipelineModule):
         self._mlp = None
         self._device = "cpu"
         self._ml_available = False
+        self._clip_model_key = "openai/clip-vit-large-patch14"
 
         # URL for the weights (not downloading here, just reference)
         # https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/sac+logos+ava1-l14-linearMSE.pth
@@ -55,12 +59,7 @@ class AestheticScoringModule(PipelineModule):
         try:
             import torch
             import torch.nn as nn
-            from transformers import CLIPModel, CLIPProcessor
-            from ayase.runtime import (
-                from_pretrained_with_attention,
-                resolve_torch_device,
-                shared_runtime_resource,
-            )
+            from ayase.runtime import resolve_torch_device, shared_hf_clip_resource
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Loading Aesthetic Scoring models on {self._device}...")
@@ -69,28 +68,8 @@ class AestheticScoringModule(PipelineModule):
 
             # Load CLIP
             model_name = "openai/clip-vit-large-patch14"
-            def load_clip():
-                model = from_pretrained_with_attention(
-                    CLIPModel,
-                    model_name,
-                    self.config,
-                    device=self._device,
-                    cache_dir=models_dir,
-                    use_safetensors=True,
-                ).to(self._device).eval()
-                processor = CLIPProcessor.from_pretrained(model_name, cache_dir=models_dir)
-                return model, processor
-
-            self._model, self._processor = shared_runtime_resource(
-                self,
-                (
-                    "hf_clip",
-                    model_name,
-                    self._device,
-                    str(self.config.get("attention_backend", "auto")),
-                    "safetensors",
-                ),
-                load_clip,
+            self._model, self._processor, self._clip_model_key = shared_hf_clip_resource(
+                self, model_name, self._device, cache_dir=models_dir
             )
 
             # Load MLP Head
@@ -155,11 +134,18 @@ class AestheticScoringModule(PipelineModule):
             pil_images = [
                 Image.fromarray(np.ascontiguousarray(image)) for image in frames
             ]
-            inputs = self._processor(images=pil_images, return_tensors="pt").to(self._device)
+            image_features = cached_clip_image_features(
+                self,
+                self._model,
+                self._processor,
+                pil_images,
+                model_key=self._clip_model_key,
+                device=self._device,
+                cache_key=(8, media_state_key(sample.path)),
+                full_precision=True,
+            )
 
             with torch.no_grad():
-                image_features = extract_features(self._model.get_image_features(**inputs))
-                image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
                 score_tensor = self._linear(image_features.float()).flatten()
                 scores = [float(value) for value in score_tensor.detach().cpu().tolist()]
 

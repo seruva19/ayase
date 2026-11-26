@@ -247,6 +247,115 @@ def test_cached_clip_image_features_retries_smaller_on_cuda_oom():
     assert features.shape[0] == 4
 
 
+@pytest.mark.parametrize("temporal_first", [True, False])
+def test_hf_clip_modules_share_weights_and_image_features(tmp_path, monkeypatch, temporal_first):
+    import sys
+    from types import ModuleType, SimpleNamespace
+    from unittest.mock import Mock
+
+    from PIL import Image
+
+    from ayase.modules.clip_temporal import CLIPTemporalModule
+    from ayase.modules.semantic_alignment import SemanticAlignmentModule
+
+    torch = pytest.importorskip("torch")
+    model = _FakeCLIPModel(torch)
+    model.to = lambda _: model
+    model.eval = lambda: model
+    processor = _FakeCLIPProcessor()
+    transformer = ModuleType("transformers")
+    transformer.CLIPModel = SimpleNamespace(from_pretrained=Mock(return_value=model))
+    transformer.CLIPProcessor = SimpleNamespace(from_pretrained=Mock(return_value=processor))
+    monkeypatch.setitem(sys.modules, "transformers", transformer)
+
+    config = {"max_frames": 2, "device": "cpu"}
+    temporal = CLIPTemporalModule(config)
+    alignment = SemanticAlignmentModule(config)
+    modules = [temporal, alignment] if temporal_first else [alignment, temporal]
+    pipeline = Pipeline(modules, allow_provenance=["adapted"])
+    frames = [np.full((2, 2, 3), fill_value=i + 1, dtype=np.uint8) for i in range(2)]
+    monkeypatch.setattr(temporal, "_load_frames", lambda _: frames)
+    monkeypatch.setattr(alignment, "_load_frames", lambda _: list(map(Image.fromarray, frames)))
+    for module in modules:
+        module.setup()
+        module._mounted = True
+    transformer.CLIPModel.from_pretrained.assert_called_once_with(
+        "openai/clip-vit-base-patch32", use_safetensors=True
+    )
+    transformer.CLIPProcessor.from_pretrained.assert_called_once()
+
+    sample = pipeline.process_sample(
+        Sample(
+            path=tmp_path / "clip.mp4",
+            is_video=True,
+            caption=CaptionMetadata(text="example caption", length=15),
+        )
+    )
+    image_features = torch.nn.functional.normalize(model.get_image_features(count=2))
+    text_features = torch.nn.functional.normalize(model.get_text_features(count=1))
+    assert sample.quality_metrics.clip_temp == pytest.approx(
+        (image_features[0] @ image_features[1]).item()
+    )
+    assert sample.quality_metrics.clip_score == pytest.approx(
+        (image_features @ text_features.T).mean().item()
+    )
+    assert processor.image_batches == [2]
+
+
+def test_hf_clip_legacy_weight_cache_does_not_satisfy_safetensors_only(monkeypatch):
+    import sys
+    from types import ModuleType, SimpleNamespace
+    from unittest.mock import Mock
+
+    from ayase.runtime import shared_hf_clip_resource
+
+    checkpoint = Mock()
+    checkpoint.to.return_value.eval.return_value = checkpoint
+
+    def load(*args, use_safetensors=None):
+        if use_safetensors:
+            raise OSError("checkpoint has no safetensors")
+        return checkpoint
+
+    transformer = ModuleType("transformers")
+    transformer.CLIPModel = SimpleNamespace(from_pretrained=Mock(side_effect=load))
+    transformer.CLIPProcessor = SimpleNamespace(from_pretrained=Mock())
+    monkeypatch.setitem(sys.modules, "transformers", transformer)
+    owner = SimpleNamespace(config={}, pipeline=Pipeline([]))
+    model, _, _ = shared_hf_clip_resource(
+        owner, "example/legacy", "cpu", allow_legacy_weights=True
+    )
+    assert model is checkpoint
+    with pytest.raises(OSError, match="no safetensors"):
+        shared_hf_clip_resource(owner, "example/legacy", "cpu")
+    transformer.CLIPProcessor.from_pretrained.assert_called_once()
+
+
+def test_aesthetic_clip_cache_preserves_full_precision_and_frame_mean(tmp_path, monkeypatch):
+    from ayase import image
+    from ayase.modules.aesthetic_scoring import AestheticScoringModule
+
+    torch = pytest.importorskip("torch")
+    frames = [np.zeros((2, 2, 3), dtype=np.uint8)] * 2
+    monkeypatch.setattr(image, "sample_frames", lambda *args, **kwargs: frames)
+    module = AestheticScoringModule({"max_clip_images_per_forward": 1})
+    module._ml_available = True
+    module._processor = _FakeCLIPProcessor()
+    module._model = _FakeCLIPModel(torch)
+    module._linear = lambda features: features[:, :1] * 10.0
+    module.pipeline = Pipeline([])
+    sample = Sample(path=tmp_path / "clip.mp4", is_video=True)
+
+    features = module._model.get_image_features(count=2)
+    scores = (features / features.norm(p=2, dim=-1, keepdim=True))[:, 0] * 10.0
+    for _ in range(2):
+        result = module.process(sample)
+        assert result.quality_metrics.aesthetic_mlp_score == pytest.approx(
+            sum(scores.tolist()) / len(scores)
+        )
+    assert module._processor.image_batches == [2]
+
+
 def test_semantic_alignment_process_batch_batches_clip_images(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

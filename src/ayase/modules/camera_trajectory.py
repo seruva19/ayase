@@ -401,7 +401,7 @@ class CameraTrajectoryModule(PipelineModule):
         def build():
             return VGGT.from_pretrained(model_id).to(self._device).eval()
 
-        return shared_runtime_resource(self, ("vggt", self._device), build)
+        return shared_runtime_resource(self, ("vggt", model_id, str(self._device)), build)
 
     @staticmethod
     def _detect_sfm_binaries() -> Optional[dict]:
