@@ -45,6 +45,7 @@ class WorldConsistencyModule(PipelineModule):
         "world_consistency_score": "concept from arXiv:2508.00144, own implementation — https://arxiv.org/abs/2508.00144",
     }
     description = "World Consistency Score: object permanence + causal compliance (2025)"
+    models = [{"id": "facebookresearch/dinov2", "type": "torch_hub", "task": "Video frame encoder"}]
     default_config = {
         "subsample": 12,
         "permanence_weight": 0.40,
@@ -85,7 +86,7 @@ class WorldConsistencyModule(PipelineModule):
             import torchvision.transforms as T
 
             from ayase.config import download_model_file, resolve_assets_url
-            from ayase.runtime import resolve_torch_device
+            from ayase.runtime import resolve_torch_device, shared_dinov2_backbone
 
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             checkpoint = download_model_file(
@@ -95,11 +96,7 @@ class WorldConsistencyModule(PipelineModule):
                 ),
                 str(self.config.get("models_dir", "models")),
             )
-            self._model = torch.hub.load(
-                "facebookresearch/dinov2", "dinov2_vits14", pretrained=False, verbose=False
-            )
-            self._model.load_state_dict(torch.load(str(checkpoint), map_location="cpu"))
-            self._model.to(self._device).eval()
+            self._model = shared_dinov2_backbone(self, "dinov2_vits14", checkpoint, self._device)
             self._transform = T.Compose([
                 T.Resize(224, interpolation=T.InterpolationMode.BICUBIC),
                 T.CenterCrop(224),

@@ -33,6 +33,7 @@ class SpectralComplexityModule(PipelineModule):
     implementation_review = "Source inspection; confidence medium; pretrained inference not validated."
     provenance = "own"
     description = "Analyzes spectral complexity (Effective Rank) of video features (DINOv2)"
+    models = [{"id": "facebookresearch/dinov2", "type": "torch_hub", "task": "Video frame encoder"}]
     default_config = {
         "model_type": "dinov2_vits14", # 'dinov2_vits14', 'dinov2_vitb14'
         "sample_rate": 8, # Process every 8th frame
@@ -62,7 +63,7 @@ class SpectralComplexityModule(PipelineModule):
         try:
             import torch  # noqa: F401
             from ayase.config import download_model_file
-            from ayase.runtime import resolve_torch_device
+            from ayase.runtime import resolve_torch_device, shared_dinov2_backbone
             self._device = resolve_torch_device(self.config.get("device", "auto"))
             logger.info(f"Setting up Spectral Complexity (DINOv2) on {self._device}...")
 
@@ -76,12 +77,7 @@ class SpectralComplexityModule(PipelineModule):
                 resolve_assets_url(_DINOV2_MIRROR_BASE + relative_path, self.config),
                 str(self.config.get("models_dir", "models")),
             )
-            self._model = torch.hub.load(
-                'facebookresearch/dinov2', self.model_type, pretrained=False
-            )
-            self._model.load_state_dict(torch.load(str(checkpoint), map_location="cpu"))
-            self._model = self._model.to(self._device)
-            self._model.eval()
+            self._model = shared_dinov2_backbone(self, self.model_type, checkpoint, self._device)
             
             # DINOv2 transforms
             from torchvision import transforms

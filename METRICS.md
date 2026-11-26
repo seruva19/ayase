@@ -1,6 +1,6 @@
 # Ayase Metrics Reference
 
-> **Version 0.2.1** · Generated 2026-11-26 20:44 · **391 modules** · **618 metrics**
+> **Version 0.2.1** · Generated 2026-11-26 20:52 · **391 modules** · **618 metrics**
 >
 > `ayase modules docs -o METRICS.md` to regenerate
 >
@@ -5689,7 +5689,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py), [`vtss`](src/ayase/m
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Backend**: algorithmic
 - **Provenance**: `published` — source: variance of the Laplacian (Pech-Pacheco et al., ICPR 2000, DOI:10.1109/ICPR.2000.903548)
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +4 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `brightness` [↑](#categories)
@@ -5715,7 +5715,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +4 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `compression_artifacts` [↑](#categories)
@@ -5757,7 +5757,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +4 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `cpbd_score` [↑](#categories)
@@ -5872,7 +5872,7 @@ Used by: [`llm_advisor`](src/ayase/modules/llm_advisor.py)
 - **Review evidence**: Source inspection; confidence high; pretrained inference not validated.
 - **Backend**: algorithmic
 - **Provenance**: `utility`
-- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +3 more
+- **Tests**: covered by [`test_basic_quality.py`](tests/modules/per_module/test_basic_quality.py), [`test_docs_integrity.py`](tests/test_docs_integrity.py), [`test_implementation_status.py`](tests/test_implementation_status.py), +4 more
 - **Config**: `threshold=40.0`, `blur_threshold=100.0`, `noise_threshold=50.0`
 
 ### `spatial_information` [↑](#categories)

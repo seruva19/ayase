@@ -136,6 +136,21 @@ def shared_model_weights(owner: Any, key: tuple[Any, ...], factory: Any) -> Any:
     return shared_runtime_resource(owner, key, factory)
 
 
+def shared_dinov2_backbone(owner: Any, model_name: str, checkpoint: Any, device: str) -> Any:
+    """Share eval-only Torch Hub DINOv2 weights within a pipeline run."""
+    import torch
+
+    repo = "facebookresearch/dinov2"
+    key = ("torch_hub_dinov2", repo, model_name, str(device), media_state_key(checkpoint))
+
+    def load() -> Any:
+        model = torch.hub.load(repo, model_name, pretrained=False, verbose=False)
+        model.load_state_dict(torch.load(str(checkpoint), map_location="cpu"))
+        return model.to(device).eval()
+
+    return shared_runtime_resource(owner, key, load)
+
+
 def shared_hf_clip_resource(
     owner: Any,
     model_name: str,
