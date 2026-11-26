@@ -104,6 +104,11 @@ def load_state(pipeline: "Pipeline", path: Path) -> None:
                             pipeline._legacy_lip_sync_protocol
                         )
                     manifest = manifests.get(k) if isinstance(manifests, dict) else None
+                    if sample.source_video is not None and (
+                        not isinstance(manifest, dict) or not manifest.get("source_video")
+                    ):
+                        partial_restore = True
+                        continue
                     if isinstance(manifest, dict):
                         if not pipeline._sample_matches_manifest(manifest):
                             logger.info(

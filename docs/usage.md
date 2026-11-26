@@ -49,6 +49,24 @@ draw contributes to a component only when it retains that component's
 connectivity. The report includes the number of accepted draws and uses
 `null` for unavailable intervals.
 
+## Video editing inputs
+
+For an edited video, set `Sample.source_video` to the original video path
+and `Sample.edit_instruction` to the requested edit. Use the separate
+`reference_path` field when a metric expects a target reference.
+
+`Sample.video_alignment` accepts a `VideoAlignment` policy. Pass the actual
+frame timestamps in seconds to `source_indices(edited_pts, source_pts)`.
+The default policy, `timestamp`, matches elapsed time. `normalized` maps
+the edited span onto the source span. `anchors` interpolates between
+`(edited_seconds, source_seconds)` pairs and supports held frames.
+Each timeline starts at its first frame. The result uses the nearest
+source frame, breaking ties toward the earlier frame, and uses `None`
+outside the covered range.
+
+The edit inputs are serialized with pipeline state. A new instruction,
+alignment policy, or changed source video invalidates cached results.
+
 ## Configuration
 
 `ayase.toml` in project root:

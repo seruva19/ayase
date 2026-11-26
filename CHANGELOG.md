@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Add source-video inputs, edit instructions and timestamp alignment policies for video editing.
 - Add `ayase compare` for prompt-bootstrapped Bradley–Terry rankings from pairwise judgments.
 - Skip redundant metric snapshots in single and batch processing when no after-hook runs.
 - Snapshot only the audited output fields of `motion` and `psnr99` during sample processing.

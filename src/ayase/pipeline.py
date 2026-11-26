@@ -1243,6 +1243,12 @@ class Pipeline:
             "embedding": sample.embedding,
             "metadata": sample.metadata,
         }
+        if sample.source_video is not None:
+            input_context["source_video"] = str(sample.source_video)
+        if sample.edit_instruction is not None:
+            input_context["edit_instruction"] = sample.edit_instruction
+        if sample.video_alignment is not None:
+            input_context["video_alignment"] = sample.video_alignment.model_dump(mode="json")
         normalized = cls._normalize_fingerprint_value(input_context)
         context_digest = hashlib.sha256(
             json.dumps(normalized, sort_keys=True, separators=(",", ":"), default=str).encode(
@@ -1454,11 +1460,14 @@ class Pipeline:
     def _sample_state_manifest(cls, sample: Sample) -> Dict[str, Any]:
         """Build a manifest used to validate persisted cache entries on resume."""
         caption_source = sample.caption.source_file if sample.caption else None
-        return {
+        manifest = {
             "media": cls._path_state_snapshot(sample.path),
             "reference": cls._path_state_snapshot(sample.reference_path),
             "caption_source": cls._path_state_snapshot(caption_source),
         }
+        if sample.source_video is not None:
+            manifest["source_video"] = cls._path_state_snapshot(sample.source_video)
+        return manifest
 
     @staticmethod
     def _path_matches_snapshot(snapshot: Optional[Dict[str, Any]]) -> bool:
@@ -1483,7 +1492,7 @@ class Pipeline:
         """Return whether all files referenced by a manifest are unchanged."""
         return all(
             cls._path_matches_snapshot(manifest.get(field))
-            for field in ("media", "reference", "caption_source")
+            for field in ("media", "reference", "caption_source", "source_video")
         )
 
     @staticmethod

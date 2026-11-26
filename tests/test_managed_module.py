@@ -101,6 +101,8 @@ def _tiny_module(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, unavailable
 def test_real_worker_preserves_identity_and_forwards_lifecycle(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    from ayase.video_alignment import VideoAlignment
+
     module = _tiny_module(tmp_path, monkeypatch)
     pipeline = Pipeline([module])
     module.pipeline = pipeline
@@ -116,8 +118,15 @@ def test_real_worker_preserves_identity_and_forwards_lifecycle(
     assert sample.metadata["processed"] is True
 
     batch = [Sample(path=tmp_path / f"{index}.png", is_video=False) for index in range(2)]
+    batch[1] = Sample(
+        path=tmp_path / "edited.mp4", is_video=True, source_video=tmp_path / "source.mp4",
+        edit_instruction="Change the sky", video_alignment=VideoAlignment(mode="normalized"),
+    )
     processed = module.process_batch(batch)
     assert all(left is right for left, right in zip(batch, processed))
+    assert processed[1].source_video == tmp_path / "source.mp4"
+    assert processed[1].edit_instruction == "Change the sky"
+    assert processed[1].video_alignment == VideoAlignment(mode="normalized")
     assert pipeline.stats.fvd == 7.5
     module.post_process(batch)
     assert all(item.metadata["post_processed"] for item in batch)

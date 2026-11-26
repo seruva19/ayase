@@ -12,7 +12,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, ClassVar, Dict, Iterator, List, Optional, cast
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationInfo, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, ValidationInfo, model_serializer, model_validator
+
+from .video_alignment import VideoAlignment
 
 logger = logging.getLogger(__name__)
 
@@ -1835,6 +1837,9 @@ class Sample(BaseModel):
     reference_path: Optional[Path] = None
     reference_mask_path: Optional[Path] = None
     style_reference_path: Optional[Path] = None
+    source_video: Optional[Path] = None
+    edit_instruction: Optional[str] = None
+    video_alignment: Optional[VideoAlignment] = None
     video_metadata: Optional[VideoMetadata] = None
     image_metadata: Optional[ImageMetadata] = None
     audio_metadata: Optional[AudioMetadata] = None
@@ -1857,6 +1862,14 @@ class Sample(BaseModel):
     # class. Serialised with the sample state; empty by default so legacy state
     # files load cleanly.
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @model_serializer(mode="wrap")
+    def _serialize_edit_inputs(self, handler: Any) -> Dict[str, Any]:
+        document = cast(Dict[str, Any], handler(self))
+        for field in ("source_video", "edit_instruction", "video_alignment"):
+            if document.get(field) is None:
+                document.pop(field, None)
+        return document
 
     def canonical_model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         """Serialize sample state with canonical metric names."""
